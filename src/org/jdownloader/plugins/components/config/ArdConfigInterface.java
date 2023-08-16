@@ -68,7 +68,13 @@ public interface ArdConfigInterface extends PluginConfigInterface {
         XML {
             @Override
             public String getLabel() {
-                return "SRT [XML converted to srt (.srt)]";
+                return "EBU-TT XML (.xml)";
+            }
+        },
+        SRT {
+            @Override
+            public String getLabel() {
+                return "SRT [EBU-TT XML converted to srt (.srt)]";
             }
         };
     }

@@ -261,12 +261,12 @@ public class ARDMediathek extends PluginForHost {
         final boolean allowConvertSubtitle;
         final MediathekProperties data_src = link.bindData(MediathekProperties.class);
         if ("subtitle".equalsIgnoreCase(data_src.getStreamingType())) {
-            /* Legacy handling for items added up to revision 4815 */
+            /* Legacy handling for items added up to revision 48155 */
             allowConvertSubtitle = true;
         } else {
             allowConvertSubtitle = link.getBooleanProperty(PROPERTY_CONVERT_XML_SUBTITLE, false);
         }
-        if (isSubtitle(link) && StringUtils.endsWithCaseInsensitive(link.getName(), ".xml")) {
+        if (isSubtitle(link) && StringUtils.endsWithCaseInsensitive(link.getName(), ".xml") && allowConvertSubtitle) {
             if (!convertSubtitle(link)) {
                 logger.severe("Subtitle conversion failed!");
             } else {
@@ -277,7 +277,8 @@ public class ARDMediathek extends PluginForHost {
 
     private boolean isSubtitle(final DownloadLink dl) {
         final MediathekProperties data_src = dl.bindData(MediathekProperties.class);
-        if ("subtitle".equalsIgnoreCase(data_src.getStreamingType())) {
+        final String streamingType = data_src.getStreamingType();
+        if (streamingType != null && streamingType.matches("subtitle.*")) {
             return true;
         } else {
             return false;

@@ -1640,10 +1640,16 @@ public class Ardmediathek extends PluginForDecrypt {
             captionsURL = metadata.getCaptionsURL_WEBVTT();
             captionsExt = ".vtt";
             convertSubtitle = false;
-        } else {
+        } else if (cfg.getPreferredSubtitleType() == SubtitleType.SRT) {
+            /* XML with conversion */
             captionsURL = metadata.getCaptionsURL_XML();
             captionsExt = ".xml";
             convertSubtitle = true;
+        } else {
+            /* XML without conversion */
+            captionsURL = metadata.getCaptionsURL_XML();
+            captionsExt = ".xml";
+            convertSubtitle = false;
         }
         final Iterator<Entry<String, DownloadLink>> it = finalSelectedQualityMap.entrySet().iterator();
         while (it.hasNext()) {
@@ -1653,7 +1659,7 @@ public class Ardmediathek extends PluginForDecrypt {
                 final DownloadLink subtitle = createDownloadlink(captionsURL.replaceAll("https?://", getHost() + "decrypted://"));
                 final MediathekProperties data_src = dl.bindData(MediathekProperties.class);
                 final MediathekProperties data_subtitle = subtitle.bindData(MediathekProperties.class);
-                data_subtitle.setStreamingType("subtitle");
+                data_subtitle.setStreamingType("subtitle_" + captionsExt);
                 data_subtitle.setSourceHost(data_src.getSourceHost());
                 data_subtitle.setChannel(data_src.getChannel());
                 data_subtitle.setProtocol(data_src.getProtocol() + "sub");
