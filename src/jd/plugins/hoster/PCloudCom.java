@@ -117,7 +117,7 @@ public class PCloudCom extends PluginForHost {
     }
 
     public static String getAPIDomain(final DownloadLink link) throws Exception {
-        final String mainLink = link.getStringProperty("mainlink", null);
+        final String mainLink = link.getStringProperty("mainlink");
         if (mainLink != null) {
             return getAPIDomain(new URL(mainLink).getHost());
         } else {
@@ -128,8 +128,8 @@ public class PCloudCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, Exception {
         this.setBrowserExclusive();
-        final String filename = link.getStringProperty("plain_name", null);
-        final String filesize = link.getStringProperty("plain_size", null);
+        final String filename = link.getStringProperty("plain_name");
+        final String filesize = link.getStringProperty("plain_size");
         if (filename == null || filesize == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else {
