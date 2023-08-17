@@ -242,4 +242,5 @@ public class CFG_GENERAL {
      * Penaltytime before a retry if JDownloader lost connection
      **/
     public static final IntegerKeyHandler               WAITTIME_ON_CONNECTION_LOSS                                      = SH.getKeyHandler("WaittimeOnConnectionLoss", IntegerKeyHandler.class);
+    public static final ObjectKeyHandler                FILENAME_AND_PATH_CHARACTER_REGEX_REPLACEMAP                     = SH.getKeyHandler("FilenameAndPathCharacterRegexReplaceMap", ObjectKeyHandler.class);
 }

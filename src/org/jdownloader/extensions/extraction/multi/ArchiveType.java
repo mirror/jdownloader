@@ -454,15 +454,15 @@ public enum ArchiveType {
                         // RAR 4.x 0x52 0x61 0x72 0x21 0x1A 0x07 0x00 (MARK_HEAD)
                         /*
                          * 0x0001 Volume/Archive, bit 0
-                         *
+                         * 
                          * 0x0002 Comment
-                         *
+                         * 
                          * 0x0004 Lock Archive
-                         *
+                         * 
                          * 0x0008 Solid Archive
-                         *
+                         * 
                          * 0x0010 New Volume naming scheme (.partN.rar), bit 4
-                         *
+                         * 
                          * 0x0100 First Volume (only in RAR 3.0 and later), bit 8
                          */
                         final boolean archiveHeader = "73".equals(signatureString.substring(18, 20));
@@ -479,15 +479,15 @@ public enum ArchiveType {
                     } else if (isRAR5x && signatureString.length() >= 17 * 2) {
                         // RAR 5.x 0x52 0x61 0x72 0x21 0x1A 0x07 0x01 0x00 (MARK_HEAD)
                         /*
-                         * 
+                         *
                          * 0x0001   Volume. Archive is a part of multivolume set.
-                         * 
+                         *
                          * 0x0002   Volume number field is present. This flag is present in all volumes except first.
-                         * 
-                         * 0x0004   Solid archive.  
-                         * 
+                         *
+                         * 0x0004   Solid archive.
+                         *
                          * 0x0008   Recovery record is present.
-                         * 
+                         *
                          * 0x0010   Locked archive.
                          */
                         try {
@@ -508,10 +508,14 @@ public enum ArchiveType {
                                 return isMultiPart;
                             } else if (headerType == 4) {
                                 // Archive encryption header
+                                // cannot check Main archive header because of encryption
                                 return null;
                             }
                         } catch (IOException ignore) {
                         }
+                    } else {
+                        // unknown RAR version?
+                        return null;
                     }
                     return verifiedResult ? false : null;
                 }
@@ -533,12 +537,12 @@ public enum ArchiveType {
                 } else {
                     final long value = read & 0x7f;
                     final int msb = (read & 0xff) >> 7;
-                                ret |= (value << shift);
-                                if (msb == 0) {
-                                    return ret;
-                                } else {
-                                    shift += 7;
-                                }
+                    ret |= (value << shift);
+                    if (msb == 0) {
+                        return ret;
+                    } else {
+                        shift += 7;
+                    }
                 }
             }
         }
