@@ -36,6 +36,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.hoster.DirectHTTP;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class Gogoplay4Com extends PluginForDecrypt {
@@ -195,7 +196,10 @@ public class Gogoplay4Com extends PluginForDecrypt {
         for (final String streamLink : streamLinks) {
             final DownloadLink link;
             if (streamLink.matches("^https?://gogo-cdn\\.com/.*")) {
-                link = createDownloadlink("directhttp://" + streamLink);
+                link = createDownloadlink(DirectHTTP.createURLForThisPlugin(streamLink));
+            } else if (streamLink.matches("(?i)https?://22gogodownload\\.net/download\\.php\\?url=.+")) {
+                /* 2023-08-17 */
+                link = createDownloadlink(DirectHTTP.createURLForThisPlugin(streamLink));
             } else {
                 link = createDownloadlink(streamLink);
             }

@@ -146,13 +146,6 @@ public class SiteType {
          */
         PhpDisk,
         /**
-         * Not sure what's the name of this script.<br />
-         * Usually hosts using this script will provide an public upload- & filecheck API under '/docs/api'.<br />
-         * <b>Example(s):</b> <a href="https://anonfiles.com/">anonfiles.com</a><br />
-         * <b>Superclass:</b> UnknownHostingScriptCore <br />
-         */
-        Unknown_FilehostScript,
-        /**
          * the template that supports mirror stack type sites.. Not sure what to call this script.
          */
         Unknown_MirrorStack,

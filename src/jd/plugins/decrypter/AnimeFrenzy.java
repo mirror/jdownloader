@@ -18,12 +18,16 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
+import org.appwork.storage.TypeRef;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -104,6 +108,24 @@ public class AnimeFrenzy extends antiDDoSForDecrypt {
                 ret.add(this.createDownloadlink(hlsmaster));
             }
         }
+        /* 2023-08-17 */
+        final String slugFromURL = new Regex(br.getURL(), "https?://[^/]+/stream/([^/]+)").getMatch(0);
+        if (ret.isEmpty() && slugFromURL != null) {
+            /* 2023-08-17: Token is from: https://animefrenzy.org/static/js/main.60f4e127.chunk.js */
+            final Browser brc = br.cloneBrowser();
+            brc.getHeaders().put("Origin", "https://" + br.getHost());
+            brc.getPage("https://animeheaven.app/anime-episode/slug/" + slugFromURL + "?token=YopgjtY0CA0q6a7NX1Oe");
+            final Map<String, Object> entries = restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.MAP);
+            final Map<String, Object> data = (Map<String, Object>) entries.get("data");
+            fpName = data.get("name").toString();
+            final List<Map<String, Object>> videos = (List<Map<String, Object>>) data.get("videos");
+            for (final Map<String, Object> video : videos) {
+                final String url = buildEmbedURL(video.get("host").toString(), video.get("video_id").toString());
+                if (url != null) {
+                    ret.add(this.createDownloadlink(url));
+                }
+            }
+        }
         if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName).trim());
@@ -112,7 +134,7 @@ public class AnimeFrenzy extends antiDDoSForDecrypt {
         return ret;
     }
 
-    private String buildEmbedURL(String host, String id) {
+    private String buildEmbedURL(final String host, final String id) {
         String result = null;
         if (host.equals("trollvid")) {
             result = "https//trollvid.net/embed/" + id;
@@ -124,14 +146,16 @@ public class AnimeFrenzy extends antiDDoSForDecrypt {
             result = "https://www.xstreamcdn.com/v/" + id;
         } else if (host.equals("vidstreaming")) {
             result = "https://vidstreaming.io/streaming.php?id=" + id;
-        } else if (host.equalsIgnoreCase("vidstream") || host.equalsIgnoreCase("vidstream")) {
-            result = "https://vidstreaming.io/download?id=" + id;
+        } else if (host.equalsIgnoreCase("vidstream")) {
+            result = "https://gogoplay4.com/download?id=" + id;
         } else if (host.equals("yare.wtf")) {
             result = "https://yare.wtf/vidstreaming/download/" + id;
         } else if (host.equals("facebook")) {
             result = "https://www.facebook.com/plugins/video.php?href=https%3A%2F%2Fwww.facebook.com%2Flayfon.alseif.16%2Fvideos%2F" + id + "%2F";
         } else if (host.equals("upload2")) {
             result = "https//upload2.com/embed/" + id;
+        } else {
+            logger.info("Unknown host: " + host);
         }
         return result;
     }

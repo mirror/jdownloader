@@ -133,85 +133,79 @@ public class AllDebridCom extends PluginForHost {
     private static MultiHosterManagement  mhm                                  = new MultiHosterManagement("alldebrid.com");
     public static final String            api_base                             = "https://api.alldebrid.com/v4";
     // this is used by provider which calculates unique token to agent/client.
-    private static final String           agent                                = "agent=JDownloader";
     public static final String            agent_raw                            = "JDownloader";
+    private static final String           agent                                = "agent=" + agent_raw;
     private final String                  PROPERTY_APIKEY_CREATED_TIMESTAMP    = "APIKEY_CREATED_TIMESTAMP";
     private static final String           PROPERTY_apikey                      = "apiv4_apikey";
     private final String                  PROPERTY_maxchunks                   = "alldebrid_maxchunks";
     private final AccountInvalidException exceptionFreeAccountsAreNotSupported = new AccountInvalidException("Free accounts are not supported!");
 
-    public String fetchApikey(final Account account, final AccountInfo accountInfo) throws Exception {
+    public String login(final Account account, final AccountInfo accountInfo, final boolean validateApikey) throws Exception {
         synchronized (account) {
-            try {
-                String apikey = getStoredApiKey(account);
-                if (apikey != null) {
-                    try {
-                        loginAccount(account, accountInfo, apikey);
-                        logger.info("Apikey login successful");
-                        return apikey;
-                    } catch (final PluginException elogin) {
-                        logger.log(elogin);
-                        logger.info("Apikey login failed");
-                    }
+            String apikey = getStoredApiKey(account);
+            if (apikey != null) {
+                if (!validateApikey) {
+                    setAuthHeader(br, apikey);
+                    return apikey;
                 }
-                /* Full login */
-                logger.info("Performing full login");
-                br.getPage(api_base + "/pin/get?" + agent);
-                final Map<String, Object> entries = this.handleErrors(account, null);
-                final Map<String, Object> data = (Map<String, Object>) entries.get("data");
-                final String user_url = data.get("user_url").toString();
-                final String check_url = data.get("check_url").toString();
-                final int maxSecondsServerside = ((Number) data.get("expires_in")).intValue();
-                final Thread dialog = showPINLoginInformation(user_url, maxSecondsServerside);
-                int secondsWaited = 0;
-                final int waitSecondsPerLoop = 3;
-                try {
-                    for (int i = 0; i <= 23; i++) {
-                        logger.info("Waiting for user to authorize application. Seconds waited: " + secondsWaited + "/" + maxSecondsServerside);
-                        Thread.sleep(waitSecondsPerLoop * 1000);
-                        secondsWaited += waitSecondsPerLoop;
-                        br.getPage(check_url);
-                        if (secondsWaited >= maxSecondsServerside) {
-                            logger.info("Stopping because: Timeout #1 | User did not perform authorization within " + maxSecondsServerside + " seconds");
-                            break;
-                        }
-                        /** Example response: { "status": "success", "data": { "activated": false, "expires_in": 590 }}} */
-                        final Map<String, Object> resp = this.handleErrors(account, null);
-                        final Map<String, Object> respData = (Map<String, Object>) resp.get("data");
-                        apikey = (String) respData.get("apikey");
-                        final int secondsLeftServerside = ((Number) data.get("expires_in")).intValue();
-                        if (!StringUtils.isEmpty(apikey)) {
-                            logger.info("Stopping because: Found apikey!");
-                            break;
-                        } else if (secondsLeftServerside < waitSecondsPerLoop) {
-                            logger.info("Stopping because: Timeout #2");
-                            break;
-                        } else if (!dialog.isAlive()) {
-                            logger.info("Stopping because: Dialog closed!");
-                            break;
-                        }
-                    }
-                } finally {
-                    dialog.interrupt();
-                }
-                if (StringUtils.isEmpty(apikey)) {
-                    throw new AccountInvalidException("User failed to authorize PIN/Code. Do not close the pairing dialog until you have confirmed the PIN/Code via browser!");
-                }
-                /* Save this property - it might be useful in the future. */
-                account.setProperty(PROPERTY_APIKEY_CREATED_TIMESTAMP, System.currentTimeMillis());
-                loginAccount(account, accountInfo, apikey);
-                setAuthHeader(br, apikey);
+                logger.info("Attempting login with existing apikey");
+                getAccountInfo(account, accountInfo, apikey);
+                logger.info("Apikey login successful");
                 return apikey;
-            } catch (final PluginException e) {
-                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
-                    account.removeProperty(PROPERTY_apikey);
-                }
-                throw e;
             }
+            /* Full login */
+            logger.info("Performing full login");
+            br.getPage(api_base + "/pin/get?" + agent);
+            final Map<String, Object> entries = this.handleErrors(account, null);
+            final Map<String, Object> data = (Map<String, Object>) entries.get("data");
+            final String user_url = data.get("user_url").toString();
+            final String check_url = data.get("check_url").toString();
+            final int maxSecondsServerside = ((Number) data.get("expires_in")).intValue();
+            final Thread dialog = showPINLoginInformation(user_url, maxSecondsServerside);
+            int secondsWaited = 0;
+            final int waitSecondsPerLoop = 3;
+            try {
+                for (int i = 0; i <= 23; i++) {
+                    logger.info("Waiting for user to authorize application. Seconds waited: " + secondsWaited + "/" + maxSecondsServerside);
+                    Thread.sleep(waitSecondsPerLoop * 1000);
+                    secondsWaited += waitSecondsPerLoop;
+                    br.getPage(check_url);
+                    if (secondsWaited >= maxSecondsServerside) {
+                        logger.info("Stopping because: Timeout #1 | User did not perform authorization within " + maxSecondsServerside + " seconds");
+                        break;
+                    }
+                    /** Example response: { "status": "success", "data": { "activated": false, "expires_in": 590 }}} */
+                    final Map<String, Object> resp = this.handleErrors(account, null);
+                    final Map<String, Object> respData = (Map<String, Object>) resp.get("data");
+                    apikey = (String) respData.get("apikey");
+                    final int secondsLeftServerside = ((Number) data.get("expires_in")).intValue();
+                    if (!StringUtils.isEmpty(apikey)) {
+                        logger.info("Stopping because: Found apikey!");
+                        break;
+                    } else if (secondsLeftServerside < waitSecondsPerLoop) {
+                        logger.info("Stopping because: Timeout #2");
+                        break;
+                    } else if (!dialog.isAlive()) {
+                        logger.info("Stopping because: Dialog closed!");
+                        break;
+                    }
+                }
+            } finally {
+                dialog.interrupt();
+            }
+            if (StringUtils.isEmpty(apikey)) {
+                throw new AccountInvalidException("User failed to authorize PIN/Code. Do not close the pairing dialog until you have confirmed the PIN/Code via browser!");
+            }
+            account.setProperty(PROPERTY_apikey, apikey);
+            /* Save this property - it might be useful in the future. */
+            account.setProperty(PROPERTY_APIKEY_CREATED_TIMESTAMP, System.currentTimeMillis());
+            getAccountInfo(account, accountInfo, apikey);
+            setAuthHeader(br, apikey);
+            return apikey;
         }
     }
 
-    private void loginAccount(final Account account, final AccountInfo ai, final String apikey) throws Exception {
+    private void getAccountInfo(final Account account, final AccountInfo ai, final String apikey) throws Exception {
         synchronized (account) {
             setAuthHeader(br, apikey);
             br.getPage(api_base + "/user?" + agent);
@@ -232,8 +226,6 @@ public class AllDebridCom extends PluginForHost {
                 if (premiumUntil != null) {
                     ai.setValidUntil(premiumUntil.longValue() * 1000l, br);
                 }
-                /* Only save apikey for premium accounts */
-                account.setProperty(PROPERTY_apikey, apikey);
                 if ((Boolean) user.get("isTrial") == Boolean.TRUE) {
                     /*
                      * 2020-03-27: Premium "test" accounts which last 7 days and have a total of 25GB as quota. Once that limit is reached,
@@ -268,7 +260,7 @@ public class AllDebridCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo accountInfo = new AccountInfo();
-        fetchApikey(account, accountInfo);
+        login(account, new AccountInfo(), true);
         /* They got 3 arrays of types of supported websites --> We want to have the "hosts" Array only! */
         br.getPage(api_base + "/user/hosts?" + agent + "&hostsOnly=true");
         final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
@@ -366,6 +358,127 @@ public class AllDebridCom extends PluginForHost {
         return thread;
     }
 
+    /**
+     * This is executed whenever user is suddently logged out by alldebrid as a security measurement and needs to confirm his login via
+     * email.
+     */
+    public String authBlockedLogin(final Account account, final DownloadLink link, final Map<String, Object> errormap) throws Exception {
+        final String msg = errormap.get("message").toString();
+        final String token = errormap.get("token").toString();
+        if (StringUtils.isEmpty(msg)) {
+            /* This should never happen */
+            throw new IllegalArgumentException();
+        }
+        if (StringUtils.isEmpty(token)) {
+            /* No token given -> No way for us to refresh apikey */
+            account.removeProperty(PROPERTY_apikey);
+            throw new AccountInvalidException("Authorization has been denied by account owner.");
+        }
+        final AccountUnavailableException exceptionOnFailure = new AccountUnavailableException(msg, 10 * 60 * 1000);
+        synchronized (account) {
+            logger.info("Performing auth blocked login");
+            final String check_url = api_base + "/user/verif?agent=" + agent_raw + "&token=" + token;
+            final int maxSecondsWait = 600;
+            final Thread dialog = showNewLocationLoginInformation(null, msg, maxSecondsWait);
+            int secondsWaited = 0;
+            final int waitSecondsPerLoop = 3;
+            String apikey = null;
+            boolean throwThisException = false;
+            try {
+                try {
+                    for (int i = 0; i <= 23; i++) {
+                        logger.info("Waiting for user to authorize application. Seconds waited: " + secondsWaited + "/" + maxSecondsWait);
+                        Thread.sleep(waitSecondsPerLoop * 1000);
+                        secondsWaited += waitSecondsPerLoop;
+                        br.getPage(check_url);
+                        if (secondsWaited >= maxSecondsWait) {
+                            logger.info("Stopping because: Timeout #1 | User did not perform authorization within " + maxSecondsWait + " seconds");
+                            break;
+                        }
+                        /** Example response: { "status": "success", "data": { "activated": false, "expires_in": 590 }}} */
+                        final Map<String, Object> resp = this.handleErrors(account, link);
+                        final Map<String, Object> data = (Map<String, Object>) resp.get("data");
+                        final String verifStatus = data.get("verif").toString();
+                        if (verifStatus.equals("denied")) {
+                            /* User opened link from email and denied this login-attempt. */
+                            throwThisException = true;
+                            throw new AccountInvalidException("Authorization has been denied by account owner");
+                        }
+                        apikey = (String) data.get("apikey");
+                        if (!StringUtils.isEmpty(apikey)) {
+                            logger.info("Stopping because: Found apikey!");
+                            break;
+                        } else if (!dialog.isAlive()) {
+                            logger.info("Stopping because: Dialog closed!");
+                            break;
+                        }
+                    }
+                } finally {
+                    dialog.interrupt();
+                }
+            } catch (final Exception e) {
+                if (throwThisException) {
+                    throw e;
+                } else {
+                    throw exceptionOnFailure;
+                }
+            }
+            if (StringUtils.isEmpty(apikey)) {
+                logger.warning("Failed for unknown reasons");
+                throw exceptionOnFailure;
+            }
+            logger.info("Using new apikey: " + apikey);
+            account.setProperty(PROPERTY_apikey, apikey);
+            setAuthHeader(br, apikey);
+            throw new AccountUnavailableException("Retry after blocked login has been cleared", 5 * 1000);
+        }
+    }
+
+    private Thread showNewLocationLoginInformation(final String pin_url, final String api_errormsg, final int timeoutSeconds) {
+        final Thread thread = new Thread() {
+            public void run() {
+                try {
+                    String message = "";
+                    final String title;
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        title = "Alldebrid - Logout";
+                        message += "Hallo liebe(r) alldebrid NutzerIn";
+                        message += "\r\nDu wurdest automatisch abgemeldet, da du versucht hast, deinen Account in einem neuen Land zu verwenden.";
+                        message += "\r\nBestätige diesen Loginversuch mit dem Link, den du per E-Mail erhalten hast, um deinen Account in JD weiterverwenden zu können.";
+                        message += "\r\nDieser dialog schließt sich automatisch, sobald du den Login bestätigt hast.";
+                        if (api_errormsg != null) {
+                            message += "\r\nFehlermeldung der Alldebrid API:";
+                            message += "\r\n" + api_errormsg;
+                        }
+                    } else {
+                        title = "Alldebrid - Confirm new location";
+                        message += "\r\nHello dear alldebrid user";
+                        message += "\r\nYou were logged out because you've tried to sign in from a new location.";
+                        message += "\r\nYou've received an e-mail with a link to confirm this new location.";
+                        message += "\r\n Confirm this e-mail to continue using your Alldebrid account in JDownloader.";
+                        message += "\r\nOnce accepted, this dialog will be closed automatically.";
+                        if (api_errormsg != null) {
+                            message += "\r\nMessage from Alldebrid API:";
+                            message += "\r\n" + api_errormsg;
+                        }
+                    }
+                    final ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, title, message);
+                    dialog.setTimeout(timeoutSeconds * 1000);
+                    if (pin_url != null && CrossSystem.isOpenBrowserSupported() && !Application.isHeadless()) {
+                        CrossSystem.openURL(pin_url);
+                    }
+                    final ConfirmDialogInterface ret = UIOManager.I().show(ConfirmDialogInterface.class, dialog);
+                    ret.throwCloseExceptions();
+                } catch (final Throwable e) {
+                    getLogger().log(e);
+                }
+            };
+        };
+        thread.setDaemon(true);
+        thread.start();
+        return thread;
+    }
+
     /** See https://docs.alldebrid.com/v4/#all-errors */
     private Map<String, Object> handleErrors(final Account account, final DownloadLink link) throws PluginException, Exception {
         /* 2020-03-25: E.g. {"status": "error", "error": {"code": "AUTH_BAD_APIKEY","message": "The auth apikey is invalid"}} */
@@ -383,19 +496,12 @@ public class AllDebridCom extends PluginForHost {
             message = "Unknown error";
         }
         if (code.equalsIgnoreCase("AUTH_BAD_APIKEY")) {
-            /* Do not use given errormessage here as it is irritating. */
-            if (link != null) {
-                /*
-                 * If this happens during download attempt, temp. disable account for a very short time so next check will trigger a full
-                 * login.
-                 */
-                throw new AccountUnavailableException("Session expired or apikey has changed: " + message, 10 * 60 * 1000);
-            } else {
-                throw new AccountInvalidException("Invalid login: " + message);
-            }
+            /* This is the only error which allows us to remove the apikey and re-login. */
+            account.removeProperty(PROPERTY_apikey);
+            throw new AccountInvalidException("Invalid login: " + message + "\r\nRefresh account to renew apikey.");
         } else if (code.equalsIgnoreCase("AUTH_BLOCKED")) {
             /* Apikey GEO-blocked or IP blocked */
-            throw new AccountUnavailableException(message, 10 * 60 * 1000);
+            this.authBlockedLogin(account, link, errormap);
         } else if (code.equalsIgnoreCase("AUTH_USER_BANNED")) {
             throw new AccountInvalidException(message);
         } else if (code.equalsIgnoreCase("DELAYED_INVALID_ID")) {
@@ -524,7 +630,6 @@ public class AllDebridCom extends PluginForHost {
         if (!StringUtils.isEmpty(dllink)) {
             logger.info("Re-using stored directurl: " + dllink);
         } else {
-            /* Login */
             dllink = generteFreshDirecturl(link, account);
         }
         dllink = updateProtocolInDirecturl(dllink);
@@ -614,8 +719,7 @@ public class AllDebridCom extends PluginForHost {
 
     private String generteFreshDirecturl(final DownloadLink link, final Account account) throws Exception {
         logger.info("Generating fresh directurl");
-        final String apikey = getStoredApiKey(account);
-        setAuthHeader(br, apikey);
+        this.login(account, new AccountInfo(), false);
         String downloadPassword = link.getDownloadPassword();
         Form dlform = new Form();
         dlform.setMethod(MethodType.GET);

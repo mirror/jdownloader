@@ -24,7 +24,6 @@ import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -33,23 +32,20 @@ import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
-public class FastShareCz extends antiDDoSForHost {
+public class FastShareCz extends PluginForHost {
     public FastShareCz(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://fastshare.cz/cenik_cs");
-    }
-
-    @Override
-    protected boolean useRUA() {
-        return true;
     }
 
     @Override
@@ -59,7 +55,7 @@ public class FastShareCz extends antiDDoSForHost {
 
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
-        ret.add(new String[] { "fastshare.live", "fastshare.cz", "fastshare.pl", "netshare.cz", "dinoshare.cz" });
+        ret.add(new String[] { "fastshare.live", "fastshare.cz", "fastshare.cloud", "fastshare.pl", "netshare.cz", "dinoshare.cz" });
         return ret;
     }
 
@@ -117,7 +113,7 @@ public class FastShareCz extends antiDDoSForHost {
             this.login(account, false);
         }
         br.setFollowRedirects(true);
-        getPage(link.getPluginPatternMatcher().replaceFirst("http://", "https://"));
+        br.getPage(link.getPluginPatternMatcher().replaceFirst("http://", "https://"));
         int numberofRedirects = 0;
         do {
             final String redirect = br.getRequest().getHTMLRefresh();
@@ -126,9 +122,9 @@ public class FastShareCz extends antiDDoSForHost {
             } else if (StringUtils.isEmpty(redirect)) {
                 break;
             } else if (numberofRedirects >= 5) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Redirectloop");
             } else {
-                getPage(redirect);
+                br.getPage(redirect);
                 numberofRedirects++;
             }
         } while (true);
@@ -180,9 +176,9 @@ public class FastShareCz extends antiDDoSForHost {
         }
         if (captchaLink != null) {
             final String captcha = getCaptchaCode(captchaLink, link);
-            postPage(action, "code=" + Encoding.urlEncode(captcha));
+            br.postPage(action, "code=" + Encoding.urlEncode(captcha));
         } else {
-            postPage(action, "");
+            br.postPage(action, "");
         }
         if (br.containsHTML("Pres FREE muzete stahovat jen jeden soubor najednou")) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads", 60 * 1000l);
@@ -223,7 +219,7 @@ public class FastShareCz extends antiDDoSForHost {
         dl.startDownload();
     }
 
-    private void login(Account account, boolean force) throws Exception {
+    private void login(final Account account, boolean force) throws Exception {
         synchronized (account) {
             try {
                 br.setCookiesExclusive(true);
@@ -237,7 +233,7 @@ public class FastShareCz extends antiDDoSForHost {
                         return;
                     }
                     logger.info("Attempting cookie login...");
-                    getPage("https://" + this.getHost() + "/user");
+                    br.getPage("https://" + this.getHost() + "/user");
                     if (this.isLoggedIN(br)) {
                         logger.info("Cookie login successful");
                         account.saveCookies(br.getCookies(br.getURL()), "");
@@ -248,13 +244,13 @@ public class FastShareCz extends antiDDoSForHost {
                 }
                 logger.info("Performing full login");
                 br.setFollowRedirects(true);
-                postPage("https://" + this.getHost() + "/sql.php", "login=" + Encoding.urlEncode(account.getUser()) + "&heslo=" + Encoding.urlEncode(account.getPass()));
+                br.postPage("https://" + this.getHost() + "/sql.php", "login=" + Encoding.urlEncode(account.getUser()) + "&heslo=" + Encoding.urlEncode(account.getPass()));
                 final String redirect = br.getRequest().getHTMLRefresh();
                 if (redirect != null) {
-                    getPage(redirect);
+                    br.getPage(redirect);
                 }
                 if (!isLoggedIN(br)) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    throw new AccountInvalidException();
                 }
                 account.saveCookies(br.getCookies(getHost()), "");
             } catch (final PluginException e) {
@@ -329,7 +325,7 @@ public class FastShareCz extends antiDDoSForHost {
             requestFileInformation(link);
             login(account, false);
             br.setFollowRedirects(false);
-            getPage(link.getPluginPatternMatcher().replaceFirst("http://", "https://"));
+            br.getPage(link.getPluginPatternMatcher().replaceFirst("http://", "https://"));
             checkErrors(br, link, account);
             /* Maybe user has direct downloads active */
             String dllink = br.getRedirectLocation();
