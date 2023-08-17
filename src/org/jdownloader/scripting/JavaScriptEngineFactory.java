@@ -32,12 +32,11 @@ import javax.script.SimpleScriptContext;
 
 import jd.config.Property;
 import jd.parser.Regex;
+import jd.plugins.MinimalMemoryJSonParser;
 import jd.plugins.components.ThrowingRunnable;
 
 import org.appwork.storage.JSonMapperException;
 import org.appwork.storage.SimpleTypeRef;
-import org.appwork.storage.simplejson.JSonParser;
-import org.appwork.storage.simplejson.MinimalMemoryMap;
 import org.appwork.storage.simplejson.ParserException;
 import org.appwork.utils.Exceptions;
 import org.appwork.utils.StringUtils;
@@ -989,13 +988,7 @@ public class JavaScriptEngineFactory {
         try {
             if (true) {
                 try {
-                    final JSonParser factory = new JSonParser(string) {
-                        @Override
-                        protected Map<String, ? extends Object> createJSonObject() {
-                            return new MinimalMemoryMap<String, Object>();
-                        }
-                    };
-                    return factory.parse();
+                    return new MinimalMemoryJSonParser(string).parse();
                 } catch (ParserException e) {
                     throw new JSonMapperException(e);
                 }

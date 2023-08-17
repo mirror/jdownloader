@@ -5,7 +5,7 @@ import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.appwork.utils.Application;
+import org.appwork.utils.JVMVersion;
 import org.appwork.utils.logging2.LogSource;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.os.CrossSystem.OperatingSystem;
@@ -64,15 +64,22 @@ public class MacAntiStandBy extends Thread {
             final Process process = lastProcess.getAndSet(null);
             if (process != null) {
                 process.destroy();
-                if (Application.getJavaVersion() >= Application.JAVA18 && Application.getJavaVersion() < Application.JAVA19) {
-                    try {
-                        final Method method = process.getClass().getMethod("destroyForcibly", new Class[] {});
-                        if (method != null) {
-                            method.setAccessible(true);
-                            method.invoke(process, new Object[] {});
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e1) {
+                }
+                if (process.isAlive()) {
+                    final long jvmVersion = JVMVersion.get();
+                    if (jvmVersion >= JVMVersion.JAVA_1_8 && jvmVersion < JVMVersion.JAVA_19) {
+                        try {
+                            final Method method = process.getClass().getMethod("destroyForcibly", new Class[] {});
+                            if (method != null) {
+                                method.setAccessible(true);
+                                method.invoke(process, new Object[] {});
+                            }
+                        } catch (final Throwable e) {
+                            logger.log(e);
                         }
-                    } catch (final Throwable e) {
-                        logger.log(e);
                     }
                 }
                 logger.fine("JDAntiStandby: Stop");

@@ -38,23 +38,6 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 
-import org.appwork.storage.JSonMapperException;
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.ReflectionUtils;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.net.httpconnection.HTTPConnection;
-import org.appwork.utils.net.httpconnection.SSLSocketStreamOptions;
-import org.appwork.utils.net.httpconnection.SSLSocketStreamOptionsModifier;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.downloader.hls.M3U8Playlist;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.logging.LogController;
-import org.jdownloader.net.BCSSLSocketStreamFactory;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -85,6 +68,23 @@ import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.PornHubComVideoCrawler;
+
+import org.appwork.storage.JSonMapperException;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.ReflectionUtils;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.httpconnection.HTTPConnection;
+import org.appwork.utils.net.httpconnection.SSLSocketStreamOptions;
+import org.appwork.utils.net.httpconnection.SSLSocketStreamOptionsModifier;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.net.BCSSLSocketStreamFactory;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 @PluginDependencies(dependencies = { PornHubComVideoCrawler.class })
@@ -121,6 +121,11 @@ public class PornHubCom extends PluginForHost {
     public static final String                    BEST_SELECTION_ONLY                   = "BEST_SELECTION_ONLY";
     public static final String                    CRAWL_VIDEO_HLS                       = "CRAWL_VIDEO_HLS";
     public static final String                    CRAWL_VIDEO_MP4                       = "CRAWL_VIDEO_MP4";
+    public static final boolean                   MP4_SUPPORTED                         = false;                                                               // 2023-08-16:
+    // mp4
+    // no
+    // longer
+    // available?
     public static final String                    CRAWL_THUMBNAIL                       = "CRAWL_THUMBNAIL";
     public static final String                    FAST_LINKCHECK                        = "FAST_LINKCHECK";
     private static final String                   USE_ORIGINAL_SERVER_FILENAME          = "USE_ORIGINAL_SERVER_FILENAME";
@@ -810,7 +815,7 @@ public class PornHubCom extends PluginForHost {
                             if (StringUtils.equalsIgnoreCase(format, "mp4")) {
                                 final boolean mp4Workaround = MP4_WORKAROUND.get();
                                 try {
-                                    if (TRY_MP4.get()) {
+                                    if (TRY_MP4.get() && MP4_SUPPORTED) {
                                         final Browser brc = br.cloneBrowser();
                                         brc.setFollowRedirects(true);
                                         // no keep alive for this request
@@ -1252,8 +1257,8 @@ public class PornHubCom extends PluginForHost {
                 if (premiumExpired && !isPremiumDomain(br.getHost())) {
                     /**
                      * Expired pornhub premium --> It should still be a valid free account --> We might need to access a special url which
-                     * redirects us to the pornhub free mainpage and sets the cookies. </br>
-                     * 2022-06-27: Old code but let's leave it in for now as we can't know if it is still needed.
+                     * redirects us to the pornhub free mainpage and sets the cookies. </br> 2022-06-27: Old code but let's leave it in for
+                     * now as we can't know if it is still needed.
                      */
                     logger.info("Expired premium --> Free account (?)");
                     final String pornhubMainpageCookieRedirectUrl = br.getRegex("\\'pornhubLink\\'\\s*?:\\s*?(?:\"|\\')(https?://(?:www\\.)?pornhub\\.(?:com|org)/[^<>\"\\']+)(?:\"|\\')").getMatch(0);
@@ -1299,8 +1304,7 @@ public class PornHubCom extends PluginForHost {
     }
 
     /**
-     * Checks login and sets account-type. </br>
-     * Expects browser instance to be logged in already (cookies need to be there).
+     * Checks login and sets account-type. </br> Expects browser instance to be logged in already (cookies need to be there).
      *
      * @throws Exception
      */
@@ -1887,7 +1891,9 @@ public class PornHubCom extends PluginForHost {
             getConfig().addEntry(vidcfg);
         }
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), CRAWL_VIDEO_HLS, "Crawl video (HLS)?").setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), CRAWL_VIDEO_MP4, "Crawl video (HTTP)?").setDefaultValue(true));
+        if (MP4_SUPPORTED) {
+            getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), CRAWL_VIDEO_MP4, "Crawl video (HTTP)?").setDefaultValue(true));
+        }
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), CRAWL_THUMBNAIL, "Crawl video thumbnail?").setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FAST_LINKCHECK, "Enable fast linkcheck?\r\nNOTE: If enabled, links will appear faster but filesize won't be shown before downloadstart.").setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), USE_ORIGINAL_SERVER_FILENAME, "Use original server filename?").setDefaultValue(false));

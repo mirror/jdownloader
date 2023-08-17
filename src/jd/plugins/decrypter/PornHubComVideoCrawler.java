@@ -27,15 +27,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -59,6 +50,15 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.DirectHTTP;
 import jd.plugins.hoster.PornHubCom;
+
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class PornHubComVideoCrawler extends PluginForDecrypt {
@@ -431,8 +431,8 @@ public class PornHubComVideoCrawler extends PluginForDecrypt {
         final String seeAllURL = br.getRegex("(" + Regex.escape(br._getURL().getPath()) + "/[^\"]+)\" class=\"seeAllButton greyButton float-right\">").getMatch(0);
         if (seeAllURL != null) {
             /**
-             * E.g. users/bla/videos --> /users/bla/videos/favorites </br>
-             * Without this we might only see some of all items and no pagination which is needed to be able to find all items.
+             * E.g. users/bla/videos --> /users/bla/videos/favorites </br> Without this we might only see some of all items and no
+             * pagination which is needed to be able to find all items.
              */
             logger.info("Found seeAllURL: " + seeAllURL);
             PornHubCom.getPage(br, seeAllURL);
@@ -831,12 +831,12 @@ public class PornHubComVideoCrawler extends PluginForDecrypt {
         final boolean bestselectiononly = cfg.getBooleanProperty(PornHubCom.BEST_SELECTION_ONLY, false);
         final boolean fastlinkcheck = cfg.getBooleanProperty(PornHubCom.FAST_LINKCHECK, false);
         boolean crawlHLS = cfg.getBooleanProperty(PornHubCom.CRAWL_VIDEO_HLS, true);
-        boolean crawlMP4 = cfg.getBooleanProperty(PornHubCom.CRAWL_VIDEO_MP4, true);
+        boolean crawlMP4 = PornHubCom.MP4_SUPPORTED && cfg.getBooleanProperty(PornHubCom.CRAWL_VIDEO_MP4, true);
         final boolean crawlThumbnail = cfg.getBooleanProperty(PornHubCom.CRAWL_THUMBNAIL, false);
         if (!crawlHLS && !crawlMP4) {
             logger.info("User disabled HLS and HTTP versions -> Force-enable both");
             crawlHLS = true;
-            crawlMP4 = true;
+            crawlMP4 = PornHubCom.MP4_SUPPORTED;
         }
         final boolean prefer_server_filename = cfg.getBooleanProperty("USE_ORIGINAL_SERVER_FILENAME", false);
         /* Convert embed links to normal links */
