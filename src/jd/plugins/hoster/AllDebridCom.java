@@ -380,6 +380,7 @@ public class AllDebridCom extends PluginForHost {
         synchronized (account) {
             final String newAuth = br.getHeaders().getHeader(HTTPConstants.HEADER_REQUEST_AUTHORIZATION).getValue();
             if (!StringUtils.equals(oldAuth, newAuth)) {
+                /* Previous download-attempt already successfully ran through this handling so we don't need to do this here again. */
                 throw exceptionOnDownloadAndSuccess;
             }
             logger.info("Performing auth blocked login");
