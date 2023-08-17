@@ -26,27 +26,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.WeakHashMap;
 
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.storage.TypeRef;
-import org.appwork.storage.config.annotations.AboutConfig;
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.views.downloads.columns.ETAColumn;
-import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.plugins.PluginTaskID;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.AccountController;
@@ -75,6 +54,27 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.DownloadLinkDownloadable;
 import jd.plugins.download.HashInfo;
+
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.storage.TypeRef;
+import org.appwork.storage.config.annotations.AboutConfig;
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.views.downloads.columns.ETAColumn;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.plugins.PluginTaskID;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "alldebrid.com" }, urls = { "https?://alldebrid\\.com/f/([A-Za-z0-9\\-_]+)" })
 public class AllDebridCom extends PluginForHost {
@@ -381,7 +381,7 @@ public class AllDebridCom extends PluginForHost {
             final String newAuth = br.getHeaders().getHeader(HTTPConstants.HEADER_REQUEST_AUTHORIZATION).getValue();
             if (!StringUtils.equals(oldAuth, newAuth)) {
                 /* Previous download-attempt already successfully ran through this handling so we don't need to do this here again. */
-                throw exceptionOnDownloadAndSuccess;
+                throw (PluginException) exceptionOnDownloadAndSuccess.fillInStackTrace();
             }
             logger.info("Performing auth blocked login");
             final String check_url = api_base + "/user/verif?agent=" + agent_raw + "&token=" + token;
@@ -427,12 +427,12 @@ public class AllDebridCom extends PluginForHost {
                 if (throwThisException) {
                     throw e;
                 } else {
-                    throw exceptionOnFailure;
+                    throw (AccountUnavailableException) exceptionOnFailure.fillInStackTrace();
                 }
             }
             if (StringUtils.isEmpty(apikey)) {
                 logger.warning("Failed for unknown reasons");
-                throw exceptionOnFailure;
+                throw (AccountUnavailableException) exceptionOnFailure.fillInStackTrace();
             }
             logger.info("Using new apikey: " + apikey);
             account.setProperty(PROPERTY_apikey, apikey);
@@ -440,7 +440,7 @@ public class AllDebridCom extends PluginForHost {
             if (link == null) {
                 throw new AccountUnavailableException("Retry after blocked login has been cleared", 5 * 1000);
             } else {
-                throw exceptionOnDownloadAndSuccess;
+                throw (PluginException) exceptionOnDownloadAndSuccess.fillInStackTrace();
             }
         }
     }
@@ -493,7 +493,7 @@ public class AllDebridCom extends PluginForHost {
     /** See https://docs.alldebrid.com/v4/#all-errors */
     private Map<String, Object> handleErrors(final Account account, final DownloadLink link) throws PluginException, Exception {
         /* 2020-03-25: E.g. {"status": "error", "error": {"code": "AUTH_BAD_APIKEY","message": "The auth apikey is invalid"}} */
-        Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+        Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         final String status = (String) entries.get("status");
         if (!"error".equalsIgnoreCase(status)) {
             return entries;
