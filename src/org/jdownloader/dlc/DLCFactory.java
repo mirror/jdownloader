@@ -8,13 +8,6 @@ import java.util.Locale;
 import javax.swing.JComponent;
 import javax.swing.filechooser.FileFilter;
 
-import jd.controlling.linkcollector.LinknameCleaner;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
-import jd.controlling.packagecontroller.AbstractPackageNode;
-import jd.http.Browser;
-import jd.plugins.DownloadLink;
-
 import org.appwork.uio.CloseReason;
 import org.appwork.utils.Application;
 import org.appwork.utils.IO;
@@ -35,6 +28,13 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
+
+import jd.controlling.linkcollector.LinknameCleaner;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
+import jd.controlling.packagecontroller.AbstractPackageNode;
+import jd.http.Browser;
+import jd.plugins.DownloadLink;
 
 public class DLCFactory extends D {
     public String encryptDLC(String xml) {
@@ -89,7 +89,7 @@ public class DLCFactory extends D {
         if (nodes != null && nodes.size() > 0) {
             if (nodes.size() == 1) {
                 final String name = nodes.get(0).getName();
-                return LinknameCleaner.cleanFileName(name, false, false, LinknameCleaner.EXTENSION_SETTINGS.REMOVE_ALL, false) + ".dlc";
+                return LinknameCleaner.cleanFilename(name, true) + ".dlc";
             } else {
                 for (AbstractPackageChildrenNode node : nodes) {
                     final AbstractPackageNode parent = ((AbstractPackageNode) nodes.get(0).getParentNode());

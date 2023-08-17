@@ -1,13 +1,22 @@
 package jd.controlling.linkcollector;
 
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
-import jd.controlling.packagecontroller.AbstractNode;
-
+import org.appwork.storage.config.JsonConfig;
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ArchiveExtensions;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ExtensionsFilterInterface;
+import org.jdownloader.settings.GeneralSettings;
+
+import jd.controlling.packagecontroller.AbstractNode;
 
 public class LinknameCleaner {
     public static final Pattern   pat0     = Pattern.compile("(.*)(\\.|_|-)pa?r?t?\\.?[0-9]+.(rar|rev|exe)($|\\.html?)", Pattern.CASE_INSENSITIVE);
@@ -35,12 +44,12 @@ public class LinknameCleaner {
             /* not loaded yet */
         }
     }
-    public static final Pattern   pat12    = Pattern.compile("(CD\\d+)", Pattern.CASE_INSENSITIVE);
-    public static final Pattern   pat13    = Pattern.compile("(part\\d+)", Pattern.CASE_INSENSITIVE);
-    public static final Pattern   pat17    = Pattern.compile("(.+)\\.\\d+\\.xtm($|\\.html?)");
-    public static final Pattern   pat18    = Pattern.compile("(.*)\\.isz($|\\.html?)", Pattern.CASE_INSENSITIVE);
-    public static final Pattern   pat19    = Pattern.compile("(.*)\\.i\\d{2}$", Pattern.CASE_INSENSITIVE);
-    public static final Pattern[] iszPats  = new Pattern[] { pat18, pat19 };
+    public static final Pattern   pat12   = Pattern.compile("(CD\\d+)", Pattern.CASE_INSENSITIVE);
+    public static final Pattern   pat13   = Pattern.compile("(part\\d+)", Pattern.CASE_INSENSITIVE);
+    public static final Pattern   pat17   = Pattern.compile("(.+)\\.\\d+\\.xtm($|\\.html?)");
+    public static final Pattern   pat18   = Pattern.compile("(.*)\\.isz($|\\.html?)", Pattern.CASE_INSENSITIVE);
+    public static final Pattern   pat19   = Pattern.compile("(.*)\\.i\\d{2}$", Pattern.CASE_INSENSITIVE);
+    public static final Pattern[] iszPats = new Pattern[] { pat18, pat19 };
 
     public static enum EXTENSION_SETTINGS {
         KEEP,
@@ -52,6 +61,7 @@ public class LinknameCleaner {
         return cleanFileName(null, name, splitUpperLowerCase, ignoreArchiveFilters, extensionSettings, cleanup);
     }
 
+    /* TODO: Refactor this */
     public static String cleanFileName(AbstractNode node, String name, boolean splitUpperLowerCase, boolean ignoreArchiveFilters, final EXTENSION_SETTINGS extensionSettings, boolean cleanup) {
         if (name == null) {
             return null;
@@ -69,7 +79,7 @@ public class LinknameCleaner {
             }
             if (extensionStilExists) {
                 /**
-                 * remove 7zip/zip and hjmerge extensions
+                 * remove 7zip/zip and merge extensions
                  */
                 before = name;
                 for (Pattern Pat : zipPats) {
@@ -105,7 +115,7 @@ public class LinknameCleaner {
                 /**
                  * FFSJ splitted files
                  *
-                 * */
+                 */
                 before = name;
                 for (Pattern Pat : ffsjPats) {
                     name = getNameMatch(name, Pat);
@@ -195,6 +205,46 @@ public class LinknameCleaner {
             name = sb.toString();
         }
         return name.trim();
+    }
+
+    public static String cleanPackagename(final String packagename) {
+        return LinknameCleaner.cleanFileName(null, packagename, false, true, LinknameCleaner.EXTENSION_SETTINGS.REMOVE_KNOWN, true);
+    }
+
+    public static String cleanFilename(final String filename, final boolean removeLeadingHidingDot) {
+        String newfinalFileName = filename;
+        final String toRemove = new Regex(newfinalFileName, Pattern.compile("r(?:ar|\\d{2,3})(\\.html?)$", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        if (toRemove != null) {
+            System.out.println("Use Workaround for stupid >>rar.html<< uploaders!");
+            newfinalFileName = newfinalFileName.substring(0, newfinalFileName.length() - toRemove.length());
+        }
+        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            // 2023-08-04: TODO, see https://svn.jdownloader.org/issues/83699
+            // TODO: This should never be null ?!
+            final Map<String, String> forbiddenCharacterRegexReplaceMap = JsonConfig.create(GeneralSettings.class).getFilenameAndPathCharacterRegexReplaceMap();
+            if (forbiddenCharacterRegexReplaceMap != null && !forbiddenCharacterRegexReplaceMap.isEmpty()) {
+                String newfilenameTemp = newfinalFileName;
+                final Iterator<Entry<String, String>> iterator = forbiddenCharacterRegexReplaceMap.entrySet().iterator();
+                while (iterator.hasNext()) {
+                    final Entry<String, String> entry = iterator.next();
+                    if (entry.getValue() != null) {
+                        try {
+                            newfilenameTemp = newfilenameTemp.replaceAll(entry.getKey(), entry.getValue());
+                        } catch (final PatternSyntaxException e) {
+                        }
+                    }
+                }
+                /**
+                 * Users can put anything into that replace map. </br>
+                 * Try to avoid the results of adding something like ".+" resulting in empty filenames.
+                 */
+                if (!StringUtils.isEmpty(newfilenameTemp)) {
+                    newfinalFileName = newfilenameTemp;
+                }
+            }
+        }
+        newfinalFileName = CrossSystem.alleviatePathParts(newfinalFileName, removeLeadingHidingDot);
+        return newfinalFileName;
     }
 
     private static String getNameMatch(String name, Pattern pattern) {

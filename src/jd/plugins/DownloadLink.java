@@ -25,24 +25,16 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.regex.Pattern;
-import java.util.regex.PatternSyntaxException;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.JsonConfig;
-import org.appwork.utils.DebugMode;
 import org.appwork.utils.Files;
-import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.reflection.Clazz;
 import org.jdownloader.DomainInfo;
 import org.jdownloader.controlling.DefaultDownloadLinkViewImpl;
@@ -70,6 +62,7 @@ import jd.controlling.downloadcontroller.DownloadLinkCandidate;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.downloadcontroller.HistoryEntry;
 import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.linkcollector.LinknameCleaner;
 import jd.controlling.linkcrawler.CheckableLink;
 import jd.controlling.packagecontroller.AbstractNodeNotifier;
 import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
@@ -1579,37 +1572,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     protected String fixFilename(String filename, final boolean removeLeadingHidingDot) {
-        String newfinalFileName = filename;
-        final String toRemove = new Regex(newfinalFileName, Pattern.compile("r(?:ar|\\d{2,3})(\\.html?)$", Pattern.CASE_INSENSITIVE)).getMatch(0);
-        if (toRemove != null) {
-            System.out.println("Use Workaround for stupid >>rar.html<< uploaders!");
-            newfinalFileName = newfinalFileName.substring(0, newfinalFileName.length() - toRemove.length());
-        }
-        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-            // 2023-08-04: TODO, see https://svn.jdownloader.org/issues/83699
-            // TODO: This should never be null ?!
-            final Map<String, String> forbiddenCharacterRegexReplaceMap = JsonConfig.create(GeneralSettings.class).getFilenameAndPathCharacterRegexReplaceMap();
-            if (forbiddenCharacterRegexReplaceMap != null && !forbiddenCharacterRegexReplaceMap.isEmpty()) {
-                String newfilenameTemp = newfinalFileName;
-                final Iterator<Entry<String, String>> iterator = forbiddenCharacterRegexReplaceMap.entrySet().iterator();
-                while (iterator.hasNext()) {
-                    final Entry<String, String> entry = iterator.next();
-                    try {
-                        newfilenameTemp = newfilenameTemp.replaceAll(entry.getKey(), entry.getValue());
-                    } catch (final PatternSyntaxException e) {
-                    }
-                }
-                /**
-                 * Users can put anything into that replace map. </br>
-                 * Try to avoid the results of adding something like ".+" resulting in empty filenames.
-                 */
-                if (!StringUtils.isEmpty(newfilenameTemp)) {
-                    newfinalFileName = newfilenameTemp;
-                }
-            }
-        }
-        newfinalFileName = CrossSystem.alleviatePathParts(newfinalFileName, removeLeadingHidingDot);
-        return newfinalFileName;
+        return LinknameCleaner.cleanFilename(filename, removeLeadingHidingDot);
     }
 
     /**

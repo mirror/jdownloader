@@ -3,12 +3,6 @@ package org.jdownloader.gui.views.linkgrabber.contextmenu;
 import java.io.File;
 import java.util.List;
 
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcollector.LinknameCleaner;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
-import jd.controlling.linkcrawler.CrawledPackage.TYPE;
-
 import org.appwork.utils.event.queue.Queue;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
@@ -18,6 +12,12 @@ import org.jdownloader.gui.views.DownloadFolderChooserDialog;
 import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.context.SetDownloadFolderAction;
 import org.jdownloader.settings.staticreferences.CFG_LINKCOLLECTOR;
+
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinknameCleaner;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
+import jd.controlling.linkcrawler.CrawledPackage.TYPE;
 
 public class SetDownloadFolderInLinkgrabberAction extends SetDownloadFolderAction<CrawledPackage, CrawledLink> {
     /**
@@ -62,7 +62,7 @@ public class SetDownloadFolderInLinkgrabberAction extends SetDownloadFolderActio
         final CrawledPackage pkg = new CrawledPackage();
         pkg.setExpanded(CFG_LINKCOLLECTOR.CFG.isPackageAutoExpanded());
         if (TYPE.NORMAL != entry.getType()) {
-            final String pkgName = LinknameCleaner.cleanFileName(entry, getSelection().getPackageView(entry).getChildren().get(0).getName(), false, true, LinknameCleaner.EXTENSION_SETTINGS.REMOVE_ALL, true);
+            final String pkgName = LinknameCleaner.cleanPackagename(getSelection().getPackageView(entry).getChildren().get(0).getName());
             pkg.setName(pkgName);
         } else {
             pkg.setName(entry.getName());

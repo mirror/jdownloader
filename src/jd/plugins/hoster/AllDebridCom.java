@@ -452,7 +452,7 @@ public class AllDebridCom extends PluginForHost {
                         }
                     } else {
                         title = "Alldebrid - Confirm new location";
-                        message += "\r\nHello dear alldebrid user";
+                        message += "Hello dear alldebrid user";
                         message += "\r\nYou were logged out because you've tried to sign in from a new location.";
                         message += "\r\nYou've received an e-mail with a link to confirm this new location.";
                         message += "\r\n Confirm this e-mail to continue using your Alldebrid account in JDownloader.";
