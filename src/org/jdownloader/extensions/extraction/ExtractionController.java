@@ -75,15 +75,54 @@ public class ExtractionController extends QueueAction<Void, RuntimeException> im
         } else if (getArchive() == archive) {
             return true;
         } else if (!StringUtils.equals(getArchive().getArchiveID(), archive.getArchiveID())) {
+            // different ArchiveID
             return false;
         } else if (getArchive().getArchiveType() != archive.getArchiveType() || getArchive().getSplitType() != archive.getSplitType()) {
+            // different Archive-/SplitType
             return false;
         } else if (getArchive().getArchiveFiles().size() != archive.getArchiveFiles().size()) {
+            // different number of ArchiveFiles
             return false;
         } else {
             final String thisFirstFilePath = getArchive().getArchiveFiles().get(0).getFilePath();
             final String otherFirstFilePath = archive.getArchiveFiles().get(0).getFilePath();
-            return StringUtils.equals(thisFirstFilePath, otherFirstFilePath);
+            final File thisFolder = getArchive().getFolder();
+            final File otherFolder = archive.getFolder();
+            if (!StringUtils.equals(thisFirstFilePath, otherFirstFilePath)) {
+                // different first/start FilePath
+                return false;
+            } else if (!thisFolder.equals(otherFolder)) {
+                // different destination folder
+                return false;
+            } else {
+                return true;
+            }
+        }
+    }
+
+    public boolean isOutDatedArchive(Archive archive) {
+        if (archive == null) {
+            return false;
+        } else if (getArchive().getArchiveType() != archive.getArchiveType() || getArchive().getSplitType() != archive.getSplitType()) {
+            // different ArchiveType or SplitType
+            return false;
+        } else {
+            final String thisFirstFilePath = getArchive().getArchiveFiles().get(0).getFilePath();
+            final String otherFirstFilePath = archive.getArchiveFiles().get(0).getFilePath();
+            final File thisFolder = getArchive().getFolder();
+            final File otherFolder = archive.getFolder();
+            if (!StringUtils.equals(thisFirstFilePath, otherFirstFilePath)) {
+                // different first/start FilePath
+                return false;
+            } else if (!thisFolder.equals(otherFolder)) {
+                // different destination folder
+                return false;
+            } else if (getArchive().getArchiveFiles().size() < archive.getArchiveFiles().size()) {
+                // same first/start FilePath, same destination folder, same Archive-/SplitType AND more ArchiveFiles
+                return true;
+            } else {
+                return false;
+            }
         }
     }
 

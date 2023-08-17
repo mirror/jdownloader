@@ -1,7 +1,10 @@
 package org.jdownloader.extensions.extraction.multi;
 
+import java.io.ByteArrayInputStream;
+import java.io.EOFException;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
@@ -14,6 +17,7 @@ import net.sf.sevenzipjbinding.ArchiveFormat;
 import org.appwork.utils.Hash;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.HexFormatter;
 import org.jdownloader.extensions.extraction.Archive;
 import org.jdownloader.extensions.extraction.ArchiveFactory;
 import org.jdownloader.extensions.extraction.ArchiveFile;
@@ -103,6 +107,11 @@ public enum ArchiveType {
         public String getIconExtension() {
             return RAR_SINGLE.getIconExtension();
         }
+
+        @Override
+        protected boolean isMultiPartType() {
+            return true;
+        }
     },
     /**
      * Multipart RAR Archive (.000.rar, .001.rar...) 000-999 -> max 1000 parts
@@ -165,6 +174,11 @@ public enum ArchiveType {
             return 1;
         }
 
+        @Override
+        protected boolean isMultiPartType() {
+            return true;
+        }
+
         private final int multiPartThreshold = 50;
 
         @Override
@@ -206,6 +220,11 @@ public enum ArchiveType {
         @Override
         public ArchiveFormat getArchiveFormat(Archive archive) throws IOException {
             return getRARArchiveFormat(archive);
+        }
+
+        @Override
+        protected boolean isMultiPartType() {
+            return true;
         }
 
         @Override
@@ -324,6 +343,11 @@ public enum ArchiveType {
         }
 
         @Override
+        protected boolean isMultiPartType() {
+            return false;
+        }
+
+        @Override
         public boolean matches(String filePathOrName) {
             return filePathOrName != null && pattern.matcher(filePathOrName).matches();
         }
@@ -378,7 +402,7 @@ public enum ArchiveType {
         }
 
         /**
-         * http://www.forensicswiki.org/wiki/RAR
+         * https://forensics.wiki/rar/
          *
          * http://www.rarlab.com/technote.htm#rarsign
          *
@@ -389,56 +413,134 @@ public enum ArchiveType {
             if (archiveFile == null) {
                 return false;
             } else if (partIndex == -1) {
-                    return null;
-                } else if (archiveFile.exists(verifiedResult)) {
-                    final String signatureString;
-                    try {
-                        signatureString = FileSignatures.readFileSignature(new File(archiveFile.getFilePath()), 4);
-                    } catch (IOException e) {
-                        LogController.CL().log(e);
-                        return false;
-                    }
-                    if (signatureString.length() >= 8) {
-                        return signatureString.startsWith("52617221");
-                    }
+                return null;
+            } else if (archiveFile.exists(verifiedResult)) {
+                final String signatureString;
+                try {
+                    signatureString = FileSignatures.readFileSignature(new File(archiveFile.getFilePath()), 4);
+                } catch (IOException e) {
+                    LogController.CL().log(e);
+                    return false;
                 }
+                if (signatureString.length() >= 8) {
+                    return signatureString.startsWith("52617221");
+                }
+            }
             return verifiedResult ? false : null;
         }
 
         /**
-         * http://www.forensicswiki.org/wiki/RAR
+         * https://forensics.wiki/rar/
          *
          * http://www.rarlab.com/technote.htm#rarsign
          *
-         * 0x24:23:22:21 indices (because of endianness)
+         * bytes are little endian format!
          *
-         * 0x0001 Volume/Archive
-         *
-         * 0x0010 New Volume naming scheme (.partN.rar)
-         *
-         * 0x0100 First Volume (only in RAR 3.0 and later)
          */
         @Override
         protected Boolean isMultiPart(ArchiveFile archiveFile, boolean verifiedResult) {
             if (archiveFile.exists(verifiedResult)) {
                 final String signatureString;
                 try {
-                    signatureString = FileSignatures.readFileSignature(new File(archiveFile.getFilePath()), 12);
+                    signatureString = FileSignatures.readFileSignature(new File(archiveFile.getFilePath()), 32);
                 } catch (IOException e) {
                     LogController.CL().log(e);
                     return false;
                 }
                 if (signatureString.length() >= 8) {
-                    if (StringUtils.startsWithCaseInsensitive(signatureString, "526172211A0700")) {
-                        if (signatureString.length() >= 22) {
-                            final int flag = Integer.parseInt(Character.toString(signatureString.charAt(21)), 16);
-                            return flag > 0 && (flag % 2 != 0);
+                    final boolean isRAR4x = StringUtils.startsWithCaseInsensitive(signatureString, "526172211A0700");
+                    final boolean isRAR5x = StringUtils.startsWithCaseInsensitive(signatureString, "526172211A070100");
+                    if (isRAR4x && signatureString.length() >= 12 * 2) {
+                        // RAR 4.x 0x52 0x61 0x72 0x21 0x1A 0x07 0x00 (MARK_HEAD)
+                        /*
+                         * 0x0001 Volume/Archive, bit 0
+                         *
+                         * 0x0002 Comment
+                         *
+                         * 0x0004 Lock Archive
+                         *
+                         * 0x0008 Solid Archive
+                         *
+                         * 0x0010 New Volume naming scheme (.partN.rar), bit 4
+                         *
+                         * 0x0100 First Volume (only in RAR 3.0 and later), bit 8
+                         */
+                        final boolean archiveHeader = "73".equals(signatureString.substring(18, 20));
+                        final String flagsBits = signatureString.substring(22, 24) + signatureString.substring(20, 22);
+                        final int flags = Integer.parseInt(flagsBits, 16);
+                        final boolean isVolume = (flags & (1 << 0)) != 0;
+                        final boolean isComment = (flags & (1 << 1)) != 0;
+                        final boolean isLock = (flags & (1 << 2)) != 0;
+                        final boolean isSolid = (flags & (1 << 3)) != 0;
+                        final boolean isNewVolumeNamingScheme = (flags & (1 << 4)) != 0;
+                        final boolean isFirstVolume = (flags & (1 << 8)) != 0;
+                        final boolean isMultiPart = archiveHeader && isVolume;
+                        return isMultiPart;
+                    } else if (isRAR5x && signatureString.length() >= 17 * 2) {
+                        // RAR 5.x 0x52 0x61 0x72 0x21 0x1A 0x07 0x01 0x00 (MARK_HEAD)
+                        /*
+                         * 
+                         * 0x0001   Volume. Archive is a part of multivolume set.
+                         * 
+                         * 0x0002   Volume number field is present. This flag is present in all volumes except first.
+                         * 
+                         * 0x0004   Solid archive.  
+                         * 
+                         * 0x0008   Recovery record is present.
+                         * 
+                         * 0x0010   Locked archive.
+                         */
+                        try {
+                            final ByteArrayInputStream is = new ByteArrayInputStream(HexFormatter.hexToByteArray(signatureString.substring(24)));
+                            final long headerSize = readVarInt(is, true);
+                            final long headerType = readVarInt(is, true);
+                            if (headerType == 1) {
+                                // Main archive header
+                                final long headerFlags = readVarInt(is, true);
+                                final long extraAreaSize = readVarInt(is, true);
+                                final long archiveFlags = readVarInt(is, true);
+                                final boolean isVolume = (archiveFlags & (1 << 0)) != 0;
+                                final boolean isVolumeNumberPresent = (archiveFlags & (1 << 1)) != 0;
+                                final boolean isSolidArchive = (archiveFlags & (1 << 2)) != 0;
+                                final boolean isRecoveryRecordPreset = (archiveFlags & (1 << 3)) != 0;
+                                final boolean isLockedArchive = (archiveFlags & (1 << 4)) != 0;
+                                final boolean isMultiPart = isVolume;
+                                return isMultiPart;
+                            } else if (headerType == 4) {
+                                // Archive encryption header
+                                return null;
+                            }
+                        } catch (IOException ignore) {
                         }
                     }
                     return verifiedResult ? false : null;
                 }
             }
             return verifiedResult ? false : null;
+        }
+
+        private long readVarInt(InputStream is, final boolean alwaysThrowEOF) throws IOException {
+            long ret = 0;
+            int shift = 0;
+            while (true) {
+                final int read = is.read();
+                if (read == -1) {
+                    if (shift > 0 && alwaysThrowEOF) {
+                        throw new EOFException();
+                    } else {
+                        return -1;
+                    }
+                } else {
+                    final long value = read & 0x7f;
+                    final int msb = (read & 0xff) >> 7;
+                                ret |= (value << shift);
+                                if (msb == 0) {
+                                    return ret;
+                                } else {
+                                    shift += 7;
+                                }
+                }
+            }
         }
 
         @Override
@@ -469,6 +571,11 @@ public enum ArchiveType {
             } else {
                 return "\\.(?i)7z\\.\\d{" + matches[1].length() + "}";
             }
+        }
+
+        @Override
+        protected boolean isMultiPartType() {
+            return true;
         }
 
         @Override
@@ -526,6 +633,11 @@ public enum ArchiveType {
         @Override
         public ArchiveFormat getArchiveFormat(Archive archive) throws IOException {
             return ArchiveFormat.ZIP;
+        }
+
+        @Override
+        protected boolean isMultiPartType() {
+            return true;
         }
 
         @Override
@@ -619,6 +731,11 @@ public enum ArchiveType {
         }
 
         @Override
+        protected boolean isMultiPartType() {
+            return true;
+        }
+
+        @Override
         public boolean matches(String filePathOrName) {
             return filePathOrName != null && pattern.matcher(filePathOrName).matches();
         }
@@ -687,6 +804,11 @@ public enum ArchiveType {
         @Override
         public ArchiveFormat getArchiveFormat(Archive archive) throws IOException {
             return ArchiveFormat.SEVEN_ZIP;
+        }
+
+        @Override
+        protected boolean isMultiPartType() {
+            return false;
         }
 
         @Override
@@ -760,6 +882,11 @@ public enum ArchiveType {
         }
 
         @Override
+        protected boolean isMultiPartType() {
+            return false;
+        }
+
+        @Override
         public boolean matches(String filePathOrName) {
             return filePathOrName != null && pattern.matcher(filePathOrName).matches();
         }
@@ -827,6 +954,11 @@ public enum ArchiveType {
         @Override
         public ArchiveFormat getArchiveFormat(Archive archive) throws IOException {
             return ArchiveFormat.LZH;
+        }
+
+        @Override
+        protected boolean isMultiPartType() {
+            return false;
         }
 
         @Override
@@ -900,6 +1032,11 @@ public enum ArchiveType {
         }
 
         @Override
+        protected boolean isMultiPartType() {
+            return false;
+        }
+
+        @Override
         public boolean matches(String filePathOrName) {
             return filePathOrName != null && pattern.matcher(filePathOrName).matches();
         }
@@ -967,6 +1104,11 @@ public enum ArchiveType {
         @Override
         public ArchiveFormat getArchiveFormat(Archive archive) throws IOException {
             return ArchiveFormat.ARJ;
+        }
+
+        @Override
+        protected boolean isMultiPartType() {
+            return false;
         }
 
         @Override
@@ -1040,6 +1182,11 @@ public enum ArchiveType {
         }
 
         @Override
+        protected boolean isMultiPartType() {
+            return false;
+        }
+
+        @Override
         public boolean matches(String filePathOrName) {
             return filePathOrName != null && pattern.matcher(filePathOrName).matches();
         }
@@ -1107,6 +1254,11 @@ public enum ArchiveType {
         @Override
         public ArchiveFormat getArchiveFormat(Archive archive) throws IOException {
             return ArchiveFormat.GZIP;
+        }
+
+        @Override
+        protected boolean isMultiPartType() {
+            return false;
         }
 
         @Override
@@ -1180,6 +1332,11 @@ public enum ArchiveType {
         }
 
         @Override
+        protected boolean isMultiPartType() {
+            return false;
+        }
+
+        @Override
         public boolean matches(String filePathOrName) {
             return filePathOrName != null && pattern.matcher(filePathOrName).matches();
         }
@@ -1250,6 +1407,11 @@ public enum ArchiveType {
         }
 
         @Override
+        protected boolean isMultiPartType() {
+            return false;
+        }
+
+        @Override
         public boolean matches(String filePathOrName) {
             return filePathOrName != null && pattern.matcher(filePathOrName).matches();
         }
@@ -1317,6 +1479,11 @@ public enum ArchiveType {
         @Override
         public boolean matches(String filePathOrName) {
             return filePathOrName != null && pattern.matcher(filePathOrName).matches();
+        }
+
+        @Override
+        protected boolean isMultiPartType() {
+            return true;
         }
 
         @Override
@@ -1445,6 +1612,8 @@ public enum ArchiveType {
 
     protected abstract int getMinimumNeededPartIndex();
 
+    protected abstract boolean isMultiPartType();
+
     protected abstract String buildMissingPart(String[] matches, int partIndex, int partStringLength);
 
     protected boolean looksLikeAnArchive(BitSet bitset, ArchiveFile archiveFiles[]) {
@@ -1533,17 +1702,29 @@ public enum ArchiveType {
 
     public static Archive createArchive(final ArchiveFactory link, final boolean allowDeepInspection, final ArchiveType... archiveTypes) throws ArchiveException {
         final String linkPath = link.getFilePath();
+        Boolean isKnownMultiPart = null;
         archiveTypeLoop: for (final ArchiveType archiveType : archiveTypes) {
+            if (isKnownMultiPart != null && archiveType.isMultiPartType() != isKnownMultiPart.booleanValue()) {
+                continue archiveTypeLoop;
+            }
             final String[] filePathParts = archiveType.getMatches(linkPath);
-            if (filePathParts != null && !Boolean.FALSE.equals(archiveType.isValidPart(-1, link, false))) {
+            final Boolean validPart = filePathParts != null ? archiveType.isValidPart(-1, link, false) : null;
+            if (filePathParts != null && !Boolean.FALSE.equals(validPart)) {
                 final Boolean isMultiPart;
-                if (allowDeepInspection) {
+                if (isKnownMultiPart != null) {
+                    isMultiPart = isKnownMultiPart;
+                } else if (allowDeepInspection) {
                     isMultiPart = archiveType.isMultiPart(link, false);
                 } else {
                     isMultiPart = null;
                 }
+                if (isKnownMultiPart == null) {
+                    isKnownMultiPart = isMultiPart;
+                }
                 final Pattern pattern = archiveType.buildArchivePattern(filePathParts, isMultiPart);
                 if (pattern == null) {
+                    continue archiveTypeLoop;
+                } else if (isMultiPart != null && archiveType.isMultiPartType() != isMultiPart.booleanValue()) {
                     continue archiveTypeLoop;
                 }
                 final List<ArchiveFile> foundArchiveFiles = link.createPartFileList(linkPath, pattern.pattern());

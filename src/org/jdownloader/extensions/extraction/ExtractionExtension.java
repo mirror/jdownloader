@@ -179,6 +179,10 @@ public class ExtractionExtension extends AbstractExtension<ExtractionConfig, Ext
         for (final ExtractionController ec : extractionQueue.getJobs()) {
             if (ec.isSameArchive(archive)) {
                 return ec;
+            } else if (ec.isOutDatedArchive(archive)) {
+                if (extractionQueue.remove(ec)) {
+                    logger.info("removed outdated Archive(" + ec.getArchive().getArchiveID() + "|started:" + ec.gotStarted());
+                }
             }
         }
         final ExtractionController currentController = extractionQueue.getCurrentQueueEntry();
