@@ -362,7 +362,7 @@ public class AllDebridCom extends PluginForHost {
      * This is executed whenever user is suddently logged out by alldebrid as a security measurement and needs to confirm his login via
      * email.
      */
-    public String authBlockedLogin(final Account account, final DownloadLink link, final Map<String, Object> errormap) throws Exception {
+    public void authBlockedLogin(final Account account, final DownloadLink link, final Map<String, Object> errormap) throws Exception {
         final String msg = errormap.get("message").toString();
         final String token = errormap.get("token").toString();
         if (StringUtils.isEmpty(msg)) {
@@ -375,7 +375,13 @@ public class AllDebridCom extends PluginForHost {
             throw new AccountInvalidException("Authorization has been denied by account owner.");
         }
         final AccountUnavailableException exceptionOnFailure = new AccountUnavailableException(msg, 10 * 60 * 1000);
+        final PluginException exceptionOnDownloadAndSuccess = new PluginException(LinkStatus.ERROR_RETRY, "Retry after successful AUTH_BLOCKED handling");
+        final String oldAuth = br.getHeaders().getHeader(HTTPConstants.HEADER_REQUEST_AUTHORIZATION).getValue();
         synchronized (account) {
+            final String newAuth = br.getHeaders().getHeader(HTTPConstants.HEADER_REQUEST_AUTHORIZATION).getValue();
+            if (!StringUtils.equals(oldAuth, newAuth)) {
+                throw exceptionOnDownloadAndSuccess;
+            }
             logger.info("Performing auth blocked login");
             final String check_url = api_base + "/user/verif?agent=" + agent_raw + "&token=" + token;
             final int maxSecondsWait = 600;
@@ -430,7 +436,11 @@ public class AllDebridCom extends PluginForHost {
             logger.info("Using new apikey: " + apikey);
             account.setProperty(PROPERTY_apikey, apikey);
             setAuthHeader(br, apikey);
-            throw new AccountUnavailableException("Retry after blocked login has been cleared", 5 * 1000);
+            if (link == null) {
+                throw new AccountUnavailableException("Retry after blocked login has been cleared", 5 * 1000);
+            } else {
+                throw exceptionOnDownloadAndSuccess;
+            }
         }
     }
 
