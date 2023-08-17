@@ -82,13 +82,18 @@ public class AnimegalleriesNet extends PluginForHost {
     private AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
         dllink = null;
         final String extDefault = ".jpg";
+        final String fileid = this.getFID(link);
+        if (!link.isNameSet()) {
+            link.setName(fileid + extDefault);
+        }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("(?i)>\\s*The selected album/picture does not exist")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String fileid = this.getFID(link);
         String title = br.getRegex("<title>Anime Galleries dot Net \\- ([^<>\"]+) Pics, Images, Screencaps, and Scans</title>").getMatch(0);
         if (title == null) {
             title = fileid;
@@ -97,14 +102,15 @@ public class AnimegalleriesNet extends PluginForHost {
         if (dllink == null) {
             dllink = br.getRegex("\"(https?://media\\.animegalleries\\.net/albums/[^<>\"]+)\"").getMatch(0);
         }
-        if (title == null || dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (dllink != null) {
+            dllink = Encoding.htmlDecode(dllink);
         }
-        dllink = Encoding.htmlDecode(dllink);
-        title = Encoding.htmlDecode(title);
-        title = title.trim();
-        final String extFromURL = getFileNameExtensionFromString(dllink, extDefault);
-        link.setName(this.correctOrApplyFileNameExtension(title, extFromURL));
+        if (title != null) {
+            title = Encoding.htmlDecode(title);
+            title = title.trim();
+            final String extFromURL = getFileNameExtensionFromString(dllink, extDefault);
+            link.setName(this.correctOrApplyFileNameExtension(title, extFromURL));
+        }
         final String filesizeStr = br.getRegex("(?i)File Size\\s*:\\s*</td><td [^>]*><span [^>]*>(\\d+ [^<]+)</span>").getMatch(0);
         if (filesizeStr != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesizeStr));
