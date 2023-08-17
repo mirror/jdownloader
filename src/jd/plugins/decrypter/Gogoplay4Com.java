@@ -197,7 +197,7 @@ public class Gogoplay4Com extends PluginForDecrypt {
             final DownloadLink link;
             if (streamLink.matches("^https?://gogo-cdn\\.com/.*")) {
                 link = createDownloadlink(DirectHTTP.createURLForThisPlugin(streamLink));
-            } else if (streamLink.matches("(?i)https?://22gogodownload\\.net/download\\.php\\?url=.+")) {
+            } else if (streamLink.matches("(?i)https?://gogodownload\\.net/download\\.php\\?url=.+")) {
                 /* 2023-08-17 */
                 link = createDownloadlink(DirectHTTP.createURLForThisPlugin(streamLink));
             } else {
