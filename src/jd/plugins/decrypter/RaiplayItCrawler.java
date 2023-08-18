@@ -498,7 +498,6 @@ public class RaiplayItCrawler extends PluginForDecrypt {
             }
             title += seriesString + "_";
         }
-        title = encodeUnicode(title);
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(title);
         return crawlRelinker(dllink, title, fp, description);

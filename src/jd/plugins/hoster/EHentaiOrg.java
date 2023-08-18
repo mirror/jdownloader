@@ -179,7 +179,7 @@ public class EHentaiOrg extends PluginForHost {
         prepBR(br, link);
         final boolean preferOriginalQuality = this.getPluginConfig().getBooleanProperty(PREFER_ORIGINAL_QUALITY, default_PREFER_ORIGINAL_QUALITY);
         /* from manual 'online check', we don't want to 'try' as it uses up quota... */
-        if (new Regex(link.getPluginPatternMatcher(), TYPE_ARCHIVE).matches()) {
+        if (new Regex(link.getPluginPatternMatcher(), TYPE_ARCHIVE).patternFind()) {
             /* Account archive download */
             if (account == null) {
                 /* Cannot check without account */
@@ -335,13 +335,12 @@ public class EHentaiOrg extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Redirect to mainpage? Login failure?", 3 * 60 * 1000l);
                 }
             }
-            if (br.toString().length() <= 100) {
+            if (isOffline(br)) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (br.toString().length() <= 100) {
                 /* 2020-05-23: Empty page: Most likely exhentai.org URL with account that does not have permissions to access it. */
                 throw new AccountRequiredException();
-            } else if (br.getRequest().getHtmlCode().matches("Your IP address has been temporarily banned for excessive pageloads.+")) {
-                if (account == null) {
-                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Your IP address has been temporarily banned for excessive pageloads");
-                }
+            } else if (br.getRequest().getHtmlCode().matches("(?i)Your IP address has been temporarily banned for excessive pageloads.+")) {
                 String tmpYears = new Regex(br, "(\\d+)\\s+years?").getMatch(0);
                 String tmpdays = new Regex(br, "(\\d+)\\s+days?").getMatch(0);
                 String tmphrs = new Regex(br, "(\\d+)\\s+hours?").getMatch(0);
@@ -363,10 +362,17 @@ public class EHentaiOrg extends PluginForHost {
                 if (StringUtils.isEmpty(tmpsec)) {
                     seconds = Integer.parseInt(tmpsec);
                 }
-                long expireS = ((years * 86400000 * 365) + (days * 86400000) + (hours * 3600000) + (minutes * 60000) + (seconds * 1000)) + System.currentTimeMillis();
-                throw new AccountUnavailableException("Your IP address has been temporarily banned for excessive pageloads", expireS);
-            } else if (isOffline(br)) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                final String errortext = "Your IP address has been temporarily banned for excessive pageloads";
+                long waittime = ((years * 86400000 * 365) + (days * 86400000) + (hours * 3600000) + (minutes * 60000) + (seconds * 1000));
+                final long minWaitMillis = 30 * 60 * 1000;
+                if (waittime < minWaitMillis) {
+                    waittime = minWaitMillis;
+                }
+                if (account == null) {
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, errortext, waittime);
+                } else {
+                    throw new AccountUnavailableException(errortext, waittime);
+                }
             }
             String filesizeStrOriginalImage = null;
             if (account != null && this.getPluginConfig().getBooleanProperty(PREFER_ORIGINAL_QUALITY, default_PREFER_ORIGINAL_QUALITY)) {
@@ -423,7 +429,14 @@ public class EHentaiOrg extends PluginForHost {
 
     /** Returns whether or not a gallery is offline. */
     public static boolean isOffline(final Browser br) {
-        return br.getHttpConnection().getResponseCode() == 404;
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            return true;
+        }
+        if (br.getRequest().getHtmlCode().matches("(?i)^Invalid page\\.?")) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     /** Returns direct downloadable URL to normal image (not original image). */

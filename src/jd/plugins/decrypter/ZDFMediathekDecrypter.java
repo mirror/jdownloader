@@ -298,7 +298,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
         if (items == null || items.length == 0 || title_general == null || date_general == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final String fpname = encodeUnicode(formatDatePHOENIX(date_general) + "_" + title_general);
+        final String fpname = formatDatePHOENIX(date_general) + "_" + title_general;
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(fpname);
         for (final String item : items) {
@@ -316,7 +316,6 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
             }
             final DownloadLink dl = super.createDownloadlink("directhttp://" + url);
             String final_filename = formatDatePHOENIX(date) + "_" + tvstation + "_" + title + ".mp4";
-            final_filename = encodeUnicode(final_filename);
             if (description != null) {
                 dl.setComment(description);
             }

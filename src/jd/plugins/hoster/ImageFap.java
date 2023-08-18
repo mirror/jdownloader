@@ -31,7 +31,6 @@ import org.appwork.utils.ReflectionUtils;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
@@ -56,7 +55,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "imagefap.com" }, urls = { "https?://(www\\.)?imagefap.com/(imagedecrypted/\\d+|video\\.php\\?vid=\\d+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "imagefap.com" }, urls = { "https?://(?:www\\.)?imagefap.com/(imagedecrypted/\\d+|video\\.php\\?vid=\\d+)" })
 public class ImageFap extends PluginForHost {
     public ImageFap(final PluginWrapper wrapper) {
         super(wrapper);
@@ -123,11 +122,12 @@ public class ImageFap extends PluginForHost {
     }
 
     private String getFID(final DownloadLink link) {
-        String ret = new Regex(link.getPluginPatternMatcher(), "/(?:photo|imagedecrypted)/(\\d+)").getMatch(0);
-        if (ret == null) {
-            ret = new Regex(link.getPluginPatternMatcher(), "/video\\.php\\?\\vid=(\\d+)").getMatch(0);
+        final Regex videolink = new Regex(link.getPluginPatternMatcher(), VIDEOLINK);
+        if (videolink.patternFind()) {
+            return videolink.getMatch(0);
+        } else {
+            return new Regex(link.getPluginPatternMatcher(), "(?i)/(?:photo|imagedecrypted)/(\\d+)").getMatch(0);
         }
-        return ret;
     }
 
     public static Browser prepBR(final Browser br) {
@@ -136,7 +136,7 @@ public class ImageFap extends PluginForHost {
         return br;
     }
 
-    private static final String VIDEOLINK = "(?i)https?://[^/]+/video\\.php\\?vid=\\d+";
+    private static final String VIDEOLINK = "(?i)https?://[^/]+/video\\.php\\?vid=(\\d+)";
 
     private String decryptLink(final String code) {
         try {
@@ -170,7 +170,7 @@ public class ImageFap extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://imagefap.com/faq.php";
+        return "https://www.imagefap.com/termsofservice.php";
     }
 
     public static String getGalleryName(final Browser br, final DownloadLink dl, boolean isImageLink) {
@@ -274,7 +274,11 @@ public class ImageFap extends PluginForHost {
         final String contenturl = getContentURL(link);
         getRequest(this, this.br, br.createGetRequest(contenturl));
         if (contenturl.matches(VIDEOLINK)) {
-            link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.FLV);
+            /* Video */
+            final String extDefault = ".flv";
+            if (!link.isNameSet()) {
+                link.setName(this.getFID(link) + extDefault);
+            }
             /*
              * 2021-05-05: Offline videos can't be easily recognized by html code e.g.: https://www.imagefap.com/video.php?vid=999999999999
              */
@@ -287,16 +291,13 @@ public class ImageFap extends PluginForHost {
             if (filename == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            link.setFinalFileName(Encoding.htmlDecode(filename) + ".flv");
+            link.setFinalFileName(Encoding.htmlDecode(filename) + extDefault);
         } else {
-            /* 2020-10-14: TODO: What was this for?? */
-            // final String location = br.getRedirectLocation();
-            // if (location != null) {
-            // if (!location.contains("/photo/")) {
-            // getPage(this.br, location);
-            // }
-            // getPage(this.br, location);
-            // }
+            /* Image */
+            final String extDefault = ".jpg";
+            if (!link.isNameSet()) {
+                link.setName(this.getFID(link) + extDefault);
+            }
             if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(>The image you are trying to access does not exist|<title> \\(Picture 1\\) uploaded by  on ImageFap\\.com</title>)")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -330,25 +331,11 @@ public class ImageFap extends PluginForHost {
                 link.setProperty("directusername", username);
             }
             link.setFinalFileName(getFormattedFilename(link));
-            /* Only set filepackage if not set yet */
-            try {
-                if (FilePackage.isDefaultFilePackage(link.getFilePackage())) {
-                    final FilePackage fp = FilePackage.getInstance();
-                    fp.setName(username + " - " + galleryName);
-                    fp.add(link);
-                }
-            } catch (final Throwable e) {
-                /*
-                 * does not work in stable 0.9580, can be removed with next major update
-                 */
-                try {
-                    if (link.getFilePackage() == FilePackage.getDefaultFilePackage()) {
-                        final FilePackage fp = FilePackage.getInstance();
-                        fp.setName(username + " - " + galleryName);
-                        fp.add(link);
-                    }
-                } catch (final Throwable e2) {
-                }
+            /* Set FilePackage if not set yet */
+            if (FilePackage.isDefaultFilePackage(link.getFilePackage())) {
+                final FilePackage fp = FilePackage.getInstance();
+                fp.setName(username + " - " + galleryName);
+                fp.add(link);
             }
         }
         return AvailableStatus.TRUE;
