@@ -92,7 +92,7 @@ public class AnimeFrenzy extends antiDDoSForDecrypt {
                 ret.add(createDownloadlink(link));
             }
         }
-        /* 2022-03-24 */
+        /* 2022-03-24: New */
         final String[] urls = HTMLParser.getHttpLinks(br.getRequest().getHtmlCode(), br.getURL());
         for (final String url : urls) {
             if (Gogoplay4Com.looksLikeSupportedPattern(url)) {
@@ -108,23 +108,42 @@ public class AnimeFrenzy extends antiDDoSForDecrypt {
                 ret.add(this.createDownloadlink(hlsmaster));
             }
         }
+        final String token = "YopgjtY0CA0q6a7NX1Oe";
+        final Regex animeurlRegex = new Regex(br.getURL(), "(?i)https?://[^/]+/anime/([\\w\\-]+)$");
+        if (ret.isEmpty() && animeurlRegex.patternFind()) {
+            /* Crawl all episodes from a series */
+            final String animeSlug = animeurlRegex.getMatch(0);
+            final Browser brc = br.cloneBrowser();
+            brc.getHeaders().put("Origin", "https://" + br.getHost());
+            brc.getPage("https://animeheaven.app/anime/slug/" + animeSlug + "?token=" + token);
+            final Map<String, Object> entries = restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.MAP);
+            if (Boolean.TRUE.equals(entries.get("error"))) {
+                /* E.g. {"message":"Nothing to see here move along...","error":true} */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            final Map<String, Object> data = (Map<String, Object>) entries.get("data");
+            final List<Map<String, Object>> episodes = (List<Map<String, Object>>) data.get("episodes");
+            for (final Map<String, Object> episode : episodes) {
+                final List<Map<String, Object>> videos = (List<Map<String, Object>>) episode.get("videos");
+                crawlVideos(ret, videos);
+            }
+        }
         /* 2023-08-17 */
         final String slugFromURL = new Regex(br.getURL(), "https?://[^/]+/stream/([^/]+)").getMatch(0);
         if (ret.isEmpty() && slugFromURL != null) {
             /* 2023-08-17: Token is from: https://animefrenzy.org/static/js/main.60f4e127.chunk.js */
             final Browser brc = br.cloneBrowser();
             brc.getHeaders().put("Origin", "https://" + br.getHost());
-            brc.getPage("https://animeheaven.app/anime-episode/slug/" + slugFromURL + "?token=YopgjtY0CA0q6a7NX1Oe");
+            brc.getPage("https://animeheaven.app/anime-episode/slug/" + slugFromURL + "?token=" + token);
             final Map<String, Object> entries = restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.MAP);
+            if (Boolean.TRUE.equals(entries.get("error"))) {
+                /* E.g. {"message":"Nothing to see here move along...","error":true} */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             final Map<String, Object> data = (Map<String, Object>) entries.get("data");
             fpName = data.get("name").toString();
             final List<Map<String, Object>> videos = (List<Map<String, Object>>) data.get("videos");
-            for (final Map<String, Object> video : videos) {
-                final String url = buildEmbedURL(video.get("host").toString(), video.get("video_id").toString());
-                if (url != null) {
-                    ret.add(this.createDownloadlink(url));
-                }
-            }
+            crawlVideos(ret, videos);
         }
         if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();
@@ -132,6 +151,19 @@ public class AnimeFrenzy extends antiDDoSForDecrypt {
             fp.addLinks(ret);
         }
         return ret;
+    }
+
+    private void crawlVideos(final ArrayList<DownloadLink> ret, final List<Map<String, Object>> videos) {
+        for (final Map<String, Object> video : videos) {
+            crawlVideo(ret, video);
+        }
+    }
+
+    private void crawlVideo(final ArrayList<DownloadLink> ret, final Map<String, Object> video) {
+        final String url = buildEmbedURL(video.get("host").toString(), video.get("video_id").toString());
+        if (url != null) {
+            ret.add(this.createDownloadlink(url));
+        }
     }
 
     private String buildEmbedURL(final String host, final String id) {

@@ -18,11 +18,14 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
+import jd.parser.html.HTMLSearch;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -64,7 +67,7 @@ public class ArdmediathekEmbed extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/[^<>\"]+\\.html");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/.+");
         }
         return ret.toArray(new String[0]);
     }
@@ -76,20 +79,57 @@ public class ArdmediathekEmbed extends PluginForDecrypt {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        String title = HTMLSearch.searchMetaTag(br, "og:title");
+        if (title != null) {
+            title = Encoding.htmlDecode(title).trim();
+        }
+        final ArrayList<String> audioIDs = new ArrayList<String>();
+        final String[] ardaudiothekHTMLs = br.getRegex("<p class=\"mediaplayer-download\"[^>]*><a href=\"https?://[^>]*>.*?</a></p>").getColumn(-1);
+        if (ardaudiothekHTMLs != null && ardaudiothekHTMLs.length > 0) {
+            /* E.g. https://www.swr.de/swr4/tipps/rezept-kraeuterdip-crissini-selber-machen-100.html */
+            for (final String ardaudiothekHTML : ardaudiothekHTMLs) {
+                final String url = new Regex(ardaudiothekHTML, "href=\"(https?://[^\"]+)").getMatch(0);
+                final String filesize = new Regex(ardaudiothekHTML, "\\((\\d+(,\\d+)? [A-Za-z]{1,5}) \\| MP3").getMatch(0);
+                final DownloadLink audio = this.createDownloadlink(url);
+                if (title != null && ardaudiothekHTMLs.length == 1) {
+                    audio.setFinalFileName(title + ".mp3");
+                }
+                if (filesize != null) {
+                    audio.setDownloadSize(SizeFormatter.getSize(filesize));
+                }
+                audio.setAvailable(true);
+                ret.add(audio);
+                final String audioID = new Regex(url, "(\\d+)\\.?[A-Za-z]+\\.mp3$").getMatch(0);
+                if (audioID != null) {
+                    audioIDs.add(audioID);
+                }
+            }
+        }
         /*
          * Very simple wrapper that finds embedded content --> Adds it via "new style" of URLs --> Goes into Ardmediathek main crawler and
          * content gets crawler
          */
         final String[] links = br.getRegex("data-cridid=\"(crid://[^\"]+)\"").getColumn(0);
-        if (links == null || links.length == 0) {
+        if (links != null && links.length > 0) {
+            if (links.length == audioIDs.size()) {
+                logger.info("Skipping possible video items because most likely those would be the same audio items that we've already crawled");
+            } else {
+                for (final String ardAppURL : links) {
+                    final String mediaID = new Regex(ardAppURL, "(\\d+)$").getMatch(0);
+                    if (audioIDs.contains(mediaID)) {
+                        /* Skip audio items as we've already crawled them and they cannot be accessed via ardmediathek.de. */
+                        continue;
+                    }
+                    String appURLEncoded = Encoding.Base64Encode(ardAppURL);
+                    /* WTF */
+                    appURLEncoded = appURLEncoded.replace("=", "");
+                    ret.add(createDownloadlink("https://www.ardmediathek.de/ard/player/" + appURLEncoded));
+                }
+            }
+        }
+        if (ret.isEmpty()) {
             logger.info("Failed to find any downloadable content");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        for (final String ardAppURL : links) {
-            String appURLEncoded = Encoding.Base64Encode(ardAppURL);
-            /* WTF */
-            appURLEncoded = appURLEncoded.replace("=", "");
-            ret.add(createDownloadlink("https://www.ardmediathek.de/ard/player/" + appURLEncoded));
         }
         return ret;
     }

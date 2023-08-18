@@ -5,6 +5,10 @@ import java.util.List;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -25,10 +29,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
-
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public abstract class FlexShareCore extends antiDDoSForHost {
@@ -74,8 +74,9 @@ public abstract class FlexShareCore extends antiDDoSForHost {
 
     /**
      * Can be found in account under: '/members/account.php'. Docs are usually here: '/api/docs.php'. Example website with working API:
-     * filepup.net </br> The presence of an APIKey does not necessarily mean that the API or that filehost will work! Usually if it does
-     * still not work, it will just return 404. Override this to use API.
+     * filepup.net </br>
+     * The presence of an APIKey does not necessarily mean that the API or that filehost will work! Usually if it does still not work, it
+     * will just return 404. Override this to use API.
      */
     protected String getAPIKey() {
         return null;
@@ -155,7 +156,7 @@ public abstract class FlexShareCore extends antiDDoSForHost {
     public AvailableStatus requestFileInformationAPI(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         getPage(getMainPage() + "/api/info.php?api_key=" + getAPIKey() + "&file_id=" + getFID(link));
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("file does not exist")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(?i)file does not exist")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String filename = br.getRegex("\\[file_name\\] => (.*?)\n").getMatch(0);
@@ -232,6 +233,7 @@ public abstract class FlexShareCore extends antiDDoSForHost {
             }
             if (dlform == null && getLink == null) {
                 handleErrors(link, account);
+                handleGeneralServerErrors(br.getHttpConnection());
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             /* Pre download wait */
@@ -256,23 +258,23 @@ public abstract class FlexShareCore extends antiDDoSForHost {
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 logger.warning("The final dllink seems not to be a file!");
                 br.followConnection(true);
-                handleGeneralServerErrors(dl.getConnection());
                 handleErrors(link, account);
+                handleGeneralServerErrors(dl.getConnection());
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
         dl.startDownload();
     }
 
-    protected void handleGeneralServerErrors(URLConnectionAdapter con) throws PluginException {
+    protected void handleGeneralServerErrors(final URLConnectionAdapter con) throws PluginException {
         if (con.getResponseCode() == 403) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 10 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 5 * 60 * 1000l);
         } else if (con.getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 10 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 5 * 60 * 1000l);
         }
     }
 
-    protected void handleErrors(final DownloadLink downloadLink, final Account account) throws PluginException {
+    protected void handleErrors(final DownloadLink link, final Account account) throws PluginException {
         if (br.containsHTML("(?i)(>\\s*Premium Only\\s*\\!|you have requested require a premium account for download\\.\\s*<|you have requested require a premium account for download|>\\s*Only premium accounts are able to download this file)")) {
             throw new AccountRequiredException();
         } else if (br.containsHTML("(?i)<title>\\s*Site Maintenance\\s*</title>")) {
@@ -487,7 +489,9 @@ public abstract class FlexShareCore extends antiDDoSForHost {
     /**
      * @return true: Website supports https and plugin will prefer https. <br />
      *         false: Website does not support https - plugin will avoid https. <br />
-     *         default: true </br> Example which supports https: extmatrix.com </br> Example which does NOT support https: filepup.net
+     *         default: true </br>
+     *         Example which supports https: extmatrix.com </br>
+     *         Example which does NOT support https: filepup.net
      */
     protected boolean supports_https() {
         return true;

@@ -494,13 +494,14 @@ public class EHentaiOrg extends PluginForHost {
     }
 
     private void exceptionLimitReached(final Account account, final String errormessage) throws PluginException {
+        final String errortext = "Downloadlimit reached";
         if (account == null) {
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 5 * 60 * 1000);
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, errortext, 5 * 60 * 1000);
         } else {
             /* 2020-03-03: This should not be required anymore --> Lead to timeouts --> No idea what it was good for */
             // br.getPage("http://exhentai.org/home.php");
             // account.saveCookies(br.getCookies(MAINPAGE), "");
-            throw new AccountUnavailableException("Downloadlimit reached", 5 * 60 * 1000);
+            throw new AccountUnavailableException(errortext, 5 * 60 * 1000);
         }
     }
 
