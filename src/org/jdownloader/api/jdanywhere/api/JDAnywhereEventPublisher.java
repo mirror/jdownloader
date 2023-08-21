@@ -41,7 +41,6 @@ import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.jdownloader.api.captcha.CaptchaAPISolver;
-import org.jdownloader.api.captcha.CaptchaAPISolverListener;
 import org.jdownloader.api.jdanywhere.api.storable.CaptchaJob;
 import org.jdownloader.captcha.v2.challenge.stringcaptcha.ImageCaptchaChallenge;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
@@ -51,7 +50,7 @@ import org.jdownloader.plugins.PluginTaskID;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 import org.jdownloader.settings.staticreferences.CFG_RECONNECT;
 
-public class JDAnywhereEventPublisher implements EventPublisher, AccountControllerListener, DownloadWatchdogListener, DownloadControllerListener, StateEventListener, LinkCollectorListener, CaptchaAPISolverListener {
+public class JDAnywhereEventPublisher implements EventPublisher, AccountControllerListener, DownloadWatchdogListener, DownloadControllerListener, StateEventListener, LinkCollectorListener {
     private CopyOnWriteArraySet<RemoteAPIEventsSender> eventSenders       = new CopyOnWriteArraySet<RemoteAPIEventsSender>();
     private EventsAPI                                  eventsApi          = new EventsAPI();
     HashMap<Long, String>                              linkStatusMessages = new HashMap<Long, String>();
@@ -90,119 +89,119 @@ public class JDAnywhereEventPublisher implements EventPublisher, AccountControll
     }
 
     GenericConfigEventListener<Integer> downloadSpeedLimitEventListener            = new GenericConfigEventListener<Integer>() {
-                                                                                       public void onConfigValueModified(KeyHandler<Integer> keyHandler, Integer newValue) {
-                                                                                           org.jdownloader.myjdownloader.client.json.JsonMap data = new org.jdownloader.myjdownloader.client.json.JsonMap();
-                                                                                           data.put("message", "Limitspeed");
-                                                                                           data.put("data", CFG_GENERAL.DOWNLOAD_SPEED_LIMIT.getValue());
-                                                                                           SimpleEventObject eventObject = new SimpleEventObject(JDAnywhereEventPublisher.this, EVENTID.SETTINGSCHANGED.name(), data, "DOWNLOAD_SPEED_LIMIT");
-                                                                                           for (RemoteAPIEventsSender eventSender : eventSenders) {
-                                                                                               eventSender.publishEvent(eventObject, null);
-                                                                                           }
-                                                                                           // JDAnywhereController.getInstance().getEventsapi().publishEvent(new
-                                                                                           // EventObject("SettingsChanged", data), null);
-                                                                                       }
+        public void onConfigValueModified(KeyHandler<Integer> keyHandler, Integer newValue) {
+            org.jdownloader.myjdownloader.client.json.JsonMap data = new org.jdownloader.myjdownloader.client.json.JsonMap();
+            data.put("message", "Limitspeed");
+            data.put("data", CFG_GENERAL.DOWNLOAD_SPEED_LIMIT.getValue());
+            SimpleEventObject eventObject = new SimpleEventObject(JDAnywhereEventPublisher.this, EVENTID.SETTINGSCHANGED.name(), data, "DOWNLOAD_SPEED_LIMIT");
+            for (RemoteAPIEventsSender eventSender : eventSenders) {
+                eventSender.publishEvent(eventObject, null);
+            }
+            // JDAnywhereController.getInstance().getEventsapi().publishEvent(new
+                    // EventObject("SettingsChanged", data), null);
+        }
 
-                                                                                       public void onConfigValidatorError(KeyHandler<Integer> keyHandler, Integer invalidValue, ValidationException validateException) {
-                                                                                       }
-                                                                                   };
+        public void onConfigValidatorError(KeyHandler<Integer> keyHandler, Integer invalidValue, ValidationException validateException) {
+        }
+    };
     GenericConfigEventListener<Boolean> downloadSpeedLimitEnabledEventListener     = new GenericConfigEventListener<Boolean>() {
-                                                                                       public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
-                                                                                       }
+        public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
+        }
 
-                                                                                       public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
-                                                                                           org.jdownloader.myjdownloader.client.json.JsonMap data = new org.jdownloader.myjdownloader.client.json.JsonMap();
-                                                                                           data.put("message", "LimitspeedActivated");
-                                                                                           data.put("data", CFG_GENERAL.DOWNLOAD_SPEED_LIMIT_ENABLED.isEnabled());
-                                                                                           SimpleEventObject eventObject = new SimpleEventObject(JDAnywhereEventPublisher.this, EVENTID.SETTINGSCHANGED.name(), data, "DOWNLOAD_SPEED_LIMIT_ENABLED");
-                                                                                           for (RemoteAPIEventsSender eventSender : eventSenders) {
-                                                                                               eventSender.publishEvent(eventObject, null);
-                                                                                           }
-                                                                                       }
-                                                                                   };
+        public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
+            org.jdownloader.myjdownloader.client.json.JsonMap data = new org.jdownloader.myjdownloader.client.json.JsonMap();
+            data.put("message", "LimitspeedActivated");
+            data.put("data", CFG_GENERAL.DOWNLOAD_SPEED_LIMIT_ENABLED.isEnabled());
+            SimpleEventObject eventObject = new SimpleEventObject(JDAnywhereEventPublisher.this, EVENTID.SETTINGSCHANGED.name(), data, "DOWNLOAD_SPEED_LIMIT_ENABLED");
+            for (RemoteAPIEventsSender eventSender : eventSenders) {
+                eventSender.publishEvent(eventObject, null);
+            }
+        }
+    };
     GenericConfigEventListener<Integer> maxSimultaneDownloadsEventListenr          = new GenericConfigEventListener<Integer>() {
-                                                                                       public void onConfigValueModified(KeyHandler<Integer> keyHandler, Integer newValue) {
-                                                                                           org.jdownloader.myjdownloader.client.json.JsonMap data = new org.jdownloader.myjdownloader.client.json.JsonMap();
-                                                                                           data.put("message", "MaxDL");
-                                                                                           data.put("data", CFG_GENERAL.MAX_SIMULTANE_DOWNLOADS.getValue());
-                                                                                           SimpleEventObject eventObject = new SimpleEventObject(JDAnywhereEventPublisher.this, EVENTID.SETTINGSCHANGED.name(), data, "MAX_SIMULTANE_DOWNLOADS");
-                                                                                           for (RemoteAPIEventsSender eventSender : eventSenders) {
-                                                                                               eventSender.publishEvent(eventObject, null);
-                                                                                           }
-                                                                                       }
+        public void onConfigValueModified(KeyHandler<Integer> keyHandler, Integer newValue) {
+            org.jdownloader.myjdownloader.client.json.JsonMap data = new org.jdownloader.myjdownloader.client.json.JsonMap();
+            data.put("message", "MaxDL");
+            data.put("data", CFG_GENERAL.MAX_SIMULTANE_DOWNLOADS.getValue());
+            SimpleEventObject eventObject = new SimpleEventObject(JDAnywhereEventPublisher.this, EVENTID.SETTINGSCHANGED.name(), data, "MAX_SIMULTANE_DOWNLOADS");
+            for (RemoteAPIEventsSender eventSender : eventSenders) {
+                eventSender.publishEvent(eventObject, null);
+            }
+        }
 
-                                                                                       public void onConfigValidatorError(KeyHandler<Integer> keyHandler, Integer invalidValue, ValidationException validateException) {
-                                                                                       }
-                                                                                   };
+        public void onConfigValidatorError(KeyHandler<Integer> keyHandler, Integer invalidValue, ValidationException validateException) {
+        }
+    };
     GenericConfigEventListener<Integer> maxChunksPerFileEventListener              = new GenericConfigEventListener<Integer>() {
-                                                                                       public void onConfigValueModified(KeyHandler<Integer> keyHandler, Integer newValue) {
-                                                                                           org.jdownloader.myjdownloader.client.json.JsonMap data = new org.jdownloader.myjdownloader.client.json.JsonMap();
-                                                                                           data.put("message", "MaxConDL");
-                                                                                           data.put("data", CFG_GENERAL.MAX_CHUNKS_PER_FILE.getValue());
-                                                                                           SimpleEventObject eventObject = new SimpleEventObject(JDAnywhereEventPublisher.this, EVENTID.SETTINGSCHANGED.name(), data, "MAX_CHUNKS_PER_FILE");
-                                                                                           for (RemoteAPIEventsSender eventSender : eventSenders) {
-                                                                                               eventSender.publishEvent(eventObject, null);
-                                                                                           }
-                                                                                       }
+        public void onConfigValueModified(KeyHandler<Integer> keyHandler, Integer newValue) {
+            org.jdownloader.myjdownloader.client.json.JsonMap data = new org.jdownloader.myjdownloader.client.json.JsonMap();
+            data.put("message", "MaxConDL");
+            data.put("data", CFG_GENERAL.MAX_CHUNKS_PER_FILE.getValue());
+            SimpleEventObject eventObject = new SimpleEventObject(JDAnywhereEventPublisher.this, EVENTID.SETTINGSCHANGED.name(), data, "MAX_CHUNKS_PER_FILE");
+            for (RemoteAPIEventsSender eventSender : eventSenders) {
+                eventSender.publishEvent(eventObject, null);
+            }
+        }
 
-                                                                                       public void onConfigValidatorError(KeyHandler<Integer> keyHandler, Integer invalidValue, ValidationException validateException) {
-                                                                                       }
-                                                                                   };
+        public void onConfigValidatorError(KeyHandler<Integer> keyHandler, Integer invalidValue, ValidationException validateException) {
+        }
+    };
     GenericConfigEventListener<Integer> maxSiumultaneDownloadsPerHostEventListener = new GenericConfigEventListener<Integer>() {
-                                                                                       public void onConfigValueModified(KeyHandler<Integer> keyHandler, Integer newValue) {
-                                                                                           org.jdownloader.myjdownloader.client.json.JsonMap data = new org.jdownloader.myjdownloader.client.json.JsonMap();
-                                                                                           data.put("message", "MaxConHost");
-                                                                                           data.put("data", CFG_GENERAL.MAX_SIMULTANE_DOWNLOADS_PER_HOST.getValue());
-                                                                                           SimpleEventObject eventObject = new SimpleEventObject(JDAnywhereEventPublisher.this, EVENTID.SETTINGSCHANGED.name(), data, "MAX_SIMULTANE_DOWNLOADS_PER_HOST");
-                                                                                           for (RemoteAPIEventsSender eventSender : eventSenders) {
-                                                                                               eventSender.publishEvent(eventObject, null);
-                                                                                           }
-                                                                                       }
+        public void onConfigValueModified(KeyHandler<Integer> keyHandler, Integer newValue) {
+            org.jdownloader.myjdownloader.client.json.JsonMap data = new org.jdownloader.myjdownloader.client.json.JsonMap();
+            data.put("message", "MaxConHost");
+            data.put("data", CFG_GENERAL.MAX_SIMULTANE_DOWNLOADS_PER_HOST.getValue());
+            SimpleEventObject eventObject = new SimpleEventObject(JDAnywhereEventPublisher.this, EVENTID.SETTINGSCHANGED.name(), data, "MAX_SIMULTANE_DOWNLOADS_PER_HOST");
+            for (RemoteAPIEventsSender eventSender : eventSenders) {
+                eventSender.publishEvent(eventObject, null);
+            }
+        }
 
-                                                                                       public void onConfigValidatorError(KeyHandler<Integer> keyHandler, Integer invalidValue, ValidationException validateException) {
-                                                                                       }
-                                                                                   };
+        public void onConfigValidatorError(KeyHandler<Integer> keyHandler, Integer invalidValue, ValidationException validateException) {
+        }
+    };
     GenericConfigEventListener<Boolean> maxDownloadsPerHostEnbledEventListener     = new GenericConfigEventListener<Boolean>() {
-                                                                                       public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
-                                                                                       }
+        public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
+        }
 
-                                                                                       public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
-                                                                                           org.jdownloader.myjdownloader.client.json.JsonMap data = new org.jdownloader.myjdownloader.client.json.JsonMap();
-                                                                                           data.put("message", "MaxConHostActivated");
-                                                                                           data.put("data", CFG_GENERAL.MAX_DOWNLOADS_PER_HOST_ENABLED.isEnabled());
-                                                                                           SimpleEventObject eventObject = new SimpleEventObject(JDAnywhereEventPublisher.this, EVENTID.SETTINGSCHANGED.name(), data, "MAX_DOWNLOADS_PER_HOST_ENABLED");
-                                                                                           for (RemoteAPIEventsSender eventSender : eventSenders) {
-                                                                                               eventSender.publishEvent(eventObject, null);
-                                                                                           }
-                                                                                       }
-                                                                                   };
+        public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
+            org.jdownloader.myjdownloader.client.json.JsonMap data = new org.jdownloader.myjdownloader.client.json.JsonMap();
+            data.put("message", "MaxConHostActivated");
+            data.put("data", CFG_GENERAL.MAX_DOWNLOADS_PER_HOST_ENABLED.isEnabled());
+            SimpleEventObject eventObject = new SimpleEventObject(JDAnywhereEventPublisher.this, EVENTID.SETTINGSCHANGED.name(), data, "MAX_DOWNLOADS_PER_HOST_ENABLED");
+            for (RemoteAPIEventsSender eventSender : eventSenders) {
+                eventSender.publishEvent(eventObject, null);
+            }
+        }
+    };
     GenericConfigEventListener<Boolean> autioReconnectEnabledEventListener         = new GenericConfigEventListener<Boolean>() {
-                                                                                       public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
-                                                                                       }
+        public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
+        }
 
-                                                                                       public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
-                                                                                           org.jdownloader.myjdownloader.client.json.JsonMap data = new org.jdownloader.myjdownloader.client.json.JsonMap();
-                                                                                           data.put("message", "Reconnect");
-                                                                                           data.put("data", CFG_RECONNECT.AUTO_RECONNECT_ENABLED.isEnabled());
-                                                                                           SimpleEventObject eventObject = new SimpleEventObject(JDAnywhereEventPublisher.this, EVENTID.SETTINGSCHANGED.name(), data, "AUTO_RECONNECT_ENABLED");
-                                                                                           for (RemoteAPIEventsSender eventSender : eventSenders) {
-                                                                                               eventSender.publishEvent(eventObject, null);
-                                                                                           }
-                                                                                       }
-                                                                                   };
+        public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
+            org.jdownloader.myjdownloader.client.json.JsonMap data = new org.jdownloader.myjdownloader.client.json.JsonMap();
+            data.put("message", "Reconnect");
+            data.put("data", CFG_RECONNECT.AUTO_RECONNECT_ENABLED.isEnabled());
+            SimpleEventObject eventObject = new SimpleEventObject(JDAnywhereEventPublisher.this, EVENTID.SETTINGSCHANGED.name(), data, "AUTO_RECONNECT_ENABLED");
+            for (RemoteAPIEventsSender eventSender : eventSenders) {
+                eventSender.publishEvent(eventObject, null);
+            }
+        }
+    };
     GenericConfigEventListener<Boolean> useAvailableAccountEventListener           = new GenericConfigEventListener<Boolean>() {
-                                                                                       public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
-                                                                                       }
+        public void onConfigValidatorError(KeyHandler<Boolean> keyHandler, Boolean invalidValue, ValidationException validateException) {
+        }
 
-                                                                                       public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
-                                                                                           org.jdownloader.myjdownloader.client.json.JsonMap data = new org.jdownloader.myjdownloader.client.json.JsonMap();
-                                                                                           data.put("message", "Premium");
-                                                                                           data.put("data", CFG_GENERAL.USE_AVAILABLE_ACCOUNTS.isEnabled());
-                                                                                           SimpleEventObject eventObject = new SimpleEventObject(JDAnywhereEventPublisher.this, EVENTID.SETTINGSCHANGED.name(), data, "USE_AVAILABLE_ACCOUNTS");
-                                                                                           for (RemoteAPIEventsSender eventSender : eventSenders) {
-                                                                                               eventSender.publishEvent(eventObject, null);
-                                                                                           }
-                                                                                       }
-                                                                                   };
+        public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
+            org.jdownloader.myjdownloader.client.json.JsonMap data = new org.jdownloader.myjdownloader.client.json.JsonMap();
+            data.put("message", "Premium");
+            data.put("data", CFG_GENERAL.USE_AVAILABLE_ACCOUNTS.isEnabled());
+            SimpleEventObject eventObject = new SimpleEventObject(JDAnywhereEventPublisher.this, EVENTID.SETTINGSCHANGED.name(), data, "USE_AVAILABLE_ACCOUNTS");
+            for (RemoteAPIEventsSender eventSender : eventSenders) {
+                eventSender.publishEvent(eventObject, null);
+            }
+        }
+    };
 
     private void publishEvent(EVENTID eventID, Object data, String id) {
         SimpleEventObject eventObject = new SimpleEventObject(this, eventID.name(), data, id);
@@ -483,23 +482,11 @@ public class JDAnywhereEventPublisher implements EventPublisher, AccountControll
     }
 
     @Override
-    public void onAPIJobDone(SolverJob<?> job) {
-        sendEvent(job, "expired");
-    }
-
-    @Override
-    public void onAPIJobStarted(SolverJob<Object> job) {
-        sendEvent(job, "new");
-        eventsApi.sendNewCaptcha(job);
-    }
-
-    @Override
     public synchronized void register(RemoteAPIEventsSender eventsAPI) {
         boolean wasEmpty = eventSenders.isEmpty();
         eventSenders.add(eventsAPI);
         if (wasEmpty && eventSenders.isEmpty() == false) {
             DownloadController.getInstance().addListener(this, true);
-            CaptchaAPISolver.getInstance().getEventSender().addListener(this);
             LinkCollector.getInstance().getEventsender().addListener(this, true);
             DownloadWatchDog.getInstance().getStateMachine().addListener(this);
             DownloadWatchDog.getInstance().getEventSender().addListener(this);
@@ -520,7 +507,6 @@ public class JDAnywhereEventPublisher implements EventPublisher, AccountControll
         eventSenders.remove(eventsAPI);
         if (eventSenders.isEmpty()) {
             DownloadController.getInstance().removeListener(this);
-            CaptchaAPISolver.getInstance().getEventSender().removeListener(this);
             LinkCollector.getInstance().getEventsender().removeListener(this);
             DownloadWatchDog.getInstance().getStateMachine().removeListener(this);
             DownloadWatchDog.getInstance().getEventSender().removeListener(this);

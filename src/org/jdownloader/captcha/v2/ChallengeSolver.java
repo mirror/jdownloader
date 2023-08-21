@@ -23,11 +23,11 @@ import org.jdownloader.captcha.v2.solverjob.SolverJob;
 
 public abstract class ChallengeSolver<T> {
     public static final ChallengeSolver EXTERN = new ChallengeSolver<Object>() {
-                                                   @Override
-                                                   public void solve(SolverJob<Object> solverJob) throws InterruptedException, SolverException, SkipException {
-                                                       throw new WTFException("Not Implemented");
-                                                   }
-                                               };
+        @Override
+        public void solve(SolverJob<Object> solverJob) throws InterruptedException, SolverException, SkipException {
+            throw new WTFException("Not Implemented");
+        }
+    };
 
     private ChallengeSolver() {
     }
@@ -98,6 +98,12 @@ public abstract class ChallengeSolver<T> {
     public List<SolverJob<T>> listJobs() {
         synchronized (map) {
             return new ArrayList<SolverJob<T>>(map.keySet());
+        }
+    }
+
+    public boolean hasJobs() {
+        synchronized (map) {
+            return map.size() > 0;
         }
     }
 
