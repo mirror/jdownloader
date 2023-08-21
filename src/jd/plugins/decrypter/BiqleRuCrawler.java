@@ -363,12 +363,18 @@ public class BiqleRuCrawler extends PluginForDecrypt {
         final String id = urlinfo.getMatch(1);
         final String oid_and_id = oid + "_" + id;
         String url = br.getRegex("((?:https?:)?//[^/]+/(?:player|playlist|download)/[a-zA-Z0-9_\\-]+\\?m=[a-f0-9]+)").getMatch(0);
-        url = url.replaceFirst("(player|playlist|download)/", "playlist/");
+        if (url == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        url = url.replaceFirst("/(player|playlist|download)/", "/player/");
+        br.getPage(url);
+        url = br.getRegex("(/playlist/[^<>\"\\']+)").getMatch(0);
         final String userPreferredQuality = getUserPreferredqualityStr();
         final Map<String, DownloadLink> qualityMap = new HashMap<String, DownloadLink>();
         DownloadLink best = null;
         int highestQualityHeight = -1;
-        final Map<String, Object> response = restoreFromString(br.getPage(url), TypeRef.MAP);
+        br.getPage(url);
+        final Map<String, Object> response = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         int numberofSkippedUnsupportedStreamTypes = 0;
         for (Map<String, Object> source : (List<Map<String, Object>>) response.get("sources")) {
             if ("mp4".equals(source.get("type"))) {
