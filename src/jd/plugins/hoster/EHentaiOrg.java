@@ -444,19 +444,27 @@ public class EHentaiOrg extends PluginForHost {
 
     /** Returns direct downloadable URL to normal image (not original image). */
     private String getNormalmageDownloadurl(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
-        /* 2023-08-15: This workaround is not required anymore -> Only do one attempt. */
-        final boolean allowRetryOnLimitReached = false;
-        boolean looksLikeLimitReached = false;
-        int counter = 0;
-        int counter_max = 2;
-        /* URL to current image */
-        final String targetURL = br.getURL();
-        String dllink = null;
-        final String errorMessageOnLimitReached = "No GP left";
-        do {
-            counter++;
-            logger.info(String.format("Getdllink attempt %d / %d", counter, counter_max));
-            if (looksLikeLimitReached) {
+        final String html = br.getRequest().getHtmlCode();
+        String cleanup = new Regex(html, "<iframe[^>]*>(.*?)<iframe").getMatch(0);
+        if (cleanup == null) {
+            cleanup = new Regex(html, "<div id=\"i3\">(.*?)</div").getMatch(0);
+        }
+        String dllink = new Regex(cleanup, "<img [^>]*src=(\"|\\')([^\"\\'<>]+)\\1").getMatch(1);
+        if (dllink == null) {
+            /* 2017-01-30: Until now only jp(e)g was allowed, now also png. */
+            dllink = new Regex(html, "(?i)<img [^>]*src=(\"|')([^\"\\'<>]{30,}(?:\\.jpe?g|png|gif))\\1").getMatch(1);
+        }
+        if (dllink == null) {
+            logger.info("Failed to find final downloadurl");
+            return null;
+        }
+        if (StringUtils.containsIgnoreCase(dllink, "509.gif")) {
+            /* E.g. https://ehgt.org/g/509.gif or https://exhentai.org/img/509.gif */
+            final String errorMessageOnLimitReached = "Error 509: Downloadlimit reached";
+            final boolean allowAdditionalPointsCheck = false;
+            if (account != null && allowAdditionalPointsCheck) {
+                /* URL to current image */
+                final String targetURL = br.getURL();
                 this.sleep(3000l, link);
                 /*
                  * script we require!
@@ -477,47 +485,19 @@ public class EHentaiOrg extends PluginForHost {
                     br.getPage(targetURL);
                 }
             }
-            final String html = br.getRequest().getHtmlCode();
-            String cleanup = new Regex(html, "<iframe[^>]*>(.*?)<iframe").getMatch(0);
-            if (cleanup == null) {
-                cleanup = new Regex(html, "<div id=\"i3\">(.*?)</div").getMatch(0);
-            }
-            dllink = new Regex(cleanup, "<img [^>]*src=(\"|\\')([^\"\\'<>]+)\\1").getMatch(1);
-            if (dllink == null) {
-                /* 2017-01-30: Until now only jp(e)g was allowed, now also png. */
-                dllink = new Regex(html, "(?i)<img [^>]*src=(\"|')([^\"\\'<>]{30,}(?:\\.jpe?g|png|gif))\\1").getMatch(1);
-            }
-            if (dllink == null) {
-                logger.info("Failed to find final downloadurl");
-                break;
-            }
-            if (StringUtils.containsIgnoreCase(dllink, "509.gif")) {
-                /* E.g. https://ehgt.org/g/509.gif or https://exhentai.org/img/509.gif */
-                looksLikeLimitReached = true;
-            } else {
-                looksLikeLimitReached = false;
-                break;
-            }
-            if (!isDownload) {
-                /* This function has been called during linkcheck -> We don't want to waste time here. */
-                break;
-            }
-        } while (looksLikeLimitReached && allowRetryOnLimitReached && counter < counter_max);
-        if (looksLikeLimitReached) {
             exceptionLimitReached(account, errorMessageOnLimitReached);
         }
         return dllink;
     }
 
     private void exceptionLimitReached(final Account account, final String errormessage) throws PluginException {
-        final String errortext = "Downloadlimit reached";
         if (account == null) {
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, errortext, 5 * 60 * 1000);
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, errormessage, 5 * 60 * 1000);
         } else {
             /* 2020-03-03: This should not be required anymore --> Lead to timeouts --> No idea what it was good for */
             // br.getPage("http://exhentai.org/home.php");
             // account.saveCookies(br.getCookies(MAINPAGE), "");
-            throw new AccountUnavailableException(errortext, 5 * 60 * 1000);
+            throw new AccountUnavailableException(errormessage, 5 * 60 * 1000);
         }
     }
 
@@ -555,8 +535,8 @@ public class EHentaiOrg extends PluginForHost {
         try {
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 br.followConnection(true);
-                final String errorNotEnoughGP = "Downloading original files during peak hours requires GP, and you do not have enough.";
-                final String errorNotEnoughGP2 = "Downloading original files of this gallery requires GP, and you do not have enough.";
+                final String errorNotEnoughPoints1 = "Downloading original files (during peak hours )?requires GP, and you do not have enough\\.";
+                final String errorNotEnoughPoints2 = "Downloading original files of this gallery (during peak hours )?requires GP, and you do not have enough\\.";
                 if (dl.getConnection().getResponseCode() == 403) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
                 } else if (dl.getConnection().getResponseCode() == 404) {
@@ -571,10 +551,10 @@ public class EHentaiOrg extends PluginForHost {
                         /* This should never happen */
                         throw new AccountRequiredException();
                     }
-                } else if (br.containsHTML(Pattern.quote(errorNotEnoughGP))) {
-                    exceptionLimitReached(account, errorNotEnoughGP);
-                } else if (br.containsHTML(Pattern.quote(errorNotEnoughGP2))) {
-                    exceptionLimitReached(account, errorNotEnoughGP2);
+                } else if (br.containsHTML(Pattern.quote(errorNotEnoughPoints1))) {
+                    exceptionLimitReached(account, "Downloading original files (during peak hours) requires GP, and you do not have enough.");
+                } else if (br.containsHTML(Pattern.quote(errorNotEnoughPoints2))) {
+                    exceptionLimitReached(account, "Downloading original files of this gallery (during peak hours) requires GP, and you do not have enough.");
                 } else if (br.getRequest().getHtmlCode().length() <= 150 && !br.getRequest().getHtmlCode().startsWith("<html")) {
                     /* No html error but plaintext -> Looks like an errormessage we don't know */
                     throw new PluginException(LinkStatus.ERROR_FATAL, "Unknown error: " + br.getRequest().getHtmlCode());
@@ -780,6 +760,8 @@ public class EHentaiOrg extends PluginForHost {
                 final long dummyTrafficMax = SizeFormatter.getSize(creditsLeftInfo[1] + "TiB");
                 ai.setTrafficLeft(dummyTrafficMax - dummyTrafficUsed);
                 ai.setTrafficMax(dummyTrafficMax);
+            } else {
+                ai.setUnlimitedTraffic();
             }
         } else {
             logger.warning("Failed to find items_downloadedStr or items_maxStr:" + creditsLeftInfo);

@@ -20,6 +20,11 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.URLHelper;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -34,11 +39,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.ImageFap;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.net.URLHelper;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imagefap.com" }, urls = { "https?://(?:www\\.)?imagefap\\.com/(gallery\\.php\\?p?gid=.+|gallery/.+|pictures/\\d+/.*|photo/\\d+|organizer/\\d+|(usergallery|showfavorites)\\.php\\?userid=\\d+(&folderid=-?\\d+)?)" })
 public class ImageFapCrawler extends PluginForDecrypt {
@@ -234,8 +234,8 @@ public class ImageFapCrawler extends PluginForDecrypt {
                     }
                     if (page == maxPage) {
                         /**
-                         * Find new max page value if it looks like we're currently on the last page. </br> E.g. if we are on page one,
-                         * highest page number we can see is 10 even though the item may have 20+ pages.
+                         * Find new max page value if it looks like we're currently on the last page. </br>
+                         * E.g. if we are on page one, highest page number we can see is 10 even though the item may have 20+ pages.
                          */
                         final int maxPageValueOfCurrentPage = getMaxPage(br);
                         if (maxPageValueOfCurrentPage > maxPage) {
@@ -296,7 +296,7 @@ public class ImageFapCrawler extends PluginForDecrypt {
 
     private int getMaxPage(final Browser br) {
         int maxPage = 0;
-        final String[] pages = br.getRegex("page=(\\d+)").getColumn(0);
+        final String[] pages = br.getRegex("(?i)page=(\\d+)").getColumn(0);
         for (final String pageStr : pages) {
             final int pageInt = Integer.parseInt(pageStr);
             if (pageInt > maxPage) {
