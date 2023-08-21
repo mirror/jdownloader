@@ -361,7 +361,6 @@ public class BiqleRuCrawler extends PluginForDecrypt {
         final Regex urlinfo = new Regex(param.getCryptedUrl(), "((?:\\-)?\\d+)_(\\d+)");
         final String oid = urlinfo.getMatch(0);
         final String id = urlinfo.getMatch(1);
-        final String oid_and_id = oid + "_" + id;
         String url = br.getRegex("((?:https?:)?//[^/]+/(?:player|playlist|download)/[a-zA-Z0-9_\\-]+\\?m=[a-f0-9]+)").getMatch(0);
         if (url == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -369,7 +368,10 @@ public class BiqleRuCrawler extends PluginForDecrypt {
         url = url.replaceFirst("/(player|playlist|download)/", "/player/");
         br.getPage(url);
         url = br.getRegex("(/playlist/[^<>\"\\']+)").getMatch(0);
-        final String userPreferredQuality = getUserPreferredqualityStr();
+        if (url == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        // final String userPreferredQuality = getUserPreferredqualityStr();
         final Map<String, DownloadLink> qualityMap = new HashMap<String, DownloadLink>();
         DownloadLink best = null;
         int highestQualityHeight = -1;
