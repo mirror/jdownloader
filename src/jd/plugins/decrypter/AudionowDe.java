@@ -19,16 +19,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.DebugMode;
 import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -37,8 +33,9 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.hoster.DirectHTTP;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "audionow.de" }, urls = { "https?://(?:www\\.)?audionow\\.de/podcast/([a-f0-9\\-]+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "audionow.de" }, urls = { "https?://(?:(?:www\\.)?audionow\\.de|plus\\.rtl\\.de)/podcast/([a-z0-9\\-]+)" })
 public class AudionowDe extends PluginForDecrypt {
     public AudionowDe(PluginWrapper wrapper) {
         super(wrapper);
@@ -50,105 +47,51 @@ public class AudionowDe extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String contentID = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
+        final boolean pluginBroken20230821 = true;
+        if (pluginBroken20230821 && !DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            /* https://svn.jdownloader.org/issues/90395 */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
         br.getPage(param.getCryptedUrl());
         /* 2021-02-18: E.g. redirect to "audionow.de/404" without actual 404 http code */
         if (br.getHttpConnection().getResponseCode() == 404 || !this.canHandle(br.getURL())) {
-            decryptedLinks.add(this.createOfflinelink(param.getCryptedUrl()));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        /* 2021-05-22: We can't get a good packagename via API which is why we'll use both website and API. */
-        String fpName = br.getRegex("data-podTitle=\"([^<>\"]+)\"").getMatch(0);
-        if (fpName == null) {
-            /* Fallback */
-            fpName = contentID;
+        final String contentID = new Regex(br.getURL(), "/podcast/[a-z0-9\\-]+\\-([a-z0-9]+)/").getMatch(0);
+        if (contentID == null) {
+            /* Invalid URL or developer mistake. */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        br.getPage("https://plus.rtl.de/main.5bd47519b4daf53f.js");
+        final String secret = br.getRegex("client_secret\\s*:\\s*\"([a-f0-9\\-]+)").getMatch(0);
+        br.postPage("https://auth.rtl.de/auth/realms/rtlplus/protocol/openid-connect/token", "grant_type=client_credentials&client_id=anonymous-user&client_secret=" + secret);
+        final Map<String, Object> authmap = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+        final String access_token = authmap.get("access_token").toString();
+        br.getHeaders().put("Authorization", "Bearer " + access_token);
+        br.getHeaders().put("Rtlplus-Client-Id", "rci:rtlplus:web");
+        br.getHeaders().put("Rtlplus-Client-Version", "2023.8.21.5");
+        final String sha256Hash = "TODO";
+        br.getPage("https://cdn.gateway.now-plus-prod.aws-cbc.cloud/graphql?operationName=PodcastDetail&variables=%7B%22offset%22:0,%22id%22:%22" + contentID + "%22,%22take%22:8,%22sort%22:%7B%22direction%22:%22DEFAULT%22%7D%7D&extensions=%7B%22persistedQuery%22:%7B%22version%22:1,%22sha256Hash%22:%22" + "TODO" + "%22%7D%7D");
+        final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+        final Map<String, Object> data = (Map<String, Object>) entries.get("data");
+        final Map<String, Object> podcast = (Map<String, Object>) data.get("podcast");
+        final String podcastTitle = podcast.get("title").toString();
+        final String podcastDescription = podcast.get("description").toString();
+        final Map<String, Object> episodesmap = (Map<String, Object>) podcast.get("episodes");
+        final List<Map<String, Object>> episodelist = (List<Map<String, Object>>) episodesmap.get("items");
         final FilePackage fp = FilePackage.getInstance();
-        fp.setName(Encoding.htmlDecode(fpName.trim()));
-        /* 2021-05-22: Use API */
-        final boolean useAPI = true;
-        if (useAPI) {
-            int page = 1;
-            br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            do {
-                br.getPage("https://audionow.de/api/v4/podcast/" + contentID + "/episodes.json?format=json&page=" + page);
-                if (br.getHttpConnection().getResponseCode() == 404) {
-                    decryptedLinks.add(this.createOfflinelink(param.getCryptedUrl()));
-                    return decryptedLinks;
-                }
-                final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
-                final List<Object> ressourcelist = (List<Object>) entries.get("data");
-                for (final Object podcastO : ressourcelist) {
-                    final Map<String, Object> podcast = (Map<String, Object>) podcastO;
-                    final String title = (String) podcast.get("title");
-                    final long filesize = ((Number) podcast.get("fileSize")).longValue();
-                    final String directurl = (String) podcast.get("mediaURL");
-                    final String description = (String) podcast.get("description");
-                    if (StringUtils.isEmpty(title) || StringUtils.isEmpty(directurl)) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    final DownloadLink dl = this.createDownloadlink(directurl);
-                    dl.setFinalFileName(title + ".mp3");
-                    dl.setVerifiedFileSize(filesize);
-                    dl.setAvailable(true);
-                    if (!StringUtils.isEmpty(description)) {
-                        dl.setComment(description);
-                    }
-                    dl._setFilePackage(fp);
-                    decryptedLinks.add(dl);
-                    distribute(dl);
-                }
-                final Map<String, Object> pagination = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "meta/pagination");
-                final int lastPage = ((Number) pagination.get("total_pages")).intValue();
-                logger.info("Found " + ressourcelist.size() + " items on page " + page + " / " + lastPage);
-                if (this.isAbort()) {
-                    break;
-                } else if (page == lastPage) {
-                    logger.info("Stopping because: Last page");
-                    break;
-                } else {
-                    page += 1;
-                }
-            } while (true);
-        } else {
-            final String[] htmls = br.getRegex("<li[^>]*class=\"episode-list-item\">(.*?)</div>\\s*</li>").getColumn(0);
-            if (htmls == null || htmls.length == 0) {
-                logger.warning("Decrypter broken for link: " + param.getCryptedUrl());
-                return null;
-            }
-            fpName = Encoding.htmlDecode(fpName);
-            int index = 0;
-            for (final String html : htmls) {
-                index++;
-                String eptitle = new Regex(html, "class=\"episode-title\"[^>]*>([^<>\"]+)<").getMatch(0);
-                final String directurl = new Regex(html, "data-audiolink=\"(https://[^<>\"]+)").getMatch(0);
-                final String filesize = new Regex(html, "<span[^>]*class=\"text-size\"[^>]*>(\\d+ [A-Za-z]+)</span>").getMatch(0);
-                // final String date = new Regex(html, "class=\"text-date\">(\\d{2}\\.\\d{2}\\.\\d{4})<").getMatch(0);
-                if (StringUtils.isEmpty(directurl)) {
-                    /* Skip invalid items */
-                    continue;
-                }
-                if (StringUtils.isEmpty(eptitle)) {
-                    /* Fallback */
-                    eptitle = index + "";
-                }
-                eptitle = Encoding.htmlDecode(eptitle);
-                final DownloadLink dl = createDownloadlink(directurl);
-                dl.setFinalFileName(fpName + " - " + eptitle + ".mp3");
-                if (filesize != null) {
-                    dl.setDownloadSize(SizeFormatter.getSize(filesize));
-                }
-                dl.setAvailable(true);
-                dl._setFilePackage(fp);
-                decryptedLinks.add(dl);
-            }
-            if (decryptedLinks.size() == 0) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
+        fp.setName(podcastTitle);
+        fp.setComment(podcastDescription);
+        for (final Map<String, Object> episode : episodelist) {
+            final DownloadLink link = this.createDownloadlink(DirectHTTP.createURLForThisPlugin(episode.get("url").toString()));
+            link.setFinalFileName(episode.get("title").toString() + ".mp3");
+            link.setComment(episode.get("description").toString());
+            link.setAvailable(true);
+            link._setFilePackage(fp);
+            ret.add(link);
         }
-        return decryptedLinks;
+        return ret;
     }
 }
