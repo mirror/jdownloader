@@ -82,9 +82,10 @@ public class KoofrNetFolder extends PluginForDecrypt {
         } else if (br.getURL().endsWith("/notfound")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String contentID = new Regex(br.getURL(), "/links/([a-f0-9\\-]+)").getMatch(0);
+        final String contentID = new Regex(br.getURL(), "(?i)/links/([a-f0-9\\-]+)").getMatch(0);
         if (contentID == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            logger.info("Invalid URL or broken plugin");
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         PluginForHost hosterplugin = null;
         String pathInternal = UrlQuery.parse(br.getURL()).get("path");

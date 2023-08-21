@@ -20,6 +20,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.text.DecimalFormat;
 import java.text.ParseException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -364,7 +365,7 @@ public class ImageFap extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 for (final String videoLinksEntry : videoLinks) {
-                    final String quality = new Regex(videoLinksEntry, "-(\\d+)p\\.(mp4|flv|webm)").getMatch(0);
+                    final String quality = new Regex(videoLinksEntry, "(?i)-(\\d+)p\\.(mp4|flv|webm)").getMatch(0);
                     final Integer p = quality != null ? Integer.parseInt(quality) : -1;
                     final String url = Encoding.htmlDecode(videoLinksEntry);
                     URLConnectionAdapter con = null;
@@ -414,8 +415,16 @@ public class ImageFap extends PluginForHost {
                     final String fid = getFID(link);
                     final String[] fullImageLinks = br.getRegex("(https?://[^/]+/images/full/[^\"]+)").getColumn(0);
                     if (fullImageLinks != null == fullImageLinks.length > 0) {
-                        final HashSet<String> hits = new HashSet<String>();
+                        final ArrayList<String> fullImageLinksWithoutDuplicates = new ArrayList<String>();
                         for (final String fullImageLink : fullImageLinks) {
+                            if (!fullImageLinksWithoutDuplicates.contains(fullImageLink)) {
+                                fullImageLinksWithoutDuplicates.add(fullImageLink);
+                            }
+                        }
+                        logger.info("Total number of fullsize image URLs: " + fullImageLinksWithoutDuplicates.size());
+                        // final String startImgID = br.getRegex("_start_img = (\\d+);").getMatch(0);
+                        final HashSet<String> hits = new HashSet<String>();
+                        for (final String fullImageLink : fullImageLinksWithoutDuplicates) {
                             if (fullImageLink.contains(fid)) {
                                 /* Safe hit */
                                 imageLink = fullImageLink;
@@ -425,11 +434,16 @@ public class ImageFap extends PluginForHost {
                             }
                         }
                         if (imageLink == null) {
+                            /* 2023-08-21: TODO: Find a better way than this! This way we are at risc of downloading the wrong image!! */
                             if (hits.size() == 1) {
                                 imageLink = hits.iterator().next();
                             } else {
                                 logger.warning("Too many fullsize-hits");
                             }
+                        }
+                        if (imageLink == null && fullImageLinksWithoutDuplicates.size() >= 5) {
+                            logger.info("Fallback to fifth element");
+                            imageLink = fullImageLinksWithoutDuplicates.get(4);
                         }
                     } else {
                         logger.warning("Failed to find any fullsize urls");
