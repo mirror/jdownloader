@@ -77,7 +77,7 @@ public class ImageFapCrawler extends PluginForDecrypt {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.setFollowRedirects(false);
         ImageFap.prepBR(this.br);
-        String parameter = param.toString();
+        String parameter = param.getCryptedUrl();
         final Set<String> dupes = new HashSet<String>();
         final String oid = new Regex(parameter, "(?:organizer)/(\\d+)").getMatch(0);
         if (oid != null) {
@@ -101,8 +101,8 @@ public class ImageFapCrawler extends PluginForDecrypt {
             } while (!this.isAbort());
             return ret;
         }
-        final String userID = new Regex(parameter, "userid=(\\d+)").getMatch(0);
-        final String folderID = new Regex(parameter, "folderid=(-?\\d+)").getMatch(0);
+        final String userID = new Regex(parameter, "(?i)userid=(\\d+)").getMatch(0);
+        final String folderID = new Regex(parameter, "(?i)folderid=(-?\\d+)").getMatch(0);
         if (userID != null && folderID != null) {
             /** user/folderID link **/
             final boolean userGallery = StringUtils.containsIgnoreCase(parameter, "usergallery.php");
@@ -166,6 +166,7 @@ public class ImageFapCrawler extends PluginForDecrypt {
                 link.setProperty("photoID", Long.parseLong(photoID));
                 ret.add(link);
             } else {
+                /* view=2 -> "One page" view -> More images on each page */
                 parameter = parameter.replaceAll("view\\=[0-9]+", "view=2");
                 if (new Regex(parameter, "imagefap\\.com/gallery\\.php\\?pgid=").matches()) {
                     /**
