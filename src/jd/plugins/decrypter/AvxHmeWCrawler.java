@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.regex.Pattern;
 
 import org.appwork.utils.Time;
 import org.jdownloader.captcha.v2.challenge.hcaptcha.AbstractHCaptcha;
@@ -34,6 +35,7 @@ import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.http.Request;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
 import jd.plugins.Account;
@@ -79,13 +81,24 @@ public class AvxHmeWCrawler extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(ebooks|music|software|video|magazines|newspapers|games|graphics|misc|hraphile|comics|go|audiobooks| girls|tvseries|anime|sheet_music|musik|fernsehserie|zeitschriften|zeitungen|grafik|madchen|horbucher)/.+");
+            String pattern = "https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/";
+            pattern += "(";
+            pattern += PATTERN_REDIRECT_STR;
+            pattern += "|" + PATTERN_RELEASE_STR;
+            pattern += "|" + PATTERN_RELEASE_OVERVIEW_STR;
+            pattern += ")";
+            ret.add(pattern);
         }
         return ret.toArray(new String[0]);
     }
 
-    private static final String TYPE_REDIRECT = "(?i)https?://[^/]+/go/([a-f0-9]{32}/\\d+/?|[A-Za-z0-9\\-_:%]+/?|\\d+/[^\"]+)";
-    private static AtomicLong   LAST_DIRECT   = new AtomicLong(-1);
+    private static final String  PATTERN_REDIRECT_STR         = "go/([a-f0-9]{32}/\\d+/?|[A-Za-z0-9\\-_:%]+/?|\\d+/[^\"]+)";
+    private static final Pattern PATTERN_REDIRECT             = Pattern.compile("(?i)https?://[^/]+/" + PATTERN_REDIRECT_STR);
+    private static final String  PATTERN_RELEASE_STR          = "(ebooks|music|software|video|magazines|newspapers|games|graphics|misc|hraphile|comics|audiobooks|girls|tvseries|anime|sheet_music|musik|fernsehserie|zeitschriften|zeitungen|grafik|madchen|horbucher)/(?!facet/).+";
+    private static final Pattern PATTERN_RELEASE              = Pattern.compile("(?i)https?://[^/]+/" + PATTERN_RELEASE_STR);
+    private static final String  PATTERN_RELEASE_OVERVIEW_STR = "m/(\\d+)/.*";
+    private static final Pattern PATTERN_RELEASE_OVERVIEW     = Pattern.compile("(?i)https?://[^/]+/" + PATTERN_RELEASE_OVERVIEW_STR);
+    private static AtomicLong    LAST_DIRECT                  = new AtomicLong(-1);
 
     @Override
     public int getMaxConcurrentProcessingInstances() {
@@ -99,7 +112,7 @@ public class AvxHmeWCrawler extends PluginForDecrypt {
         br.setAllowedResponseCodes(new int[] { 401 });
         /* 2021-03-11: Do not replace hosts inside URLs anymore as this can lead to wrong redirectURLs breaking the crawling process. */
         // final String parameter = param.toString().replaceFirst("(?i)" + Regex.escape(Browser.getHost(param.toString())), this.getHost());
-        if (param.getCryptedUrl().matches(TYPE_REDIRECT)) {
+        if (new Regex(param.getCryptedUrl(), PATTERN_REDIRECT).patternFind()) {
             /* 2021-01-20: Login whenever possible -> No captchas required then */
             final Account acc = AccountController.getInstance().getValidAccount("avxhm.se");
             if (acc != null) {
@@ -176,13 +189,12 @@ public class AvxHmeWCrawler extends PluginForDecrypt {
                     throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                 }
             }
-            if (link != null && !link.matches(this.getSupportedLinks().pattern())) {
-                ret.add(createDownloadlink(link));
-            } else {
+            if (link == null || this.canHandle(link)) {
                 /* Item offline or plugin broken. */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-        } else {
+            ret.add(createDownloadlink(link));
+        } else if (new Regex(param.getCryptedUrl(), PATTERN_RELEASE).patternFind()) {
             br.setFollowRedirects(true);
             br.getPage(param.getCryptedUrl());
             if (br.getHttpConnection().getResponseCode() == 404) {
@@ -205,9 +217,9 @@ public class AvxHmeWCrawler extends PluginForDecrypt {
             }
             /* Now find single redirect-URLs */
             int numberofRedirectURLs = 0;
-            final String[] allURLs = HTMLParser.getHttpLinks(this.br.toString(), br.getURL());
+            final String[] allURLs = HTMLParser.getHttpLinks(br.getRequest().getHtmlCode(), br.getURL());
             for (final String url : allURLs) {
-                if (url.matches(TYPE_REDIRECT)) {
+                if (new Regex(url, PATTERN_REDIRECT).patternFind()) {
                     ret.add(createDownloadlink(url));
                     numberofRedirectURLs++;
                 }
@@ -236,17 +248,44 @@ public class AvxHmeWCrawler extends PluginForDecrypt {
                     if (!dupe.add(coverlink)) {
                         continue;
                     }
-                    ret.add(createDownloadlink(coverlink));
+                    final DownloadLink cover = createDownloadlink(coverlink);
+                    cover.setAvailable(true);
+                    ret.add(cover);
                 }
             }
-            String fpName = br.getRegex("<title>(.*?)\\s*[\\|/]\\s*AvaxHome.*?</title>").getMatch(0);
-            if (fpName == null) {
-                fpName = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
+            String title = br.getRegex("<title>(.*?)\\s*[\\|/]\\s*AvaxHome.*?</title>").getMatch(0);
+            if (title == null) {
+                title = br.getRegex("<h1>(.*?)</h1>").getMatch(0);
             }
-            if (fpName != null) {
+            if (title != null) {
+                title = Encoding.htmlOnlyDecode(title).trim();
                 final FilePackage fp = FilePackage.getInstance();
-                fp.setName(Encoding.htmlOnlyDecode(fpName).trim());
+                /* Two releases can have the same title but we want them in different packages. */
+                fp.setAllowMerge(false);
+                final String greenLabel = br.getRegex("<span class=\"label label-success\"[^>]*>([^<]+)</span>").getMatch(0);
+                if (greenLabel != null) {
+                    fp.setName(title + " " + Encoding.htmlDecode(greenLabel).trim());
+                } else {
+                    fp.setName(title);
+                }
                 fp.addLinks(ret);
+            }
+        } else {
+            /* PATTERN_RELEASE_OVERVIEW */
+            br.setFollowRedirects(true);
+            br.getPage(param.getCryptedUrl());
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            logger.info("Performing fallback");
+            final String[] urls = HTMLParser.getHttpLinks(br.getRequest().getHtmlCode(), br.getURL());
+            for (final String url : urls) {
+                if (new Regex(url, PATTERN_RELEASE).patternFind()) {
+                    ret.add(this.createDownloadlink(url));
+                }
+            }
+            if (ret.isEmpty()) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
         return ret;
@@ -264,7 +303,7 @@ public class AvxHmeWCrawler extends PluginForDecrypt {
     }
 
     @Override
-    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
-        return false;
+    public boolean hasCaptcha(final CryptedLink link, jd.plugins.Account acc) {
+        return true;
     }
 }

@@ -482,7 +482,8 @@ public class EHentaiOrg extends PluginForHost {
                     logger.info("Confirmed limit reached according to remaining credits");
                     exceptionLimitReached(account, errorMessageOnLimitReached);
                 } else {
-                    br.getPage(targetURL);
+                    // br.getPage(targetURL);
+                    exceptionLimitReached(account, "Unknown error in downloadlimit handling occured: Looks like limit reached but it hasn't been reached?");
                 }
             }
             exceptionLimitReached(account, errorMessageOnLimitReached);
