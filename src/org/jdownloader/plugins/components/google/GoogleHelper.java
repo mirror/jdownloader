@@ -23,6 +23,7 @@ import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.InputDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.os.CrossSystem;
@@ -297,7 +298,11 @@ public class GoogleHelper {
                         logger.info("Login with cookies successful");
                         validate(account);
                         /* Only store cookies if username via username + password has been used. */
-                        if (userCookies == null) {
+                        if (userCookies != null) {
+                            synchronized (account) {
+                                displayAdditionalCookieLoginInformation(account);
+                            }
+                        } else {
                             account.saveCookies(br.getCookies(br.getHost()), "");
                         }
                         return;
@@ -463,6 +468,43 @@ public class GoogleHelper {
                 }
                 throw e;
             }
+        }
+    }
+
+    private final String PROPERTY_HAS_SHOWN_ADDITIONAL_COOKIE_LOGIN_INFORMATION = "has_shown_additional_cookie_login_information";
+
+    private void displayAdditionalCookieLoginInformation(final Account account) {
+        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && account.getBooleanProperty(PROPERTY_HAS_SHOWN_ADDITIONAL_COOKIE_LOGIN_INFORMATION, false) == false) {
+            final Thread thread = new Thread() {
+                public void run() {
+                    try {
+                        String message = "";
+                        final String title;
+                        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                            title = "Google Login - wichtige Information zum Cookie Login";
+                            message += "! ! ! WICHTIGE INFORMATION ZUM GOOGLE COOKIE LOGIN ! ! !";
+                            message += "\r\nWir empfehlen, die Session/Cookies, die du gerade in JDownloader eingegeben hast nicht weiter im Browser zu verwenden.";
+                            message += "\r\nSolltest du diesen Hinweis missachten, werden deine Google Cookies in JDownloader höchstwahrscheinlich nach sehr kurzer Zeit ungültig.";
+                            message += "\r\nWir empfehlen, vor dem Export der Cookies eine neue Session zu eröffnen, die danach nicht mehr im Browser verwendet wird z.B. durch Login in einem Inkognitofenster oder in einem separaten Browserprofil.";
+                        } else {
+                            title = "Google Login - additional cookie login information";
+                            message += "! ! ! IMPORTANT INFORMATION ABOUT GOOGLE COOKIE LOGIN ! ! !";
+                            message += "\r\nWe recommend not to use the same Google session/cookies which you've just entered in JDownloader in your browser!";
+                            message += "\r\nIf you ignore this recommendation, the cookies in JDownloader may expire within a very short time.";
+                            message += "\r\nWe recommend creating a separate Google session in a private browser window or separate browser profile which you are not actively using afterwards!";
+                        }
+                        final ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, title, message);
+                        dialog.setTimeout(300 * 1000);
+                        final ConfirmDialogInterface ret = UIOManager.I().show(ConfirmDialogInterface.class, dialog);
+                        ret.throwCloseExceptions();
+                    } catch (final Throwable e) {
+                        getLogger().log(e);
+                    }
+                };
+            };
+            thread.setDaemon(true);
+            thread.start();
+            account.setProperty(PROPERTY_HAS_SHOWN_ADDITIONAL_COOKIE_LOGIN_INFORMATION, true);
         }
     }
 

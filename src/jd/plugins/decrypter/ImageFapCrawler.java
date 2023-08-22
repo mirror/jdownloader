@@ -219,7 +219,7 @@ public class ImageFapCrawler extends PluginForDecrypt {
                 final FilePackage fp = FilePackage.getInstance();
                 fp.setName(authorsName + " - " + galleryName + " - " + galleryID);
                 final String baseURL = URLHelper.getUrlWithoutParams(br._getURL());
-                final String firstPageViewParam = new Regex(br.getURL(), "view=(\\d)").getMatch(0);
+                final String firstPageViewParam = new Regex(br.getURL(), "(?i)view=(\\d)").getMatch(0);
                 final UrlQuery query = new UrlQuery();
                 query.add("gid", galleryIDStr);
                 query.add("view", firstPageViewParam != null ? firstPageViewParam : "0");
@@ -231,7 +231,12 @@ public class ImageFapCrawler extends PluginForDecrypt {
                     }
                     final String info[][] = br.getRegex("<span id=\"img_(\\d+)_desc\">.*?<font face=verdana color=\"#000000\"><i>([^<>\"]*?)</i>").getMatches();
                     if (info == null || info.length == 0) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        if (ret.size() > 0) {
+                            logger.info("Stopping because: Current page contains no items -> Possibly buggy website with error 'Gallery not found' on last page");
+                            break;
+                        } else {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
                     }
                     if (page == maxPage) {
                         /**
