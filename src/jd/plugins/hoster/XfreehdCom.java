@@ -20,7 +20,6 @@ import java.util.List;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
-import jd.http.Cookies;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
@@ -53,8 +52,8 @@ public class XfreehdCom extends KernelVideoSharingComV2 {
 
     @Override
     protected boolean isLoggedIN(final Browser br) {
-        if (br.getCookie(br.getHost(), "AVS", Cookies.NOTDELETEDPATTERN) != null) {
-            return br.containsHTML(">\\s*Welcome");
+        if (br.containsHTML("/logout")) {
+            return true;
         } else {
             return false;
         }

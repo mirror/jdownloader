@@ -17,6 +17,7 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -61,19 +62,39 @@ public class BaseShareComCrawler extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/[\\w\\-]+/mixtapes/[\\w\\-]+/\\d+/");
+            String pattern = "https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(";
+            pattern += PATTERN_NORMAL_STR;
+            pattern += "|" + PATTERN_EMBED_STR;
+            pattern += ")";
+            ret.add(pattern);
         }
         return ret.toArray(new String[0]);
     }
+
+    private static final String  PATTERN_EMBED_STR  = "mixtapes/embed/id/(\\d+)";
+    private static final Pattern PATTERN_EMBED      = Pattern.compile("(?i)https?://[^/]+/" + PATTERN_EMBED_STR);
+    private static final String  PATTERN_NORMAL_STR = "([\\w\\-]+)/mixtapes/([\\w\\-]+)/(\\d+)/";
+    private static final Pattern PATTERN_NORMAL     = Pattern.compile("(?i)https?://[^/]+/" + PATTERN_NORMAL_STR);
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
         getPage(param.getCryptedUrl());
-        if (br.getHttpConnection().getResponseCode() == 404 || !this.canHandle(br.getURL())) {
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (!this.canHandle(br.getURL())) {
+            /* E.g. redirect to mainpage. */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String url_artist = new Regex(param.getCryptedUrl(), "baseshare\\.com/([A-Za-z0-9\\-_]+)/mixtapes").getMatch(0);
+        if (new Regex(br.getURL(), PATTERN_EMBED).patternFind()) {
+            final String normalURL = br.getRegex(PATTERN_NORMAL_STR).getMatch(-1);
+            if (normalURL == null) {
+                /* No link to non-embed URL -> Item must be offline. */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            getPage("/" + normalURL);
+        }
+        final String slugArtist = new Regex(br.getURL(), PATTERN_NORMAL).getMatch(0);
         String artist = br.getRegex("<h1>([^<>]*?)</h1>").getMatch(0);
         String title = br.getRegex("<h2>([^<>]*?)</h2>").getMatch(0);
         String fpName = null;
@@ -88,7 +109,7 @@ public class BaseShareComCrawler extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         for (final String singleLink : links) {
-            final String[][] linkinfo = new Regex(singleLink, "updateSong\\(\\'\\s*(http://baseshare\\.com/uploads[^<>\"]*?\\.mp3)\\'\\s*,\\s*\\'/uploads/waves/[a-z0-9]+\\.png\\'\\s*,\\s*\\'([^<>\"]*?)\\'\\s*,\\s*\\'([^<>\"]*?)\\'\\s*,\\s*(\\d+)\\);").getMatches();
+            final String[][] linkinfo = new Regex(singleLink, "updateSong\\(\\'\\s*(https?://baseshare\\.com/uploads[^<>\"]*?\\.mp3)\\'\\s*,\\s*\\'/uploads/waves/[a-z0-9]+\\.png\\'\\s*,\\s*\\'([^<>\"]*?)\\'\\s*,\\s*\\'([^<>\"]*?)\\'\\s*,\\s*(\\d+)\\);").getMatches();
             if (linkinfo != null && linkinfo.length == 1) {
                 final String thisurl = linkinfo[0][0];
                 final String thisartist = linkinfo[0][1];
@@ -96,7 +117,7 @@ public class BaseShareComCrawler extends PluginForDecrypt {
                 final String thisid = linkinfo[0][3];
                 final String thisartisturl = thisartist.replaceAll("(\\-|\\.|_)", "").replace(" ", "-");
                 final String thistitleurl = thistitle.replaceAll("(\\-|\\.|_)", "").replace(" ", "-");
-                final String songurl = "http://baseshare.com/" + url_artist + "/songs/" + thisartisturl + "-" + thistitleurl + "/" + thisid + "/";
+                final String songurl = "https://baseshare.com/" + slugArtist + "/songs/" + thisartisturl + "-" + thistitleurl + "/" + thisid + "/";
                 final DownloadLink dl = createDownloadlink(songurl);
                 dl.setProperty("directlink", thisurl);
                 dl.setName(thisartist + " - " + thistitle + ".mp3");

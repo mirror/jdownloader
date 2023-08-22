@@ -78,25 +78,43 @@ public class AudionowDe extends PluginForDecrypt {
         br.getHeaders().put("Rtlplus-Client-Version", "2023.8.21.5");
         /* See main.*.js -> Yn = fn.sha256,... */
         final String sha256Hash = "3a24ebe82cd8425d597419728fff9d7e4b8894e8c36af583699d2c196048e0ed";
-        br.getPage("https://cdn.gateway.now-plus-prod.aws-cbc.cloud/graphql?operationName=PodcastDetail&variables=%7B%22offset%22:0,%22id%22:%22" + contentID + "%22,%22take%22:8,%22sort%22:%7B%22direction%22:%22DEFAULT%22%7D%7D&extensions=%7B%22persistedQuery%22:%7B%22version%22:1,%22sha256Hash%22:%22" + sha256Hash + "%22%7D%7D");
-        final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
-        final Map<String, Object> data = (Map<String, Object>) entries.get("data");
-        final Map<String, Object> podcast = (Map<String, Object>) data.get("podcast");
-        final String podcastTitle = podcast.get("title").toString();
-        final String podcastDescription = podcast.get("description").toString();
-        final Map<String, Object> episodesmap = (Map<String, Object>) podcast.get("episodes");
-        final List<Map<String, Object>> episodelist = (List<Map<String, Object>>) episodesmap.get("items");
+        final int itemsPerPage = 20;
+        int offset = 0;
         final FilePackage fp = FilePackage.getInstance();
-        fp.setName(podcastTitle);
-        fp.setComment(podcastDescription);
-        for (final Map<String, Object> episode : episodelist) {
-            final DownloadLink link = this.createDownloadlink(DirectHTTP.createURLForThisPlugin(episode.get("url").toString()));
-            link.setFinalFileName(episode.get("title").toString() + ".mp3");
-            link.setComment(episode.get("description").toString());
-            link.setAvailable(true);
-            link._setFilePackage(fp);
-            ret.add(link);
-        }
+        int page = 1;
+        do {
+            br.getPage("https://cdn.gateway.now-plus-prod.aws-cbc.cloud/graphql?operationName=PodcastDetail&variables=%7B%22offset%22:" + offset + ",%22id%22:%22" + contentID + "%22,%22take%22:" + itemsPerPage + "   ,%22sort%22:%7B%22direction%22:%22DEFAULT%22%7D%7D&extensions=%7B%22persistedQuery%22:%7B%22version%22:1,%22sha256Hash%22:%22" + sha256Hash + "%22%7D%7D");
+            final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+            final Map<String, Object> data = (Map<String, Object>) entries.get("data");
+            final Map<String, Object> podcast = (Map<String, Object>) data.get("podcast");
+            final Map<String, Object> episodesmap = (Map<String, Object>) podcast.get("episodes");
+            final List<Map<String, Object>> episodelist = (List<Map<String, Object>>) episodesmap.get("items");
+            if (offset == 0) {
+                fp.setName(podcast.get("title").toString());
+                fp.setComment(podcast.get("description").toString());
+            }
+            for (final Map<String, Object> episode : episodelist) {
+                final DownloadLink link = this.createDownloadlink(DirectHTTP.createURLForThisPlugin(episode.get("url").toString()));
+                link.setFinalFileName(episode.get("title").toString() + ".mp3");
+                link.setComment(episode.get("description").toString());
+                link.setAvailable(true);
+                link._setFilePackage(fp);
+                distribute(link);
+                ret.add(link);
+            }
+            final int numberOfEpisodes = ((Number) podcast.get("numberOfEpisodes")).intValue();
+            logger.info("Crawled page " + page + " | Found items: " + ret.size() + "/" + numberOfEpisodes);
+            if (this.isAbort()) {
+                logger.info("Stopping because: Aborted by user");
+            } else if (offset >= numberOfEpisodes) {
+                logger.info("Stopping because: Found all items: " + numberOfEpisodes);
+                break;
+            } else {
+                offset += episodelist.size();
+                page++;
+                continue;
+            }
+        } while (!this.isAbort());
         return ret;
     }
 }
