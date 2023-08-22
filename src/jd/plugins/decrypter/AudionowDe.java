@@ -18,6 +18,7 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.DebugMode;
@@ -46,6 +47,9 @@ public class AudionowDe extends PluginForDecrypt {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.AUDIO_STREAMING };
     }
 
+    private static String     token      = null;
+    private static AtomicLong validUntil = new AtomicLong(0);
+
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final boolean pluginBroken20230821 = true;
         if (pluginBroken20230821 && !DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
@@ -59,21 +63,28 @@ public class AudionowDe extends PluginForDecrypt {
         if (br.getHttpConnection().getResponseCode() == 404 || !this.canHandle(br.getURL())) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String contentID = new Regex(br.getURL(), "/podcast/[a-z0-9\\-]+\\-([a-z0-9]+)/").getMatch(0);
+        final String contentID = new Regex(br.getURL(), "(?i)/podcast/[a-z0-9\\-]+\\-([a-z0-9]+)(/.+|$)").getMatch(0);
         if (contentID == null) {
             /* Invalid URL or developer mistake. */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        br.getPage("https://plus.rtl.de/main.5bd47519b4daf53f.js");
-        final String secret = br.getRegex("client_secret\\s*:\\s*\"([a-f0-9\\-]+)").getMatch(0);
-        br.postPage("https://auth.rtl.de/auth/realms/rtlplus/protocol/openid-connect/token", "grant_type=client_credentials&client_id=anonymous-user&client_secret=" + secret);
-        final Map<String, Object> authmap = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
-        final String access_token = authmap.get("access_token").toString();
-        br.getHeaders().put("Authorization", "Bearer " + access_token);
+        synchronized (validUntil) {
+            if (token == null || System.currentTimeMillis() > validUntil.get()) {
+                logger.info("Obtaining fresh token");
+                br.getPage("https://plus.rtl.de/main.5bd47519b4daf53f.js");
+                final String secret = br.getRegex("client_secret\\s*:\\s*\"([a-f0-9\\-]+)").getMatch(0);
+                br.postPage("https://auth.rtl.de/auth/realms/rtlplus/protocol/openid-connect/token", "grant_type=client_credentials&client_id=anonymous-user&client_secret=" + secret);
+                final Map<String, Object> authmap = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+                token = authmap.get("access_token").toString();
+                validUntil.set(System.currentTimeMillis() + (((Number) authmap.get("expires_in")).longValue() * 1000));
+            }
+        }
+        br.getHeaders().put("Authorization", "Bearer " + token);
         br.getHeaders().put("Rtlplus-Client-Id", "rci:rtlplus:web");
         br.getHeaders().put("Rtlplus-Client-Version", "2023.8.21.5");
-        final String sha256Hash = "TODO";
-        br.getPage("https://cdn.gateway.now-plus-prod.aws-cbc.cloud/graphql?operationName=PodcastDetail&variables=%7B%22offset%22:0,%22id%22:%22" + contentID + "%22,%22take%22:8,%22sort%22:%7B%22direction%22:%22DEFAULT%22%7D%7D&extensions=%7B%22persistedQuery%22:%7B%22version%22:1,%22sha256Hash%22:%22" + "TODO" + "%22%7D%7D");
+        /* See main.*.js -> Yn = fn.sha256,... */
+        final String sha256Hash = "3a24ebe82cd8425d597419728fff9d7e4b8894e8c36af583699d2c196048e0ed";
+        br.getPage("https://cdn.gateway.now-plus-prod.aws-cbc.cloud/graphql?operationName=PodcastDetail&variables=%7B%22offset%22:0,%22id%22:%22" + contentID + "%22,%22take%22:8,%22sort%22:%7B%22direction%22:%22DEFAULT%22%7D%7D&extensions=%7B%22persistedQuery%22:%7B%22version%22:1,%22sha256Hash%22:%22" + sha256Hash + "%22%7D%7D");
         final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         final Map<String, Object> data = (Map<String, Object>) entries.get("data");
         final Map<String, Object> podcast = (Map<String, Object>) data.get("podcast");
