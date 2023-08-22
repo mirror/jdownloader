@@ -69,7 +69,7 @@ public class DummyDirect extends PluginForDecrypt {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         final String hex = new Regex(parameter, "https?://dummydirect\\.jdownloader\\.org/([a-f0-9A-F]+)").getMatch(0);
-        final HashMap<String, Object> params = JSonStorage.restoreFromString(new String(HexFormatter.hexToByteArray(hex), "UTF-8"), TypeRef.HASHMAP);
+        final Map<String, Object> params = restoreFromString(new String(HexFormatter.hexToByteArray(hex), "UTF-8"), TypeRef.MAP);
         final String url = (String) params.get("url");
         if (StringUtils.isNotEmpty(url) && url.matches("^https?://.+$")) {
             final DownloadLink link = new DownloadLink(null, null, "DirectHTTP", "directhttp://" + url, true);

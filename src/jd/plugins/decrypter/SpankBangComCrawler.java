@@ -22,6 +22,13 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.UniqueAlltimeID;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -46,13 +53,6 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.DirectHTTP;
 import jd.plugins.hoster.SpankBangCom;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.UniqueAlltimeID;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class SpankBangComCrawler extends PluginForDecrypt {
@@ -390,7 +390,7 @@ public class SpankBangComCrawler extends PluginForDecrypt {
             final Browser brc = br.cloneBrowser();
             final String page = brc.getPage(request);
             if (page.matches("(?s)^\\s*\\{.*") && page.matches("(?s).*\\}\\s*$")) {
-                final Map<String, Object> map = JSonStorage.restoreFromString(page, TypeRef.HASHMAP);
+                final Map<String, Object> map = JSonStorage.restoreFromString(page, TypeRef.MAP);
                 final String stream_url_m3u8 = String.valueOf(map.get("m3u8"));
                 for (final String quality : knownQualities) {
                     final String qualityID = getQuality(quality);

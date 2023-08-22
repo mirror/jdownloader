@@ -306,7 +306,7 @@ public class EsouboryCz extends PluginForHost {
         if (!br.getURL().contains("/accountinfo?token=")) {
             br.getPage(API_BASE + "/accountinfo?token=" + token);
         }
-        Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
         Map<String, Object> data = (Map<String, Object>) entries.get("data");
         final long trafficLeftMB = ((Number) data.get("credit")).longValue();
         ai.setTrafficLeft(trafficLeftMB * 1024 * 1024);
@@ -320,7 +320,7 @@ public class EsouboryCz extends PluginForHost {
         /*
          * E.g. {"error":"","data":{"list":"http:\/\/www.edisk.cz;https:\/\/datoid.cz;https:\/\/webshare.cz;https:\/\/www.shareprofi.com"}}
          */
-        entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        entries = restoreFromString(br.toString(), TypeRef.MAP);
         data = (Map<String, Object>) entries.get("data");
         final String hostsStr = (String) data.get("list");
         final String[] hosts = hostsStr.split(";");
@@ -351,7 +351,7 @@ public class EsouboryCz extends PluginForHost {
                      * 2021-07-26: This may also returns teh following on invalid token </br>
                      * {"error":"","data":{"credit":0,"last_login":null}}
                      */
-                    final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                    final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
                     final Map<String, Object> data = (Map<String, Object>) entries.get("data");
                     if (data.get("last_login") != null) {
                         logger.info("Token login successful");
@@ -364,7 +364,7 @@ public class EsouboryCz extends PluginForHost {
             logger.info("Performing full login");
             br.getPage(API_BASE + "/login?email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
             checkErrorsAPI(this.br);
-            final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
             final Map<String, Object> data = (Map<String, Object>) entries.get("data");
             token = (String) data.get("token");
             if (StringUtils.isEmpty(token)) {
@@ -376,7 +376,7 @@ public class EsouboryCz extends PluginForHost {
     }
 
     private void checkErrorsAPI(final Browser br) throws AccountUnavailableException, AccountInvalidException {
-        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
         final String error = (String) entries.get("error");
         /* "error":"" == default! */
         if (!StringUtils.isEmpty(error)) {

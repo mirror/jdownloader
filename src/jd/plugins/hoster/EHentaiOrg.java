@@ -275,7 +275,7 @@ public class EHentaiOrg extends PluginForHost {
                 host = "e-hentai.org";
                 br.postPageRaw("https://api.e-hentai.org/api.php", JSonStorage.serializeToJson(postData));
             }
-            final Map<String, Object> entries = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+            final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
             final String filesizeStr;
             final String lowResInfo = (String) entries.get("d");
             final String origInfo = (String) entries.get("o");

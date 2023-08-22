@@ -83,7 +83,7 @@ public class IssuuCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (filename == null) {
-            final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
             link.setFinalFileName(entries.get("title") + ".pdf");
         }
         return AvailableStatus.TRUE;
@@ -171,7 +171,7 @@ public class IssuuCom extends PluginForHost {
         br.getPage("/call/document-page/document-download/" + getUsername(link) + "/" + this.getDocumentSlug(link));
         Map<String, Object> entries = null;
         try {
-            entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            entries = restoreFromString(br.toString(), TypeRef.MAP);
         } catch (final JSonMapperException e) {
             if (br.getHttpConnection().getResponseCode() == 403) {
                 /* No json response --> Document not downloadable --> Check for errormessage in plaintext */

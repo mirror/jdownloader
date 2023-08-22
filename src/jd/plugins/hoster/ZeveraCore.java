@@ -418,7 +418,7 @@ abstract public class ZeveraCore extends UseNet {
     public AccountInfo fetchAccountInfoAPI(final Browser br, final String client_id, final Account account) throws Exception {
         login(br, account, true, client_id);
         final AccountInfo ai = new AccountInfo();
-        final Map<String, Object> userinfo = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+        final Map<String, Object> userinfo = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         final String customerID = userinfo.get("customer_id").toString();
         if (customerID != null) {
             account.setUser(customerID);
@@ -684,7 +684,7 @@ abstract public class ZeveraCore extends UseNet {
                         logger.info("Token expired or user has revoked access --> Full login required");
                     }
                     br.postPage("https://www." + account.getHoster() + "/token", "response_type=device_code&client_id=" + clientID);
-                    Map<String, Object> entries = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+                    Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
                     final long interval_seconds = ((Number) entries.get("interval")).longValue();
                     final long expires_in_seconds = ((Number) entries.get("expires_in")).longValue() - interval_seconds;
                     final long expires_in_timestamp = System.currentTimeMillis() + expires_in_seconds * 1000l;
@@ -704,7 +704,7 @@ abstract public class ZeveraCore extends UseNet {
                             logger.info("Waiting for user to authorize application: " + loop);
                             Thread.sleep(interval_seconds * 1001l);
                             br.postPage("https://www." + account.getHoster() + "/token", "grant_type=device_code&client_id=" + clientID + "&code=" + device_code);
-                            entries = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+                            entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
                             access_token = (String) entries.get("access_token");
                             if (!StringUtils.isEmpty(access_token)) {
                                 success = true;

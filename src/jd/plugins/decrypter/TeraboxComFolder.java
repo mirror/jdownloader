@@ -235,7 +235,7 @@ public class TeraboxComFolder extends PluginForDecrypt {
             queryFolder.addAndReplace("num", Integer.toString(maxItemsPerPage));
             final String requesturl = "https://www." + this.getHost() + "/share/list?" + queryFolder.toString();
             br.getPage(requesturl);
-            entries = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+            entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
             int errno = ((Number) entries.get("errno")).intValue();
             if (errno == -9) {
                 /* Password protected folder */
@@ -265,7 +265,7 @@ public class TeraboxComFolder extends PluginForDecrypt {
                     if (errno == -62) {
                         captchaRequired = true;
                         br.getPage("/api/getcaptcha?prod=shareverify&app_id=" + getAppID() + "&web=1&channel=" + getChannel() + "&clienttype=" + getClientType());
-                        entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                        entries = restoreFromString(br.toString(), TypeRef.MAP);
                         final String captchaurl = (String) entries.get("vcode_img");
                         final String code = this.getCaptchaCode(captchaurl, param);
                         querypwPOST.appendEncoded("vcode", code);
@@ -275,7 +275,7 @@ public class TeraboxComFolder extends PluginForDecrypt {
                         querypwPOST.add("vcode_str", "");
                     }
                     br.postPage("/share/verify?" + querypw.toString(), querypwPOST);
-                    entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                    entries = restoreFromString(br.toString(), TypeRef.MAP);
                     errno = ((Number) entries.get("errno")).intValue();
                     passwordCookie = (String) entries.get("randsk");
                     if (!StringUtils.isEmpty(passwordCookie)) {
@@ -307,7 +307,7 @@ public class TeraboxComFolder extends PluginForDecrypt {
                 trustPassword = true;
                 /* Repeat the first request -> We should be able to access the folder now. */
                 br.getPage(requesturl);
-                entries = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+                entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
             }
             errno = ((Number) entries.get("errno")).intValue();
             if (errno != 0 || !entries.containsKey("list")) {

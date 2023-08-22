@@ -128,7 +128,7 @@ public class TransfernowNet extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final Map<String, Object> root = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> root = restoreFromString(br.toString(), TypeRef.MAP);
         final List<Map<String, Object>> files = (List<Map<String, Object>>) root.get("files");
         long totalSize = 0;
         for (final Map<String, Object> file : files) {
@@ -175,7 +175,7 @@ public class TransfernowNet extends PluginForHost {
             if (br.getHttpConnection().getResponseCode() == 403 && link.isPasswordProtected()) {
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
             }
-            final Map<String, Object> root = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            final Map<String, Object> root = restoreFromString(br.toString(), TypeRef.MAP);
             final String dllink = (String) root.get("url");
             if (StringUtils.isEmpty(dllink)) {
                 logger.warning("Failed to find final downloadurl");

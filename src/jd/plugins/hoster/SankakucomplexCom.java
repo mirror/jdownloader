@@ -217,7 +217,7 @@ public class SankakucomplexCom extends antiDDoSForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final List<Object> ressourcelist = JSonStorage.restoreFromString(br.toString(), TypeRef.LIST);
+        final List<Object> ressourcelist = restoreFromString(br.toString(), TypeRef.LIST);
         if (ressourcelist.isEmpty()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }

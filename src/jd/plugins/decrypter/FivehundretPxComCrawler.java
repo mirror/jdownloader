@@ -81,7 +81,7 @@ public class FivehundretPxComCrawler extends PluginForDecrypt {
                 userID = "";
                 final Browser brc = br.cloneBrowser();
                 brc.getPage("https://api.500px.com/v1/users/search?term=" + URLEncode.encodeURIComponent(username));
-                final Map<String, Object> map = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
+                final Map<String, Object> map = restoreFromString(brc.toString(), TypeRef.MAP);
                 final List<Map<String, Object>> users = (List<Map<String, Object>>) map.get("users");
                 for (Map<String, Object> user : users) {
                     final String realUserName = StringUtils.valueOfOrNull(user.get("username"));
@@ -177,7 +177,7 @@ public class FivehundretPxComCrawler extends PluginForDecrypt {
             while (!isAbort()) {
                 br.getPage("https://api.500px.com/v1/users/" + userID + "/galleries/" + galleryID + "/items?rpp=50&image_size[]=1&image_size[]=2&image_size[]=32&image_size[]=31&image_size[]=33&image_size[]=34&image_size[]=35&image_size[]=36&image_size[]=2048&image_size[]=4&image_size[]=14&include_licensing=true&formats=jpeg,lytro&sort=position&sort_direction=asc&page=" + page++ + "&rpp=50");
                 checkErrorsAPI(br);
-                final Map<String, Object> map = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                final Map<String, Object> map = restoreFromString(br.toString(), TypeRef.MAP);
                 final List<Map<String, Object>> photos = (List<Map<String, Object>>) map.get("photos");
                 if (photos == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -205,7 +205,7 @@ public class FivehundretPxComCrawler extends PluginForDecrypt {
                 logger.info("Crawling page: " + page);
                 br.getPage("https://api.500px.com/v1/photos?feature=user&stream=photos&username=" + userName + "&include_states=true&image_size[]=1&image_size[]=2&image_size[]=32&image_size[]=31&image_size[]=33&image_size[]=34&image_size[]=35&image_size[]=36&image_size[]=2048&image_size[]=4&image_size[]=14&include_licensing=true&page=" + page++ + "&rpp=50");
                 checkErrorsAPI(br);
-                final Map<String, Object> map = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                final Map<String, Object> map = restoreFromString(br.toString(), TypeRef.MAP);
                 final List<Map<String, Object>> photos = (List<Map<String, Object>>) map.get("photos");
                 if (photos == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

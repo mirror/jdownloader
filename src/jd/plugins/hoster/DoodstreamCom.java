@@ -192,7 +192,7 @@ public class DoodstreamCom extends XFileSharingProBasic {
                 query.add("_", Long.toString(System.currentTimeMillis()));
                 getPage("/?" + query.toString());
                 if (br.getRequest().getResponseHeader("content-type").contains("application/json")) {
-                    final Map<String, Object> response = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                    final Map<String, Object> response = restoreFromString(br.toString(), TypeRef.MAP);
                     if (response.get("status").toString().equalsIgnoreCase("otp_sent")) {
                         /* {"status":"otp_sent","message":"OTP has been sent to your mail"} */
                         logger.info("2FA code required");
@@ -463,7 +463,7 @@ public class DoodstreamCom extends XFileSharingProBasic {
             final Browser brc = br.cloneBrowser();
             brc.getPage(cptr);
             try {
-                final Map<String, Object> response = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
+                final Map<String, Object> response = restoreFromString(brc.toString(), TypeRef.MAP);
                 String filename = doodExe((String) JavaScriptEngineFactory.walkJson(response, "ttl/crp"), (String) JavaScriptEngineFactory.walkJson(response, "ttl/crs"));
                 if (!StringUtils.isEmpty(filename)) {
                     if (!StringUtils.endsWithCaseInsensitive(filename, ".mp4")) {

@@ -467,7 +467,7 @@ public class EightTracksCom extends antiDDoSForHost {
                 accessSoundcloudLink(br2, dlink);
             } catch (final Throwable e) {
             }
-            final List<Object> ressourcelist = JSonStorage.restoreFromString(br.toString(), TypeRef.LIST);
+            final List<Object> ressourcelist = restoreFromString(br.toString(), TypeRef.LIST);
             final String streamlink = jd.plugins.hoster.SoundcloudCom.getDirectlink(this, null, br2, (Map<String, Object>) ressourcelist.get(0));
             return streamlink;
         } else {

@@ -83,7 +83,7 @@ public class RozhlasCz extends PluginForDecrypt {
         /* 2022-02-28 */
         final String json = br.getRegex("data-player='(\\{.*?\\})'").getMatch(0);
         if (json != null) {
-            final Map<String, Object> entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
+            final Map<String, Object> entries = restoreFromString(json, TypeRef.MAP);
             final Map<String, Object> data = (Map<String, Object>) entries.get("data");
             final List<Map<String, Object>> playlist = (List<Map<String, Object>>) data.get("playlist");
             for (final Map<String, Object> audio : playlist) {

@@ -186,7 +186,7 @@ public class HogTv extends PluginForHost {
             final Browser brc = br.cloneBrowser();
             brc.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             brc.postPage("/api/video-info", "videoId=" + this.getFID(link));
-            final Map<String, Object> entries = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
+            final Map<String, Object> entries = restoreFromString(brc.toString(), TypeRef.MAP);
             dllink = (String) entries.get("downloadUrl");
         }
         final String ext = ".mp4";

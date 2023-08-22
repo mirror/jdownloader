@@ -145,7 +145,7 @@ public class DocplayerNet extends PluginForHost {
                 }
                 query.add("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                 brc.getPage("/doc/get-download-link/?" + query.toString());
-                final Map<String, Object> entries = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
+                final Map<String, Object> entries = restoreFromString(brc.toString(), TypeRef.MAP);
                 dllink = (String) JavaScriptEngineFactory.walkJson(entries, "message/url");
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);

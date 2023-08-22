@@ -348,7 +348,7 @@ public class PeekVidsCom extends PluginForHost {
                 logger.info("Performing full login");
                 br.setFollowRedirects(true);
                 br.postPage("https://accounts.playvids.com/de/login/peekvids", "remember_me=on&back_url=&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-                final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
                 final String status = (String) entries.get("status");
                 final String redirect = (String) entries.get("redirect");
                 if (!"ok".equals(status)) {

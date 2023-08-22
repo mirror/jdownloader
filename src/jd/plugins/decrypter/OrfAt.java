@@ -299,7 +299,7 @@ public class OrfAt extends PluginForDecrypt {
         final Map<String, Object> loopstream = (Map<String, Object>) channelInfo.get("loopstream");
         br.setAllowedResponseCodes(410);
         br.getPage(API_BASE + "/" + domainIDCorrected + "/api/json/current/broadcast/" + broadcastID + "/" + broadcastDay + "?_s=" + System.currentTimeMillis());
-        final Map<String, Object> response = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> response = restoreFromString(br.toString(), TypeRef.MAP);
         if (br.getHttpConnection().getResponseCode() == 410 || "Broadcast is no longer available".equals(response.get("message"))) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -371,7 +371,7 @@ public class OrfAt extends PluginForDecrypt {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+        final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         final Map<String, Object> payload = (Map<String, Object>) entries.get("payload");
         final Map<String, Object> collectionContent = (Map<String, Object>) payload.get("content");
         final String collectionTitle = collectionContent.get("title").toString();
@@ -466,7 +466,7 @@ public class OrfAt extends PluginForDecrypt {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final Map<String, Object> resp = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+        final Map<String, Object> resp = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         final Map<String, Object> payload = (Map<String, Object>) resp.get("payload");
         final Map<String, Object> podcast = (Map<String, Object>) payload.get("podcast");
         final String author = podcast.get("author").toString();
@@ -512,7 +512,7 @@ public class OrfAt extends PluginForDecrypt {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final Map<String, Object> resp = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+        final Map<String, Object> resp = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         final Map<String, Object> payload = (Map<String, Object>) resp.get("payload");
         final Map<String, Object> broadcast = (Map<String, Object>) payload.get("broadcast");
         final ArrayList<Map<String, Object>> streams = new ArrayList<Map<String, Object>>();
@@ -530,7 +530,7 @@ public class OrfAt extends PluginForDecrypt {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final Map<String, Object> resp = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+        final Map<String, Object> resp = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         final Map<String, Object> broadcast = (Map<String, Object>) resp.get("payload");
         return crawlProcessBroadcastItems(broadcast, (List<Map<String, Object>>) broadcast.get("streams"));
     }
@@ -581,7 +581,7 @@ public class OrfAt extends PluginForDecrypt {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final Map<String, Object> resp = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+        final Map<String, Object> resp = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         final Map<String, Object> payload = (Map<String, Object>) resp.get("payload");
         if ((Boolean) payload.get("isOnline") == Boolean.FALSE) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

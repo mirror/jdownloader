@@ -314,7 +314,7 @@ public class FreeDiscPl extends PluginForHost {
             logger.info("Cannot do linkcheck due to antiBot captcha");
             return AvailableStatus.UNCHECKABLE;
         }
-        final Map<String, Object> root = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> root = restoreFromString(br.toString(), TypeRef.MAP);
         /* TODO: Make use of field "current_file_description" */
         final Map<String, Object> data = (Map<String, Object>) JavaScriptEngineFactory.walkJson(root, "response/data");
         if ((Boolean) data.get("file_exists") == Boolean.FALSE) {
@@ -579,7 +579,7 @@ public class FreeDiscPl extends PluginForHost {
                     /* TODO: Improve errorhandling */
                     postPageRaw("/download/payment_info", "{\"item_id\":\"" + fid + "\",\"item_type\":1,\"code\":\"\",\"file_id\":" + fid + ",\"no_headers\":1,\"menu_visible\":0}", account);
                     try {
-                        final Map<String, Object> root = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                        final Map<String, Object> root = restoreFromString(br.toString(), TypeRef.MAP);
                         final Map<String, Object> response = (Map<String, Object>) root.get("response");
                         final String html = (String) response.get("html");
                         final Map<String, Object> download_data = (Map<String, Object>) response.get("download_data");
@@ -971,7 +971,7 @@ public class FreeDiscPl extends PluginForHost {
         final Browser brc = br.cloneBrowser();
         prepBRAjax(brc);
         brc.getPage("/settings/get/");
-        final Map<String, Object> root = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> root = restoreFromString(brc.toString(), TypeRef.MAP);
         final Map<String, Object> response = (Map<String, Object>) root.get("response");
         final Map<String, Object> profile = (Map<String, Object>) response.get("profile");
         final Map<String, Object> user_settings = (Map<String, Object>) response.get("user_settings");

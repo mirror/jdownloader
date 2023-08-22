@@ -60,7 +60,7 @@ public class MangadexOrg extends antiDDoSForDecrypt {
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            Map<String, Object> root = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            Map<String, Object> root = restoreFromString(br.toString(), TypeRef.MAP);
             if (!"ok".equals(root.get("result"))) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -79,7 +79,7 @@ public class MangadexOrg extends antiDDoSForDecrypt {
                 int limit = 32;
                 while (!isAbort()) {
                     getPage(apiBase + "cover?order[volume]=asc&manga[]=" + mangaID + "&limit=" + limit + "&offset=" + offset);
-                    root = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                    root = restoreFromString(br.toString(), TypeRef.MAP);
                     if (!"ok".equals(root.get("result"))) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
@@ -127,7 +127,7 @@ public class MangadexOrg extends antiDDoSForDecrypt {
                 int limit = 32;
                 while (!isAbort()) {
                     getPage(apiBase + "manga/" + mangaID + "/feed?limit=" + limit + "&includes[]=scanlation_group&includes[]=user&order[volume]=desc&order[chapter]=desc&offset=" + offset + "&contentRating[]=safe&contentRating[]=suggestive&contentRating[]=erotica&contentRating[]=pornographic");
-                    root = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                    root = restoreFromString(br.toString(), TypeRef.MAP);
                     if (!"ok".equals(root.get("result"))) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
@@ -158,7 +158,7 @@ public class MangadexOrg extends antiDDoSForDecrypt {
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            final Map<String, Object> root = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            final Map<String, Object> root = restoreFromString(br.toString(), TypeRef.MAP);
             final Map<String, Object> data = (Map<String, Object>) root.get("data");
             final Map<String, Object> attributes = (Map<String, Object>) data.get("attributes");
             final StringBuilder sb = new StringBuilder();
@@ -233,7 +233,7 @@ public class MangadexOrg extends antiDDoSForDecrypt {
                 titleForFilename = mangaTitle;
             }
             this.getPage("/at-home/server/" + chapterID + "?forcePort443=false");
-            final Map<String, Object> root2 = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            final Map<String, Object> root2 = restoreFromString(br.toString(), TypeRef.MAP);
             final Map<String, Object> chapter2 = (Map<String, Object>) root2.get("chapter");
             final String baseUrl = (String) root2.get("baseUrl");
             final String hash = (String) chapter2.get("hash");

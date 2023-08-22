@@ -109,7 +109,7 @@ public class SweetpornOrg extends PluginForDecrypt {
             logger.info("Crawling item " + (index + 1) + " / " + ids.length);
             final Browser brc = br.cloneBrowser();
             brc.postPage("/get_file.php", "id=" + Encoding.urlEncode(id));
-            final Map<String, Object> entries = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
+            final Map<String, Object> entries = restoreFromString(brc.toString(), TypeRef.MAP);
             final String html = (String) entries.get("htmlcode");
             final String url = new Regex(html, "<a href=\"([^\"]+)").getMatch(0);
             if (url != null) {

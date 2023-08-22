@@ -124,7 +124,7 @@ public class AtvAt extends PluginForDecrypt {
             } else {
                 /* New 2021-04-15 */
                 final String partsJson = br.getRegex("var playlist\\s*=\\s*(\\[.*?\\]);").getMatch(0);
-                parts = JSonStorage.restoreFromString(partsJson, TypeRef.LIST);
+                parts = restoreFromString(partsJson, TypeRef.LIST);
             }
         } catch (final Throwable ignore) {
             logger.log(ignore);

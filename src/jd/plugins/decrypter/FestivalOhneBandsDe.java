@@ -16,6 +16,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -129,6 +130,7 @@ public class FestivalOhneBandsDe extends PluginForDecrypt {
             fp.setName("FoB - " + galleryTitleSlugClean);
             galleryPath = "FoB/" + galleryTitleSlugClean;
         }
+        final HashSet<String> dupes = new HashSet<String>();
         int page = 1;
         for (final String json : jsons) {
             logger.info("Crawling page " + page + "/" + jsons.length);
@@ -153,10 +155,15 @@ public class FestivalOhneBandsDe extends PluginForDecrypt {
             brc.getHeaders().put("Origin", "https://" + br.getHost());
             brc.submitForm(form);
             final String[] urls = brc.getRegex("(/wp-content/uploads/[^<>\"\\']+)").getColumn(0);
-            if (urls.length == 0) {
+            if (urls == null || urls.length == 0) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            logger.info("Crawled page " + page + "/" + jsons.length + " | Found items so far: " + ret.size());
             for (final String url : urls) {
+                if (!dupes.add(url)) {
+                    /* Skip dupes */
+                    continue;
+                }
                 final DownloadLink image = this.createDownloadlink(br.getURL(url).toString());
                 image.setRelativeDownloadFolderPath(galleryPath);
                 image.setAvailable(true);
@@ -165,7 +172,10 @@ public class FestivalOhneBandsDe extends PluginForDecrypt {
                 distribute(image);
             }
             if (this.isAbort()) {
+                logger.info("Pagination aborted by user");
                 break;
+            } else {
+                page++;
             }
         }
         return ret;

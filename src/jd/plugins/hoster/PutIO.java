@@ -2,9 +2,14 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.net.HTTPHeader;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -22,13 +27,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.net.HTTPHeader;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "put.io" }, urls = { "https?://(?:[a-z0-9\\-]+\\.)?put\\.io/(?:(?:v2/)?files/\\d+/(mp4/download(/[^/]*)?|download(/[^/]*)?)|zipstream/\\d+.*|download/\\d+.*)\\?oauth_token=[A-Z0-9]+" })
 public class PutIO extends PluginForHost {
@@ -75,7 +73,7 @@ public class PutIO extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             }
         }
-        final Map<String, Object> infoResponse = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> infoResponse = restoreFromString(br.toString(), TypeRef.MAP);
         final Map<String, Object> info = (Map<String, Object>) infoResponse.get("info");
         final String dateExpireStr = (String) info.get("plan_expiration_date");
         final long dateExpire = TimeFormatter.getMilliSeconds(dateExpireStr, "yyyy-MM-dd'T'HH:mm:ss", Locale.ENGLISH);
@@ -182,7 +180,7 @@ public class PutIO extends PluginForHost {
             if (responseCode != 200) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
-            final HashMap<String, Object> authResponse = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP, null);
+            final Map<String, Object> authResponse = restoreFromString(br.toString(), TypeRef.HASHMAP);
             access_token = (String) authResponse.get("access_token");
             if (StringUtils.isEmpty(access_token)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

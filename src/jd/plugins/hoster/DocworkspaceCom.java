@@ -115,7 +115,7 @@ public class DocworkspaceCom extends PluginForHost {
             /* Assume that content is offline */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final Map<String, Object> root = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
+        final Map<String, Object> root = restoreFromString(json, TypeRef.MAP);
         final Map<String, Object> file = (Map<String, Object>) root.get("file");
         // final boolean accountRequired = ((Boolean) root.get("needLogin")).booleanValue();
         // if (accountRequired) {
@@ -149,7 +149,7 @@ public class DocworkspaceCom extends PluginForHost {
             final Browser brc = br.cloneBrowser();
             brc.getHeaders().put("Accept", "application/json, text/plain, */*");
             brc.getPage("https://ru-drive.wps.com/api/v3/links/" + this.getFID(link) + "/download?isblocks=false");
-            final Map<String, Object> entries = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
+            final Map<String, Object> entries = restoreFromString(brc.toString(), TypeRef.MAP);
             final Map<String, Object> fileInfo = (Map<String, Object>) entries.get("fileinfo");
             if (fileInfo == null) {
                 final String errorMsg = (String) entries.get("msg");

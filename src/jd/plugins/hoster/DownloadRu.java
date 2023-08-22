@@ -113,7 +113,7 @@ public class DownloadRu extends PluginForHost {
             /* 2020-09-25: E.g. {"code":404,"reason":"file","message":"File not found."} */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        entries = restoreFromString(br.toString(), TypeRef.MAP);
         entries = (Map<String, Object>) entries.get("object");
         final boolean is_dir = ((Boolean) entries.get("is_dir")).booleanValue();
         if (is_dir) {

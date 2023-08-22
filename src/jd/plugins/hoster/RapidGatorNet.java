@@ -447,7 +447,7 @@ public class RapidGatorNet extends antiDDoSForHost {
             br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             br2.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
             getPage(br2, "/download/AjaxStartTimer?fid=" + fid);
-            Map<String, Object> entries = JSonStorage.restoreFromString(br2.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+            Map<String, Object> entries = restoreFromString(br2.getRequest().getHtmlCode(), TypeRef.MAP);
             final String sid = (String) entries.get("sid");
             String state = (String) entries.get("state");
             if (!"started".equalsIgnoreCase(state)) {

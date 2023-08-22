@@ -167,7 +167,7 @@ public class EmpflixCom extends PluginForHost {
          * failure then.
          */
         br.getPage("https://www." + this.getHost() + "/ajax/video-player/" + videoid);
-        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
         final String html = entries.get("html").toString();
         final String[] urls = new Regex(html, "src=\"(https?://[^\"]+)\"").getColumn(0);
         String bestQualityDownloadurl = null;

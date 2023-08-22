@@ -81,7 +81,7 @@ public class DoubleJNetAu extends PluginForHost {
             // get associated json crapola
             // getAjax("http://program.abcradio.net.au/api/v1/on_demand/" + contentID + ".json");
             getAjax("https://program.abcradio.net.au/api/v1/programitems/" + contentID + ".json");
-            final Map<String, Object> root = JSonStorage.restoreFromString(ajax.toString(), TypeRef.HASHMAP);
+            final Map<String, Object> root = restoreFromString(ajax.toString(), TypeRef.MAP);
             dllinkHTTP = br.getRegex("(?i)Try to\\s*<a href=\"(https?://[^<>\"]+\\.mp3)\"").getMatch(0);
             link.setFinalFileName(root.get("title").toString() + ".m4a");
         }

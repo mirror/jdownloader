@@ -114,7 +114,7 @@ public class MetArtCrawler extends PluginForDecrypt {
                 if (br.getHttpConnection().getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                Map<String, Object> entries = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+                Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
                 final String uuid = (String) entries.get("UUID");
                 entries = (Map<String, Object>) entries.get("files");
                 entries = (Map<String, Object>) entries.get("sizes");
@@ -140,7 +140,7 @@ public class MetArtCrawler extends PluginForDecrypt {
                 if (br.getHttpConnection().getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                final Map<String, Object> entries = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+                final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
                 final List<Map<String, Object>> imagesO = (List<Map<String, Object>>) entries.get("media");
                 for (final Map<String, Object> image : imagesO) {
                     final String uuid = image.get("UUID").toString();
@@ -167,7 +167,7 @@ public class MetArtCrawler extends PluginForDecrypt {
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            final Map<String, Object> entries = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+            final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(modelname + " - " + date + " - " + galleryname);
             fp.setComment(entries.get("description").toString());

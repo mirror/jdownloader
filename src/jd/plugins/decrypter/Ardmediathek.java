@@ -618,7 +618,7 @@ public class Ardmediathek extends PluginForDecrypt {
             /* Assume that content is offline */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final Map<String, Object> root = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
+        final Map<String, Object> root = restoreFromString(json, TypeRef.MAP);
         return crawlWdrMediaObject(param, root);
     }
 

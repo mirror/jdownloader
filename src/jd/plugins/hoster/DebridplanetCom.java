@@ -113,7 +113,7 @@ public class DebridplanetCom extends PluginForHost {
             postdata.put("listurl", urllist);
             br.postPageRaw(API_BASE + "/gen_link.php", JSonStorage.serializeToJson(postdata));
             this.checkErrors(account, link);
-            final List<Object> ressourcelist = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.LIST);
+            final List<Object> ressourcelist = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.LIST);
             /* 2021-03-24: Sometimes they just return "[]" -> wtf */
             if (ressourcelist.size() == 0) {
                 mhm.handleErrorGeneric(account, this.getDownloadLink(), "API returned empty array", 50, 5 * 60 * 1000l);
@@ -171,7 +171,7 @@ public class DebridplanetCom extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         login(account, true);
-        Map<String, Object> entries = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+        Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         entries = (Map<String, Object>) entries.get("user");
         final String accountType = (String) entries.get("account_type");
         if (accountType.equalsIgnoreCase("free")) {
@@ -188,7 +188,7 @@ public class DebridplanetCom extends PluginForHost {
             ai.setUnlimitedTraffic();
         }
         br.getPage(API_BASE + "/supportedhosts.php");
-        entries = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+        entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         final ArrayList<String> supportedHosts = new ArrayList<String>();
         final List<Object> supportedHostsO = (List<Object>) entries.get("supportedhosts");
         for (final Object supportedHostO : supportedHostsO) {
@@ -233,7 +233,7 @@ public class DebridplanetCom extends PluginForHost {
                 postdata.put("username", account.getUser());
                 postdata.put("password", JDHash.getSHA256(account.getPass()));
                 br.postPageRaw(API_BASE + "/login.php", JSonStorage.serializeToJson(postdata));
-                final Map<String, Object> entries = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+                final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
                 final String token = (String) entries.get("token");
                 if (StringUtils.isEmpty(token)) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -253,7 +253,7 @@ public class DebridplanetCom extends PluginForHost {
     private Object checkErrors(final Account account, final DownloadLink link) throws PluginException, InterruptedException {
         Object jsonO = null;
         try {
-            jsonO = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.OBJECT);
+            jsonO = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.OBJECT);
             if (jsonO == null || !(jsonO instanceof Map)) {
                 return jsonO;
             }

@@ -172,7 +172,7 @@ public class RtveEs extends PluginForHost {
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
             entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "page/items/{0}");
             final String state = (String) JavaScriptEngineFactory.walkJson(entries, "pubState/code");
             if (state.equalsIgnoreCase("DESPU")) {
@@ -243,7 +243,7 @@ public class RtveEs extends PluginForHost {
             final Browser brc = br.cloneBrowser();
             brc.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             brc.getPage("https://www." + this.getHost() + "/odin/loki/" + Encoding.urlEncode(br.getRequest().getHeaders().getValue(HTTPConstants.HEADER_REQUEST_USER_AGENT)) + "/");
-            final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
             /* 2021-06-01: Usually this will have the value "banebdyede" */
             final String manager = (String) entries.get("manager");
             final String thumbnailB64URL = "https://ztnr.rtve.es/ztnr/movil/thumbnail/" + manager + "/videos/" + this.getFID(link) + ".png?q=v2";

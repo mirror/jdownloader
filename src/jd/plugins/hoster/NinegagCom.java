@@ -94,8 +94,8 @@ public class NinegagCom extends PluginForHost {
         Map<String, Object> root = null;
         boolean video = false;
         if (jsonParse != null) {
-            jsonParse = JSonStorage.restoreFromString(jsonParse, TypeRef.STRING);
-            root = JSonStorage.restoreFromString(jsonParse, TypeRef.HASHMAP);
+            jsonParse = restoreFromString(jsonParse, TypeRef.STRING);
+            root = restoreFromString(jsonParse, TypeRef.MAP);
             final Object postsO = JavaScriptEngineFactory.walkJson(root, "data/posts");
             Map<String, Object> post = null;
             if (postsO != null) {

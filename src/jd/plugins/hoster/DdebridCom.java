@@ -181,7 +181,7 @@ public class DdebridCom extends PluginForHost {
             br.getPage(API_BASE + "/info?token=" + token);
             handleErrors(br, account, null);
         }
-        Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
         final Object traffic_leftO = entries.get("traffic_left");
         boolean is_premium = "Premium".equalsIgnoreCase((String) entries.get("type"));
         if (!is_premium) {
@@ -217,7 +217,7 @@ public class DdebridCom extends PluginForHost {
             }
         }
         br.getPage(API_BASE + "/status");
-        entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        entries = restoreFromString(br.toString(), TypeRef.MAP);
         final ArrayList<String> supportedhostslist = new ArrayList<String>();
         final List<Object> ressourcelist = (List<Object>) entries.get("result");
         final PluginFinder finder = new PluginFinder();
@@ -293,7 +293,7 @@ public class DdebridCom extends PluginForHost {
     }
 
     private void handleErrors(final Browser br, final Account account, final DownloadLink link) throws PluginException, InterruptedException {
-        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
         final String status = (String) entries.get("status");
         if (!"success".equalsIgnoreCase(status)) {
             String errormsg = (String) entries.get("reason");

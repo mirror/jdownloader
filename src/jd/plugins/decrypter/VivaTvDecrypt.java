@@ -102,7 +102,7 @@ public class VivaTvDecrypt extends PluginForDecrypt {
         }
         /* Try to find all video objects */
         final ArrayList<Map<String, Object>> websiteVideoObjects = new ArrayList<Map<String, Object>>();
-        final Map<String, Object> root = JSonStorage.restoreFromString(jsonRoot, TypeRef.HASHMAP);
+        final Map<String, Object> root = restoreFromString(jsonRoot, TypeRef.MAP);
         findVideoMaps(websiteVideoObjects, root);
         if (websiteVideoObjects.isEmpty()) {
             logger.info("Failed to find any video items inside json");
@@ -124,7 +124,7 @@ public class VivaTvDecrypt extends PluginForDecrypt {
             final Map<String, Object> props = (Map<String, Object>) websiteVideoPlayerRoot.get("props");
             final String schemaText = (String) props.get("schema");
             if (schemaText != null) {
-                final Map<String, Object> schema = JSonStorage.restoreFromString(schemaText, TypeRef.HASHMAP);
+                final Map<String, Object> schema = restoreFromString(schemaText, TypeRef.MAP);
                 final String mediaType = (String) schema.get("@type");
                 if (mediaType.equalsIgnoreCase("TVEpisode")) {
                     final Map<String, Object> partOfSeries = (Map<String, Object>) schema.get("partOfSeries");
@@ -145,7 +145,7 @@ public class VivaTvDecrypt extends PluginForDecrypt {
             query.add("configtype", "edge");
             query.add("ref", Encoding.urlEncode(param.getCryptedUrl()));
             brc.getPage("https://media.mtvnservices.com/pmt/e1/access/index.html?" + query.toString());
-            final Map<String, Object> uriRoot = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
+            final Map<String, Object> uriRoot = restoreFromString(brc.toString(), TypeRef.MAP);
             final Map<String, Object> feed = (Map<String, Object>) uriRoot.get("feed");
             final String title = (String) feed.get("title");
             final String description = (String) feed.get("description");
@@ -191,7 +191,7 @@ public class VivaTvDecrypt extends PluginForDecrypt {
                 final Browser brMedia = br.cloneBrowser();
                 brMedia.getHeaders().put("Accept", "application/json");
                 brMedia.getPage(mediagenURLWithoutParams + "?" + queryMediagen.toString());
-                final Map<String, Object> video = JSonStorage.restoreFromString(brMedia.toString(), TypeRef.HASHMAP);
+                final Map<String, Object> video = restoreFromString(brMedia.toString(), TypeRef.MAP);
                 final List<Map<String, Object>> videoStreams = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(video, "package/video/item");
                 if (videoStreams.size() > 1) {
                     logger.warning("Multiple video streams available: " + videoStreams.size());

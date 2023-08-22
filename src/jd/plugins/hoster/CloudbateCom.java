@@ -94,7 +94,7 @@ public class CloudbateCom extends antiDDoSForHost {
         }
         br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
         this.postPage("/wp-admin/admin-ajax.php", "action=my_xv_mo&post_type=POST&xv=" + Encoding.urlEncode(dataXV) + "&mo=" + Encoding.urlEncode(dataMO));
-        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
         br.getRequest().setHtmlCode((String) entries.get("video"));
         this.dllink = br.getRegex("<source src=(?:\"|\\')(https?://[^<>\"\\']*?)(?:\"|\\')[^>]*?type=(?:\"|\\')(?:video/)?(?:mp4|flv)(?:\"|\\')").getMatch(0);
         if (!StringUtils.isEmpty(dllink)) {

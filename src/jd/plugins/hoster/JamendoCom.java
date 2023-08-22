@@ -146,7 +146,7 @@ public class JamendoCom extends PluginForHost {
                     query.add("id%5B%5D", this.getFID(link));
                 }
                 queryAPI(br, "/tracks?" + query.toString());
-                final List<Map<String, Object>> tracks = (List<Map<String, Object>>) JSonStorage.restoreFromString(br.toString(), TypeRef.OBJECT);
+                final List<Map<String, Object>> tracks = (List<Map<String, Object>>) restoreFromString(br.toString(), TypeRef.OBJECT);
                 for (final DownloadLink link : links) {
                     Map<String, Object> trackInfo = null;
                     final String trackID = this.getFID(link);
@@ -259,7 +259,7 @@ public class JamendoCom extends PluginForHost {
             return ARTIST_INFO_CACHE.get(artistID);
         } else {
             queryAPI(br, "/artists?id%5B%5D=" + artistID);
-            final List<Object> artists = JSonStorage.restoreFromString(br.toString(), TypeRef.LIST);
+            final List<Object> artists = restoreFromString(br.toString(), TypeRef.LIST);
             if (artists.isEmpty()) {
                 /* Artist not found */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

@@ -130,7 +130,7 @@ public class DouyinCom extends PluginForHost {
             // if (brc.getHttpConnection().getResponseCode() == 404) {
             // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             // }
-            Map<String, Object> entries = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
+            Map<String, Object> entries = restoreFromString(brc.toString(), TypeRef.MAP);
             final List<Object> results = (List<Object>) entries.get("item_list");
             /* List is empty --> Video must be offline */
             if (results.isEmpty()) {
@@ -166,7 +166,7 @@ public class DouyinCom extends PluginForHost {
             }
             String json = br.getRegex("<script id=\"RENDER_DATA\" type=\"application/json\">(.*?)<").getMatch(0);
             json = Encoding.htmlDecode(json);
-            Map<String, Object> entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
+            Map<String, Object> entries = restoreFromString(json, TypeRef.MAP);
             final Map<String, Object> aweme = (Map<String, Object>) findAwemeMap(entries);
             if (aweme == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

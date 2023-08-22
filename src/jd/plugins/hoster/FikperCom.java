@@ -195,7 +195,7 @@ public class FikperCom extends PluginForHost {
                 postdata.put("links", urlstocheck);
                 br.postPageRaw(API_BASE + "api/file/check-links", JSonStorage.serializeToJson(postdata));
                 this.checkErrorsAPI(br, null, account, null);
-                final List<Map<String, Object>> ressourcelist = (List<Map<String, Object>>) JSonStorage.restoreFromString(br.toString(), TypeRef.OBJECT);
+                final List<Map<String, Object>> ressourcelist = (List<Map<String, Object>>) restoreFromString(br.toString(), TypeRef.OBJECT);
                 for (final DownloadLink link : links) {
                     if (!link.isNameSet()) {
                         link.setName(this.getWeakFilename(link));

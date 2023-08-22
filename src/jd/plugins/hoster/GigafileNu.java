@@ -152,7 +152,7 @@ public class GigafileNu extends PluginForHost {
             final String filesJson = br.getRegex("var files = (\\[.*?\\]);").getMatch(0);
             String fileIDForDownload = null;
             if (filesJson != null) {
-                final List<Object> ressourcelist = JSonStorage.restoreFromString(filesJson, TypeRef.LIST);
+                final List<Object> ressourcelist = restoreFromString(filesJson, TypeRef.LIST);
                 if (ressourcelist.size() == 1) {
                     /* Single file -> Download that, else .zip of all files. */
                     final Map<String, Object> filemap = (Map<String, Object>) ressourcelist.get(0);

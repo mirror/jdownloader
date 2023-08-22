@@ -309,7 +309,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
         query.add("traffic_segment", traffic_segment);
         query.add("visitor_id", visitor_id);
         brg.postPage(auth_url, query);
-        final Map<String, Object> entries = JSonStorage.restoreFromString(brg.getRequest().getHtmlCode(), TypeRef.MAP);
+        final Map<String, Object> entries = restoreFromString(brg.getRequest().getHtmlCode(), TypeRef.MAP);
         final String access_token = (String) entries.get("access_token");
         // final String expires_in = entries.get("expires_in");
         if (StringUtils.isEmpty(access_token)) {
@@ -422,7 +422,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
             this.prepGraphqlBrowser(gbr);
             passCode = getUserInput("Password?", param);
             gbr.postPageRaw(DailyMotionCom.API_BASE_GRAPHQL, "{\"query\":\"query playerPasswordQuery($videoId:String!,$password:String!){video(xid:$videoId,password:$password){id xid}}\",\"variables\":{\"videoId\":\"" + videoID + "\",\"password\":\"" + passCode + "\"}}");
-            final Map<String, Object> pwResponse = JSonStorage.restoreFromString(gbr.toString(), TypeRef.HASHMAP);
+            final Map<String, Object> pwResponse = restoreFromString(gbr.toString(), TypeRef.MAP);
             if (pwResponse.containsKey("errors")) {
                 /*
                  * E.g. {"data": {"video": null}, "errors": [{"message":
@@ -463,7 +463,7 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
         /* Collect more video metadata */
         Long date = null;
         String dateFormatted = null;
-        final Map<String, Object> map = restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+        final Map<String, Object> map = restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.MAP);
         if (channelName == null) {
             channelName = (String) JavaScriptEngineFactory.walkJson(map, "metadata/owner/username");
             if (channelName == null) {

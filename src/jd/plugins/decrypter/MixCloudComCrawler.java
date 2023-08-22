@@ -130,7 +130,7 @@ public class MixCloudComCrawler extends antiDDoSForDecrypt {
         br.postPageRaw("/graphql",
                 "{\"query\":\"query UserProfileHeaderQuery(  $lookup: UserLookup!) {  user: userLookup(lookup: $lookup) {    id    displayName    username    isBranded    isStaff    isFollowing    isViewer    followers {      totalCount    }    hasCoverPicture    hasPremiumFeatures    hasProFeatures    picture {      primaryColor      ...UGCImage_picture    }    coverPicture {      urlRoot    }    ...UserBadge_user    ...ProfileNavigation_user    ...ShareUserButton_user    ...ProfileRegisterUpsellComponent_user    ...FollowButton_user    ...SelectUpsellButton_user  }  viewer {    ...ProfileRegisterUpsellComponent_viewer    ...FollowButton_viewer    id  }}fragment FollowButton_user on User {  id  isFollowed  isFollowing  isViewer  followers {    totalCount  }  username  displayName}fragment FollowButton_viewer on Viewer {  me {    id  }}fragment ProfileNavigation_user on User {  id  username  stream {    totalCount  }  favorites {    totalCount  }  listeningHistory {    totalCount  }  uploads {    totalCount  }  posts {    totalCount  }  profileNavigation {    menuItems {      __typename      ... on NavigationItemInterface {        __isNavigationItemInterface: __typename        inDropdown      }      ... on HideableNavigationItemInterface {        __isHideableNavigationItemInterface: __typename        hidden      }      ... on PlaylistNavigationItem {        count        playlist {          id          name          slug        }      }    }  }}fragment ProfileRegisterUpsellComponent_user on User {  id  displayName  followers {    totalCount  }}fragment ProfileRegisterUpsellComponent_viewer on Viewer {  me {    id  }}fragment SelectUpsellButton_user on User {  username  isSelect  isSubscribedTo  selectUpsell {    planInfo {      displayAmount    }  }}fragment ShareUserButton_user on User {  biog  username  displayName  id  isUploader  picture {    urlRoot  }}fragment UGCImage_picture on Picture {  urlRoot  primaryColor}fragment UserBadge_user on User {  username  hasProFeatures  hasPremiumFeatures  isStaff  isSelect}\",\"variables\":{\"lookup\":{\"username\":\""
                         + username + "\"}}}");
-        Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
         entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "data/user");
         if (entries == null) {
             /* Offline or invalid URL e.g. "https://www.mixcloud.com/about/" */
@@ -162,7 +162,7 @@ public class MixCloudComCrawler extends antiDDoSForDecrypt {
         fp.setName(username);
         do {
             logger.info("Crawling page: " + page);
-            entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            entries = restoreFromString(br.toString(), TypeRef.MAP);
             entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "data/user/uploads");
             final Map<String, Object> pageInfo = (Map<String, Object>) entries.get("pageInfo");
             final List<Object> audioObjects = (List<Object>) entries.get("edges");
@@ -318,7 +318,7 @@ public class MixCloudComCrawler extends antiDDoSForDecrypt {
                 downloadReq.getHeaders().put("x-requested-with", "XMLHttpRequest");
                 br.openRequestConnection(downloadReq);
                 br.loadConnection(null);
-                entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                entries = restoreFromString(br.toString(), TypeRef.MAP);
                 entries = (Map<String, Object>) entries.get("data");
                 Iterator<Entry<String, Object>> iterator = entries.entrySet().iterator();
                 while (iterator.hasNext()) {

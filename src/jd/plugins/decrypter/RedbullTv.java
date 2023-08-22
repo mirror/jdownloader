@@ -62,7 +62,7 @@ public class RedbullTv extends PluginForDecrypt {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final Map<String, Object> urlLookupRoot = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> urlLookupRoot = restoreFromString(br.toString(), TypeRef.MAP);
         /* Continue with internal videoID. */
         final String videoID = (String) JavaScriptEngineFactory.walkJson(urlLookupRoot, "data/translations/{0}/id");
         if (StringUtils.isEmpty(videoID)) {
@@ -74,7 +74,7 @@ public class RedbullTv extends PluginForDecrypt {
         } else {
             br.getPage("https://api-player.redbull.com/rbcom/vodwithplaylist?videoId=" + Encoding.urlEncode(videoID) + "&scoring=featuredFresh&disableUsageRestrictions=false&playlistItems=20&localeMixing=de-DE%3Ede-INT&relatedTo=" + Encoding.urlEncode(videoID) + "&spaces=redbull_com%2Crbtv%2Credbullmusic");
         }
-        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
         final String title = (String) entries.get("title");
         final String subtitle = (String) entries.get("subHeading");
         final String description = (String) entries.get("description");

@@ -77,7 +77,7 @@ public class GoGoAnimePro extends antiDDoSForDecrypt {
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.getPage("/ajax/" + type + "/servers" + "?" + query.toString());
         final String jsonSource = this.br.toString();
-        String videoDetails = (String) JavaScriptEngineFactory.walkJson(JSonStorage.restoreFromString(jsonSource, TypeRef.HASHMAP), "html");
+        String videoDetails = (String) JavaScriptEngineFactory.walkJson(restoreFromString(jsonSource, TypeRef.HASHMAP), "html");
         if (StringUtils.isEmpty(videoDetails)) {
             getLogger().warning("Could not retrieve video Detail JSON from webservice.");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -106,7 +106,7 @@ public class GoGoAnimePro extends antiDDoSForDecrypt {
                                 Thread.sleep(1000);
                                 getEpisodeResponse = br.getPage(getEpisode);
                             }
-                            String target = (String) JavaScriptEngineFactory.walkJson(JSonStorage.restoreFromString(getEpisodeResponse, TypeRef.HASHMAP), "target");
+                            String target = (String) JavaScriptEngineFactory.walkJson(restoreFromString(getEpisodeResponse, TypeRef.HASHMAP), "target");
                             if (StringUtils.isNotEmpty(target)) {
                                 decryptedLinks.add(createDownloadlink(Encoding.htmlOnlyDecode(target)));
                             }

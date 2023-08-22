@@ -161,7 +161,7 @@ public class CtDiskComFolder extends PluginForDecrypt {
             query.addAndReplace("passcode", passCode != null ? Encoding.urlEncode(passCode) : "");
             query.addAndReplace("r", "0." + System.currentTimeMillis());
             br.getPage(WEBAPI_BASE + "/getdir.php?" + query.toString());
-            folderinfo = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            folderinfo = restoreFromString(br.toString(), TypeRef.MAP);
             if (((Number) folderinfo.get("code")).intValue() == 401) {
                 if (passwordCounter > 3) {
                     throw new DecrypterException(DecrypterException.PASSWORD);
@@ -181,7 +181,7 @@ public class CtDiskComFolder extends PluginForDecrypt {
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(subfolderpath);
-        final Map<String, Object> folderoverview = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> folderoverview = restoreFromString(br.toString(), TypeRef.MAP);
         if (((Number) folderoverview.get("iTotalRecords")).intValue() == 0) {
             ret.add(this.createOfflinelink(param.getCryptedUrl(), "EMPTY_FOLDER " + subfolderpath, "EMPTY_FOLDER " + subfolderpath));
             return ret;

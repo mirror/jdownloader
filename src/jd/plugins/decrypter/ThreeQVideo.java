@@ -83,7 +83,7 @@ public class ThreeQVideo extends PluginForDecrypt {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final Map<String, Object> root = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> root = restoreFromString(br.toString(), TypeRef.MAP);
         final String contentType = root.get("streamContent").toString();
         if (StringUtils.equalsIgnoreCase(contentType, "live")) {
             logger.info("Livestreams are not supported");

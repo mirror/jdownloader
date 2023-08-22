@@ -84,7 +84,7 @@ public class FiveSingCom extends PluginForHost {
         src = Encoding.Base64Decode(src).replace("\\", "");
         String dllink = new Regex(src, "\"file\":\"(https?:[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) {
-            Map<String, Object> map = JSonStorage.restoreFromString(src, TypeRef.HASHMAP);
+            Map<String, Object> map = restoreFromString(src, TypeRef.MAP);
             final String songID = map.containsKey("songID") ? String.valueOf(map.get("songID")) : null;
             final String songType = map.containsKey("songType") ? String.valueOf(map.get("songType")) : null;
             if (StringUtils.isEmpty(songType) || StringUtils.isEmpty(songID)) {
@@ -92,7 +92,7 @@ public class FiveSingCom extends PluginForHost {
             }
             final Browser brc = br.cloneBrowser();
             brc.getPage("http://service.5sing.kugou.com/song/getsongurl?jsoncallback=jQuery" + System.currentTimeMillis() + "_" + System.currentTimeMillis() + "&songid=" + songID + "&songtype=" + songType + "&from=web&version=6.6.72&_=1539798427612");
-            map = JSonStorage.restoreFromString(new Regex(brc.toString(), "(\\{.+\\})").getMatch(0), TypeRef.HASHMAP);
+            map = restoreFromString(new Regex(brc.toString(), "(\\{.+\\})").getMatch(0), TypeRef.MAP);
             map = (Map<String, Object>) map.get("data");
             dllink = (String) map.get("lqurl");
             if (dllink == null) {

@@ -459,7 +459,7 @@ public class MotherLessCom extends PluginForHost {
             loginform.put("remember_me", "1");
             loginform.put("__remember_me", "0");
             br.submitForm(loginform);
-            final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
             if (!entries.get("status").toString().equalsIgnoreCase("ok")) {
                 /* E.g. {"status":"bad","type":"warning","message":"Incorrect username or password"} */
                 account.clearCookies("");

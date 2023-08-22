@@ -88,7 +88,7 @@ public class FexNet extends PluginForDecrypt {
         // decryptedLinks.add(this.createOfflinelink(parameter));
         // return decryptedLinks;
         // }
-        // entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        // entries = restoreFromString(br.toString(), TypeRef.MAP);
         // /* Set root folder name */
         // subfolderPath = (String) JavaScriptEngineFactory.walkJson(entries, "shared_link/title");
         String subfolderPath = this.getAdoptedCloudFolderStructure();
@@ -147,7 +147,7 @@ public class FexNet extends PluginForDecrypt {
                         continue;
                     } else {
                         /* 2021-01-14: {"refresh_token":"b64String", "token": "b64String"} */
-                        entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                        entries = restoreFromString(br.toString(), TypeRef.MAP);
                         final String tokenNew = (String) entries.get("token");
                         if (!StringUtils.isEmpty(tokenNew)) {
                             jd.plugins.hoster.FexNet.setAuthToken(tokenNew);
@@ -173,7 +173,7 @@ public class FexNet extends PluginForDecrypt {
                 }
                 br.getPage(url + "?" + query.toString());
             }
-            entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            entries = restoreFromString(br.toString(), TypeRef.MAP);
             final Map<String, Object> pagination = (Map<String, Object>) entries.get("pagination");
             if (entries.containsKey("children")) {
                 final List<Object> ressourcelist = (List<Object>) entries.get("children");

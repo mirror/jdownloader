@@ -146,7 +146,7 @@ public class UseNetFarm extends UseNet {
             if (cookies != null) {
                 br.setCookies(getHost(), cookies);
                 br.getPage("https://usenet.farm/action/auth/state");
-                final Map<String, Object> state = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                final Map<String, Object> state = restoreFromString(br.toString(), TypeRef.MAP);
                 if (state == null || !Boolean.TRUE.equals(state.get("state"))) {
                     account.clearCookies("");
                 }
@@ -163,14 +163,14 @@ public class UseNetFarm extends UseNet {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 br.getPage("https://usenet.farm/action/auth/state");
-                final Map<String, Object> state = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                final Map<String, Object> state = restoreFromString(br.toString(), TypeRef.MAP);
                 if (state == null || !Boolean.TRUE.equals(state.get("state"))) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
             }
             account.saveCookies(br.getCookies(getHost()), "");
             br.getPage("https://usenet.farm/action/notify/dash");
-            final Map<String, Object> dash = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            final Map<String, Object> dash = restoreFromString(br.toString(), TypeRef.MAP);
             if (dash != null) {
                 final String email = (String) dash.get("email");
                 if (email != null) {
@@ -178,7 +178,7 @@ public class UseNetFarm extends UseNet {
                 }
             }
             br.getPage("https://usenet.farm/action/payment/list");
-            final Map<String, Object> list = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            final Map<String, Object> list = restoreFromString(br.toString(), TypeRef.MAP);
             if (list != null) {
                 if (Boolean.TRUE.equals(list.get("lifetime"))) {
                     ai.setValidUntil(-1);
@@ -192,7 +192,7 @@ public class UseNetFarm extends UseNet {
                     }
                 }
                 br.getPage("https://usenet.farm/action/metric/usage");
-                final Map<String, Object> usage = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                final Map<String, Object> usage = restoreFromString(br.toString(), TypeRef.MAP);
                 if (usage != null) {
                     final Number total = getNumber(usage, "total");
                     final Number remain = getNumber(usage, "remain");
@@ -204,7 +204,7 @@ public class UseNetFarm extends UseNet {
                     }
                 }
                 br.getPage("https://usenet.farm/action/config/userpass");
-                final Map<String, Object> userpass = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                final Map<String, Object> userpass = restoreFromString(br.toString(), TypeRef.MAP);
                 if (userpass != null) {
                     final String user = (String) userpass.get("user");
                     final String pass = (String) userpass.get("pass");

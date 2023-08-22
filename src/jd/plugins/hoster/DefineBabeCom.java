@@ -155,7 +155,7 @@ public class DefineBabeCom extends PluginForHost {
         if (useNewAPI) {
             br.getPage("/player/config.php?id=" + videoID);
             try {
-                final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
                 this.dllink = (String) entries.get("video_alt_url");
                 if (StringUtils.isEmpty(this.dllink)) {
                     this.dllink = (String) entries.get("video_url");

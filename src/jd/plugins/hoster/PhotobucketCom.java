@@ -105,7 +105,7 @@ public class PhotobucketCom extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
         PhotobucketComAlbum.handleErrors(entries);
         final Map<String, Object> image = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "data/getPublicImage");
         parseFileInfo(link, image);
@@ -141,7 +141,7 @@ public class PhotobucketCom extends PluginForHost {
             requestFileInformation(link);
             if (isVideo(link)) {
                 br.postPageRaw(PhotobucketComAlbum.API_BASE, "{\"operationName\":\"GetDirectVideoLinks\",\"variables\":{\"ids\":[\"" + PluginJSonUtils.escape(this.getFID(link)) + "\"]},\"query\":\"query GetDirectVideoLinks($ids: [String]!, $password: String) {  getDirectVideoLinks(ids: $ids, password: $password)}\"}");
-                final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
                 PhotobucketComAlbum.handleErrors(entries);
                 final String directurl = JavaScriptEngineFactory.walkJson(entries, "data/getDirectVideoLinks/{0}").toString();
                 if (StringUtils.isEmpty(directurl)) {

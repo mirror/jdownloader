@@ -137,7 +137,7 @@ public class TwitchTvDecrypt extends PluginForDecrypt {
                 decryptedLinks.add(this.createOfflinelink(parameter));
                 return decryptedLinks;
             }
-            final Map<String, Object> entries = JSonStorage.restoreFromString(clipBR.toString(), TypeRef.HASHMAP);
+            final Map<String, Object> entries = restoreFromString(clipBR.toString(), TypeRef.MAP);
             final Map<String, Object> userInfo = (Map<String, Object>) entries.get("broadcaster");
             final Map<String, Object> thumbnailInfo = (Map<String, Object>) entries.get("thumbnails");
             final String username = (String) userInfo.get("name");
@@ -218,7 +218,7 @@ public class TwitchTvDecrypt extends PluginForDecrypt {
                     }
                     decryptAgainLinks = ajax.getRegex("/videos/(\\d+)").getColumn(0);
                     /* TODO: Walk through json instead of using RegEx */
-                    Map<String, Object> entries = JSonStorage.restoreFromString(ajax.toString(), TypeRef.HASHMAP);
+                    Map<String, Object> entries = restoreFromString(ajax.toString(), TypeRef.MAP);
                     final List<Object> ressourcelist = (List<Object>) entries.get("videos");
                     if (ressourcelist.size() == 0) {
                         decryptedLinks.add(this.createOfflinelink(parameter));
@@ -257,7 +257,7 @@ public class TwitchTvDecrypt extends PluginForDecrypt {
                     decryptedLinks.add(this.createOfflinelink(parameter));
                     return decryptedLinks;
                 }
-                final Map<String, Object> ajaxMap = JSonStorage.restoreFromString(ajax.toString(), TypeRef.HASHMAP);
+                final Map<String, Object> ajaxMap = restoreFromString(ajax.toString(), TypeRef.MAP);
                 filename = (String) ajaxMap.get("title");
                 channelName = (String) JavaScriptEngineFactory.walkJson(ajaxMap, "channel/display_name");
                 date = (String) ajaxMap.get("recorded_at");
@@ -370,7 +370,7 @@ public class TwitchTvDecrypt extends PluginForDecrypt {
                     decryptedLinks.add(createOfflinelink(parameter, vid + " - " + message, message));
                     return decryptedLinks;
                 }
-                Map<String, Object> ajaxMap = JSonStorage.restoreFromString(ajax.toString(), TypeRef.HASHMAP);
+                Map<String, Object> ajaxMap = restoreFromString(ajax.toString(), TypeRef.MAP);
                 filename = (String) ajaxMap.get("title");
                 channelName = (String) JavaScriptEngineFactory.walkJson(ajaxMap, "channel/display_name");
                 date = (String) ajaxMap.get("recorded_at");
@@ -380,7 +380,7 @@ public class TwitchTvDecrypt extends PluginForDecrypt {
                 filename = Encoding.htmlDecode(filename.trim());
                 filename = filename.replaceAll("[\r\n#]+", "");
                 ajax = this.ajaxGetPagePlayer("https://api.twitch.tv/api/vods/" + vid + "/access_token?api_version=5" + (token != null ? "&oauth_token=" + token : ""));
-                ajaxMap = JSonStorage.restoreFromString(ajax.toString(), TypeRef.HASHMAP);
+                ajaxMap = restoreFromString(ajax.toString(), TypeRef.MAP);
                 final String auth = (String) ajaxMap.get("sig");
                 // final String expire = PluginJSonUtils.getJson(ajax, "expires");
                 final String privileged = (String) ajaxMap.get("privileged");

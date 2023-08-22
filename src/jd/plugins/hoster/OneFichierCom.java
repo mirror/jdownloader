@@ -302,7 +302,7 @@ public class OneFichierCom extends PluginForHost {
         postData.put("url", link.getPluginPatternMatcher());
         postData.put("pass", link.getDownloadPassword());
         performAPIRequest(API_BASE + "/file/info.cgi", JSonStorage.serializeToJson(postData));
-        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
         final String errorMsg = (String) entries.get("message");
         if (br.getHttpConnection().getResponseCode() == 404) {
             /* E.g. message": "Resource not found #469" */
@@ -742,7 +742,7 @@ public class OneFichierCom extends PluginForHost {
             return ai;
         }
         handleErrorsAPI(account);
-        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
         final String mail = (String) entries.get("email");
         if (!StringUtils.isEmpty(mail)) {
             /* don't store the complete username for security purposes. */
@@ -900,7 +900,7 @@ public class OneFichierCom extends PluginForHost {
 
     private String getAPIErrormessage(final Browser br) {
         try {
-            final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
             return (String) entries.get("message");
         } catch (final Throwable e) {
             /* E.g. no valid json in browser. */

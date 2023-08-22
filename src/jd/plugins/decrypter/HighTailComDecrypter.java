@@ -81,7 +81,7 @@ public class HighTailComDecrypter extends PluginForDecrypt {
             return null;
         }
         br.getPage("https://api.spaces." + this.getHost() + "/api/v1/spaces/url/" + spaceID + "?status=SEND");
-        Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
         final String errorMessage = (String) entries.get("errorMessage");
         if (!StringUtils.isEmpty(errorMessage)) {
             /* 2017-05-04: E.g. {"errorMessage":"SPACE_EXPIRED"} */

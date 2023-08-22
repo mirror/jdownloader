@@ -381,7 +381,7 @@ public class OffCloudCom extends UseNet {
          * Basically, at the moment we got 3 account types: Premium, Free account with generate-links feature, Free Account without
          * generate-links feature (used free account, ZERO traffic)
          */
-        Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
         List<Object> ressourcelist = (List) entries.get("data");
         String packagetype = null;
         String activeTill = null;
@@ -441,7 +441,7 @@ public class OffCloudCom extends UseNet {
         if (cfg.isShowHostersWithStatusAwaitingDemand()) {
             allowedHostStates.add("awaiting demand");
         }
-        entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        entries = restoreFromString(br.toString(), TypeRef.MAP);
         ressourcelist = (List) entries.get("fs");
         /**
          * Explanation of their status-types: Healthy = working, Fragile = may work or not - if not will be fixed within the next 72 hours
@@ -552,7 +552,7 @@ public class OffCloudCom extends UseNet {
             hostMaxchunksMap.clear();
             hostMaxdlsMap.clear();
             this.getAPISafe("https://offcloud.com/api/sites/chunks");
-            final List<Object> ressourcelist = JSonStorage.restoreFromString(br.toString(), TypeRef.LIST);
+            final List<Object> ressourcelist = restoreFromString(br.toString(), TypeRef.LIST);
             for (final Object o : ressourcelist) {
                 final Map<String, Object> entries = (Map<String, Object>) o;
                 final String host = (String) entries.get("host");
@@ -622,7 +622,7 @@ public class OffCloudCom extends UseNet {
             do {
                 logger.info("Decrypting requestIDs of page: " + page);
                 this.postRawAPISafe("https://offcloud.com/" + downloadtype + "/history", "{\"page\":" + page + "}");
-                final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
                 final List<Object> history = (List) entries.get("history");
                 for (final Object historyentry_object : history) {
                     final Map<String, Object> historyentry = (Map<String, Object>) historyentry_object;

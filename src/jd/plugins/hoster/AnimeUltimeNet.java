@@ -150,14 +150,14 @@ public class AnimeUltimeNet extends PluginForHost {
             final String fid = getFID(link);
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             br.postPage("/ddl/authorized_download.php", "idfile=" + fid + "&type=orig");
-            final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
             final boolean skipPreDownloadWaittime = false;
             if (!skipPreDownloadWaittime) {
                 final int waittime = ((Number) entries.get("wait")).intValue();
                 this.sleep(waittime * 1001l, link);
             }
             br.postPage("/ddl/authorized_download.php", "idfile=" + fid + "&type=orig");
-            final Map<String, Object> entries2 = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            final Map<String, Object> entries2 = restoreFromString(br.toString(), TypeRef.MAP);
             final String dllink = (String) entries2.get("link");
             if (StringUtils.isEmpty(dllink)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

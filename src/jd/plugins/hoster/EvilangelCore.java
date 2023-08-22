@@ -270,7 +270,7 @@ public abstract class EvilangelCore extends PluginForHost {
                      * No error-page but also no player --> Assume content is offline e.g. </br>
                      * https://members.wicked.com/en/movie/bla-bla/123456
                      */
-                    qualitiesList = (List<Map<String, Object>>) JSonStorage.restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.OBJECT);
+                    qualitiesList = (List<Map<String, Object>>) restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.OBJECT);
                 }
                 Map<String, String> qualityMap = null;
                 if (htmlVideoJson != null) {

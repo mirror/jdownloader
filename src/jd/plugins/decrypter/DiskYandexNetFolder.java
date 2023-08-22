@@ -372,7 +372,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
         final FilePackage fp = FilePackage.getInstance();
         do {
             br.getPage(DiskYandexNet.APIV1_BASE + "/disk/public/resources?limit=" + entries_per_request + "&offset=" + offset + "&public_key=" + URLEncode.encodeURIComponent(hashWithoutPath) + "&path=" + URLEncode.encodeURIComponent(internalPath));
-            Map<String, Object> entries = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+            Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
             /*
              * 2021-01-19:
              * {"message":"Не удалось найти запрошенный ресурс.","description":"Resource not found.","error":"DiskNotFoundError"}

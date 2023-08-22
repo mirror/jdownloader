@@ -1538,7 +1538,7 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
                     // tubepornclassic.com, vjav.com
                     video_url = br.getRegex("\"video_url\"\\s*:\\s*\"(.*?)\"").getMatch(0);
                     if (video_url != null) {
-                        video_url = JSonStorage.restoreFromString("\"" + video_url + "\"", TypeRef.STRING);
+                        video_url = restoreFromString("\"" + video_url + "\"", TypeRef.STRING);
                     }
                 }
             }
@@ -1583,7 +1583,7 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
     /* Example websites: tubepornclassic.com, vjav.com, hotmovs.com, txxx.tube, vxxx.com, txxx.com */
     protected String getDllinkViaAPI(final Browser br, final DownloadLink link, final String videoID) throws IOException, PluginException {
         br.getPage("/api/videofile.php?video_id=" + videoID + "&lifetime=8640000");
-        final Object responseO = JSonStorage.restoreFromString(br.toString(), TypeRef.OBJECT);
+        final Object responseO = restoreFromString(br.toString(), TypeRef.OBJECT);
         if (responseO instanceof Map) {
             /*
              * E.g. {"error":1,"code":"private_video"} --> E.g. if we fail to properly detect this in beforehand and try to download such

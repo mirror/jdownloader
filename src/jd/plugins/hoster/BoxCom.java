@@ -155,7 +155,7 @@ public class BoxCom extends antiDDoSForHost {
         tokens.getHeaders().put("X-Box-Client-Version", "0.86.0");
         Browser brc = br.cloneBrowser();
         brc.getPage(tokens);
-        Map<String, Object> map = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
+        Map<String, Object> map = restoreFromString(brc.toString(), TypeRef.MAP);
         final String token_read = (String) ((Map<String, Object>) map.get("file_" + fileid)).get("read");
         if (StringUtils.isEmpty(token_read)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -167,7 +167,7 @@ public class BoxCom extends antiDDoSForHost {
         pre_download_req.getHeaders().put("Origin", "https://app.box.com");
         brc = br.cloneBrowser();
         brc.getPage(pre_download_req);
-        map = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
+        map = restoreFromString(brc.toString(), TypeRef.MAP);
         final Map<String, Object> permissions = (Map<String, Object>) map.get("permissions");
         final Map<String, Object> file_version = (Map<String, Object>) map.get("file_version");
         /*
@@ -198,7 +198,7 @@ public class BoxCom extends antiDDoSForHost {
                 /* 2020-05-26: E.g. download is officially not allowed, item can only be watched/streamed */
                 throw new AccountRequiredException();
             }
-            map = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
+            map = restoreFromString(brc.toString(), TypeRef.MAP);
             dllink = (String) map.get("download_url");
             if (!StringUtils.isEmpty(sha1)) {
                 link.setSha1Hash(sha1);

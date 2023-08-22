@@ -83,7 +83,7 @@ public class VolaFileOrg extends PluginForDecrypt {
                         query.add("password", URLEncoder.encode(passCode, "UTF-8"));
                         continue;
                     }
-                    final List<Object> list = JSonStorage.restoreFromString(string, TypeRef.LIST);
+                    final List<Object> list = restoreFromString(string, TypeRef.LIST);
                     List<Object> files = (List<Object>) ((Map<String, Object>) ((List<Object>) ((List<Object>) ((List<Object>) list.get(6)).get(0)).get(1)).get(1)).get("files");
                     if (files == null) {
                         files = (List<Object>) ((Map<String, Object>) ((List<Object>) ((List<Object>) ((List<Object>) list.get(7)).get(0)).get(1)).get(1)).get("files");

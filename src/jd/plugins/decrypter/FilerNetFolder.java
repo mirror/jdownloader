@@ -82,7 +82,7 @@ public class FilerNetFolder extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br.getPage(FilerNet.API_BASE + "/folder/" + folderID + ".json");
-        Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
         int code = ((Integer) ReflectionUtils.cast(entries.get("code"), Integer.class)).intValue();
         if (code == 506) {
             /* Offline folder */
@@ -93,7 +93,7 @@ public class FilerNetFolder extends PluginForDecrypt {
             for (int i = 1; i <= 3; i++) {
                 final String passCode = getUserInput("Password?", param);
                 br.getPage("/api/folder/" + folderID + ".json?password=" + Encoding.urlEncode(passCode));
-                entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                entries = restoreFromString(br.toString(), TypeRef.MAP);
                 code = ((Integer) ReflectionUtils.cast(entries.get("code"), Integer.class)).intValue();
                 if (code == 201) {
                     logger.info("Wrong password: " + passCode);

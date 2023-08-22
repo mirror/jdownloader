@@ -523,7 +523,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
                 page += 1;
                 logger.info("Crawling sectionless PINs page: " + page + " | " + crawledSectionlessPINs + " / " + sectionlessPinCount + " PINs crawled");
                 br.getPage("/resource/BoardFeedResource/get/?source_url=" + Encoding.urlEncode(source_url) + "&data=" + URLEncode.encodeURIComponent(JSonStorage.serializeToJson(postData)) + "&_=" + System.currentTimeMillis());
-                Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
                 entries = (Map<String, Object>) entries.get("resource_response");
                 final String bookmark = (String) entries.get("bookmark");
                 final List<Object> pinList = (List<Object>) entries.get("data");

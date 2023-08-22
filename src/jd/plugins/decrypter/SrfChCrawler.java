@@ -133,7 +133,7 @@ public class SrfChCrawler extends PluginForDecrypt {
         }
         final String json = br.getRegex(">\\s*window\\.__SSR_VIDEO_DATA__ = (\\{.*?\\})</script>").getMatch(0);
         if (json != null) {
-            final Map<String, Object> entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
+            final Map<String, Object> entries = restoreFromString(json, TypeRef.MAP);
             final Map<String, Object> initialData = (Map<String, Object>) entries.get("initialData");
             final Map<String, Object> show = (Map<String, Object>) initialData.get("show");
             final Map<String, Object> videoDetail = (Map<String, Object>) initialData.get("videoDetail");

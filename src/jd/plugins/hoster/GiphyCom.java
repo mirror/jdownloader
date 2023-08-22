@@ -123,7 +123,7 @@ public class GiphyCom extends PluginForHost {
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
             this.dllink = (String) entries.get("url");
             final String titleTmp = (String) entries.get("title");
             if (!StringUtils.isEmpty(titleTmp)) {

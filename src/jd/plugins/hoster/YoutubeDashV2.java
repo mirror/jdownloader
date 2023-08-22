@@ -2740,13 +2740,13 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
         // old compatibility
         Object jsonString = downloadLink.getProperty(YoutubeHelper.YT_VARIANTS);
         if (jsonString != null && jsonString instanceof String) {
-            String[] lst = JSonStorage.restoreFromString((String) jsonString, TypeRef.STRING_ARRAY);
+            String[] lst = restoreFromString((String) jsonString, TypeRef.STRING_ARRAY);
             downloadLink.setProperty(YoutubeHelper.YT_VARIANTS, lst);
         }
         String subtitles = downloadLink.getStringProperty(YoutubeHelper.YT_SUBTITLE_CODE_LIST);
         if (StringUtils.isNotEmpty(subtitles)) {
             downloadLink.removeProperty(YoutubeHelper.YT_SUBTITLE_CODE_LIST);
-            String[] queryList = JSonStorage.restoreFromString(subtitles, TypeRef.STRING_ARRAY);
+            String[] queryList = restoreFromString(subtitles, TypeRef.STRING_ARRAY);
             ArrayList<String> subtitleIDs = new ArrayList<String>();
             if (queryList != null) {
                 for (String q : queryList) {

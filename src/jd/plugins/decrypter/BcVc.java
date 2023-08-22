@@ -140,7 +140,7 @@ public class BcVc extends antiDDoSForDecrypt {
         // this.sleep(5001l, param);
         this.br.submitForm(form1);
         /* On error, browser will redirect to random ad website. */
-        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
         final Object errorO = entries.get("error");
         if (errorO == null || (Boolean) errorO) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

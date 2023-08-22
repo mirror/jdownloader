@@ -6,6 +6,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.os.CrossSystem;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -18,12 +23,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.os.CrossSystem;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "cloud.1und1.de" }, urls = { "https?://cloud\\.1und1\\.de/ngcloud/external\\?.*?guestToken=[a-zA-Z0-9\\-]{22}(&loginName=\\d+)?" })
 public class Cloud1und1De extends PluginForDecrypt {
@@ -101,7 +100,7 @@ public class Cloud1und1De extends PluginForDecrypt {
                 throw new DecrypterException(DecrypterException.PASSWORD);
             }
         }
-        final Map<String, Object> response = JSonStorage.restoreFromString(br2.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> response = restoreFromString(br2.toString(), TypeRef.MAP);
         final Map<String, Object> ui_fs = (Map<String, Object>) response.get("ui:fs");
         ret.addAll(parse(br2, shareID, userName, CrossSystem.alleviatePathParts(""), ui_fs));
         return ret;
@@ -156,7 +155,7 @@ public class Cloud1und1De extends PluginForDecrypt {
                                 resourceURI = "/resource/" + resourceURI;
                             }
                             br2.getPage("https://cloud.1und1.de/ngcloud/restfs/guest/" + userName + "/share/" + shareID + resourceURI + "?option=shares&option=download&option=thumbnails&option=metadata&option=props&option=displayresource&sort=ui:meta:user.created-a,name-a-i&option=props&length=1000&offset=0");
-                            final Map<String, Object> response = JSonStorage.restoreFromString(br2.toString(), TypeRef.HASHMAP, null);
+                            final Map<String, Object> response = restoreFromString(br2.toString(), TypeRef.HASHMAP);
                             final Map<String, Object> node_ui_fs = (Map<String, Object>) response.get("ui:fs");
                             ret.addAll(parse(br2, shareID, userName, path + "/" + CrossSystem.alleviatePathParts(name), node_ui_fs));
                         } catch (final IOException e) {

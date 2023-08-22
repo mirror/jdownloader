@@ -154,7 +154,7 @@ public class AniStreamCom extends XFileSharingProBasic {
                 }
                 final String js = Encoding.Base64Decode(b64);
                 final String json = new Regex(js, "(\\{.+\\})").getMatch(0);
-                Map<String, Object> entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
+                Map<String, Object> entries = restoreFromString(json, TypeRef.MAP);
                 final List<Object> ressourcelist = (List<Object>) JavaScriptEngineFactory.walkJson(entries, "playlist/{0}/sources");
                 long qualityMax = 0;
                 String hlsMaster = null;

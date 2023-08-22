@@ -183,7 +183,7 @@ public class PremiumizeMeZeveraFolder extends PluginForDecrypt {
 
     public static ArrayList<PremiumizeBrowseNode> getNodes(final Browser br, final Account account, final String url) throws IOException, AccountInvalidException {
         final String response = accessCloudItem(br, account, url);
-        final Map<String, Object> responseMap = JSonStorage.restoreFromString(response, TypeRef.HASHMAP);
+        final Map<String, Object> responseMap = JSonStorage.restoreFromString(response, TypeRef.MAP);
         final String status = (String) responseMap.get("status");
         final ArrayList<PremiumizeBrowseNode> browseNodes = new ArrayList<PremiumizeBrowseNode>();
         if (StringUtils.equals("success", status)) {

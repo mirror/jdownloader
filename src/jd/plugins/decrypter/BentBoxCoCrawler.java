@@ -63,7 +63,7 @@ public class BentBoxCoCrawler extends PluginForDecrypt {
         boxView.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         boxView.setContentType("application/x-www-form-urlencoded; charset=UTF-8");
         br.getPage(boxView);
-        final Map<String, Object> map = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> map = restoreFromString(br.toString(), TypeRef.MAP);
         br.getRequest().setHtmlCode((String) map.get("html"));
         final DecimalFormat df = new DecimalFormat("000");
         int index = 1;

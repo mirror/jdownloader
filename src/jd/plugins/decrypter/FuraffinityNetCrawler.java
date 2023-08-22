@@ -84,7 +84,7 @@ public class FuraffinityNetCrawler extends PluginForDecrypt {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
                 final String json = br.getRegex("var descriptions = (\\{.*?\\});").getMatch(0);
-                final Map<String, Object> entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
+                final Map<String, Object> entries = restoreFromString(json, TypeRef.MAP);
                 final Iterator<Entry<String, Object>> iterator = entries.entrySet().iterator();
                 int itemsCounter = 0;
                 while (iterator.hasNext()) {

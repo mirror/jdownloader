@@ -102,7 +102,7 @@ public class JustPasteIt extends AbstractPastebinCrawler {
             metadata.setTitle(title);
         }
         try {
-            final Map<String, Object> entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
+            final Map<String, Object> entries = restoreFromString(json, TypeRef.MAP);
             final String createdText = entries.get("createdText").toString();
             metadata.setDate(new Date(TimeFormatter.getMilliSeconds(createdText.substring(0, createdText.lastIndexOf(":")), "yyyy-MM-dd'T'HH:mm:ss", Locale.ENGLISH)));
         } catch (final Throwable e) {

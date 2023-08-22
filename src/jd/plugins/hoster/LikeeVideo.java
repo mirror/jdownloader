@@ -154,7 +154,7 @@ public class LikeeVideo extends PluginForHost {
         if (brc.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final Map<String, Object> entries = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> entries = restoreFromString(brc.toString(), TypeRef.MAP);
         final Map<String, Object> videoInfo = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "data/videoList/{0}");
         link.setProperty(PROPERTY_TITLE, videoInfo.get("title"));
         link.setProperty(PROPERTY_VIDEO_ID, videoInfo.get("postId"));

@@ -30,7 +30,7 @@ public class LiveMeCom extends PluginForDecrypt {
         br.setFollowRedirects(true);
         final String vali = vali(4) + "l" + vali(4) + "m" + vali(5);
         br.postPage("https://live.ksmobile.net/live/queryinfo", "userid=1&videoid=" + videoid + "&area=&h5=1&vali=" + vali);
-        final Map<String, Object> response = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> response = restoreFromString(br.toString(), TypeRef.MAP);
         final Map<String, Object> data = (Map<String, Object>) response.get("data");
         final Map<String, Object> video_info = (Map<String, Object>) data.get("video_info");
         final Map<String, Object> user_info = (Map<String, Object>) data.get("user_info");

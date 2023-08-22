@@ -286,7 +286,7 @@ public class Tube8Com extends PluginForHost {
         if (flashVars == null) {
             return;
         }
-        final Map<String, Object> entries = JSonStorage.restoreFromString(flashVars, TypeRef.HASHMAP);
+        final Map<String, Object> entries = restoreFromString(flashVars, TypeRef.MAP);
         final String[] quals = new String[] { "quality_2160p", "quality_1440p", "quality_720p", "quality_480p", "quality_240p", "quality_180p" };
         for (final String qual : quals) {
             final Object qualO = entries.get(qual);

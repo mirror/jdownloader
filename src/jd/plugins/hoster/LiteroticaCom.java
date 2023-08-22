@@ -139,7 +139,7 @@ public class LiteroticaCom extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404");
                 }
             }
-            final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
             if (maxPages == -1) {
                 maxPages = ((Number) JavaScriptEngineFactory.walkJson(entries, "meta/pages_count")).intValue();
             }

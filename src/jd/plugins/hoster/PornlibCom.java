@@ -112,7 +112,7 @@ public class PornlibCom extends PluginForHost {
             /* Not a json response */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
         final Map<String, Object> files = (Map<String, Object>) entries.get("files");
         String title = entries.get("title").toString();
         /* Find best quality */

@@ -102,7 +102,7 @@ public class DliveTv extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final Map<String, Object> root = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> root = restoreFromString(br.toString(), TypeRef.MAP);
         final Map<String, Object> data = (Map<String, Object>) root.get("data");
         final Map<String, Object> video = (Map<String, Object>) data.get("pastBroadcast");
         if (video == null) {

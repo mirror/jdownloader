@@ -279,7 +279,7 @@ public class TeraboxCom extends PluginForHost {
             final Browser brc = br.cloneBrowser();
             brc.getPage("/rest/2.0/membership/proxy/user?method=query&membership_version=1.0&channel=dubox&web=1&app_id=250528&clienttype=0&bdstoken=" + bdstoken);
             /* 2021-04-14: Only free accounts are existent/supported */
-            final Map<String, Object> root = JSonStorage.restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+            final Map<String, Object> root = restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.MAP);
             final Number error_code = (Number) root.get("error_code");
             if (error_code != null && error_code.intValue() != 0) {
                 /*

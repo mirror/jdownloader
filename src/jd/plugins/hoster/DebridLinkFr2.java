@@ -126,7 +126,7 @@ public class DebridLinkFr2 extends PluginForHost {
         if (br.getRequest() == null || !br.getURL().contains("/account/infos")) {
             callAPIGetAccountInfo(br);
         }
-        Map<String, Object> entries = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+        Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         entries = (Map<String, Object>) entries.get("value");
         /* Set censored E-Mail address of user as username. */
         final String emailCensored = (String) entries.get("email");
@@ -182,7 +182,7 @@ public class DebridLinkFr2 extends PluginForHost {
         /* https://debrid-link.com/api_doc/v2/downloader-regex */
         br.getPage(this.getApiBase() + "/downloader/hosts?keys=status%2CisFree%2Cname%2Cdomains");
         final List<String> supportedHosts = new ArrayList<String>();
-        entries = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+        entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         final List<Object> hosters = (List<Object>) entries.get("value");
         final HashMap<String, String> name2RealHostMap = new HashMap<String, String>();
         final AccountInfo dummyAccInfo = new AccountInfo();
@@ -230,7 +230,7 @@ public class DebridLinkFr2 extends PluginForHost {
         }
         ac.setMultiHostSupport(this, supportedHosts);
         br.getPage(this.getApiBase() + "/downloader/limits/all");
-        entries = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+        entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         entries = (Map<String, Object>) entries.get("value");
         /** How much percent of the (daily?) quota is used up so far? */
         final Map<String, Object> usagePercentMap = (Map<String, Object>) entries.get("usagePercent");
@@ -336,7 +336,7 @@ public class DebridLinkFr2 extends PluginForHost {
                 query.add("grant_type", "refresh_token");
                 prepBR(this.br);
                 br.postPage(this.getApiBaseOauth() + "/token", query);
-                final TokenResponse tokenResponse = JSonStorage.restoreFromString(this.br.toString(), new TypeRef<TokenResponse>(TokenResponse.class) {
+                final TokenResponse tokenResponse = restoreFromString(this.br.toString(), new TypeRef<TokenResponse>(TokenResponse.class) {
                 });
                 if (!StringUtils.isEmpty(tokenResponse.getAccess_token())) {
                     logger.info("Refresh token successful");
@@ -363,7 +363,7 @@ public class DebridLinkFr2 extends PluginForHost {
                 queryDevicecode.add("scopes", "get.account,get.post.downloader");
                 prepBR(this.br);
                 br.postPage(this.getApiBaseOauth() + "/device/code", queryDevicecode);
-                final CodeResponse code = JSonStorage.restoreFromString(this.br.toString(), new TypeRef<CodeResponse>(CodeResponse.class) {
+                final CodeResponse code = restoreFromString(this.br.toString(), new TypeRef<CodeResponse>(CodeResponse.class) {
                 });
                 final Thread dialog = showPINLoginInformation(code.getVerification_url(), code.getUser_code());
                 final UrlQuery queryPollingLogin = new UrlQuery();
@@ -382,7 +382,7 @@ public class DebridLinkFr2 extends PluginForHost {
                         /*
                          * E.g. returns the following as long as we're waiting for the user to authorize: {"error":"authorization_pending"}
                          */
-                        final TokenResponse tokenResponse = JSonStorage.restoreFromString(br2.toString(), new TypeRef<TokenResponse>(TokenResponse.class) {
+                        final TokenResponse tokenResponse = restoreFromString(br2.toString(), new TypeRef<TokenResponse>(TokenResponse.class) {
                         });
                         if (!StringUtils.isEmpty(tokenResponse.getAccess_token())) {
                             expiresIn = tokenResponse.getExpires_in();
@@ -456,7 +456,7 @@ public class DebridLinkFr2 extends PluginForHost {
     /** List of errors: https://debrid-link.com/api_doc/v2/errors */
     private void errHandling(final Account account, final DownloadLink link) throws PluginException, InterruptedException {
         try {
-            final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
             final boolean success = ((Boolean) entries.get("success")).booleanValue();
             if (success) {
                 return;
@@ -584,7 +584,7 @@ public class DebridLinkFr2 extends PluginForHost {
                     query.appendEncoded("password", passCode);
                 }
                 br.postPage(this.getApiBase() + "/downloader/add", query);
-                final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
                 if (this.isErrorPasswordRequiredOrWrong((String) entries.get("error"))) {
                     wrongPasswordAttempts += 1;
                     passCode = getUserInput("Password?", link);
@@ -606,7 +606,7 @@ public class DebridLinkFr2 extends PluginForHost {
                 link.setDownloadPassword(passCode);
             }
             this.errHandling(account, link);
-            Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
             entries = (Map<String, Object>) entries.get("value");
             link.setProperty(PROPERTY_MAXCHUNKS, entries.get("chunk"));
             final String dllink = (String) entries.get("downloadUrl");

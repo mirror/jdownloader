@@ -88,7 +88,7 @@ public class IcedriveNetFolder extends PluginForDecrypt {
         /* Folder */
         brc.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         brc.getPage("https://" + this.getHost() + "/API/Internal/V1/?request=collection&type=public&folderId=" + URLEncode.encodeURIComponent(folderID) + "&sess=1");
-        final Map<String, Object> root = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> root = restoreFromString(brc.toString(), TypeRef.MAP);
         if ((Boolean) root.get("error") == Boolean.TRUE) {
             /* Assume that content is offline */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

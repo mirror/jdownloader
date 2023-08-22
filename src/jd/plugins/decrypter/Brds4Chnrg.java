@@ -211,7 +211,7 @@ public class Brds4Chnrg extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         Map<String, Object> entries = null;
-        final List<Object> pages = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.LIST);
+        final List<Object> pages = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.LIST);
         final int maxPage = PluginJsonConfig.get(this.getConfigInterface()).getCategoryCrawlerPageLimit();
         for (final Object pageO : pages) {
             entries = (Map<String, Object>) pageO;
@@ -252,7 +252,7 @@ public class Brds4Chnrg extends PluginForDecrypt {
             if (!BOARD_LONG_TITLE_CACHE.containsKey(boardShortTitle)) {
                 logger.info("Updating board cache because it doesn't contain the long title for: " + boardShortTitle);
                 br.getPage(API_BASE + "/boards.json");
-                final Map<String, Object> entries = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+                final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
                 final List<Map<String, Object>> boards = (List<Map<String, Object>>) entries.get("boards");
                 for (final Map<String, Object> boardMap : boards) {
                     final String boardShortTitleTmp = (String) boardMap.get("board");
@@ -275,7 +275,7 @@ public class Brds4Chnrg extends PluginForDecrypt {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final Map<String, Object> entries = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+        final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         final List<Map<String, Object>> posts = (List<Map<String, Object>>) entries.get("posts");
         final FilePackage fp = FilePackage.getInstance();
         final boolean preferServerFilenames = PluginJsonConfig.get(this.getConfigInterface()).isPreferServerFilenamesOverPluginDefaultFilenames();

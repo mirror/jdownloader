@@ -405,67 +405,58 @@ public class ImageFap extends PluginForHost {
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else {
-            String imageLink = null;
+            String fullsizeUrl = null;
             final String returnID = new Regex(br, Pattern.compile("return lD\\(\\'(\\S+?)\\'\\);", Pattern.CASE_INSENSITIVE)).getMatch(0);
             if (returnID != null) {
-                imageLink = decryptLink(returnID);
+                fullsizeUrl = decryptLink(returnID);
             }
-            if (imageLink == null) {
+            if (fullsizeUrl == null) {
                 final String thumbnailurl = br.getRegex("itemprop=\"contentUrl\"[^>]*>(https?://[^<]+)</span>").getMatch(0);
                 final String thumbPart = new Regex(thumbnailurl, "frame-thumb/(\\d+/\\d+)").getMatch(0);
-                if (thumbPart != null) {
-                    final String imageID = getFID(link);
-                    final String[] fullImageLinks = br.getRegex("(https?://[^/]+/images/full/[^\"]+)").getColumn(0);
-                    if (fullImageLinks != null == fullImageLinks.length > 0) {
-                        final ArrayList<String> fullImageLinksWithoutDuplicates = new ArrayList<String>();
-                        for (final String fullImageLink : fullImageLinks) {
-                            if (!fullImageLinksWithoutDuplicates.contains(fullImageLink)) {
-                                fullImageLinksWithoutDuplicates.add(fullImageLink);
-                            }
+                final String imageID = getFID(link);
+                final String[] fullImageLinks = br.getRegex("(https?://[^/]+/images/full/[^\"]+)").getColumn(0);
+                if (fullImageLinks != null == fullImageLinks.length > 0) {
+                    final ArrayList<String> fullImageLinksWithoutDuplicates = new ArrayList<String>();
+                    for (final String fullImageLink : fullImageLinks) {
+                        if (!fullImageLinksWithoutDuplicates.contains(fullImageLink)) {
+                            fullImageLinksWithoutDuplicates.add(fullImageLink);
                         }
-                        logger.info("Total number of fullsize image URLs: " + fullImageLinksWithoutDuplicates.size());
-                        // final String startImgID = br.getRegex("_start_img = (\\d+);").getMatch(0);
-                        final HashSet<String> hitsByThumbnailUrlPart = new HashSet<String>();
-                        for (final String fullImageLink : fullImageLinksWithoutDuplicates) {
-                            if (fullImageLink.contains(imageID)) {
-                                /* Safe hit */
-                                imageLink = fullImageLink;
-                                break;
-                            } else if (fullImageLink.contains(thumbPart)) {
-                                hitsByThumbnailUrlPart.add(fullImageLink);
-                            }
+                    }
+                    logger.info("Total number of fullsize image URLs: " + fullImageLinksWithoutDuplicates.size());
+                    // final String startImgID = br.getRegex("_start_img = (\\d+);").getMatch(0);
+                    final HashSet<String> hitsByThumbnailUrlPart = new HashSet<String>();
+                    for (final String fullImageLink : fullImageLinksWithoutDuplicates) {
+                        if (fullImageLink.contains(imageID)) {
+                            /* Safe hit */
+                            fullsizeUrl = fullImageLink;
+                            break;
+                        } else if (thumbPart != null && fullImageLink.contains(thumbPart)) {
+                            hitsByThumbnailUrlPart.add(fullImageLink);
                         }
-                        String actuallyFoundFullsizeImageID = null;
-                        if (imageLink == null) {
-                            final String totalNumberofItemsStr = br.getRegex("data-total=\"(\\d+)").getMatch(0);
-                            final String idxStr = br.getRegex("data-idx=\"(\\d+)").getMatch(0);
-                            if (totalNumberofItemsStr != null && idxStr != null) {
-                                /*
-                                 * See
-                                 * https://www.imagefap.com/combine.php?type=js&str=jquery.scroll-follow.js,jquery.cookie.js,jquery.scrollTo
-                                 * -min
-                                 * .js,jquery.validate.js,tools.js,jquery.rating.js,jquery.tools.overlay.js,jquery.tools.toolbox.expose.js,
-                                 * 019ce .js,gallerificPlus.js,gallery.js,tools.comments.js,adsmanager.js,facets.js,12403.js
-                                 */
-                                // int startIndex = 0;
-                                final int numThumbs = 8;
-                                final int idx = Integer.parseInt(idxStr);
-                                // final int totalNumberofItems = Integer.parseInt(totalNumberofItemsStr);
-                                final int offset = idx % numThumbs;
-                                logger.info("Obtaining fullsize URL via offset: " + offset);
-                                final String thisFullsizeUrl = fullImageLinksWithoutDuplicates.get(offset);
-                                actuallyFoundFullsizeImageID = new Regex(thisFullsizeUrl, "/full/\\d+/\\d+/(\\d+)").getMatch(0);
-                                // imageLink = thisFullsizeUrl;
-                            }
-                            if (hitsByThumbnailUrlPart.size() == 1) {
-                                logger.info("There is only one fullsize URL available -> Using that");
-                                imageLink = hitsByThumbnailUrlPart.iterator().next();
-                            } else {
-                                logger.warning("Too many fullsize-hits");
-                            }
-                        }
-                        if (imageLink == null) {
-                            if (actuallyFoundFullsizeImageID != null && !actuallyFoundFullsizeImageID.equals(imageID)) {
+                    }
+                    if (fullsizeUrl == null) {
+                        final String totalNumberofItemsStr = br.getRegex("data-total=\"(\\d+)").getMatch(0);
+                        final String idxStr = br.getRegex("data-idx=\"(\\d+)").getMatch(0);
+                        if (totalNumberofItemsStr != null && idxStr != null) {
+                            /*
+                             * See https://www.imagefap.com/combine.php?type=js&str=jquery.scroll-follow.js,jquery.cookie.js,jquery.scrollTo
+                             * -min .js,jquery.validate.js,tools.js,jquery.rating.js,jquery.tools.overlay.js,jquery.tools.toolbox.expose.js,
+                             * 019ce .js,gallerificPlus.js,gallery.js,tools.comments.js,adsmanager.js,facets.js,12403.js
+                             */
+                            // int startIndex = 0;
+                            final int numThumbs = 8;
+                            final int idx = Integer.parseInt(idxStr);
+                            // final int totalNumberofItems = Integer.parseInt(totalNumberofItemsStr);
+                            final int offset = idx % numThumbs;
+                            logger.info("Obtaining fullsize URL via offset: " + offset);
+                            final String thisFullsizeUrl = fullImageLinksWithoutDuplicates.get(offset);
+                            logger.warning("Knowingly downloading image with wrong ID | URL: " + thisFullsizeUrl);
+                            final String actuallyFoundFullsizeImageID = new Regex(thisFullsizeUrl, "/full/\\d+/\\d+/(\\d+)").getMatch(0);
+                            // imageLink = thisFullsizeUrl;
+                            final boolean allowDownloadWrongServersideImage = true;
+                            if (allowDownloadWrongServersideImage) {
+                                fullsizeUrl = thisFullsizeUrl;
+                            } else if (actuallyFoundFullsizeImageID != null && !actuallyFoundFullsizeImageID.equals(imageID)) {
                                 final boolean devSetRealImagelinkAsComment = false;
                                 if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && devSetRealImagelinkAsComment) {
                                     link.setComment("https://www.imagefap.com/photo/" + actuallyFoundFullsizeImageID + "/");
@@ -474,19 +465,19 @@ public class ImageFap extends PluginForHost {
                             } else {
                                 throw new PluginException(LinkStatus.ERROR_FATAL, "Image ID mismatch");
                             }
+                        } else if (hitsByThumbnailUrlPart.size() == 1) {
+                            logger.info("Final fallback: There is only one fullsize URL available -> Using that");
+                            fullsizeUrl = hitsByThumbnailUrlPart.iterator().next();
                         }
-                    } else {
-                        logger.warning("Failed to find any fullsize urls");
                     }
-                }
-                if (imageLink == null) {
-                    imageLink = br.getRegex("\"contentUrl\"\\s*>\\s*(https?://cdn\\.imagefap\\.com/images/full/.*?)\\s*<").getMatch(0);
+                } else {
+                    logger.warning("Failed to find any fullsize urls");
                 }
             }
-            if (imageLink == null) {
+            if (fullsizeUrl == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             } else {
-                return imageLink;
+                return fullsizeUrl;
             }
         }
     }
@@ -515,38 +506,14 @@ public class ImageFap extends PluginForHost {
         }
         if (link.getPluginPatternMatcher().matches(VIDEOLINK)) {
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, finalLink, true, 0);
-            if (!looksLikeDownloadableContent(dl.getConnection())) {
-                br.followConnection(true);
-                if (br.getHttpConnection().getResponseCode() == 404) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                } else if (looksLikeThumbnail(br._getURL())) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Image broken or only thumbnail available?");
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-            }
+            handleConnectionErrors(br, dl.getConnection());
         } else {
             /* Image */
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, finalLink, false, 1);
-            final long contentLength = dl.getConnection().getCompleteContentLength();
-            if (!looksLikeDownloadableContent(dl.getConnection())) {
-                br.followConnection(true);
-                if (br.getHttpConnection().getResponseCode() == 404) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                } else if (looksLikeThumbnail(br._getURL())) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Image broken or only thumbnail available?");
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-            } else if (contentLength != -1 && contentLength < 107) {
-                br.followConnection(true);
-                logger.info("Image is very small -> Must be offline");
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
+            handleConnectionErrors(br, dl.getConnection());
             final String fileExtension = getExtensionFromMimeType(dl.getConnection().getContentType());
             if (fileExtension != null && link.getName() != null) {
-                final String correctedFilename = this.correctOrApplyFileNameExtension(link.getName(), "." + fileExtension);
-                link.setFinalFileName(correctedFilename);
+                link.setFinalFileName(this.correctOrApplyFileNameExtension(link.getName(), "." + fileExtension));
             }
         }
         controlSlot(+1);
@@ -558,10 +525,26 @@ public class ImageFap extends PluginForHost {
         }
     }
 
-    private static Object CTRLLOCK = new Object();
+    private void handleConnectionErrors(final Browser br, final URLConnectionAdapter con) throws PluginException, IOException {
+        final long contentLength = con.getCompleteContentLength();
+        if (!looksLikeDownloadableContent(con)) {
+            br.followConnection(true);
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (looksLikeThumbnail(br._getURL())) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Image broken or only thumbnail available?");
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+        } else if (contentLength != -1 && contentLength < 107) {
+            br.followConnection(true);
+            logger.info("File is very small -> Must be offline");
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+    }
 
     private void controlSlot(final int num) {
-        synchronized (CTRLLOCK) {
+        synchronized (maxFreeDownloadsForSequentialMode) {
             final int was = maxFreeDownloadsForSequentialMode.get();
             maxFreeDownloadsForSequentialMode.set(was + num);
             logger.info("maxFree was = " + was + " && maxFree now = " + maxFreeDownloadsForSequentialMode.get());

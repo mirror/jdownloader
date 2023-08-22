@@ -135,7 +135,7 @@ public class XsNewsNl extends UseNet {
                 if (!br.containsHTML("\"ok\"\\s*:\\s*true")) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 } else {
-                    final Map<String, Object> response = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                    final Map<String, Object> response = restoreFromString(br.toString(), TypeRef.MAP);
                     final Map<String, Object> active = (Map<String, Object>) response.get("active");
                     if (active == null || active.size() == 0) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "No active package", PluginException.VALUE_ID_PREMIUM_DISABLE);

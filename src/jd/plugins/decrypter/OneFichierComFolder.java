@@ -131,7 +131,7 @@ public class OneFichierComFolder extends PluginForDecrypt {
         // password handling
         final String password = handlePassword(param, folderURL);
         if (password == null && "application/json; charset=utf-8".equals(jsonBR.getHttpConnection().getContentType())) {
-            final List<Object> ressourcelist = JSonStorage.restoreFromString(jsonBR.toString(), TypeRef.LIST);
+            final List<Object> ressourcelist = restoreFromString(jsonBR.toString(), TypeRef.LIST);
             for (final Object fileO : ressourcelist) {
                 final Map<String, Object> fileInfo = (Map<String, Object>) fileO;
                 final String filename = (String) fileInfo.get("filename");

@@ -79,7 +79,7 @@ public class EroScriptsCom extends antiDDoSForHost {
                 Browser csrfBr = br.cloneBrowser();
                 csrfBr.setHeader("accept", "application/json");
                 csrfBr.getPage("https://discuss.eroscripts.com/session/csrf");
-                final Map<String, String> apiResponse = JSonStorage.restoreFromString(csrfBr.toString(), TypeRef.HASHMAP_STRING);
+                final Map<String, String> apiResponse = restoreFromString(csrfBr.toString(), TypeRef.HASHMAP_STRING);
                 form.put("login", account.getUser());
                 form.put("password", account.getPass());
                 form.put("second_factor_method", "1");
@@ -89,13 +89,13 @@ public class EroScriptsCom extends antiDDoSForHost {
                 formBr.setHeader("x-csrf-token", apiResponse.get("csrf"));
                 formBr.setHeader("x-requested-with", "XMLHttpRequest");
                 formBr.submitForm(form);
-                Map<String, Object> loginResponse = JSonStorage.restoreFromString(formBr.toString(), TypeRef.HASHMAP);
+                Map<String, Object> loginResponse = restoreFromString(formBr.toString(), TypeRef.MAP);
                 if (loginResponse.containsKey("reason") && ((String) loginResponse.get("reason")).equals("invalid_second_factor")) {
                     String twoFactorCode = getUserInput("Two Factor code", null);
                     form.put("second_factor_method", "1");
                     form.put("second_factor_token", twoFactorCode);
                     formBr.submitForm(form);
-                    loginResponse = JSonStorage.restoreFromString(formBr.toString(), TypeRef.HASHMAP);
+                    loginResponse = restoreFromString(formBr.toString(), TypeRef.MAP);
                 }
                 if (loginResponse.containsKey("error")) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, (String) loginResponse.get("error"), PluginException.VALUE_ID_PREMIUM_DISABLE);

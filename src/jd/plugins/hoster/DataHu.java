@@ -143,7 +143,7 @@ public class DataHu extends antiDDoSForHost {
                     sb.append("%2C");
                 }
                 this.getAPISafe(API_BASE + "?act=check_download_links&links=" + sb.toString());
-                final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
                 final Map<String, Object> link_info = (Map<String, Object>) entries.get("link_info");
                 for (final DownloadLink link : links) {
                     final Map<String, Object> info = (Map<String, Object>) link_info.get(link.getPluginPatternMatcher());
@@ -213,7 +213,7 @@ public class DataHu extends antiDDoSForHost {
         AccountInfo ai = new AccountInfo();
         this.setBrowserExclusive();
         login(account);
-        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
         final String type = entries.get("type").toString();
         if (!"premium".equalsIgnoreCase(type)) {
             if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
@@ -258,7 +258,7 @@ public class DataHu extends antiDDoSForHost {
                 ajax.getHeaders().put("Accept", "*/*");
                 ajax.getHeaders().put("X-Requested-With", " XMLHttpRequest");
                 submitForm(ajax, captcha);
-                final Map<String, Object> entries = JSonStorage.restoreFromString(ajax.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+                final Map<String, Object> entries = restoreFromString(ajax.getRequest().getHtmlCode(), TypeRef.MAP);
                 dllink = (String) entries.get("redirect");
             } else {
                 /* No captcha required */

@@ -75,7 +75,7 @@ public class DlslinkNet extends PluginForDecrypt {
         final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, brc).getToken();
         captchaForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
         brc.submitForm(captchaForm);
-        final Map<String, Object> entries = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> entries = restoreFromString(brc.toString(), TypeRef.MAP);
         final String finallink = (String) entries.get("actualUrl");
         if (StringUtils.isEmpty(finallink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

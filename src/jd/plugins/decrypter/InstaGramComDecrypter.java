@@ -1941,7 +1941,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                 // br.getPage(hashtagBaseURL + "?after=" + nextid);
                 InstaGramCom.getPageAltAPI(account, this.br, savedItemsFeedBaseURL + "?max_id=" + nextid);
             }
-            entries = JSonStorage.restoreFromString(br.toString(), TypeRef.MAP);
+            entries = restoreFromString(br.toString(), TypeRef.MAP);
             final int numberofitemsOnThisPage = (int) JavaScriptEngineFactory.toLong(entries.get("num_results"), 0);
             if (numberofitemsOnThisPage == 0) {
                 if (page == 1) {

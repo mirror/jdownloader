@@ -68,7 +68,7 @@ public class MagentamusikDe extends PluginForDecrypt {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final Map<String, Object> map = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+        final Map<String, Object> map = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         final Map<String, Object> content = (Map<String, Object>) map.get("content");
         final Map<String, Object> feature = (Map<String, Object>) content.get("feature");
         final Map<String, Object> metadata = (Map<String, Object>) feature.get("metadata");

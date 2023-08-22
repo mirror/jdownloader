@@ -297,7 +297,7 @@ public class CamvaultXyz extends PluginForHost {
                 br2.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
                 br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 br2.postPage("/cloud/downloadtoken", "file_id=" + fid);
-                final Map<String, Object> entries = restoreFromString(br2.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+                final Map<String, Object> entries = restoreFromString(br2.getRequest().getHtmlCode(), TypeRef.MAP);
                 final String cdn = entries.get("cdn").toString();
                 final String token = entries.get("token").toString();
                 dlform.setAction(br._getURL().getProtocol() + "://" + cdn + "/v2");
@@ -328,7 +328,7 @@ public class CamvaultXyz extends PluginForHost {
             br2.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
             br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             br2.postPage("/gallery/downloadtoken", "trim=&token=" + fid);
-            final Map<String, Object> entries = restoreFromString(br2.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+            final Map<String, Object> entries = restoreFromString(br2.getRequest().getHtmlCode(), TypeRef.MAP);
             final String cdn = entries.get("cdn").toString();
             final String token = entries.get("token").toString();
             dlform.setAction(br._getURL().getProtocol() + "://" + cdn + "/");

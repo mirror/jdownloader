@@ -220,7 +220,7 @@ public class PornportalCom extends PluginForHost {
                 return;
             }
             br.getPage("https://ppp.contentdef.com/thirdparty?sid=" + sid + "&_=" + System.currentTimeMillis());
-            Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.MAP);
             final List<Object> domaininfos = (List<Object>) entries.get("notificationNetworks");
             final PluginFinder finder = new PluginFinder();
             for (final Object domaininfo : domaininfos) {
@@ -556,7 +556,7 @@ public class PornportalCom extends PluginForHost {
                     }
                     final PostRequest postRequest = brlogin.createPostRequest(api_base + "/v1/authenticate/redirect", JSonStorage.serializeToJson(logindata));
                     brlogin.getPage(postRequest);
-                    final Map<String, Object> authInfo = JSonStorage.restoreFromString(brlogin.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+                    final Map<String, Object> authInfo = restoreFromString(brlogin.getRequest().getHtmlCode(), TypeRef.MAP);
                     final String authenticationUrl = (String) authInfo.get("authenticationUrl");
                     if (StringUtils.isEmpty(authenticationUrl)) {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -722,12 +722,12 @@ public class PornportalCom extends PluginForHost {
 
     public static Map<String, Object> getJsonJuanEawInstance(final Browser br) {
         final String json = br.getRegex("window\\.__JUAN\\.rawInstance = (\\{.*?\\});\n").getMatch(0);
-        return JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
+        return JSonStorage.restoreFromString(json, TypeRef.MAP);
     }
 
     public static Map<String, Object> getJsonJuanInitialState(final Browser br) {
         final String json = br.getRegex("window\\.__JUAN\\.initialState = (\\{.*?\\});\\s+").getMatch(0);
-        return JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
+        return JSonStorage.restoreFromString(json, TypeRef.MAP);
     }
 
     private static final String getDefaultCookieNameLogin() {
@@ -783,7 +783,7 @@ public class PornportalCom extends PluginForHost {
                 if (br.getURL() == null || !br.getURL().contains("/v1/self")) {
                     br.getPage(getAPIBase() + "/self");
                 }
-                final Map<String, Object> map = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                final Map<String, Object> map = restoreFromString(br.toString(), TypeRef.MAP);
                 final String joinDate = (String) map.get("joinDate");
                 if (!StringUtils.isEmpty(joinDate)) {
                     ai.setCreateTime(TimeFormatter.getMilliSeconds(joinDate, "yyyy'-'MM'-'dd'T'HH':'mm':'ss", null));
@@ -902,7 +902,7 @@ public class PornportalCom extends PluginForHost {
                         final String sid = UrlQuery.parse("https://" + this.getHost() + autologinURLs[0]).get("sid");
                         final Browser brContentdef = br.cloneBrowser();
                         brContentdef.getPage(String.format("https://ppp.contentdef.com/notification/list?page=1&type=1&network=1&archived=0&ajaxCounter=1&sid=%s&data=%s&_=%d", sid, Encoding.urlEncode(data), System.currentTimeMillis()));
-                        Map<String, Object> entries = JSonStorage.restoreFromString(brContentdef.toString(), TypeRef.HASHMAP);
+                        Map<String, Object> entries = restoreFromString(brContentdef.toString(), TypeRef.MAP);
                         final List<Object> notificationNetworks = (List<Object>) entries.get("notificationNetworks");
                         final ArrayList<String> supportedHostsTmp = new ArrayList<String>();
                         final ArrayList<String> allowedHosts = getAllSupportedPluginDomainsFlat();

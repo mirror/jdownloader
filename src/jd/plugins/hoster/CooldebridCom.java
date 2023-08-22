@@ -114,7 +114,7 @@ public class CooldebridCom extends PluginForHost {
             this.setAjaxHeaders(brc);
             brc.getHeaders().put("Referer", WEBSITE_BASE + "/generate.html");
             brc.submitForm(dlform);
-            final Map<String, Object> root = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
+            final Map<String, Object> root = restoreFromString(brc.toString(), TypeRef.MAP);
             /* TODO: Add/improve errorhandling */
             final String dllink = (String) root.get("dl_link");
             if (StringUtils.isEmpty(dllink)) {
@@ -311,7 +311,7 @@ public class CooldebridCom extends PluginForHost {
                 setAjaxHeaders(brc);
                 brc.submitForm(loginform);
                 /* We expect a json response */
-                final Map<String, Object> root = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
+                final Map<String, Object> root = restoreFromString(brc.toString(), TypeRef.MAP);
                 if (root.get("status").toString().equalsIgnoreCase("error")) {
                     /*
                      * Usually e.g. {"status":"error","msg":"Security Code Incorrect"} or

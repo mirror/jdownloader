@@ -112,7 +112,7 @@ public class DebridFileCom extends PluginForHost {
             br.setHeader("Referer", WEBSITE_BASE + "/service");
             br.setHeader("x-csrf-token", csrfTokenStr);
             br.postPage("/service/get-link", "link=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)));
-            final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
             final String html = entries.get("html").toString();
             final String dllink = new Regex(html, "href='(http[^<>\"\\']+)'>").getMatch(0);
             if (dllink == null) {

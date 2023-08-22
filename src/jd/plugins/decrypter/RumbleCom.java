@@ -107,7 +107,7 @@ public class RumbleCom extends PluginForDecrypt {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final Map<String, Object> root = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> root = restoreFromString(br.toString(), TypeRef.MAP);
         String dateFormatted = null;
         final String dateStr = (String) root.get("pubDate");
         if (!StringUtils.isEmpty(dateStr)) {

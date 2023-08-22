@@ -86,7 +86,7 @@ public class DanbooruDonmaiUsCrawler extends PluginForDecrypt {
             query.addAndReplace("page", Integer.toString(page));
             /* 2021-04-19: API read requests are not limited! https://danbooru.donmai.us/forum_topics/13628 */
             br.getPage(jd.plugins.hoster.DanbooruDonmaiUs.API_BASE + "/posts.json?" + query.toString());
-            final Object apiResponse = JSonStorage.restoreFromString(br.toString(), TypeRef.OBJECT);
+            final Object apiResponse = restoreFromString(br.toString(), TypeRef.OBJECT);
             if (!(apiResponse instanceof List)) {
                 if (page == 1) {
                     /* Unsupported json response */

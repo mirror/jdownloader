@@ -5,6 +5,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Hash;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.requests.PostRequest;
@@ -18,14 +26,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Hash;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "linkifier.com" }, urls = { "" })
 public class LinkifierCom extends PluginForHost {
@@ -57,12 +57,12 @@ public class LinkifierCom extends PluginForHost {
         final PostRequest userRequest = new PostRequest(API_BASE + "/downloadapi.svc/user");
         userRequest.setContentType("application/json; charset=utf-8");
         userRequest.setPostBytes(JSonStorage.serializeToJsonByteArray(userJson));
-        final HashMap<String, Object> userResponse = JSonStorage.restoreFromString(br.getPage(userRequest), TypeRef.HASHMAP);
+        final Map<String, Object> userResponse = restoreFromString(br.getPage(userRequest), TypeRef.MAP);
         if (Boolean.TRUE.equals(userResponse.get("isActive")) && !Boolean.TRUE.equals(userResponse.get("hasErrors"))) {
             final PostRequest hosterRequest = new PostRequest(API_BASE + "/DownloadAPI.svc/hosters");
             hosterRequest.setContentType("application/json; charset=utf-8");
             hosterRequest.setPostBytes(JSonStorage.serializeToJsonByteArray(userJson));
-            final HashMap<String, Object> hosterResponse = JSonStorage.restoreFromString(br.getPage(hosterRequest), TypeRef.HASHMAP);
+            final Map<String, Object> hosterResponse = restoreFromString(br.getPage(hosterRequest), TypeRef.MAP);
             if ("unlimited".equalsIgnoreCase(String.valueOf(userResponse.get("extraTraffic")))) {
                 ai.setUnlimitedTraffic();
             }
@@ -141,7 +141,7 @@ public class LinkifierCom extends PluginForHost {
         final PostRequest downloadRequest = new PostRequest(API_BASE + "/downloadapi.svc/stream");
         downloadRequest.setContentType("application/json; charset=utf-8");
         downloadRequest.setPostBytes(JSonStorage.serializeToJsonByteArray(downloadJson));
-        final HashMap<String, Object> downloadResponse = JSonStorage.restoreFromString(br.getPage(downloadRequest), TypeRef.HASHMAP);
+        final Map<String, Object> downloadResponse = restoreFromString(br.getPage(downloadRequest), TypeRef.MAP);
         if (Boolean.FALSE.equals(downloadResponse.get("hasErrors"))) {
             final String dllink = downloadResponse.get("url") != null ? String.valueOf(downloadResponse.get("url")) : null;
             if (StringUtils.isEmpty(dllink)) {

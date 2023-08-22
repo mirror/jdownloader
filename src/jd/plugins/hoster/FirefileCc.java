@@ -449,7 +449,7 @@ public class FirefileCc extends PluginForHost {
         api.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         api.getPage("https://firefile.cc/secure/uploads/downloadChunk?hashes=" + entryInfo.get("hash") + "&shareable_link=" + linkInfo.get("id"));
         try {
-            final Map<String, Object> apiResponse = JSonStorage.restoreFromString(api.toString(), TypeRef.HASHMAP);
+            final Map<String, Object> apiResponse = restoreFromString(api.toString(), TypeRef.MAP);
             return (String) apiResponse.get("url");
         } catch (JSonMapperException e) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, null, e);
@@ -464,7 +464,7 @@ public class FirefileCc extends PluginForHost {
         api.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         api.getPage("https://firefile.cc/secure/drive/shareable-links/" + linkData.getHash() + "?&withEntries=true");
         try {
-            final Map<String, Object> apiResponse = JSonStorage.restoreFromString(api.toString(), TypeRef.HASHMAP);
+            final Map<String, Object> apiResponse = restoreFromString(api.toString(), TypeRef.MAP);
             return apiResponse;
         } catch (JSonMapperException e) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, null, e);

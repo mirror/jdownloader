@@ -179,7 +179,7 @@ public class PixivNet extends PluginForHost {
             checkErrors(br);
             final String novelID = this.getFID(link);
             final String json = br.getRegex("id=\"meta-preload-data\"[^>]*content='([^\\']*?)'").getMatch(0);
-            final Map<String, Object> entries = restoreFromString(json, TypeRef.HASHMAP);
+            final Map<String, Object> entries = restoreFromString(json, TypeRef.MAP);
             final Map<String, Object> novelInfo = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "novel/" + novelID);
             final String createDate = novelInfo.get("createDate").toString();
             final String dateFormatted = new Regex(createDate, "(\\d{4}-\\d{2}-\\d{2})").getMatch(0);
@@ -445,7 +445,7 @@ public class PixivNet extends PluginForHost {
                 logger.info("Performing full login");
                 br.getPage("https://www." + this.getHost() + "/login.php?ref=wwwtop_accounts_index");
                 final String loginJson = br.getRegex("class=\"json-data\" value='(\\{.*?)\\'>").getMatch(0);
-                final Map<String, Object> loginInfo = restoreFromString(loginJson, TypeRef.HASHMAP);
+                final Map<String, Object> loginInfo = restoreFromString(loginJson, TypeRef.MAP);
                 final Form loginform = new Form();
                 loginform.setAction("/ajax/login?lang=en");
                 loginform.setMethod(MethodType.POST);
@@ -510,7 +510,7 @@ public class PixivNet extends PluginForHost {
                 loginRequest.getHeaders().put("Accept", "application/json");
                 loginRequest.getHeaders().put("Origin", "https://accounts." + br.getHost());
                 br.getPage(loginRequest);
-                final Map<String, Object> response = restoreFromString(br.toString(), TypeRef.HASHMAP);
+                final Map<String, Object> response = restoreFromString(br.toString(), TypeRef.MAP);
                 if ((Boolean) response.get("error") == Boolean.TRUE) {
                     throw new AccountInvalidException();
                 }

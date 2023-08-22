@@ -58,7 +58,7 @@ public class GoFileIoCrawler extends PluginForDecrypt {
             req.getHeaders().put(new HTTPHeader(HTTPConstants.HEADER_REQUEST_ORIGIN, "https://" + this.getHost()));
             req.getHeaders().put(new HTTPHeader(HTTPConstants.HEADER_REQUEST_REFERER, "https://" + this.getHost()));
             brc.getPage(req);
-            response = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
+            response = restoreFromString(brc.toString(), TypeRef.MAP);
             if ("error-passwordRequired".equals(response.get("status")) || "error-passwordWrong".equals(response.get("status"))) {
                 passwordRequired = true;
                 passwordCorrect = false;

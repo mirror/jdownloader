@@ -263,7 +263,7 @@ public class AllDebridCom extends PluginForHost {
         login(account, new AccountInfo(), true);
         /* They got 3 arrays of types of supported websites --> We want to have the "hosts" Array only! */
         br.getPage(api_base + "/user/hosts?" + agent + "&hostsOnly=true");
-        final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+        final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         final Map<String, Object> supportedHostsInfo = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "data/hosts");
         final Iterator<Entry<String, Object>> iterator = supportedHostsInfo.entrySet().iterator();
         final ArrayList<String> supportedHosts = new ArrayList<String>();
@@ -909,7 +909,7 @@ public class AllDebridCom extends PluginForHost {
                 br.submitForm(dlform);
                 try {
                     /* We have to use the parser here because json contains two 'status' objects ;) */
-                    final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+                    final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
                     final Map<String, Object> data = (Map<String, Object>) entries.get("data");
                     delayedStatus = (int) JavaScriptEngineFactory.toLong(data.get("status"), 3);
                     final int tmpCurrentProgress = (int) ((Number) data.get("progress")).doubleValue() * 100;

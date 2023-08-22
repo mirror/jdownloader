@@ -17,6 +17,7 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
@@ -73,7 +74,7 @@ public class BaseShareComCrawler extends PluginForDecrypt {
 
     private static final String  PATTERN_EMBED_STR  = "mixtapes/embed/id/(\\d+)";
     private static final Pattern PATTERN_EMBED      = Pattern.compile("(?i)https?://[^/]+/" + PATTERN_EMBED_STR);
-    private static final String  PATTERN_NORMAL_STR = "([\\w\\-]+)/mixtapes/([\\w\\-]+)/(\\d+)/";
+    private static final String  PATTERN_NORMAL_STR = "([\\w\\-]+)/mixtapes/([^/]+)/(\\d+)/";
     private static final Pattern PATTERN_NORMAL     = Pattern.compile("(?i)https?://[^/]+/" + PATTERN_NORMAL_STR);
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
@@ -115,12 +116,10 @@ public class BaseShareComCrawler extends PluginForDecrypt {
                 final String thisartist = linkinfo[0][1];
                 final String thistitle = linkinfo[0][2];
                 final String thisid = linkinfo[0][3];
-                final String thisartisturl = thisartist.replaceAll("(\\-|\\.|_)", "").replace(" ", "-");
-                final String thistitleurl = thistitle.replaceAll("(\\-|\\.|_)", "").replace(" ", "-");
-                final String songurl = "https://baseshare.com/" + slugArtist + "/songs/" + thisartisturl + "-" + thistitleurl + "/" + thisid + "/";
+                final String songurl = "https://baseshare.com/" + slugArtist + "/songs/" + toSlug(thisartist) + "-" + toSlug(thistitle) + "/" + thisid + "/";
                 final DownloadLink dl = createDownloadlink(songurl);
                 dl.setProperty("directlink", thisurl);
-                dl.setName(thisartist + " - " + thistitle + ".mp3");
+                dl.setName(Encoding.htmlDecode(thisartist).trim() + " - " + Encoding.htmlDecode(thistitle).trim() + ".mp3");
                 dl.setAvailable(true);
                 ret.add(dl);
             }
@@ -131,6 +130,22 @@ public class BaseShareComCrawler extends PluginForDecrypt {
             fp.addLinks(ret);
         }
         return ret;
+    }
+
+    private String toSlug(final String str) {
+        final String preparedSlug = str.toLowerCase(Locale.ENGLISH).replace("ü", "u").replace("ä", "a").replace("ö", "o");
+        String slug = preparedSlug.replaceAll("[^a-z0-9]", "-");
+        /* Remove double-minus */
+        slug = slug.replaceAll("-{2,}", "-");
+        /* Do not begin with minus */
+        if (slug.startsWith("-")) {
+            slug = slug.substring(1);
+        }
+        /* Do not end with minus */
+        if (slug.endsWith("-")) {
+            slug = slug.substring(0, slug.length() - 1);
+        }
+        return slug;
     }
 
     private PluginForHost plugin = null;

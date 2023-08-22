@@ -145,7 +145,7 @@ public class TumblrCom extends PluginForHost {
                     br.getHeaders().put("Authorization", "Bearer " + apikey);
                     br.getPage(API_BASE + "/user/info?fields%5Bblogs%5D=avatar%2Cname%2Ctitle%2Curl%2Ccan_message%2Cdescription%2Cis_adult%2Cuuid%2Cis_private_channel%2Cposts%2Cis_group_channel%2C%3Fprimary%2C%3Fadmin%2C%3Fdrafts%2C%3Ffollowers%2C%3Fqueue%2C%3Fhas_flagged_posts%2Cmessages%2Cask%2C%3Fcan_submit%2C%3Ftweet%2Cmention_key%2C%3Ftimezone_offset%2C%3Fanalytics_url%2C%3Fis_premium_partner%2C%3Fis_blogless_advertiser%2C%3Fcan_onboard_to_paywall%2C%3Fis_tumblrpay_onboarded%2C%3Fis_paywall_on%2C%3Flinked_accounts");
                     try {
-                        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                        final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
                         if (entries.containsKey("errors")) {
                             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                         }
@@ -172,7 +172,7 @@ public class TumblrCom extends PluginForHost {
             br.getHeaders().put("Authorization", "Bearer " + apikey);
             br.getPage(API_BASE + "/user/info?fields%5Bblogs%5D=avatar%2Cname%2Ctitle%2Curl%2Ccan_message%2Cdescription%2Cis_adult%2Cuuid%2Cis_private_channel%2Cposts%2Cis_group_channel%2C%3Fprimary%2C%3Fadmin%2C%3Fdrafts%2C%3Ffollowers%2C%3Fqueue%2C%3Fhas_flagged_posts%2Cmessages%2Cask%2C%3Fcan_submit%2C%3Ftweet%2Cmention_key%2C%3Ftimezone_offset%2C%3Fanalytics_url%2C%3Fis_premium_partner%2C%3Fis_blogless_advertiser%2C%3Fcan_onboard_to_paywall%2C%3Fis_tumblrpay_onboarded%2C%3Fis_paywall_on%2C%3Flinked_accounts");
             try {
-                final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
                 if (entries.containsKey("errors")) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
@@ -187,7 +187,7 @@ public class TumblrCom extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         login(account, true);
-        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
         final Map<String, Object> user = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "response/user");
         /* User could enter any name as username during cookie login -> Fixed this -> Make sure that name is unique */
         account.setUser(user.get("name").toString());

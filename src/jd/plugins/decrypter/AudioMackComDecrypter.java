@@ -103,7 +103,7 @@ public class AudioMackComDecrypter extends PluginForDecrypt {
                 decryptedLinks.add(createOfflinelink(parameter, title_url, null));
                 return decryptedLinks;
             }
-            final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
             final Map<String, Object> results = (Map<String, Object>) entries.get("results");
             final String status = (String) results.get("status");
             if (status != null && status.equalsIgnoreCase("suspended")) {

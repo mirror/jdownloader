@@ -189,7 +189,7 @@ public class BoxCom extends antiDDoSForDecrypt {
         }
         do {
             final String json = br.getRegex("<script>\\s*Box\\.postStreamData\\s*=\\s*(\\{.*?\\});\\s*</script>").getMatch(0);
-            Map<String, Object> rootMap = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
+            Map<String, Object> rootMap = restoreFromString(json, TypeRef.MAP);
             Map<String, Object> itemInfoMap = (Map<String, Object>) rootMap.get("/app-api/enduserapp/shared-item");
             final String itemType = (String) itemInfoMap.get("itemType");
             final long fuidSingle = JavaScriptEngineFactory.toLong(itemInfoMap.get("itemID"), 0);

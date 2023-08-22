@@ -324,7 +324,7 @@ public class MydebridCom extends antiDDoSForHost {
     private String getErrormessage(final Browser br) {
         String errormsg = null;
         try {
-            final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
             errormsg = (String) entries.get("error");
         } catch (final Throwable e) {
         }

@@ -483,7 +483,7 @@ public class NexusmodsCom extends antiDDoSForHost {
         prepBrAPI(br, account);
         getPage(API_BASE + "/users/validate.json");
         handleErrorsAPI(br);
-        final Map<String, Object> user = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> user = restoreFromString(br.toString(), TypeRef.MAP);
         final String email = (String) user.get("email");
         if (!StringUtils.isEmpty(email)) {
             /* User can enter whatever he wants into username field in JDownloader but we want unique usernames. */

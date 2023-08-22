@@ -279,7 +279,7 @@ public class GfyCatCom extends PluginForHost {
                         request.setContentType("application/json");// is important, default content-type with charset will fail in bad
                         // request
                         brc.getPage(request);
-                        final Map<String, Object> entries = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
+                        final Map<String, Object> entries = restoreFromString(brc.toString(), TypeRef.MAP);
                         token = (String) entries.get("access_token");
                         if (StringUtils.isEmpty(token)) {
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -308,7 +308,7 @@ public class GfyCatCom extends PluginForHost {
             } else if (brapi.getHttpConnection().getResponseCode() == 410) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            Map<String, Object> entries = JSonStorage.restoreFromString(brapi.toString(), TypeRef.HASHMAP);
+            Map<String, Object> entries = restoreFromString(brapi.toString(), TypeRef.MAP);
             entries = (Map<String, Object>) entries.get("gfyItem");
             final Map<String, Object> sources = (Map<String, Object>) entries.get("content_urls");
             String url = null;
@@ -461,7 +461,7 @@ public class GfyCatCom extends PluginForHost {
                         if (complicatedJSON != null) {
                             try {
                                 final Object rootO = JavaScriptEngineFactory.jsonToJavaObject(complicatedJSON);
-                                // final List<Object> ressourcelist = JSonStorage.restoreFromString(complicatedJSON, TypeRef.LIST);
+                                // final List<Object> ressourcelist = restoreFromString(complicatedJSON, TypeRef.LIST);
                                 final Map<String, Object> allMedia = (Map<String, Object>) JavaScriptEngineFactory.walkJson(rootO, "{0}/cache/gifs");
                                 final Map<String, Object> thisMediaInfo = (Map<String, Object>) allMedia.get(fid);
                                 title = (String) thisMediaInfo.get("title");

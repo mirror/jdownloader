@@ -228,7 +228,7 @@ public class TransloadMe extends PluginForHost {
                 ai.setUnlimitedTraffic();
             }
             getApi("require=supporthost", account, null);
-            final Map<String, Object> host_list = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            final Map<String, Object> host_list = restoreFromString(br.toString(), TypeRef.MAP);
             final List<Map<String, Object>> list = (List<Map<String, Object>>) host_list.get("host_list");
             List<String> supportedHosts = new ArrayList<String>();
             for (final Map<String, Object> entry : list) {

@@ -209,7 +209,7 @@ public class IwaraTv extends PluginForHost {
                 if (brc.toString().equals("[]")) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Processing video, please check back in a while");
                 }
-                final List<Map<String, Object>> ressourcelist = (List<Map<String, Object>>) JSonStorage.restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.OBJECT);
+                final List<Map<String, Object>> ressourcelist = (List<Map<String, Object>>) restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.OBJECT);
                 int maxQuality = -1;
                 String maxQualityStr = null;
                 String bestQualityDownloadurl = null;

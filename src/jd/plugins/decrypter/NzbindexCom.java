@@ -86,7 +86,7 @@ public class NzbindexCom extends PluginForDecrypt {
             final String searchString = query.get("q");
             final String url = query.toString();
             br.getPage("https://" + this.getHost() + "/search/json?" + url.substring(url.lastIndexOf("?") + 1) + "&p=0");
-            final Map<String, Object> root = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            final Map<String, Object> root = restoreFromString(br.toString(), TypeRef.MAP);
             final List<Map<String, Object>> results = (List<Map<String, Object>>) root.get("results");
             final Map<String, Object> stats = (Map<String, Object>) root.get("stats");
             final int max_page = ((Number) stats.get("max_page")).intValue();

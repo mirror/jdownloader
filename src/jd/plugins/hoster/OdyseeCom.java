@@ -148,7 +148,7 @@ public class OdyseeCom extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
         entries = (Map<String, Object>) entries.get("result");
         entries = (Map<String, Object>) entries.get(resolveString);
         if (entries.containsKey("error")) {

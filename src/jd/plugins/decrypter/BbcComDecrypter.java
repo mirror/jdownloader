@@ -270,7 +270,7 @@ public class BbcComDecrypter extends PluginForDecrypt {
         /* 2022-01-17: New handling */
         final String jsonMorphSingle = br.getRegex("Morph\\.setPayload\\('[^\\']+', (\\{.*?\\})\\);").getMatch(0);
         if (jsonMorphSingle != null) {
-            final Map<String, Object> root = JSonStorage.restoreFromString(jsonMorphSingle, TypeRef.HASHMAP);
+            final Map<String, Object> root = restoreFromString(jsonMorphSingle, TypeRef.MAP);
             final Map<String, Object> body = (Map<String, Object>) root.get("body");
             pageTitle = (String) body.get("pageTitle");
             final List<Map<String, Object>> videos = (List<Map<String, Object>>) body.get("videos");
@@ -536,7 +536,7 @@ public class BbcComDecrypter extends PluginForDecrypt {
         if (jsons.length > 0) {
             String playlistTitle = null;
             for (final String json : jsons) {
-                final Map<String, Object> root = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
+                final Map<String, Object> root = restoreFromString(json, TypeRef.MAP);
                 final Map<String, Object> smpSettings = (Map<String, Object>) root.get("smpSettings");
                 final Map<String, Object> playlistObject = (Map<String, Object>) smpSettings.get("playlistObject");
                 playlistTitle = (String) playlistObject.get("title");

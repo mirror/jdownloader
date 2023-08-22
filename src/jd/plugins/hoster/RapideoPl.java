@@ -111,7 +111,7 @@ public class RapideoPl extends PluginForHost {
         if (obtainTrafficViaOldAPI) {
             /* API used in their browser addons */
             br.postPage("https://enc.rapideo.pl/", "site=newrd&output=json&loc=1&info=1&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + md5HEX(account.getPass()));
-            final Map<String, Object> root = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            final Map<String, Object> root = restoreFromString(br.toString(), TypeRef.MAP);
             final String trafficLeftStr = root.get("balance").toString();
             if (trafficLeftStr != null && trafficLeftStr.matches("\\d+")) {
                 ac.setTrafficLeft(Long.parseLong(trafficLeftStr) * 1024);
@@ -226,7 +226,7 @@ public class RapideoPl extends PluginForHost {
             String dllink = null;
             for (int i = 1; i <= 280; i++) {
                 br.postPage("/twoje_pliki", "downloadprogress=1");
-                final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
                 final List<Map<String, Object>> standardFiles = (List<Map<String, Object>>) entries.get("StandardFiles");
                 Map<String, Object> activeDownloadingFileInfo = null;
                 for (final Map<String, Object> standardFile : standardFiles) {

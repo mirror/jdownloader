@@ -112,7 +112,7 @@ public class AccioDebridCom extends PluginForHost {
                 query.add("password", Encoding.urlEncode(link.getDownloadPassword()));
             }
             br.postPage(API_BASE + "?action=getLink&token=" + Encoding.urlEncode(this.getLoginToken(account)), query);
-            final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
             final String dllink = (String) entries.get("debridLink");
             final String response_text = entries.get("response_text").toString(); // "ok" if no error is returned
             if (StringUtils.isEmpty(dllink)) {
@@ -164,7 +164,7 @@ public class AccioDebridCom extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         login(account, true);
-        final Map<String, Object> root = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> root = restoreFromString(br.toString(), TypeRef.MAP);
         /* 2022-04-11: Look like API is returning long values as string... */
         final long expireTimestamp = JavaScriptEngineFactory.toLong(root.get("vip_end"), -1);
         if (expireTimestamp != -1) {
@@ -175,7 +175,7 @@ public class AccioDebridCom extends PluginForHost {
             ai.setExpired(true);
         }
         br.getPage(API_BASE + "?action=getHostersList");
-        final Map<String, Object> hostsMap = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> hostsMap = restoreFromString(br.toString(), TypeRef.MAP);
         final ArrayList<String> supportedHosts = new ArrayList<String>();
         for (final Object hostInfoO : hostsMap.values()) {
             /*
@@ -204,7 +204,7 @@ public class AccioDebridCom extends PluginForHost {
                 }
                 logger.info("Performing full login");
                 br.getPage(API_BASE + "?action=login&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-                final Map<String, Object> root = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                final Map<String, Object> root = restoreFromString(br.toString(), TypeRef.MAP);
                 final String response_code = (String) root.get("response_code");
                 if (StringUtils.equalsIgnoreCase(response_code, "INCORRECT_PASSWORD")) {
                     throw new AccountInvalidException();
@@ -230,7 +230,7 @@ public class AccioDebridCom extends PluginForHost {
     private void checkErrors(final Account account) throws PluginException, InterruptedException {
         /* TODO: Make use of this */
         try {
-            final Object jsonO = JSonStorage.restoreFromString(br.toString(), TypeRef.OBJECT);
+            final Object jsonO = restoreFromString(br.toString(), TypeRef.OBJECT);
             if (jsonO == null || !(jsonO instanceof Map)) {
                 return;
             }

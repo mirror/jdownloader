@@ -227,7 +227,7 @@ public class FShareVn extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, null, aue);
                     }
                 }
-                entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                entries = restoreFromString(br.toString(), TypeRef.MAP);
                 break;
             }
         }
@@ -276,7 +276,7 @@ public class FShareVn extends PluginForHost {
                 throw new AccountUnavailableException("Banned API credentials - read this: " + apiCredentialsHelpPage, 60 * 60 * 1000l);
             }
         }
-        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
         String msg = "Unknown error";
         if (entries.containsKey("msg")) {
             msg = entries.get("msg").toString();
@@ -697,7 +697,7 @@ public class FShareVn extends PluginForHost {
                 }
                 final PostRequest downloadReq = brc.createJSonPostRequest("https://" + getAPIHost() + "/api/session/download", JSonStorage.serializeToJson(postdata));
                 brc.getPage(downloadReq);
-                final Map<String, Object> entries = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
+                final Map<String, Object> entries = restoreFromString(brc.toString(), TypeRef.MAP);
                 if (isDownloadPasswordRequiredOrInvalid((String) entries.get("msg")) && passwordAttemptsCounter < 3) {
                     passCode = getUserInput("Password?", link);
                     passwordAttemptsCounter += 1;
@@ -1017,7 +1017,7 @@ public class FShareVn extends PluginForHost {
                 final PostRequest loginReq = br.createJSonPostRequest("https://" + getAPIHost() + "/api/user/login", JSonStorage.toString(map));
                 br.getPage(loginReq);
                 checkErrorsAPI(br, account, null);
-                final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
                 token = (String) entries.get(PROPERTY_ACCOUNT_TOKEN);
                 /*
                  * session_id is valid for 6 hours after last usage which means as long as the users' JD is always running, every default
@@ -1135,7 +1135,7 @@ public class FShareVn extends PluginForHost {
             prepBrowserAPI(br);
             br.getPage("https://" + getAPIHost() + "/api/user/get");
         }
-        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
         /**
          * 2019-07-16: Website does not display any traffic related information so we'll leave this out for now! All given values are 0.
          */

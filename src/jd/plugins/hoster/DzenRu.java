@@ -110,7 +110,7 @@ public class DzenRu extends PluginForHost {
         final String redirectJson = br.getRegex("var it = (\\{.*\\});").getMatch(0);
         if (redirectJson != null) {
             logger.info("Handling redirect");
-            final Map<String, Object> entries = JSonStorage.restoreFromString(redirectJson, TypeRef.MAP);
+            final Map<String, Object> entries = restoreFromString(redirectJson, TypeRef.MAP);
             br.getPage(entries.get("retpath").toString());
         }
         if (br.getHttpConnection().getResponseCode() == 404) {
@@ -140,7 +140,7 @@ public class DzenRu extends PluginForHost {
             Map<String, Object> schemaOrgVideoObject = null;
             for (final String otherJson : otherJsons) {
                 try {
-                    final Map<String, Object> root = JSonStorage.restoreFromString(otherJson, TypeRef.MAP);
+                    final Map<String, Object> root = restoreFromString(otherJson, TypeRef.MAP);
                     final String atContext = (String) root.get("@context");
                     if (StringUtils.equalsIgnoreCase(atContext, "http://schema.org")) {
                         schemaOrgVideoObject = root;

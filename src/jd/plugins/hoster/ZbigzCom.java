@@ -240,7 +240,7 @@ public class ZbigzCom extends antiDDoSForHost {
             accountInfoReq.addFormData(new FormData("undefined", "undefined"));
             super.sendRequest(accountInfoReq);
         }
-        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
         final String premium_valid_date = (String) entries.get("premium_valid_date");
         final String premium_days = PluginJSonUtils.getJson(br, "premium_days");
         if (!StringUtils.isEmpty(premium_valid_date) || "true".equalsIgnoreCase(premium_days)) {

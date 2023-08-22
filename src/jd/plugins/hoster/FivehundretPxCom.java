@@ -97,7 +97,7 @@ public class FivehundretPxCom extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
         final Map<String, Object> photo = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "photos/" + photoID);
         if (photo == null) {
             /* 2020-09-09: E.g. {"photos":{}} --> Content offline */

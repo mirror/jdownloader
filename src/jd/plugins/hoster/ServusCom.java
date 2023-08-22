@@ -147,7 +147,7 @@ public class ServusCom extends PluginForHost {
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            entries = restoreFromString(br.toString(), TypeRef.MAP);
             title = (String) entries.get("title");
             description = (String) entries.get("description");
             if (episodenumber == null) {
@@ -190,7 +190,7 @@ public class ServusCom extends PluginForHost {
             tokenRequest.getHeaders().put("Authorization", "Basic " + authToken);
             br.getPage(tokenRequest);
             /* 2020-10-19: This one will typically be valid for 5 minutes */
-            entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            entries = restoreFromString(br.toString(), TypeRef.MAP);
             final String access_token = (String) entries.get("access_token");
             if (StringUtils.isEmpty(access_token)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -202,7 +202,7 @@ public class ServusCom extends PluginForHost {
                 /* 2020-10-20: E.g. {"code":404,"message":"Asset not found"} */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            entries = restoreFromString(br.toString(), TypeRef.MAP);
             final String contentType = (String) entries.get("contentType");
             if (!StringUtils.equalsIgnoreCase(contentType, "video")) {
                 /*
@@ -224,7 +224,7 @@ public class ServusCom extends PluginForHost {
                     /*
                      * 2020-10-21: WTF this almost always contains multiple items but with the same dates --> Let's just grab the first one
                      */
-                    final List<Object> dateList = JSonStorage.restoreFromString(source_list_schedule_data, TypeRef.LIST);
+                    final List<Object> dateList = restoreFromString(source_list_schedule_data, TypeRef.LIST);
                     if (dateList.isEmpty()) {
                         logger.info("source_list_schedule_data is empty");
                     } else {
@@ -248,7 +248,7 @@ public class ServusCom extends PluginForHost {
                     final String json = br.getRegex("<script type=\"application/ld\\+json\">([^<]+VideoObject[^<]+)</script>").getMatch(0);
                     if (json != null) {
                         link.setProperty(PROPERTY_HAS_TRIED_TO_CRAWL_RELEASE_DATE, true);
-                        final Map<String, Object> websiteData = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
+                        final Map<String, Object> websiteData = restoreFromString(json, TypeRef.MAP);
                         if (StringUtils.isEmpty(title)) {
                             title = (String) websiteData.get("name");
                         }
@@ -269,7 +269,7 @@ public class ServusCom extends PluginForHost {
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            entries = restoreFromString(br.toString(), TypeRef.MAP);
             // final ArrayList<Object> ressourcelist = (ArrayList<Object>) entries.get("");
             date = (String) JavaScriptEngineFactory.walkJson(entries, "playability/{0}/{0}/startDate");
             title = (String) entries.get("titleStv");
@@ -385,7 +385,7 @@ public class ServusCom extends PluginForHost {
                     request.getHeaders().put("Origin", "https://www.servustv.com");
                     request.getHeaders().put("Referer", "https://www.servustv.com");
                     brc.getPage(request);
-                    final Map<String, Object> response = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
+                    final Map<String, Object> response = restoreFromString(brc.toString(), TypeRef.MAP);
                     final String v3Token = (String) response.get("token");
                     if (v3Token != null) {
                         brc = br.cloneBrowser();

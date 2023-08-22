@@ -221,7 +221,7 @@ public class FlickrComCrawler extends PluginForDecrypt {
             final UrlQuery specialQueryForFirstRequest = query;
             specialQueryForFirstRequest.add("get_gallery_info", "1");
             apiGetPage(API_BASE + "services/rest?" + specialQueryForFirstRequest.toString());
-            final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
             final Map<String, Object> galleryInfo = (Map<String, Object>) entries.get("gallery");
             username = (String) galleryInfo.get("username");
             usernameInternal = (String) galleryInfo.get("owner");

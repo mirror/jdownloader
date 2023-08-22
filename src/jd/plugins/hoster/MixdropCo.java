@@ -137,7 +137,7 @@ public class MixdropCo extends antiDDoSForHost {
              */
             final Browser brc = br.cloneBrowser();
             getPage(brc, API_BASE + "/fileinfo?email=" + Encoding.urlEncode(getAPIMail()) + "&key=" + getAPIKey() + "&ref[]=" + this.getFID(link));
-            final Map<String, Object> json = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
+            final Map<String, Object> json = restoreFromString(brc.toString(), TypeRef.MAP);
             final Boolean success = (Boolean) json.get("success");
             if (brc.getHttpConnection().getResponseCode() == 404 || success == Boolean.FALSE) {
                 /* E.g. {"success":false,"result":{"msg":"file not found"}} */
@@ -214,7 +214,7 @@ public class MixdropCo extends antiDDoSForHost {
             }
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             postPage(br.getURL(), query.toString());
-            final Map<String, Object> json = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            final Map<String, Object> json = restoreFromString(br.toString(), TypeRef.MAP);
             dllink = (String) json.get("url");
             if (StringUtils.isEmpty(dllink)) {
                 final String errormsg = (String) json.get("msg");

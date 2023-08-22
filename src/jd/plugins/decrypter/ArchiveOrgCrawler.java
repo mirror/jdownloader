@@ -294,7 +294,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         if (audioPlaylistJson != null) {
             final ArrayList<DownloadLink> audioPlaylistItemsSimple = new ArrayList<DownloadLink>();
             final Map<String, Integer> filenameToTrackPositionMapping = new HashMap<String, Integer>();
-            final List<Map<String, Object>> ressourcelist = (List<Map<String, Object>>) JSonStorage.restoreFromString(audioPlaylistJson, TypeRef.OBJECT);
+            final List<Map<String, Object>> ressourcelist = (List<Map<String, Object>>) restoreFromString(audioPlaylistJson, TypeRef.OBJECT);
             if (ressourcelist.isEmpty()) {
                 /* This should never happen. */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

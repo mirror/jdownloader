@@ -20,6 +20,10 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -32,10 +36,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "fex.net" }, urls = { "https?://(?:www\\.)?fex\\.net/folder/([a-z0-9]+)/file/(\\d+)" })
 public class FexNet extends PluginForHost {
@@ -106,7 +106,7 @@ public class FexNet extends PluginForHost {
         // final String token = (String) JavaScriptEngineFactory.walkJson(entries, "anonymous/anonym_token");
         final Browser brc = br.cloneBrowser();
         brc.getPage(API_BASE + "/v1/anonymous/upload-token");
-        final Map<String, Object> entries = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> entries = JSonStorage.restoreFromString(brc.toString(), TypeRef.MAP);
         final String token = (String) entries.get("token");
         if (StringUtils.isEmpty(token)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

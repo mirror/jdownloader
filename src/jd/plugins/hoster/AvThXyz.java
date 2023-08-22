@@ -127,7 +127,7 @@ public class AvThXyz extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
-        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
         /* TODO: Check if this is ever given */
         final List<Object> downloadLinks = (List<Object>) entries.get("downloadLinks");
         if (!downloadLinks.isEmpty()) {

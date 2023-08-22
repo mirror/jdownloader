@@ -148,7 +148,7 @@ public class LetsuploadCo extends YetiShareCore {
             /* 2022-01-12: Special handling */
             final Browser brc = br.cloneBrowser();
             brc.postPage("/account/ajax/file_details", "u=" + internalFileID);
-            final Map<String, Object> entries = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
+            final Map<String, Object> entries = restoreFromString(brc.toString(), TypeRef.MAP);
             final String html = (String) entries.get("html");
             brc.getRequest().setHtmlCode(html);
             final Form pwform = brc.getFormbyProperty("id", "folderPasswordForm");
@@ -161,7 +161,7 @@ public class LetsuploadCo extends YetiShareCore {
                 pwform.setMethod(MethodType.POST);
                 br.setFollowRedirects(false);
                 this.submitForm(pwform);
-                final Map<String, Object> pwResponse = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                final Map<String, Object> pwResponse = restoreFromString(br.toString(), TypeRef.MAP);
                 if (pwResponse.get("success") != Boolean.TRUE) {
                     /* E.g. {"success":false,"msg":"The folder password is invalid"} */
                     throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");

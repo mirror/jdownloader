@@ -129,7 +129,7 @@ public class NaughtyBlgOrg extends antiDDoSForDecrypt {
                 form.put("token", recaptchaV2Response);
                 final Browser brc = br.cloneBrowser();
                 brc.submitForm(form);
-                final Map<String, Object> response = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
+                final Map<String, Object> response = restoreFromString(brc.toString(), TypeRef.MAP);
                 if (Boolean.TRUE.equals(response.get("success"))) {
                     downloadhidden = (String) response.get("content");
                 }

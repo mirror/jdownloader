@@ -63,7 +63,7 @@ public class SvtSe extends PluginForHost {
         final String id = new Regex(link.getDownloadURL(), "/video/(\\d+)").getMatch(0);
         final String query = br.getRegex("\"query\"\\s*:\\s*(\\{.*?\\})").getMatch(0);
         if (query != null && id != null) {
-            final Map<String, Object> queryMap = JSonStorage.restoreFromString(query, TypeRef.HASHMAP);
+            final Map<String, Object> queryMap = restoreFromString(query, TypeRef.MAP);
             if (id.equals(queryMap.get("videoId"))) {
                 videoid = (String) queryMap.get("id");
                 if (StringUtils.isEmpty(videoid)) {

@@ -64,7 +64,7 @@ public class IssuuCom extends PluginForDecrypt {
                 if (isOffline(brc)) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                final Map<String, Object> entries = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
+                final Map<String, Object> entries = restoreFromString(brc.toString(), TypeRef.MAP);
                 ownerUsername = entries.get("ownerUsername").toString();
                 documentURI = entries.get("documentURI").toString();
             } else {
@@ -85,10 +85,10 @@ public class IssuuCom extends PluginForDecrypt {
             /* E.g. {"message":"Document does not exist"} */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final Map<String, Object> docInfo = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> docInfo = restoreFromString(br.toString(), TypeRef.MAP);
         final Map<String, Object> metadata = (Map<String, Object>) docInfo.get("metadata");
         br.getPage("https://reader3.isu.pub/" + ownerUsername + "/" + documentURI + "/reader3_4.json");
-        Map<String, Object> docInfo2 = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        Map<String, Object> docInfo2 = restoreFromString(br.toString(), TypeRef.MAP);
         final Map<String, Object> document = (Map<String, Object>) docInfo2.get("document");
         final List<Map<String, Object>> pages = (List<Map<String, Object>>) document.get("pages");
         // final String username = docInfo.get("userDisplayName").toString();

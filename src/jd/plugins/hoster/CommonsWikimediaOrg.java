@@ -90,7 +90,7 @@ public class CommonsWikimediaOrg extends PluginForHost {
             } else if (this.br.containsHTML("\"invalid\"")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            final Map<String, Object> root = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            final Map<String, Object> root = restoreFromString(br.toString(), TypeRef.MAP);
             final Map<String, Object> page = (Map<String, Object>) JavaScriptEngineFactory.walkJson(root, "query/pages/{0}");
             final Object imageinfoO = page.get("imageinfo");
             if (imageinfoO == null) {

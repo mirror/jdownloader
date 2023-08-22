@@ -521,7 +521,7 @@ public class DiskYandexNet extends PluginForHost {
     }
 
     private void handleErrorsAPI(final DownloadLink link, final Account account) throws PluginException {
-        final Map<String, Object> entries = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+        final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         if (entries.containsKey("error")) {
             final String error = (String) entries.get("error");
             final String description = (String) entries.get("description");
@@ -835,7 +835,7 @@ public class DiskYandexNet extends PluginForHost {
                 br.getHeaders().put("Accept", "*/*");
                 br.getHeaders().put("Content-Type", "text/plain");
                 br.postPageRaw("/public/api/download-url", URLEncode.encodeURIComponent(String.format("{\"hash\":\"%s\",\"sk\":\"%s\",\"uid\":\"%s\",\"options\":{\"hasExperimentVideoWithoutPreview\":true}}", this.getRawHash(link), authSk, userID)));
-                entries = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+                entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
                 dllink = (String) JavaScriptEngineFactory.walkJson(entries, "data/url");
                 if (StringUtils.isEmpty(dllink)) {
                     logger.warning("Failed to find official downloadurl");
@@ -871,7 +871,7 @@ public class DiskYandexNet extends PluginForHost {
                         copySource = "public_web_copy";
                     }
                     br.postPageRaw("/public/api/save", URLEncode.encodeURIComponent(String.format("{\"hash\":\"%s\",\"name\":\"%s\",\"lang\":\"en\",\"source\":\"%s\",\"isAlbum\":false,\"itemId\":null,\"sk\":\"%s\",\"uid\":\"%s\",\"options\":{\"hasExperimentVideoWithoutPreview\":true}}", this.getRawHash(link), link.getName(), copySource, authSk, userID)));
-                    entries = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+                    entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
                     internal_file_path = (String) JavaScriptEngineFactory.walkJson(entries, "data/path");
                     final String oid = (String) JavaScriptEngineFactory.walkJson(entries, "data/oid");
                     if (br.containsHTML("\"code\":85")) {
@@ -1037,7 +1037,7 @@ public class DiskYandexNet extends PluginForHost {
             logger.info("Trying to move file to trash: " + filepath);
             try {
                 br2.postPage("/models/?_m=do-resource-delete", "_model.0=do-resource-delete&id.0=" + Encoding.urlEncode(filepath) + "&idClient=" + CLIENT_ID + "&sk=" + authSk);
-                final Map<String, Object> entries = JSonStorage.restoreFromString(br2.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+                final Map<String, Object> entries = restoreFromString(br2.getRequest().getHtmlCode(), TypeRef.MAP);
                 if (entries.containsKey("error")) {
                     logger.info("Possible failure on moving file into trash");
                 } else {

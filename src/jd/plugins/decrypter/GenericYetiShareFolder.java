@@ -197,7 +197,7 @@ public class GenericYetiShareFolder extends antiDDoSForDecrypt {
         folderquery.add("additionalParams%5BfilterUploadedDateRange%5D", "");
         folderquery.add("pageStart", "1");
         postPage("/account/ajax/load_files", folderquery.toString());
-        Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
         if (entries.containsKey("javascript")) {
             final String js = (String) entries.get("javascript");
             /*
@@ -229,7 +229,7 @@ public class GenericYetiShareFolder extends antiDDoSForDecrypt {
             passCode = getUserInput("Password?", param);
             pwForm.put("folderPassword", Encoding.urlEncode(passCode));
             this.submitForm(pwForm);
-            entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            entries = restoreFromString(br.toString(), TypeRef.MAP);
             passwordSuccess = ((Boolean) entries.get("success")).booleanValue();
             counter++;
         } while (!this.isAbort() && !passwordSuccess && counter < 3);
@@ -238,7 +238,7 @@ public class GenericYetiShareFolder extends antiDDoSForDecrypt {
         } else if (passCode != null) {
             /* Re-do request to access folder content */
             postPage("/account/ajax/load_files", folderquery.toString());
-            entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            entries = restoreFromString(br.toString(), TypeRef.MAP);
             htmlInsideJson = (String) entries.get("html");
             br.getRequest().setHtmlCode(htmlInsideJson);
         }
@@ -335,7 +335,7 @@ public class GenericYetiShareFolder extends antiDDoSForDecrypt {
                 page++;
                 folderquery.add("pageStart", Integer.toString(page));
                 postPage("/account/ajax/load_files", folderquery.toString());
-                entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                entries = restoreFromString(br.toString(), TypeRef.MAP);
                 htmlInsideJson = (String) entries.get("html");
                 br.getRequest().setHtmlCode(htmlInsideJson);
             } else {

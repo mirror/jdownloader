@@ -96,9 +96,9 @@ public class PeerTubeCrawler extends PluginForDecrypt {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final Map<String, Object> channel = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> channel = restoreFromString(br.toString(), TypeRef.MAP);
         br.getPage("/api/v1/video-channels/" + channelName + "/videos?start=0&count=0&sort=-publishedAt");
-        final Map<String, Object> channelVideosInfo = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> channelVideosInfo = restoreFromString(br.toString(), TypeRef.MAP);
         final int totalNumberofVideos = ((Number) channelVideosInfo.get("total")).intValue();
         if (totalNumberofVideos == 0) {
             final DownloadLink dummy = this.createOfflinelink(param.getCryptedUrl(), "EMPTY_CHANNEL_" + channelName, "This channel contains no videos.");
@@ -124,7 +124,7 @@ public class PeerTubeCrawler extends PluginForDecrypt {
             query.add("skipCount", "true");
             query.add("nsfw", "both");
             br.getPage("/api/v1/video-channels/" + channelNameUrlencoded + "/videos?" + query.toString());
-            final Map<String, Object> channelVideosResponse = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            final Map<String, Object> channelVideosResponse = restoreFromString(br.toString(), TypeRef.MAP);
             final List<Map<String, Object>> videoMaps = (List<Map<String, Object>>) channelVideosResponse.get("data");
             for (final Map<String, Object> videoMap : videoMaps) {
                 String videoURL = (String) videoMap.get("url");

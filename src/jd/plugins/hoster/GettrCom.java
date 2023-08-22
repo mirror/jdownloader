@@ -113,7 +113,7 @@ public class GettrCom extends PluginForHost {
         } else if (brc.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final Map<String, Object> root = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> root = restoreFromString(brc.toString(), TypeRef.MAP);
         final Map<String, Object> result = (Map<String, Object>) root.get("result");
         final Map<String, Object> videoInfo = (Map<String, Object>) result.get("postData");
         final Map<String, Object> streamInfo = (Map<String, Object>) result.get("broadcast");

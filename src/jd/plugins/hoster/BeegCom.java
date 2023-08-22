@@ -132,7 +132,7 @@ public class BeegCom extends PluginForHost {
             } else if (br.toString().length() < 100) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
             /* 2021-07-26: Seems like all objects in this array lead to the same video. */
             final List<Map<String, Object>> vids = (List<Map<String, Object>>) entries.get("fc_facts");
             final Map<String, Object> file = (Map<String, Object>) entries.get("file");

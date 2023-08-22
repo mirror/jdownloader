@@ -256,7 +256,7 @@ public class CloudMailRu extends PluginForHost {
                     /* Usually this should not be needed! */
                     logger.info("Trying to find dataserver");
                     br.getPage("/api/v2/dispatcher?api=2&build=" + BUILD + "&x-page-id=" + pageid + "&email=anonym&x-email=anonym&_=" + System.currentTimeMillis());
-                    final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                    final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
                     dataserver = (String) JavaScriptEngineFactory.walkJson(entries, "body/weblink_get/{0}/url");
                     /*
                      * 2020-08-04: Use of static host is also possible: e.g.
@@ -389,7 +389,7 @@ public class CloudMailRu extends PluginForHost {
                 login1.appendEncoded("email", account.getUser());
                 br.getHeaders().put("Referer", "https://account.mail.ru/");
                 br.postPage("https://auth.mail.ru/api/v1/pushauth/info", login1);
-                Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
                 final int status = ((Number) entries.get("status")).intValue();
                 if (status != 200) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);

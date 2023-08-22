@@ -107,7 +107,7 @@ public class ImDbCom extends PluginForHost {
             /* 2020-11-03 */
             final String json = br.getRegex("__NEXT_DATA__\"\\s*type\\s*=\\s*\"application/json\"\\s*>\\s*(\\{.*?\\});?\\s*</script").getMatch(0);
             // final String id_main = new Regex(link.getDownloadURL(), "([a-z]{2}\\d+)/mediaviewer").getMatch(0);
-            Map<String, Object> entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
+            Map<String, Object> entries = restoreFromString(json, TypeRef.MAP);
             /* Now let's find the specific object ... */
             final String idright = new Regex(link.getDownloadURL(), "(rm\\d+)").getMatch(0);
             final Map<String, Object> targetMap = this.findPictureMap(entries, idright);
@@ -142,7 +142,7 @@ public class ImDbCom extends PluginForHost {
             }
             filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
             final String json = br.getRegex("__NEXT_DATA__\"\\s*type\\s*=\\s*\"application/json\"\\s*>\\s*(\\{.*?\\});?\\s*</script").getMatch(0);
-            Map<String, Object> entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
+            Map<String, Object> entries = restoreFromString(json, TypeRef.MAP);
             /* json inside json */
             final List<Map<String, Object>> videoObjects = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entries, "props/pageProps/videoPlaybackData/video/playbackURLs");
             String dllink_http = null;

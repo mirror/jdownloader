@@ -170,7 +170,7 @@ public class RosefileNet extends PluginForHost {
             ajax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             /** 2021-04-12: Waittime and captcha (required for anonymous downloads in browser) is skippable! */
             // br.getPage("/ajax.php?action=load_time&ctime=" + System.currentTimeMillis());
-            // final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            // final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
             // final int waitSeconds = ((Number) entries.get("")).intValue();
             // this.sleep(waitSeconds * 1001l, link);
             // br.getPage("https://" + this.br.getHost() + "/d/" + this.getFID(link) + "/" + Encoding.urlEncode(link.getName()) + ".html");

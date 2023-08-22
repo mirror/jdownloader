@@ -104,7 +104,7 @@ public class OracleCom extends PluginForDecrypt {
             }
         } else {
             final String json = br.getRegex("var globalConsData =\\s*(\\{.+\\});").getMatch(0);
-            Map<String, Object> entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
+            Map<String, Object> entries = restoreFromString(json, TypeRef.MAP);
             final String title = (String) entries.get("name");
             final List<Object> ressourcelist = (List<Object>) entries.get("components");
             /* Grab http qualities only! */

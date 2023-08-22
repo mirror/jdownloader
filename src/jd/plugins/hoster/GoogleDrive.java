@@ -25,7 +25,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
-import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.uio.ConfirmDialogInterface;
@@ -387,7 +386,7 @@ public class GoogleDrive extends PluginForHost {
         queryFile.appendEncoded("key", getAPIKey());
         br.getPage(GoogleDrive.API_BASE + "/files/" + fid + "?" + queryFile.toString());
         this.handleErrorsAPI(this.br, link, null);
-        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
         parseFileInfoAPIAndWebsiteWebAPI(this, JsonSchemeType.API, link, true, true, true, entries);
         return AvailableStatus.TRUE;
     }
@@ -1643,7 +1642,7 @@ public class GoogleDrive extends PluginForHost {
          */
         List<Map<String, Object>> errors = null;
         try {
-            final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
             errors = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entries, "error/errors");
         } catch (final Exception ignore) {
             /* Did not get the expected json response */
@@ -1857,7 +1856,7 @@ public class GoogleDrive extends PluginForHost {
         try {
             helper.login(account, forceLoginValidation);
         } catch (final PluginException e) {
-            /* Look for other reasons of failure */
+            /* Look for reasons of failure other than invalid login-cookies. */
             this.checkErrorBlockedByGoogle(br, null, account);
             this.checkHandleRateLimit(br, null, account);
             throw e;
@@ -1900,7 +1899,7 @@ public class GoogleDrive extends PluginForHost {
             refreshTokenQuery.appendEncoded("grant_type", refresh_token);
             refreshTokenQuery.appendEncoded("refresh_token", refresh_token);
             br.postPage("https://oauth2.googleapis.com/token", refreshTokenQuery);
-            entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            entries = restoreFromString(br.toString(), TypeRef.MAP);
             access_token = (String) entries.get("access_token");
             auth_expires_in = ((Number) entries.get("expires_in")).intValue();
             if (StringUtils.isEmpty(access_token)) {
@@ -1926,7 +1925,7 @@ public class GoogleDrive extends PluginForHost {
          */
         deviceCodeQuery.appendEncoded("scope", "https://www.googleapis.com/auth/drive.file");
         br.postPage("https://oauth2.googleapis.com/device/code", deviceCodeQuery);
-        entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        entries = restoreFromString(br.toString(), TypeRef.MAP);
         final String device_code = (String) entries.get("device_code");
         final String user_code = (String) entries.get("user_code");
         final int user_code_expires_in = ((Number) entries.get("expires_in")).intValue();
@@ -1949,7 +1948,7 @@ public class GoogleDrive extends PluginForHost {
             do {
                 Thread.sleep(interval * 1000l);
                 br.postPage("https://oauth2.googleapis.com/token", pollingQuery);
-                entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                entries = restoreFromString(br.toString(), TypeRef.MAP);
                 if (entries.containsKey("error")) {
                     logger.info("User hasn't yet confirmed auth");
                     continue;

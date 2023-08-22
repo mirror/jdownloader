@@ -52,7 +52,7 @@ public class RokfinCom extends PluginForDecrypt {
         final Map<String, Object> map;
         if (postID != null) {
             // free posts with without authentication
-            map = JSonStorage.restoreFromString(brc.getPage("https://prod-api-v2.production.rokfin.com/api/v2/public/post/" + postID), TypeRef.HASHMAP);
+            map = restoreFromString(brc.getPage("https://prod-api-v2.production.rokfin.com/api/v2/public/post/" + postID), TypeRef.MAP);
             final String type = (String) JavaScriptEngineFactory.walkJson(map, "content/contentType");
             if (!"video".equalsIgnoreCase(type) && !"audio".equalsIgnoreCase(type)) {
                 logger.info("Unsupported type:" + type);
@@ -82,7 +82,7 @@ public class RokfinCom extends PluginForDecrypt {
             }
         } else {
             // may require authentication
-            map = JSonStorage.restoreFromString(brc.getPage("https://prod-api-v2.production.rokfin.com/api/v2/public/stream/" + streamID), TypeRef.HASHMAP);
+            map = restoreFromString(brc.getPage("https://prod-api-v2.production.rokfin.com/api/v2/public/stream/" + streamID), TypeRef.MAP);
             final String title = (String) JavaScriptEngineFactory.walkJson(map, "title");
             if (StringUtils.isEmpty(title)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

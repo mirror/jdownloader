@@ -948,7 +948,7 @@ public class NitroFlareCom extends antiDDoSForHost {
         String msg = null;
         try {
             /* E.g. {"type":"error","message":"Wrong login","code":8} */
-            final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
             msg = (String) entries.get("message");
             errorcode = ((Number) entries.get("code")).intValue();
         } catch (final Throwable e) {
@@ -1100,7 +1100,7 @@ public class NitroFlareCom extends antiDDoSForHost {
     private void handlePremiumDownloadAPI(final DownloadLink link, final Account account) throws Exception {
         this.getPage(getAPIBase() + "/getDownloadLink?user=" + Encoding.urlEncode(account.getUser()) + "&premiumKey=" + Encoding.urlEncode(account.getPass()) + "&file=" + Encoding.urlEncode(this.getFID(link)));
         this.checkErrorsAPI(br, link, account);
-        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
         final Map<String, Object> result = (Map<String, Object>) entries.get("result");
         final String dllink = result.get("url").toString();
         if (StringUtils.isEmpty(dllink) || !dllink.startsWith("http")) {

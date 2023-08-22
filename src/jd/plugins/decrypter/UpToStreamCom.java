@@ -207,7 +207,7 @@ public class UpToStreamCom extends PluginForDecrypt {
                     try {
                         final String token = account.getPass();
                         br.getPage(hosterPlugin.getAPIBase(param.getCryptedUrl()) + "/streaming?token=" + Encoding.urlEncode(token) + "&file_code=" + fuid);
-                        Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                        Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
                         final List<Object> subtitles = (List<Object>) JavaScriptEngineFactory.walkJson(entries, "data/subs");
                         if (subtitles == null || subtitles.size() == 0) {
                             logger.info("Failed to find any subtitles");

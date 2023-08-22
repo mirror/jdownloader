@@ -93,7 +93,7 @@ public class AlldebridComFolder extends PluginForDecrypt {
         query.appendEncoded("apikey", AllDebridCom.getStoredApiKey(account));
         query.add("id", magnetID);
         br.getPage(AllDebridCom.api_base + "/magnet/status?" + query.toString());
-        final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
         if (entries.containsKey("error")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }

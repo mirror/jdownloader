@@ -73,7 +73,7 @@ public class NewsAstraWebCom extends UseNet {
         if (brc.getRequest().getHttpConnection().getResponseCode() == 403) {
             return new HashMap<String, Object>();
         } else {
-            return JSonStorage.restoreFromString(response, TypeRef.HASHMAP);
+            return restoreFromString(response, TypeRef.MAP);
         }
     }
 
@@ -146,7 +146,7 @@ public class NewsAstraWebCom extends UseNet {
                     loginRequest.getHeaders().put("Origin", "https://www.astraweb.com");
                     loginRequest.getHeaders().put("Referer", "https://www.astraweb.com");
                     final String responseString = brc.getPage(loginRequest);
-                    response = JSonStorage.restoreFromString(responseString, TypeRef.HASHMAP);
+                    response = restoreFromString(responseString, TypeRef.MAP);
                     if (response.containsKey("errorCode")) {
                         switch (((Number) response.get("errorCode")).intValue()) {
                         case 1002:

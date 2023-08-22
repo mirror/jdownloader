@@ -80,7 +80,7 @@ public class DegooCom extends PluginForDecrypt {
                 /* Offline folder e.g.: {"Error": "Got empty result!"} */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
             nextPageToken = (String) entries.get("NextToken");
             final List<Map<String, Object>> ressourcelist = (List<Map<String, Object>>) entries.get("Items");
             if (ressourcelist.isEmpty()) {

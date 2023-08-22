@@ -143,7 +143,7 @@ public class RedTubeCom extends PluginForHost {
                 } else if (StringUtils.equals("mp4", format)) {
                     final Browser brc = br.cloneBrowser();
                     brc.getPage(videoUrl);
-                    list = (List<Map<String, Object>>) JSonStorage.restoreFromString(brc.toString(), TypeRef.OBJECT);
+                    list = (List<Map<String, Object>>) restoreFromString(brc.toString(), TypeRef.OBJECT);
                     break;
                 }
             }

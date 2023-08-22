@@ -109,10 +109,10 @@ public class PorndoeCom extends PluginForHost {
             /* Find highest quality */
             int quality_max = 0;
             int quality_temp = 0;
-            Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
             entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "payload/video/player/sources");
             final Iterator<Entry<String, Object>> iterator = entries.entrySet().iterator();
-            Map<String, Object> qualityInfo = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            Map<String, Object> qualityInfo = restoreFromString(br.toString(), TypeRef.MAP);
             final String preferredQualityStr = getPreferredStreamQuality();
             while (iterator.hasNext()) {
                 final Entry<String, Object> entry = iterator.next();

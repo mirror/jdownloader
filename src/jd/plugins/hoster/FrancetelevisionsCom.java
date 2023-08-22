@@ -153,7 +153,7 @@ public class FrancetelevisionsCom extends PluginForHost {
                         final Browser brc = br.cloneBrowser();
                         brc.setFollowRedirects(true);
                         brc.getPage("https://" + host + "/esi/TA?format=json&url=" + Encoding.urlEncode(url_temp));
-                        final Map<String, Object> response = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
+                        final Map<String, Object> response = restoreFromString(brc.toString(), TypeRef.MAP);
                         final String url = (String) response.get("url");
                         if (StringUtils.isNotEmpty(url)) {
                             final Browser brc2 = br.cloneBrowser();

@@ -523,7 +523,7 @@ public class FlickrCom extends PluginForHost {
         query.add("hermesClient", "1");
         query.add("nojsoncallback", "1");
         apibr.getPage(FlickrComCrawler.API_BASE + "services/rest?" + query.toString());
-        Map<String, Object> entries = JSonStorage.restoreFromString(apibr.toString(), TypeRef.HASHMAP);
+        Map<String, Object> entries = restoreFromString(apibr.toString(), TypeRef.MAP);
         /*
          * 2021-09-09: Found 2 video types so far: "700" and "iphone_wifi" --> Both are equal in filesize. If more are available,
          * implementing a quality selection for videos could make sense.

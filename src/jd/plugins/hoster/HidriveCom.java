@@ -136,7 +136,7 @@ public class HidriveCom extends PluginForHost {
                     query.add("password", Encoding.urlEncode(passCode));
                 }
                 brAPI.postPage(HidriveComCrawler.API_BASE + "/sharelink/info", query);
-                final Map<String, Object> entries = JSonStorage.restoreFromString(brAPI.toString(), TypeRef.HASHMAP);
+                final Map<String, Object> entries = restoreFromString(brAPI.toString(), TypeRef.MAP);
                 if (brAPI.getHttpConnection().getResponseCode() == 404 || brAPI.getHttpConnection().getResponseCode() == 410) {
                     /* {"msg":"Not Found: Invalid share id 'XXXXYYYY'","code":"404"} */
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

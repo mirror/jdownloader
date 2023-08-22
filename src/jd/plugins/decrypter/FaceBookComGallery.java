@@ -175,7 +175,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
                     final Object jsonO = JavaScriptEngineFactory.jsonToJavaMap(json);
                     parsedJsons.add(jsonO);
                     /* 2021-03-23: Use JavaScriptEngineFactory as they can also have json without quotes around the keys. */
-                    // final Object jsonO = JSonStorage.restoreFromString(json, TypeRef.OBJECT);
+                    // final Object jsonO = restoreFromString(json, TypeRef.OBJECT);
                     final ArrayList<DownloadLink> videos = new ArrayList<DownloadLink>();
                     this.crawlVideos(jsonO, videos);
                     ret.addAll(videos);

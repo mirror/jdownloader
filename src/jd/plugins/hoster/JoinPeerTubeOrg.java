@@ -154,7 +154,7 @@ public class JoinPeerTubeOrg extends antiDDoSForHost {
             do {
                 try {
                     br.getPage("https://instances.joinpeertube.org/api/v1/instances?start=" + index + "&count=" + itemsPerRequest + "&sort=-createdAt");
-                    Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                    Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.MAP);
                     if (index == 0) {
                         totalNumberofItems = ((Number) entries.get("total")).intValue();
                     }
@@ -217,14 +217,14 @@ public class JoinPeerTubeOrg extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         checkErrorsAPI(brc);
-        final Map<String, Object> root = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> root = restoreFromString(brc.toString(), TypeRef.MAP);
         String description = (String) root.get("description");
         if (!StringUtils.isEmpty(description) && link.getComment() == null) {
             /* Description is truncated sometimes --> Grab full description if needed */
             if (description.endsWith("...")) {
                 logger.info("Description seems to be truncated -> Trying to fetch full description");
                 brc.getPage(brc.getURL() + "/description");
-                final Map<String, Object> descriptionInfo = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
+                final Map<String, Object> descriptionInfo = restoreFromString(brc.toString(), TypeRef.MAP);
                 final Object descriptionFull = descriptionInfo.get("description");
                 if (descriptionFull instanceof String) {
                     description = descriptionFull.toString();
@@ -304,7 +304,7 @@ public class JoinPeerTubeOrg extends antiDDoSForHost {
     }
 
     protected void checkErrorsAPI(final Browser br) throws PluginException {
-        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
         final String errorMsg = (String) entries.get("error");
         if (!StringUtils.isEmpty(errorMsg)) {
             if (errorMsg.equalsIgnoreCase("Video not found")) {

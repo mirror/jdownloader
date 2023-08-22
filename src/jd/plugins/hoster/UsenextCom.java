@@ -180,7 +180,7 @@ public class UsenextCom extends UseNet {
             postRequest.getHeaders().put("Origin", "https://www.usenext.com");
             br.setCurrentURL("https://www.usenext.com/");
             sendRequest(postRequest);
-            final Map<String, Object> json = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            final Map<String, Object> json = restoreFromString(br.toString(), TypeRef.MAP);
             final Map<String, Object> volume = (Map<String, Object>) JavaScriptEngineFactory.walkJson(json, "data/radiusData/volume");
             final long trafficTotal = parseNumber(volume, "total", -1);
             final long trafficRemaining = parseNumber(volume, "remaining", -1);

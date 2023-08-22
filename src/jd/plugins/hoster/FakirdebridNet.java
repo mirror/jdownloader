@@ -142,7 +142,7 @@ public class FakirdebridNet extends PluginForHost {
                     postData += Encoding.urlEncode("|" + passCode);
                 }
                 br.postPage(API_BASE + "/generate.php?pin=" + Encoding.urlEncode(account.getPass()), postData);
-                entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                entries = restoreFromString(br.toString(), TypeRef.MAP);
                 final Object errorCodeO = entries.get("code");
                 if (errorCodeO != null && errorCodeO instanceof String && errorCodeO.toString().equalsIgnoreCase("Password_Required")) {
                     logger.info("Password required");
@@ -175,7 +175,7 @@ public class FakirdebridNet extends PluginForHost {
                 final String apilink = (String) entries.get("apilink");
                 br.getPage(apilink);
                 this.handleErrorsAPI(this.br, link, account);
-                entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                entries = restoreFromString(br.toString(), TypeRef.MAP);
                 entries = (Map<String, Object>) entries.get("data");
                 final int files_done = ((Number) entries.get("files_done")).intValue();
                 if (files_done != 1) {
@@ -262,7 +262,7 @@ public class FakirdebridNet extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         login(account, true);
-        Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
         final Object accountBannedO = entries.get("banned");
         if (accountBannedO instanceof Boolean && accountBannedO == Boolean.TRUE) {
             throw new AccountInvalidException("Account banned");
@@ -281,7 +281,7 @@ public class FakirdebridNet extends PluginForHost {
         ai.setValidUntil(JavaScriptEngineFactory.toLong(entries.get("premium_until"), 0) * 1000, br);
         final ArrayList<String> supportedHosts = new ArrayList<String>();
         br.getPage(API_BASE + "/supportedhosts.php?pin=" + Encoding.urlEncode(account.getPass()));
-        entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        entries = restoreFromString(br.toString(), TypeRef.MAP);
         final List<Object> arrayHoster;
         final Object arrayHosterO = entries.get("supportedhosts");
         /* 2021-05-27: API can return Map instead of expected Array */
@@ -360,7 +360,7 @@ public class FakirdebridNet extends PluginForHost {
      * working.',</br> 'Banned_Account' => 'Banned Account',</br> 'Free_Account' => 'Not supported for free members.',
      */
     private void handleErrorsAPI(final Browser br, final DownloadLink link, final Account account) throws PluginException, InterruptedException {
-        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
         final Object errorO = entries.get("error");
         if (errorO instanceof Boolean && errorO == Boolean.TRUE) {
             final String message = (String) entries.get("message");

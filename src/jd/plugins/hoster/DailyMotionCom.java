@@ -407,7 +407,7 @@ public class DailyMotionCom extends PluginForHost {
             setGraphqlHeaders(br);
             br.postPageRaw(API_BASE_GRAPHQL, "{\"operationName\":\"USER_BIRTHDAY_QUERY\",\"variables\":{},\"query\":\"query USER_BIRTHDAY_QUERY {  me {    id    birthday    __typename  }}\"}");
             try {
-                final Map<String, Object> root = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                final Map<String, Object> root = restoreFromString(br.toString(), TypeRef.MAP);
                 final Map<String, Object> data = (Map<String, Object>) root.get("data");
                 final Map<String, Object> me = (Map<String, Object>) data.get("me");
                 /* Throws Exception on null value */

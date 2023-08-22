@@ -115,7 +115,7 @@ public class StreamableCom extends PluginForHost {
             /* E.g. if user adds non-video URLs such as: https://streamable.com/login */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final Map<String, Object> entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
+        final Map<String, Object> entries = restoreFromString(json, TypeRef.MAP);
         String filename = (String) entries.get("title");
         final long filesize = ((Number) entries.get("size")).longValue();
         if (!StringUtils.isEmpty(filename)) {

@@ -52,7 +52,7 @@ public class AparatCom extends PluginForDecrypt {
         if (br.getHttpConnection().getResponseCode() == 400 || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
         final Number status = (Number) JavaScriptEngineFactory.walkJson(entries, "meta/status");
         if (status != null && (status.intValue() == 404 || status.intValue() == 410)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

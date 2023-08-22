@@ -117,7 +117,7 @@ public class PluralsightCom extends antiDDoSForHost {
         if (!StringUtils.equals(br.getURL(), WEBSITE_BASE_APP + "/web-analytics/api/v1/users/current")) {
             getRequest(br, this, br.createGetRequest(WEBSITE_BASE_APP + "/web-analytics/api/v1/users/current"));
         }
-        final Map<String, Object> map = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> map = restoreFromString(br.toString(), TypeRef.MAP);
         List<Map<String, Object>> subscriptions = (List<Map<String, Object>>) map.get("userSubscriptions");
         if (subscriptions == null) {
             subscriptions = (List<Map<String, Object>>) map.get("subscriptions");
@@ -415,7 +415,7 @@ public class PluralsightCom extends antiDDoSForHost {
                 if (br.containsHTML(resolution + ".mp4 encoding not found")) {
                     resolutionExists = false;
                 } else {
-                    final Map<String, Object> response = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                    final Map<String, Object> response = restoreFromString(br.toString(), TypeRef.MAP);
                     urls = (List<Map<String, Object>>) response.get("urls");
                     existent_resolution = resolution;
                     logger.info("Found working resolution: " + resolution);
@@ -435,7 +435,7 @@ public class PluralsightCom extends antiDDoSForHost {
                 request.setContentType("application/json;charset=UTF-8");
                 request.getHeaders().put("Origin", "https://app.pluralsight.com");
                 getRequest(br, this, request);
-                final Map<String, Object> response = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                final Map<String, Object> response = restoreFromString(br.toString(), TypeRef.MAP);
                 urls = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(response, "data/viewClip/urls");
                 existent_resolution = resolution;
                 break;

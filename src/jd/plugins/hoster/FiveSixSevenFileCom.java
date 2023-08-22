@@ -153,7 +153,7 @@ public class FiveSixSevenFileCom extends PluginForHost {
             if (!skipCaptcha) {
                 /** 2022-05-04: Waittime and captcha (required for anonymous downloads in browser) is skippable! */
                 br.getPage("/ajax.php?action=load_time&ctime=" + System.currentTimeMillis());
-                final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.HASHMAP);
+                final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
                 final boolean skipWaittime = false;
                 if (!skipWaittime) {
                     final int waitSeconds = ((Number) entries.get("waittime")).intValue();

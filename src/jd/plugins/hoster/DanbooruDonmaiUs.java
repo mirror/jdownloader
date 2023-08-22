@@ -132,7 +132,7 @@ public class DanbooruDonmaiUs extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
         if (!entries.containsKey("id")) {
             throw new AccountUnavailableException("Invalid apikey or insufficient permissions", 5 * 60 * 1000l);
         }
@@ -346,7 +346,7 @@ public class DanbooruDonmaiUs extends PluginForHost {
                     return false;
                 }
                 br.getPage(API_BASE + "/profile.json");
-                final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
                 final boolean success = entries.containsKey("success") ? ((Boolean) entries.get("success")).booleanValue() : true;
                 if (!success) {
                     if (account.hasProperty(PROPERTY_ACCOUNT_QUERY_LIMIT)) {
@@ -450,7 +450,7 @@ public class DanbooruDonmaiUs extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         loginAPI(account, true);
-        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
         /* Level == AccountType --> https://danbooru.donmai.us/user_upgrades/new */
         final String levelString = (String) entries.get("level_string");
         final Number tagQueryLimit = ((Number) entries.get("tag_query_limit"));

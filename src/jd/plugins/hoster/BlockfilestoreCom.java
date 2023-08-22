@@ -112,7 +112,7 @@ public class BlockfilestoreCom extends PluginForHost {
         brc.getHeaders().put("Content-Type", "text/plain;charset=UTF-8");
         brc.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         brc.postPage("https://www." + this.getHost() + "/bfshub/negotiate", "");
-        final Map<String, Object> entries = JSonStorage.restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+        final Map<String, Object> entries = restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.MAP);
         final String connectionId = entries.get("connectionId").toString();
         // br.getHeaders().put("Origin", "https://www.blockfilestore.com");
         // br.getHeaders().put("Sec-WebSocket-Extensions", "permessage-deflate; client_max_window_bits");

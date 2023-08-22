@@ -116,7 +116,7 @@ public class SeedrCc extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
         this.dllink = (String) entries.get("url");
         final String filename = (String) entries.get("name");
         if (!StringUtils.isEmpty(filename)) {
@@ -330,7 +330,7 @@ public class SeedrCc extends PluginForHost {
          * Correct username - e.g. when logging in via cookies, users can enter whatever they want into the username field but we want the
          * account to be unique!
          */
-        final Map<String, Object> user = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> user = restoreFromString(br.toString(), TypeRef.MAP);
         final Map<String, Object> userAccount = (Map<String, Object>) user.get("account");
         // final Map<String, Object> userSettings =(Map<String, Object>)user.get("settings");
         final String email = (String) userAccount.get("email");
@@ -346,7 +346,7 @@ public class SeedrCc extends PluginForHost {
         ai.setUnlimitedTraffic();
         prepAjaxBr(this.br);
         br.getPage("/account/quota/used");
-        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
         final long bandwidth_used = ((Number) entries.get("bandwidth_used")).longValue();
         final long bandwidth_max = ((Number) entries.get("bandwidth_max")).longValue();
         ai.setUsedSpace(((Number) entries.get("space_used")).longValue());

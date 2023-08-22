@@ -952,7 +952,7 @@ public class InstaGramCom extends PluginForHost {
             // loginChoiceRequest.setContentType("application/x-www-form-urlencoded");
             // post.setPostDataString("choice=1");
             // br.getPage(loginChoiceRequest);
-            // entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
+            // entries = restoreFromString(json, TypeRef.MAP);
             // final Object twoFaTextO = JavaScriptEngineFactory.walkJson(entries, "extraData/content/{1}/text");
             // final String twoFaText;
             // if (twoFaTextO != null && twoFaTextO instanceof String) {
@@ -968,7 +968,7 @@ public class InstaGramCom extends PluginForHost {
             // }
             // post.setPostDataString("security_code=" + code);
             // br.getPage(post);
-            // entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
+            // entries = restoreFromString(json, TypeRef.MAP);
             // final String status = (String) entries.get("status");
             // if (!"success".equalsIgnoreCase(status)) {
             // throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\n2FA login failed", PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -1064,7 +1064,7 @@ public class InstaGramCom extends PluginForHost {
                 InstaGramCom.prepBRAltAPI(brc);
                 /* Alternative endpoint (website): https://i.instagram.com/api/v1/feed/user/<userID>/story/ */
                 InstaGramCom.getPageAltAPI(account, brc, InstaGramCom.ALT_API_BASE + "/feed/user/" + loggedInUserID + "/reel_media/");
-                final Map<String, Object> reel_media = JSonStorage.restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+                final Map<String, Object> reel_media = restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.MAP);
                 final Map<String, Object> user = (Map<String, Object>) reel_media.get("user");
                 final String realUsername = user.get("username").toString();
                 if (!StringUtils.equalsIgnoreCase(account.getUser(), realUsername)) {

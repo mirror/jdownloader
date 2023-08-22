@@ -31,6 +31,7 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
 import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -58,6 +59,11 @@ public class BatoToCrawler extends PluginForDecrypt {
         super(wrapper);
         /* Prevent server response 503! */
         BatoTo.setRequestLimits();
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.IMAGE_GALLERY, LazyPlugin.FEATURE.IMAGE_HOST };
     }
 
     public static List<String[]> getPluginDomains() {

@@ -136,7 +136,7 @@ public class AbbyWintersCom extends PluginForHost {
             } else {
                 logger.warning("Failed to find any estimated filesize");
             }
-            final List<Object> ressourcelist = JSonStorage.restoreFromString(Encoding.htmlDecode(videoDataResources), TypeRef.LIST);
+            final List<Object> ressourcelist = restoreFromString(Encoding.htmlDecode(videoDataResources), TypeRef.LIST);
             /* Last item = Best video quality */
             final Map<String, Object> bestVideo = (Map<String, Object>) ressourcelist.get(ressourcelist.size() - 1);
             final String directurl = bestVideo.get("src").toString();

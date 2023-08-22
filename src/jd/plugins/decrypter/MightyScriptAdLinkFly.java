@@ -364,7 +364,7 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
         }
         String finallink = null;
         if (StringUtils.containsIgnoreCase(br.getRequest().getResponseHeader("Content-Type"), "application/json")) {
-            final Map<String, Object> entries = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+            final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
             finallink = (String) entries.get("url");
             logger.info("finallink from json: " + finallink);
             if (finallink != null && finallink.startsWith("/")) {

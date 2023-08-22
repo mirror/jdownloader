@@ -111,7 +111,7 @@ public class NhentaiNet extends antiDDoSForDecrypt {
         try {
             String json = br.getRegex("JSON\\.parse\\(\"(\\{.*?)\"\\);").getMatch(0);
             json = PluginJSonUtils.unescape(json);
-            Map<String, Object> entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
+            Map<String, Object> entries = restoreFromString(json, TypeRef.MAP);
             Map<String, Object> titles = (Map<String, Object>) entries.get("title");
             title = (String) titles.get("english");
             if (StringUtils.isEmpty(title)) {

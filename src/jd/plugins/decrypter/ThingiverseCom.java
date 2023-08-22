@@ -127,7 +127,7 @@ public class ThingiverseCom extends antiDDoSForDecrypt {
         String sourceData = PluginJSonUtils.getJsonNested(br, "data");
         sourceData = new Regex(sourceData, "(\\{[^\\}]+\\})").getMatch(0);
         if (sourceData != null) {
-            HashMap<String, String> searchValues = JSonStorage.restoreFromString(sourceData, TypeRef.HASHMAP_STRING);
+            HashMap<String, String> searchValues = restoreFromString(sourceData, TypeRef.HASHMAP_STRING);
             if (searchValues != null && searchValues.keySet().size() > 0) {
                 searchValues.put("page", "1");
                 searchValues.put("per_page", "999999999");

@@ -79,7 +79,7 @@ public class DropmeafileCom extends PluginForDecrypt {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
         final List<Map<String, Object>> files = (List<Map<String, Object>>) entries.get("files");
         for (final Map<String, Object> file : files) {
             final DownloadLink direct = this.createDownloadlink("directhttp://" + br.getURL() + "/" + file.get("id"));

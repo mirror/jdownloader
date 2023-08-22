@@ -372,7 +372,7 @@ public class UnknownPornScript5 extends PluginForHost {
                 final Request req = br.createFormRequest(loginform);
                 req.getHeaders().put("x-requested-with", "XMLHttpRequest");
                 br.getPage(req);
-                final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+                final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
                 if ((Boolean) entries.get("SUCCESS") != Boolean.TRUE) {
                     throw new AccountInvalidException();
                 }

@@ -96,7 +96,7 @@ public class FreeDiscPlFolder extends PluginForDecrypt {
         FreeDiscPl.prepBRAjax(this.br);
         /* First let's find the absolute path to the folder we want. If we fail to do so we can assume that it is offline. */
         getPage("https://" + this.getHost() + "/directory/directory_data/get_tree/" + user, param, account);
-        final Map<String, Object> responseFolderTree = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> responseFolderTree = restoreFromString(br.toString(), TypeRef.MAP);
         final Map<String, Map<String, Object>> folderTree = (Map<String, Map<String, Object>>) JavaScriptEngineFactory.walkJson(responseFolderTree, "response/data");
         final Map<String, Object> folderInfo = findFolderMap(folderTree, folderID);
         if (folderInfo == null) {
@@ -113,7 +113,7 @@ public class FreeDiscPlFolder extends PluginForDecrypt {
         }
         getPage("https://" + this.getHost() + "/directory/directory_data/get/" + user + "/" + folderID, param, account);
         final boolean crawlSubfolders = PluginJsonConfig.get(FreeDiscPlConfig.class).isCrawlSubfolders();
-        final Map<String, Object> responseFolder = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> responseFolder = restoreFromString(br.toString(), TypeRef.MAP);
         final Map<String, Map<String, Object>> data = (Map<String, Map<String, Object>>) JavaScriptEngineFactory.walkJson(responseFolder, "response/data/data");
         for (final Map<String, Object> resource : data.values()) {
             final String type = resource.get("type").toString();

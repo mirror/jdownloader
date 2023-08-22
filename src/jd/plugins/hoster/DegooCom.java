@@ -146,7 +146,7 @@ public class DegooCom extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 400 || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
         final String filename = (String) entries.get("Name");
         final int filesize = ((Number) entries.get("Size")).intValue();
         this.dllink = (String) entries.get("URL");
@@ -176,7 +176,7 @@ public class DegooCom extends PluginForHost {
                 dl.startDownload();
             } else {
                 /* For text files they may return the full content of a file as base64 encoded text right away. */
-                final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
                 final String b64EncodedData = (String) entries.get("Data");
                 if (StringUtils.isEmpty(b64EncodedData)) {
                     /* 2021-08-16: Don't use PLUGIN_DEFECT LinkStatus here as we're using an API which is supposed to be fairly stable. */
@@ -252,7 +252,7 @@ public class DegooCom extends PluginForHost {
                 // br.postPageRaw(API_BASE + "/register", "{\"Username\":\"" + account.getUser() + "\",\"Password\":\"" +
                 // account.getPass() + "\",\"LanguageCode\":\"de-DE\",\"CountryCode\":\"DE\",\"Source\":\"Web
                 // App\",\"GenerateToken\":true}");
-                final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
                 final String refreshToken = (String) entries.get("RefreshToken");
                 token = (String) entries.get("Token");
                 if (StringUtils.isEmpty(refreshToken) || StringUtils.isEmpty(token)) {
@@ -333,7 +333,7 @@ public class DegooCom extends PluginForHost {
         final AccountInfo ai = new AccountInfo();
         login(this.br, account, true);
         accessAccountInfoIfNotAlreadyAccessed(this.br, account);
-        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
         final Map<String, Object> data = (Map<String, Object>) entries.get("data");
         final Map<String, Object> userinfo = (Map<String, Object>) data.get("getUserInfo3");
         ai.setUsedSpace(JavaScriptEngineFactory.toLong(userinfo.get("UsedQuota"), 0));
@@ -377,7 +377,7 @@ public class DegooCom extends PluginForHost {
                             + this.getFileID(link)
                             + "\"}},\"query\":\"query GetOverlay4($Token: String!, $ID: IDType!) {    getOverlay4(Token: $Token, ID: $ID) {      ID      MetadataID      UserID      DeviceID      MetadataKey      Name      FilePath      LocalPath      LastUploadTime      LastModificationTime      ParentID      Category      Size      Platform      URL      ThumbnailURL      CreationTime      IsSelfLiked      Likes      Comments      IsHidden      IsInRecycleBin      Description      Location {        Country        Province        Place        GeoLocation {          Latitude          Longitude        }      }      Location2 {        Country        Region        SubRegion        Municipality        Neighborhood        GeoLocation {          Latitude          Longitude        }      }      Data      DataBlock      CompressionParameters      Shareinfo {        Status        ShareTime      }      HasViewed      QualityScore    }  }\"}");
             // this.checkErrorsAPI(this.br, account);
-            final Map<String, Object> entries = JSonStorage.restoreFromString(brAPI.toString(), TypeRef.HASHMAP);
+            final Map<String, Object> entries = restoreFromString(brAPI.toString(), TypeRef.MAP);
             this.dllink = JavaScriptEngineFactory.walkJson(entries, "data/getOverlay4/URL").toString();
             if (!StringUtils.isEmpty(this.dllink)) {
                 dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);

@@ -179,7 +179,7 @@ public class RapidsPl extends PluginForHost {
                 br.postPageRaw(API_BASE + "/files/check-and-add", String.format("{\"file\":\"%s\"}", link.getDefaultPlugin().buildExternalDownloadURL(link, this)));
                 try {
                     /* We have to use the parser here because json contains two 'status' objects ;) */
-                    Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                    Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
                     final List<Object> data = (List<Object>) entries.get("data");
                     if (data.size() > 1) {
                         /* This should never happen */

@@ -158,7 +158,7 @@ public class MetArtCom extends PluginForHost {
                     /* Not required but maybe useful in the future */
                     // final String metartnetworkAppdataURL = "https://account-new.metartnetwork.com/api/app-data";
                     // brc.getPage(metartnetworkAppdataURL);
-                    // final Map<String, Object> entries = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
+                    // final Map<String, Object> entries = restoreFromString(brc.toString(), TypeRef.MAP);
                     // String thisMetartSiteUUID = null;
                     // final List<Map<String, Object>> metartSites = (List<Map<String, Object>>) entries.get("sites");
                     // for (final Map<String, Object> metartSite : metartSites) {
@@ -170,7 +170,7 @@ public class MetArtCom extends PluginForHost {
                     // }
                     final String metartnetworkSubscriptionsURL = "https://account-new.metartnetwork.com/api/subscriptions";
                     brc.getPage(metartnetworkSubscriptionsURL);
-                    final List<Map<String, Object>> subscriptions = (List<Map<String, Object>>) JSonStorage.restoreFromString(brc.toString(), TypeRef.OBJECT);
+                    final List<Map<String, Object>> subscriptions = (List<Map<String, Object>>) restoreFromString(brc.toString(), TypeRef.OBJECT);
                     long highestExpireDate = -1;
                     for (final Map<String, Object> subscription : subscriptions) {
                         final String expireDateStr = subscription.get("expireDate").toString();
@@ -191,7 +191,7 @@ public class MetArtCom extends PluginForHost {
     }
 
     private void getSetAccountTypeSimple(final Account account) {
-        Map<String, Object> entries = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+        Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         entries = (Map<String, Object>) entries.get("initialState");
         entries = (Map<String, Object>) entries.get("auth");
         entries = (Map<String, Object>) entries.get("user");

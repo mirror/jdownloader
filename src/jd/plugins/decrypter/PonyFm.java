@@ -42,7 +42,7 @@ public class PonyFm extends PluginForDecrypt {
         final String fid = new Regex(parameter, "pony\\.fm/tracks/(\\d+)").getMatch(0);
         br.getHeaders().put("Accept", "application/json, text/plain, */*");
         br.getPage("https://pony.fm/api/web/tracks/" + fid + "?log=true");
-        Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("\"Track not found")) {
             logger.info("Link offline: " + parameter);
             return decryptedLinks;

@@ -103,7 +103,7 @@ public class RappersIn extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (json != null) {
-            final List<Object> tracksO = JSonStorage.restoreFromString(json, TypeRef.LIST);
+            final List<Object> tracksO = restoreFromString(json, TypeRef.LIST);
             for (final Object trackO : tracksO) {
                 final Map<String, Object> trackInfo = (Map<String, Object>) trackO;
                 final DownloadLink track = this.createDownloadlink(trackInfo.get("url").toString());

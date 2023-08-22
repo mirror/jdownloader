@@ -2,11 +2,17 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+
+import org.appwork.storage.TypeRef;
+import org.appwork.storage.flexijson.FlexiJSONParser;
+import org.appwork.storage.flexijson.ParsingError;
+import org.appwork.storage.flexijson.mapper.FlexiJSonMapper;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -19,14 +25,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.DirectHTTP;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.storage.flexijson.FlexiJSONParser;
-import org.appwork.storage.flexijson.ParsingError;
-import org.appwork.storage.flexijson.mapper.FlexiJSonMapper;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "genshin.hoyoverse.com" }, urls = { "https?://genshin.hoyoverse.com/(?:[a-z]{2}/)?manga/detail/\\d+" })
 public class GenshinManga extends PluginForDecrypt {
@@ -41,13 +39,13 @@ public class GenshinManga extends PluginForDecrypt {
         final String detailID = new Regex(parameter.getCryptedUrl(), "/detail/(\\d+)").getMatch(0);
         String stringArray = br.getRegex("\\}\\s*\\}\\s*\\((.*?)\\)\\)\\s*;").getMatch(0);
         stringArray = stringArray.replaceAll("(Array\\(\\d+\\))", "\"IGNORE\"");
-        final List<Object> objectArray = JSonStorage.restoreFromString("[" + stringArray + "]", TypeRef.LIST);
+        final List<Object> objectArray = restoreFromString("[" + stringArray + "]", TypeRef.LIST);
         final String pages = br.getRegex("ext\\s*:\\s*\\[(\\s*\\{arrtName.*?\\]\\s*\\})").getMatch(0);
         final String indexString = br.getRegex("function\\((a,.*?)\\)").getMatch(0);
         final List<String> indexArray = Arrays.asList(indexString.split(","));
         final FlexiJSONParser parser = new FlexiJSONParser(pages).setIgnoreIssues(new HashSet<ParsingError>(Arrays.asList(new ParsingError[] { ParsingError.ERROR_STRING_VALUE_WITHOUT_QUOTES, ParsingError.ERROR_STRING_TOKEN_WITHOUT_QUOTES, ParsingError.ERROR_KEY_WITHOUT_QUOTES })));
         parser.setDebug(new StringBuilder());
-        final HashMap<String, Object> map = new FlexiJSonMapper().jsonToObject(parser.parse(), TypeRef.HASHMAP);
+        final Map<String, Object> map = new FlexiJSonMapper().jsonToObject(parser.parse(), TypeRef.MAP);
         final String mangaTitle = br.getRegex("<title[^>]*>\\s*(Genshin Impact.*?)\\s*</title>").getMatch(0);
         if (mangaTitle == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

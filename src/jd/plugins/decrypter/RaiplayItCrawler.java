@@ -279,7 +279,7 @@ public class RaiplayItCrawler extends PluginForDecrypt {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
         final Map<String, Object> trackInfo = (Map<String, Object>) entries.get("track_info");
         final Map<String, Object> showInfo = (Map<String, Object>) entries.get("program_info");
         String title = (String) entries.get("name");

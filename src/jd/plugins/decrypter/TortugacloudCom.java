@@ -49,7 +49,7 @@ public class TortugacloudCom extends PluginForDecrypt {
         }
         String finallink = null;
         try {
-            final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
             finallink = (String) entries.get("url");
         } catch (final Throwable e) {
             /* Parsing failure --> Offline */

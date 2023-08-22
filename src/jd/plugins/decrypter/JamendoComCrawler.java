@@ -118,7 +118,7 @@ public class JamendoComCrawler extends PluginForDecrypt {
         }
         queryAPI(br, "/albums?id%5B%5D=" + albumID);
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final List<Object> ressourcelist = JSonStorage.restoreFromString(br.toString(), TypeRef.LIST);
+        final List<Object> ressourcelist = restoreFromString(br.toString(), TypeRef.LIST);
         if (ressourcelist.isEmpty()) {
             /* Invalid albumID. */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -150,7 +150,7 @@ public class JamendoComCrawler extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         queryAPI(br, "/playlists?id%5B%5D=" + playlistID);
-        final List<Object> ressourcelist = JSonStorage.restoreFromString(br.toString(), TypeRef.LIST);
+        final List<Object> ressourcelist = restoreFromString(br.toString(), TypeRef.LIST);
         if (ressourcelist.isEmpty()) {
             /* Invalid playlistID. */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -218,7 +218,7 @@ public class JamendoComCrawler extends PluginForDecrypt {
                 query.add("offset", Integer.toString(offset));
             }
             queryAPI(br, "/favorites/track?" + query.toString());
-            final List<Map<String, Object>> tracks = (List<Map<String, Object>>) JSonStorage.restoreFromString(br.toString(), TypeRef.OBJECT);
+            final List<Map<String, Object>> tracks = (List<Map<String, Object>>) restoreFromString(br.toString(), TypeRef.OBJECT);
             for (final Map<String, Object> track : tracks) {
                 final DownloadLink link = createSongDownloadlink(track.get("id").toString());
                 link._setFilePackage(fp);
@@ -262,7 +262,7 @@ public class JamendoComCrawler extends PluginForDecrypt {
                 query.add("offset", Integer.toString(offset));
             }
             queryAPI(br, "/playlists?" + query.toString());
-            final List<Map<String, Object>> playlists = (List<Map<String, Object>>) JSonStorage.restoreFromString(br.toString(), TypeRef.OBJECT);
+            final List<Map<String, Object>> playlists = (List<Map<String, Object>>) restoreFromString(br.toString(), TypeRef.OBJECT);
             for (final Map<String, Object> playlist : playlists) {
                 final ArrayList<DownloadLink> playlistResults = crawlProcessUserPlaylist(user, playlist);
                 for (final DownloadLink link : playlistResults) {
@@ -326,7 +326,7 @@ public class JamendoComCrawler extends PluginForDecrypt {
             return USER_INFO_CACHE.get(userID);
         } else {
             queryAPI(br, "/users?id%5B%5D=" + userID);
-            final List<Object> users = JSonStorage.restoreFromString(br.toString(), TypeRef.LIST);
+            final List<Object> users = restoreFromString(br.toString(), TypeRef.LIST);
             if (users.isEmpty()) {
                 /* User not found */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

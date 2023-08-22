@@ -182,7 +182,7 @@ public class RealDebridCom extends PluginForHost {
         this.checkErrorsWebsite(apiBrowser);
         if (request.getHttpConnection().getResponseCode() != 200) {
             if (json.trim().startsWith("{")) {
-                final ErrorResponse errorResponse = JSonStorage.restoreFromString(json, new TypeRef<ErrorResponse>(ErrorResponse.class) {
+                final ErrorResponse errorResponse = restoreFromString(json, new TypeRef<ErrorResponse>(ErrorResponse.class) {
                 });
                 Error errorCode = Error.getByCode(errorResponse.getError_code());
                 if (Error.UNKNOWN.equals(errorCode) && request.getHttpConnection().getResponseCode() == 403) {
@@ -194,7 +194,7 @@ public class RealDebridCom extends PluginForHost {
             }
         }
         try {
-            return JSonStorage.restoreFromString(json, type);
+            return restoreFromString(json, type);
         } catch (final JSonMapperException e) {
             throw Exceptions.addSuppressed(new AccountUnavailableException("Bad API response", 5 * 60 * 1000l), e);
         }
@@ -481,7 +481,7 @@ public class RealDebridCom extends PluginForHost {
                         // seems not connected to current token
                         synchronized (account) {
                             final String tokenJSon = account.getStringProperty(TOKEN, null);
-                            final TokenResponse existingToken = tokenJSon != null ? JSonStorage.restoreFromString(tokenJSon, TokenResponse.TYPE) : null;
+                            final TokenResponse existingToken = tokenJSon != null ? restoreFromString(tokenJSon, TokenResponse.TYPE) : null;
                             if (existingToken != null && StringUtils.equals(currentToken.getAccess_token(), existingToken.getAccess_token()) && StringUtils.equals(currentToken.getRefresh_token(), existingToken.getRefresh_token())) {
                                 currentToken.setRefresh(true);
                                 account.setProperty(TOKEN, JSonStorage.serializeToJson(currentToken));
@@ -570,7 +570,7 @@ public class RealDebridCom extends PluginForHost {
                 String tokenJSon = account.getStringProperty(TOKEN);
                 if (!force) {
                     if (StringUtils.isNotEmpty(tokenJSon)) {
-                        final TokenResponse existingToken = JSonStorage.restoreFromString(tokenJSon, new TypeRef<TokenResponse>(TokenResponse.class) {
+                        final TokenResponse existingToken = restoreFromString(tokenJSon, new TypeRef<TokenResponse>(TokenResponse.class) {
                         });
                         // ensure that the token is at elast 5 minutes valid
                         final long expireTime = existingToken.getExpires_in() * 1000 + existingToken.getCreateTime();
@@ -586,11 +586,11 @@ public class RealDebridCom extends PluginForHost {
                 tokenJSon = account.getStringProperty(TOKEN);
                 final String clientSecretJson = account.getStringProperty(CLIENT_SECRET);
                 if (StringUtils.isNotEmpty(tokenJSon) && StringUtils.isNotEmpty(clientSecretJson)) {
-                    final TokenResponse existingToken = JSonStorage.restoreFromString(tokenJSon, TokenResponse.TYPE);
-                    final ClientSecret clientSecret = JSonStorage.restoreFromString(clientSecretJson, ClientSecret.TYPE);
+                    final TokenResponse existingToken = restoreFromString(tokenJSon, TokenResponse.TYPE);
+                    final ClientSecret clientSecret = restoreFromString(clientSecretJson, ClientSecret.TYPE);
                     final String tokenResponseJson = br.postPage(API + "/oauth/v2/token", new UrlQuery().append(CLIENT_ID_KEY, clientSecret.getClient_id(), true).append(CLIENT_SECRET_KEY, clientSecret.getClient_secret(), true).append("code", existingToken.getRefresh_token(), true).append("grant_type", "http://oauth.net/grant_type/device/1.0", true));
                     this.checkErrorsWebsite(br);
-                    final TokenResponse newToken = JSonStorage.restoreFromString(tokenResponseJson, TokenResponse.TYPE);
+                    final TokenResponse newToken = restoreFromString(tokenResponseJson, TokenResponse.TYPE);
                     if (newToken.validate()) {
                         tokenJSon = JSonStorage.serializeToJson(newToken);
                         account.setProperty(TOKEN, tokenJSon);
@@ -605,7 +605,7 @@ public class RealDebridCom extends PluginForHost {
                 final Browser autoSolveBr = br.cloneBrowser();
                 final String responseJson = br.getPage(API + "/oauth/v2/device/code?client_id=" + CLIENT_ID + "&new_credentials=yes");
                 this.checkErrorsWebsite(br);
-                final CodeResponse code = JSonStorage.restoreFromString(responseJson, new TypeRef<CodeResponse>(CodeResponse.class) {
+                final CodeResponse code = restoreFromString(responseJson, new TypeRef<CodeResponse>(CodeResponse.class) {
                 });
                 ensureAPIBrowser();
                 final AtomicReference<ClientSecret> clientSecretResult = new AtomicReference<ClientSecret>(null);
@@ -796,7 +796,7 @@ public class RealDebridCom extends PluginForHost {
                 }
                 final String tokenResponseJson = br.postPage(API + "/oauth/v2/token", new UrlQuery().append(CLIENT_ID_KEY, clientSecret.getClient_id(), true).append(CLIENT_SECRET_KEY, clientSecret.getClient_secret(), true).append("code", code.getDevice_code(), true).append("grant_type", "http://oauth.net/grant_type/device/1.0", true));
                 this.checkErrorsWebsite(br);
-                final TokenResponse newToken = JSonStorage.restoreFromString(tokenResponseJson, new TypeRef<TokenResponse>(TokenResponse.class) {
+                final TokenResponse newToken = restoreFromString(tokenResponseJson, new TypeRef<TokenResponse>(TokenResponse.class) {
                 });
                 if (newToken.validate()) {
                     final UserResponse user = callRestAPIInternal(newToken, "https://api.real-debrid.com/rest/1.0" + "/user", null, UserResponse.TYPE);

@@ -72,7 +72,7 @@ public class PscpTv extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 400 || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
         entries = (Map<String, Object>) entries.get("broadcast");
         final String user_display_name = (String) entries.get("user_display_name");
         String filename = PluginJSonUtils.getJson(br, "status");

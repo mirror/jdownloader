@@ -424,7 +424,7 @@ public class FilerNet extends PluginForHost {
         final AccountInfo ai = new AccountInfo();
         this.setBrowserExclusive();
         loginAPI(account);
-        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
         final Map<String, Object> data = (Map<String, Object>) entries.get("data");
         if (data.get("state").toString().equalsIgnoreCase("free")) {
             account.setType(AccountType.FREE);

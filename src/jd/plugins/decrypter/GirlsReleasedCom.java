@@ -120,7 +120,7 @@ public class GirlsReleasedCom extends antiDDoSForDecrypt {
         if (pageType == PageType.GR_SET) {
             final Request request = br2.createGetRequest("https://girlsreleased.com/api/0.1/set/" + setID);
             sendRequest(br2, request);
-            final Map<String, Object> entries = JSonStorage.restoreFromString(br2.toString(), TypeRef.HASHMAP);
+            final Map<String, Object> entries = restoreFromString(br2.toString(), TypeRef.MAP);
             Map<String, Object> infomap = (Map<String, Object>) entries.get("set");
             List<List<Object>> imgs = (List<List<Object>>) infomap.get("images");
             for (final List<Object> imgInfo : imgs) {

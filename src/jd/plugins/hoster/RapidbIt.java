@@ -149,7 +149,7 @@ public class RapidbIt extends PluginForHost {
                 postdata.put("notif_email", false);
                 br.postPageRaw(API_BASE + "/services/downloadfile", JSonStorage.serializeToJson(postdata));
                 this.checkErrors(account, link);
-                final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
                 handleErrorMap(account, link, entries);
                 file_id = entries.get("file_id").toString();
                 /* Save this ID to re-use on next try. */
@@ -167,7 +167,7 @@ public class RapidbIt extends PluginForHost {
              * want.
              */
             br.getPage(API_BASE + "/files?" + query.toString());
-            final Map<String, Object> dlresponse = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            final Map<String, Object> dlresponse = restoreFromString(br.toString(), TypeRef.MAP);
             handleErrorMap(account, link, dlresponse);
             final List<Map<String, Object>> files = (List<Map<String, Object>>) dlresponse.get("result");
             if (files.isEmpty()) {
@@ -225,9 +225,9 @@ public class RapidbIt extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         login(account, true);
-        final Map<String, Object> user = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> user = restoreFromString(br.toString(), TypeRef.MAP);
         br.getPage(API_BASE + "/system/config");
-        final Map<String, Object> apiconfig = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> apiconfig = restoreFromString(br.toString(), TypeRef.MAP);
         ai.setCreateTime(((Number) user.get("created")).longValue());
         final int level_id = ((Number) user.get("level_id")).intValue();
         final List<Map<String, Object>> levels = (List<Map<String, Object>>) apiconfig.get("levels");
@@ -292,7 +292,7 @@ public class RapidbIt extends PluginForHost {
                 postdata.put("googleauth", null);
                 postdata.put("never_expires", true);
                 br.postPageRaw(API_BASE + "/users/login", JSonStorage.serializeToJson(postdata));
-                final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
                 final String token = (String) entries.get("access_token");
                 if (StringUtils.isEmpty(token)) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
@@ -310,7 +310,7 @@ public class RapidbIt extends PluginForHost {
 
     private void checkErrors(final Account account, final DownloadLink link) throws PluginException, InterruptedException {
         try {
-            final Object jsonO = JSonStorage.restoreFromString(br.toString(), TypeRef.OBJECT);
+            final Object jsonO = restoreFromString(br.toString(), TypeRef.OBJECT);
             if (jsonO == null || !(jsonO instanceof Map)) {
                 return;
             }

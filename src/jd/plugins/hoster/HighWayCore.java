@@ -405,7 +405,7 @@ public abstract class HighWayCore extends UseNet {
                         getdata += "&pass=" + Encoding.urlEncode(passCode);
                     }
                     br.getPage(getWebsiteBase() + "load.php?" + getdata);
-                    entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                    entries = restoreFromString(br.toString(), TypeRef.MAP);
                     statuscode = ((Number) entries.get("code")).intValue();
                     if (statuscode != STATUSCODE_PASSWORD_NEEDED_OR_WRONG) {
                         break;
@@ -852,7 +852,7 @@ public abstract class HighWayCore extends UseNet {
 
     private Map<String, Object> checkErrors(final Browser br, final DownloadLink link, final Account account) throws PluginException, InterruptedException {
         try {
-            final Map<String, Object> entries = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+            final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
             this.checkErrors(entries, link, account);
             return entries;
         } catch (final JSonMapperException jse) {

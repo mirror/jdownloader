@@ -126,7 +126,7 @@ public class JubaGetCom extends PluginForHost {
                 br.getHeaders().put("x-csrf-token", csrftoken);
             }
             br.postPage("/api/generate", query);
-            final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
             String dllink = (String) entries.get("download");
             if (StringUtils.isEmpty(dllink)) {
                 /* E.g. {"error":true,"error_message":"Error generate"} */

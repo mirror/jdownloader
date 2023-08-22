@@ -32,7 +32,7 @@ public class HotSpotComMy extends antiDDoSForDecrypt {
         final String urlCoded = new Regex(parameter.getCryptedUrl(), "/([^/]+)-\\d+$").getMatch(0);
         getPage("https://api.vod.astro.com.my/rest/media/" + videoID + "/smil?output=json&key=hotspot&applicationalias=JWPlayer&callback=AP.AP" + System.currentTimeMillis());
         final String jsonString = br.toString().replaceFirst("AP\\.AP\\d+\\(", "").replaceFirst("\\)$", "");
-        final Map<String, Object> map = JSonStorage.restoreFromString(jsonString, TypeRef.HASHMAP);
+        final Map<String, Object> map = restoreFromString(jsonString, TypeRef.MAP);
         final String m3u8 = (String) JavaScriptEngineFactory.walkJson(map, "smil/body/switch/{0}/m3u8/@src");
         if (m3u8 == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

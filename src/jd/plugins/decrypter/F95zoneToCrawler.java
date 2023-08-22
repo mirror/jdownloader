@@ -127,7 +127,7 @@ public class F95zoneToCrawler extends PluginForDecrypt {
         } else if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+        Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         String status = entries.get("status").toString();
         boolean captchaWasRequired = false;
         if (StringUtils.equalsIgnoreCase(status, "captcha")) {
@@ -135,7 +135,7 @@ public class F95zoneToCrawler extends PluginForDecrypt {
             final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br, "6LcwQ5kUAAAAAAI-_CXQtlnhdMjmFDt-MruZ2gov").getToken();
             query.add("captcha", Encoding.urlEncode(recaptchaV2Response));
             br.postPage(action, query);
-            entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+            entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
             status = entries.get("status").toString();
             captchaWasRequired = true;
         }

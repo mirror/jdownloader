@@ -586,7 +586,7 @@ public class RedditCom extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 429) {
             rateLimitReached(br, account);
         }
-        final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
         final String errormsg = (String) entries.get("message");
         final long errorcode = JavaScriptEngineFactory.toLong(entries.get("error"), 0);
         if (errorcode == 403) {

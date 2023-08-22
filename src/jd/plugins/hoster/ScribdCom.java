@@ -530,7 +530,7 @@ public class ScribdCom extends PluginForHost {
          */
         String formatToDownload = null;
         br.getPage("https://www." + this.getHost() + "/doc-page/download-receipt-modal-props/" + fileId);
-        Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
         entries = (Map<String, Object>) entries.get("document");
         String firstAvailableFormat = null;
         final List<Object> ressourcelist = (List<Object>) entries.get("formats");

@@ -95,7 +95,7 @@ public class MangareaderTo extends PluginForDecrypt {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+        final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         if (!Boolean.TRUE.equals(entries.get("status"))) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }

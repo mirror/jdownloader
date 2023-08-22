@@ -235,7 +235,7 @@ public class JpgChurchCrawler extends PluginForDecrypt {
                 query.addAndReplace("page", Integer.toString(page));
                 query.addAndReplace("seek", URLEncode.encodeURIComponent(seek));
                 br.postPage(apiurl, query);
-                final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+                final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
                 br.getRequest().setHtmlCode(entries.get("html").toString());
                 seek = entries.get("seekEnd").toString();
             }

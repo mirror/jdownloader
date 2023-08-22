@@ -131,7 +131,7 @@ public class SpiegelDe extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(param.getCryptedUrl()));
             return decryptedLinks;
         }
-        Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
         final List<Object> ressourcelist = (List<Object>) entries.get("playlist");
         for (final Object videoO : ressourcelist) {
             entries = (Map<String, Object>) videoO;

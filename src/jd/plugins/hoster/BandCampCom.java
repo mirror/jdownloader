@@ -168,7 +168,7 @@ public class BandCampCom extends PluginForHost {
             if (json_album == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            final Map<String, Object> albumInfo = JSonStorage.restoreFromString(json_album, TypeRef.HASHMAP);
+            final Map<String, Object> albumInfo = restoreFromString(json_album, TypeRef.MAP);
             String artist = (String) JavaScriptEngineFactory.walkJson(albumInfo, "byArtist/name");
             if (artist == null) {
                 artist = br.getRegex("name\\s*=\\s*\"title\"\\s*content\\s*=\\s*\"[^\"]+,\\s*by\\s*([^<>\"]+)\\s*\"").getMatch(0);

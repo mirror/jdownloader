@@ -84,7 +84,7 @@ public class ReadMng extends antiDDoSForDecrypt {
                     }
                 }
                 json = json.replace("''", "\"\"");
-                Map<String, Object> map = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
+                Map<String, Object> map = restoreFromString(json, TypeRef.MAP);
                 List<String> sourceImages = (List<String>) JavaScriptEngineFactory.walkJson(map, "sources/{0}/images");
                 if (sourceImages != null && sourceImages.size() > 0) {
                     images = sourceImages.toArray(new String[0]);

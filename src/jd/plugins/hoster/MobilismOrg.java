@@ -287,7 +287,7 @@ public class MobilismOrg extends antiDDoSForHost {
                 br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
                 br.getHeaders().put("X-Requested-With", null);
                 /* E.g. successful response: {"ok":true,"url":"\/amember\/member"} */
-                final Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
                 final boolean loginIsOK = ((Boolean) entries.get("ok")).booleanValue();
                 if (br.getCookie(this.br.getHost(), "amember_nr", Cookies.NOTDELETEDPATTERN) == null || !loginIsOK) {
                     /*

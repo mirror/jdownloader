@@ -130,7 +130,7 @@ public class FEmbedDecrypter extends PluginForDecrypt {
             final PostRequest postRequest = new PostRequest("https://" + fembedHost + "/api/source/" + file_id);
             br.getPage(postRequest);
             try {
-                response = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                response = restoreFromString(br.toString(), TypeRef.MAP);
             } catch (final Throwable e) {
                 logger.log(e);
             }
@@ -161,7 +161,7 @@ public class FEmbedDecrypter extends PluginForDecrypt {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, msg);
             } else {
                 if (response.get("data") instanceof String) {
-                    videos.addAll((List<Map<String, Object>>) JSonStorage.restoreFromString((String) response.get("data"), TypeRef.OBJECT));
+                    videos.addAll((List<Map<String, Object>>) restoreFromString((String) response.get("data"), TypeRef.OBJECT));
                 } else {
                     videos.addAll((List<Map<String, Object>>) response.get("data"));
                 }

@@ -78,7 +78,7 @@ public class PixivNetSketch extends PluginForDecrypt {
                 }
                 return decryptedLinks;
             }
-            Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
             next = (String) JavaScriptEngineFactory.walkJson(entries, "_links/next/href");
             final List<Object> imgObjects = (List<Object>) JavaScriptEngineFactory.walkJson(entries, "data/items");
             for (final Object imgO : imgObjects) {

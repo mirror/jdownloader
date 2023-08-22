@@ -178,7 +178,7 @@ public class IcedriveNet extends PluginForHost {
         final Browser brc = br.cloneBrowser();
         brc.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         brc.getPage("https://icedrive.net/API/Internal/V1/?request=download-multi&items=file-" + URLEncode.encodeURIComponent(internalFileID) + "&public=1&sess=1");
-        final Map<String, Object> entries = JSonStorage.restoreFromString(brc.toString(), TypeRef.HASHMAP);
+        final Map<String, Object> entries = restoreFromString(brc.toString(), TypeRef.MAP);
         final Boolean error = (Boolean) entries.get("error");
         if (error == Boolean.TRUE) {
             final String message = (String) entries.get("message");

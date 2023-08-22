@@ -87,7 +87,7 @@ public class MywikifeetCom extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String json = br.getRegex("g\\.plan = (\\{.*?\\})</script>").getMatch(0);
-        final Map<String, Object> entries = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
+        final Map<String, Object> entries = restoreFromString(json, TypeRef.MAP);
         final Map<String, Object> data = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "populate/data");
         final int price = ((Number) data.get("price")).intValue();
         final Map<String, Object> userinfo = (Map<String, Object>) data.get("userinfo");

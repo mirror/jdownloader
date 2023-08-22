@@ -151,7 +151,7 @@ public class UlozToFolder extends PluginForDecrypt {
             decryptedLinks.add(this.createOfflinelink(param.getCryptedUrl()));
             return decryptedLinks;
         }
-        Map<String, Object> entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+        Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
         entries = (Map<String, Object>) entries.get("folder");
         final String folderName = (String) entries.get("name");
         if (StringUtils.isEmpty(folderName)) {
@@ -178,7 +178,7 @@ public class UlozToFolder extends PluginForDecrypt {
                     passCode = getUserInput("Password?", param);
                     this.setPasswordHeader(passCode);
                     this.accessFolderFiles(folderID, 0, 50);
-                    entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                    entries = restoreFromString(br.toString(), TypeRef.MAP);
                     if (br.getHttpConnection().getResponseCode() != 403) {
                         success = true;
                         break;
@@ -205,7 +205,7 @@ public class UlozToFolder extends PluginForDecrypt {
             /* Do not perform this request if we've already done that before. */
             if (page > 1 || !alreadyAccessedFirstFilesIndex) {
                 this.accessFolderFiles(folderID, offset, maxItemsPerPage);
-                entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+                entries = restoreFromString(br.toString(), TypeRef.MAP);
             }
             final List<Object> ressourcelist = (List<Object>) entries.get("items");
             for (final Object fileO : ressourcelist) {
@@ -253,7 +253,7 @@ public class UlozToFolder extends PluginForDecrypt {
             page += 1;
             logger.info("Crawling subfolders page: " + page);
             this.accessFolderSubfolders(folderID, offset, maxItemsPerPage);
-            entries = JSonStorage.restoreFromString(br.toString(), TypeRef.HASHMAP);
+            entries = restoreFromString(br.toString(), TypeRef.MAP);
             final List<Object> ressourcelist = (List<Object>) entries.get("subfolders");
             for (final Object folderO : ressourcelist) {
                 entries = (Map<String, Object>) folderO;

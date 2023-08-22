@@ -106,7 +106,7 @@ public class OpenDriveCom extends PluginForHost {
             if (!br.containsHTML("\"FileId\"")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+            final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
             link.setFinalFileName(entries.get("Name").toString());
             /* 2022-10-06: API returns number values as string */
             final String filesize = entries.get("SizeOriginal").toString();
@@ -119,7 +119,7 @@ public class OpenDriveCom extends PluginForHost {
             if (br.getHttpConnection().getResponseCode() == 400 || br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.HASHMAP);
+            final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
             link.setFinalFileName(entries.get("Name").toString());
             /* 2022-10-06: Web-API returns number values as string */
             final String filesize = entries.get("Size").toString();
