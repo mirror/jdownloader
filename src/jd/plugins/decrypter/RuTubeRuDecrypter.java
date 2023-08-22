@@ -27,7 +27,6 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
 
-import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.parser.UrlQuery;
@@ -108,7 +107,7 @@ public class RuTubeRuDecrypter extends PluginForDecrypt {
             if (br.getHttpConnection().getResponseCode() == 401 || br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("<root><detail>Not found</detail></root>")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            final Map<String, Object> entries = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+            final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
             videoID = entries.get("track_id").toString();
         }
         final Browser ajax = getAjaxBR(br.cloneBrowser());

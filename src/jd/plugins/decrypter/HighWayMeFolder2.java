@@ -19,7 +19,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.gui.IconKey;
@@ -100,7 +99,7 @@ public class HighWayMeFolder2 extends PluginForDecrypt {
         final ArrayList<String> skippedItemsUsenet = new ArrayList<String>();
         torrentCrawler: if (crawlTorrent) {
             br.getPage(hosterplugin.getWebsiteBase() + "torrent.php?action=list&json&order=1&suche=");
-            final Map<String, Object> entries = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+            final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
             final List<Map<String, Object>> items = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entries, "arguments/torrents");
             if (items == null || items.isEmpty()) {
                 logger.info("Failed to find any items for category: torrent");
@@ -137,7 +136,7 @@ public class HighWayMeFolder2 extends PluginForDecrypt {
         }
         usenetCrawler: if (crawlUsenet) {
             br.getPage(hosterplugin.getWebsiteBase() + "usenet.php?action=list&json&order=1&suche=");
-            final Map<String, Object> entries = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+            final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
             final List<Map<String, Object>> items = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entries, "arguments/usenet");
             if (items == null || items.isEmpty()) {
                 logger.info("Failed to find any items for category: usenet");

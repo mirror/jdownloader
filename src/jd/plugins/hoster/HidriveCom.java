@@ -19,6 +19,12 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.parser.UrlQuery;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -33,12 +39,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.HidriveComCrawler;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.parser.UrlQuery;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hidrive.com" }, urls = { "https?://(?:my\\.hidrive\\.com/lnk/|(?:www\\.)?hidrive\\.strato\\.com/wget)[A-Za-z0-9]+|https://my\\.hidrive\\.com/share/([^/]+)#file_id=(.+)" })
 public class HidriveCom extends PluginForHost {
@@ -238,7 +238,7 @@ public class HidriveCom extends PluginForHost {
                     // final String file_id = new Regex(link.getPluginPatternMatcher(), TYPE_SINGLE_FILE_AS_PART_OF_FOLDER).getMatch(1);
                     // br.getPage(HidriveComCrawler.API_BASE + "/file/url?pid=" + file_id);
                     // // throw new PluginException(LinkStatus.ERROR_FATAL, "Access token expired");
-                    // final Map<String, Object> json = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+                    // final Map<String, Object> json = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
                     // final String directurl = json.get("url").toString();
                     // }
                 } else {

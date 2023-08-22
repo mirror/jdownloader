@@ -448,7 +448,7 @@ public class IwaraTv extends PluginForHost {
                 postData.put("password", account.getPass());
                 br.getHeaders().put("Referer", "https://www." + this.getHost() + "/login");
                 br.postPageRaw(WEBAPI_BASE + "/user/login", JSonStorage.serializeToJson(postData));
-                final Map<String, Object> entries = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+                final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
                 if (br.getHttpConnection().getResponseCode() == 400) {
                     /* E.g. {"message":"errors.invalidLogin"} */
                     throw new AccountInvalidException();
@@ -458,7 +458,7 @@ public class IwaraTv extends PluginForHost {
                 br.getHeaders().put("Authorization", "Bearer " + token);
                 /* Get final token. */
                 br.postPage("/user/token", "");
-                final Map<String, Object> entries2 = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+                final Map<String, Object> entries2 = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
                 final String accessToken = entries2.get("accessToken").toString();
                 br.getHeaders().put("Authorization", "Bearer " + accessToken);
                 account.setProperty(PROPERTY_ACCOUNT_ACCESS_TOKEN, accessToken);
@@ -471,7 +471,7 @@ public class IwaraTv extends PluginForHost {
 
     private Map<String, Object> apiGetUserInfo(final Browser br) throws IOException {
         br.getPage(WEBAPI_BASE + "/user");
-        return JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+        return restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
     }
 
     @Override
