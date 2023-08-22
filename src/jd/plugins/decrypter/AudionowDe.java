@@ -21,7 +21,6 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
 import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
@@ -51,11 +50,6 @@ public class AudionowDe extends PluginForDecrypt {
     private static AtomicLong validUntil = new AtomicLong(0);
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final boolean pluginBroken20230821 = true;
-        if (pluginBroken20230821 && !DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-            /* https://svn.jdownloader.org/issues/90395 */
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
         br.getPage(param.getCryptedUrl());
