@@ -9,6 +9,18 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperHostPluginHCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -35,18 +47,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
 import jd.plugins.download.HashInfo;
-
-import org.appwork.storage.TypeRef;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperHostPluginHCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class TurbobitCore extends antiDDoSForHost {
@@ -99,9 +99,9 @@ public class TurbobitCore extends antiDDoSForHost {
         }
         /**
          * Enabled = Do not check for filesize via single-linkcheck on first time linkcheck - only on the 2nd linkcheck and when the
-         * filesize is not known already. This will speedup the linkcheck! </br> Disabled = Check for filesize via single-linkcheck even
-         * first time links get added as long as no filesize is given. This will slow down the linkcheck and cause more http requests in a
-         * short amount of time!
+         * filesize is not known already. This will speedup the linkcheck! </br>
+         * Disabled = Check for filesize via single-linkcheck even first time links get added as long as no filesize is given. This will
+         * slow down the linkcheck and cause more http requests in a short amount of time!
          */
         final boolean fastLinkcheck = isFastLinkcheckEnabled();
         final ArrayList<DownloadLink> deepChecks = new ArrayList<DownloadLink>();
@@ -435,7 +435,7 @@ public class TurbobitCore extends antiDDoSForHost {
     protected void handleFree(final DownloadLink link, Account account) throws Exception {
         /* support for public premium links */
         if (link.getPluginPatternMatcher().matches(TYPE_premiumRedirectLinks)) {
-            if (handlePremiumLink(link)) {
+            if (handlePremiumLink(link, account)) {
                 return;
             } else {
                 logger.info("Download of pre given directurl failed --> Attempting normal free download");
@@ -445,11 +445,6 @@ public class TurbobitCore extends antiDDoSForHost {
         if (checkShowFreeDialog(getHost())) {
             super.showFreeDialog(getHost());
         }
-        /**
-         * 2020-03-03: Removed, not needed anymore 2019-05-11: Not required for e.g. hitfile.net but it does not destroy anything either so
-         * let's set it anyways.
-         */
-        // br.setCookie(br.getHost(), "turbobit1", getCurrentTimeCookie(br));
         sleep(2000, link);
         getPage(br, "/download/free/" + this.getFUID(link));
         if (isFileOfflineWebsite(this.br)) {
@@ -478,6 +473,10 @@ public class TurbobitCore extends antiDDoSForHost {
         }
     }
 
+    /**
+     * Fills in captchaForm. </br>
+     * DOES NOT SEND CAPTCHA-FORM!!
+     */
     protected boolean processCaptchaForm(final DownloadLink link, final Account account, final Form captchaform, final Browser br, final boolean optionalCaptcha) throws PluginException, InterruptedException {
         if (containsHCaptcha(br)) {
             final String response = new CaptchaHelperHostPluginHCaptcha(this, br).getToken();
@@ -519,7 +518,7 @@ public class TurbobitCore extends antiDDoSForHost {
             }
         }
         if (captchaform == null) {
-            handleGeneralErrors(br);
+            handleGeneralErrors(br, account);
             if (!br.getURL().contains("/download/free/")) {
                 if (allowRetry && br.containsHTML("/download/free/" + Pattern.quote(this.getFUID(link)))) {
                     // from a log where the first call to this, just redirected to main page and set some cookies
@@ -579,7 +578,7 @@ public class TurbobitCore extends antiDDoSForHost {
         handleDownloadRedirectErrors(downloadUrl, link);
         /** 2019-05-11: Not required for e.g. hitfile.net but it does not destroy anything either so let's set it anyways. */
         br.setCookie(br.getHost(), "turbobit2", getCurrentTimeCookie(br2));
-        initDownload(DownloadType.GUEST_FREE, link, downloadUrl);
+        initDownload(DownloadType.GUEST_FREE, link, account, downloadUrl);
         handleErrorsPreDownloadstart(dl.getConnection());
         dl.startDownload();
     }
@@ -710,6 +709,7 @@ public class TurbobitCore extends antiDDoSForHost {
             /* 2021-03-30: Captchas can sometimes happen in premium mode (wtf but confirmed!) */
             logger.info("Detected premium download-captcha");
             processCaptchaForm(link, account, premiumCaptchaForm, br, false);
+            this.submitForm(premiumCaptchaForm);
         }
     }
 
@@ -718,9 +718,9 @@ public class TurbobitCore extends antiDDoSForHost {
         if (account.getType() == AccountType.FREE) {
             this.handleFree(link, account);
         } else {
-            /* support for public premium links */
             if (link.getPluginPatternMatcher().matches(TYPE_premiumRedirectLinks)) {
-                if (handlePremiumLink(link)) {
+                /* Direct-downloadable public premium link. */
+                if (handlePremiumLink(link, account)) {
                     return;
                 } else {
                     logger.info("Download of pre given directurl failed --> Attempting normal premium download");
@@ -732,7 +732,7 @@ public class TurbobitCore extends antiDDoSForHost {
             accessContentURL(br, link);
             handlePremiumCaptcha(br, link, account);
             String dllink = null;
-            final String[] mirrors = br.getRegex("('|\")(https?://([a-z0-9\\.]+)?[^/\\'\"]+//?download/redirect/.*?)\\1").getColumn(1);
+            final String[] mirrors = br.getRegex("(?i)('|\")(https?://([a-z0-9\\.]+)?[^/\\'\"]+//?download/redirect/.*?)\\1").getColumn(1);
             if (mirrors == null || mirrors.length == 0) {
                 if (br.containsHTML("(?i)You have reached the.*? limit of premium downloads")) {
                     throw new AccountUnavailableException("Downloadlimit reached", 30 * 60 * 1000l);
@@ -740,7 +740,7 @@ public class TurbobitCore extends antiDDoSForHost {
                     logger.info("Premium access is blocked --> No traffic available?");
                     throw new AccountUnavailableException("Error 'Premium access is blocked' --> No traffic available?", 30 * 60 * 1000l);
                 }
-                this.handleGeneralErrors(br);
+                this.handleGeneralErrors(br, account);
                 logger.warning("dllink equals null, plugin seems to be broken!");
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to find final downloadlink");
             }
@@ -752,43 +752,33 @@ public class TurbobitCore extends antiDDoSForHost {
                 getPage(currentlink);
                 if (br.getHttpConnection().getResponseCode() == 503) {
                     logger.info("Too many connections on current account via current IP");
-                    throw new AccountUnavailableException("Too many connections on current account via current IP", 1 * 60 * 1000l);
+                    throw new AccountUnavailableException("Too many connections on current account via current IP", 30 * 1000l);
                 }
                 if (br.getRedirectLocation() == null) {
-                    logger.info("Skipping broken mirror: " + currentlink);
+                    logger.info("Skipping broken mirror reason#1: " + currentlink);
                     br = br2.cloneBrowser();
-                } else {
-                    dllink = br.getRedirectLocation();
-                    if (dllink != null) {
-                        final boolean isLast = mirrors.length - 1 == i;
-                        try {
-                            if (initDownload(DownloadType.ACCOUNT_PREMIUM, link, dllink)) {
-                                break;
-                            }
-                        } catch (final PluginException e) {
-                            if (isLast) {
-                                throw e;
-                            } else {
-                                logger.log(e);
-                                continue;
-                            }
-                        }
-                        /* Ugly workaround */
-                        logger.info("Skipping non working mirror: " + dllink);
-                        br = br2.cloneBrowser();
+                    continue;
+                }
+                dllink = br.getRedirectLocation();
+                try {
+                    if (initDownload(DownloadType.ACCOUNT_PREMIUM, link, account, dllink)) {
+                        break;
+                    }
+                } catch (final PluginException e) {
+                    final boolean isLastMirror = mirrors.length - 1 == i;
+                    if (isLastMirror) {
+                        throw e;
+                    } else {
+                        logger.log(e);
+                        logger.info("Skipping broken mirror reason#2: " + dllink);
+                        continue;
                     }
                 }
+                /* Ugly workaround */
+                logger.info("Skipping non working mirror: " + dllink);
+                br = br2.cloneBrowser();
             }
-            if (br.containsHTML("(?i)>\\s*Your IP exceeded the max\\.? number of files that can be downloaded")) {
-                final Regex durationRegex = br.getRegex("You will be able to download at high speed again in (\\d+) hour\\(s\\) (\\d+) minute");
-                final String hoursStr = durationRegex.getMatch(0);
-                final String minutesStr = durationRegex.getMatch(1);
-                long wait = 30 * 60 * 1000l;
-                if (hoursStr != null && minutesStr != null) {
-                    wait = (Long.parseLong(hoursStr) * 60 * 60 + Long.parseLong(minutesStr) * 60) * 1000l;
-                }
-                throw new AccountUnavailableException("Your IP exceeded the max number of files that can be downloaded", wait);
-            } else if (dl == null) {
+            if (dl == null) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to find final downloadlink");
             } else {
                 dl.startDownload();
@@ -822,7 +812,7 @@ public class TurbobitCore extends antiDDoSForHost {
     }
 
     /** 2019-05-11: Limits seem to be the same for all of their services. */
-    private boolean initDownload(final DownloadType downloadType, final DownloadLink link, final String directlink) throws Exception {
+    private boolean initDownload(final DownloadType downloadType, final DownloadLink link, final Account account, final String directlink) throws Exception {
         if (directlink == null) {
             logger.warning("dllink is null");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -863,7 +853,7 @@ public class TurbobitCore extends antiDDoSForHost {
                 }
             } else if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 br.followConnection(true);
-                handleGeneralErrors(br);
+                handleGeneralErrors(br, account);
                 return false;
             } else {
                 getAndSetMd5Hash(link, dl.getConnection().getURL().toString());
@@ -884,22 +874,23 @@ public class TurbobitCore extends antiDDoSForHost {
     }
 
     /** Attempts to download pre-given premium direct-URLs. */
-    protected boolean handlePremiumLink(final DownloadLink link) throws Exception {
+    protected boolean handlePremiumLink(final DownloadLink link, final Account account) throws Exception {
         if (!link.getPluginPatternMatcher().matches(TYPE_premiumRedirectLinks)) {
             /* Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (initDownload(DownloadType.GUEST_PREMIUMLINK, link, link.getPluginPatternMatcher())) {
+        if (initDownload(DownloadType.GUEST_PREMIUMLINK, link, account, link.getPluginPatternMatcher())) {
             handleErrorsPreDownloadstart(dl.getConnection());
             dl.startDownload();
             return true;
         } else {
+            logger.info("Download of supposedly direct-downloadable premium link failed");
             this.dl = null;
             return false;
         }
     }
 
-    private void handleGeneralErrors(final Browser br) throws PluginException {
+    private void handleGeneralErrors(final Browser br, final Account account) throws PluginException {
         if (br.containsHTML("(?i)Try to download it once again after")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Try again later'", 20 * 60 * 1000l);
         } else if (br.containsHTML("(?i)>\\s*Ссылка просрочена\\. Пожалуйста получите")) {
@@ -907,6 +898,19 @@ public class TurbobitCore extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'link expired'", 5 * 60 * 1000l);
         } else if (br.containsHTML("(?i)Our service is currently unavailable in your country\\.")) {
             throw new PluginException(LinkStatus.ERROR_FATAL, this.getHost() + " is currently unavailable in your country!");
+        } else if (br.containsHTML("(?i)>\\s*Your IP exceeded the max\\.? number of files that can be downloaded")) {
+            final Regex durationRegex = br.getRegex("You will be able to download at high speed again in (\\d+) hour\\(s\\) (\\d+) minute");
+            final String hoursStr = durationRegex.getMatch(0);
+            final String minutesStr = durationRegex.getMatch(1);
+            long wait = 30 * 60 * 1000l;
+            if (hoursStr != null && minutesStr != null) {
+                wait = (Long.parseLong(hoursStr) * 60 * 60 + Long.parseLong(minutesStr) * 60) * 1000l;
+            }
+            if (account != null) {
+                throw new AccountUnavailableException("Your IP exceeded the max number of files that can be downloaded", wait);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Your IP exceeded the max number of files that can be downloaded", 5 * 60 * 1000l);
+            }
         }
     }
 
