@@ -72,7 +72,7 @@ public class PastehillCom extends AbstractPastebinCrawler {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:download|embed/)?([a-z0-9]+)");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:(?:download|embed)/)?([a-z0-9]+)");
         }
         return ret.toArray(new String[0]);
     }
