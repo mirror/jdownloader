@@ -15,7 +15,6 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -69,35 +68,26 @@ public class Paste2OrgCrawler extends AbstractPastebinCrawler {
     }
 
     @Override
-    protected String getPastebinText(final Browser br) {
-        final String textWithHTML = br.getRegex("(?i)<ol class='highlight code'>(.*?)</div></li></ol>").getMatch(0);
-        if (textWithHTML != null) {
-            final String[] linesWithPlaintext = new Regex(textWithHTML, "id='line-\\d+'><div>([^<]+)</div>").getColumn(0);
-            if (linesWithPlaintext != null && linesWithPlaintext.length > 0) {
-                return StringUtils.join(linesWithPlaintext, "\r\n");
-            } else {
-                return textWithHTML;
-            }
-        }
-        return null;
-    }
-
-    @Override
     public PastebinMetadata crawlMetadata(final CryptedLink param, final Browser br) throws Exception {
-        final PastebinMetadata metadata = super.crawlMetadata(param, br);
-        final String description = br.getRegex("class=\"desc\"[^>]*>\\s*<p>([^<]+)</p>").getMatch(0);
-        if (description != null) {
-            metadata.setDescription(description);
-        }
-        return metadata;
-    }
-
-    @Override
-    public void preProcess(final CryptedLink param) throws IOException, PluginException {
         br.setFollowRedirects(true);
         br.getPage(param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        String text = br.getRegex("(?i)<ol class='highlight code'>(.*?)</div></li></ol>").getMatch(0);
+        if (text == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final String[] linesWithPlaintext = new Regex(text, "id='line-\\d+'><div>([^<]+)</div>").getColumn(0);
+        if (linesWithPlaintext != null && linesWithPlaintext.length > 0) {
+            text = StringUtils.join(linesWithPlaintext, "\r\n");
+        }
+        final PastebinMetadata metadata = new PastebinMetadata(param, this.getFID(param.getCryptedUrl()));
+        metadata.setPastebinText(text);
+        final String description = br.getRegex("class=\"desc\"[^>]*>\\s*<p>([^<]+)</p>").getMatch(0);
+        if (description != null) {
+            metadata.setDescription(description);
+        }
+        return metadata;
     }
 }

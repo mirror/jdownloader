@@ -15,14 +15,12 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.Regex;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -38,6 +36,15 @@ import jd.plugins.PluginException;
 public class JustPasteIt extends AbstractPastebinCrawler {
     public JustPasteIt(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = new Browser();
+        br.setFollowRedirects(true);
+        br.setLoadLimit(3 * br.getLoadLimit());
+        br.setAllowedResponseCodes(451);
+        return br;
     }
 
     @Override
@@ -74,13 +81,7 @@ public class JustPasteIt extends AbstractPastebinCrawler {
     }
 
     @Override
-    protected String getPastebinText(final Browser br) {
-        return br.getRegex("<div[^>]+id=\"articleContent\"[^>]*>(.*?)</div>").getMatch(0);
-    }
-
-    @Override
-    public void preProcess(final CryptedLink param) throws IOException, PluginException {
-        prepBR(br);
+    public PastebinMetadata crawlMetadata(final CryptedLink param, final Browser br) throws Exception {
         br.getPage(param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -90,16 +91,19 @@ public class JustPasteIt extends AbstractPastebinCrawler {
             logger.warning("Captcha is not supported");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-    }
-
-    @Override
-    public PastebinMetadata crawlMetadata(final CryptedLink param, final Browser br) throws Exception {
-        final PastebinMetadata metadata = super.crawlMetadata(param, br);
+        final String pastebinText = br.getRegex("<div[^>]+id=\"articleContent\"[^>]*>(.*?)</div>").getMatch(0);
+        if (pastebinText == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final PastebinMetadata metadata = new PastebinMetadata(param, this.getFID(param.getCryptedUrl()));
+        metadata.setPastebinText(pastebinText);
         // metadata.setUsername("@anonymous");
         final String json = br.getRegex("window\\.barOptions\\s*=\\s*(\\{.*?\\});").getMatch(0);
         final String title = br.getRegex("class=\"articleFirstTitle\"[^>]*>([^<>\"]+)</h1>").getMatch(0);
         if (title != null) {
             metadata.setTitle(title);
+        } else {
+            logger.warning("Failed to find pastebin title");
         }
         try {
             final Map<String, Object> entries = restoreFromString(json, TypeRef.MAP);
@@ -107,14 +111,8 @@ public class JustPasteIt extends AbstractPastebinCrawler {
             metadata.setDate(new Date(TimeFormatter.getMilliSeconds(createdText.substring(0, createdText.lastIndexOf(":")), "yyyy-MM-dd'T'HH:mm:ss", Locale.ENGLISH)));
         } catch (final Throwable e) {
             logger.log(e);
+            logger.info("Failed to find pastebin create date");
         }
         return metadata;
-    }
-
-    public static Browser prepBR(final Browser br) {
-        br.setFollowRedirects(true);
-        br.setLoadLimit(3 * br.getLoadLimit());
-        br.setAllowedResponseCodes(451);
-        return br;
     }
 }

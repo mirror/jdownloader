@@ -15,7 +15,6 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -68,23 +67,19 @@ public class TextupFr extends AbstractPastebinCrawler {
     }
 
     @Override
-    protected String getPastebinText(final Browser br) {
-        return br.getRegex("<div id=\"page-inner\">(.*?)id=\"dialog-edit\"").getMatch(0);
-    }
-
-    @Override
-    public void preProcess(final CryptedLink param) throws IOException, PluginException {
+    public PastebinMetadata crawlMetadata(final CryptedLink param, final Browser br) throws Exception {
         br.setFollowRedirects(true);
         br.getPage(param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-    }
-
-    @Override
-    public PastebinMetadata crawlMetadata(final CryptedLink param, final Browser br) throws Exception {
-        final PastebinMetadata metadata = super.crawlMetadata(param, br);
-        final String author = br.getRegex("Auteur\\s*:\\s*<em>([^<]+)</em>").getMatch(0);
+        final String plaintext = br.getRegex("<div id=\"page-inner\">(.*?)id=\"dialog-edit\"").getMatch(0);
+        if (plaintext == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final PastebinMetadata metadata = new PastebinMetadata(param, this.getFID(param.getCryptedUrl()));
+        metadata.setPastebinText(plaintext);
+        final String author = br.getRegex("(?i)Auteur\\s*:\\s*<em>([^<]+)</em>").getMatch(0);
         if (author != null) {
             metadata.setUsername(author);
         }

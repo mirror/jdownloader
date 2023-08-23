@@ -65,10 +65,10 @@ public abstract class AbstractPastebinHoster extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         final PluginForDecrypt plg = this.getNewPluginForDecryptInstance(this.getHost());
-        final DownloadLink plaintext = ((AbstractPastebinCrawler) plg).preProcessAndGetPlaintextDownloadLink(new CryptedLink(link.getPluginPatternMatcher(), link));
-        link.setFinalFileName(plaintext.getName());
+        final PastebinMetadata metadata = ((AbstractPastebinCrawler) plg).crawlMetadata(new CryptedLink(link.getPluginPatternMatcher(), link), br);
+        link.setFinalFileName(metadata.getFilename());
         /* Do this in case the password has changed. */
-        link.setDownloadPassword(plaintext.getDownloadPassword());
+        link.setDownloadPassword(metadata.getPassword());
         return AvailableStatus.TRUE;
     }
 
@@ -76,7 +76,7 @@ public abstract class AbstractPastebinHoster extends PluginForHost {
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link);
         final PluginForDecrypt plg = this.getNewPluginForDecryptInstance(this.getHost());
-        final PastebinMetadata metadata = ((AbstractPastebinCrawler) plg).preProcessAndGetMetadata(new CryptedLink(link.getPluginPatternMatcher(), link));
+        final PastebinMetadata metadata = ((AbstractPastebinCrawler) plg).crawlMetadata(new CryptedLink(link.getPluginPatternMatcher(), link), br);
         final String textToSave = metadata.getPastebinText();
         /* Write text to file */
         final File dest = new File(link.getFileOutput());

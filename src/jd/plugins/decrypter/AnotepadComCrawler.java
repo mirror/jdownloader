@@ -15,14 +15,15 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import org.appwork.utils.Regex;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.LinkStatus;
@@ -68,7 +69,14 @@ public class AnotepadComCrawler extends AbstractPastebinCrawler {
     }
 
     @Override
-    protected String getPastebinText(final Browser br) {
+    public PastebinMetadata crawlMetadata(final CryptedLink param, final Browser br) throws Exception {
+        br.setFollowRedirects(true);
+        br.getPage(param.getCryptedUrl());
+        if (this.br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(?i)This note either is private or has been deleted")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final String fid = this.getFID(param.getCryptedUrl());
+        final String title = br.getRegex("span class=\"note_title\"[^>]*>([^<]+)</span>").getMatch(0);
         String plaintxt = br.getRegex("href\\s*=\\s*\"(https?[^<>\"]+)\">\\s*Download Link\\s*:\\s*Click Here").getMatch(0);
         if (plaintxt == null) {
             /* Plaintext containing multiple links (?) */
@@ -80,15 +88,18 @@ public class AnotepadComCrawler extends AbstractPastebinCrawler {
                 }
             }
         }
-        return plaintxt;
-    }
-
-    @Override
-    public void preProcess(final CryptedLink param) throws IOException, PluginException {
-        br.setFollowRedirects(true);
-        br.getPage(param.getCryptedUrl());
-        if (this.br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(?i)This note either is private or has been deleted")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (plaintxt == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        final PastebinMetadata metadata = new PastebinMetadata(param, fid);
+        metadata.setPastebinText(plaintxt);
+        if (title != null) {
+            metadata.setTitle(Encoding.htmlDecode(title).trim());
+        }
+        final String downloadurl = "/note/download/" + fid + "?format=Text";
+        if (br.containsHTML(Pattern.quote(downloadurl))) {
+            metadata.setOfficialDirectDownloadlink(br.getURL(downloadurl).toString());
+        }
+        return metadata;
     }
 }

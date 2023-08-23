@@ -15,7 +15,6 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -71,13 +70,7 @@ public class JwpasteCom extends AbstractPastebinCrawler {
     }
 
     @Override
-    protected String getPastebinText(final Browser br) {
-        final String plaintxt = br.getRegex("<td[^>]*nowrap align=\"left\"[^>]*><pre(.*?)</table>").getMatch(0);
-        return plaintxt;
-    }
-
-    @Override
-    public void preProcess(final CryptedLink param) throws IOException, PluginException, DecrypterException {
+    public PastebinMetadata crawlMetadata(final CryptedLink param, final Browser br) throws Exception {
         br.setFollowRedirects(true);
         br.getPage(param.getCryptedUrl());
         if (this.br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("class=\"paste\\-error\"")) {
@@ -115,6 +108,13 @@ public class JwpasteCom extends AbstractPastebinCrawler {
                 throw new DecrypterException(DecrypterException.PASSWORD);
             }
         }
+        final String plaintxt = br.getRegex("<td[^>]*nowrap align=\"left\"[^>]*><pre(.*?)</table>").getMatch(0);
+        if (plaintxt == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final PastebinMetadata metadata = new PastebinMetadata(param, this.getFID(param.getCryptedUrl()));
+        metadata.setPastebinText(plaintxt);
+        return metadata;
     }
 
     private Form getPasswordProtectedForm(final Browser br) {

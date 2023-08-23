@@ -59,7 +59,7 @@ public class PastebinCom extends AbstractPastebinHoster {
         this.setBrowserExclusive();
         final PluginForDecrypt plg = this.getNewPluginForDecryptInstance(this.getHost());
         /* If the content is offline, the following call will throw an appropriate exception. */
-        ((AbstractPastebinCrawler) plg).preProcessAndGetPlaintextDownloadLink(new CryptedLink(link.getPluginPatternMatcher(), link));
+        ((AbstractPastebinCrawler) plg).crawlMetadata(new CryptedLink(link.getPluginPatternMatcher(), link), br);
         URLConnectionAdapter con = null;
         try {
             con = br.openHeadConnection(getDirectDownloadURL(link));

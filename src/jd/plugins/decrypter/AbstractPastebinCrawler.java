@@ -1,6 +1,5 @@
 package jd.plugins.decrypter;
 
-import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -21,13 +20,12 @@ import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+import jd.plugins.hoster.DirectHTTP;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public abstract class AbstractPastebinCrawler extends PluginForDecrypt {
@@ -40,8 +38,8 @@ public abstract class AbstractPastebinCrawler extends PluginForDecrypt {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.PASTEBIN };
     }
 
-    /** Use this if you want to change the URL added by the user before processing it. */
-    protected void correctCryptedLink(final CryptedLink param) {
+    protected String getContentURL(final CryptedLink link) {
+        return link.getCryptedUrl();
     }
 
     /**
@@ -58,8 +56,6 @@ public abstract class AbstractPastebinCrawler extends PluginForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         /* TODO: Implement logic of pastebin settings once available: https://svn.jdownloader.org/issues/90043 */
-        correctCryptedLink(param);
-        this.preProcess(param);
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final PastebinMetadata metadata = this.crawlMetadata(param, br);
         if (metadata.getPastebinText() == null) {
@@ -90,7 +86,16 @@ public abstract class AbstractPastebinCrawler extends PluginForDecrypt {
         final PastebinPlaintextCrawlMode mode = JsonConfig.create(PastebinCrawlerSettings.class).getPastebinPlaintextCrawlMode();
         final LazyHostPlugin lazyHostPlugin = HostPluginController.getInstance().get(getHost());
         final boolean isAllowedByMode = mode == PastebinPlaintextCrawlMode.ALWAYS || (mode == PastebinPlaintextCrawlMode.ONLY_IF_NO_HTTP_URLS_WERE_FOUND && links.length == 0);
-        if (lazyHostPlugin != null && isAllowedByMode) {
+        final String directurl = metadata.getOfficialDirectDownloadlink();
+        if (directurl != null && isAllowedByMode) {
+            final DownloadLink textfile = this.createDownloadlink(DirectHTTP.createURLForThisPlugin(directurl));
+            textfile.setFinalFileName(metadata.getFilename());
+            textfile.setAvailable(true);
+            if (metadata.getPassword() != null) {
+                textfile.setDownloadPassword(metadata.getPassword(), true);
+            }
+            ret.add(textfile);
+        } else if (lazyHostPlugin != null && isAllowedByMode) {
             final PluginForHost sisterPlugin = getNewPluginInstance(lazyHostPlugin);
             if (sisterPlugin != null && sisterPlugin.canHandle(param.getCryptedUrl())) {
                 final DownloadLink textfile = getDownloadlinkForHosterplugin(param, metadata);
@@ -104,21 +109,6 @@ public abstract class AbstractPastebinCrawler extends PluginForDecrypt {
             fp.addLinks(ret);
         }
         return ret;
-    }
-
-    public DownloadLink preProcessAndGetPlaintextDownloadLink(final CryptedLink param) throws Exception {
-        correctCryptedLink(param);
-        this.preProcess(param);
-        final PastebinMetadata metadata = this.crawlMetadata(param, br);
-        final DownloadLink textfile = getDownloadlinkForHosterplugin(param, metadata);
-        return textfile;
-    }
-
-    public PastebinMetadata preProcessAndGetMetadata(final CryptedLink param) throws Exception {
-        correctCryptedLink(param);
-        this.preProcess(param);
-        final PastebinMetadata metadata = this.crawlMetadata(param, br);
-        return metadata;
     }
 
     protected DownloadLink getDownloadlinkForHosterplugin(final CryptedLink link, final PastebinMetadata metadata) {
@@ -147,35 +137,27 @@ public abstract class AbstractPastebinCrawler extends PluginForDecrypt {
     }
 
     /**
-     * Accesses URL, checks if content looks like it's available and handles password/captcha until plaintext is available in HTML.
-     *
-     * @throws DecrypterException
-     */
-    public abstract void preProcess(final CryptedLink param) throws IOException, PluginException, DecrypterException;
-
-    /**
-     * Collects metadata which will be used later.
+     * Collects metadata which will be used later. </br>
+     * Handling for password protected pastebins and so on goes in here.
      *
      * @throws Exception
      */
     public PastebinMetadata crawlMetadata(final CryptedLink param, final Browser br) throws Exception {
         final PastebinMetadata metadata = new PastebinMetadata(this.getFID(param.getCryptedUrl()));
         metadata.setPassword(param.getDecrypterPassword());
-        metadata.setPastebinText(getPastebinText(br));
         return metadata;
     }
 
-    protected abstract String getPastebinText(final Browser br) throws Exception;
-
     public class PastebinMetadata {
-        private String contentID     = null;
-        private String title         = null;
-        private Date   date          = null;
-        private String username      = null;
-        private String description   = null;
-        private String pastebinText  = null;
-        private String password      = null;
-        private String fileExtension = ".txt";
+        private String contentID                  = null;
+        private String title                      = null;
+        private Date   date                       = null;
+        private String username                   = null;
+        private String description                = null;
+        private String pastebinText               = null;
+        private String password                   = null;
+        private String fileExtension              = ".txt";
+        private String officialDirectDownloadlink = null;
 
         public String getContentID() {
             return contentID;
@@ -213,6 +195,15 @@ public abstract class AbstractPastebinCrawler extends PluginForDecrypt {
         }
 
         public PastebinMetadata(final String contentID) {
+            this.contentID = contentID;
+        }
+
+        public PastebinMetadata(final CryptedLink param) {
+            this.setPassword(param.getDecrypterPassword());
+        }
+
+        public PastebinMetadata(final CryptedLink param, final String contentID) {
+            this.setPassword(param.getDecrypterPassword());
             this.contentID = contentID;
         }
 
@@ -259,6 +250,8 @@ public abstract class AbstractPastebinCrawler extends PluginForDecrypt {
                 return this.getDateFormatted() + "_" + this.username + "_" + this.contentID + this.getFileExtension();
             } else if (this.date != null) {
                 return this.getDateFormatted() + "_" + this.contentID + this.getFileExtension();
+            } else if (this.title != null) {
+                return this.title + this.getFileExtension();
             } else {
                 return this.contentID + this.getFileExtension();
             }
@@ -270,6 +263,18 @@ public abstract class AbstractPastebinCrawler extends PluginForDecrypt {
 
         public void setPassword(String password) {
             this.password = password;
+        }
+
+        public String getOfficialDirectDownloadlink() {
+            return officialDirectDownloadlink;
+        }
+
+        /**
+         * URL which can be used to download the paste. </br>
+         * Needs to be a direct-downloadable URL.
+         */
+        public void setOfficialDirectDownloadlink(String officialDirectDownloadlink) {
+            this.officialDirectDownloadlink = officialDirectDownloadlink;
         }
     }
 }

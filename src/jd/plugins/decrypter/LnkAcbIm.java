@@ -15,7 +15,6 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -68,16 +67,17 @@ public class LnkAcbIm extends AbstractPastebinCrawler {
     }
 
     @Override
-    protected String getPastebinText(final Browser br) {
-        final String plaintxt = br.getRegex("<div class=\"base-block\"[^>]*>(.*?)<footer").getMatch(0);
-        return plaintxt;
-    }
-
-    @Override
-    public void preProcess(final CryptedLink param) throws IOException, PluginException {
+    public PastebinMetadata crawlMetadata(final CryptedLink param, final Browser br) throws Exception {
         br.getPage(param.getCryptedUrl());
         if (this.br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("class=\"error-page\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        final String plaintxt = br.getRegex("<div class=\"base-block\"[^>]*>(.*?)<footer").getMatch(0);
+        if (plaintxt == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final PastebinMetadata metadata = new PastebinMetadata(param, this.getFID(param.getCryptedUrl()));
+        metadata.setPastebinText(plaintxt);
+        return metadata;
     }
 }

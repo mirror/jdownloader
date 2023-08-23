@@ -15,7 +15,6 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -74,51 +73,7 @@ public class PastebinComCrawler extends AbstractPastebinCrawler {
     }
 
     @Override
-    protected String getPastebinText(final Browser br) {
-        String plaintxt = br.getRegex("<textarea(.*?)</textarea>").getMatch(0);
-        if (plaintxt == null) {
-            plaintxt = br.getRegex("<div class\\s*=\\s*\"source.*?\"[^>]*>\\s*<ol[^>]*>\\s*(.*?)\\s*</ol>\\s*</div>").getMatch(0);
-            if (plaintxt != null) {
-                plaintxt = plaintxt.replaceAll("<li[^>]*>", "");
-                plaintxt = plaintxt.replaceAll("<div[^>]*>", "");
-                plaintxt = plaintxt.replaceAll("</li>", "");
-                plaintxt = plaintxt.replaceAll("</div>", "");
-            }
-        }
-        if (plaintxt == null && (br.getURL().contains("raw.php") || br.getURL().contains("/raw/"))) {
-            plaintxt = br.toString();
-        }
-        return plaintxt;
-    }
-
     public PastebinMetadata crawlMetadata(final CryptedLink param, final Browser br) throws Exception {
-        final PastebinMetadata metadata = super.crawlMetadata(param, br);
-        final String title = br.getRegex("<h1>([^<]+)</h1>").getMatch(0);
-        if (title != null && !title.trim().equalsIgnoreCase("untitled")) {
-            metadata.setTitle(Encoding.htmlDecode(title).trim());
-        } else {
-            logger.warning("Unable to find paste title");
-        }
-        final String username = br.getRegex("<a href=\"/message/compose\\?to=([^\"]+)\"").getMatch(0);
-        if (username != null) {
-            metadata.setUsername(username);
-        } else {
-            logger.warning("Unable to find paste username");
-        }
-        final Regex dateregex = br.getRegex("class=\"date\"[^>]*>\\s*<span title=\"[A-Za-z]+ (\\d+)([a-z]{2})? of ([^\"]+)\"");
-        if (dateregex.matches()) {
-            final String dayNumber = dateregex.getMatch(0);
-            final String restOfDate = dateregex.getMatch(2);
-            final String newDateString = dayNumber + " " + restOfDate;
-            metadata.setDate(new Date(TimeFormatter.getMilliSeconds(newDateString, "dd MMM yyyy HH:mm:ss a ZZZ", Locale.ENGLISH)));
-        } else {
-            logger.warning("Unable to find paste date");
-        }
-        return metadata;
-    }
-
-    @Override
-    public void preProcess(final CryptedLink param) throws IOException, PluginException, DecrypterException {
         br.setFollowRedirects(true);
         final String pasteID = this.getFID(param.getCryptedUrl());
         br.getPage("https://" + this.getHost() + "/" + pasteID);
@@ -157,6 +112,45 @@ public class PastebinComCrawler extends AbstractPastebinCrawler {
         if (!br.containsHTML("/report/" + pasteID)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        String plaintxt = br.getRegex("<textarea(.*?)</textarea>").getMatch(0);
+        if (plaintxt == null) {
+            plaintxt = br.getRegex("<div class\\s*=\\s*\"source.*?\"[^>]*>\\s*<ol[^>]*>\\s*(.*?)\\s*</ol>\\s*</div>").getMatch(0);
+            if (plaintxt != null) {
+                plaintxt = plaintxt.replaceAll("<li[^>]*>", "");
+                plaintxt = plaintxt.replaceAll("<div[^>]*>", "");
+                plaintxt = plaintxt.replaceAll("</li>", "");
+                plaintxt = plaintxt.replaceAll("</div>", "");
+            }
+        }
+        if (plaintxt == null && (br.getURL().contains("raw.php") || br.getURL().contains("/raw/"))) {
+            plaintxt = br.getRequest().getHtmlCode();
+        }
+        if (plaintxt == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final PastebinMetadata metadata = new PastebinMetadata(param, this.getFID(param.getCryptedUrl()));
+        final String title = br.getRegex("<h1>([^<]+)</h1>").getMatch(0);
+        if (title != null && !title.trim().equalsIgnoreCase("untitled")) {
+            metadata.setTitle(Encoding.htmlDecode(title).trim());
+        } else {
+            logger.warning("Unable to find paste title");
+        }
+        final String username = br.getRegex("<a href=\"/message/compose\\?to=([^\"]+)\"").getMatch(0);
+        if (username != null) {
+            metadata.setUsername(username);
+        } else {
+            logger.warning("Unable to find paste username");
+        }
+        final Regex dateregex = br.getRegex("class=\"date\"[^>]*>\\s*<span title=\"[A-Za-z]+ (\\d+)([a-z]{2})? of ([^\"]+)\"");
+        if (dateregex.matches()) {
+            final String dayNumber = dateregex.getMatch(0);
+            final String restOfDate = dateregex.getMatch(2);
+            final String newDateString = dayNumber + " " + restOfDate;
+            metadata.setDate(new Date(TimeFormatter.getMilliSeconds(newDateString, "dd MMM yyyy HH:mm:ss a ZZZ", Locale.ENGLISH)));
+        } else {
+            logger.warning("Unable to find paste date");
+        }
+        return metadata;
     }
 
     private Form getPwProtectedForm(final Browser br) {
