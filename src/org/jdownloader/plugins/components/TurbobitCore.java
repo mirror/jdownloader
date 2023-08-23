@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
@@ -60,12 +61,13 @@ public class TurbobitCore extends antiDDoSForHost {
      */
     /* Settings */
     // private static final String SETTING_JAC = "SETTING_JAC";
-    public static final String   SETTING_FREE_PARALLEL_DOWNLOADSTARTS          = "SETTING_FREE_PARALLEL_DOWNLOADSTARTS";
-    public static final String   SETTING_PREFERRED_DOMAIN                      = "SETTING_PREFERRED_DOMAIN";
-    private static String        PROPERTY_DOWNLOADLINK_checked_atleast_onetime = "checked_atleast_onetime";
-    private static final int     FREE_MAXDOWNLOADS_PLUGINSETTING               = 20;
-    private static final boolean prefer_single_linkcheck_via_mass_linkchecker  = true;
-    private static final String  TYPE_premiumRedirectLinks                     = "(?i)(?:https?://[^/]+/)?/?download/redirect/[A-Za-z0-9]+/([a-z0-9]+)";
+    public static final String       SETTING_FREE_PARALLEL_DOWNLOADSTARTS          = "SETTING_FREE_PARALLEL_DOWNLOADSTARTS";
+    public static final String       SETTING_PREFERRED_DOMAIN                      = "SETTING_PREFERRED_DOMAIN";
+    private static String            PROPERTY_DOWNLOADLINK_checked_atleast_onetime = "checked_atleast_onetime";
+    private static final int         FREE_MAXDOWNLOADS_PLUGINSETTING               = 20;
+    private static final boolean     prefer_single_linkcheck_via_mass_linkchecker  = true;
+    private static final String      TYPE_premiumRedirectLinks                     = "(?i)(?:https?://[^/]+/)?/?download/redirect/[A-Za-z0-9]+/([a-z0-9]+)";
+    private static Map<String, Long> hostLastPremiumCaptchaProcessedTimestampMap   = new HashMap<String, Long>();
 
     public TurbobitCore(final PluginWrapper wrapper) {
         super(wrapper);
@@ -707,9 +709,17 @@ public class TurbobitCore extends antiDDoSForHost {
         }
         if (premiumCaptchaForm != null) {
             /* 2021-03-30: Captchas can sometimes happen in premium mode (wtf but confirmed!) */
-            logger.info("Detected premium download-captcha");
-            processCaptchaForm(link, account, premiumCaptchaForm, br, false);
-            this.submitForm(premiumCaptchaForm);
+            final Long lastPremiumCaptchaRequestedTimestampOld = hostLastPremiumCaptchaProcessedTimestampMap.get(this.getHost());
+            synchronized (hostLastPremiumCaptchaProcessedTimestampMap) {
+                logger.info("Detected premium download-captcha");
+                if (lastPremiumCaptchaRequestedTimestampOld != null && !lastPremiumCaptchaRequestedTimestampOld.equals(hostLastPremiumCaptchaProcessedTimestampMap.get(this.getHost()))) {
+                    // TODO: Check if a retry makes sense here when one captcha was solved by the user
+                    logger.info("Captcha has just been solved -> We might be able to skip this and all other subsequent premium captchas by just retrying");
+                }
+                processCaptchaForm(link, account, premiumCaptchaForm, br, false);
+                this.submitForm(premiumCaptchaForm);
+                hostLastPremiumCaptchaProcessedTimestampMap.put(this.getHost(), System.currentTimeMillis());
+            }
         }
     }
 
