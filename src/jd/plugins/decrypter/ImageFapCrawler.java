@@ -31,13 +31,13 @@ import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
-import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
 import jd.plugins.hoster.ImageFap;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imagefap.com" }, urls = { "https?://(?:www\\.)?imagefap\\.com/(gallery\\.php\\?p?gid=.+|gallery/.+|pictures/\\d+/.*|photo/\\d+|organizer/\\d+|(usergallery|showfavorites)\\.php\\?userid=\\d+(&folderid=-?\\d+)?)" })
@@ -75,9 +75,10 @@ public class ImageFapCrawler extends PluginForDecrypt {
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        br.setFollowRedirects(false);
+        br.setFollowRedirects(true);
         ImageFap.prepBR(this.br);
         String parameter = param.getCryptedUrl();
+        final PluginForHost hosterplugin = this.getNewPluginForHostInstance(this.getHost());
         final Set<String> dupes = new HashSet<String>();
         final String oid = new Regex(parameter, "(?:organizer)/(\\d+)").getMatch(0);
         if (oid != null) {
@@ -151,24 +152,25 @@ public class ImageFapCrawler extends PluginForDecrypt {
             }
             return ret;
         } else {
-            String galleryIDStr = new Regex(parameter, "(?:pictures|gallery)/(\\d+)/?").getMatch(0);
-            if (galleryIDStr == null) {
-                galleryIDStr = new Regex(parameter, "gallery\\.php\\?p?gid=(\\d+)").getMatch(0);
-            }
             if (parameter.matches(type_invalid)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            if (parameter.matches("https?://[^/]+/photo/\\d+")) {
-                final String photoID = new Regex(parameter, "(\\d+)$").getMatch(0);
-                final DownloadLink link = createDownloadlink("https://imagefap.com/imagedecrypted/" + photoID);
-                link.setContentUrl(parameter + "/");
-                /* Set Packagizer property */
-                link.setProperty("photoID", Long.parseLong(photoID));
+            final Regex singlephoto = new Regex(parameter, "(?i)https?://[^/]+/photo/(\\d+)");
+            if (singlephoto.patternFind()) {
+                /* Single photo */
+                final String photoID = singlephoto.getMatch(0);
+                final DownloadLink link = new DownloadLink(hosterplugin, this.getHost(), parameter + "/");
+                link.setProperty(ImageFap.PROPERTY_PHOTO_ID, photoID);
                 ret.add(link);
             } else {
+                /* Gallery */
                 /* view=2 -> "One page" view -> More images on each page */
+                String galleryIDStr = new Regex(parameter, "(?:pictures|gallery)/(\\d+)/?").getMatch(0);
+                if (galleryIDStr == null) {
+                    galleryIDStr = new Regex(parameter, "gallery\\.php\\?p?gid=(\\d+)").getMatch(0);
+                }
                 parameter = parameter.replaceAll("view\\=[0-9]+", "view=2");
-                if (new Regex(parameter, "imagefap\\.com/gallery\\.php\\?pgid=").matches()) {
+                if (new Regex(parameter, "(?i)imagefap\\.com/gallery\\.php\\?pgid=").matches()) {
                     /**
                      * Workaround to get all images on one page for private galleries (site buggy)
                      */
@@ -201,11 +203,11 @@ public class ImageFapCrawler extends PluginForDecrypt {
                 // the galleries author)
                 String galleryName = ImageFap.getGalleryName(br, null, false);
                 if (galleryName == null) {
-                    throw new DecrypterException("Decrypter broken for link: " + parameter);
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 String authorsName = ImageFap.getUserName(br, null, false);
-                galleryName = Encoding.htmlDecode(galleryName.trim());
-                authorsName = Encoding.htmlDecode(authorsName.trim());
+                galleryName = Encoding.htmlDecode(galleryName).trim();
+                authorsName = Encoding.htmlDecode(authorsName).trim();
                 int counter = 1;
                 final DecimalFormat df = new DecimalFormat("0000");
                 final HashSet<String> incompleteOriginalFilenameWorkaround = new HashSet<String>();
@@ -215,9 +217,8 @@ public class ImageFapCrawler extends PluginForDecrypt {
                 if (galleryIDStr == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                final Long galleryID = Long.parseLong(galleryIDStr);
                 final FilePackage fp = FilePackage.getInstance();
-                fp.setName(authorsName + " - " + galleryName + " - " + galleryID);
+                fp.setName(authorsName + " - " + galleryName + " - " + galleryIDStr);
                 final String baseURL = URLHelper.getUrlWithoutParams(br._getURL());
                 final String firstPageViewParam = new Regex(br.getURL(), "(?i)view=(\\d)").getMatch(0);
                 final UrlQuery query = new UrlQuery();
@@ -254,26 +255,24 @@ public class ImageFapCrawler extends PluginForDecrypt {
                         final String orderID = df.format(counter);
                         final String photoID = elements[0];
                         if (dupes.add(photoID)) {
-                            final DownloadLink link = createDownloadlink("https://imagefap.com/imagedecrypted/" + photoID);
+                            final DownloadLink link = new DownloadLink(hosterplugin, this.getHost(), generateSinglePhotoURL(photoID));
                             link._setFilePackage(fp);
-                            String original_filename = Encoding.htmlDecode(elements[1].trim());
+                            String original_filename = Encoding.htmlDecode(elements[1]).trim();
                             if (!incompleteOriginalFilenameWorkaround.add(original_filename) || original_filename.matches(".*[\\.]{2,}$")) {
                                 // some filenames are incomplete and end with ...
                                 // this workaround removes ... and adds orderID
                                 original_filename = original_filename.replaceFirst("([\\.]{2,})$", "") + "_" + orderID + ".jpg";
-                                link.setProperty("incomplete_filename", original_filename);
+                                link.setProperty(ImageFap.PROPERTY_INCOMPLETE_FILENAME, original_filename);
                             } else {
-                                link.setProperty("original_filename", original_filename);
+                                link.setProperty(ImageFap.PROPERTY_ORIGINAL_FILENAME, original_filename);
                             }
-                            link.setContentUrl("https://www." + this.getHost() + "/photo/" + photoID + "/");
-                            link.setProperty("orderid", orderID);
-                            /* Set Packagizer property */
-                            link.setProperty("photoID", Long.parseLong(photoID));
-                            if (galleryID != null) {
-                                link.setProperty("galleryID", galleryID);
-                            }
-                            link.setProperty("galleryname", galleryName);
-                            link.setProperty("directusername", authorsName);
+                            link.setProperty(ImageFap.PROPERTY_ORDER_ID, orderID);
+                            link.setProperty(ImageFap.PROPERTY_PHOTO_ID, photoID);
+                            link.setProperty(ImageFap.PROPERTY_ALBUM_ID, galleryIDStr);
+                            link.setProperty(ImageFap.PROPERTY_PHOTO_PAGE_NUMBER, page);
+                            link.setProperty(ImageFap.PROPERTY_PHOTO_GALLERY_TITLE, galleryName);
+                            link.setProperty(ImageFap.PROPERTY_USERNAME, authorsName);
+                            link.setProperty(ImageFap.PROPERTY_PHOTO_INDEX, (counter - 1));
                             link.setName(ImageFap.getFormattedFilename(link));
                             link.setAvailable(true);
                             ret.add(link);
@@ -298,6 +297,10 @@ public class ImageFapCrawler extends PluginForDecrypt {
             }
         }
         return ret;
+    }
+
+    private String generateSinglePhotoURL(final String photoID) {
+        return "https://www." + this.getHost() + "/photo/" + photoID + "/";
     }
 
     private int getMaxPage(final Browser br) {

@@ -57,7 +57,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "imagefap.com" }, urls = { "https?://(?:www\\.)?imagefap.com/(imagedecrypted/\\d+|video\\.php\\?vid=\\d+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "imagefap.com" }, urls = { "https?://(?:www\\.)?imagefap.com/video\\.php\\?vid=\\d+" })
 public class ImageFap extends PluginForHost {
     public ImageFap(final PluginWrapper wrapper) {
         super(wrapper);
@@ -82,9 +82,19 @@ public class ImageFap extends PluginForHost {
     private static final String               FORCE_RECONNECT_ON_RATELIMIT                = "FORCE_RECONNECT_ON_RATELIMIT";
     private static final String               SETTING_REQUEST_LIMIT_MILLISECONDS          = "REQUEST_LIMIT_MILLISECONDS";
     private static final String               SETTING_ENABLE_START_DOWNLOADS_SEQUENTIALLY = "ENABLE_START_DOWNLOADS_SEQUENTIALLY";
+    public static final String                PROPERTY_PHOTO_ID                           = "photoID";
+    public static final String                PROPERTY_ALBUM_ID                           = "galleryID";
+    public static final String                PROPERTY_PHOTO_INDEX                        = "photo_index";
+    public static final String                PROPERTY_PHOTO_PAGE_NUMBER                  = "photo_page_number";
+    public static final String                PROPERTY_PHOTO_GALLERY_TITLE                = "photo_gallery_title";
+    public static final String                PROPERTY_ORDER_ID                           = "orderid";
+    public static final String                PROPERTY_USERNAME                           = "directusername";
+    public static final String                PROPERTY_INCOMPLETE_FILENAME                = "incomplete_filename";
+    public static final String                PROPERTY_ORIGINAL_FILENAME                  = "original_filename";
     protected static Object                   LOCK                                        = new Object();
     protected static HashMap<String, Cookies> sessionCookies                              = new HashMap<String, Cookies>();
     private static AtomicInteger              maxFreeDownloadsForSequentialMode           = new AtomicInteger(1);
+    private final String                      PATTERN_VIDEO                               = "(?i)https?://[^/]+/video\\.php\\?vid=(\\d+)";
 
     private void loadSessionCookies(final Browser prepBr, final String host) {
         synchronized (sessionCookies) {
@@ -102,33 +112,51 @@ public class ImageFap extends PluginForHost {
         }
     }
 
+    @Override
+    public String getPluginContentURL(final DownloadLink link) {
+        return getContentURL(link);
+    }
+
     private String getContentURL(final DownloadLink link) {
-        if (link.getPluginPatternMatcher() != null && link.getPluginPatternMatcher().contains("imagedecrypted/")) {
-            final String photoID = new Regex(link.getPluginPatternMatcher(), "(\\d+)$").getMatch(0);
-            link.setProperty("photoID", Long.parseLong(photoID));
+        if (link.getPluginPatternMatcher().matches(PATTERN_VIDEO)) {
+            return link.getPluginPatternMatcher();
+        } else {
+            final String photoID = getContentID(link);
+            final String photoAlbumID = link.getStringProperty(PROPERTY_ALBUM_ID);
+            final int photoIndex = link.getIntegerProperty(PROPERTY_PHOTO_INDEX, -1);
+            final int photoPageNumber = link.getIntegerProperty(PROPERTY_PHOTO_PAGE_NUMBER, 0);
             if (photoID != null) {
-                return "https://www.imagefap.com/photo/" + photoID + "/";
+                String url = "https://www." + STATIC_HOST + "/photo/" + photoID + "/";
+                if (photoAlbumID != null) {
+                    url += "?pgid=&gid=" + photoAlbumID + "&page=" + photoPageNumber;
+                }
+                if (photoIndex != -1) {
+                    url += "#" + photoIndex;
+                }
+                return url;
+            }
+            return link.getPluginPatternMatcher();
+        }
+    }
+
+    private String getContentID(final DownloadLink link) {
+        String id = new Regex(link.getPluginPatternMatcher(), PATTERN_VIDEO).getMatch(0);
+        if (id == null) {
+            id = link.getStringProperty(PROPERTY_PHOTO_ID);
+            if (id == null) {
+                id = new Regex(link.getPluginPatternMatcher(), "(\\d+)$").getMatch(0);
             }
         }
-        return link.getPluginPatternMatcher();
+        return id;
     }
 
     @Override
     public String getLinkID(final DownloadLink link) {
-        final String fid = getFID(link);
+        final String fid = getContentID(link);
         if (fid != null) {
             return this.getHost() + "://" + fid;
         } else {
             return super.getLinkID(link);
-        }
-    }
-
-    private String getFID(final DownloadLink link) {
-        final Regex videolink = new Regex(link.getPluginPatternMatcher(), VIDEOLINK);
-        if (videolink.patternFind()) {
-            return videolink.getMatch(0);
-        } else {
-            return new Regex(link.getPluginPatternMatcher(), "(?i)/(?:photo|imagedecrypted)/(\\d+)").getMatch(0);
         }
     }
 
@@ -137,8 +165,6 @@ public class ImageFap extends PluginForHost {
         br.setFollowRedirects(true);
         return br;
     }
-
-    private static final String VIDEOLINK = "(?i)https?://[^/]+/video\\.php\\?vid=(\\d+)";
 
     @Deprecated
     private String decryptLink(final String code) {
@@ -177,7 +203,7 @@ public class ImageFap extends PluginForHost {
     }
 
     public static String getGalleryName(final Browser br, final DownloadLink dl, boolean isImageLink) {
-        String galleryName = dl != null ? dl.getStringProperty("galleryname", null) : null;
+        String galleryName = dl != null ? dl.getStringProperty(PROPERTY_PHOTO_GALLERY_TITLE) : null;
         if (galleryName == null) {
             if (isImageLink) {
                 galleryName = br.getRegex("Gallery:\\s*</td>\\s*<td[^>]*\\s*><a[^>]*gid=\\d+\"[^>]*>\\s*(.*?)\\s*<").getMatch(0);
@@ -207,38 +233,34 @@ public class ImageFap extends PluginForHost {
     }
 
     public static String getGalleryID(final Browser br, final DownloadLink dl, boolean isImageLink) {
-        String ret = dl != null ? dl.getStringProperty("galleryID", null) : null;
+        String ret = dl != null ? dl.getStringProperty(PROPERTY_ALBUM_ID) : null;
         if (ret == null) {
             if (isImageLink) {
-                ret = br.getRegex("Gallery:\\s*</td>\\s*<td[^>]*\\s*><a[^>]*gid=(\\d+)\"[^>]*>").getMatch(0);
+                ret = br.getRegex("(?i)Gallery\\s*:\\s*</td>\\s*<td[^>]*\\s*><a[^>]*gid=(\\d+)\"[^>]*>").getMatch(0);
             }
         }
         return ret;
     }
 
-    public static String getOrderID(final Browser br, final DownloadLink dl, boolean isImageLink) {
-        String ret = dl != null ? dl.getStringProperty("orderid", null) : null;
+    public static String getOrderID(final Browser br, final DownloadLink dl) {
+        String ret = dl.getStringProperty(PROPERTY_ORDER_ID);
         if (ret == null) {
-            if (isImageLink) {
-                final String current = br.getRegex("_start_img\\s*=\\s*(\\d+)").getMatch(0);
-                if (current != null) {
-                    // final String max = br.getRegex("_pics\\s*=\\s*(\\d+)").getMatch(0);
-                    DecimalFormat df = new DecimalFormat("0000");
-                    ret = df.format(Integer.parseInt(current) + 1);
-                }
+            final int imageIndex = dl.getIntegerProperty(PROPERTY_PHOTO_INDEX, -1);
+            if (imageIndex != -1) {
+                ret = new DecimalFormat("0000").format(imageIndex + 1);
             }
         }
         return ret;
     }
 
     public static String getUserName(final Browser br, final DownloadLink dl, boolean isImageLink) {
-        String username = dl != null ? dl.getStringProperty("directusername", null) : null;
+        String username = dl != null ? dl.getStringProperty(PROPERTY_USERNAME) : null;
         if (username == null) {
             username = br.getRegex("<b><font size=\"3\" color=\"#CC0000\">Uploaded by ([^<>\"]+)</font></b>").getMatch(0);
             if (username == null) {
                 username = br.getRegex("<b><font size=\"4\" color=\"#CC0000\">(.*?)\\'s gallery</font></b>").getMatch(0);
                 if (username == null) {
-                    username = br.getRegex("<td class=\"mnu0\"><a href=\"https?://(www\\.)?imagefap\\.com/profile\\.php\\?user=([^<>\"]+)\"").getMatch(0);
+                    username = br.getRegex("<td class=\"mnu0\"><a href=\"https?://(?:www\\.)?imagefap\\.com/profile\\.php\\?user=([^<>\"]+)\"").getMatch(0);
                     if (username == null) {
                         username = br.getRegex("<td class=\"mnu0\"><a href=\"/profile\\.php\\?user=(.*?)\"").getMatch(0);
                         if (username == null) {
@@ -276,11 +298,11 @@ public class ImageFap extends PluginForHost {
         loadSessionCookies(this.br, this.getHost());
         final String contenturl = getContentURL(link);
         getRequest(this, this.br, br.createGetRequest(contenturl));
-        if (contenturl.matches(VIDEOLINK)) {
+        if (contenturl.matches(PATTERN_VIDEO)) {
             /* Video */
-            final String extDefault = ".flv";
+            final String extDefault = ".mp4";
             if (!link.isNameSet()) {
-                link.setName(this.getFID(link) + extDefault);
+                link.setName(this.getContentID(link) + extDefault);
             }
             /*
              * 2021-05-05: Offline videos can't be easily recognized by html code e.g.: https://www.imagefap.com/video.php?vid=999999999999
@@ -299,39 +321,43 @@ public class ImageFap extends PluginForHost {
             /* Image */
             final String extDefault = ".jpg";
             if (!link.isNameSet()) {
-                link.setName(this.getFID(link) + extDefault);
+                link.setName(this.getContentID(link) + extDefault);
             }
             if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(>The image you are trying to access does not exist|<title> \\(Picture 1\\) uploaded by  on ImageFap\\.com</title>)")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             final String pictureTitle = br.getRegex("<title>\\s*([^<]+)\\s*(in gallery|uploaded by|Porn Pic)").getMatch(0);
             if (StringUtils.isNotEmpty(pictureTitle)) {
-                link.setProperty("original_filename", pictureTitle);
-                link.removeProperty("incomplete_filename");
+                link.setProperty(PROPERTY_ORIGINAL_FILENAME, pictureTitle);
+                link.removeProperty(PROPERTY_INCOMPLETE_FILENAME);
             }
             String galleryName = ImageFap.getGalleryName(br, link, true);
             String username = ImageFap.getUserName(br, link, true);
-            final String orderID = getOrderID(br, link, true);
-            if (orderID != null && !link.hasProperty("orderid")) {
-                link.setProperty("orderid", orderID);
+            final String orderID = getOrderID(br, link);
+            if (orderID != null && !link.hasProperty(PROPERTY_ORDER_ID)) {
+                link.setProperty(PROPERTY_ORDER_ID, orderID);
             }
             final String galleryID = getGalleryID(br, link, true);
-            if (galleryID != null && !link.hasProperty("galleryID")) {
-                link.setProperty("galleryID", galleryID);
+            if (galleryID != null && !link.hasProperty(PROPERTY_ALBUM_ID)) {
+                link.setProperty(PROPERTY_ALBUM_ID, galleryID);
             }
             if (StringUtils.isEmpty(galleryName) || StringUtils.isEmpty(pictureTitle)) {
                 logger.info("Possibly missing data: galleryName: " + galleryName + " picture_name: " + pictureTitle);
                 // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            if (galleryName != null && !link.hasProperty("galleryname")) {
+            if (galleryName != null && !link.hasProperty(PROPERTY_PHOTO_GALLERY_TITLE)) {
                 galleryName = Encoding.htmlDecode(galleryName);
                 galleryName = galleryName.trim();
-                link.setProperty("galleryname", galleryName);
+                link.setProperty(PROPERTY_PHOTO_GALLERY_TITLE, galleryName);
             }
-            if (username != null && !link.hasProperty("directusername")) {
+            if (username != null && !link.hasProperty(PROPERTY_USERNAME)) {
                 username = Encoding.htmlDecode(username);
                 username = username.trim();
-                link.setProperty("directusername", username);
+                link.setProperty(PROPERTY_USERNAME, username);
+            }
+            final String photoIndexFromHTML = br.getRegex("_start_img\\s*=\\s*(\\d+)").getMatch(0);
+            if (photoIndexFromHTML != null && !link.hasProperty(PROPERTY_PHOTO_INDEX)) {
+                link.setProperty(PROPERTY_PHOTO_INDEX, Integer.parseInt(photoIndexFromHTML));
             }
             link.setFinalFileName(getFormattedFilename(link));
             /* Set FilePackage if not set yet */
@@ -345,7 +371,7 @@ public class ImageFap extends PluginForHost {
     }
 
     private final String findFinalLink(final Browser br, final DownloadLink link) throws Exception {
-        if (link.getPluginPatternMatcher().matches(VIDEOLINK)) {
+        if (link.getPluginPatternMatcher().matches(PATTERN_VIDEO)) {
             String configLink = br.getRegex("flashvars\\.config = escape\\(\"(https?://[^<>\"]*?)\"").getMatch(0);
             if (configLink == null) {
                 /* 2020-03-23 */
@@ -413,7 +439,7 @@ public class ImageFap extends PluginForHost {
             if (fullsizeUrl == null) {
                 final String thumbnailurl = br.getRegex("itemprop=\"contentUrl\"[^>]*>(https?://[^<]+)</span>").getMatch(0);
                 final String thumbPart = new Regex(thumbnailurl, "frame-thumb/(\\d+/\\d+)").getMatch(0);
-                final String imageID = getFID(link);
+                final String imageID = this.getContentID(link);
                 final String[] fullImageLinks = br.getRegex("(https?://[^/]+/images/full/[^\"]+)").getColumn(0);
                 if (fullImageLinks != null == fullImageLinks.length > 0) {
                     final ArrayList<String> fullImageLinksWithoutDuplicates = new ArrayList<String>();
@@ -504,7 +530,7 @@ public class ImageFap extends PluginForHost {
         if (finalLink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (link.getPluginPatternMatcher().matches(VIDEOLINK)) {
+        if (link.getPluginPatternMatcher().matches(PATTERN_VIDEO)) {
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, finalLink, true, 0);
             handleConnectionErrors(br, dl.getConnection());
         } else {
@@ -649,15 +675,15 @@ public class ImageFap extends PluginForHost {
     @SuppressWarnings("deprecation")
     public static String getFormattedFilename(final DownloadLink link) throws ParseException {
         final SubConfiguration cfg = SubConfiguration.getConfig(STATIC_HOST);
-        final String username = link.getStringProperty("directusername", "-");
-        String filename = link.getStringProperty("original_filename", null);
+        final String username = link.getStringProperty(PROPERTY_USERNAME, "-");
+        String filename = link.getStringProperty(PROPERTY_ORIGINAL_FILENAME);
         if (filename == null) {
-            filename = link.getStringProperty("incomplete_filename", "unknown");
+            filename = link.getStringProperty(PROPERTY_INCOMPLETE_FILENAME, "unknown");
         }
-        final String galleryname = link.getStringProperty("galleryname", "");
-        final String orderid = link.getStringProperty("orderid", "-");
-        final long galleryID = link.getLongProperty("galleryID", -1);
-        final long photoID = link.getLongProperty("photoID", -1);
+        final String galleryname = link.getStringProperty(PROPERTY_PHOTO_GALLERY_TITLE, "");
+        final String orderid = link.getStringProperty(PROPERTY_ORDER_ID, "-");
+        final long galleryID = link.getLongProperty(PROPERTY_ALBUM_ID, -1);
+        final long photoID = link.getLongProperty(PROPERTY_PHOTO_ID, -1);
         /* Date: Maybe add this in the future, if requested by a user. */
         // final long date = getLongProperty(downloadLink, "originaldate", 0l);
         // String formattedDate = null;
