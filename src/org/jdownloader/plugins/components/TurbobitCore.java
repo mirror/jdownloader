@@ -7,20 +7,9 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
-
-import org.appwork.storage.TypeRef;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperHostPluginHCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -49,6 +38,18 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.components.UserAgents;
 import jd.plugins.download.HashInfo;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperHostPluginHCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class TurbobitCore extends antiDDoSForHost {
     /**
@@ -61,13 +62,13 @@ public class TurbobitCore extends antiDDoSForHost {
      */
     /* Settings */
     // private static final String SETTING_JAC = "SETTING_JAC";
-    public static final String       SETTING_FREE_PARALLEL_DOWNLOADSTARTS          = "SETTING_FREE_PARALLEL_DOWNLOADSTARTS";
-    public static final String       SETTING_PREFERRED_DOMAIN                      = "SETTING_PREFERRED_DOMAIN";
-    private static String            PROPERTY_DOWNLOADLINK_checked_atleast_onetime = "checked_atleast_onetime";
-    private static final int         FREE_MAXDOWNLOADS_PLUGINSETTING               = 20;
-    private static final boolean     prefer_single_linkcheck_via_mass_linkchecker  = true;
-    private static final String      TYPE_premiumRedirectLinks                     = "(?i)(?:https?://[^/]+/)?/?download/redirect/[A-Za-z0-9]+/([a-z0-9]+)";
-    private static Map<String, Long> hostLastPremiumCaptchaProcessedTimestampMap   = new HashMap<String, Long>();
+    public static final String             SETTING_FREE_PARALLEL_DOWNLOADSTARTS          = "SETTING_FREE_PARALLEL_DOWNLOADSTARTS";
+    public static final String             SETTING_PREFERRED_DOMAIN                      = "SETTING_PREFERRED_DOMAIN";
+    private static String                  PROPERTY_DOWNLOADLINK_checked_atleast_onetime = "checked_atleast_onetime";
+    private static final int               FREE_MAXDOWNLOADS_PLUGINSETTING               = 20;
+    private static final boolean           prefer_single_linkcheck_via_mass_linkchecker  = true;
+    private static final String            TYPE_premiumRedirectLinks                     = "(?i)(?:https?://[^/]+/)?/?download/redirect/[A-Za-z0-9]+/([a-z0-9]+)";
+    private static Map<String, AtomicLong> hostLastPremiumCaptchaProcessedTimestampMap   = new HashMap<String, AtomicLong>();
 
     public TurbobitCore(final PluginWrapper wrapper) {
         super(wrapper);
@@ -101,9 +102,9 @@ public class TurbobitCore extends antiDDoSForHost {
         }
         /**
          * Enabled = Do not check for filesize via single-linkcheck on first time linkcheck - only on the 2nd linkcheck and when the
-         * filesize is not known already. This will speedup the linkcheck! </br>
-         * Disabled = Check for filesize via single-linkcheck even first time links get added as long as no filesize is given. This will
-         * slow down the linkcheck and cause more http requests in a short amount of time!
+         * filesize is not known already. This will speedup the linkcheck! </br> Disabled = Check for filesize via single-linkcheck even
+         * first time links get added as long as no filesize is given. This will slow down the linkcheck and cause more http requests in a
+         * short amount of time!
          */
         final boolean fastLinkcheck = isFastLinkcheckEnabled();
         final ArrayList<DownloadLink> deepChecks = new ArrayList<DownloadLink>();
@@ -476,8 +477,7 @@ public class TurbobitCore extends antiDDoSForHost {
     }
 
     /**
-     * Fills in captchaForm. </br>
-     * DOES NOT SEND CAPTCHA-FORM!!
+     * Fills in captchaForm. </br> DOES NOT SEND CAPTCHA-FORM!!
      */
     protected boolean processCaptchaForm(final DownloadLink link, final Account account, final Form captchaform, final Browser br, final boolean optionalCaptcha) throws PluginException, InterruptedException {
         if (containsHCaptcha(br)) {
@@ -699,6 +699,17 @@ public class TurbobitCore extends antiDDoSForHost {
         }
     }
 
+    protected AtomicLong getLastPremiumCaptchaProcessedTimestamp() {
+        synchronized (hostLastPremiumCaptchaProcessedTimestampMap) {
+            AtomicLong ret = hostLastPremiumCaptchaProcessedTimestampMap.get(this.getHost());
+            if (ret == null) {
+                ret = new AtomicLong(-1);
+                hostLastPremiumCaptchaProcessedTimestampMap.put(getHost(), ret);
+            }
+            return ret;
+        }
+    }
+
     protected void handlePremiumCaptcha(final Browser br, final DownloadLink link, final Account account) throws Exception {
         Form premiumCaptchaForm = null;
         for (final Form form : br.getForms()) {
@@ -709,16 +720,16 @@ public class TurbobitCore extends antiDDoSForHost {
         }
         if (premiumCaptchaForm != null) {
             /* 2021-03-30: Captchas can sometimes happen in premium mode (wtf but confirmed!) */
-            final Long lastPremiumCaptchaRequestedTimestampOld = hostLastPremiumCaptchaProcessedTimestampMap.get(this.getHost());
-            synchronized (hostLastPremiumCaptchaProcessedTimestampMap) {
+            final AtomicLong lastPremiumCaptchaProcessedTimestamp = getLastPremiumCaptchaProcessedTimestamp();
+            final long lastPremiumCaptchaRequestedTimestamp = lastPremiumCaptchaProcessedTimestamp.get();
+            synchronized (lastPremiumCaptchaProcessedTimestamp) {
                 logger.info("Detected premium download-captcha");
-                if (lastPremiumCaptchaRequestedTimestampOld != null && !lastPremiumCaptchaRequestedTimestampOld.equals(hostLastPremiumCaptchaProcessedTimestampMap.get(this.getHost()))) {
+                if (!lastPremiumCaptchaProcessedTimestamp.compareAndSet(lastPremiumCaptchaRequestedTimestamp, System.currentTimeMillis())) {
                     // TODO: Check if a retry makes sense here when one captcha was solved by the user
                     logger.info("Captcha has just been solved -> We might be able to skip this and all other subsequent premium captchas by just retrying");
                 }
                 processCaptchaForm(link, account, premiumCaptchaForm, br, false);
                 this.submitForm(premiumCaptchaForm);
-                hostLastPremiumCaptchaProcessedTimestampMap.put(this.getHost(), System.currentTimeMillis());
             }
         }
     }

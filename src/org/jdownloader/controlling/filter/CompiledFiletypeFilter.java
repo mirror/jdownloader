@@ -186,6 +186,7 @@ public class CompiledFiletypeFilter {
         ASS, // SubStation Alpha
         IDX, // VobSub
         TTXT, // MPEG-4 Timed Text
+        TTML, // Timed Text Markup Language
         SMI, // SAMI
         VTT, // WebVTT
         SUB;// VobSub

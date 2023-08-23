@@ -11,6 +11,7 @@ import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -29,8 +30,14 @@ import javax.script.ScriptException;
 import javax.script.SimpleBindings;
 import javax.script.SimpleScriptContext;
 
+import jd.config.Property;
+import jd.parser.Regex;
+import jd.plugins.MinimalMemoryJSonParser;
+import jd.plugins.components.ThrowingRunnable;
+
 import org.appwork.storage.JSonMapperException;
 import org.appwork.storage.SimpleTypeRef;
+import org.appwork.storage.simplejson.MinimalMemoryMap;
 import org.appwork.storage.simplejson.ParserException;
 import org.appwork.utils.Exceptions;
 import org.appwork.utils.StringUtils;
@@ -52,11 +59,6 @@ import org.mozilla.javascript.ScriptableObject;
 import org.mozilla.javascript.Synchronizer;
 import org.mozilla.javascript.Undefined;
 import org.mozilla.javascript.Wrapper;
-
-import jd.config.Property;
-import jd.parser.Regex;
-import jd.plugins.MinimalMemoryJSonParser;
-import jd.plugins.components.ThrowingRunnable;
 
 public class JavaScriptEngineFactory {
     /**
@@ -1124,7 +1126,7 @@ public class JavaScriptEngineFactory {
                         crawlentry_number = -2;
                     }
                 }
-                if (currentObject instanceof Map && crawlentry_number >= -1) {
+                if ((currentObject instanceof LinkedHashMap || currentObject instanceof MinimalMemoryMap) && crawlentry_number >= -1) {
                     /*
                      * Get Object from LinkedHashMap from desired position - this is a rare case but good to have it covered here in this
                      * way! Example: "mapOne/{mapTwo}/{0}<-Not an ArrayList but we want the first map which we do not know the name of"
