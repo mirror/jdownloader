@@ -125,7 +125,7 @@ public class VKontakteRuHoster extends PluginForHost {
     /* Dummy default value for user agent setting */
     public static final String  default_VKADVANCED_USER_AGENT                                               = "JDDEFAULT";
     public static final String  VKADVANCED_USER_AGENT                                                       = "VKADVANCED_USER_AGENT_NEW_06_2023";
-    public static final String  default_user_agent                                                          = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36";
+    public static final String  default_user_agent                                                          = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36";
     public static Object        LOCK                                                                        = new Object();
     private String              finalUrl                                                                    = null;
     private String              ownerID                                                                     = null;

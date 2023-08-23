@@ -30,6 +30,8 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
@@ -48,15 +50,17 @@ public class BitchuteComChannel extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final Set<String> dupes = new HashSet<String>();
-        final String parameter = param.toString();
+        final String parameter = param.getCryptedUrl();
         br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML("(?i)>\\s*This channel is unavailable at your location due to the following restrictions")) {
             /* 2021-09-13 */
+            throw new DecrypterRetryException(RetryReason.GEO);
+        } else if (br.containsHTML("(?i)>\\s*This channel is blocked under the following Community Guideline")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String csrftoken = this.br.getCookie(br.getHost(), "csrftoken", Cookies.NOTDELETEDPATTERN);
@@ -96,7 +100,7 @@ public class BitchuteComChannel extends PluginForDecrypt {
                     /* Property for packagizer */
                     dl.setProperty("username", channelname);
                     dl._setFilePackage(fp);
-                    decryptedLinks.add(dl);
+                    ret.add(dl);
                     distribute(dl);
                     addedItems++;
                 }
@@ -109,6 +113,6 @@ public class BitchuteComChannel extends PluginForDecrypt {
             index += itemsPerRequest;
             page += 1;
         } while (!this.isAbort());
-        return decryptedLinks;
+        return ret;
     }
 }

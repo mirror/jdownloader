@@ -11,7 +11,6 @@ import java.lang.reflect.Proxy;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -29,11 +28,6 @@ import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 import javax.script.SimpleBindings;
 import javax.script.SimpleScriptContext;
-
-import jd.config.Property;
-import jd.parser.Regex;
-import jd.plugins.MinimalMemoryJSonParser;
-import jd.plugins.components.ThrowingRunnable;
 
 import org.appwork.storage.JSonMapperException;
 import org.appwork.storage.SimpleTypeRef;
@@ -58,6 +52,11 @@ import org.mozilla.javascript.ScriptableObject;
 import org.mozilla.javascript.Synchronizer;
 import org.mozilla.javascript.Undefined;
 import org.mozilla.javascript.Wrapper;
+
+import jd.config.Property;
+import jd.parser.Regex;
+import jd.plugins.MinimalMemoryJSonParser;
+import jd.plugins.components.ThrowingRunnable;
 
 public class JavaScriptEngineFactory {
     /**
@@ -474,9 +473,9 @@ public class JavaScriptEngineFactory {
                 /*
                  * script may use Java primitive wrapper type objects (such as java.lang.Integer, java.lang.Boolean etc) explicitly. If we
                  * unwrap, then these script objects will become script primitive types. For example,
-                 * 
+                 *
                  * var x = new java.lang.Double(3.0); print(typeof x);
-                 * 
+                 *
                  * will print 'number'. We don't want that to happen.
                  */
                 Object obj = njb.unwrap();
@@ -1125,12 +1124,12 @@ public class JavaScriptEngineFactory {
                         crawlentry_number = -2;
                     }
                 }
-                if (currentObject instanceof LinkedHashMap && crawlentry_number >= -1) {
+                if (currentObject instanceof Map && crawlentry_number >= -1) {
                     /*
                      * Get Object from LinkedHashMap from desired position - this is a rare case but good to have it covered here in this
                      * way! Example: "mapOne/{mapTwo}/{0}<-Not an ArrayList but we want the first map which we do not know the name of"
                      */
-                    final LinkedHashMap<String, Object> tmp_linkedmap = (LinkedHashMap<String, Object>) currentObject;
+                    final Map<String, Object> tmp_linkedmap = (Map<String, Object>) currentObject;
                     final Iterator<Entry<String, Object>> it = tmp_linkedmap.entrySet().iterator();
                     int position = 0;
                     /* Did it find the desired value or not */

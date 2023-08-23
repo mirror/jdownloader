@@ -17,14 +17,13 @@ package jd.plugins.decrypter;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
-import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -35,44 +34,74 @@ import jd.parser.html.Form;
 import jd.parser.html.Form.MethodType;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "bc.vc" }, urls = { "https?://(?:www\\.)?(?:bc\\.vc|bcvc\\.live|bcvc\\.xyz)/(\\d+/.+|[A-Za-z0-9]{5,7})" })
-public class BcVc extends antiDDoSForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
+public class BcVc extends PluginForDecrypt {
     public BcVc(PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "bc.vc", "bcvc.live", "bcvc.ink", "bcvc.xyz", "bcvc2.com" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(\\d+/.+|[A-Za-z0-9]{5,7})");
+        }
+        return ret.toArray(new String[0]);
+    }
+
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        {
-            final String linkInsideLink = new Regex(param.getCryptedUrl(), "(?:bc\\.vc|bcvc\\.live|bcvc\\.xyz)/\\d+/(.+)").getMatch(0);
-            if (linkInsideLink != null) {
-                final String finalLinkInsideLink;
-                if (StringUtils.startsWithCaseInsensitive(linkInsideLink, "http") || StringUtils.startsWithCaseInsensitive(linkInsideLink, "ftp")) {
-                    finalLinkInsideLink = linkInsideLink;
-                } else {
-                    finalLinkInsideLink = "http://" + linkInsideLink;
-                }
-                if (!StringUtils.containsIgnoreCase(finalLinkInsideLink, getHost() + "/")) {
-                    final DownloadLink link = createDownloadlink(finalLinkInsideLink);
-                    link.setReferrerUrl(param.toString());
-                    ret.add(link);
-                    return ret;
-                } else {
-                    param.setCryptedUrl(linkInsideLink);
-                }
+        String url = param.getCryptedUrl();
+        final String linkInsideLink = new Regex(param.getCryptedUrl(), "https?://[^/]+//\\d+/(.+)").getMatch(0);
+        if (linkInsideLink != null) {
+            final String finalLinkInsideLink;
+            if (StringUtils.startsWithCaseInsensitive(linkInsideLink, "http") || StringUtils.startsWithCaseInsensitive(linkInsideLink, "ftp")) {
+                finalLinkInsideLink = linkInsideLink;
+            } else {
+                finalLinkInsideLink = "http://" + linkInsideLink;
+            }
+            if (!StringUtils.containsIgnoreCase(finalLinkInsideLink, getHost() + "/")) {
+                final DownloadLink link = createDownloadlink(finalLinkInsideLink);
+                link.setReferrerUrl(url);
+                ret.add(link);
+                return ret;
+            } else {
+                url = linkInsideLink;
             }
         }
         /**
          * we have to rename them here because we can damage urls within urls.</br>
          * URLs containing www. will always be offline.
          */
-        param.setCryptedUrl(param.getCryptedUrl().replaceFirst("://www.", "://").replaceFirst("http://", "https://"));
+        url = url.replaceFirst("://www.", "://").replaceFirst("http://", "https://");
         br.setFollowRedirects(false);
-        getPage(param.getCryptedUrl());
+        br.getPage(url);
         /* Check for direct redirect */
         String redirect = null;
         int counter = -1;
@@ -93,16 +122,15 @@ public class BcVc extends antiDDoSForDecrypt {
                 logger.info("Too many redirects -> Link is probably offline or redirects to some advertising network");
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else {
-                getPage(redirect);
+                br.getPage(redirect);
             }
         } while (true);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (br.toString().length() <= 100) {
+        } else if (br.getRequest().getHtmlCode().length() <= 100) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML("(?i)Unable to connect to database")) {
-            logger.info("Link can't be crawled because of server problems: " + param.getCryptedUrl());
-            return ret;
+            throw new DecrypterRetryException(RetryReason.HOST);
         }
         ret.add(this.crawlBcbclive(param));
         return ret;
@@ -140,13 +168,14 @@ public class BcVc extends antiDDoSForDecrypt {
         // this.sleep(5001l, param);
         this.br.submitForm(form1);
         /* On error, browser will redirect to random ad website. */
-        final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
+        final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         final Object errorO = entries.get("error");
-        if (errorO == null || (Boolean) errorO) {
+        if (Boolean.TRUE.equals(errorO)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final String url = (String) JavaScriptEngineFactory.walkJson(entries, "message/url");
-        final String b64 = UrlQuery.parse(url).get("cr");
+        String b64 = UrlQuery.parse(url).get("cr");
+        b64 = Encoding.htmlDecode(b64);
         final String finallink = Encoding.Base64Decode(b64);
         return this.createDownloadlink(finallink);
     }

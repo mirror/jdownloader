@@ -1838,7 +1838,7 @@ public class VKontakteRu extends PluginForDecrypt {
             // }
             throw e;
         }
-        Map<String, Object> map = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+        Map<String, Object> map = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.getRequest().getHtmlCode());
         try {
             /* Access original url as we sometimes need the listID for videos (see decryptWallPost). */
             this.apiGetPageSafe("https://vk.com/wall" + postIDWithOwnerID);
@@ -2924,6 +2924,14 @@ public class VKontakteRu extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.getURL().matches("https?://[^/]+/login\\?.*")) {
             throw new AccountRequiredException();
+        }
+        final String htmlrefresh = br.getRequest().getHTMLRefresh();
+        if (StringUtils.containsIgnoreCase(htmlrefresh, "badbrowser.php")) {
+            /**
+             * If this happens user needs to change User-Agent of this plugin to continue using it. </br>
+             * vk.com does not necessarily simply block a User-Agent value. They may as well just block it for specific users/IPs.
+             */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Blocked User-Agent");
         }
         /* General errorhandling end */
     }

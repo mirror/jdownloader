@@ -490,7 +490,7 @@ public class TurbobitCore extends antiDDoSForHost {
             return true;
         } else if (!optionalCaptcha) {
             /* This should not happen - see old captcha handling in TurboBitNet class revision 40594 */
-            logger.warning("Captcha-handling failed");
+            logger.warning("Captcha-handling failed: Captcha handling was executed and captcha is expected to be there but is not there");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else {
             return false;

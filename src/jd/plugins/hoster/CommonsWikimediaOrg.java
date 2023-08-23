@@ -19,6 +19,11 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.URLHelper;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -30,12 +35,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.net.URLHelper;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "commons.wikimedia.org" }, urls = { "https?://commons\\.(?:\\w+\\.)?wikimedia\\.org/wiki/File:[^\\&]+|https?://[a-z]{2}\\.wikipedia\\.org/wiki/([^/]+/media/)?[A-Za-z0-9%]+.*" })
 public class CommonsWikimediaOrg extends PluginForHost {
@@ -100,9 +99,10 @@ public class CommonsWikimediaOrg extends PluginForHost {
                      * https://zh.wikipedia.org/wiki/File:%E9%84%AD%E7%A7%80%E6%96%87_%E5%8E%BB%E6%84%9B%E5%90%A7.jpg
                      */
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                } else {
+                    logger.info("Unsupported / no downloadable content");
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                logger.info("Unsupported / no downloadable content");
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             final List<Map<String, Object>> imageinfo = (List<Map<String, Object>>) imageinfoO;
             final Map<String, Object> fileInfo = imageinfo.get(0);
