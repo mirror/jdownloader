@@ -53,6 +53,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.UserAgents;
@@ -582,7 +583,27 @@ public class EHentaiOrg extends PluginForHost {
                 throw e;
             }
         }
+        /* Store directurl to be able to re-use it later. */
         link.setProperty(getDirecturlproperty(account), dl.getConnection().getURL().toString());
+        final String headerFilename = Plugin.getFileNameFromHeader(dl.getConnection());
+        final String finalFilename = link.getFinalFileName();
+        final String extByMimeType = Plugin.getExtensionFromMimeTypeStatic(dl.getConnection().getContentType());
+        if (headerFilename != null && finalFilename != null) {
+            final String newExt = Plugin.getFileNameExtensionFromString(headerFilename);
+            if (newExt != null) {
+                final String newFilename = this.correctOrApplyFileNameExtension(finalFilename, newExt);
+                if (!newFilename.equals(finalFilename)) {
+                    logger.info("Corrected file-extension before download by header | New filename: " + newFilename);
+                    link.setFinalFileName(newFilename);
+                }
+            }
+        } else if (extByMimeType != null) {
+            final String newFilename = this.correctOrApplyFileNameExtension(finalFilename, "." + extByMimeType);
+            if (!newFilename.equals(finalFilename)) {
+                logger.info("Corrected file-extension before download by Content-Type | New filename: " + newFilename);
+                link.setFinalFileName(newFilename);
+            }
+        }
         dl.startDownload();
     }
 
