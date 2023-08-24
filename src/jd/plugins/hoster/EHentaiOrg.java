@@ -53,7 +53,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.UserAgents;
@@ -74,7 +73,8 @@ public class EHentaiOrg extends PluginForHost {
     @Override
     public Browser createNewBrowserInstance() {
         final Browser br = new Browser();
-        prepBR(br, null);
+        br.setReadTimeout(3 * 60 * 1000);
+        br.setFollowRedirects(true);
         return br;
     }
 
@@ -83,37 +83,37 @@ public class EHentaiOrg extends PluginForHost {
         return true;
     }
 
-    private Browser prepBR(final Browser br, final DownloadLink link) {
-        br.setReadTimeout(3 * 60 * 1000);
-        // br.setConnectTimeout(3 * 60 * 1000);
-        /* TODO: 2020-12-14: What does this do? */
-        if (link != null) {
-            br.setCookie(Browser.getHost(link.getPluginPatternMatcher()), "nw", "1");
+    public int getMaxChunks(final DownloadLink link, final Account account) {
+        if (new Regex(link.getPluginPatternMatcher(), TYPE_ARCHIVE).patternFind()) {
+            return -8;
+        } else {
+            /* Small file/image -> Limit chunks to 1 */
+            return 1;
         }
-        return br;
     }
 
     /* DEV NOTES */
     // Tags:
     // protocol: no https
     // other:
-    /* Limit chunks to 1 as we only download small files */
-    private static final int    free_maxchunks                    = 1;
-    private static final int    free_maxdownloads                 = -1;
-    private String              dllink                            = null;
-    private final boolean       ENABLE_RANDOM_UA                  = true;
-    public static final String  PREFER_ORIGINAL_QUALITY           = "PREFER_ORIGINAL_QUALITY";
-    public static final String  PREFER_ORIGINAL_FILENAME          = "PREFER_ORIGINAL_FILENAME";
-    public static final String  SETTING_DOWNLOAD_ZIP              = "DOWNLOAD_ZIP";
-    private static final String TYPE_EXHENTAI                     = "exhentai\\.org";
-    private static final String TYPE_ARCHIVE                      = "ehentaiarchive://\\d+/[a-z0-9]+";
-    private static final String TYPE_SINGLE_IMAGE_MULTI_PAGE_VIEW = "https://[^/]+/mpv/(\\d+)/([a-f0-9]{10})/#page(\\d+)";
-    private static final String TYPE_SINGLE_IMAGE                 = "https?://[^/]+/s/([a-f0-9]{10})/(\\d+)-(\\d+)";
-    public static final String  PROPERTY_GALLERY_URL              = "gallery_url";
+    private static final int    free_maxdownloads                  = -1;
+    private String              dllink                             = null;
+    private final boolean       ENABLE_RANDOM_UA                   = true;
+    public static final String  PREFER_ORIGINAL_QUALITY            = "PREFER_ORIGINAL_QUALITY";
+    public static final String  PREFER_ORIGINAL_FILENAME           = "PREFER_ORIGINAL_FILENAME";
+    public static final String  SETTING_DOWNLOAD_ZIP               = "DOWNLOAD_ZIP";
+    private static final String TYPE_EXHENTAI                      = "exhentai\\.org";
+    private static final String TYPE_ARCHIVE                       = "(?i)ehentaiarchive://(\\d+)/([a-z0-9]+)";
+    private static final String TYPE_SINGLE_IMAGE_MULTI_PAGE_VIEW  = "(?i)https?://[^/]+/mpv/(\\d+)/([a-f0-9]{10})/#page(\\d+)";
+    private static final String TYPE_SINGLE_IMAGE                  = "(?i)https?://[^/]+/s/([a-f0-9]{10})/(\\d+)-(\\d+)";
+    public static final String  PROPERTY_GALLERY_URL               = "gallery_url";
+    public static final String  PROPERTY_MPVKEY                    = "mpvkey";
+    public static final String  PROPERTY_IMAGEKEY                  = "imagekey";
+    private final String        PROPERTY_ACCOUNT_IMAGE_POINTS_LEFT = "image_points_left";
 
     @Override
     public String getAGBLink() {
-        return "http://g.e-hentai.org/tos.php";
+        return "https://e-hentai.org/tos.php";
     }
 
     @Override
@@ -134,7 +134,7 @@ public class EHentaiOrg extends PluginForHost {
         if (requiresAccount(link) && account == null) {
             return false;
         } else {
-            return super.canHandle(link, account);
+            return true;
         }
     }
 
@@ -170,18 +170,21 @@ public class EHentaiOrg extends PluginForHost {
         dllink = null;
         if (account != null) {
             login(this.br, account, false);
-        } else if (ENABLE_RANDOM_UA) {
-            /* Be sure only to use random UA when an account is not used! */
-            /*
-             * Using a different UA for every download might be a bit obvious but at the moment, this fixed the error-server responses as it
-             * tricks it into thinking that we re a lot of users and not only one.
-             */
-            br.getHeaders().put("User-Agent", UserAgents.stringUserAgent());
+        } else {
+            if (this.requiresAccount(link)) {
+                throw new AccountRequiredException();
+            }
+            if (ENABLE_RANDOM_UA) {
+                /* Be sure only to use random UA when an account is not used! */
+                /*
+                 * Using a different UA for every download might be a bit obvious but at the moment, this fixed the error-server responses
+                 * as it tricks it into thinking that we re a lot of users and not only one.
+                 */
+                br.getHeaders().put("User-Agent", UserAgents.stringUserAgent());
+            }
         }
         final String directurlproperty = getDirecturlproperty(account);
-        prepBR(br, link);
         final boolean preferOriginalQuality = this.getPluginConfig().getBooleanProperty(PREFER_ORIGINAL_QUALITY, default_PREFER_ORIGINAL_QUALITY);
-        /* from manual 'online check', we don't want to 'try' as it uses up quota... */
         if (new Regex(link.getPluginPatternMatcher(), TYPE_ARCHIVE).patternFind()) {
             /* Account archive download */
             if (account == null) {
@@ -197,6 +200,7 @@ public class EHentaiOrg extends PluginForHost {
                 /* Fallback for revision 45332 and prior */
                 host = this.getHost();
             }
+            /* Check if gallery still exists. */
             br.getPage("https://" + host + "/g/" + galleryid + "/" + galleryhash);
             if (isOffline(br)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -206,7 +210,7 @@ public class EHentaiOrg extends PluginForHost {
                  * 2022-01-10: Depending on account settings, some galleries won't be displayed by default for some users. They have to
                  * click on a "View anyways" button to continue.
                  */
-                final String skipContentWarningURL = br.getRegex("\"(https?://[^/]+/g/\\d+/[a-f0-9]+/\\?nw=session)\"[^>]*>\\s*View Gallery\\s*<").getMatch(0);
+                final String skipContentWarningURL = br.getRegex("(?i)\"(https?://[^/]+/g/\\d+/[a-f0-9]+/\\?nw=session)\"[^>]*>\\s*View Gallery").getMatch(0);
                 if (skipContentWarningURL != null) {
                     logger.info("Skipping content warning via URL: " + skipContentWarningURL);
                     br.getPage(skipContentWarningURL);
@@ -237,7 +241,7 @@ public class EHentaiOrg extends PluginForHost {
                 dllink = br.getRegex("document\\.location\\s*=\\s*\"((?:/|http)[^\"]+)\"").getMatch(0);
                 if (dllink == null) {
                     /* 2022-01-07 */
-                    dllink = br.getRegex("(?i)href=\"([^\"]+)\"[^>]*>Click Here To Start Downloading").getMatch(0);
+                    dllink = br.getRegex("(?i)href=\"([^\"]+)\"[^>]*>\\s*Click Here To Start Downloading").getMatch(0);
                 }
                 if (dllink == null && br.containsHTML("name=\"dlcheck\"[^<>]*value=\"Insufficient Funds\"")) {
                     /* 2020-05-20: E.g. not enough credits for archive downloads but enough to download single images. */
@@ -245,7 +249,7 @@ public class EHentaiOrg extends PluginForHost {
                 }
             }
             return AvailableStatus.TRUE;
-        } else if (new Regex(link.getPluginPatternMatcher(), TYPE_SINGLE_IMAGE_MULTI_PAGE_VIEW).matches()) {
+        } else if (new Regex(link.getPluginPatternMatcher(), TYPE_SINGLE_IMAGE_MULTI_PAGE_VIEW).patternFind()) {
             /* 2020-05-21: New linktype "Multi Page View" */
             br.setFollowRedirects(true);
             final Regex urlinfo = new Regex(link.getPluginPatternMatcher(), TYPE_SINGLE_IMAGE_MULTI_PAGE_VIEW);
@@ -255,8 +259,8 @@ public class EHentaiOrg extends PluginForHost {
              * 2020-05-21: TODO: Check if this ever expires - it would be easy to renew this but would require additional http requests
              * which slows down the process of downloading a lot of small files significantly!
              */
-            final String mpvkey = link.getStringProperty("mpvkey", null);
-            final String imagekey = link.getStringProperty("imagekey", null);
+            final String mpvkey = link.getStringProperty(PROPERTY_MPVKEY);
+            final String imagekey = link.getStringProperty(PROPERTY_IMAGEKEY);
             if (galleryid == null || page == null || mpvkey == null || imagekey == null) {
                 /* This should never happen */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -280,7 +284,7 @@ public class EHentaiOrg extends PluginForHost {
             final String lowResInfo = (String) entries.get("d");
             final String origInfo = (String) entries.get("o");
             /* 2020-05-21: Only registered users can download originals! */
-            boolean downloadRequiresPoints = false;
+            boolean downloadRequiresImagePoints = false;
             if (account != null && preferOriginalQuality) {
                 /* Download original file */
                 filesizeStr = new Regex(origInfo, "(\\d+\\.\\d{1,2} [A-Za-z]+)").getMatch(0);
@@ -288,7 +292,7 @@ public class EHentaiOrg extends PluginForHost {
                 if (!this.dllink.startsWith("http") && !this.dllink.startsWith("/")) {
                     this.dllink = "https://" + host + "/" + this.dllink;
                 }
-                downloadRequiresPoints = true;
+                downloadRequiresImagePoints = true;
             } else {
                 /* Download "lower quality" file */
                 filesizeStr = new Regex(lowResInfo, "(\\d+\\.\\d{1,2} [A-Za-z]+)").getMatch(0);
@@ -298,12 +302,11 @@ public class EHentaiOrg extends PluginForHost {
             if (filesizeStr != null) {
                 link.setDownloadSize(SizeFormatter.getSize(filesizeStr));
             }
-            if (filesizeStr == null && !downloadRequiresPoints) {
+            if (filesizeStr == null && !downloadRequiresImagePoints && !isDownload) {
                 URLConnectionAdapter con = null;
                 try {
                     final Browser brc = br.cloneBrowser();
-                    brc.setFollowRedirects(true);
-                    con = br.openHeadConnection(dllink);
+                    con = brc.openHeadConnection(dllink);
                     if (this.looksLikeDownloadableContent(con)) {
                         if (con.getCompleteContentLength() > 0) {
                             link.setDownloadSize(con.getCompleteContentLength());
@@ -318,71 +321,37 @@ public class EHentaiOrg extends PluginForHost {
                 }
             }
         } else if (link.getPluginPatternMatcher().matches(TYPE_SINGLE_IMAGE)) {
-            /* TYPE_SINGLE_IMAGE */
-            if (this.requiresAccount(link) && account == null) {
-                throw new AccountRequiredException();
-            }
             /* TYPE_SINGLE_IMAGE e-hentai.org and exhentai.org */
-            String dllinkOriginalFile = null;
-            br.setFollowRedirects(true);
             br.getPage(link.getPluginPatternMatcher());
-            final String urlpart = new Regex(link.getPluginPatternMatcher(), TYPE_SINGLE_IMAGE).getMatch(0);
-            /*
-             * 2020-12-01: Workaround attempt: Some users randomly always get the "cookie redirect" for exhentai.org which should only
-             * happen when accessing it for the first time. It redirects them to the main page.
-             */
-            if (link.getPluginPatternMatcher().contains("exhentai") && !this.canHandle(br.getURL()) && !br.getURL().contains(urlpart)) {
-                logger.info("Redirect to mainpage? Accessing gallery URL again ...");
-                br.getPage(link.getPluginPatternMatcher());
-                if (!this.canHandle(br.getURL()) && !br.getURL().contains(urlpart)) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Redirect to mainpage? Login failure?", 3 * 60 * 1000l);
-                }
-            }
             if (isOffline(br)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else if (br.toString().length() <= 100) {
-                /* 2020-05-23: Empty page: Most likely exhentai.org URL with account that does not have permissions to access it. */
-                throw new AccountRequiredException();
-            } else if (br.getRequest().getHtmlCode().matches("(?i)Your IP address has been temporarily banned for excessive pageloads.+")) {
-                String tmpYears = new Regex(br, "(\\d+)\\s+years?").getMatch(0);
-                String tmpdays = new Regex(br, "(\\d+)\\s+days?").getMatch(0);
-                String tmphrs = new Regex(br, "(\\d+)\\s+hours?").getMatch(0);
-                String tmpmin = new Regex(br, "(\\d+)\\s+minutes?").getMatch(0);
-                String tmpsec = new Regex(br, "(\\d+)\\s+seconds?").getMatch(0);
-                long years = 0, days = 0, hours = 0, minutes = 0, seconds = 0;
-                if (StringUtils.isEmpty(tmpYears)) {
-                    years = Integer.parseInt(tmpYears);
-                }
-                if (StringUtils.isEmpty(tmpdays)) {
-                    days = Integer.parseInt(tmpdays);
-                }
-                if (StringUtils.isEmpty(tmphrs)) {
-                    hours = Integer.parseInt(tmphrs);
-                }
-                if (StringUtils.isEmpty(tmpmin)) {
-                    minutes = Integer.parseInt(tmpmin);
-                }
-                if (StringUtils.isEmpty(tmpsec)) {
-                    seconds = Integer.parseInt(tmpsec);
-                }
-                final String errortext = "Your IP address has been temporarily banned for excessive pageloads";
-                long waittime = ((years * 86400000 * 365) + (days * 86400000) + (hours * 3600000) + (minutes * 60000) + (seconds * 1000));
-                final long minWaitMillis = 30 * 60 * 1000;
-                if (waittime < minWaitMillis) {
-                    waittime = minWaitMillis;
-                }
-                if (account == null) {
-                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, errortext, waittime);
+            } else if (br.getRequest().getHtmlCode().length() <= 1) {
+                /**
+                 * 2020-05-23: Empty page: Most likely exhentai.org URL with account that does not have permissions to access it or exhentai
+                 * login failure.
+                 */
+                final String errorDetailsText = "Received blank page";
+                if (account != null) {
+                    throw new AccountUnavailableException("exhentai login failure: " + errorDetailsText, 5 * 60 * 1000l);
                 } else {
-                    throw new AccountUnavailableException(errortext, waittime);
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Website problem: " + errorDetailsText);
                 }
-            }
-            String filesizeStrOriginalImage = null;
-            if (account != null && this.getPluginConfig().getBooleanProperty(PREFER_ORIGINAL_QUALITY, default_PREFER_ORIGINAL_QUALITY)) {
-                /* Try to get fullsize (original) image. */
-                final Regex fulllinkinfo = br.getRegex("href=\"(https?://(?:(?:g\\.)?e\\-hentai|exhentai)\\.org/fullimg\\.php[^<>\"]*?)\">Download original \\d+ x \\d+ ([^<>\"]*?) source</a>");
-                dllinkOriginalFile = fulllinkinfo.getMatch(0);
-                filesizeStrOriginalImage = fulllinkinfo.getMatch(1);
+            } else if (br.containsHTML("Your IP address has been temporarily banned for excessive pageloads")) {
+                final String errortext = "Your IP address has been temporarily banned for excessive pageloads";
+                long waitMillis = 30 * 60 * 1000;
+                if (account == null) {
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, errortext, waitMillis);
+                } else {
+                    throw new AccountUnavailableException(errortext, waitMillis);
+                }
+            } else if (br.getRequest().getHtmlCode().length() <= 100) {
+                /* This should never happen! */
+                final String errorDetailsText = "Got page with max 100 characters";
+                if (account != null) {
+                    throw new AccountUnavailableException("Login failure: " + errorDetailsText, 5 * 60 * 1000l);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errorDetailsText);
+                }
             }
             String ext = null;
             String originalFileName = br.getRegex("(?i)<div>([^<>]*\\.(jpe?g|png|gif))\\s*::\\s*\\d+").getMatch(0);
@@ -390,8 +359,6 @@ public class EHentaiOrg extends PluginForHost {
             if (originalFileName != null) {
                 originalFileName = Encoding.htmlDecode(originalFileName).trim();
                 ext = getFileNameExtensionFromString(originalFileName, extDefault);
-            } else if (dllink != null) {
-                ext = Plugin.getFileNameExtensionFromURL(dllink, extDefault);
             }
             if (link.getForcedFileName() != null) {
                 /* Special handling: Package customizer altered, or user altered value, we need to update this value. */
@@ -403,20 +370,52 @@ public class EHentaiOrg extends PluginForHost {
                 if (StringUtils.isNotEmpty(originalFileName) && preferOriginalFilename) {
                     link.setFinalFileName(originalFileName);
                 } else {
-                    // decrypter doesn't set file extension.
+                    /* crawler might not set file extension. */
                     link.setFinalFileName(namepart + ext);
                 }
             }
-            if (dllinkOriginalFile != null) {
-                dllinkOriginalFile = Encoding.htmlDecode(dllinkOriginalFile);
-                /* Filesize is already set via html_filesize, we have our full (original) resolution downloadlink and our file extension! */
-                dllink = dllinkOriginalFile;
+            final boolean userPrefersOriginalDownloadurl = this.getPluginConfig().getBooleanProperty(PREFER_ORIGINAL_QUALITY, default_PREFER_ORIGINAL_QUALITY);
+            final Regex originalDownloadRegex = br.getRegex("href=\"(https?://(?:(?:g\\.)?e\\-hentai|exhentai)\\.org/fullimg\\.php[^<>\"]*?)\">\\s*Download original \\d+ x \\d+ ([^<>\"]*?) source\\s*</a>");
+            String originalImageDownloadurl = originalDownloadRegex.getMatch(0);
+            if (originalImageDownloadurl != null) {
+                originalImageDownloadurl = Encoding.htmlDecode(originalImageDownloadurl);
+            } else {
+                if (userPrefersOriginalDownloadurl) {
+                    /* Some [exhentai?] .gif files are not downloadable as original e.g.: https://exhentai.org/s/f448e4f296/2652144-204 */
+                    logger.info("User prefers original image but failed to find original image downloadurl");
+                }
+            }
+            if (account != null && originalImageDownloadurl != null) {
+                dllink = originalImageDownloadurl;
+                final String filesizeStrOriginalImage = originalDownloadRegex.getMatch(1);
                 if (filesizeStrOriginalImage != null) {
                     link.setDownloadSize(SizeFormatter.getSize(filesizeStrOriginalImage));
                 }
             } else {
-                /* 2020-03-06: Sometimes needed for exhentai URLs but not that important. */
-                this.dllink = getNormalmageDownloadurl(link, account, isDownload);
+                try {
+                    this.dllink = getNormalmageDownloadurl(link, account, isDownload);
+                } catch (final PluginException e) {
+                    /* Limit reached */
+                    final String host = br.getHost();
+                    if (isLimitError && host.equals(host_exhentai) && link.getPluginPatternMatcher().contains(host_exhentai) && isDownload) {
+                        final String newurl = link.getPluginPatternMatcher().replaceFirst(Pattern.quote(host_exhentai), host_ehentai);
+                        logger.info("Attempting workaround via ehentai website: " + newurl);
+                        br.getPage(newurl);
+                        try {
+                            this.dllink = getNormalmageDownloadurl(link, account, isDownload);
+                        } catch (final Exception ignore) {
+                            logger.log(ignore);
+                            logger.info("Failed to get around limit");
+                            /* Throw initial Exception */
+                            throw e;
+                        }
+                    } else {
+                        throw e;
+                    }
+                }
+                if (this.dllink != null) {
+                    link.setProperty(getDirecturlproperty(account), this.dllink);
+                }
                 final String filesizeStrNormalImage = br.getRegex(":: ([^:<>\"]+)</div><div class=\"sn\"").getMatch(0);
                 if (filesizeStrNormalImage != null) {
                     link.setDownloadSize(SizeFormatter.getSize(filesizeStrNormalImage));
@@ -434,16 +433,19 @@ public class EHentaiOrg extends PluginForHost {
     public static boolean isOffline(final Browser br) {
         if (br.getHttpConnection().getResponseCode() == 404) {
             return true;
-        }
-        if (br.getRequest().getHtmlCode().matches("(?i)^Invalid page\\.?")) {
+        } else if (br.getRequest().getHtmlCode().matches("(?i)^Invalid page\\.?")) {
             return true;
         } else {
             return false;
         }
     }
 
+    /** Ugly public variable to try to avoid the need to add a custom Exception-type. */
+    private boolean isLimitError = false;
+
     /** Returns direct downloadable URL to normal image (not original image). */
     private String getNormalmageDownloadurl(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
+        isLimitError = false;
         final String html = br.getRequest().getHtmlCode();
         String cleanup = new Regex(html, "<iframe[^>]*>(.*?)<iframe").getMatch(0);
         if (cleanup == null) {
@@ -456,7 +458,7 @@ public class EHentaiOrg extends PluginForHost {
         }
         if (dllink == null) {
             logger.info("Failed to find final downloadurl");
-            return null;
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (StringUtils.containsIgnoreCase(dllink, "509.gif")) {
             /* E.g. https://ehgt.org/g/509.gif or https://exhentai.org/img/509.gif */
@@ -473,11 +475,11 @@ public class EHentaiOrg extends PluginForHost {
                 br.setFollowRedirects(true);
                 br.getPage(MAINPAGE_ehentai + "/home.php");
                 logger.info("Credits before:");
-                int[] creditsLeftInfo = getCreditsLeftInfo(br); // prints credits left (logs them)
+                int[] creditsLeftInfo = getImagePointsLeftInfo(br); // prints credits left (logs them)
                 br.getPage(MAINPAGE_ehentai + "/hathperks.php");
                 br.getPage(MAINPAGE_ehentai + "/home.php");
                 logger.info("Credits AFTER:");
-                creditsLeftInfo = getCreditsLeftInfo(br);
+                creditsLeftInfo = getImagePointsLeftInfo(br);
                 if (creditsLeftInfo != null && creditsLeftInfo[0] >= creditsLeftInfo[1]) {
                     logger.info("Confirmed limit reached according to remaining credits");
                     exceptionLimitReached(account, errorMessageOnLimitReached);
@@ -486,6 +488,7 @@ public class EHentaiOrg extends PluginForHost {
                     exceptionLimitReached(account, "Unknown error in downloadlimit handling occured: Looks like limit reached but it hasn't been reached?");
                 }
             }
+            isLimitError = true;
             exceptionLimitReached(account, errorMessageOnLimitReached);
         }
         return dllink;
@@ -520,11 +523,12 @@ public class EHentaiOrg extends PluginForHost {
         } else {
             requestFileInformation(link, account, true);
             if (StringUtils.isEmpty(dllink)) {
+                /* This should never happen! */
                 logger.warning("Failed to find final downloadurl");
                 this.handleErrorsLastResort(link, account, this.br);
             }
         }
-        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, this.isResumeable(link, account), free_maxchunks);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, this.isResumeable(link, account), getMaxChunks(link, account));
         long expectedFilesize = link.getView().getBytesTotal();
         if (expectedFilesize > 1000) {
             /*
@@ -582,8 +586,10 @@ public class EHentaiOrg extends PluginForHost {
         dl.startDownload();
     }
 
-    private static final String MAINPAGE_ehentai  = "https://e-hentai.org";
-    private static final String MAINPAGE_exhentai = "https://exhentai.org";
+    private final String host_ehentai      = "e-hentai.org";
+    private final String MAINPAGE_ehentai  = "https://" + host_ehentai;
+    private final String host_exhentai     = "exhentai.org";
+    private final String MAINPAGE_exhentai = "https://" + host_exhentai;
 
     /** 2019-11-26: Alternative way to login: https://e-hentai.org/bounce_login.php?b=d&bt=1-1 */
     public void login(final Browser br, final Account account, final boolean force) throws Exception {
@@ -594,132 +600,110 @@ public class EHentaiOrg extends PluginForHost {
              * day (usually >5000), all accounts can be stuck with the daily 5000 limit. Accessing this page first and then '/home.php'
              * fixes this. Accessing hathperks will set two additional cookies: 'sk' and 'hath_perks'
              */
-            final boolean followRedirects = br.isFollowingRedirects();
-            try {
-                br.setFollowRedirects(true);
-                br.setCookiesExclusive(true);
-                final Cookies cookies = account.loadCookies("");
-                final Cookies userCookies = account.loadUserCookies();
-                if (userCookies != null) {
-                    br.setCookies(MAINPAGE_ehentai, userCookies);
-                    if (!force) {
-                        /* We trust these cookies --> Do not check them */
-                        return;
-                    }
-                    if (verifyCookies(account, true)) {
-                        /* Success */
-                        return;
-                    } else {
-                        if (account.hasEverBeenValid()) {
-                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
-                        } else {
-                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
-                        }
-                    }
+            br.setCookiesExclusive(true);
+            final Cookies cookies = account.loadCookies("");
+            final Cookies userCookies = account.loadUserCookies();
+            if (userCookies != null) {
+                setCookies(br, userCookies);
+                if (!force) {
+                    /* We trust these cookies --> Do not check them */
+                    return;
                 }
-                if (cookies != null) {
-                    br.setCookies(MAINPAGE_ehentai, cookies);
-                    final Cookies cookies2 = account.loadCookies("exhentai");
-                    if (cookies2 != null) {
-                        br.setCookies(MAINPAGE_exhentai, cookies2);
-                    }
-                    if (!force) {
-                        /* We trust these cookies --> Do not check them */
-                        return;
-                    }
-                    if (verifyCookies(account, false)) {
-                        /* Success */
-                        return;
-                    }
-                }
-                boolean failed = true;
-                /* Login page with params to redirect to /home.php */
-                br.getPage(MAINPAGE_ehentai + "/bounce_login.php?b=d&bt=1-1");
-                /* 2020-03-04: --> Will redirect to forums.* */
-                // br.getPage("https://forums.e-hentai.org/index.php?act=Login");
-                for (int i = 0; i <= 1; i++) {
-                    final Form loginform = br.getFormbyKey("CookieDate");
-                    if (loginform == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    loginform.put("UserName", account.getUser());
-                    loginform.put("PassWord", Encoding.urlEncode(account.getPass()));
-                    if (i > 0 && CaptchaHelperHostPluginRecaptchaV2.containsRecaptchaV2Class(br)) {
-                        /*
-                         * First login attempt failed and we get a captcha --> Does not necessarily mean that user entered wrong logindata -
-                         * captchas may happen!
-                         */
-                        final CaptchaHelperHostPluginRecaptchaV2 rc2 = new CaptchaHelperHostPluginRecaptchaV2(this, br);
-                        final String recaptchaV2Response = rc2.getToken();
-                        loginform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-                    } else if (i > 0) {
-                        logger.info("No captcha on 2nd login attempt --> Probably invalid logindata");
-                        break;
-                    }
-                    br.submitForm(loginform);
-                    failed = !isLoggedInEhentai(br);
-                    if (!failed) {
-                        logger.info("Stepping out of login loop");
-                        break;
-                    }
-                }
-                if (failed) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-                /* This will set two more important cookies! */
-                br.getPage(MAINPAGE_ehentai + "/hathperks.php");
-                account.saveCookies(br.getCookies(MAINPAGE_ehentai), "");
-                /*
-                 * Important! Get- and save exhentai cookies: First time this will happen: exhentai.org ->
-                 * forums.e-hentai.org/remoteapi.php?ex= -> exhentai.org/?poni= -> exhentai.org
-                 */
-                br.getPage(MAINPAGE_exhentai);
-                if (this.isLoggedInEhentaiOrExhentai(br)) {
-                    logger.info("Successfully logged in exhentai -> Saving cookies");
-                    account.saveCookies(br.getCookies(MAINPAGE_exhentai), "exhentai");
+                if (verifyCookies(account, false)) {
+                    /* Success */
+                    return;
                 } else {
-                    logger.info("Failed to login in exhentai -> Ignoring cookies");
+                    if (account.hasEverBeenValid()) {
+                        throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
+                    } else {
+                        throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
+                    }
                 }
-            } catch (final PluginException e) {
-                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
-                    account.clearCookies("");
-                    account.clearCookies("exhentai");
-                }
-                throw e;
-            } finally {
-                br.setFollowRedirects(followRedirects);
             }
+            if (cookies != null) {
+                setCookies(br, cookies);
+                if (!force) {
+                    /* We trust these cookies --> Do not check them */
+                    return;
+                }
+                if (verifyCookies(account, false)) {
+                    /* Success */
+                    return;
+                }
+            }
+            /* Login page with params to redirect to /home.php */
+            logger.info("Performing full login");
+            br.getPage(MAINPAGE_ehentai + "/bounce_login.php?b=d&bt=1-1");
+            /* 2020-03-04: --> Will redirect to forums.* */
+            // br.getPage("https://forums.e-hentai.org/index.php?act=Login");
+            for (int i = 0; i <= 1; i++) {
+                final Form loginform = br.getFormbyKey("CookieDate");
+                if (loginform == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                loginform.put("UserName", account.getUser());
+                loginform.put("PassWord", Encoding.urlEncode(account.getPass()));
+                if (i > 0 && CaptchaHelperHostPluginRecaptchaV2.containsRecaptchaV2Class(br)) {
+                    /*
+                     * First login attempt failed and we get a captcha --> Does not necessarily mean that user entered wrong logindata -
+                     * captchas may happen!
+                     */
+                    final CaptchaHelperHostPluginRecaptchaV2 rc2 = new CaptchaHelperHostPluginRecaptchaV2(this, br);
+                    final String recaptchaV2Response = rc2.getToken();
+                    loginform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                } else if (i > 0) {
+                    logger.info("No captcha on 2nd login attempt --> Probably invalid logindata");
+                    break;
+                }
+                br.submitForm(loginform);
+                if (isLoggedInEhentai(br)) {
+                    logger.info("Stepping out of login loop because: Success");
+                    break;
+                }
+            }
+            if (!isLoggedInEhentai(br)) {
+                throw new AccountInvalidException();
+            }
+            /* Double-check */
+            if (!verifyCookies(account, false)) {
+                throw new AccountInvalidException();
+            }
+            account.saveCookies(br.getCookies(MAINPAGE_ehentai), "");
         }
     }
 
+    private void setCookies(final Browser br, final Cookies cookies) {
+        br.setCookies(MAINPAGE_ehentai, cookies);
+        br.setCookies(MAINPAGE_exhentai, cookies);
+    }
+
     /** Sets given cookies and checks if we can login with them. */
-    protected boolean verifyCookies(final Account account, final boolean isUserCookies) throws Exception {
+    protected boolean verifyCookies(final Account account, final boolean throwExceptionOnFailure) throws Exception {
         // getPage(br, MAINPAGE_ehentai + "/index.php?");
         br.getPage(MAINPAGE_ehentai + "/hathperks.php");
         if (this.isLoggedInEhentai(br)) {
             br.getPage(MAINPAGE_ehentai + "/home.php");
             if (this.isLoggedInEhentai(br)) {
-                final String items_downloadedStr = br.getRegex("You are currently at <strong>(\\d+)</strong>").getMatch(0);
-                final String items_maxStr = br.getRegex("towards a limit of <strong>(\\d+)</strong>").getMatch(0);
-                logger.info("Successfully logged in via cookies:" + items_downloadedStr + "/" + items_maxStr);
-                if (!isUserCookies) {
-                    account.saveCookies(br.getCookies(MAINPAGE_ehentai), "");
-                }
-                /* Get- and save exhentai cookies too */
+                logger.info("e-hentai.org: Successfully logged in via cookies -> Checking exhentai.org login");
+                /* Get- and save exhentai.org cookies too */
+                /**
+                 * Important! Get- and save exhentai cookies: First time this will happen: </br>
+                 * exhentai.org -> forums.e-hentai.org/remoteapi.php?ex= -> exhentai.org/?poni= -> exhentai.org
+                 */
                 br.getPage(MAINPAGE_exhentai);
                 if (this.isLoggedInEhentaiOrExhentai(br)) {
-                    logger.info("Successfully logged in exhentai -> Saving cookies");
-                    if (!isUserCookies) {
-                        account.saveCookies(br.getCookies(MAINPAGE_exhentai), "exhentai");
-                    }
+                    logger.info("Successfully logged in exhentai.org");
                 } else {
-                    logger.info("Failed to login in exhentai -> Ignoring cookies");
+                    logger.warning("Failed to login in exhentai.org");
+                    if (throwExceptionOnFailure) {
+                        throw new AccountInvalidException("exhentai.org login failed");
+                    }
                 }
                 return true;
             }
         }
         logger.info("Failed to login via cookies");
-        br.clearAll();
+        br.clearCookies(null);
         return false;
     }
 
@@ -752,33 +736,38 @@ public class EHentaiOrg extends PluginForHost {
         account.setType(AccountType.FREE);
         account.setConcurrentUsePossible(true);
         br.getPage(MAINPAGE_ehentai + "/home.php");
-        final int[] creditsLeftInfo = this.getCreditsLeftInfo(br);
-        if (creditsLeftInfo != null) {
-            ai.setStatus(String.format(AccountType.FREE.getLabel() + " [Used %d / %d items]", creditsLeftInfo[0], creditsLeftInfo[1]));
+        final int[] imagePointsLeftInfo = this.getImagePointsLeftInfo(br);
+        if (imagePointsLeftInfo != null) {
+            account.setProperty(PROPERTY_ACCOUNT_IMAGE_POINTS_LEFT, imagePointsLeftInfo[1] - imagePointsLeftInfo[0]);
+            ai.setStatus(String.format(AccountType.FREE.getLabel() + " [Used %d / %d items]", imagePointsLeftInfo[0], imagePointsLeftInfo[1]));
             if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
                 /* For development purposes: Set fake trafficlimit so developer can see the limit visually. */
-                final long dummyTrafficUsed = SizeFormatter.getSize(creditsLeftInfo[0] + "TiB");
-                final long dummyTrafficMax = SizeFormatter.getSize(creditsLeftInfo[1] + "TiB");
+                final long dummyTrafficUsed = SizeFormatter.getSize(imagePointsLeftInfo[0] + "TiB");
+                final long dummyTrafficMax = SizeFormatter.getSize(imagePointsLeftInfo[1] + "TiB");
                 ai.setTrafficLeft(dummyTrafficMax - dummyTrafficUsed);
                 ai.setTrafficMax(dummyTrafficMax);
             } else {
                 ai.setUnlimitedTraffic();
             }
         } else {
-            logger.warning("Failed to find items_downloadedStr or items_maxStr:" + creditsLeftInfo);
+            logger.warning("Failed to find items_downloadedStr or items_maxStr:" + imagePointsLeftInfo);
+            account.removeProperty(PROPERTY_ACCOUNT_IMAGE_POINTS_LEFT);
             ai.setStatus(AccountType.FREE.getLabel() + " Failed to find credits left info");
             ai.setUnlimitedTraffic();
         }
-        if (creditsLeftInfo != null && creditsLeftInfo[0] >= creditsLeftInfo[1]) {
+        if (imagePointsLeftInfo != null && imagePointsLeftInfo[0] >= imagePointsLeftInfo[1]) {
             logger.info("Account does not have any credits left --> Set remaining traffic to 0");
             ai.setTrafficLeft(0);
         }
-        /* 2020-11-30: Experimental */
         account.setRefreshTimeout(10 * 60 * 1000l);
         synchronized (account) {
-            displayImagePointsUsageInformation(account, creditsLeftInfo);
+            displayImagePointsUsageInformation(account, imagePointsLeftInfo);
         }
         return ai;
+    }
+
+    private int getImagePointsLeft(final Account account) {
+        return account.getIntegerProperty(PROPERTY_ACCOUNT_IMAGE_POINTS_LEFT, -1);
     }
 
     private final String PROPERTY_ACCOUNT__ORIGINAL_IMAGE_DOWNLOAD_IMAGE_POINTS_USAGE_INFORMATION_HAS_BEEN_DISPLAYED = "original_image_download_image_points_usage_information_has_been_displayed";
@@ -830,7 +819,7 @@ public class EHentaiOrg extends PluginForHost {
      * [1] = max limit for this account </br>
      * [1] minus [0] = points left
      */
-    private int[] getCreditsLeftInfo(final Browser br) {
+    private int[] getImagePointsLeftInfo(final Browser br) {
         if (!br.getURL().endsWith("/home.php")) {
             logger.warning("!Developer! You did not access '/home.php' before calling this! It will most likely fail!");
         }
