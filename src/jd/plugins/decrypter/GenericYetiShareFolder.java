@@ -19,7 +19,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
@@ -83,6 +82,7 @@ public class GenericYetiShareFolder extends antiDDoSForDecrypt {
         ret.add(new String[] { "uploadcorner.com" });
         ret.add(new String[] { "bippupload.com" });
         ret.add(new String[] { "cyphershare.net" });
+        ret.add(new String[] { "udrop.com" });
         return ret;
     }
 

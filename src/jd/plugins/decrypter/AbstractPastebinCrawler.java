@@ -87,12 +87,17 @@ public abstract class AbstractPastebinCrawler extends PluginForDecrypt {
         final LazyHostPlugin lazyHostPlugin = HostPluginController.getInstance().get(getHost());
         final boolean isAllowedByMode = mode == PastebinPlaintextCrawlMode.ALWAYS || (mode == PastebinPlaintextCrawlMode.ONLY_IF_NO_HTTP_URLS_WERE_FOUND && links.length == 0);
         final String directurl = metadata.getOfficialDirectDownloadlink();
-        if (directurl != null && isAllowedByMode) {
+        if (directurl != null && isAllowedByMode || true) {
             final DownloadLink textfile = this.createDownloadlink(DirectHTTP.createURLForThisPlugin(directurl));
             textfile.setFinalFileName(metadata.getFilename());
             textfile.setAvailable(true);
             if (metadata.getPassword() != null) {
                 textfile.setDownloadPassword(metadata.getPassword(), true);
+            }
+            try {
+                textfile.setDownloadSize(metadata.getPastebinText().getBytes("UTF-8").length);
+            } catch (final UnsupportedEncodingException ignore) {
+                ignore.printStackTrace();
             }
             ret.add(textfile);
         } else if (lazyHostPlugin != null && isAllowedByMode) {

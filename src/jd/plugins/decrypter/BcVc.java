@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.regex.Pattern;
 
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
@@ -28,6 +29,7 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -54,6 +56,12 @@ public class BcVc extends PluginForDecrypt {
         return ret;
     }
 
+    protected List<String> getDeadDomains() {
+        final ArrayList<String> deadDomains = new ArrayList<String>();
+        deadDomains.add("bcvc.live");
+        return deadDomains;
+    }
+
     public static String[] getAnnotationNames() {
         return buildAnnotationNames(getPluginDomains());
     }
@@ -78,6 +86,12 @@ public class BcVc extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         String url = param.getCryptedUrl();
+        /* Correct domain inside URL if we know it is dead. */
+        final List<String> deadDomains = getDeadDomains();
+        final String domainFromURL = Browser.getHost(url, false);
+        if (deadDomains.contains(domainFromURL)) {
+            url = url.replaceFirst(Pattern.quote(domainFromURL), this.getHost());
+        }
         final String linkInsideLink = new Regex(param.getCryptedUrl(), "https?://[^/]+//\\d+/(.+)").getMatch(0);
         if (linkInsideLink != null) {
             final String finalLinkInsideLink;
@@ -177,6 +191,7 @@ public class BcVc extends PluginForDecrypt {
         String b64 = UrlQuery.parse(url).get("cr");
         b64 = Encoding.htmlDecode(b64);
         final String finallink = Encoding.Base64Decode(b64);
+        logger.info("finallink = " + finallink);
         return this.createDownloadlink(finallink);
     }
 

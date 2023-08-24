@@ -27,8 +27,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
-public class AsdfilesCom extends YetiShareCore {
-    public AsdfilesCom(PluginWrapper wrapper) {
+public class UdropCom extends YetiShareCore {
+    public UdropCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(getPurchasePremiumURL());
     }
@@ -37,14 +37,14 @@ public class AsdfilesCom extends YetiShareCore {
      * DEV NOTES YetiShare<br />
      ****************************
      * mods: See overridden functions<br />
-     * limit-info: 2019-07-03: No limits at all <br />
-     * captchatype-info: 2019-07-03: null<br />
+     * limit-info:<br />
+     * captchatype-info: 2023-08-24: null <br />
      * other: <br />
      */
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "asdocs.net", "asdfiles.com" });
+        ret.add(new String[] { "udrop.com" });
         return ret;
     }
 
@@ -78,13 +78,13 @@ public class AsdfilesCom extends YetiShareCore {
     public int getMaxChunks(final Account account) {
         if (account != null && account.getType() == AccountType.FREE) {
             /* Free Account */
-            return 1;
+            return 0;
         } else if (account != null && account.getType() == AccountType.PREMIUM) {
             /* Premium account */
             return 0;
         } else {
             /* Free(anonymous) and unknown account type */
-            return 1;
+            return 0;
         }
     }
 

@@ -26,6 +26,11 @@ import java.util.WeakHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -47,11 +52,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dailyleech.com" }, urls = { "" })
 public class DailyleechCom extends PluginForHost {
     private static final String          PROTOCOL                  = "http://";
@@ -68,14 +68,16 @@ public class DailyleechCom extends PluginForHost {
     }
 
     @Override
-    public String getAGBLink() {
-        return "http://dailyleech.com/";
-    }
-
-    private Browser prepBR(final Browser br) {
+    public Browser createNewBrowserInstance() {
+        final Browser br = new Browser();
         br.setCookiesExclusive(true);
         br.setFollowRedirects(true);
         return br;
+    }
+
+    @Override
+    public String getAGBLink() {
+        return "http://dailyleech.com/";
     }
 
     @Override
@@ -111,7 +113,6 @@ public class DailyleechCom extends PluginForHost {
 
     @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
-        prepBR(this.br);
         mhm.runCheck(account, link);
         login(account, false);
         final String directurlproperty = getCachedLinkPropertyKey(account);
@@ -160,8 +161,9 @@ public class DailyleechCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Cannot download URLs without filename");
             }
             /**
-             * Okay this website is an absolute chaos: </br> We need to generate downloadlinks through a chatbox ... after adding new URLs,
-             * we need to try to find our downloadlinks by going through the chat and need to identify our file by filename! </br>
+             * Okay this website is an absolute chaos: </br>
+             * We need to generate downloadlinks through a chatbox ... after adding new URLs, we need to try to find our downloadlinks by
+             * going through the chat and need to identify our file by filename! </br>
              * Direct-downloadurls can be broken so we need to ignore the ones we know are broken to speed-up the process of finding the
              * correct one.
              */
@@ -323,7 +325,8 @@ public class DailyleechCom extends PluginForHost {
                 /* same linkID */
                 /**
                  * This extra check is necessary because in theory this website may display the submitted URL in a slightly modified version
-                 * than the original. </br> Using the linkIDs for comparison might increase our chances of finding a result.
+                 * than the original. </br>
+                 * Using the linkIDs for comparison might increase our chances of finding a result.
                  */
                 logger.info("Matched post via linkID");
             } else if (StringUtils.equals(filename, link.getName())) {
@@ -508,6 +511,7 @@ public class DailyleechCom extends PluginForHost {
             account.setType(AccountType.FREE);
             account.setMaxSimultanDownloads(ACCOUNT_MAXDLS);
             ai.setTrafficLeft(0);
+            ai.setExpired(true);
         }
         br.getPage("/hostsp/");
         final String[] hostlist = br.getRegex("domain=([^<>\"\\'/]+)\"").getColumn(0);
@@ -521,62 +525,56 @@ public class DailyleechCom extends PluginForHost {
     private void login(final Account account, final boolean force) throws Exception {
         synchronized (account) {
             br.setCookiesExclusive(true);
-            prepBR(this.br);
             loginWebsite(account, force);
         }
     }
 
     private void loginWebsite(final Account account, final boolean force) throws Exception {
-        try {
-            final Cookies cookies = account.loadCookies("");
-            /* Re-use cookies to try to avoid login-captcha! */
-            if (cookies != null) {
-                this.br.setCookies(cookies);
-                /*
-                 * Even though login is forced first check if our cookies are still valid --> If not, force login!
-                 */
-                br.getPage(PROTOCOL + this.getHost() + "/cbox/cbox.php");
-                if (isLoggedIn(br)) {
-                    logger.info("Login via cached cookies successful");
-                    account.saveCookies(br.getCookies(this.getHost()), "");
-                    return;
-                } else {
-                    logger.info("Login via cached cookies failed");
-                    br.clearCookies(null);
-                }
-            }
-            br.getPage(PROTOCOL + this.getHost() + "/cbox/login.php");
-            final Form loginform = br.getFormbyProperty("class", "omb_loginForm");
-            if (loginform == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            loginform.put("Email", Encoding.urlEncode(account.getUser()));
-            loginform.put("Password", Encoding.urlEncode(account.getPass()));
-            /* Login-Captcha seems to be always required. */
-            final String image = loginform.getRegex("(captcha_code_file\\.php\\?rand=\\d+)").getMatch(0);
-            if (image != null) {
-                final DownloadLink dummyLink = new DownloadLink(this, "Account", getHost(), "https://" + getHost(), true);
-                final String captcha = getCaptchaCode(image, dummyLink);
-                loginform.put("6_letters_code", Encoding.urlEncode(captcha));
-            }
+        final Cookies cookies = account.loadCookies("");
+        /* Re-use cookies to try to avoid login-captcha! */
+        if (cookies != null) {
+            this.br.setCookies(cookies);
             /*
-             * Sending this form will always redirect us to the login page once again. We need to refresh this once to see if we're actually
-             * logged in or not but let's check for invalid captcha status before.
+             * Even though login is forced first check if our cookies are still valid --> If not, force login!
              */
-            br.submitForm(loginform);
-            if (!isLoggedIn(br) && br.containsHTML("(?i)>\\s*The captcha code does not match")) {
-                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-            }
-            logger.info("Looks like correct login captcha has been entered -> Checking if we're logged in");
-            br.getPage("/cbox/cbox.php");
-            if (!isLoggedIn(br)) {
-                throw new AccountInvalidException();
-            } else {
+            br.getPage(PROTOCOL + this.getHost() + "/cbox/cbox.php");
+            if (isLoggedIn(br)) {
+                logger.info("Login via cached cookies successful");
                 account.saveCookies(br.getCookies(this.getHost()), "");
+                return;
+            } else {
+                logger.info("Login via cached cookies failed");
+                br.clearCookies(null);
             }
-        } catch (final PluginException e) {
-            account.clearCookies("");
-            throw e;
+        }
+        br.getPage(PROTOCOL + this.getHost() + "/cbox/login.php");
+        final Form loginform = br.getFormbyProperty("class", "omb_loginForm");
+        if (loginform == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        loginform.put("Email", Encoding.urlEncode(account.getUser()));
+        loginform.put("Password", Encoding.urlEncode(account.getPass()));
+        /* Login-Captcha seems to be always required. */
+        final String image = loginform.getRegex("(captcha_code_file\\.php\\?rand=\\d+)").getMatch(0);
+        if (image != null) {
+            final DownloadLink dummyLink = new DownloadLink(this, "Account", getHost(), "https://" + getHost(), true);
+            final String captcha = getCaptchaCode(image, dummyLink);
+            loginform.put("6_letters_code", Encoding.urlEncode(captcha));
+        }
+        /*
+         * Sending this form will always redirect us to the login page once again. We need to refresh this once to see if we're actually
+         * logged in or not but let's check for invalid captcha status before.
+         */
+        br.submitForm(loginform);
+        if (!isLoggedIn(br) && br.containsHTML("(?i)>\\s*The captcha code does not match")) {
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        }
+        logger.info("Looks like correct login captcha has been entered -> Checking if we're logged in");
+        br.getPage("/cbox/cbox.php");
+        if (!isLoggedIn(br)) {
+            throw new AccountInvalidException();
+        } else {
+            account.saveCookies(br.getCookies(br.getHost()), "");
         }
     }
 
