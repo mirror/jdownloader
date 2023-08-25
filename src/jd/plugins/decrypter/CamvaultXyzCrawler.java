@@ -17,7 +17,9 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
@@ -32,6 +34,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DecrypterRetryException;
 import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
@@ -115,13 +118,27 @@ public class CamvaultXyzCrawler extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        FilePackage fp = null;
+        boolean crawlExternalDownloadurls = false;
         if (videoTokens.length == 1) {
             /* Selfhosted content? Pass to hosterplugin. */
             logger.info("Looks like selfhosted content");
             final DownloadLink selfhostedVideo = new DownloadLink(hosterPlugin, this.getHost(), this.getHost(), param.getCryptedUrl(), true);
             CamvaultXyz.parseFileInfo(br, selfhostedVideo);
+            if (selfhostedVideo.getName() != null) {
+                fp = FilePackage.getInstance();
+                fp.setName(selfhostedVideo.getName());
+                selfhostedVideo._setFilePackage(fp);
+            }
             ret.add(selfhostedVideo);
+            distribute(selfhostedVideo);
+            if (br.containsHTML("#megaDownloadModal")) {
+                crawlExternalDownloadurls = true;
+            }
         } else {
+            crawlExternalDownloadurls = true;
+        }
+        if (crawlExternalDownloadurls) {
             /* 2023-03-24: TODO: Check if it is even still possible that an item can contain multiple/externally hosted items. */
             logger.info("Looks like externally hosted content");
             br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
@@ -136,7 +153,8 @@ public class CamvaultXyzCrawler extends PluginForDecrypt {
                 if (isRateLimitReached(br2)) {
                     throw new DecrypterRetryException(RetryReason.HOST_RATE_LIMIT);
                 }
-                final String reCaptchaSiteKey = PluginJSonUtils.getJsonValue(br2, "sitekey");
+                final Map<String, Object> entries = restoreFromString(br2.getRequest().getHtmlCode(), TypeRef.MAP);
+                final String reCaptchaSiteKey = (String) entries.get("sitekey");
                 if (!StringUtils.isEmpty(reCaptchaSiteKey)) {
                     /* Usually a reCaptchaV2 is required! */
                     logger.info("Captcha required");
@@ -147,9 +165,15 @@ public class CamvaultXyzCrawler extends PluginForDecrypt {
                 br2.getRequest().setHtmlCode(PluginJSonUtils.unescape(br2.toString()));
                 final String[] dllinks = br2.getRegex("download\\-link\"><a href=\"(https?[^<>\"]+)\"").getColumn(0);
                 for (final String dllink : dllinks) {
-                    ret.add(createDownloadlink(dllink));
+                    final DownloadLink item = createDownloadlink(dllink);
+                    if (fp != null) {
+                        item._setFilePackage(fp);
+                    }
+                    ret.add(item);
+                    distribute(item);
                 }
                 if (this.isAbort()) {
+                    logger.info("Stopping because: Aborted by user");
                     break;
                 }
             }

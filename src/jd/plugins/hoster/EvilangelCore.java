@@ -25,7 +25,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
@@ -745,7 +744,7 @@ public abstract class EvilangelCore extends PluginForHost {
                 if (br.containsHTML("(?i)>\\s*We are experiencing some problems\\!<")) {
                     throw new AccountInvalidException("Your IP is banned. Please re-connect to get a new IP to be able to log-in!");
                 }
-                final String realLoginURL = br.getURL();
+                // final String realLoginURL = br.getURL();
                 final Form login = br.getFormbyProperty("id", "loginForm");
                 if (login == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

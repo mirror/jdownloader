@@ -1516,9 +1516,18 @@ public abstract class YetiShareCore extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Wrong IP'", 5 * 60 * 1000l);
         }
         /* 2020-10-12: New YetiShare */
-        final String waittimeBetweenDownloadsStr = br.getRegex("(?i)>\\s*You must wait (\\d+) minutes? between downloads").getMatch(0);
-        if (waittimeBetweenDownloadsStr != null) {
-            ipBlockedOrAccountLimit(link, account, "Wait between downloads", Integer.parseInt(waittimeBetweenDownloadsStr) * 60 * 1001l);
+        final Regex waitBetweenDownloads = br.getRegex("(?i)>\\s*You must wait (\\d+) minutes? ((\\d+) (segundos|seconds))?[^<]*between downloads");
+        if (waitBetweenDownloads.patternFind()) {
+            /* 2023-08-25: E.g. asdocs.net is mising english and spanish */
+            final String minutesStr = waitBetweenDownloads.getMatch(0);
+            final String secondsStr = waitBetweenDownloads.getMatch(2);
+            int waitMillis = Integer.parseInt(minutesStr) * 60 * 1000;
+            if (secondsStr != null) {
+                waitMillis += Integer.parseInt(secondsStr) * 1000;
+            }
+            /* Add one extra second */
+            waitMillis += 1000;
+            ipBlockedOrAccountLimit(link, account, "Wait between downloads", waitMillis);
         }
     }
 
