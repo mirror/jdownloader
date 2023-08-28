@@ -59,7 +59,7 @@ public class GldSlTo extends antiDDoSForDecrypt {
     }
 
     protected List<String> getDeadDomains() {
-        return Arrays.asList(new String[] { "saugen.to", "laden.to", "blockbuster.to" });
+        return Arrays.asList(new String[] { "saugen.to", "laden.to", "blockbuster.to", "goldesel.sx" });
     }
 
     public static String[] getAnnotationNames() {
