@@ -1470,6 +1470,8 @@ public class XHamsterCom extends PluginForHost {
         final String acceptLanguage = "en-gb;q=0.7,en;q=0.3";
         br.setAcceptLanguage(acceptLanguage);
         br.getHeaders().put("Accept-Language", acceptLanguage);
+        /* 2023-08-29: They've started to block older user agents. */
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36");
         br.setAllowedResponseCodes(new int[] { 400, 410, 423, 452 });
     }
 
