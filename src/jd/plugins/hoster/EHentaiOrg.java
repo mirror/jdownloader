@@ -825,7 +825,7 @@ public class EHentaiOrg extends PluginForHost {
                         final String title;
                         title = "E-Hentai - Information about image points usage for downloads of original images";
                         message += "Hello " + account.getUser();
-                        message += "\r\nYou prefer to download original quality images from this website.";
+                        message += "\r\nAccording to your e-hentai settings, you prefer to download original quality images from this website.";
                         message += "\r\nDownloading original images counts towards your 'image limits'.";
                         if (creditsLeftInfo != null) {
                             message += "\r\nCurrently used image points: " + creditsLeftInfo[0] + " of " + creditsLeftInfo[1];

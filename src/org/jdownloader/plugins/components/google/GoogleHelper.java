@@ -23,7 +23,6 @@ import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.InputDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
-import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.os.CrossSystem;
@@ -474,7 +473,7 @@ public class GoogleHelper {
     private final String PROPERTY_HAS_SHOWN_ADDITIONAL_COOKIE_LOGIN_INFORMATION = "has_shown_additional_cookie_login_information";
 
     private void displayAdditionalCookieLoginInformation(final Account account) {
-        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && account.getBooleanProperty(PROPERTY_HAS_SHOWN_ADDITIONAL_COOKIE_LOGIN_INFORMATION, false) == false) {
+        if (account.getBooleanProperty(PROPERTY_HAS_SHOWN_ADDITIONAL_COOKIE_LOGIN_INFORMATION, false) == false) {
             final Thread thread = new Thread() {
                 public void run() {
                     try {

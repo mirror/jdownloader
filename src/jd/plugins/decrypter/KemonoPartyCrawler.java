@@ -222,12 +222,14 @@ public class KemonoPartyCrawler extends PluginForDecrypt {
         final String[] directURLs = br.getRegex("\"((https?://[^/]+)?/data/[^\"]+)").getColumn(0);
         if (directURLs != null && directURLs.length > 0) {
             /* Remove duplicates from results so our index will be correct down below. */
+            final ArrayList<String> videoItemsToSkip = new ArrayList<String>();
             final HashSet<String> dups = new HashSet<String>();
             int index = 0;
+            final ArrayList<DownloadLink> videoItemsUnfiltered = new ArrayList<DownloadLink>();
             for (final String directURL : directURLs) {
                 final String urlFull = br.getURL(directURL).toString();
                 if (dups.add(urlFull)) {
-                    final DownloadLink media = this.createDownloadlink("directhttp://" + urlFull);
+                    final DownloadLink media = this.createDownloadlink(DirectHTTP.createURLForThisPlugin(urlFull));
                     media.setProperty(KemonoParty.PROPERTY_POST_CONTENT_INDEX, index);
                     final UrlQuery query = UrlQuery.parse(urlFull);
                     String betterFilename = Encoding.htmlDecode(query.get("f"));
@@ -239,10 +241,31 @@ public class KemonoPartyCrawler extends PluginForDecrypt {
                         betterFilename = Encoding.htmlDecode(betterFilename);
                         media.setFinalFileName(betterFilename);
                         media.setProperty(DirectHTTP.FIXNAME, betterFilename);
+                        final String internalVideoFilename = new Regex(urlFull, "([a-f0-9]{64}\\.m4v)").getMatch(0);
+                        if (internalVideoFilename != null) {
+                            videoItemsToSkip.add(internalVideoFilename);
+                        }
                     }
-                    kemonoResults.add(media);
+                    videoItemsUnfiltered.add(media);
                     index++;
                 }
+            }
+            if (videoItemsToSkip.size() > 0) {
+                logger.info("Filtering duplicated video items: " + videoItemsUnfiltered);
+                for (final DownloadLink link : videoItemsUnfiltered) {
+                    boolean filter = false;
+                    for (final String videoItemToSkip : videoItemsToSkip) {
+                        if (link.getPluginPatternMatcher().endsWith(videoItemToSkip)) {
+                            filter = true;
+                            break;
+                        }
+                    }
+                    if (!filter) {
+                        kemonoResults.add(link);
+                    }
+                }
+            } else {
+                kemonoResults.addAll(videoItemsUnfiltered);
             }
         }
         final String postTextContent = br.getRegex("<div\\s*class\\s*=\\s*\"post__content\"[^>]*>(.+)</div>\\s*<footer").getMatch(0);

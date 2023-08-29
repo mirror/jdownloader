@@ -82,14 +82,10 @@ public class ShareplaceOrg extends YetiShareCore {
 
     @Override
     protected String getContentURL(final DownloadLink link) {
-        final String url = super.getContentURL(link);
-        if (url == null) {
-            return null;
-        }
-        if (isOldURL(url)) {
-            return url.replaceFirst("Download", "");
+        if (isOldURL(link.getPluginPatternMatcher())) {
+            return link.getPluginPatternMatcher().replaceFirst("Download", "");
         } else {
-            return url;
+            return super.getContentURL(link);
         }
     }
 
@@ -141,8 +137,9 @@ public class ShareplaceOrg extends YetiShareCore {
     }
 
     public AvailableStatus requestFileInformationOLD(final DownloadLink link) throws Exception {
+        final String fid = this.getFID(link);
         if (!link.isNameSet()) {
-            link.setName(this.getFID(link));
+            link.setName(fid);
         }
         setBrowserExclusive();
         prepBrowserWebsite(this.br);
@@ -150,7 +147,7 @@ public class ShareplaceOrg extends YetiShareCore {
         br.setCustomCharset("UTF-8");
         br.setFollowRedirects(true);
         getPage(this.getContentURL(link));
-        if (!this.br.getURL().contains(this.getFID(link))) {
+        if (!this.br.getURL().contains(fid)) {
             /* E.g. redirect to mainpage or errorpage. */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }

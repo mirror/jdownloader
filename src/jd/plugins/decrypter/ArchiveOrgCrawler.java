@@ -27,7 +27,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.DebugMode;
 import org.appwork.utils.Regex;
@@ -78,7 +77,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         }
     }
 
-    private final String PATTERN_DOWNLOAD = "(?i)https?://[^/]+/download/(.+)";
+    private final String PATTERN_DOWNLOAD = "(?i)https?://[^/]+/download/([\\w\\-]+).*";
     private final String PATTERN_SEARCH   = "(?i)https?://[^/]+/search\\?query=.+";
     final Set<String>    dups             = new HashSet<String>();
     private ArchiveOrg   hostPlugin       = null;

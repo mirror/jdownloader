@@ -329,6 +329,7 @@ public class XunniupanCom extends PluginForHost {
             this.dl.startDownload();
         } catch (final Exception e) {
             if (storedDirecturl != null) {
+                logger.log(e);
                 link.removeProperty(directlinkproperty);
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Stored directurl expired");
             } else {
