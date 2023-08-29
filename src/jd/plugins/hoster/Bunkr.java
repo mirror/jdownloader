@@ -368,6 +368,9 @@ public class Bunkr extends PluginForHost {
                         directurl = directurlForFileWithoutExtOrUnknownExt;
                     }
                 }
+                if (directurl == null) {
+                    directurl = br.getRegex("class=\"text-white hover:[^\"]*justify-center rounded[^\"]*\" href=\"(https?://[^\"]+)\">").getMatch(0);
+                }
             }
         }
         String filesize = br.getRegex("Download\\s*(\\d+[^<]+)</a>").getMatch(0);
@@ -405,23 +408,23 @@ public class Bunkr extends PluginForHost {
                 /* No fileID in link while it should be given */
                 correctedFilename = filename;
             }
+            final String filenameWithMinusReplacement = correctedFilename.replace("-", " ");
             if (filenameFromAlbum != null) {
                 /* We know they replace spaces with minus but if the original filename already contained minus that would be a mistake. */
                 if (!correctedFilename.equals(filenameFromAlbum)) {
-                    correctedFilename = correctedFilename.replace("-", " ");
+                    correctedFilename = filenameWithMinusReplacement;
                 }
-                if (correctedFilename.equals(filenameFromAlbum)) {
+                if (correctedFilename.equals(filenameFromAlbum) && !filenameFromAlbum.contains("-")) {
                     /*
                      * We were able to re-create the desired filename without the need of the one we stored -> Remove that property to save
                      * memory.
                      */
                     link.removeProperty(PROPERTY_FILENAME_FROM_ALBUM);
-                } else {
-                    correctedFilename = filenameFromAlbum;
                 }
+                correctedFilename = filenameFromAlbum;
             } else {
                 /* No reference "original filename" given so let's do the default replacements. */
-                correctedFilename = correctedFilename.replace("-", " ");
+                correctedFilename = filenameWithMinusReplacement;
             }
         } else {
             /* Do not touch given filename */
@@ -480,7 +483,7 @@ public class Bunkr extends PluginForHost {
             } else {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File broken or temporarily unavailable", 2 * 60 * 60 * 1000l);
             }
-        } else if (con.getURL().getPath().equalsIgnoreCase("/maintenance-vid.mp4")) {
+        } else if (con.getURL().getPath().equalsIgnoreCase("/maintenance-vid.mp4") || con.getURL().getPath().equalsIgnoreCase("/v/maintenance-kek-bunkr.webm")) {
             con.disconnect();
             /* https://bnkr.b-cdn.net/maintenance-vid.mp4 */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Media temporarily not available due to ongoing server maintenance.", 2 * 60 * 60 * 1000l);
