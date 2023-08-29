@@ -301,6 +301,11 @@ public class TiktokComCrawler extends PluginForDecrypt {
                         ret.add(audio);
                     }
                 }
+                if (!StringUtils.isEmpty(videoDllink)) {
+                    video.setProperty(TiktokCom.PROPERTY_DIRECTURL_WEBSITE, videoDllink);
+                }
+                video.setProperty(TiktokCom.PROPERTY_TYPE, TiktokCom.TYPE_VIDEO);
+                ret.add(video);
             }
         } else {
             /* Rev. 40928 and earlier */
@@ -321,45 +326,109 @@ public class TiktokComCrawler extends PluginForDecrypt {
                 if (itemModule == null || itemModule.isEmpty()) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                final Map<String, Object> videoInfo = (Map<String, Object>) itemModule.entrySet().iterator().next().getValue();
+                final Map<String, Object> aweme_detail = (Map<String, Object>) itemModule.entrySet().iterator().next().getValue();
                 description = (String) entries.get("desc");
-                final Map<String, Object> downloadInfo = (Map<String, Object>) videoInfo.get("video");
-                videoDllink = (String) downloadInfo.get("downloadAddr");
-                if (StringUtils.isEmpty(videoDllink)) {
-                    videoDllink = (String) downloadInfo.get("playAddr");
-                }
-                username = videoInfo.get("author").toString();
-                final String createDateTimestampStr = videoInfo.get("createTime").toString();
+                final Map<String, Object> videoDownloadInfo = (Map<String, Object>) aweme_detail.get("video");
+                final boolean isVideo = !StringUtils.isEmpty(videoDownloadInfo.get("id").toString());
+                username = aweme_detail.get("author").toString();
+                final String createDateTimestampStr = aweme_detail.get("createTime").toString();
                 if (!StringUtils.isEmpty(createDateTimestampStr)) {
                     dateFormatted = TiktokCom.convertDateFormat(createDateTimestampStr);
                 }
-                final Map<String, Object> stats = (Map<String, Object>) videoInfo.get("stats");
+                final Map<String, Object> stats = (Map<String, Object>) aweme_detail.get("stats");
                 diggCountO = stats.get("diggCount");
                 shareCountO = stats.get("shareCount");
                 playCountO = stats.get("playCount");
                 commentCountO = stats.get("commentCount");
-                if (videoDllink == null) {
-                    /* Fallback */
-                    videoDllink = TiktokCom.generateDownloadurlOld(br, contentID);
-                    video.setProperty(TiktokCom.PROPERTY_ALLOW_HEAD_REQUEST, true);
+                boolean crawlAudio = cfg.isVideoCrawlerCrawlAudioSeparately();
+                final Map<String, Object> music = (Map<String, Object>) aweme_detail.get("music");
+                final Map<String, Object> imagePost = (Map<String, Object>) aweme_detail.get("imagePost");
+                if (isVideo) {
+                    videoDllink = (String) videoDownloadInfo.get("downloadAddr");
+                    if (StringUtils.isEmpty(videoDllink)) {
+                        videoDllink = (String) videoDownloadInfo.get("playAddr");
+                    }
+                    if (videoDllink == null) {
+                        /* Fallback */
+                        videoDllink = TiktokCom.generateDownloadurlOld(br, contentID);
+                        video.setProperty(TiktokCom.PROPERTY_ALLOW_HEAD_REQUEST, true);
+                    } else {
+                        video.setProperty(TiktokCom.PROPERTY_ALLOW_HEAD_REQUEST, false);
+                    }
+                    if (!StringUtils.isEmpty(videoDllink)) {
+                        video.setProperty(TiktokCom.PROPERTY_DIRECTURL_WEBSITE, videoDllink);
+                    }
+                    video.setProperty(TiktokCom.PROPERTY_TYPE, TiktokCom.TYPE_VIDEO);
+                    ret.add(video);
+                } else if (imagePost != null) {
+                    /* Image post */
+                    final String preferredImageFileExtension;
+                    if (cfg.getPreferredImageFormat() == ImageFormat.JPEG) {
+                        preferredImageFileExtension = ".jpeg";
+                    } else {
+                        preferredImageFileExtension = ".webp";
+                    }
+                    final List<Map<String, Object>> images = (List<Map<String, Object>>) imagePost.get("images");
+                    int imageIndex = 0;
+                    for (final Map<String, Object> imageMap : images) {
+                        final Map<String, Object> imageURL = (Map<String, Object>) imageMap.get("imageURL");
+                        final List<String> urlList = (List<String>) imageURL.get("urlList");
+                        String preferredImageURL = null;
+                        for (final String image_url : urlList) {
+                            final String thisExt = Plugin.getFileNameExtensionFromURL(image_url);
+                            if (StringUtils.equalsIgnoreCase(thisExt, preferredImageFileExtension)) {
+                                preferredImageURL = image_url;
+                                break;
+                            }
+                        }
+                        final String chosenImageURL;
+                        if (StringUtils.isNotEmpty(preferredImageURL)) {
+                            chosenImageURL = preferredImageURL;
+                        } else {
+                            /* Fallback */
+                            chosenImageURL = urlList.get(0);
+                            logger.info("Failed to find preferred image format -> Fallback: " + chosenImageURL);
+                        }
+                        final DownloadLink picture = new DownloadLink(hostPlg, this.getHost(), url);
+                        picture.setProperty(TiktokCom.PROPERTY_ALLOW_HEAD_REQUEST, false);
+                        picture.setProperty(TiktokCom.PROPERTY_DIRECTURL_WEBSITE, chosenImageURL);
+                        picture.setProperty(TiktokCom.PROPERTY_TYPE, TiktokCom.TYPE_PICTURE);
+                        picture.setProperty(TiktokCom.PROPERTY_INDEX, imageIndex);
+                        picture.setProperty(TiktokCom.PROPERTY_INDEX_MAX, images.size());
+                        ret.add(picture);
+                        imageIndex++;
+                    }
+                    /* Force crawl audio as audio is part of that "image slideshow" on tiktok website. */
+                    crawlAudio = true;
                 } else {
-                    video.setProperty(TiktokCom.PROPERTY_ALLOW_HEAD_REQUEST, false);
+                    crawlAudio = true;
+                }
+                if (crawlAudio && music != null) {
+                    final String musicURL = music.get("playUrl").toString();
+                    if (StringUtils.isNotEmpty(musicURL)) {
+                        String ext = Plugin.getFileNameExtensionFromURL(musicURL);
+                        if (ext == null) {
+                            /* Fallback */
+                            ext = ".mp3";
+                        }
+                        final DownloadLink audio = new DownloadLink(hostPlg, this.getHost(), url);
+                        audio.setProperty(TiktokCom.PROPERTY_DIRECTURL_WEBSITE, musicURL);
+                        audio.setProperty(TiktokCom.PROPERTY_TYPE, TiktokCom.TYPE_AUDIO);
+                        ret.add(audio);
+                    }
                 }
             } catch (final Exception e) {
                 if (offlineIfWebsiteHandlingFails) {
+                    logger.log(e);
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 } else {
                     throw e;
                 }
             }
         }
-        if (!StringUtils.isEmpty(videoDllink)) {
-            video.setProperty(TiktokCom.PROPERTY_DIRECTURL_WEBSITE, videoDllink);
-        }
-        video.setProperty(TiktokCom.PROPERTY_TYPE, TiktokCom.TYPE_VIDEO);
-        ret.add(video);
-        /* Add additional properties */
+        /* Set additional properties and find packagename */
         final String dateFromHtml = TiktokCom.getAndSetDateFromWebsite(this, br, ret.get(0));
+        String packagename = null;
         for (final DownloadLink result : ret) {
             result.setAvailable(true);
             result.setProperty(TiktokCom.PROPERTY_ALLOW_HEAD_REQUEST, true);
@@ -388,6 +457,16 @@ public class TiktokComCrawler extends PluginForDecrypt {
             if (dateFromHtml != null) {
                 result.setProperty(TiktokCom.PROPERTY_DATE_FROM_WEBSITE, dateFromHtml);
             }
+            if (packagename == null && (result.getStringProperty(TiktokCom.PROPERTY_TYPE).equals(TiktokCom.TYPE_AUDIO) || result.getStringProperty(TiktokCom.PROPERTY_TYPE).equals(TiktokCom.TYPE_VIDEO))) {
+                final String filename = result.getName();
+                packagename = filename.substring(0, filename.lastIndexOf("."));
+            }
+        }
+        if (packagename != null) {
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName(packagename);
+            fp.setCleanupPackageName(false);
+            fp.addLinks(ret);
         }
         return ret;
     }
