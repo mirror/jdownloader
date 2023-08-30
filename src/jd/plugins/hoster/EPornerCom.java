@@ -91,7 +91,7 @@ public class EPornerCom extends PluginForHost {
     }
 
     private final Pattern      PATTERN_VIDEO      = Pattern.compile("(?i)https?://[^/]+/(?:hd\\-porn/|video-)(\\w+)(/([^/]+))?");
-    private final Pattern      PATTERN_PHOTO      = Pattern.compile("(?i)https?://[^/]+/photo/([A-Za-z0-9]+)(/[\\w\\-]+/)?");
+    private final Pattern      PATTERN_PHOTO      = Pattern.compile("(?i)https?://[^/]+/photo/([A-Za-z0-9]+)(/([\\w\\-]+)/)?");
     private String             vq                 = null;
     public static final String PROPERTY_DIRECTURL = "directurl";
 
@@ -136,6 +136,7 @@ public class EPornerCom extends PluginForHost {
         } else {
             extDefault = ".jpg";
             isVideo = false;
+            titleByURL = new Regex(link.getPluginPatternMatcher(), PATTERN_PHOTO).getMatch(2);
         }
         String fallbackFilename;
         if (titleByURL != null) {

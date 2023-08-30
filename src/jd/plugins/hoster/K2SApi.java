@@ -1,11 +1,9 @@
 package jd.plugins.hoster;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -15,10 +13,6 @@ import java.util.Map.Entry;
 import java.util.WeakHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.regex.Pattern;
-
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
 
 import org.appwork.storage.JSonMapperException;
 import org.appwork.storage.JSonStorage;
@@ -26,11 +20,9 @@ import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.RFC2047;
 import org.appwork.utils.logging2.LogInterface;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v1.Recaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.components.config.Keep2shareConfig;
 import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.proxy.AbstractProxySelectorImpl;
@@ -40,7 +32,6 @@ import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
-import jd.http.requests.PostRequest;
 import jd.nutils.Formatter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -84,6 +75,20 @@ public abstract class K2SApi extends PluginForHost {
     }
 
     @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = new Browser();
+        br.addAllowedResponseCodes(new int[] { 429, 503, 520, 522 });
+        br.getHeaders().put("User-Agent", "JDownloader." + getVersion());
+        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
+        br.getHeaders().put("Accept-Charset", null);
+        // prepBr.getHeaders().put("Cache-Control", null);
+        br.getHeaders().put("Pragma", null);
+        br.setConnectTimeout(90 * 1000);
+        br.setReadTimeout(90 * 1000);
+        return br;
+    }
+
+    @Override
     public String getAGBLink() {
         return "https://" + this.getHost() + "/page/terms.html";
     }
@@ -91,7 +96,7 @@ public abstract class K2SApi extends PluginForHost {
     @Override
     public void correctDownloadLink(final DownloadLink link) {
         /* Respect users protocol choosing. */
-        link.setPluginPatternMatcher(link.getPluginPatternMatcher().replaceFirst("^https?://", getProtocol()));
+        link.setPluginPatternMatcher(link.getPluginPatternMatcher().replaceFirst("(?i)^https?://", getProtocol()));
     }
 
     protected int getMaxChunks(final Account account) {
@@ -298,10 +303,6 @@ public abstract class K2SApi extends PluginForHost {
         return new Regex(link, this.getSupportedLinks()).getMatch(0);
     }
 
-    private static HashMap<String, String> antiDDoSCookies = new HashMap<String, String>();
-    // private static AtomicReference<String> agent = new AtomicReference<String>(null);
-    private boolean                        prepBrSet       = false;
-
     @Override
     public void init() {
         try {
@@ -322,33 +323,7 @@ public abstract class K2SApi extends PluginForHost {
         }
     }
 
-    protected Browser prepBrowser(final Browser br) {
-        // define custom browser headers and language settings.
-        // required for native cloudflare support, without the need to repeat requests.
-        br.addAllowedResponseCodes(new int[] { 429, 503, 520, 522 });
-        synchronized (antiDDoSCookies) {
-            if (!antiDDoSCookies.isEmpty()) {
-                for (final Map.Entry<String, String> cookieEntry : antiDDoSCookies.entrySet()) {
-                    final String key = cookieEntry.getKey();
-                    final String value = cookieEntry.getValue();
-                    br.setCookie(this.getHost(), key, value);
-                }
-            }
-        }
-        br.getHeaders().put("User-Agent", "JDownloader." + getVersion());
-        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
-        br.getHeaders().put("Accept-Charset", null);
-        // prepBr.getHeaders().put("Cache-Control", null);
-        br.getHeaders().put("Pragma", null);
-        br.setConnectTimeout(90 * 1000);
-        br.setReadTimeout(90 * 1000);
-        prepBrSet = true;
-        return br;
-    }
-
     private Browser prepAPI(final Browser br) {
-        // prep site variables, this links back to prepADB from Override
-        prepBrowser(br);
         // api && dl server response codes
         br.addAllowedResponseCodes(new int[] { 400, 401, 403, 406 });
         return br;
@@ -360,7 +335,7 @@ public abstract class K2SApi extends PluginForHost {
 
     public boolean checkLinks(final DownloadLink[] urls) {
         // required to get overrides to work
-        final Browser br = prepAPI(new Browser());
+        final Browser br = prepAPI(createNewBrowserInstance());
         try {
             final List<DownloadLink> links = new ArrayList<DownloadLink>();
             int index = 0;
@@ -624,33 +599,16 @@ public abstract class K2SApi extends PluginForHost {
         /* Check link */
         reqFileInformation(link);
         final String fuid = getFUID(link);
-        String dllink = this.getStoredDirecturl(link, account);
-        // required to get overrides to work
-        prepAPI(br);
-        // because opening the link to test it, uses up the availability, then reopening it again = too many requests too quickly issue.
-        if (!StringUtils.isEmpty(dllink)) {
-            final Browser obr = br.cloneBrowser();
-            logger.info("Reusing cached finallink!");
-            this.dl = new jd.plugins.BrowserAdapter().openDownload(obr, link, dllink, this.isResumeable(link, account), this.getMaxChunks(account));
-            if (!isValidDownloadConnection(dl.getConnection())) {
-                logger.warning("The final dllink seems not to be a file!");
-                obr.followConnection(true);
-                /*
-                 * 2019-11-26: Outdated downloadurls will return precise errors (only text) e.g. "This link assigned with other IP address"
-                 * or
-                 * "Download link is outdated, invalid or assigned to another IP address.If you see this error, most likely you will need to get new download link"
-                 */
-                handleGeneralServerErrors(obr, dl, account, link);
-                // we now want to restore!
-                br = obr;
-                dllink = null;
-                this.dl = null;
-            }
-        }
-        final boolean isFree = this.isNoAccountOrFreeAccount(account);
-        /* if above has failed, dllink will be null */
-        if (StringUtils.isEmpty(dllink)) {
-            logger.info("Trying to generate new directurl");
+        final String storedDirecturl = this.getStoredDirecturl(link, account);
+        final String dllink;
+        boolean resumable = this.isResumeable(link, account);
+        int maxChunks = this.getMaxChunks(account);
+        if (!StringUtils.isEmpty(storedDirecturl)) {
+            logger.info("Trying to re-use stored directurl: " + storedDirecturl);
+            dllink = storedDirecturl;
+        } else {
+            logger.info("Generating new directurl");
+            final boolean isFree = this.isNoAccountOrFreeAccount(account);
             if ("premium".equalsIgnoreCase(link.getStringProperty(PROPERTY_ACCESS)) && isFree) {
                 // download not possible
                 premiumDownloadRestriction(getErrorMessageForUser(3));
@@ -742,8 +700,6 @@ public abstract class K2SApi extends PluginForHost {
             }
             Map<String, Object> geturlResponse = postPageRaw(this.br, "/geturl", postdata, account, link);
             final String free_download_key = (String) geturlResponse.get("free_download_key");
-            boolean resumable = this.isResumeable(link, account);
-            int maxChunks = this.getMaxChunks(account);
             if (!StringUtils.isEmpty(free_download_key)) {
                 /* Free and free-account download */
                 /*
@@ -800,22 +756,29 @@ public abstract class K2SApi extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             logger.info("dllink = " + dllink);
-            /*
-             * E.g. free = 51200, with correct Referer = 204800 --> Normal free speed: 30-50 KB/s | Free Speed with special Referer: 150-200
-             * KB/s
-             */
-            final String rate_limitStr = new Regex(dllink, "rate_limit=(\\d+)").getMatch(0);
-            if (rate_limitStr != null) {
-                /* 0 = unlimited/premium */
-                logger.info("Current speedlimit according to final downloadurl: " + rate_limitStr);
-            }
             this.saveFreeLimit(account, currentIP, System.currentTimeMillis());
+        }
+        /*
+         * E.g. free = 51200, with correct Referer = 204800 --> Normal free speed: 30-50 KB/s | Free Speed with special Referer: 150-200
+         * KB/s
+         */
+        final String rate_limitStr = new Regex(dllink, "(?i)rate_limit=(\\d+)").getMatch(0);
+        /* 0 = unlimited/premium */
+        logger.info("Current speedlimit according to final downloadurl: " + rate_limitStr);
+        try {
             dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resumable, maxChunks);
             if (!isValidDownloadConnection(dl.getConnection())) {
                 logger.warning("The final dllink seems not to be a file!");
                 br.followConnection(true);
                 handleGeneralServerErrors(br, dl, account, link);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+        } catch (final Exception e) {
+            if (storedDirecturl != null) {
+                link.removeProperty(this.getDirectLinkProperty(account));
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Stored directurl expired");
+            } else {
+                throw e;
             }
         }
         // add download slot
@@ -908,50 +871,6 @@ public abstract class K2SApi extends PluginForHost {
         }
     }
 
-    public Browser newWebBrowser(boolean followRedirects) {
-        final Browser nbr = new Browser() {
-            @Override
-            public void updateCookies(Request request) {
-                super.updateCookies(request);
-                // sync cookies between domains!
-                // just not for api requests
-                if (request.getURL().getPath().contains("/api/v2")) {
-                    return;
-                }
-                final String host = Browser.getHost(request.getUrl());
-                // todo: test which reference this is.
-                final Cookies cookies = request.getCookies();
-                // also remove cloudflare cookies, each domain gets its own instance (same as browser)
-                {
-                    final Cookie cfuid = cookies.get("__cfduid");
-                    if (cfuid != null) {
-                        cookies.remove(cfuid);
-                    }
-                    final Cookie cfclearance = cookies.get("cf_clearance");
-                    if (cfclearance != null) {
-                        cookies.remove(cfclearance);
-                    }
-                }
-                String[] siteSupportedNames = siteSupportedNames();
-                if (siteSupportedNames() == null && request != null) {
-                    siteSupportedNames = new String[] { getHost() };
-                } else {
-                    siteSupportedNames = new String[0];
-                }
-                for (final String domain : siteSupportedNames) {
-                    if (domain.equals(host)) {
-                        continue;
-                    }
-                    for (Cookie c : this.getCookies(host).getCookies()) {
-                        this.setCookie(domain, c.getKey(), c.getValue());
-                    }
-                }
-            }
-        };
-        nbr.setFollowRedirects(followRedirects);
-        return nbr;
-    }
-
     protected static Object REQUESTLOCK = new Object();
 
     public Map<String, Object> postPageRaw(final Browser ibr, String url, final Map<String, Object> postdata, final Account account) throws Exception {
@@ -979,7 +898,6 @@ public abstract class K2SApi extends PluginForHost {
             }
             final URLConnectionAdapter con = ibr.openPostConnection(url, JSonStorage.serializeToJson(postdata));
             readConnection(con, ibr);
-            antiDDoS(ibr);
             /* Only handle captchas on login page. */
             CAPTCHA loginCaptcha = null;
             final String status = PluginJSonUtils.getJsonValue(ibr, "status");
@@ -1001,7 +919,7 @@ public abstract class K2SApi extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                 }
                 // we can assume that the previous user:pass is wrong, prompt user for new one!
-                final Browser cbr = new Browser();
+                final Browser cbr = createNewBrowserInstance();
                 if (CAPTCHA.REQUESTCAPTCHA.equals(loginCaptcha)) {
                     final Map<String, Object> requestcaptcha = postPageRaw(cbr, "/requestcaptcha", new HashMap<String, Object>(), account, link);
                     final String challenge = (String) requestcaptcha.get("challenge");
@@ -1149,7 +1067,7 @@ public abstract class K2SApi extends PluginForHost {
             }
             logger.info("Performing full login");
             // we don't want to pollute this.br
-            final Browser auth = prepBrowser(new Browser());
+            final Browser auth = createNewBrowserInstance();
             final HashMap<String, Object> loginJson = new HashMap<String, Object>();
             loginJson.put("username", account.getUser());
             loginJson.put("password", account.getPass());
@@ -1721,9 +1639,7 @@ public abstract class K2SApi extends PluginForHost {
     private AvailableStatus reqFileInformation(final DownloadLink link) throws Exception {
         final boolean checked = checkLinks(new DownloadLink[] { link });
         // we can't throw exception in checklinks! This is needed to prevent multiple captcha events!
-        if (!checked && hasAntiddosCaptchaRequirement()) {
-            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        } else if (!checked || !link.isAvailabilityStatusChecked()) {
+        if (!checked || !link.isAvailabilityStatusChecked()) {
             link.setAvailableStatus(AvailableStatus.UNCHECKABLE);
         } else if (!link.isAvailable()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -1900,9 +1816,6 @@ public abstract class K2SApi extends PluginForHost {
         if (page == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (!prepBrSet) {
-            prepBrowser(ibr);
-        }
         URLConnectionAdapter con = null;
         try {
             con = ibr.openGetConnection(page);
@@ -1913,7 +1826,6 @@ public abstract class K2SApi extends PluginForHost {
             } catch (Throwable e) {
             }
         }
-        antiDDoS(ibr);
     }
 
     /**
@@ -1930,9 +1842,6 @@ public abstract class K2SApi extends PluginForHost {
         if (page == null || postData == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (!prepBrSet) {
-            prepBrowser(ibr);
-        }
         final Request request = ibr.createPostRequest(page, postData);
         request.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
         URLConnectionAdapter con = null;
@@ -1945,7 +1854,6 @@ public abstract class K2SApi extends PluginForHost {
             } catch (Throwable e) {
             }
         }
-        antiDDoS(ibr);
     }
 
     /**
@@ -1961,9 +1869,6 @@ public abstract class K2SApi extends PluginForHost {
     public void sendForm(final Browser ibr, final Form form) throws Exception {
         if (form == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        if (!prepBrSet) {
-            prepBrowser(ibr);
         }
         boolean setContentType = false;
         if (Form.MethodType.POST.equals(form.getMethod())) {
@@ -1987,7 +1892,6 @@ public abstract class K2SApi extends PluginForHost {
             } catch (Throwable e) {
             }
         }
-        antiDDoS(ibr);
     }
 
     /**
@@ -2001,9 +1905,6 @@ public abstract class K2SApi extends PluginForHost {
     }
 
     public void sendRequest(final Browser ibr, final Request request) throws Exception {
-        if (!prepBrSet) {
-            prepBrowser(ibr);
-        }
         URLConnectionAdapter con = null;
         try {
             con = ibr.openRequestConnection(request);
@@ -2014,7 +1915,6 @@ public abstract class K2SApi extends PluginForHost {
             } catch (Throwable e) {
             }
         }
-        antiDDoS(ibr);
     }
 
     /**
@@ -2027,23 +1927,6 @@ public abstract class K2SApi extends PluginForHost {
         sendRequest(br, request);
     }
 
-    private int     a_responseCode429    = 0;
-    private int     a_responseCode5xx    = 0;
-    private boolean a_captchaRequirement = false;
-
-    protected final boolean hasAntiddosCaptchaRequirement() {
-        return a_captchaRequirement;
-    }
-
-    protected final AtomicInteger antiDDosCaptcha = new AtomicInteger(0);
-
-    @Override
-    public void setHasCaptcha(DownloadLink link, Account acc, Boolean hasCaptcha) {
-        if (antiDDosCaptcha.get() == 0) {
-            super.setHasCaptcha(link, acc, hasCaptcha);
-        }
-    }
-
     @Override
     public boolean hasCaptcha(final DownloadLink link, final jd.plugins.Account acc) {
         if (acc == null || acc.getType() == AccountType.FREE) {
@@ -2053,291 +1936,6 @@ public abstract class K2SApi extends PluginForHost {
             /* Only sometimes required during login */
             return false;
         }
-    }
-
-    /**
-     * Performs Cloudflare and Incapsula requirements.<br />
-     * Auto fill out the required fields and updates antiDDoSCookies session.<br />
-     * Always called after Browser Request!
-     *
-     * @version 0.03
-     * @author raztoki
-     **/
-    private void antiDDoS(final Browser ibr) throws Exception {
-        if (ibr == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        final HashMap<String, String> cookies = new HashMap<String, String>();
-        if (ibr.getHttpConnection() != null) {
-            final int responseCode = ibr.getHttpConnection().getResponseCode();
-            // if (requestHeadersHasKeyNValueContains(ibr, "server", "cloudflare-nginx")) {
-            if (containsCloudflareCookies(ibr)) {
-                final Form cloudflareFormt = getCloudflareChallengeForm(ibr);
-                if (responseCode == 403 && cloudflareFormt != null) {
-                    a_captchaRequirement = true;
-                    // recapthcha v2
-                    if (CaptchaHelperHostPluginRecaptchaV2.containsRecaptchaV2Class(cloudflareFormt)) {
-                        antiDDosCaptcha.incrementAndGet();
-                        try {
-                            final DownloadLink dllink = new DownloadLink(null, (this.getDownloadLink() != null ? this.getDownloadLink().getName() + " :: " : "") + "antiDDoS Provider 'Clouldflare' requires Captcha", this.getHost(), "http://" + this.getHost(), true);
-                            this.setDownloadLink(dllink);
-                            final Form cf = cloudflareFormt;
-                            final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, ibr) {
-                                @Override
-                                public String getSiteKey() {
-                                    return getSiteKey(cf.getHtmlCode());
-                                }
-
-                                @Override
-                                public String getSecureToken() {
-                                    return getSecureToken(cf.getHtmlCode());
-                                }
-                            }.getToken();
-                            cloudflareFormt.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-                        } finally {
-                            antiDDosCaptcha.decrementAndGet();
-                        }
-                    } else {
-                        // recapthca v1
-                        if (cloudflareFormt.hasInputFieldByName("recaptcha_response_field")) {
-                            // they seem to add multiple input fields which is most likely meant to be corrected by js ?
-                            // we will manually remove all those
-                            while (cloudflareFormt.hasInputFieldByName("recaptcha_response_field")) {
-                                cloudflareFormt.remove("recaptcha_response_field");
-                            }
-                            while (cloudflareFormt.hasInputFieldByName("recaptcha_challenge_field")) {
-                                cloudflareFormt.remove("recaptcha_challenge_field");
-                            }
-                            // this one is null, needs to be ""
-                            if (cloudflareFormt.hasInputFieldByName("message")) {
-                                cloudflareFormt.remove("message");
-                                cloudflareFormt.put("messsage", "\"\"");
-                            }
-                            // recaptcha bullshit,
-                            String apiKey = cloudflareFormt.getRegex("/recaptcha/api/(?:challenge|noscript)\\?k=([A-Za-z0-9%_\\+\\- ]+)").getMatch(0);
-                            if (apiKey == null) {
-                                apiKey = ibr.getRegex("/recaptcha/api/(?:challenge|noscript)\\?k=([A-Za-z0-9%_\\+\\- ]+)").getMatch(0);
-                                if (apiKey == null) {
-                                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                                }
-                            }
-                            final DownloadLink dllink = new DownloadLink(null, (this.getDownloadLink() != null ? this.getDownloadLink().getName() + " :: " : "") + "antiDDoS Provider 'Clouldflare' requires Captcha", this.getHost(), "http://" + this.getHost(), true);
-                            final Recaptcha rc = new Recaptcha(ibr, this);
-                            rc.setId(apiKey);
-                            rc.load();
-                            final File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                            final String response = getCaptchaCode("recaptcha", cf, dllink);
-                            if (StringUtils.isEmpty(response)) {
-                                throw new PluginException(LinkStatus.ERROR_CAPTCHA, "CloudFlare, invalid captcha response!");
-                            }
-                            cloudflareFormt.put("recaptcha_challenge_field", rc.getChallenge());
-                            cloudflareFormt.put("recaptcha_response_field", Encoding.urlEncode(response));
-                        }
-                    }
-                    final Request originalRequest = ibr.getRequest();
-                    ibr.submitForm(cloudflareFormt);
-                    if (getCloudflareChallengeForm(ibr) != null) {
-                        logger.warning("Wrong captcha");
-                        a_captchaRequirement = true;
-                        throw new PluginException(LinkStatus.ERROR_CAPTCHA, "CloudFlare, incorrect captcha response!");
-                    }
-                    // on success cf_clearance cookie is set and a redirect will be present!
-                    // we have a problem here when site expects POST request and redirects are always are GETS
-                    if (originalRequest instanceof PostRequest) {
-                        try {
-                            sendRequest(ibr, originalRequest.cloneRequest());
-                        } catch (final Exception t) {
-                            // we want to preserve proper exceptions!
-                            if (t instanceof PluginException) {
-                                throw t;
-                            }
-                            t.printStackTrace();
-                            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Unexpected CloudFlare related issue", 5 * 60 * 1000l);
-                        }
-                        // because next round could be 200 response code, you need to nullify this value here.
-                        a_captchaRequirement = false;
-                        // new sendRequest saves cookie session
-                        return;
-                    } else if (!ibr.isFollowingRedirects() && ibr.getRedirectLocation() != null) {
-                        ibr.getPage(ibr.getRedirectLocation());
-                    }
-                    a_captchaRequirement = false;
-                } else if (ibr.getHttpConnection().getResponseCode() == 403 && ibr.containsHTML("<p>The owner of this website \\([^\\)]*" + Pattern.quote(ibr.getHost()) + "\\) has banned your IP address") && ibr.containsHTML("<title>Access denied \\| [^<]*" + Pattern.quote(ibr.getHost()) + " used CloudFlare to restrict access</title>")) {
-                    // website address could be www. or what ever prefixes, need to make sure
-                    // eg. within 403 response code, Link; 5544562095341.log; 162684; jdlog://5544562095341
-                    // <p>The owner of this website (www.premiumax.net) has banned your IP address (x.x.x.x).</p>
-                    // also common when proxies are used?? see keep2share.cc jdlog://5562413173041
-                    String ip = ibr.getRegex("your IP address \\((.*?)\\)\\.</p>").getMatch(0);
-                    String message = ibr.getHost() + " has banned your IP Address" + (StringUtils.isEmpty(ip) ? "!" : "! " + ip);
-                    logger.warning(message);
-                    throw new PluginException(LinkStatus.ERROR_FATAL, message);
-                } else if (responseCode == 503 && cloudflareFormt != null) {
-                    // 503 response code with javascript math section
-                    final String[] line1 = ibr.getRegex("var (?:t,r,a,f,|s,t,o,[a-z,]+) (\\w+)=\\{\"(\\w+)\":([^\\}]+)").getRow(0);
-                    String line2 = ibr.getRegex("(\\;" + line1[0] + "." + line1[1] + ".*?t\\.length\\;)").getMatch(0);
-                    StringBuilder sb = new StringBuilder();
-                    sb.append("var a={};\r\nvar t=\"" + Browser.getHost(ibr.getURL(), true) + "\";\r\n");
-                    sb.append("var " + line1[0] + "={\"" + line1[1] + "\":" + line1[2] + "}\r\n");
-                    sb.append(line2);
-                    ScriptEngineManager mgr = JavaScriptEngineFactory.getScriptEngineManager(this);
-                    ScriptEngine engine = mgr.getEngineByName("JavaScript");
-                    long answer = ((Number) engine.eval(sb.toString())).longValue();
-                    cloudflareFormt.getInputFieldByName("jschl_answer").setValue(answer + "");
-                    Thread.sleep(5500);
-                    ibr.submitForm(cloudflareFormt);
-                    // if it works, there should be a redirect.
-                    if (!ibr.isFollowingRedirects() && ibr.getRedirectLocation() != null) {
-                        ibr.getPage(ibr.getRedirectLocation());
-                    }
-                } else if (responseCode == 521) {
-                    // this basically indicates that the site is down, no need to retry.
-                    a_responseCode5xx++;
-                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "CloudFlare says \"Origin Sever\" is down!", 5 * 60 * 1000l);
-                } else if (responseCode == 504 || responseCode == 520 || responseCode == 522 || responseCode == 523 || responseCode == 525) {
-                    // these warrant retry instantly, as it could be just slave issue? most hosts have 2 DNS response to load balance.
-                    // additional request could work via additional IP
-                    /**
-                     * @see clouldflare_504_snippet.html
-                     */
-                    // HTTP/1.1 504 Gateway Time-out
-                    // HTTP/1.1 520 Origin Error
-                    // HTTP/1.1 522 Origin Connection Time-out
-                    /**
-                     * @see cloudflare_523_snippet.html
-                     */
-                    // HTTP/1.1 523 Origin Unreachable
-                    // HTTP/1.1 525 Origin SSL Handshake Error || >CloudFlare is unable to establish an SSL connection to the origin
-                    // server.<
-                    // cache system with possible origin dependency... we will wait and retry
-                    if (a_responseCode5xx == 4) {
-                        throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "CloudFlare can not contact \"Origin Server\"", 5 * 60 * 1000l);
-                    }
-                    a_responseCode5xx++;
-                    // this html based cookie, set by <meta (for responseCode 522)
-                    // <meta http-equiv="set-cookie" content="cf_use_ob=0; expires=Sat, 14-Jun-14 14:35:38 GMT; path=/">
-                    String[] metaCookies = ibr.getRegex("<meta http-equiv=\"set-cookie\" content=\"(.*?; expries=.*?; path=.*?\";?(?: domain=.*?;?)?)\"").getColumn(0);
-                    if (metaCookies != null && metaCookies.length != 0) {
-                        final List<String> cookieHeaders = Arrays.asList(metaCookies);
-                        final String date = ibr.getHeaders().get("Date");
-                        final String host = Browser.getHost(ibr.getURL());
-                        // get current cookies
-                        final Cookies ckies = ibr.getCookies(host);
-                        // add meta cookies to current previous request cookies
-                        for (int i = 0; i < cookieHeaders.size(); i++) {
-                            final String header = cookieHeaders.get(i);
-                            ckies.add(Cookies.parseCookies(header, host, date));
-                        }
-                        // set ckies as current cookies
-                        ibr.getHttpConnection().getRequest().setCookies(ckies);
-                    }
-                    Thread.sleep(2500);
-                    // effectively refresh page!
-                    try {
-                        sendRequest(ibr, ibr.getRequest().cloneRequest());
-                    } catch (final Exception t) {
-                        // we want to preserve proper exceptions!
-                        if (t instanceof PluginException) {
-                            throw t;
-                        }
-                        t.printStackTrace();
-                        throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Unexpected CloudFlare related issue", 5 * 60 * 1000l);
-                    }
-                    // new sendRequest saves cookie session
-                    return;
-                } else if (responseCode == 429 && ibr.containsHTML("<title>Too Many Requests</title>|<title>Error 429 - To many requests</title>")) {
-                    if (a_responseCode429 == 4) {
-                        throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE);
-                    }
-                    a_responseCode429++;
-                    // been blocked! need to wait 1min before next request. (says k2sadmin, each site could be configured differently)
-                    Thread.sleep(61000);
-                    // try again! -NOTE: this isn't stable compliant-
-                    try {
-                        sendRequest(ibr, ibr.getRequest().cloneRequest());
-                    } catch (final Exception t) {
-                        // we want to preserve proper exceptions!
-                        if (t instanceof PluginException) {
-                            throw t;
-                        }
-                        throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE);
-                    }
-                    // new sendRequest saves cookie session
-                    return;
-                    // new code here...
-                    // <script type="text/javascript">
-                    // //<![CDATA[
-                    // try{if (!window.CloudFlare) {var
-                    // CloudFlare=[{verbose:0,p:1408958160,byc:0,owlid:"cf",bag2:1,mirage2:0,oracle:0,paths:{cloudflare:"/cdn-cgi/nexp/dokv=88e434a982/"},atok:"661da6801927b0eeec95f9f3e160b03a",petok:"107d6db055b8700cf1e7eec1324dbb7be6b978d0-1408974417-1800",zone:"fileboom.me",rocket:"0",apps:{}}];CloudFlare.push({"apps":{"ape":"3a15e211d076b73aac068065e559c1e4"}});!function(a,b){a=document.createElement("script"),b=document.getElementsByTagName("script")[0],a.async=!0,a.src="//ajax.cloudflare.com/cdn-cgi/nexp/dokv=97fb4d042e/cloudflare.min.js",b.parentNode.insertBefore(a,b)}()}}catch(e){};
-                    // //]]>
-                    // </script>
-                } else if (responseCode == 200 && ibr.containsHTML("<title>Suspected phishing site\\s*\\|\\s*CloudFlare</title>")) {
-                    final Form phishing = ibr.getFormbyAction("/cdn-cgi/phish-bypass");
-                    if (phishing == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    ibr.submitForm(phishing);
-                } else {
-                    // nothing wrong, or something wrong (unsupported format)....
-                    // commenting out return prevents caching of cookies per request
-                    // return;
-                }
-                // get cookies we want/need.
-                // refresh these with every getPage/postPage/submitForm?
-                final Cookies add = ibr.getCookies(ibr.getHost());
-                for (final Cookie c : add.getCookies()) {
-                    if (new Regex(c.getKey(), "(__cfduid|cf_clearance)").matches()) {
-                        cookies.put(c.getKey(), c.getValue());
-                    }
-                }
-            }
-            // save the session!
-            synchronized (antiDDoSCookies) {
-                // why do I clear cookies? -raztok20160304
-                // antiDDoSCookies.clear();
-                antiDDoSCookies.putAll(cookies);
-            }
-        }
-    }
-
-    private Form getCloudflareChallengeForm(final Browser ibr) {
-        // speed things up, maintain our own code vs using br.getformby each time has to search and construct forms/inputfields! this is
-        // slow!
-        final Form[] forms = ibr.getForms();
-        for (final Form form : forms) {
-            if (form.getStringProperty("id") != null && (form.getStringProperty("id").equalsIgnoreCase("challenge-form") || form.getStringProperty("id").equalsIgnoreCase("ChallengeForm"))) {
-                return form;
-            }
-        }
-        return null;
-    }
-
-    /**
-     *
-     * @author raztoki
-     */
-    @SuppressWarnings("unused")
-    private boolean requestHeadersHasKeyNValueStartsWith(final Browser ibr, final String k, final String v) {
-        if (k == null || v == null || ibr == null || ibr.getHttpConnection() == null) {
-            return false;
-        }
-        if (ibr.getHttpConnection().getHeaderField(k) != null && ibr.getHttpConnection().getHeaderField(k).toLowerCase(Locale.ENGLISH).startsWith(v.toLowerCase(Locale.ENGLISH))) {
-            return true;
-        }
-        return false;
-    }
-
-    /**
-     *
-     * @author raztoki
-     */
-    private boolean requestHeadersHasKeyNValueContains(final Browser ibr, final String k, final String v) {
-        if (k == null || v == null || ibr == null || ibr.getHttpConnection() == null) {
-            return false;
-        }
-        if (ibr.getHttpConnection().getHeaderField(k) != null && ibr.getHttpConnection().getHeaderField(k).toLowerCase(Locale.ENGLISH).contains(v.toLowerCase(Locale.ENGLISH))) {
-            return true;
-        }
-        return false;
     }
 
     private static final String cfRequiredCookies = "__cfduid|cf_clearance";

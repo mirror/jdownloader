@@ -1020,13 +1020,16 @@ public abstract class YetiShareCore extends antiDDoSForHost {
         }
         if (continueform == null) {
             return null;
-        } else if (continueform.containsHTML("(?i)" + Pattern.quote(continue_link))) {
+        } else if (continue_link != null && continueform.containsHTML(Pattern.quote(continue_link))) {
+            /* Return form without changes. */
             return continueform;
         } else {
             /* Manually build / complete form. */
             final Form ret = new Form();
             ret.setMethod(continueform.getMethod());
-            ret.setAction(continue_link);
+            if (continue_link != null) {
+                ret.setAction(continue_link);
+            }
             ret.put("submit", "Submit");
             ret.put("submitted", "1");
             ret.put("d", "1");
