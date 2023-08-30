@@ -80,7 +80,7 @@ public class EPornerCom extends PluginForHost {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/((?:hd\\-porn/|video-)\\w+(/([^/]+))?|photo/[A-Za-z0-9]+(/[^/]+/)?)");
+            ret.add("https?://(?:\\w+\\.)?" + buildHostsPatternPart(domains) + "/((?:hd\\-porn/|video-)\\w+(/([^/]+))?|photo/[A-Za-z0-9]+(/[\\w\\-]+/)?)");
         }
         return ret.toArray(new String[0]);
     }
@@ -90,10 +90,10 @@ public class EPornerCom extends PluginForHost {
         return "https://www.eporner.com/terms/";
     }
 
-    private final Pattern PATTERN_VIDEO      = Pattern.compile("(?i)https?://[^/]+/(?:hd\\-porn/|video-)(\\w+)(/([^/]+))?");
-    private final Pattern PATTERN_PHOTO      = Pattern.compile("(?i)https?://[^/]+/photo/([A-Za-z0-9]+)(/[^/]+/)?");
-    private String        vq                 = null;
-    private final String  PROPERTY_DIRECTURL = "directurl";
+    private final Pattern      PATTERN_VIDEO      = Pattern.compile("(?i)https?://[^/]+/(?:hd\\-porn/|video-)(\\w+)(/([^/]+))?");
+    private final Pattern      PATTERN_PHOTO      = Pattern.compile("(?i)https?://[^/]+/photo/([A-Za-z0-9]+)(/[\\w\\-]+/)?");
+    private String             vq                 = null;
+    public static final String PROPERTY_DIRECTURL = "directurl";
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
@@ -200,7 +200,10 @@ public class EPornerCom extends PluginForHost {
             }
         } else {
             /* Photo */
-            dllink = br.getRegex("class=\"mainphoto\" src=\"(https?://[^\"]+)").getMatch(0);
+            dllink = br.getRegex("src=\"(https?://[^\"]+)\" autoplay ").getMatch(0); // gifs -> mp4
+            if (dllink == null) {
+                dllink = br.getRegex("class=\"mainphoto\" src=\"(https?://[^\"]+)").getMatch(0); // normal image -> jpg
+            }
             final String[] jsons = br.getRegex("<script type=\"application/ld\\+json\">([^<]+)</script>").getColumn(0);
             String betterPhotoTitle = null;
             if (jsons != null && jsons.length > 0) {
@@ -218,12 +221,19 @@ public class EPornerCom extends PluginForHost {
                 title = betterPhotoTitle;
             }
         }
+        String ext = null;
+        if (dllink != null) {
+            ext = Plugin.getFileNameExtensionFromURL(dllink);
+        }
+        if (ext == null) {
+            ext = extDefault;
+        }
         if (title != null) {
             title = Encoding.htmlDecode(title).trim();
             title = title.replaceFirst("(?i)\\s*Porn Pic - EPORNER\\s*", "");
             title = title.replaceFirst("\\s*\\- EPORNER Free HD Porn Tube\\s*", "");
             title = title.replaceFirst("\\s*- EPORNER\\s*", "");
-            link.setFinalFileName(title + extDefault);
+            link.setFinalFileName(title + ext);
         } else {
             link.setFinalFileName(fallbackFilename);
         }
@@ -248,9 +258,9 @@ public class EPornerCom extends PluginForHost {
                 if (con.getCompleteContentLength() > 0) {
                     link.setVerifiedFileSize(con.getCompleteContentLength());
                 }
-                final String ext = Plugin.getExtensionFromMimeTypeStatic(con.getContentType());
-                if (ext != null && title != null) {
-                    link.setFinalFileName(this.correctOrApplyFileNameExtension(title, "." + ext));
+                ext = Plugin.getExtensionFromMimeTypeStatic(con.getContentType());
+                if (ext != null && link.getName() != null) {
+                    link.setFinalFileName(this.correctOrApplyFileNameExtension(link.getName(), "." + ext));
                 }
             } finally {
                 try {
@@ -285,6 +295,10 @@ public class EPornerCom extends PluginForHost {
         try {
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, directurl, true, 0);
             connectionErrorhandling(dl.getConnection(), link, account);
+            final String ext = Plugin.getExtensionFromMimeTypeStatic(dl.getConnection().getContentType());
+            if (ext != null && link.getName() != null) {
+                link.setFinalFileName(this.correctOrApplyFileNameExtension(link.getName(), "." + ext));
+            }
             dl.startDownload();
         } catch (final Exception e) {
             if (storedDirecturl != null) {
