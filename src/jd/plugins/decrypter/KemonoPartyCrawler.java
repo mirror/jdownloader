@@ -241,7 +241,7 @@ public class KemonoPartyCrawler extends PluginForDecrypt {
                         betterFilename = Encoding.htmlDecode(betterFilename);
                         media.setFinalFileName(betterFilename);
                         media.setProperty(DirectHTTP.FIXNAME, betterFilename);
-                        final String internalVideoFilename = new Regex(urlFull, "([a-f0-9]{64}\\.m4v)").getMatch(0);
+                        final String internalVideoFilename = new Regex(urlFull, "(?i)([a-f0-9]{64}\\.(m4v|mp4))").getMatch(0);
                         if (internalVideoFilename != null) {
                             videoItemsToSkip.add(internalVideoFilename);
                         }
