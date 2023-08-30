@@ -19,6 +19,8 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -106,8 +108,12 @@ public class EPornerComGallery extends PluginForDecrypt {
                 ret.add(image);
             }
         }
+        final String albumDescription = br.getRegex("class=\"video-description\">([^<]+)").getMatch(0);
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(Encoding.htmlDecode(gallerySlug).replace("-", " ").trim());
+        if (!StringUtils.isEmpty(albumDescription)) {
+            fp.setComment(Encoding.htmlDecode(albumDescription).trim());
+        }
         fp.addLinks(ret);
         if (ret.size() < numberofPhotos) {
             logger.warning("Failed to find some photos or website contained duplicates");
