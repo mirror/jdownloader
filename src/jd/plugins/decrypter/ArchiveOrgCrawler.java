@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.lang.ref.Reference;
 import java.lang.ref.SoftReference;
 import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -87,10 +88,10 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         /* 2023-07-10: looks like some detail pages return 503 instead of 200 */
         br.setAllowedResponseCodes(503);
         param.setCryptedUrl(param.getCryptedUrl().replace("://www.", "://").replaceFirst("/(stream|embed)/", "/download/"));
-        if (new Regex(param.getCryptedUrl(), PATTERN_DOWNLOAD).matches()) {
+        if (new Regex(param.getCryptedUrl(), PATTERN_DOWNLOAD).patternFind()) {
             return crawlPatternSlashDownload(param);
         } else if (param.getCryptedUrl().matches(PATTERN_SEARCH)) {
-            return this.crawlSearchQueryURL(param);
+            return this.crawlSearchQueryURL(br, param);
         } else {
             /*
              * 2020-08-26: Login might sometimes be required for book downloads.
@@ -155,10 +156,22 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                 final BookCrawlMode mode = PluginJsonConfig.get(ArchiveOrgConfig.class).getBookCrawlMode();
                 if (isOfficiallyDownloadable) {
                     if (mode == BookCrawlMode.PREFER_ORIGINAL) {
-                        return crawlDetails(param);
+                        try {
+                            logger.info("Trying to crawl original files");
+                            return crawlDetails(br.cloneBrowser(), param);
+                        } catch (final Exception e) {
+                            /* Rare case e.g.: https://archive.org/details/isbn_9789814585354 */
+                            logger.info("Details crawler failed -> Fallback to loose book pages");
+                            return crawlBook(br, param, account);
+                        }
                     } else if (mode == BookCrawlMode.ORIGINAL_AND_LOOSE_PAGES) {
                         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-                        ret.addAll(crawlDetails(param));
+                        try {
+                            ret.addAll(crawlDetails(br, param));
+                        } catch (final Exception ignore) {
+                            logger.log(ignore);
+                            logger.info("Details crawler failed -> Fallback to returning loose book pages ONLY");
+                        }
                         ret.addAll(crawlBook(br, param, account));
                         return ret;
                     } else {
@@ -171,7 +184,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
             } else if (isArchiveContent) {
                 return crawlArchiveContent();
             } else if (StringUtils.containsIgnoreCase(param.getCryptedUrl(), "/details/")) {
-                return crawlDetails(param);
+                return crawlDetails(br, param);
             } else {
                 return crawlFiles(param);
             }
@@ -185,13 +198,12 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
     }
 
     private ArrayList<DownloadLink> crawlPatternSlashDownload(final CryptedLink param) throws Exception {
-        final Regex typeDownload = new Regex(param.getCryptedUrl(), PATTERN_DOWNLOAD);
-        /* Only crawl XML --> Fastest way */
-        final String path = typeDownload.getMatch(0);
-        if (path == null) {
+        if (!new Regex(param.getCryptedUrl(), PATTERN_DOWNLOAD).patternFind()) {
             /* Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        String path = new URL(param.getCryptedUrl()).getPath();
+        path = path.replaceFirst("^/download/", "/");
         final boolean allowCheckForDirecturl = true;
         if (path.contains("/") && allowCheckForDirecturl) {
             /**
@@ -255,7 +267,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         return crawlXML(param, br, subfolderPathURLEncoded);
     }
 
-    private ArrayList<DownloadLink> crawlDetails(final CryptedLink param) throws Exception {
+    private ArrayList<DownloadLink> crawlDetails(final Browser br, final CryptedLink param) throws Exception {
         final String urlWithoutParams = br._getURL().getPath();
         final String titleSlug = new Regex(urlWithoutParams, "/details/([^/]+)").getMatch(0);
         if (titleSlug == null) {
@@ -380,7 +392,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
             final boolean useScrapingAPIForCollections = !titleSlug.startsWith("@");
             if (useScrapingAPIForCollections) {
                 logger.info("Crawling collections...");
-                final ArrayList<DownloadLink> collectionResults = searchViaScrapeAPI("collection:" + titleSlug, -1);
+                final ArrayList<DownloadLink> collectionResults = searchViaScrapeAPI(br, "collection:" + titleSlug, -1);
                 if (collectionResults.isEmpty()) {
                     throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER, "EMPTY_COLLECTION_" + titleSlug);
                 }
@@ -463,7 +475,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         return ret;
     }
 
-    private ArrayList<DownloadLink> crawlSearchQueryURL(final CryptedLink param) throws Exception {
+    private ArrayList<DownloadLink> crawlSearchQueryURL(final Browser br, final CryptedLink param) throws Exception {
         final ArchiveOrgConfig cfg = PluginJsonConfig.get(ArchiveOrgConfig.class);
         final int maxResults = cfg.getSearchTermCrawlerMaxResultsLimit();
         if (maxResults == 0) {
@@ -479,7 +491,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
             /* User supplied invalid URL. */
             throw new DecrypterRetryException(RetryReason.FILE_NOT_FOUND, "INVALID_SEARCH_QUERY");
         }
-        final ArrayList<DownloadLink> searchResults = searchViaScrapeAPI(searchQuery, maxResults);
+        final ArrayList<DownloadLink> searchResults = searchViaScrapeAPI(br, searchQuery, maxResults);
         if (searchResults.isEmpty()) {
             throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER, "NO_SEARCH_RESULTS_FOR_QUERY_" + searchQuery);
         }
@@ -487,7 +499,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
     }
 
     /** API: Docs: https://archive.org/help/aboutsearch.htm */
-    private ArrayList<DownloadLink> searchViaScrapeAPI(final String searchTerm, final int maxResultsLimit) throws Exception {
+    private ArrayList<DownloadLink> searchViaScrapeAPI(final Browser br, final String searchTerm, final int maxResultsLimit) throws Exception {
         if (StringUtils.isEmpty(searchTerm)) {
             throw new IllegalArgumentException();
         } else if (maxResultsLimit == 0) {
@@ -884,12 +896,16 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
          * 2020-03-04: Prefer crawling xml if possible as we then get all contents of that folder including contents of subfolders via only
          * one request!
          */
-        final String titleSlug;
+        String titleSlug;
         String desiredSubpathDecoded = null;
         if (path.contains("/")) {
             /* XML will always contain all files but in this case we only want to get all files in a specific subfolder. */
             final String[] urlParts = path.split("/");
-            titleSlug = urlParts[0];
+            if (path.startsWith("/")) {
+                titleSlug = path.substring(1, path.length());
+            } else {
+                titleSlug = urlParts[0];
+            }
             if (urlParts.length > 1) {
                 desiredSubpathDecoded = Encoding.htmlDecode(path.substring(path.indexOf("/") + 1));
             }
@@ -1036,7 +1052,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (skippedItems.size() > 0) {
-            logger.info("Skipped items:");
+            logger.info("Skipped items: " + skippedItems.size());
             logger.info(skippedItems.toString());
         }
         if (desiredSubpathDecoded != null && ret.size() == 1) {
@@ -1045,7 +1061,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
              * Reference: https://board.jdownloader.org/showthread.php?t=92666&page=2
              */
             final Regex typeDownload = new Regex(param.getCryptedUrl(), PATTERN_DOWNLOAD);
-            if (typeDownload.matches() && StringUtils.equalsIgnoreCase(ret.get(0).getPluginPatternMatcher(), param.getCryptedUrl())) {
+            if (typeDownload.patternFind() && StringUtils.equalsIgnoreCase(ret.get(0).getPluginPatternMatcher(), param.getCryptedUrl())) {
                 CrawledLink source = getCurrentLink().getSourceLink();
                 boolean crawlerSource = false;
                 while (source != null) {

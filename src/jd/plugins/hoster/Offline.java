@@ -129,6 +129,8 @@ public class Offline extends PluginForHost {
         ret.add(new String[] { "rarbg.to", "rarbg.com", "rarbgproxied.org", "rarbgproxy.org", "rarbgp2p.org", "proxyrarbg.org", "rarbgaccessed.org", "rarbgaccess.org", "rarbgget.org", "rarbggo.org", "rarbg.is", "rarbgmirror.com", "rarbgmirrored.org", "rarbgmirror.org", "rarbgprx.org", "rarbgto.org", "rarbgunblock.com", "rarbgway.org" });
         ret.add(new String[] { "streamlare.com", "slmaxed.com", "slwatch.co", "sltube.org" });
         ret.add(new String[] { "filerio.in", "filerio.com", "filekeen.com" });
+        ret.add(new String[] { "fileupup.com" });
+        ret.add(new String[] { "longfiles.com" });
         if (cache != null) {
             cache.put(cacheID, ret);
         }

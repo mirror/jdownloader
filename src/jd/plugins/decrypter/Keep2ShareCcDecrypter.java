@@ -85,14 +85,14 @@ public class Keep2ShareCcDecrypter extends PluginForDecrypt {
             /* Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (param.getCryptedUrl().matches("https?://[^/]+/thumbnail/.*")) {
+        if (param.getCryptedUrl().matches("(?i)https?://[^/]+/thumbnail/.*")) {
             /* 2020-07-21: Thumbnail to video / single file --> Goes into host plugin */
             final String url = "https://" + this.getHost() + "/file/" + fuid;
             final DownloadLink dl = this.createDownloadlink(url);
             ret.add(dl);
             return ret;
         }
-        br = ((jd.plugins.hoster.Keep2ShareCc) plugin).newWebBrowser(true);
+        br = plugin.createNewBrowserInstance();
         // set cross browser support
         ((jd.plugins.hoster.K2SApi) plugin).setBrowser(br);
         final HashMap<String, Object> postdataGetfilesinfo = new HashMap<String, Object>();
