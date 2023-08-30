@@ -1607,6 +1607,7 @@ public class PornHubCom extends PluginForHost {
         synchronized (DEFAULT_COOKIES) {
             DEFAULT_COOKIES.put("accessAgeDisclaimerPH", "1");
             DEFAULT_COOKIES.put("accessAgeDisclaimerUK", "1");// 2023-07-19
+            DEFAULT_COOKIES.put("accessAgeDisclaimerMH", "1");// 2023-08-30: modelhub.com
             /* 2023-04-14: STATE OF UTAH WARNING */
             DEFAULT_COOKIES.put("accessPH", "1");
         }
