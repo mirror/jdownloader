@@ -58,7 +58,6 @@ import jd.http.Browser;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
-import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
 import jd.plugins.Account;
 import jd.plugins.AccountRequiredException;
@@ -74,6 +73,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+import jd.plugins.hoster.GenericM3u8;
 import jd.plugins.hoster.TwitterCom;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
@@ -236,25 +236,6 @@ public class TwitterComCrawler extends PluginForDecrypt {
         Browser.setRequestIntervalLimitGlobal("api.twitter.com", true, cfg.getGlobalRequestIntervalLimitApiTwitterComMilliseconds());
     }
 
-    @Deprecated
-    private boolean switchtoMobile() throws IOException {
-        /*
-         * 2020-01-30: They're now using a json web-API for which we cannot easily get the auto parameters --> Try mobile website as
-         * fallback ...
-         */
-        logger.info("Trying to switch to mobile website");
-        final Form nojs_form = br.getFormbyActionRegex(".+nojs_router.+");
-        if (nojs_form != null) {
-            logger.info("Switching to mobile website");
-            br.submitForm(nojs_form);
-            logger.warning("Successfully switched to to mobile website");
-            return true;
-        } else {
-            logger.warning("Failed to switch to mobile website");
-            return false;
-        }
-    }
-
     private String getGraphqlQueryID(final String operationName) throws IOException, PluginException {
         synchronized (graphqlQueryids) {
             if (graphqlQueryids.isEmpty() || !graphqlQueryids.containsKey(operationName) || true) {
@@ -284,6 +265,37 @@ public class TwitterComCrawler extends PluginForDecrypt {
             }
             return ret;
         }
+    }
+
+    /** Crawls items of links like this: https://twitter.com/i/broadcasts/<broadcastID> */
+    private ArrayList<DownloadLink> crawlBroadcast(final String broadcastID) throws IOException, PluginException, DecrypterRetryException {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        br.getPage("https://twitter.com/i/api/1.1/broadcasts/show.json?ids=" + broadcastID + "&include_events=true");
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+        final Map<String, Object> bc = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "broadcasts/" + broadcastID);
+        if (Boolean.FALSE.equals(bc.get("available_for_replay")) || !"ENDED".equalsIgnoreCase(bc.get("state").toString())) {
+            throw new DecrypterRetryException(RetryReason.UNSUPPORTED_LIVESTREAM);
+        }
+        // final String created_at_ms = bc.get("created_at_ms").toString();
+        final String broadcastTitle = bc.get("status").toString();
+        final String tweet_id = bc.get("tweet_id").toString();
+        final String thumbnailURL = bc.get("image_url").toString();
+        final String media_key = bc.get("media_key").toString();
+        br.getPage("https://twitter.com/i/api/1.1/live_video_stream/status/" + media_key + "?client=web&use_syndication_guest_id=false&cookie_set_host=twitter.com");
+        final Map<String, Object> entries2 = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+        final Map<String, Object> source = (Map<String, Object>) entries2.get("source");
+        final String streamType = source.get("streamType").toString();
+        if (!streamType.equalsIgnoreCase("HLS")) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final String hlsMaster = source.get("noRedirectPlaybackUrl").toString();
+        final DownloadLink link = this.createDownloadlink(hlsMaster);
+        link.setProperty(GenericM3u8.PRESET_NAME_PROPERTY, broadcastTitle);
+        ret.add(link);
+        return ret;
     }
 
     @Deprecated
