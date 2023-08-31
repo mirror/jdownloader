@@ -20,6 +20,7 @@ import java.util.Map;
 
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
@@ -36,6 +37,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.BangbrosCom;
@@ -84,15 +86,16 @@ public class BangbrosComCrawler extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final Account account, final SubConfiguration cfg) throws Exception {
         ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final String parameter = param.getCryptedUrl().replaceFirst("bangbrothers\\.com", "bangbros.com");
-        final BangbrosCom hostPlugin = (BangbrosCom) this.getNewPluginForHostInstance(this.getHost());
+        final String parameter = param.getCryptedUrl().replaceFirst("bangbrothers\\.com/", "bangbros.com/");
         final boolean loginRequired = requiresAccount(parameter);
         if (loginRequired && account == null) {
             throw new AccountRequiredException();
         }
+        final BangbrosCom hostPlugin = (BangbrosCom) this.getNewPluginForHostInstance(this.getHost());
         if (account != null) {
             hostPlugin.login(this.br, account, false);
         }
+        final boolean preferServersideOriginalFilenames = hostPlugin.getPluginConfig().getBooleanProperty("PREFER_ORIGINAL_FILENAMES", false);
         br.getPage(parameter);
         if (isOffline(this.br, parameter)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -127,15 +130,7 @@ public class BangbrosComCrawler extends PluginForDecrypt {
         if (title == null) {
             title = this.br.getRegex("class=\"desTxt\\-hed\">([^<>\"]+)<").getMatch(0);
         }
-        if (title != null) {
-            title = Encoding.htmlDecode(title);
-            if (cast_comma_separated != null) {
-                title = cast_comma_separated + "_" + title;
-            }
-        } else {
-            /* Fallback to id from inside url */
-            title = fid;
-        }
+        String titleForPlugin = null;
         final String trailerJsonEncoded = br.getRegex("class=\"pBtn overlay-trailer-opener\" data-shoot=\"(\\{[^\"]+)").getMatch(0);
         DownloadLink trailer = null;
         if (trailerJsonEncoded != null) {
@@ -145,6 +140,17 @@ public class BangbrosComCrawler extends PluginForDecrypt {
                 title = entries.get("title").toString();
             }
             description = (String) entries.get("description");
+        }
+        if (title != null) {
+            title = Encoding.htmlDecode(title);
+            titleForPlugin = title;
+            if (cast_comma_separated != null) {
+                titleForPlugin = cast_comma_separated + "_" + titleForPlugin;
+            }
+        } else {
+            /* Fallback to id from inside url */
+            title = fid;
+            titleForPlugin = title;
         }
         /* 2019-01-29: Content-Servers are very slow */
         final boolean fast_linkcheck = true;
@@ -164,7 +170,21 @@ public class BangbrosComCrawler extends PluginForDecrypt {
                 if (streamingURL != null) {
                     video.setProperty(BangbrosCom.PROPERTY_STREAMING_DIRECTURL, streamingURL);
                 }
-                video.setForcedFileName(title + "_" + qualityIdentifier + ext);
+                final String pluginFilename = titleForPlugin + "_" + qualityIdentifier + ext;
+                if (preferServersideOriginalFilenames) {
+                    String originalFilename = null;
+                    if (streamingURL != null) {
+                        originalFilename = Plugin.getFileNameFromURL(streamingURL);
+                    }
+                    if (originalFilename != null) {
+                        video.setFinalFileName(originalFilename);
+                    } else {
+                        /* Fallback */
+                        video.setName(pluginFilename);
+                    }
+                } else {
+                    video.setFinalFileName(pluginFilename);
+                }
                 if (fast_linkcheck) {
                     video.setAvailable(true);
                 }
@@ -178,25 +198,53 @@ public class BangbrosComCrawler extends PluginForDecrypt {
                 }
                 ret.add(video);
             }
-            if (cfg.getBooleanProperty(BangbrosCom.SETTING_BEST_ONLY, BangbrosCom.default_SETTING_BEST_ONLY)) {
+            if (cfg != null && cfg.getBooleanProperty(BangbrosCom.SETTING_BEST_ONLY, BangbrosCom.default_SETTING_BEST_ONLY)) {
                 ret.clear();
                 ret.add(best);
             }
             numberOfAddedVideos = ret.size();
         }
-        if (cfg == null || cfg.getBooleanProperty("GRAB_photos", false) && directurl_photos != null) {
+        if ((cfg == null || cfg.getBooleanProperty("GRAB_photos", false)) && directurl_photos != null) {
             final String quality = "pictures";
             final DownloadLink dl = this.createDownloadlink(directurl_photos, fid, productid, quality);
-            dl.setForcedFileName(title + "_" + quality + ".zip");
+            final String pluginFilename = titleForPlugin + "_" + quality + ".zip";
+            if (preferServersideOriginalFilenames) {
+                String originalFilename = UrlQuery.parse(directurl_photos).get("filename");
+                if (originalFilename == null) {
+                    originalFilename = Plugin.getFileNameFromURL(directurl_photos);
+                }
+                if (originalFilename != null) {
+                    dl.setFinalFileName(originalFilename);
+                } else {
+                    /* Fallback */
+                    dl.setName(pluginFilename);
+                }
+            } else {
+                dl.setFinalFileName(pluginFilename);
+            }
             if (fast_linkcheck) {
                 dl.setAvailable(true);
             }
             ret.add(dl);
         }
-        if (cfg == null || cfg.getBooleanProperty("GRAB_screencaps", false) && directurl_screencaps != null) {
+        if ((cfg == null || cfg.getBooleanProperty("GRAB_screencaps", false)) && directurl_screencaps != null) {
             final String quality = "screencaps";
             final DownloadLink dl = this.createDownloadlink(directurl_screencaps, fid, productid, quality);
-            dl.setForcedFileName(title + "_" + quality + ".zip");
+            final String pluginFilename = titleForPlugin + "_" + quality + ".zip";
+            if (preferServersideOriginalFilenames) {
+                String originalFilename = UrlQuery.parse(directurl_screencaps).get("filename");
+                if (originalFilename == null) {
+                    originalFilename = Plugin.getFileNameFromURL(directurl_screencaps);
+                }
+                if (originalFilename != null) {
+                    dl.setFinalFileName(originalFilename);
+                } else {
+                    /* Fallback */
+                    dl.setName(pluginFilename);
+                }
+            } else {
+                dl.setFinalFileName(pluginFilename);
+            }
             if (fast_linkcheck) {
                 dl.setAvailable(true);
             }
@@ -225,8 +273,13 @@ public class BangbrosComCrawler extends PluginForDecrypt {
             logger.info("Returning trailer because: Failed to find any other video items");
             ret.add(trailer);
         }
+        /* Set additional properties */
+        for (final DownloadLink result : ret) {
+            result.setProperty(BangbrosCom.PROPERTY_TITLE, title);
+            result.setProperty(BangbrosCom.PROPERTY_CAST_COMMA_SEPARATED, cast_comma_separated);
+        }
         final FilePackage fp = FilePackage.getInstance();
-        fp.setName(title);
+        fp.setName(titleForPlugin);
         if (!StringUtils.isEmpty(description)) {
             fp.setComment(description);
         }
@@ -235,7 +288,16 @@ public class BangbrosComCrawler extends PluginForDecrypt {
     }
 
     public static String regexStreamingURL(final Browser br, final String qualityIdentifier) {
-        return br.getRegex("<source src=\"(https?://[^\"]+" + qualityIdentifier + "\\.mp4[^\"]*)\"[^>]*type=.video/mp4").getMatch(0);
+        String url = br.getRegex("<source src=\"(https?://[^\"]+" + qualityIdentifier + "\\.mp4[^\"]*)\"[^>]*type=.video/mp4").getMatch(0);
+        if (url == null) {
+            /* 2023-08-31: Wider RegEx */
+            url = br.getRegex("href=\"(https?://[^\"]+" + qualityIdentifier + "\\.mp4[^\"]*)\"[^>]*>" + qualityIdentifier).getMatch(0);
+        }
+        if (url != null) {
+            return Encoding.htmlOnlyDecode(url);
+        } else {
+            return null;
+        }
     }
 
     public static String regexZipUrl(final Browser br, final String key) {

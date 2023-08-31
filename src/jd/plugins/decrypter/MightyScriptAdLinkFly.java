@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.URLEncode;

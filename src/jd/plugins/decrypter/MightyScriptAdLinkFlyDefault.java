@@ -99,8 +99,6 @@ public class MightyScriptAdLinkFlyDefault extends MightyScriptAdLinkFly {
             "2shorten.com", "nashr.online", "almrf.com",
             /** shrinkearn.com domains */
             "shrinkearn.com", "shortearn.eu",
-            /** shrinkme.io */
-            "shrinkme.io", "shrinke.me",
             /** clk.sh domains */
             "clk.sh", "oko.sh", "iir.ai",
             /** bt4link.com domains */

@@ -68,21 +68,23 @@ public class BangbrosCom extends PluginForHost {
     }
 
     /* Connection stuff */
-    private static final boolean FREE_RESUME                  = false;
-    private static final int     FREE_MAXCHUNKS               = 1;
-    private static final int     FREE_MAXDOWNLOADS            = 1;
-    private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
-    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
-    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-    public static final String   PROPERTY_FID                 = "fid";
-    public static final String   PROPERTY_PRODUCT_ID          = "product_id";
-    public static final String   PROPERTY_QUALITY             = "quality";
-    public static final String   PROPERTY_MAINLINK            = "mainlink";
-    public static final String   PROPERTY_STREAMING_DIRECTURL = "streaming_directurl";
-    private final String         DOMAIN_PREFIX_PREMIUM        = "members.";
-    private String               dllink                       = null;
-    private boolean              logged_in                    = false;
-    public static final String   SETTING_BEST_ONLY            = "GRAB_best_only";
+    private static final boolean FREE_RESUME                   = false;
+    private static final int     FREE_MAXCHUNKS                = 1;
+    private static final int     FREE_MAXDOWNLOADS             = 1;
+    private static final boolean ACCOUNT_PREMIUM_RESUME        = true;
+    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS     = 0;
+    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS  = 20;
+    public static final String   PROPERTY_FID                  = "fid";
+    public static final String   PROPERTY_PRODUCT_ID           = "product_id";
+    public static final String   PROPERTY_TITLE                = "title";
+    public static final String   PROPERTY_CAST_COMMA_SEPARATED = "cast_comma_separated";
+    public static final String   PROPERTY_QUALITY              = "quality";
+    public static final String   PROPERTY_MAINLINK             = "mainlink";
+    public static final String   PROPERTY_STREAMING_DIRECTURL  = "streaming_directurl";
+    private final String         DOMAIN_PREFIX_PREMIUM         = "members.";
+    private String               dllink                        = null;
+    private boolean              logged_in                     = false;
+    public static final String   SETTING_BEST_ONLY             = "GRAB_best_only";
 
     public static Browser prepBR(final Browser br) {
         /* This may happen after logging in but usually login process will be okay anways. */
@@ -129,6 +131,7 @@ public class BangbrosCom extends PluginForHost {
                 /* 2019-01-14: New */
                 dllink = br.getRegex("<source src=\"(?:https?:)?(//[^<>\"]+/trailerx/[^<>\"]+)\" type=\\'video/mp4\\' />").getMatch(0);
             }
+            allowRefreshDirecturl = false;
         } else {
             final String qualityIdentifier = link.getStringProperty(PROPERTY_QUALITY);
             if (qualityIdentifier != null && qualityIdentifier.matches("\\d+p")) {
@@ -165,6 +168,7 @@ public class BangbrosCom extends PluginForHost {
                     }
                     logger.info("Refreshing directurl");
                     refreshDirecturl(link, account);
+                    dllink = link.getStringProperty(PROPERTY_STREAMING_DIRECTURL);
                     con = br.openHeadConnection(dllink);
                     if (!this.looksLikeDownloadableContent(con)) {
                         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Broken media file?");
@@ -438,6 +442,7 @@ public class BangbrosCom extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB_2160p", "Grab 2160p (mp4)?").setDefaultValue(true).setEnabledCondidtion(best, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB_photos", "Grab photos (.zip containing images)?").setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "GRAB_screencaps", "Grab screencaps (.zip containing images)?").setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "PREFER_ORIGINAL_FILENAMES", "Use original/serverside filenames?").setDefaultValue(false));
     }
 
     @Override

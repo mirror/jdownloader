@@ -802,9 +802,7 @@ public class EHentaiOrg extends PluginForHost {
             ai.setUnlimitedTraffic();
         }
         account.setRefreshTimeout(10 * 60 * 1000l);
-        synchronized (account) {
-            displayImagePointsUsageInformation(account, imagePointsLeftInfo);
-        }
+        displayImagePointsUsageInformation(account, imagePointsLeftInfo);
         return ai;
     }
 
@@ -815,39 +813,41 @@ public class EHentaiOrg extends PluginForHost {
     private final String PROPERTY_ACCOUNT__ORIGINAL_IMAGE_DOWNLOAD_IMAGE_POINTS_USAGE_INFORMATION_HAS_BEEN_DISPLAYED = "original_image_download_image_points_usage_information_has_been_displayed";
 
     private void displayImagePointsUsageInformation(final Account account, final int[] creditsLeftInfo) {
-        final EhentaiConfig cfg = PluginJsonConfig.get(EhentaiConfig.class);
-        if (cfg.isPreferOriginalFilename() && account.getBooleanProperty(PROPERTY_ACCOUNT__ORIGINAL_IMAGE_DOWNLOAD_IMAGE_POINTS_USAGE_INFORMATION_HAS_BEEN_DISPLAYED, false) == false) {
-            final Thread thread = new Thread() {
-                public void run() {
-                    try {
-                        String message = "";
-                        final String title;
-                        title = "E-Hentai - Information about image points usage for downloads of original images";
-                        message += "Hello " + account.getUser();
-                        message += "\r\nAccording to your e-hentai settings, you prefer to download original quality images from this website.";
-                        message += "\r\nDownloading original images counts towards your 'image limits'.";
-                        if (creditsLeftInfo != null) {
-                            message += "\r\nCurrently used image points: " + creditsLeftInfo[0] + " of " + creditsLeftInfo[1];
-                        } else {
-                            /* This should never happen. */
-                            message += "\r\nCurrently used image points: Unknown";
+        synchronized (account) {
+            final EhentaiConfig cfg = PluginJsonConfig.get(EhentaiConfig.class);
+            if (cfg.isPreferOriginalFilename() && account.getBooleanProperty(PROPERTY_ACCOUNT__ORIGINAL_IMAGE_DOWNLOAD_IMAGE_POINTS_USAGE_INFORMATION_HAS_BEEN_DISPLAYED, false) == false) {
+                final Thread thread = new Thread() {
+                    public void run() {
+                        try {
+                            String message = "";
+                            final String title;
+                            title = "E-Hentai - Information about image points usage for downloads of original images";
+                            message += "Hello " + account.getUser();
+                            message += "\r\nAccording to your e-hentai settings, you prefer to download original quality images from this website.";
+                            message += "\r\nDownloading original images counts towards your 'image limits'.";
+                            if (creditsLeftInfo != null) {
+                                message += "\r\nCurrently used image points: " + creditsLeftInfo[0] + " of " + creditsLeftInfo[1];
+                            } else {
+                                /* This should never happen. */
+                                message += "\r\nCurrently used image points: Unknown";
+                            }
+                            message += "\r\nYou can also see your remaining 'image points' here: e-hentai.org/home.php";
+                            message += "\r\nIf you do not want E-Hentai image downloads via JDownloader to use up your image points, you can disable the download of original images here:";
+                            message += "\r\nSettings -> Plugins -> e-hentai.org";
+                            message += "\r\nThis dialog is shown once per added E-Hentai account and only for users who prefer to download original images via their plugin settings.";
+                            final ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, title, message);
+                            dialog.setTimeout(300 * 1000);
+                            final ConfirmDialogInterface ret = UIOManager.I().show(ConfirmDialogInterface.class, dialog);
+                            ret.throwCloseExceptions();
+                        } catch (final Throwable e) {
+                            getLogger().log(e);
                         }
-                        message += "\r\nYou can also see your remaining 'image points' here: e-hentai.org/home.php";
-                        message += "\r\nIf you do not want E-Hentai image downloads via JDownloader to use up your image points, you can disable the download of original images here:";
-                        message += "\r\nSettings -> Plugins -> e-hentai.org";
-                        message += "\r\nThis dialog is shown once per added E-Hentai account and only for users who prefer to download original images via their plugin settings.";
-                        final ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, title, message);
-                        dialog.setTimeout(300 * 1000);
-                        final ConfirmDialogInterface ret = UIOManager.I().show(ConfirmDialogInterface.class, dialog);
-                        ret.throwCloseExceptions();
-                    } catch (final Throwable e) {
-                        getLogger().log(e);
-                    }
+                    };
                 };
-            };
-            thread.setDaemon(true);
-            thread.start();
-            account.setProperty(PROPERTY_ACCOUNT__ORIGINAL_IMAGE_DOWNLOAD_IMAGE_POINTS_USAGE_INFORMATION_HAS_BEEN_DISPLAYED, true);
+                thread.setDaemon(true);
+                thread.start();
+                account.setProperty(PROPERTY_ACCOUNT__ORIGINAL_IMAGE_DOWNLOAD_IMAGE_POINTS_USAGE_INFORMATION_HAS_BEEN_DISPLAYED, true);
+            }
         }
     }
 
