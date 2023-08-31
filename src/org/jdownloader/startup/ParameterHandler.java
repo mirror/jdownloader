@@ -6,8 +6,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
-import jd.SecondLevelLaunch;
-
 import org.appwork.app.launcher.parameterparser.CommandSwitch;
 import org.appwork.app.launcher.parameterparser.ParameterParser;
 import org.appwork.utils.Application;
@@ -33,6 +31,8 @@ import org.jdownloader.startup.commands.ReconnectCommand;
 import org.jdownloader.startup.commands.SetConfigCommand;
 import org.jdownloader.startup.commands.ThreadDump;
 import org.jdownloader.updatev2.RestartController;
+
+import jd.SecondLevelLaunch;
 
 public class ParameterHandler implements InstanceMessageListener {
     private final HashMap<String, StartupCommand> commandMap;
@@ -93,7 +93,7 @@ public class ParameterHandler implements InstanceMessageListener {
 
     @Override
     @Deprecated
-    /**kept to avoid  JDownloader.jar <-> Core.jar update compatibility issues. can be removed in future**/
+    /** kept to avoid JDownloader.jar <-> Core.jar update compatibility issues. can be removed in future **/
     public void parseMessage(String[] args) {
         onIncommingMessage(null, args);
     }

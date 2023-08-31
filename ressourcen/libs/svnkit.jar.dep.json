@@ -1,0 +1,12 @@
+{
+  "artefact":"org.tmatesoft.svnkit/svnkit",
+  "files":["svnkit.jar"],
+  "installedVersion":"1.8.10",
+  "lastUpdate":"2023-08-31T11:52:39 CEST",
+  "license":"\n    <license>\n      <name>TMate Open Source License</name>\n      <url>https://svnkit.com/license.html</url>\n      <distribution>repos</distribution>\n      <comments>GPL-like license with a dual-licensing option for closed source usage</comments>\n    </license>\n  ",
+  "minJRE":null,
+  "provider":"maven",
+  "renames":null,
+  "version":"1.8.10",
+  "confirm":true
+}
