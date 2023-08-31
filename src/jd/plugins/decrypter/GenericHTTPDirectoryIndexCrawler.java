@@ -66,7 +66,7 @@ public class GenericHTTPDirectoryIndexCrawler extends PluginForDecrypt {
         final URLConnectionAdapter con = this.br.openRequestConnection(getRequest);
         try {
             if (this.looksLikeDownloadableContent(con)) {
-                final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+                final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
                 final DownloadLink direct = getCrawler().createDirectHTTPDownloadLink(getRequest, con);
                 final String pathToFile = getCurrentDirectoryPath(param.getCryptedUrl());
                 /* Set relative path if one is available. */
@@ -74,11 +74,14 @@ public class GenericHTTPDirectoryIndexCrawler extends PluginForDecrypt {
                     final String pathToFolder = pathToFile.substring(0, pathToFile.lastIndexOf("/"));
                     direct.setRelativeDownloadFolderPath(pathToFolder);
                 }
-                decryptedLinks.add(direct);
-                return decryptedLinks;
+                ret.add(direct);
+                return ret;
             } else {
                 br.followConnection();
                 if (br.getHttpConnection().getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                } else if (!con.isOK()) {
+                    /* E.g. response 403 */
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
                 return this.parseHTTPDirectory(param, br);

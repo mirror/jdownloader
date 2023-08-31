@@ -173,6 +173,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
 
     public static enum URL_TYPE {
         EMBED_VIDEO,
+        EMBED_VIDEO_2,
         FILE,
         IMAGE,
         NORMAL,
@@ -608,11 +609,15 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
     }
 
     protected boolean isEmbedURL(final DownloadLink link) {
-        return URL_TYPE.EMBED_VIDEO.equals(getURLType(link));
+        return isEmbedURLType(getURLType(link));
     }
 
     protected boolean isEmbedURL(final String url) {
-        return URL_TYPE.EMBED_VIDEO.equals(getURLType(url));
+        return isEmbedURLType(getURLType(url));
+    }
+
+    protected boolean isEmbedURLType(final URL_TYPE type) {
+        return URL_TYPE.EMBED_VIDEO.equals(type) || URL_TYPE.EMBED_VIDEO_2.equals(type);
     }
 
     protected String buildEmbedURLPath(DownloadLink link, final String fuid) {
@@ -639,6 +644,8 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
         switch (type) {
         case EMBED_VIDEO:
             return "/embed-" + fuid + ".html";
+        case EMBED_VIDEO_2:
+            return "/e/" + fuid;
         case FILE:
             return "/file/" + fuid;
         case IMAGE:
@@ -727,6 +734,8 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
                      */
                     link.setContentUrl(URLHelper.parseLocation(new URL(url.getProtocol() + "://" + urlHost), buildEmbedURLPath(link, fuid)));
                     return URLHelper.parseLocation(new URL(protocol + hostCorrected), buildNormalURLPath(link, fuid));
+                case EMBED_VIDEO_2:
+                    return URLHelper.parseLocation(new URL(protocol + hostCorrected), buildNormalURLPath(link, fuid));
                 case FILE:
                     return URLHelper.parseLocation(new URL(protocol + hostCorrected), buildNormalFileURLPath(link, fuid));
                 case NORMAL:
@@ -745,8 +754,8 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
     }
 
     @Override
-    public String buildExternalDownloadURL(DownloadLink downloadLink, PluginForHost buildForThisPlugin) {
-        return getContentURL(downloadLink);
+    public String buildExternalDownloadURL(final DownloadLink link, final PluginForHost buildForThisPlugin) {
+        return getContentURL(link);
     }
 
     @Override
@@ -1137,7 +1146,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
             } else if (url.matches("(?i)^https?://[A-Za-z0-9\\-\\.:]+/embed-([a-z0-9]{12}).*") || url.matches("(?i)^https?://[A-Za-z0-9\\-\\.:]+/e/([a-z0-9]{12}).*")) {
                 return URL_TYPE.EMBED_VIDEO;
             } else {
-                logger.info("Unknown URL_TYPE:" + url);
+                logger.info("Unknown URL_TYPE: " + url);
             }
         }
         return null;
@@ -1242,8 +1251,13 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
         if (StringUtils.isEmpty(dllink)) {
             final URL_TYPE type = this.getURLType(br.getURL());
             if (type != URL_TYPE.EMBED_VIDEO) {
-                final String embed_access = this.getMainPage(br) + this.buildEmbedURLPath(link, this.getFUIDFromURL(link));
-                getPage(br, embed_access);
+                String fid = this.getFUIDFromURL(link);
+                String embedURL = br.getRegex("/e/" + fid + "|/embed-" + fid + "(\\.html)?").getMatch(-1);
+                if (embedURL == null) {
+                    embedURL = this.getMainPage(br) + this.buildEmbedURLPath(link, fid);
+                    logger.info("Failed to find embed URL in html -> Fallback to default embed URL: " + embedURL);
+                }
+                getPage(br, embedURL);
                 /**
                  * 2019-07-03: Example response when embedding is not possible (deactivated or it is not a video-file): "Can't create video
                  * code" OR "Video embed restricted for this user"

@@ -70,6 +70,8 @@ public class HighWayMeFolder extends GenericHTTPDirectoryIndexCrawler {
         if (remove2.size() > 0 && remove2.size() < crawledItems.size()) {
             logger.info("Removing additional unusable items: " + remove2);
             crawledItems.removeAll(remove2);
+        } else if (remove2.size() > 0 && remove2.size() == crawledItems.size()) {
+            logger.info("All results look to be unusable items and will most likely be displayed as offline");
         }
         /*
          * Workaround! We want directURLs to be handled by our high-way.me host plugin, not directhttp a it's usually expected to happen

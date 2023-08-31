@@ -111,7 +111,7 @@ public class HighWayMeFolder2 extends PluginForDecrypt {
                 // final String status = item.get("Status").toString();
                 if (!percentDownloaded.equals("100")) {
                     logger.info("Skipping unfinished item: " + name + " | Percent: " + percentDownloaded);
-                    skippedItemsTorrent.add(name);
+                    skippedItemsTorrent.add(name + " | Status: " + item.get("statusT") + " | " + percentDownloaded + "%");
                     continue;
                 }
                 final DownloadLink link = this.createDownloadlink(item.get("link").toString());
@@ -150,7 +150,7 @@ public class HighWayMeFolder2 extends PluginForDecrypt {
                 // final String status = item.get("Status").toString();
                 if (!percentDownloaded.equals("100")) {
                     logger.info("Skipping unfinished item: " + name + " | Percent: " + percentDownloaded);
-                    skippedItemsUsenet.add(name);
+                    skippedItemsUsenet.add(name + " | Status: " + item.get("Status") + " | " + percentDownloaded + "%");
                     continue;
                 }
                 final DownloadLink link = this.createDownloadlink(item.get("link").toString());
@@ -180,13 +180,19 @@ public class HighWayMeFolder2 extends PluginForDecrypt {
         final int numberofSkippedItems = skippedItemsTorrent.size() + skippedItemsUsenet.size();
         String textSkippedElements = "";
         if (skippedItemsTorrent.size() > 0) {
-            textSkippedElements = "Torrents: " + textSkippedElements;
+            textSkippedElements = "Torrent(s):";
+            for (final String skippedItemTorrent : skippedItemsTorrent) {
+                textSkippedElements += "\r\n" + skippedItemTorrent;
+            }
         }
         if (skippedItemsUsenet.size() > 0) {
             if (textSkippedElements.length() > 0) {
                 textSkippedElements += "\r\n";
             }
-            textSkippedElements += "Usenet: " + skippedItemsUsenet;
+            textSkippedElements += "Usenet:";
+            for (final String skippedItemUsenet : skippedItemsUsenet) {
+                textSkippedElements += "\r\n" + skippedItemUsenet;
+            }
         }
         if (ret.isEmpty()) {
             logger.info("Failed to find any results | Number of skipped items: " + numberofSkippedItems);
