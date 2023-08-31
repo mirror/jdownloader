@@ -3568,16 +3568,15 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
             }
             logger.info("Detected reconnect waittime (milliseconds): " + waittime);
             /* Not enough wait time to reconnect -> Wait short and retry */
-            if (waittime < 180000) {
-                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait until new downloads can be started", waittime);
-            } else if (account != null) {
+            final String errMsg = "Download limit reached or wait until next download can be started";
+            if (account != null) {
                 /*
                  * 2020-04-17: Some hosts will have trafficlimit and e.g. only allow one file every X minutes so his errormessage might be
                  * confusing to some users. Now it should cover both cases at the same time.
                  */
-                throw new AccountUnavailableException("Download limit reached or wait until next download can be started", waittime);
+                throw new AccountUnavailableException(errMsg, waittime);
             } else {
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, waittime);
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, errMsg, waittime);
             }
         } else if (limitBasedOnNumberofFilesAndTime != null) {
             /*

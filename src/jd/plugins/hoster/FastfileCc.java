@@ -18,6 +18,8 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.Regex;
@@ -28,8 +30,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class FastfileCc extends XFileSharingProBasic {
@@ -146,5 +146,25 @@ public class FastfileCc extends XFileSharingProBasic {
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Your IP was banned by administrator");
             }
         }
+    }
+
+    @Override
+    protected boolean supports_availablecheck_filesize_html() {
+        /**
+         * 2023-08-31: Disabled this because it will pickup wrong results when the user is logged in: In this case the "traffic used",
+         * "traffic left" and "space used" values are displayed on every page on top. </br>
+         * If a user has "space used" of 0 bytes, this would be used as file-size.
+         */
+        return false;
+    }
+
+    @Override
+    public String[] scanInfo(final String html, final String[] fileInfo) {
+        super.scanInfo(html, fileInfo);
+        final String betterFilesize = br.getRegex("size\\s*</span>\\s*<span>([^<]+)</span>").getMatch(0);
+        if (betterFilesize != null) {
+            fileInfo[1] = betterFilesize;
+        }
+        return fileInfo;
     }
 }
