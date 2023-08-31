@@ -6,7 +6,6 @@ import java.util.Map.Entry;
 
 import org.appwork.utils.Regex;
 import org.appwork.utils.parser.Mapimizer;
-import org.appwork.utils.svn.ResolveHandler;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.gui.IconKey;

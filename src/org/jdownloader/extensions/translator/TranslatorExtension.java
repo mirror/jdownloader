@@ -42,8 +42,6 @@ import org.appwork.utils.Hash;
 import org.appwork.utils.IO;
 import org.appwork.utils.locale.AWUTranslation;
 import org.appwork.utils.logging2.sendlogs.LogSenderTranslation;
-import org.appwork.utils.svn.LocaleRunnable;
-import org.appwork.utils.svn.Subversion;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;

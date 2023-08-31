@@ -31,26 +31,40 @@
  *     If the AGPL does not fit your needs, please contact us. We'll find a solution.
  * ====================================================================================================================================================
  * ==================================================================================================================================================== */
-package org.appwork.utils.svn;
+package org.jdownloader.extensions.translator;
 
-import java.util.Locale;
 
-public abstract class LocaleRunnable<T, E extends Exception> {
-    private static final Object LOCK = new Object();
+import org.tmatesoft.svn.core.SVNDepth;
+import org.tmatesoft.svn.core.SVNException;
+import org.tmatesoft.svn.core.io.ISVNReporter;
+import org.tmatesoft.svn.core.io.ISVNReporterBaton;
 
-    protected abstract T run() throws E;
+public class ExportReporterBaton implements ISVNReporterBaton {
 
-    public T runEnglish() throws E {
-        synchronized (LOCK) {
+    private long exportRevision;
 
-            Locale bef = Locale.getDefault();
-            Locale.setDefault(Locale.ENGLISH);
-            try {
-                return run();
-            } finally {
-                Locale.setDefault(bef);
-            }
-        }
+    public ExportReporterBaton(long revision) {
+        exportRevision = revision;
     }
 
+    public void report(ISVNReporter reporter) throws SVNException {
+        try {
+            /*
+             * Here empty working copy is reported.
+             * 
+             * ISVNReporter includes methods that allows to report mixed-rev
+             * working copy and even let server know that some files or
+             * directories are locally missing or locked.
+             */
+            reporter.setPath("", null, exportRevision, SVNDepth.INFINITY, true);
+
+            /*
+             * Don't forget to finish the report!
+             */
+            reporter.finishReport();
+        } catch (SVNException svne) {
+            reporter.abortReport();
+                  org.appwork.loggingv3.LogV3.fine("Report failed.");
+        }
+    }
 }

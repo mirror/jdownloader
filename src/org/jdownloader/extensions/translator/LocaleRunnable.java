@@ -31,65 +31,26 @@
  *     If the AGPL does not fit your needs, please contact us. We'll find a solution.
  * ====================================================================================================================================================
  * ==================================================================================================================================================== */
-package org.appwork.utils.svn;
+package org.jdownloader.extensions.translator;
 
+import java.util.Locale;
 
-import org.tmatesoft.svn.core.SVNNodeKind;
-import org.tmatesoft.svn.core.wc.ISVNInfoHandler;
-import org.tmatesoft.svn.core.wc.SVNInfo;
+public abstract class LocaleRunnable<T, E extends Exception> {
+    private static final Object LOCK = new Object();
 
-public class InfoEventHandler implements ISVNInfoHandler {
+    protected abstract T run() throws E;
 
-    public void handleInfo(SVNInfo info) {
-              org.appwork.loggingv3.LogV3.fine("-----------------INFO-----------------");
-              org.appwork.loggingv3.LogV3.fine("Local Path: " + info.getPath());
-              org.appwork.loggingv3.LogV3.fine("URL: " + info.getURL());
+    public T runEnglish() throws E {
+        synchronized (LOCK) {
 
-        if (info.isRemote() && info.getRepositoryRootURL() != null) {
-                  org.appwork.loggingv3.LogV3.fine("Repository Root URL: " + info.getRepositoryRootURL());
-        }
-
-        if (info.getRepositoryUUID() != null) {
-                  org.appwork.loggingv3.LogV3.fine("Repository UUID: " + info.getRepositoryUUID());
-        }
-
-              org.appwork.loggingv3.LogV3.fine("Revision: " + info.getRevision().getNumber());
-              org.appwork.loggingv3.LogV3.fine("Node Kind: " + info.getKind().toString());
-
-        if (!info.isRemote()) {
-                  org.appwork.loggingv3.LogV3.fine("Schedule: " + (info.getSchedule() != null ? info.getSchedule() : "normal"));
-        }
-
-              org.appwork.loggingv3.LogV3.fine("Last Changed Author: " + info.getAuthor());
-              org.appwork.loggingv3.LogV3.fine("Last Changed Revision: " + info.getCommittedRevision().getNumber());
-              org.appwork.loggingv3.LogV3.fine("Last Changed Date: " + info.getCommittedDate());
-
-        if (info.getPropTime() != null) {
-                  org.appwork.loggingv3.LogV3.fine("Properties Last Updated: " + info.getPropTime());
-        }
-
-        if (info.getKind() == SVNNodeKind.FILE && info.getChecksum() != null) {
-            if (info.getTextTime() != null) {
-                      org.appwork.loggingv3.LogV3.fine("Text Last Updated: " + info.getTextTime());
-            }
-                  org.appwork.loggingv3.LogV3.fine("Checksum: " + info.getChecksum());
-        }
-
-        if (info.getLock() != null) {
-            if (info.getLock().getID() != null) {
-                      org.appwork.loggingv3.LogV3.fine("Lock Token: " + info.getLock().getID());
-            }
-
-                  org.appwork.loggingv3.LogV3.fine("Lock Owner: " + info.getLock().getOwner());
-                  org.appwork.loggingv3.LogV3.fine("Lock Created: " + info.getLock().getCreationDate());
-
-            if (info.getLock().getExpirationDate() != null) {
-                      org.appwork.loggingv3.LogV3.fine("Lock Expires: " + info.getLock().getExpirationDate());
-            }
-
-            if (info.getLock().getComment() != null) {
-                      org.appwork.loggingv3.LogV3.fine("Lock Comment: " + info.getLock().getComment());
+            Locale bef = Locale.getDefault();
+            Locale.setDefault(Locale.ENGLISH);
+            try {
+                return run();
+            } finally {
+                Locale.setDefault(bef);
             }
         }
     }
+
 }

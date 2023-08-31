@@ -31,7 +31,7 @@
  *     If the AGPL does not fit your needs, please contact us. We'll find a solution.
  * ====================================================================================================================================================
  * ==================================================================================================================================================== */
-package org.appwork.utils.svn;
+package org.jdownloader.extensions.translator;
 
 import java.io.File;
 import java.io.IOException;
