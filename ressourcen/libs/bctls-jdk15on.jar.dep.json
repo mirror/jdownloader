@@ -2,7 +2,7 @@
   "artefact":"org.bouncycastle/bctls-jdk15to18",
   "files":["bctls-jdk15on.jar"],
   "installedVersion":"1.76",
-  "lastUpdate":"2023-08-31T11:52:39 CEST",
+  "lastUpdate":"2023-08-31T12:18:04 CEST",
   "license":"\n    <license>\n      <name>Bouncy Castle Licence</name>\n      <url>http://www.bouncycastle.org/licence.html</url>\n      <distribution>repo</distribution>\n    </license>\n  ",
   "minJRE":null,
   "provider":"maven",

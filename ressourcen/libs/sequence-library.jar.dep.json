@@ -2,7 +2,7 @@
   "artefact":"de.regnis.q.sequence/sequence-library",
   "files":["sequence-library.jar"],
   "installedVersion":"1.0.2",
-  "lastUpdate":"2023-08-31T11:52:39 CEST",
+  "lastUpdate":"2023-08-31T12:18:19 CEST",
   "license":"\n    <license>\n      <name>Sequence Library License (BSD-like)</name>\n      <url>https://svn.tmatesoft.com/repos/3rdparty/de.regnis.q.sequnce/trunk/LICENSE.txt</url>\n      <distribution>repos</distribution>\n      <comments>Sequence Library License (BSD-like)</comments>\n    </license>\n  ",
   "minJRE":null,
   "provider":"maven",

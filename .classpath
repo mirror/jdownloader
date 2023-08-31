@@ -57,7 +57,6 @@
 	<classpathentry kind="lib" path="ressourcen/libs/UPNP/seamless-http.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/UPNP/seamless-util.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/UPNP/seamless-xml.jar"/>
-	<classpathentry kind="lib" path="/AppWorkUtils/libs/proxyVole.jar" sourcepath="/ProxyVole"/>
 	<classpathentry kind="lib" path="ressourcen/libs/laf/syntheticaAluOxide.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/laf/syntheticaBlueLight.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/laf/syntheticaClassy.jar"/>
@@ -78,5 +77,6 @@
 	<classpathentry kind="lib" path="ressourcen/libs/bctls-jdk15on.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/laf/flatlaf.jar"/>
 	<classpathentry kind="lib" path="ressourcen/libs/bcutil-jdk15on.jar"/>
+	<classpathentry kind="lib" path="ressourcen/libs/proxyVole.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

@@ -1,0 +1,12 @@
+{
+  "artefact":"com.github.markusbernhardt/proxyvole",
+  "files":["proxyVole.jar"],
+  "installedVersion":"1.0.5-appwork.0.1",
+  "lastUpdate":"2023-08-31T12:18:19 CEST",
+  "license":"Apache License, Version 2.0",
+  "minJRE":null,
+  "provider":"manual",
+  "renames":null,
+  "version":"latest",
+  "confirm":true
+}
