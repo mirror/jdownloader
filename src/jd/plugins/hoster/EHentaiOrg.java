@@ -30,11 +30,11 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.components.config.EhentaiConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
 import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -67,7 +67,6 @@ public class EHentaiOrg extends PluginForHost {
     public EHentaiOrg(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://e-hentai.org/");
-        setConfigElements();
     }
 
     @Override
@@ -102,9 +101,6 @@ public class EHentaiOrg extends PluginForHost {
     private final boolean       ENABLE_RANDOM_UA                        = true;
     private final String        directurlpropertyNormal                 = "directurl";
     private final String        directurlpropertyOriginal               = "directurl_original";
-    public static final String  PREFER_ORIGINAL_QUALITY                 = "PREFER_ORIGINAL_QUALITY";
-    public static final String  PREFER_ORIGINAL_FILENAME                = "PREFER_ORIGINAL_FILENAME";
-    public static final String  SETTING_DOWNLOAD_ZIP                    = "DOWNLOAD_ZIP";
     private static final String TYPE_EXHENTAI                           = "exhentai\\.org";
     private static final String TYPE_ARCHIVE                            = "(?i)ehentaiarchive://(\\d+)/([a-z0-9]+)";
     private static final String TYPE_SINGLE_IMAGE_MULTI_PAGE_VIEW       = "(?i)https?://[^/]+/mpv/(\\d+)/([a-f0-9]{10})/#page(\\d+)";
@@ -167,6 +163,7 @@ public class EHentaiOrg extends PluginForHost {
         // nullification
         dllink = null;
         dllinkOriginal = null;
+        final EhentaiConfig cfg = PluginJsonConfig.get(EhentaiConfig.class);
         if (account != null) {
             login(this.br, account, false);
         } else {
@@ -277,7 +274,7 @@ public class EHentaiOrg extends PluginForHost {
             final String lowResInfo = (String) entries.get("d");
             final String origInfo = (String) entries.get("o");
             /* 2020-05-21: Only registered users can download originals! */
-            if (account != null && this.userWantsOriginalImageDownload()) {
+            if (account != null && cfg.isAccountDownloadsPreferOriginalQuality()) {
                 /* Download original file */
                 filesizeStr = new Regex(origInfo, "(\\d+\\.\\d{1,2} [A-Za-z]+)").getMatch(0);
                 String directurl = entries.get("lf").toString();
@@ -346,21 +343,21 @@ public class EHentaiOrg extends PluginForHost {
             originalFileName = Encoding.htmlDecode(originalFileName).trim();
             ext = getFileNameExtensionFromString(originalFileName, extDefault);
         }
+        final EhentaiConfig cfg = PluginJsonConfig.get(EhentaiConfig.class);
         if (link.getForcedFileName() != null) {
             /* Special handling: Package customizer altered, or user altered value, we need to update this value. */
             link.setForcedFileName(this.correctOrApplyFileNameExtension(link.getForcedFileName(), ext));
         } else {
             final String namepart = getFileTitle(br, link);
             /* Set filename based on user setting */
-            final boolean preferOriginalFilename = getPluginConfig().getBooleanProperty(EHentaiOrg.PREFER_ORIGINAL_FILENAME, EHentaiOrg.default_PREFER_ORIGINAL_FILENAME);
-            if (StringUtils.isNotEmpty(originalFileName) && preferOriginalFilename) {
+            if (StringUtils.isNotEmpty(originalFileName) && cfg.isPreferOriginalFilename()) {
                 link.setFinalFileName(originalFileName);
             } else {
                 /* crawler might not set file extension. */
                 link.setFinalFileName(namepart + ext);
             }
         }
-        final boolean userPrefersOriginalDownloadurl = this.getPluginConfig().getBooleanProperty(PREFER_ORIGINAL_QUALITY, default_PREFER_ORIGINAL_QUALITY);
+        final boolean userPrefersOriginalDownloadurl = cfg.isAccountDownloadsPreferOriginalQuality();
         final Regex originalDownloadRegex = br.getRegex("href=\"(https?://(?:(?:g\\.)?e\\-hentai|exhentai)\\.org/fullimg\\.php[^<>\"]*?)\">\\s*Download original \\d+ x \\d+ ([^<>\"]*?) source\\s*</a>");
         final String filesizeStrOriginalImage = originalDownloadRegex.getMatch(1);
         String originalImageDownloadurl = originalDownloadRegex.getMatch(0);
@@ -481,7 +478,8 @@ public class EHentaiOrg extends PluginForHost {
 
     private void handleDownload(final DownloadLink link, final Account account) throws Exception {
         final String directurlproperty;
-        if (account != null && this.userWantsOriginalImageDownload()) {
+        final EhentaiConfig cfg = PluginJsonConfig.get(EhentaiConfig.class);
+        if (account != null && cfg.isAccountDownloadsPreferOriginalQuality()) {
             directurlproperty = directurlpropertyOriginal;
         } else {
             directurlproperty = directurlpropertyNormal;
@@ -497,7 +495,7 @@ public class EHentaiOrg extends PluginForHost {
             directurl = storedDirecturl;
         } else {
             /* Pre-check based on cached values. */
-            if (account != null && this.userWantsOriginalImageDownload() && this.isOriginalDownloadable(link)) {
+            if (account != null && cfg.isAccountDownloadsPreferOriginalQuality() && this.isOriginalDownloadable(link)) {
                 checkForImagePointsLimit(account, link.getPluginPatternMatcher());
             }
             requestFileInformation(link, account, true);
@@ -506,7 +504,7 @@ public class EHentaiOrg extends PluginForHost {
                 logger.warning("Failed to find final downloadurl");
                 this.handleErrorsLastResort(link, account, this.br);
             }
-            if (!StringUtils.isEmpty(this.dllinkOriginal) && this.userWantsOriginalImageDownload()) {
+            if (!StringUtils.isEmpty(this.dllinkOriginal) && cfg.isAccountDownloadsPreferOriginalQuality()) {
                 checkForImagePointsLimit(account, this.dllinkOriginal);
                 directurl = this.dllinkOriginal;
             } else {
@@ -545,11 +543,11 @@ public class EHentaiOrg extends PluginForHost {
         }
         /* Store directurl to be able to re-use it later. */
         if (storedDirecturl == null) {
-            if (!StringUtils.isEmpty(this.dllinkOriginal) && this.userWantsOriginalImageDownload()) {
+            if (!StringUtils.isEmpty(this.dllinkOriginal) && cfg.isAccountDownloadsPreferOriginalQuality()) {
                 link.setProperty(directurl, dl.getConnection().getURL().toString());
             } else {
                 link.setProperty(directurl, dl.getConnection().getURL().toString());
-                if (this.userWantsOriginalImageDownload()) {
+                if (cfg.isAccountDownloadsPreferOriginalQuality()) {
                     /* User wants original but that is not available -> Remember that we were forced to download normal image instead. */
                     link.setProperty(PROPERTY_FORCED_DIRECTURL_PROPERTY, directurlpropertyNormal);
                 }
@@ -817,7 +815,8 @@ public class EHentaiOrg extends PluginForHost {
     private final String PROPERTY_ACCOUNT__ORIGINAL_IMAGE_DOWNLOAD_IMAGE_POINTS_USAGE_INFORMATION_HAS_BEEN_DISPLAYED = "original_image_download_image_points_usage_information_has_been_displayed";
 
     private void displayImagePointsUsageInformation(final Account account, final int[] creditsLeftInfo) {
-        if (userWantsOriginalImageDownload() && account.getBooleanProperty(PROPERTY_ACCOUNT__ORIGINAL_IMAGE_DOWNLOAD_IMAGE_POINTS_USAGE_INFORMATION_HAS_BEEN_DISPLAYED, false) == false) {
+        final EhentaiConfig cfg = PluginJsonConfig.get(EhentaiConfig.class);
+        if (cfg.isPreferOriginalFilename() && account.getBooleanProperty(PROPERTY_ACCOUNT__ORIGINAL_IMAGE_DOWNLOAD_IMAGE_POINTS_USAGE_INFORMATION_HAS_BEEN_DISPLAYED, false) == false) {
             final Thread thread = new Thread() {
                 public void run() {
                     try {
@@ -850,10 +849,6 @@ public class EHentaiOrg extends PluginForHost {
             thread.start();
             account.setProperty(PROPERTY_ACCOUNT__ORIGINAL_IMAGE_DOWNLOAD_IMAGE_POINTS_USAGE_INFORMATION_HAS_BEEN_DISPLAYED, true);
         }
-    }
-
-    private boolean userWantsOriginalImageDownload() {
-        return this.getPluginConfig().getBooleanProperty(PREFER_ORIGINAL_QUALITY, default_PREFER_ORIGINAL_QUALITY);
     }
 
     /**
@@ -916,14 +911,9 @@ public class EHentaiOrg extends PluginForHost {
         return free_maxdownloads;
     }
 
-    public static final boolean default_PREFER_ORIGINAL_QUALITY  = true;
-    public static final boolean default_PREFER_ORIGINAL_FILENAME = false;
-    public static final boolean default_ENABLE_DOWNLOAD_ZIP      = true;
-
-    private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PREFER_ORIGINAL_QUALITY, "Account only: Prefer original quality (bigger filesize, higher resolution, reaches limit faster)?").setDefaultValue(default_PREFER_ORIGINAL_QUALITY));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PREFER_ORIGINAL_FILENAME, "Prefer original file name?").setDefaultValue(default_PREFER_ORIGINAL_FILENAME));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SETTING_DOWNLOAD_ZIP, "Add .zip file containing all pictures of a gallery?").setDefaultValue(default_ENABLE_DOWNLOAD_ZIP));
+    @Override
+    public Class<? extends EhentaiConfig> getConfigInterface() {
+        return EhentaiConfig.class;
     }
 
     @Override

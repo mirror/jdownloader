@@ -26,6 +26,9 @@ import java.util.Set;
 import org.appwork.utils.Files;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.config.EhentaiConfig;
+import org.jdownloader.plugins.components.config.EhentaiConfig.GalleryCrawlMode;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
@@ -57,6 +60,8 @@ public class EHentaiOrgCrawler extends PluginForDecrypt {
     public LazyPlugin.FEATURE[] getFeatures() {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.IMAGE_GALLERY, LazyPlugin.FEATURE.XXX };
     }
+
+    private EhentaiConfig cfg = PluginJsonConfig.get(EhentaiConfig.class);
 
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
@@ -107,7 +112,8 @@ public class EHentaiOrgCrawler extends PluginForDecrypt {
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(title);
         fp.setProperty(FilePackage.PROPERTY_PACKAGE_KEY, galleryid);
-        if (getPluginConfig().getBooleanProperty(EHentaiOrg.SETTING_DOWNLOAD_ZIP, EHentaiOrg.default_ENABLE_DOWNLOAD_ZIP)) {
+        final GalleryCrawlMode mode = cfg.getGalleryCrawlMode();
+        if (mode == GalleryCrawlMode.ZIP_ONLY || mode == GalleryCrawlMode.ZIP_AND_IMAGES) {
             /* Crawl process can take some time so let's add this always existing URL first */
             final DownloadLink galleryArchive = this.createDownloadlink("ehentaiarchive://" + galleryid + "/" + galleryhash);
             galleryArchive.setProperty(EHentaiOrg.PROPERTY_GALLERY_URL, br.getURL());
@@ -120,6 +126,9 @@ public class EHentaiOrgCrawler extends PluginForDecrypt {
             galleryArchive.setAvailable(true);
             ret.add(galleryArchive);
             distribute(galleryArchive);
+        }
+        if (mode == GalleryCrawlMode.ZIP_ONLY) {
+            return ret;
         }
         /* Now add all single images */
         int pagemax = 0;
@@ -222,7 +231,6 @@ public class EHentaiOrgCrawler extends PluginForDecrypt {
 
     private DownloadLink getDownloadlink(final String url, final String galleryID, final String uploaderName, final String tagsCommaSeparated, final String fpName, final String originalFilename, final int imagePos) {
         final DownloadLink dl = createDownloadlink(url);
-        final boolean preferOriginalFilename = getPluginConfig().getBooleanProperty(EHentaiOrg.PREFER_ORIGINAL_FILENAME, EHentaiOrg.default_PREFER_ORIGINAL_FILENAME);
         final DecimalFormat df = new DecimalFormat("0000");
         final String imgposition = df.format(imagePos);
         final String namepart = fpName + "_" + galleryID + "-" + imgposition;
@@ -243,7 +251,7 @@ public class EHentaiOrgCrawler extends PluginForDecrypt {
             dl.setProperty("tags_comma_separated", tagsCommaSeparated);
         }
         final String name;
-        if (preferOriginalFilename && StringUtils.isNotEmpty(originalFilename)) {
+        if (cfg.isPreferOriginalFilename() && StringUtils.isNotEmpty(originalFilename)) {
             if (dupes.add(originalFilename)) {
                 name = originalFilename;
             } else {

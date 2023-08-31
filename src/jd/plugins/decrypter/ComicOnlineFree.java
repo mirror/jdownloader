@@ -51,7 +51,7 @@ public class ComicOnlineFree extends antiDDoSForDecrypt {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
         ret.add(new String[] { "comiconlinefree.net", "comiconlinefree.com" });
-        ret.add(new String[] { "viewcomics.co", "viewcomics.me" });
+        ret.add(new String[] { "viewcomics.org", "viewcomics.co", "viewcomics.me" });
         return ret;
     }
 
