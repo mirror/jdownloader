@@ -119,6 +119,19 @@ public class FastfileCc extends XFileSharingProBasic {
         return isAPIKey(this.getAPIKey());
     }
 
+    @Override
+    protected String regExTrafficLeft(final Browser br) {
+        String betterTrafficLeft = br.getRegex("Traffic available today:\\s*<strong>\\s*?(\\d+[^<]+)</strong>").getMatch(0);
+        if (betterTrafficLeft == null) {
+            betterTrafficLeft = br.getRegex(">Traffic available today</div>\\s*<div[^>]*>\\s*?(\\d+[^<]+)</div>").getMatch(0);
+        }
+        if (betterTrafficLeft != null) {
+            return betterTrafficLeft;
+        } else {
+            return super.regExTrafficLeft(br);
+        }
+    }
+
     /* 2020-05-29: Just a test */
     // @Override
     // protected boolean enable_account_api_only_mode() {
