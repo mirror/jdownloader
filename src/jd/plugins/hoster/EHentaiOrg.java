@@ -154,10 +154,13 @@ public class EHentaiOrg extends PluginForHost {
     }
 
     /** Returns true if we know for 100% that image points are required to download this item. */
-    private Boolean requiresImagePoints(final DownloadLink link) {
-        if (new Regex(link.getPluginPatternMatcher(), TYPE_ARCHIVE).patternFind()) {
+    private Boolean requiresImagePoints(final String url, final boolean userPrefersOriginalImages) {
+        if (new Regex(url, TYPE_ARCHIVE).patternFind()) {
+            return Boolean.TRUE;
+        } else if (url.contains(this.host_ehentai) && userPrefersOriginalImages) {
             return Boolean.TRUE;
         } else {
+            /* We can never be 100% sure that no points are required. */
             return null;
         }
     }
@@ -518,6 +521,7 @@ public class EHentaiOrg extends PluginForHost {
                 this.handleErrorsLastResort(link, account, this.br);
             }
             if (!StringUtils.isEmpty(this.dllinkOriginal) && cfg.isAccountDownloadsPreferOriginalQuality()) {
+                /* No need to check here as we've checked cached limits before already. */
                 // checkForCachedAccountLimits(account, this.dllinkOriginal);
                 directurl = this.dllinkOriginal;
             } else {
@@ -591,15 +595,7 @@ public class EHentaiOrg extends PluginForHost {
 
     private void checkForCachedAccountLimits(final Account account, final DownloadLink link, final String url, final boolean userPrefersOriginalImages) throws PluginException {
         final boolean isEhentai = url.contains(this.host_ehentai);
-        final boolean looksLikePointsAreRequired;
-        if (userPrefersOriginalImages && isEhentai) {
-            looksLikePointsAreRequired = true;
-        } else if (Boolean.TRUE.equals(this.requiresImagePoints(link))) {
-            looksLikePointsAreRequired = true;
-        } else {
-            looksLikePointsAreRequired = false;
-        }
-        if (looksLikePointsAreRequired) {
+        if (this.requiresImagePoints(url, userPrefersOriginalImages)) {
             /* Image points are required to download original images from e-hentai.org -> Check cached limits. */
             final int imagePointsLeft = this.getImagePointsLeft(account);
             if (imagePointsLeft <= 0) {
