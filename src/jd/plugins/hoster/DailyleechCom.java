@@ -56,7 +56,7 @@ import jd.plugins.components.MultiHosterManagement;
 public class DailyleechCom extends PluginForHost {
     private static final String          PROTOCOL                  = "http://";
     /* Connection limits */
-    private static final int             ACCOUNT_MAXDLS            = 1;
+    private static final int             ACCOUNT_MAXDLS            = 8;
     private static final boolean         ACCOUNT_PREMIUM_RESUME    = true;
     private static final int             ACCOUNT_PREMIUM_MAXCHUNKS = 1;
     /** This is the old project of proleech.link owner */
@@ -64,7 +64,7 @@ public class DailyleechCom extends PluginForHost {
 
     public DailyleechCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://dailyleech.com/payment/");
+        this.enablePremium(PROTOCOL + "dailyleech.com/payment/");
     }
 
     @Override
@@ -77,7 +77,7 @@ public class DailyleechCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://dailyleech.com/";
+        return "https://dailyleech.com/";
     }
 
     @Override
@@ -504,12 +504,10 @@ public class DailyleechCom extends PluginForHost {
         if (expire > System.currentTimeMillis()) {
             account.setType(AccountType.PREMIUM);
             /* More simultaneous downloads are theoretically possibly but this script will then fail to find downloadlinks! */
-            account.setMaxSimultanDownloads(ACCOUNT_MAXDLS);
             ai.setValidUntil(expire);
             ai.setUnlimitedTraffic();
         } else {
             account.setType(AccountType.FREE);
-            account.setMaxSimultanDownloads(ACCOUNT_MAXDLS);
             ai.setTrafficLeft(0);
             ai.setExpired(true);
         }
