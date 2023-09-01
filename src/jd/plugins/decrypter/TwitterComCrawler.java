@@ -267,7 +267,10 @@ public class TwitterComCrawler extends PluginForDecrypt {
         }
     }
 
-    /** Crawls items of links like this: https://twitter.com/i/broadcasts/<broadcastID> */
+    /**
+     * Crawls items of links like this: https://twitter.com/i/broadcasts/<broadcastID> </br>
+     * 2023-09-01: Stopped working on this as the streams are DRM protected. Reference: https://board.jdownloader.org/showthread.php?t=94178
+     */
     private ArrayList<DownloadLink> crawlBroadcast(final String broadcastID) throws IOException, PluginException, DecrypterRetryException {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.getPage("https://twitter.com/i/api/1.1/broadcasts/show.json?ids=" + broadcastID + "&include_events=true");
