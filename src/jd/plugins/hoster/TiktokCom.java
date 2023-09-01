@@ -220,7 +220,7 @@ public class TiktokCom extends PluginForHost {
         if (dllink == null || forceFetchNewDirecturl) {
             logger.info("Obtaining fresh directurl");
             final TiktokComCrawler crawler = (TiktokComCrawler) this.getNewPluginForDecryptInstance(this.getHost());
-            final ArrayList<DownloadLink> results = crawler.crawlSingleMedia(new CryptedLink(link.getPluginPatternMatcher()), account);
+            final ArrayList<DownloadLink> results = crawler.crawlSingleMedia(this, new CryptedLink(link.getPluginPatternMatcher()), account, true);
             final String storedType = link.getStringProperty(PROPERTY_TYPE);
             DownloadLink result = null;
             final String currentFilename = link.getName();
