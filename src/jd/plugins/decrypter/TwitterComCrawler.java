@@ -676,7 +676,6 @@ public class TwitterComCrawler extends PluginForDecrypt {
                         dl = this.createDownloadlink(photoURL);
                         dl.setProperty(PROPERTY_TYPE, TYPE_PHOTO);
                         dl.setProperty(TwitterCom.PROPERTY_DIRECTURL, photoURL);
-                        dl.setContentUrl(urlToTweet);
                     } else {
                         /* Unknown type -> This should never happen! */
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unknown media type:" + mediaType);
@@ -710,7 +709,6 @@ public class TwitterComCrawler extends PluginForDecrypt {
             /* Fallback handling for very old (???) content */
             /* Expect such URLs which our host plugin can handle: https://video.twimg.com/amplify_video/vmap/<numbers>.vmap */
             final DownloadLink singleVideo = this.createDownloadlink(vmapURL);
-            singleVideo.setContentUrl(urlToTweet);
             final String finalFilename = formattedDate + "_" + username + "_" + tweetID + replyTextForFilename + ".mp4";
             singleVideo.setFinalFileName(finalFilename);
             singleVideo.setProperty(PROPERTY_VIDEO_DIRECT_URLS_ARE_AVAILABLE_VIA_API_EXTENDED_ENTITY, false);
@@ -793,6 +791,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
         /* Add remaining plugin properties */
         for (final DownloadLink dl : retInternal) {
             /* Add additional properties */
+            dl.setContentUrl(urlToTweet);
             dl.setProperty(PROPERTY_USERNAME, username);
             dl.setProperty(PROPERTY_TWEET_ID, tweetID);
             dl.setProperty(PROPERTY_DATE, formattedDate);
@@ -1228,8 +1227,9 @@ public class TwitterComCrawler extends PluginForDecrypt {
             br.getPage(API_BASE_GRAPHQL + "/" + queryID + "/UserTweets?" + query.toString());
             final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
             final List<Map<String, Object>> timelineInstructions = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entries, "data/user/result/timeline_v2/timeline/instructions");
-            totalFoundTweets += profileCrawlerFoundTweetsOnCurrentPage;
             final List<DownloadLink> allowedResults = this.crawlUserProfileGraphqlTimelineInstructions(timelineInstructions, user, null, fp);
+            /* Yees global variables are dangerous but please don't touch this! */
+            totalFoundTweets += profileCrawlerFoundTweetsOnCurrentPage;
             ret.addAll(allowedResults);
             distribute(allowedResults);
             logger.info("Crawled page " + page + " | Found Tweets on this page: " + profileCrawlerFoundTweetsOnCurrentPage + " | Tweets crawled so far: " + profileCrawlerTotalCrawledTweetsCount + " | nextCursor = " + profileCrawlerNextCursor);
@@ -1266,7 +1266,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             } else {
-                logger.info("Returning nothing but we found " + totalFoundTweets + " tweets: Probably all elements got skipped as user has disabled tweet text crawling");
+                logger.info("Returning nothing but we found " + totalFoundTweets + " tweets: Probably all elements got skipped as user has disabled tweet text crawling and crawled profile only contained text tweets");
             }
         }
         return ret;

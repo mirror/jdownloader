@@ -318,7 +318,7 @@ public class XunniupanCom extends PluginForHost {
                 br.followConnection(true);
                 if (br.getURL().endsWith("/503.html")) {
                     /* Errorcode 503 with http code 200 */
-                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Ordinary users are only allowed to download one file at the same time, please complete the current download before trying to download other files.", 5 * 60 * 1000l);
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You are only allowed to download one file at the same time. Please complete the current download before trying to download other files.", 5 * 60 * 1000l);
                 }
                 if (dl.getConnection().getResponseCode() == 403) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 5 * 60 * 1000l);
