@@ -38,6 +38,7 @@ import java.util.regex.PatternSyntaxException;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.Time;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -1192,6 +1193,9 @@ public class TwitterComCrawler extends PluginForDecrypt {
         final Number statuses_count = (Number) user.get("statuses_count");
         final String userID = user.get("id_str").toString();
         final FilePackage fp = FilePackage.getInstance();
+        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            fp.setPackageKey(userID);
+        }
         fp.setName(username);
         final HashSet<String> cursorDupes = new HashSet<String>();
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
