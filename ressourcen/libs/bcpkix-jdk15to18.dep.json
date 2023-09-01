@@ -8,9 +8,9 @@
     "minJRE":"15000000",
     "version":"1.76"
   },
-  "minJRE":null,
+  "minJRE":"1.6",
   "provider":"maven",
   "renames":{"jdk15to18":"jdk15on"},
-  "version":"mvnLatest",
+  "version":null,
   "confirm":true
 }

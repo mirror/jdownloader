@@ -1,9 +1,9 @@
 {
-  "artefact":"org.bouncycastle/bcpkix-jdk15to18",
+  "artefact":"org.bouncycastle/bcutil-jdk15to18",
   "filter":null,
   "installed":{
     "date":null,
-    "files":["bcpkix-jdk15on.jar"],
+    "files":["bcutil-jdk15on.jar"],
     "license":"\n    <license>\n      <name>Bouncy Castle Licence</name>\n      <url>http://www.bouncycastle.org/licence.html</url>\n      <distribution>repo</distribution>\n    </license>\n  ",
     "minJRE":"15000000",
     "version":"1.76"

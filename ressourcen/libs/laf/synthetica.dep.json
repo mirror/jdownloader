@@ -1,0 +1,16 @@
+{
+  "artefact":"com.jyloo/synthetica",
+  "filter":null,
+  "installed":{
+    "date":null,
+    "files":["synthetica.jar"],
+    "license":"Licensed by AppWork GmbH for all AppWork products.",
+    "minJRE":"16000000",
+    "version":"2.34.0"
+  },
+  "minJRE":"1.6",
+  "provider":"manual",
+  "renames":null,
+  "version":null,
+  "confirm":true
+}

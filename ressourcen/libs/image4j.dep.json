@@ -1,0 +1,16 @@
+{
+  "artefact":"net.sf.image4j/image4j",
+  "filter":null,
+  "installed":{
+    "date":null,
+    "files":["image4j.jar"],
+    "license":"LGPL",
+    "minJRE":"16000000",
+    "version":"0.1-appworkjre1.6"
+  },
+  "minJRE":"1.6",
+  "provider":"manual",
+  "renames":null,
+  "version":null,
+  "confirm":true
+}

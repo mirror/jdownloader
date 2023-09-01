@@ -8,7 +8,7 @@
     "minJRE":"15000000",
     "version":"1.1.10"
   },
-  "minJRE":null,
+  "minJRE":"1.6",
   "provider":"maven",
   "renames":null,
   "version":"1.1.10",

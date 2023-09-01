@@ -1,0 +1,16 @@
+{
+  "artefact":"com.formdev/flatlaf",
+  "filter":["flatlaf.jar"],
+  "installed":{
+    "date":null,
+    "files":["flatlaf.jar"],
+    "license":"\n    <license>\n      <name>The Apache License, Version 2.0</name>\n      <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>\n    </license>\n  ",
+    "minJRE":"18000000",
+    "version":"3.2"
+  },
+  "minJRE":"1.8",
+  "provider":"maven",
+  "renames":null,
+  "version":null,
+  "confirm":true
+}

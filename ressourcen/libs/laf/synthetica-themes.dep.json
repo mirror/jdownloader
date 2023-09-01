@@ -1,0 +1,34 @@
+{
+  "artefact":"com.jyloo/synthetica-themes",
+  "filter":null,
+  "installed":{
+    "date":null,
+    "files":[
+      "syntheticaAluOxide.jar",
+      "syntheticaBlackEye.jar",
+      "syntheticaBlackMoon.jar",
+      "syntheticaBlackStar.jar",
+      "syntheticaBlueIce.jar",
+      "syntheticaBlueLight.jar",
+      "syntheticaBlueMoon.jar",
+      "syntheticaBlueSteel.jar",
+      "syntheticaClassy.jar",
+      "syntheticaDark.jar",
+      "syntheticaGreenDream.jar",
+      "syntheticaMauveMetallic.jar",
+      "syntheticaOrangeMetallic.jar",
+      "syntheticaPlain.jar",
+      "syntheticaSilverMoon.jar",
+      "syntheticaSkyMetallic.jar",
+      "syntheticaWhiteVision.jar"
+    ],
+    "license":"Licensed by AppWork GmbH for all AppWork products.",
+    "minJRE":"16000000",
+    "version":"2.34.0"
+  },
+  "minJRE":"1.6",
+  "provider":"manual",
+  "renames":null,
+  "version":null,
+  "confirm":true
+}

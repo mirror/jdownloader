@@ -1,0 +1,16 @@
+{
+  "artefact":"net.sourceforge.htmlunit/htmlunit-core-js",
+  "filter":null,
+  "installed":{
+    "date":"2023-09-01T14:34:49 CEST",
+    "files":["htmlunit-core-js.jar"],
+    "license":null,
+    "minJRE":"15000000",
+    "version":"2.2"
+  },
+  "minJRE":"1.6",
+  "provider":"maven",
+  "renames":null,
+  "version":null,
+  "confirm":true
+}

@@ -1,0 +1,16 @@
+{
+  "artefact":"net.lingala.zip4j/zip4j",
+  "filter":null,
+  "installed":{
+    "date":null,
+    "files":["zip4j.jar"],
+    "license":null,
+    "minJRE":"17000000",
+    "version":"1.3.3"
+  },
+  "minJRE":"1.7",
+  "provider":"maven",
+  "renames":null,
+  "version":"/1\\..*/",
+  "confirm":true
+}

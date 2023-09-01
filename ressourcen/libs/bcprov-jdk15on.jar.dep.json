@@ -1,9 +1,13 @@
 {
   "artefact":"org.bouncycastle/bcprov-jdk15to18",
-  "files":["bcprov-jdk15on.jar"],
-  "installedVersion":"1.76",
-  "lastUpdate":"2023-08-31T12:18:04 CEST",
-  "license":"\n    <license>\n      <name>Bouncy Castle Licence</name>\n      <url>http://www.bouncycastle.org/licence.html</url>\n      <distribution>repo</distribution>\n    </license>\n  ",
+  "filter":null,
+  "installed":{
+    "date":null,
+    "files":["bcprov-jdk15on.jar"],
+    "license":"\n    <license>\n      <name>Bouncy Castle Licence</name>\n      <url>http://www.bouncycastle.org/licence.html</url>\n      <distribution>repo</distribution>\n    </license>\n  ",
+    "minJRE":"15000000",
+    "version":"1.76"
+  },
   "minJRE":null,
   "provider":"maven",
   "renames":{"jdk15to18":"jdk15on"},

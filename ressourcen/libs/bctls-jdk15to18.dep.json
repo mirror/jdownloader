@@ -1,16 +1,16 @@
 {
-  "artefact":"org.bouncycastle/bcpkix-jdk15to18",
+  "artefact":"org.bouncycastle/bctls-jdk15to18",
   "filter":null,
   "installed":{
     "date":null,
-    "files":["bcpkix-jdk15on.jar"],
+    "files":["bctls-jdk15on.jar"],
     "license":"\n    <license>\n      <name>Bouncy Castle Licence</name>\n      <url>http://www.bouncycastle.org/licence.html</url>\n      <distribution>repo</distribution>\n    </license>\n  ",
     "minJRE":"15000000",
     "version":"1.76"
   },
-  "minJRE":null,
+  "minJRE":"1.6",
   "provider":"maven",
   "renames":{"jdk15to18":"jdk15on"},
-  "version":"mvnLatest",
+  "version":null,
   "confirm":true
 }

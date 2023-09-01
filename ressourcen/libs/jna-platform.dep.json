@@ -8,9 +8,9 @@
     "minJRE":"16000000",
     "version":"5.13.0"
   },
-  "minJRE":null,
+  "minJRE":"1.6",
   "provider":"maven",
   "renames":{"jna-platform.jar":"jna_platform.jar"},
-  "version":"mvnLatest",
+  "version":null,
   "confirm":true
 }

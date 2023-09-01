@@ -8,9 +8,9 @@
     "minJRE":"16000000",
     "version":"1.0.5-appwork.0.1"
   },
-  "minJRE":null,
+  "minJRE":"1.6",
   "provider":"manual",
   "renames":null,
-  "version":"latest",
+  "version":null,
   "confirm":true
 }

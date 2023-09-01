@@ -1,9 +1,13 @@
 {
   "artefact":"net.java.dev.jna/jna",
-  "files":["jna.jar"],
-  "installedVersion":"5.13.0",
-  "lastUpdate":"2023-08-31T12:18:04 CEST",
-  "license":"\n    <license>\n      <name>LGPL-2.1-or-later</name>\n      <url>https://www.gnu.org/licenses/old-licenses/lgpl-2.1</url>\n      <distribution>repo</distribution>\n      <comments>\n        Java Native Access (JNA) is licensed under the LGPL, version 2.1 or\n        later, or the Apache License, version 2.0. You can freely decide which\n        license you want to apply to the project.\n      </comments>\n    </license>\n    <license>\n      <name>Apache-2.0</name>\n      <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>\n      <distribution>repo</distribution>\n      <comments>\n        Java Native Access (JNA) is licensed under the LGPL, version 2.1 or\n        later, or the Apache License, version 2.0. You can freely decide which\n        license you want to apply to the project.\n      </comments>\n    </license>\n  ",
+  "filter":null,
+  "installed":{
+    "date":null,
+    "files":["jna.jar"],
+    "license":"\n    <license>\n      <name>LGPL-2.1-or-later</name>\n      <url>https://www.gnu.org/licenses/old-licenses/lgpl-2.1</url>\n      <distribution>repo</distribution>\n      <comments>\n        Java Native Access (JNA) is licensed under the LGPL, version 2.1 or\n        later, or the Apache License, version 2.0. You can freely decide which\n        license you want to apply to the project.\n      </comments>\n    </license>\n    <license>\n      <name>Apache-2.0</name>\n      <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>\n      <distribution>repo</distribution>\n      <comments>\n        Java Native Access (JNA) is licensed under the LGPL, version 2.1 or\n        later, or the Apache License, version 2.0. You can freely decide which\n        license you want to apply to the project.\n      </comments>\n    </license>\n  ",
+    "minJRE":"16000000",
+    "version":"5.13.0"
+  },
   "minJRE":null,
   "provider":"maven",
   "renames":null,

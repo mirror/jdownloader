@@ -1,0 +1,16 @@
+{
+  "artefact":"com.jhlabs/filters",
+  "filter":null,
+  "installed":{
+    "date":null,
+    "files":["Filters.jar"],
+    "license":"\n    <license>\n      <name>Apache License, Version 2.0</name>\n      <url>http://www.apache.org/licenses/LICENSE-2.0</url>\n      <distribution>repo</distribution>\n    </license>\n  ",
+    "minJRE":"16000000",
+    "version":"2.0.235-1"
+  },
+  "minJRE":"1.6",
+  "provider":"maven",
+  "renames":{"filters":"Filters"},
+  "version":null,
+  "confirm":true
+}
