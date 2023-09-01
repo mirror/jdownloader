@@ -1194,7 +1194,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
         final String userID = user.get("id_str").toString();
         final FilePackage fp = FilePackage.getInstance();
         if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-            fp.setPackageKey(userID);
+            fp.setPackageKey("twitterprofile://" + userID);
         }
         fp.setName(username);
         final HashSet<String> cursorDupes = new HashSet<String>();
