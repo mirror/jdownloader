@@ -815,9 +815,10 @@ public class TiktokComCrawler extends PluginForDecrypt {
                 } else {
                     /* Video post */
                     final DownloadLink video = new DownloadLink(hostPlg, this.getHost(), contentURL);
+                    video.setProperty(TiktokCom.PROPERTY_TYPE, TiktokCom.TYPE_VIDEO);
                     video.setProperty(TiktokCom.PROPERTY_ALLOW_HEAD_REQUEST, true);
                     String videoDirecturl = (String) streamInfo.get("downloadAddr");
-                    if (StringUtils.isEmpty(videoDirecturl) || true) {
+                    if (StringUtils.isEmpty(videoDirecturl)) {
                         videoDirecturl = (String) streamInfo.get("playAddr");
                     }
                     if (StringUtils.isEmpty(videoDirecturl)) {

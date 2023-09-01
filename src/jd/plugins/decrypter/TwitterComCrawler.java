@@ -1187,6 +1187,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
         }
         final String queryID = this.getGraphqlQueryID("UserTweets");
         final Map<String, Object> user = getUserInfo(br, account, username);
+        final Number statuses_count = (Number) user.get("statuses_count");
         final String userID = user.get("id_str").toString();
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(username);
@@ -1200,6 +1201,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
             profileCrawlerTotalCrawledTweetsCount = this.preGivenNumberOfTotalWalkedThroughTweetsCount.intValue();
             profileCrawlerNextCursor = this.preGivenNextCursor;
         }
+        int totalFoundTweets = 0;
         do {
             final Map<String, Object> variables = new HashMap<String, Object>();
             variables.put("userId", userID);
@@ -1223,6 +1225,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
             br.getPage(API_BASE_GRAPHQL + "/" + queryID + "/UserTweets?" + query.toString());
             final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
             final List<Map<String, Object>> timelineInstructions = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entries, "data/user/result/timeline_v2/timeline/instructions");
+            totalFoundTweets += profileCrawlerFoundTweetsOnCurrentPage;
             final List<DownloadLink> allowedResults = this.crawlUserProfileGraphqlTimelineInstructions(timelineInstructions, user, null, fp);
             ret.addAll(allowedResults);
             distribute(allowedResults);
@@ -1251,6 +1254,18 @@ public class TwitterComCrawler extends PluginForDecrypt {
             }
         } while (true);
         logger.info("Last nextCursor: " + profileCrawlerNextCursor);
+        if (ret.isEmpty()) {
+            if (totalFoundTweets == 0) {
+                if (statuses_count != null && statuses_count.intValue() > 0 && account == null) {
+                    throw new AccountRequiredException();
+                } else {
+                    /* No results and we don't know why. */
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+            } else {
+                logger.info("Returning nothing but we found " + totalFoundTweets + " tweets: Probably all elements got skipped as user has disabled tweet text crawling");
+            }
+        }
         return ret;
     }
 

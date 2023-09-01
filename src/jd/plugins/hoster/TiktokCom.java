@@ -212,7 +212,7 @@ public class TiktokCom extends PluginForHost {
         }
         link.setProperty(PROPERTY_VIDEO_ID, fid);
         if (!link.isNameSet()) {
-            /* Set fallback-filename. Use .mp4 file-extension as most items are videos. */
+            /* Set fallback-filename. Use .mp4 file-extension as most items are expected to be videos. */
             link.setName(fid + ".mp4");
         }
         String dllink = null;
@@ -222,18 +222,23 @@ public class TiktokCom extends PluginForHost {
             final TiktokComCrawler crawler = (TiktokComCrawler) this.getNewPluginForDecryptInstance(this.getHost());
             final ArrayList<DownloadLink> results = crawler.crawlSingleMedia(new CryptedLink(link.getPluginPatternMatcher()), account);
             final String storedType = link.getStringProperty(PROPERTY_TYPE);
-            boolean mediaTypeWorkaroundActive = false;
             DownloadLink result = null;
             final String currentFilename = link.getName();
+            boolean resultsContainVideo = false;
+            DownloadLink audioFallbackCandidate = null;
             for (final DownloadLink thisresult : results) {
                 if (StringUtils.equals(this.getLinkID(thisresult), this.getLinkID(link))) {
                     result = thisresult;
                     break;
-                } else if (storedType == null && StringUtils.equals(getType(thisresult), TYPE_AUDIO) && StringUtils.endsWithCaseInsensitive(currentFilename, ".mp4")) {
-                    result = thisresult;
-                    mediaTypeWorkaroundActive = true;
-                    break;
+                } else if (StringUtils.equals(getType(thisresult), TYPE_AUDIO)) {
+                    audioFallbackCandidate = thisresult;
+                } else if (StringUtils.equals(getType(thisresult), TYPE_VIDEO)) {
+                    resultsContainVideo = true;
                 }
+            }
+            if (result == null && storedType == null && !resultsContainVideo && StringUtils.endsWithCaseInsensitive(currentFilename, ".mp4") && audioFallbackCandidate != null) {
+                logger.info("Workaround for legacy elements: Download .mp4 file as .mp3 because there is no video available for this item");
+                result = audioFallbackCandidate;
             }
             if (result == null) {
                 /* This should never happen */
@@ -282,6 +287,7 @@ public class TiktokCom extends PluginForHost {
     /** Prepare headers for usage of tiktok media direct-URLs. */
     private void prepareDownloadHeaders(final DownloadLink link, final Browser br) {
         br.getHeaders().put("Referer", "https://www." + this.getHost() + "/");
+        br.getHeaders().put("Origin", "https://www." + this.getHost());
     }
 
     private boolean allowsHeadRequest(final DownloadLink link) {
