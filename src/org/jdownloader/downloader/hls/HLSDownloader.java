@@ -106,7 +106,8 @@ public class HLSDownloader extends DownloadInterface {
     private class PartFile {
         private final File          file;
         private final int           index;
-        private final AtomicBoolean flag = new AtomicBoolean(false);
+        private final AtomicBoolean downloadFlag = new AtomicBoolean(false);
+        private final AtomicBoolean concatFlag   = new AtomicBoolean(false);
 
         private PartFile(int index, File file) {
             this.index = index;
@@ -572,6 +573,7 @@ public class HLSDownloader extends DownloadInterface {
                     outputCompleteFile.delete();
                 } else {
                     for (final PartFile partFile : outputPartFiles) {
+                        partFile.concatFlag.set(true);
                         partFile.file.delete();
                     }
                 }
@@ -721,7 +723,7 @@ public class HLSDownloader extends DownloadInterface {
                             throw e;
                         }
                     }
-                    partFile.flag.set(true);
+                    partFile.downloadFlag.set(true);
                 } catch (FFMpegException e) {
                     // some systems have problems with special chars to find the in or out file.
                     if (FFMpegException.ERROR.PATH_LENGTH.equals(e.getError())) {
@@ -731,7 +733,7 @@ public class HLSDownloader extends DownloadInterface {
                         try {
                             ffmpeg.runCommand(null, buildDownloadCommandLine(downloadFormat, ffmpeg, tmpOut.getAbsolutePath()));
                             ffmpeg.moveFile(destination, tmpOut);
-                            partFile.flag.set(true);
+                            partFile.downloadFlag.set(true);
                             deleteTmp = false;
                         } finally {
                             if (deleteTmp && !tmpOut.delete() && tmpOut.exists()) {
@@ -1780,7 +1782,7 @@ public class HLSDownloader extends DownloadInterface {
         }
         for (final PartFile partFile : outputPartFiles) {
             if (!isPartFileComplete(partFile)) {
-                logger.severe("PartFile:" + partFile.file + " not complete");
+                logger.severe("PartFile:" + partFile.file + " not complete: exists:" + partFile.file.isFile() + "|size:" + partFile.file.length());
                 throw new PluginException(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE, "PartFile:" + partFile.file + " not complete");
             }
         }
@@ -1803,7 +1805,7 @@ public class HLSDownloader extends DownloadInterface {
     }
 
     protected boolean isPartFileComplete(PartFile partFile) {
-        return partFile.flag.get() && isOutputFileComplete(partFile.index, partFile.file);
+        return partFile.concatFlag.get() || (partFile.downloadFlag.get() && isOutputFileComplete(partFile.index, partFile.file));
     }
 
     protected boolean isOutputFileComplete(int index, File file) {

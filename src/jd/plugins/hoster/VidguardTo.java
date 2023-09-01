@@ -26,16 +26,6 @@ import java.util.Map;
 
 import javax.imageio.ImageIO;
 
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.IO;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.ImageProvider.ImageProvider;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.images.IconIO;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.captcha.v2.challenge.multiclickcaptcha.MultiClickedPoint;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -48,6 +38,16 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.IO;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.ImageProvider.ImageProvider;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.images.IconIO;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.challenge.multiclickcaptcha.MultiClickedPoint;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class VidguardTo extends PluginForHost {
@@ -68,7 +68,7 @@ public class VidguardTo extends PluginForHost {
     private static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "vidguard.to", "vgfplay.com", "vgembed.com", "v6embed.xyz" });
+        ret.add(new String[] { "vidguard.to", "vid-guard.com", "vgfplay.com", "vgembed.com", "v6embed.xyz" });
         return ret;
     }
 
