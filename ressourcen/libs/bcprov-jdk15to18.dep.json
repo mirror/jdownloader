@@ -3,7 +3,7 @@
   "filter":null,
   "installed":{
     "date":null,
-    "files":["bcprov-jdk15on.jar"],
+    "hashes":{"bcprov-jdk15on.jar":"1c43883ac1c69ed43a13d48d130420ff3562422d0a7d2910cfa77a3e3ee6400a"},
     "license":"\n    <license>\n      <name>Bouncy Castle Licence</name>\n      <url>http://www.bouncycastle.org/licence.html</url>\n      <distribution>repo</distribution>\n    </license>\n  ",
     "minJRE":"15000000",
     "version":"1.76"

@@ -3,7 +3,7 @@
   "filter":null,
   "installed":{
     "date":null,
-    "files":["js.jar"],
+    "hashes":{"js.jar":"5c6dae050ceb71774a5fc82ce6e3f0392daf0ffa9ec3596f70d4d07ee50b8970"},
     "license":"\n    <license>\n      <name>Mozilla Public License, Version 2.0</name>\n      <url>http://www.mozilla.org/MPL/2.0/index.txt</url>\n    </license>\n  ",
     "minJRE":"16000000",
     "version":"1.7.7.2"

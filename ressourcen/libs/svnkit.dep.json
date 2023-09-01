@@ -3,7 +3,7 @@
   "filter":null,
   "installed":{
     "date":null,
-    "files":["svnkit.jar"],
+    "hashes":{"svnkit.jar":"09cb0908ec713b6aa307881c3fbd3f7b504430beae1d51120b974e2fc541fb6e"},
     "license":"\n    <license>\n      <name>TMate Open Source License (with dual licensing option)</name>\n      <url>http://www.svnkit.com/license.html</url>\n    </license>\n  ",
     "minJRE":"16000000",
     "version":"1.8.10"

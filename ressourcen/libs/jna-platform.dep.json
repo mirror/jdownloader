@@ -3,7 +3,7 @@
   "filter":null,
   "installed":{
     "date":null,
-    "files":["jna_platform.jar"],
+    "hashes":{"jna_platform.jar":"474d7b88f6e97009b6ec1d98c3024dd95c23187c65dabfbc35331bcac3d173dd"},
     "license":"\n    <license>\n      <name>LGPL-2.1-or-later</name>\n      <url>https://www.gnu.org/licenses/old-licenses/lgpl-2.1</url>\n      <distribution>repo</distribution>\n      <comments>\n        Java Native Access (JNA) is licensed under the LGPL, version 2.1 or\n        later, or the Apache License, version 2.0. You can freely decide which\n        license you want to apply to the project.\n      </comments>\n    </license>\n    <license>\n      <name>Apache-2.0</name>\n      <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>\n      <distribution>repo</distribution>\n      <comments>\n        Java Native Access (JNA) is licensed under the LGPL, version 2.1 or\n        later, or the Apache License, version 2.0. You can freely decide which\n        license you want to apply to the project.\n      </comments>\n    </license>\n  ",
     "minJRE":"16000000",
     "version":"5.13.0"

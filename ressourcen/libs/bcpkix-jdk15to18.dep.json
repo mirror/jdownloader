@@ -3,7 +3,7 @@
   "filter":null,
   "installed":{
     "date":null,
-    "files":["bcpkix-jdk15on.jar"],
+    "hashes":{"bcpkix-jdk15on.jar":"1b437ec94be3f5db003029884ad9426a98cfabc2e61811aed262703826d86b2b"},
     "license":"\n    <license>\n      <name>Bouncy Castle Licence</name>\n      <url>http://www.bouncycastle.org/licence.html</url>\n      <distribution>repo</distribution>\n    </license>\n  ",
     "minJRE":"15000000",
     "version":"1.76"

@@ -3,7 +3,7 @@
   "filter":null,
   "installed":{
     "date":null,
-    "files":["antlr-runtime.jar"],
+    "hashes":{"antlr-runtime.jar":"5b7cf53b7b30b034023f58030c8147c433f2bee0fe7dec8fae6bebf3708c5a63"},
     "license":null,
     "minJRE":"0",
     "version":"3.4"

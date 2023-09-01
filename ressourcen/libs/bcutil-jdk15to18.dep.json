@@ -3,14 +3,14 @@
   "filter":null,
   "installed":{
     "date":null,
-    "files":["bcutil-jdk15on.jar"],
+    "hashes":{"bcutil-jdk15on.jar":"1a3a1935c4abf195d7d564b56a19cb676c9727dd7c60d7d0f67efaea342ff804"},
     "license":"\n    <license>\n      <name>Bouncy Castle Licence</name>\n      <url>http://www.bouncycastle.org/licence.html</url>\n      <distribution>repo</distribution>\n    </license>\n  ",
     "minJRE":"15000000",
     "version":"1.76"
   },
-  "minJRE":null,
+  "minJRE":"1.6",
   "provider":"maven",
   "renames":{"jdk15to18":"jdk15on"},
-  "version":"mvnLatest",
+  "version":null,
   "confirm":true
 }

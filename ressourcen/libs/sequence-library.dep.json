@@ -3,7 +3,7 @@
   "filter":null,
   "installed":{
     "date":null,
-    "files":["sequence-library.jar"],
+    "hashes":{"sequence-library.jar":"2f36485bec6bb5f7ba97a40241462f3ce8b4dde2ad1acfe08ea3712450d9e7ea"},
     "license":"\r\n    <license>\r\n      <name>Sequence Library License</name>\r\n      <url>http://www.svnkit.com/SEQUENCE-LICENSE.txt</url>\r\n    </license>\r\n  ",
     "minJRE":"0",
     "version":"1.0.2"

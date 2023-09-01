@@ -3,7 +3,7 @@
   "filter":null,
   "installed":{
     "date":null,
-    "files":["bctls-jdk15on.jar"],
+    "hashes":{"bctls-jdk15on.jar":"2483a68259ba39d19efb19c09401307bb833b7aa6eb60e12c43c8ea37a8e43be"},
     "license":"\n    <license>\n      <name>Bouncy Castle Licence</name>\n      <url>http://www.bouncycastle.org/licence.html</url>\n      <distribution>repo</distribution>\n    </license>\n  ",
     "minJRE":"15000000",
     "version":"1.76"

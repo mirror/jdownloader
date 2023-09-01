@@ -3,10 +3,10 @@
   "filter":null,
   "installed":{
     "date":null,
-    "files":["image4j.jar"],
+    "hashes":{"image4j.jar":"88f9d391a1bde218ae2bf1207415b7900282bd6be5c1c0efabab5efee7632d2d"},
     "license":"LGPL",
     "minJRE":"16000000",
-    "version":"0.1-appworkjre1.6"
+    "version":"0.7-appworkjre1.6"
   },
   "minJRE":"1.6",
   "provider":"manual",

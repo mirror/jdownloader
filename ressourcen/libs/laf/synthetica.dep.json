@@ -3,7 +3,7 @@
   "filter":null,
   "installed":{
     "date":null,
-    "files":["synthetica.jar"],
+    "hashes":{"synthetica.jar":"ae423de80385c34a925d2776b29bcca83707dcde60011a81f453a9a19819c66e"},
     "license":"Licensed by AppWork GmbH for all AppWork products.",
     "minJRE":"16000000",
     "version":"2.34.0"

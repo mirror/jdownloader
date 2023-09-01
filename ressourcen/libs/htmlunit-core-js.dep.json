@@ -2,8 +2,8 @@
   "artefact":"net.sourceforge.htmlunit/htmlunit-core-js",
   "filter":null,
   "installed":{
-    "date":"2023-09-01T15:04:40 CEST",
-    "files":["htmlunit-core-js.jar"],
+    "date":null,
+    "hashes":{"htmlunit-core-js.jar":"32fd749af1599ab0daf22b60cbe97b6792cb9fe8b4220496a3adb667e58a5c3c"},
     "license":"\n        <license>\n            <name>Mozilla Public License version 2.0</name>\n            <url>http://www.mozilla.org/MPL/2.0/</url>\n            <distribution>repo</distribution>\n        </license>\n    ",
     "minJRE":"15000000",
     "version":"2.17"

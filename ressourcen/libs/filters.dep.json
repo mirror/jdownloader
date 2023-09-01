@@ -3,7 +3,7 @@
   "filter":null,
   "installed":{
     "date":null,
-    "files":["Filters.jar"],
+    "hashes":{"Filters.jar":"a37202f03eae99ab1faf2a89eeaee3665c8489f45b1aeb0d5926d78a54c613bf"},
     "license":"\n    <license>\n      <name>Apache License, Version 2.0</name>\n      <url>http://www.apache.org/licenses/LICENSE-2.0</url>\n      <distribution>repo</distribution>\n    </license>\n  ",
     "minJRE":"16000000",
     "version":"2.0.235-1"
