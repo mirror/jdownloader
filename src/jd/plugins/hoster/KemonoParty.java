@@ -19,16 +19,23 @@ import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
+import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.KemonoPartyCrawler;
@@ -40,13 +47,26 @@ public class KemonoParty extends PluginForHost {
         super(wrapper);
     }
 
-    public static String PROPERTY_TITLE              = "title";
-    public static String PROPERTY_TEXT               = "text";
-    public static String PROPERTY_PORTAL             = "portal";
-    public static String PROPERTY_USERID             = "userid";
-    public static String PROPERTY_POSTID             = "postid";
-    public static String PROPERTY_DATE               = "date";
-    public static String PROPERTY_POST_CONTENT_INDEX = "postContentIndex";
+    public static String                      PROPERTY_TITLE              = "title";
+    public static String                      PROPERTY_BETTER_FILENAME    = "better_filename";
+    public static String                      PROPERTY_TEXT               = "text";
+    public static String                      PROPERTY_PORTAL             = "portal";
+    public static String                      PROPERTY_USERID             = "userid";
+    public static String                      PROPERTY_POSTID             = "postid";
+    public static String                      PROPERTY_DATE               = "date";
+    public static String                      PROPERTY_POST_CONTENT_INDEX = "postContentIndex";
+    private static Map<String, AtomicInteger> freeRunning                 = new HashMap<String, AtomicInteger>();
+
+    protected AtomicInteger getFreeRunning() {
+        synchronized (freeRunning) {
+            AtomicInteger ret = freeRunning.get(getHost());
+            if (ret == null) {
+                ret = new AtomicInteger(0);
+                freeRunning.put(getHost(), ret);
+            }
+            return ret;
+        }
+    }
 
     @Override
     public String getAGBLink() {
@@ -88,7 +108,12 @@ public class KemonoParty extends PluginForHost {
         final String portal = link.getStringProperty(PROPERTY_PORTAL);
         final String userid = link.getStringProperty(PROPERTY_USERID);
         final String postid = link.getStringProperty(PROPERTY_POSTID);
-        if (portal != null && userid != null && postid != null) {
+        final int index = link.getIntegerProperty(PROPERTY_POST_CONTENT_INDEX, -1);
+        if (portal != null && userid != null && postid != null && index != -1) {
+            /* Media/Files */
+            return portal + "_" + userid + "_" + postid + "_index_" + index;
+        } else if (portal != null && userid != null && postid != null) {
+            /* Raw text content */
             return portal + "_" + userid + "_" + postid;
         } else {
             return null;
@@ -103,35 +128,122 @@ public class KemonoParty extends PluginForHost {
         }
     }
 
-    @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        if (!link.isNameSet()) {
-            /* Fallback */
-            link.setName(this.getFID(link) + ".txt");
-        }
-        final String textContent = link.getStringProperty(PROPERTY_TEXT);
-        if (StringUtils.isEmpty(textContent)) {
-            /* This should never happen */
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        try {
-            link.setDownloadSize(textContent.getBytes("UTF-8").length);
-        } catch (final UnsupportedEncodingException ignore) {
-            ignore.printStackTrace();
+        return requestFileInformation(link, false);
+    }
+
+    private AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws IOException, PluginException {
+        if (isTextFile(link)) {
+            if (!link.isNameSet()) {
+                /* Fallback */
+                link.setName(this.getFID(link) + ".txt");
+            }
+            final String textContent = link.getStringProperty(PROPERTY_TEXT);
+            if (StringUtils.isEmpty(textContent)) {
+                /* This should never happen */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            try {
+                link.setDownloadSize(textContent.getBytes("UTF-8").length);
+            } catch (final UnsupportedEncodingException ignore) {
+                ignore.printStackTrace();
+            }
+        } else {
+            String betterFilename = link.getStringProperty(PROPERTY_BETTER_FILENAME);
+            if (betterFilename == null) {
+                betterFilename = KemonoPartyCrawler.getBetterFilenameFromURL(link.getPluginPatternMatcher());
+            }
+            if (betterFilename != null) {
+                link.setFinalFileName(betterFilename);
+            }
+            if (!isDownload) {
+                URLConnectionAdapter con = null;
+                try {
+                    con = br.openHeadConnection(link.getPluginPatternMatcher());
+                    handleConnectionErrors(br, con);
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
+                    if (betterFilename == null) {
+                        final String filenameFromHeader = Plugin.getFileNameFromHeader(con);
+                        if (filenameFromHeader != null) {
+                            link.setFinalFileName(filenameFromHeader);
+                        }
+                    }
+                } finally {
+                    try {
+                        con.disconnect();
+                    } catch (final Throwable e) {
+                    }
+                }
+            }
         }
         return AvailableStatus.TRUE;
     }
 
+    private void handleConnectionErrors(final Browser br, final URLConnectionAdapter con) throws PluginException, IOException {
+        if (!this.looksLikeDownloadableContent(con)) {
+            br.followConnection(true);
+            if (con.getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+            } else if (con.getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            } else if (con.getResponseCode() == 429) {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "429 Too Many Requests", 1 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File broken?");
+            }
+        }
+    }
+
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        requestFileInformation(link);
-        /* Write text to file */
-        final File dest = new File(link.getFileOutput());
-        IO.writeToFile(dest, link.getStringProperty(PROPERTY_TEXT).getBytes("UTF-8"), IO.SYNC.META_AND_DATA);
-        /* Set filesize so user can see it in UI. */
-        link.setVerifiedFileSize(dest.length());
-        /* Set progress to finished - the "download" is complete. */
-        link.getLinkStatus().setStatus(LinkStatus.FINISHED);
+        requestFileInformation(link, true);
+        if (this.isTextFile(link)) {
+            /* Write text to file */
+            final File dest = new File(link.getFileOutput());
+            IO.writeToFile(dest, link.getStringProperty(PROPERTY_TEXT).getBytes("UTF-8"), IO.SYNC.META_AND_DATA);
+            /* Set filesize so user can see it in UI. */
+            link.setVerifiedFileSize(dest.length());
+            /* Set progress to finished - the "download" is complete. */
+            link.getLinkStatus().setStatus(LinkStatus.FINISHED);
+        } else {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher(), true, 1);
+            handleConnectionErrors(br, dl.getConnection());
+            /* Add a download slot */
+            controlMaxFreeDownloads(null, link, +1);
+            try {
+                dl.startDownload();
+            } finally {
+                /* remove download slot */
+                controlMaxFreeDownloads(null, link, -1);
+            }
+        }
+    }
+
+    /**
+     * Prevents more than one free download from starting at a given time. One step prior to dl.startDownload(), it adds a slot to maxFree
+     * which allows the next singleton download to start, or at least try.
+     *
+     * This is needed because xfileshare(website) only throws errors after a final dllink starts transferring or at a given step within pre
+     * download sequence. But this template(XfileSharingProBasic) allows multiple slots(when available) to commence the download sequence,
+     * this.setstartintival does not resolve this issue. Which results in x(20) captcha events all at once and only allows one download to
+     * start. This prevents wasting peoples time and effort on captcha solving and|or wasting captcha trading credits. Users will experience
+     * minimal harm to downloading as slots are freed up soon as current download begins.
+     *
+     * @param num
+     *            : (+1|-1)
+     */
+    protected void controlMaxFreeDownloads(final Account account, final DownloadLink link, final int num) {
+        if (account == null) {
+            final AtomicInteger freeRunning = getFreeRunning();
+            synchronized (freeRunning) {
+                final int before = freeRunning.get();
+                final int after = before + num;
+                freeRunning.set(after);
+                logger.info("freeRunning(" + link.getName() + ")|max:" + getMaxSimultanFreeDownloadNum() + "|before:" + before + "|after:" + after + "|num:" + num);
+            }
+        }
     }
 
     @Override
@@ -141,7 +253,10 @@ public class KemonoParty extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        final int max = Integer.MAX_VALUE;
+        final int running = getFreeRunning().get();
+        final int ret = Math.min(running + 1, max);
+        return ret;
     }
 
     @Override

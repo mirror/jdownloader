@@ -16,6 +16,7 @@
 package jd.plugins.decrypter;
 
 import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -81,6 +82,7 @@ public class KemonoPartyCrawler extends PluginForDecrypt {
 
     private final String TYPE_PROFILE = "(?:https?://[^/]+)?/([^/]+)/user/([^/\\?]+)(\\?o=(\\d+))?$";
     private final String TYPE_POST    = "(?:https?://[^/]+)?/([^/]+)/user/([^/]+)/post/(\\d+)$";
+    private KemonoParty  hostPlugin   = null;
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         if (param.getCryptedUrl().matches(TYPE_PROFILE)) {
@@ -222,33 +224,40 @@ public class KemonoPartyCrawler extends PluginForDecrypt {
         final String[] directURLs = br.getRegex("\"((https?://[^/]+)?/data/[^\"]+)").getColumn(0);
         if (directURLs != null && directURLs.length > 0) {
             /* Remove duplicates from results so our index will be correct down below. */
+            ensureInitHosterplugin();
             final ArrayList<String> videoItemsToSkip = new ArrayList<String>();
             final HashSet<String> dups = new HashSet<String>();
             int index = 0;
             final ArrayList<DownloadLink> videoItemsUnfiltered = new ArrayList<DownloadLink>();
             for (final String directURL : directURLs) {
                 final String urlFull = br.getURL(directURL).toString();
-                if (dups.add(urlFull)) {
-                    final DownloadLink media = this.createDownloadlink(DirectHTTP.createURLForThisPlugin(urlFull));
-                    media.setProperty(KemonoParty.PROPERTY_POST_CONTENT_INDEX, index);
-                    final UrlQuery query = UrlQuery.parse(urlFull);
-                    String betterFilename = Encoding.htmlDecode(query.get("f"));
-                    if (betterFilename == null) {
-                        /* 2023-03-01 */
-                        betterFilename = br.getRegex(Pattern.quote(directURL) + "\"\\s+download=\"([^\"]+)\"").getMatch(0);
-                    }
-                    if (!StringUtils.isEmpty(betterFilename)) {
-                        betterFilename = Encoding.htmlDecode(betterFilename);
-                        media.setFinalFileName(betterFilename);
-                        media.setProperty(DirectHTTP.FIXNAME, betterFilename);
-                        final String internalVideoFilename = new Regex(urlFull, "(?i)([a-f0-9]{64}\\.(m4v|mp4))").getMatch(0);
-                        if (internalVideoFilename != null) {
-                            videoItemsToSkip.add(internalVideoFilename);
-                        }
-                    }
-                    videoItemsUnfiltered.add(media);
-                    index++;
+                if (!dups.add(urlFull)) {
+                    /* Skip dupes */
+                    continue;
                 }
+                final DownloadLink media = new DownloadLink(this.hostPlugin, this.getHost(), urlFull);
+                media.setProperty(KemonoParty.PROPERTY_POST_CONTENT_INDEX, index);
+                boolean isFilenameFromHTML = false;
+                String betterFilename = getBetterFilenameFromURL(urlFull);
+                if (betterFilename == null) {
+                    /* 2023-03-01 */
+                    betterFilename = br.getRegex(Pattern.quote(directURL) + "\"\\s+download=\"([^\"]+)\"").getMatch(0);
+                    isFilenameFromHTML = true;
+                }
+                if (!StringUtils.isEmpty(betterFilename)) {
+                    betterFilename = Encoding.htmlDecode(betterFilename).trim();
+                    media.setFinalFileName(betterFilename);
+                    if (isFilenameFromHTML) {
+                        media.setProperty(KemonoParty.PROPERTY_BETTER_FILENAME, betterFilename);
+                    }
+                    media.setProperty(DirectHTTP.FIXNAME, betterFilename);
+                    final String internalVideoFilename = new Regex(urlFull, "(?i)([a-f0-9]{64}\\.(m4v|mp4))").getMatch(0);
+                    if (internalVideoFilename != null) {
+                        videoItemsToSkip.add(internalVideoFilename);
+                    }
+                }
+                videoItemsUnfiltered.add(media);
+                index++;
             }
             if (videoItemsToSkip.size() > 0) {
                 logger.info("Filtering duplicated video items: " + videoItemsUnfiltered);
@@ -281,7 +290,8 @@ public class KemonoPartyCrawler extends PluginForDecrypt {
                 }
             }
             if (mode == TextCrawlMode.ALWAYS || (mode == TextCrawlMode.ONLY_IF_NO_MEDIA_ITEMS_ARE_FOUND && kemonoResults.isEmpty())) {
-                final DownloadLink textfile = this.createDownloadlink(param.getCryptedUrl());
+                ensureInitHosterplugin();
+                final DownloadLink textfile = new DownloadLink(this.hostPlugin, this.getHost(), param.getCryptedUrl());
                 textfile.setProperty(KemonoParty.PROPERTY_TEXT, postTextContent);
                 textfile.setFinalFileName(fp.getName() + ".txt");
                 try {
@@ -307,6 +317,22 @@ public class KemonoPartyCrawler extends PluginForDecrypt {
         }
         fp.addLinks(ret);
         return ret;
+    }
+
+    public static String getBetterFilenameFromURL(final String url) throws MalformedURLException {
+        final UrlQuery query = UrlQuery.parse(url);
+        final String betterFilename = query.get("f");
+        if (betterFilename != null) {
+            return Encoding.htmlDecode(betterFilename).trim();
+        } else {
+            return null;
+        }
+    }
+
+    private void ensureInitHosterplugin() throws PluginException {
+        if (this.hostPlugin == null) {
+            this.hostPlugin = (KemonoParty) getNewPluginForHostInstance(this.getHost());
+        }
     }
 
     @Override

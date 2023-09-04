@@ -10,6 +10,8 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
@@ -29,20 +31,13 @@ public class DncHllArCom extends antiDDoSForDecrypt {
         br.setFollowRedirects(true);
         getPage(parameter);
         // invalid url
-        if (br.getHttpConnection() == null || br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("<h2>No posts")) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("<h2>No posts")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (parameter.contains("/category/")) {
-            final String filter = br.getRegex("(<div class=\"td-ss-main-content\">.*?)<div class=\"clearfix\">").getMatch(0);
-            if (filter == null) {
-                return null;
-            }
-            String[] results = new Regex(filter, "td-module-thumb\"><a href=('|\"|)(https?://(\\w*\\.)?dancehallarena\\.com/(?:[a-zA-Z0-9\\-/]+))\\1").getColumn(1);
+            String[] results = br.getRegex("(https?://dancehallarena\\.com/[\\w\\-]+/)").getColumn(0);
             if (results == null || results.length == 0) {
-                results = new Regex(filter, "<h3><a href=('|\"|)(https?://(\\w*\\.)?dancehallarena\\.com/(?:[a-zA-Z0-9\\-/]+))\\1").getColumn(0);
-                if (results == null || results.length == 0) {
-                    return null;
-                }
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             for (final String result : results) {
                 ret.add(createDownloadlink(result));
@@ -79,6 +74,9 @@ public class DncHllArCom extends antiDDoSForDecrypt {
                         ret.add(createDownloadlink(link));
                     }
                 }
+            }
+            if (ret.isEmpty()) {
+                throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER);
             }
             return ret;
         }

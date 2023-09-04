@@ -17,6 +17,9 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+
+import org.appwork.storage.TypeRef;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -24,13 +27,14 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.DatoidCz;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
@@ -60,7 +64,7 @@ public class DatoidCzFolder extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/slozka/[A-Za-z0-9]+/[A-Za-z0-9]+");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/slozka/([A-Za-z0-9]+)/([A-Za-z0-9]+)");
         }
         return ret.toArray(new String[0]);
     }
@@ -71,28 +75,26 @@ public class DatoidCzFolder extends PluginForDecrypt {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final ArrayList<String> allPages = new ArrayList<String>();
         allPages.add("1");
-        final String parameter = param.toString().replace("datoid.sk/", "datoid.cz/");
+        final String url = param.getCryptedUrl().replaceFirst("(?i)datoid\\.sk/", "datoid.cz/");
         if (USE_API) {
-            br.getPage("http://api.datoid.cz/v1/getfilesoffolder?url=" + Encoding.urlEncode(parameter));
-            final String error = PluginJSonUtils.getJsonValue(this.br, "error");
-            if (error != null || this.br.toString().length() < 30) {
-                if (error != null) {
-                    logger.info("Cannot crawl anything because of error: " + error);
-                } else {
-                    logger.info("Cannot crawl anything because folder seems to be empty");
-                }
+            br.getPage("http://api.datoid.cz/v1/getfilesoffolder?url=" + Encoding.urlEncode(url));
+            final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+            final String error = (String) entries.get("error");
+            if (error != null) {
+                logger.info("Cannot crawl anything because of error: " + error);
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            final String[] links = br.getRegex("\"(http:[^<>\"]*?)\"").getColumn(0);
-            if (links == null || links.length == 0) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
+            final List<String> links = (List<String>) entries.get("file_urls");
+            if (links == null || links.isEmpty()) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            } else if (links.isEmpty()) {
+                throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER);
             }
-            for (final String alink : links) {
-                ret.add(createDownloadlink(alink.replace("\\", "")));
+            for (final String link : links) {
+                ret.add(createDownloadlink(link));
             }
         } else {
-            br.getPage(parameter);
+            br.getPage(url);
             final String[] pages = br.getRegex("class=\"ajax\">(\\d+)</a>").getColumn(0);
             if (pages != null) {
                 for (final String aPage : pages) {
@@ -105,11 +107,11 @@ public class DatoidCzFolder extends PluginForDecrypt {
             for (final String currentPage : allPages) {
                 logger.info("Decrypting page " + currentPage + " / " + allPages.size());
                 if (!currentPage.equals("1")) {
-                    br.getPage(parameter + "?current-page=" + currentPage);
+                    br.getPage(url + "?current-page=" + currentPage);
                 }
                 final String[] links = br.getRegex("\"(/[^<>\"]*?)\">[\t\n\r ]+<div class=\"thumb").getColumn(0);
                 if (links == null || links.length == 0) {
-                    logger.warning("Decrypter broken for link: " + parameter);
+                    logger.warning("Decrypter broken for link: " + url);
                     return null;
                 }
                 for (final String singleLink : links) {
@@ -117,8 +119,9 @@ public class DatoidCzFolder extends PluginForDecrypt {
                 }
             }
         }
+        final String folderSlug = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(1);
         final FilePackage fp = FilePackage.getInstance();
-        fp.setName(new Regex(parameter, "/slozka/[A-Za-z0-9]+/(.+)").getMatch(0));
+        fp.setName(Encoding.htmlDecode(folderSlug).trim());
         fp.addLinks(ret);
         return ret;
     }
