@@ -45,46 +45,46 @@
 
 	<!-- Compiles the code -->
 	<target name="compile" depends="clean">
+		<property name="jvm_target" value="1.6" />
+		<property name="jvm_source" value="1.6" />
 		<mkdir dir="${cls}" />
-
-
 
 		<!-- Build dependencies -->
 
-		<javac srcdir="${dep.awu}/src" excludes="**/test/**" verbose="false" debug="${debug}" destdir="${cls}" encoding="UTF-8" source="1.6" target="1.6" includeantruntime="false">
+		<javac srcdir="${dep.awu}/src" excludes="**/test/**" verbose="false" debug="${debug}" destdir="${cls}" encoding="UTF-8" source="${jvm_source}" target="${jvm_target}" includeantruntime="false">
 			<classpath refid="classpath" />
 
 		</javac>
 
-		<javac srcdir="${dep.myjd}/src" excludes="**/test/**" verbose="false" debug="${debug}" destdir="${cls}" encoding="UTF-8" source="1.6" target="1.6" includeantruntime="false">
+		<javac srcdir="${dep.myjd}/src" excludes="**/test/**" verbose="false" debug="${debug}" destdir="${cls}" encoding="UTF-8" source="${jvm_source}" target="${jvm_target}" includeantruntime="false">
 			<classpath refid="classpath" />
 
 		</javac>
 
-		<javac srcdir="${dep.browser}/src" excludes="" debug="${debug}" verbose="false" destdir="${cls}" encoding="UTF-8" source="1.6" target="1.6" includeantruntime="false">
+		<javac srcdir="${dep.browser}/src" excludes="" debug="${debug}" verbose="false" destdir="${cls}" encoding="UTF-8" source="${jvm_source}" target="${jvm_target}" includeantruntime="false">
 			<classpath refid="classpath" />
 
 		</javac>
 
 
 
-		<javac srcdir="${dep.updateclient}/src" excludes="" verbose="false" debug="${debug}" destdir="${cls}" encoding="UTF-8" source="1.6" target="1.6" includeantruntime="false">
+		<javac srcdir="${dep.updateclient}/src" excludes="" verbose="false" debug="${debug}" destdir="${cls}" encoding="UTF-8" source="${jvm_source}" target="${jvm_target}" includeantruntime="false">
 			<classpath refid="classpath" />
 
 
 		</javac>
 
-		<javac srcdir="src" debug="${debug}" verbose="false" excludes="jd/utils/dev/*,org/jdownloader/extensions/langfileeditor/**/*,org/jdownloader/extensions/remoteserv/**/*" destdir="${cls}" encoding="UTF-8" source="1.6" target="1.6" includeantruntime="false">
+		<javac srcdir="src" debug="${debug}" verbose="false" excludes="jd/utils/dev/*,org/jdownloader/extensions/langfileeditor/**/*,org/jdownloader/extensions/remoteserv/**/*" destdir="${cls}" encoding="UTF-8" source="${jvm_source}" target="${jvm_target}" includeantruntime="false">
 			<classpath refid="classpath" />
 			<compilerarg line="-proc:none" />
 
 		</javac>
-		<javac srcdir="${dep.jdupdateclient}/src" excludes="" debug="${debug}" destdir="${cls}" encoding="UTF-8" source="1.6" target="1.6" includeantruntime="false">
+		<javac srcdir="${dep.jdupdateclient}/src" excludes="" debug="${debug}" destdir="${cls}" encoding="UTF-8" source="${jvm_source}" target="${jvm_target}" includeantruntime="false">
 			<classpath refid="classpath" />
 
 		</javac>
 
-		<javac srcdir="${dep.jdc}/src" debug="${debug}" verbose="false" excludes="**/test/**" destdir="${cls}" encoding="UTF-8" source="1.6" target="1.6" includeantruntime="false">
+		<javac srcdir="${dep.jdc}/src" debug="${debug}" verbose="false" excludes="**/test/**" destdir="${cls}" encoding="UTF-8" source="${jvm_source}" target="${jvm_target}" includeantruntime="false">
 			<classpath refid="classpath" />
 		</javac>
 		<echo message="Finished." />
@@ -110,13 +110,13 @@
 		</copy>
 		<copy todir="${dist}/libs">
 			<fileset dir="${res}/libs" includes="**/*">
-				<exclude name="proxyVole.jar" />			
+				<exclude name="proxyVole.jar" />
 				<exclude name="**/*.info" />
 			</fileset>
 		</copy>
 		<copy todir="${dist}/libs">
 			<fileset dir="${dep.awu}/libs" includes="**/*.jar">
-				<exclude name="miglayout.jar" />				
+				<exclude name="miglayout.jar" />
 				<exclude name="**/*.info" />
 				<exclude name="**/*jackson*" />
 			</fileset>
@@ -382,7 +382,7 @@
 			<!--<attribute name="Class-Path" value="" />-->
 
 		</manifest>
-		<jar duplicate="fail" file="${dist}/JDownloader.jar" manifest="${dist}/Manifest.MF">			
+		<jar duplicate="fail" file="${dist}/JDownloader.jar" manifest="${dist}/Manifest.MF">
 			<zipfileset src="${dep.awu}/libs/miglayout.jar" excludes="META-INF/*" />
 			<zipfileset src="${res}/libs/proxyVole.jar" excludes="META-INF/*" />
 			<zipfileset src="${dep.updateclient}/libs/xz.jar" excludes="META-INF/*" />
