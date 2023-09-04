@@ -888,29 +888,42 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
     }
 
     private ArrayList<DownloadLink> crawlXML(final CryptedLink param, final Browser xmlbr, final String path) throws IOException, PluginException, DecrypterRetryException {
-        if (xmlbr == null || path == null) {
+        if (xmlbr == null) {
             /* Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else if (StringUtils.isEmpty(path)) {
+            /* Developer mistake */
+            throw new IllegalArgumentException();
         }
         /*
          * 2020-03-04: Prefer crawling xml if possible as we then get all contents of that folder including contents of subfolders via only
          * one request!
          */
-        String titleSlug;
+        String titleSlug = null;
         String desiredSubpathDecoded = null;
         if (path.contains("/")) {
             /* XML will always contain all files but in this case we only want to get all files in a specific subfolder. */
             final String[] urlParts = path.split("/");
-            if (path.startsWith("/")) {
-                titleSlug = path.substring(1, path.length());
-            } else {
-                titleSlug = urlParts[0];
-            }
-            if (urlParts.length > 1) {
-                desiredSubpathDecoded = Encoding.htmlDecode(path.substring(path.indexOf("/") + 1));
+            boolean buildSubpathNow = false;
+            for (final String urlPart : urlParts) {
+                if (!urlPart.isEmpty() && titleSlug == null) {
+                    /* First non-empty segment = Root = Slug of element-title */
+                    titleSlug = urlPart;
+                    buildSubpathNow = true;
+                } else if (buildSubpathNow) {
+                    if (desiredSubpathDecoded == null) {
+                        desiredSubpathDecoded = Encoding.htmlDecode(urlPart);
+                    } else {
+                        desiredSubpathDecoded += "/" + Encoding.htmlDecode(urlPart);
+                    }
+                }
             }
         } else {
             titleSlug = path;
+        }
+        if (StringUtils.isEmpty(titleSlug)) {
+            /* Developer mistake */
+            throw new IllegalArgumentException();
         }
         String xmlResponse = null;
         final String xmlurl = "https://archive.org/download/" + titleSlug + "/" + titleSlug + "_files.xml";
