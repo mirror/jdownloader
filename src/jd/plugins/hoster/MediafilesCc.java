@@ -128,7 +128,7 @@ public class MediafilesCc extends YetiShareCore {
     @Override
     protected void hookBeforeCaptchaFormSubmit(final Browser br, final Form captchaForm) {
         if (captchaForm.hasInputFieldByName("adcopy_challenge") && br.containsHTML("g-recaptcha-response") && !captchaForm.hasInputFieldByName("g-recaptcha-response")) {
-            /* E.g. mediafile.cc */
+            /* 2023-09-04: Without this, we will be stuck in an endless loop of captchas. */
             captchaForm.put("g-recaptcha-response", "1");
         }
     }
