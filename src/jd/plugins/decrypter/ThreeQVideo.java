@@ -19,7 +19,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
@@ -29,6 +28,7 @@ import org.jdownloader.plugins.config.PluginJsonConfig;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DecrypterRetryException;
@@ -76,14 +76,25 @@ public class ThreeQVideo extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        br.getHeaders().put("Accept", "*/*");
         br.setFollowRedirects(true);
         final String contentID = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
+        if (contentID == null) {
+        }
+        br.getHeaders().put("Accept", "*/*");
+        try {
+            final String refererURL = param.getDownloadLink().getReferrerUrl();
+            /*
+             * 2023-09-04: Origin header is required for some items. If it is missing but required, responsecode down below will be code
+             * 400.
+             */
+            br.getHeaders().put("Origin", "https://" + Browser.getHost(refererURL, false));
+        } catch (final Exception ignore) {
+        }
         br.getPage("https://" + this.getHost() + "/config/" + contentID);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final Map<String, Object> root = restoreFromString(br.toString(), TypeRef.MAP);
+        final Map<String, Object> root = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         final String contentType = root.get("streamContent").toString();
         if (StringUtils.equalsIgnoreCase(contentType, "live")) {
             logger.info("Livestreams are not supported");

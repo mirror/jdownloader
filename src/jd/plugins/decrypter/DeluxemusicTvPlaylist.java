@@ -77,16 +77,22 @@ public class DeluxemusicTvPlaylist extends PluginForDecrypt {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String[] embeddedVideoIDs = br.getRegex("dataId\\s*:\\s*\"([a-f0-9\\-]+)\"").getColumn(0);
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        String[] embeddedVideoIDs = br.getRegex("dataId\\s*:\\s*\"([a-f0-9\\-]+)\"").getColumn(0);
+        if (embeddedVideoIDs == null || embeddedVideoIDs.length == 0) {
+            /* 2023-09-04 */
+            embeddedVideoIDs = br.getRegex("id=\"player3q\" data-id=\"([a-f0-9\\-]+)").getColumn(0);
+        }
         if (embeddedVideoIDs.length == 0) {
             logger.info("Failed to find any downloadable content");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         for (final String embeddedVideoID : embeddedVideoIDs) {
-            decryptedLinks.add(this.createDownloadlink("https://playout.3qsdn.com/config/" + embeddedVideoID + "?key=0&timestamp=0"));
+            final DownloadLink link = this.createDownloadlink("https://playout.3qsdn.com/config/" + embeddedVideoID + "?key=0&timestamp=0");
+            link.setReferrerUrl(br.getURL());
+            ret.add(link);
         }
-        return decryptedLinks;
+        return ret;
     }
 
     /**

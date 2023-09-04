@@ -26,7 +26,9 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
 import jd.plugins.PluginDependencies;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.DatoidCz;
@@ -65,9 +67,9 @@ public class DatoidCzFolder extends PluginForDecrypt {
 
     private final boolean USE_API = true;
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        ArrayList<String> allPages = new ArrayList<String>();
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final ArrayList<String> allPages = new ArrayList<String>();
         allPages.add("1");
         final String parameter = param.toString().replace("datoid.sk/", "datoid.cz/");
         if (USE_API) {
@@ -79,8 +81,7 @@ public class DatoidCzFolder extends PluginForDecrypt {
                 } else {
                     logger.info("Cannot crawl anything because folder seems to be empty");
                 }
-                decryptedLinks.add(this.createOfflinelink(parameter));
-                return decryptedLinks;
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             final String[] links = br.getRegex("\"(http:[^<>\"]*?)\"").getColumn(0);
             if (links == null || links.length == 0) {
@@ -88,7 +89,7 @@ public class DatoidCzFolder extends PluginForDecrypt {
                 return null;
             }
             for (final String alink : links) {
-                decryptedLinks.add(createDownloadlink(alink.replace("\\", "")));
+                ret.add(createDownloadlink(alink.replace("\\", "")));
             }
         } else {
             br.getPage(parameter);
@@ -112,13 +113,13 @@ public class DatoidCzFolder extends PluginForDecrypt {
                     return null;
                 }
                 for (final String singleLink : links) {
-                    decryptedLinks.add(createDownloadlink("http://datoid.cz" + singleLink));
+                    ret.add(createDownloadlink("http://datoid.cz" + singleLink));
                 }
             }
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(new Regex(parameter, "/slozka/[A-Za-z0-9]+/(.+)").getMatch(0));
-        fp.addLinks(decryptedLinks);
-        return decryptedLinks;
+        fp.addLinks(ret);
+        return ret;
     }
 }

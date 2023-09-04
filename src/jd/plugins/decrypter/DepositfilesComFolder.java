@@ -20,12 +20,14 @@ import java.util.List;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DecrypterRetryException;
 import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
@@ -69,7 +71,7 @@ public class DepositfilesComFolder extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         if (MAINPAGE == null) {
             /* we first have to load the plugin, before we can reference it */
             final PluginForHost depositfilesPlugin = this.getNewPluginForHostInstance(this.getHost());
@@ -82,8 +84,8 @@ public class DepositfilesComFolder extends PluginForDecrypt {
         String url = param.getCryptedUrl();
         // final String folderSlug = new Regex(url, this.getSupportedLinks()).getMatch(0);
         int pagecount = 1;
-        String id = new Regex(url, "folders/(.+)").getMatch(0);
-        url = MAINPAGE + "/de/folders/" + id;
+        final String folderID = new Regex(url, "(?i)folders/(.+)").getMatch(0);
+        url = MAINPAGE + "/de/folders/" + folderID;
         // Get Pagecount //
         if (url.contains("page")) {
             url = url.split("\\?")[0];
@@ -99,12 +101,23 @@ public class DepositfilesComFolder extends PluginForDecrypt {
                 }
             }
         }
-        new Regex("", "");
+        String folderTitle = br.getRegex("Dateien festlegen\\s*:\\s*<b>([^<]+)</b>").getMatch(0);
+        FilePackage fp = null;
+        if (folderTitle != null) {
+            folderTitle = Encoding.htmlDecode(folderTitle).trim();
+            fp = FilePackage.getInstance();
+            fp.setName(folderTitle);
+        }
         for (int x = 1; x <= pagecount; x++) {
             br.getPage(url + "?page=" + x + "&format=text");
-            String[] finalLinks = br.getRegex("(https?://[^/]+/files/[0-9a-z]+)").getColumn(0);
-            for (String data : finalLinks) {
-                ret.add(createDownloadlink(data));
+            final String[] urls = br.getRegex("(https?://[^/]+/files/[0-9a-z]+)").getColumn(0);
+            for (String data : urls) {
+                final DownloadLink link = createDownloadlink(data);
+                if (fp != null) {
+                    link._setFilePackage(fp);
+                }
+                ret.add(link);
+                distribute(link);
             }
         }
         if (ret.isEmpty()) {

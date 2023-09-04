@@ -131,6 +131,7 @@ public class Offline extends PluginForHost {
         ret.add(new String[] { "filerio.in", "filerio.com", "filekeen.com" });
         ret.add(new String[] { "fileupup.com" });
         ret.add(new String[] { "longfiles.com" });
+        ret.add(new String[] { "fas.li", "likn.xyz", "sloomp.space" });
         if (cache != null) {
             cache.put(cacheID, ret);
         }

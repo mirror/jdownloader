@@ -95,6 +95,14 @@ public class KemonoParty extends PluginForHost {
         }
     }
 
+    private boolean isTextFile(final DownloadLink link) {
+        if (link.hasProperty(PROPERTY_TEXT)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         if (!link.isNameSet()) {

@@ -87,12 +87,13 @@ public class TiktokComCrawler extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:(?:www|vm)\\.)?" + buildHostsPatternPart(domains) + "/.+");
+            ret.add("https?://(?:(?:www|vt|vm)\\.)?" + buildHostsPatternPart(domains) + "/.+");
         }
         return ret.toArray(new String[0]);
     }
 
-    private final String TYPE_REDIRECT       = "(?i)https?://vm\\.[^/]+/([A-Za-z0-9]+).*";
+    /** 2023-09-04: new: vt.tiktok.com */
+    private final String TYPE_REDIRECT       = "(?i)https?://(?:vm|vt)\\.[^/]+/([A-Za-z0-9]+).*";
     private final String TYPE_APP            = "(?i)https?://[^/]+/t/([A-Za-z0-9]+).*";
     private final String TYPE_USER_USERNAME  = "(?i)https?://[^/]+/@([^\\?/]+).*";
     private final String TYPE_USER_USER_ID   = "(?i)https?://[^/]+/share/user/(\\d+).*";
@@ -105,7 +106,7 @@ public class TiktokComCrawler extends PluginForDecrypt {
         if (param.getCryptedUrl().matches(TYPE_REDIRECT) || param.getCryptedUrl().matches(TYPE_APP)) {
             /* Single redirect URLs */
             br.setFollowRedirects(false);
-            final String initialURL = param.getCryptedUrl().replaceFirst("http://", "https://");
+            final String initialURL = param.getCryptedUrl().replaceFirst("(?i)http://", "https://");
             String redirect = initialURL;
             int loops = 0;
             do {
