@@ -21,6 +21,8 @@ import java.util.List;
 import org.jdownloader.plugins.components.YetiShareCore;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
@@ -38,7 +40,7 @@ public class MediafilesCc extends YetiShareCore {
      ****************************
      * mods: See overridden functions<br />
      * limit-info: 2020-06-12: No limits at all <br />
-     * captchatype-info: 2020-06-12: null<br />
+     * captchatype-info: 2023-09-04: Solvemedia <br />
      * other: <br />
      */
     public static List<String[]> getPluginDomains() {
@@ -121,5 +123,13 @@ public class MediafilesCc extends YetiShareCore {
     protected boolean allowDirectDownloadAlsoWhenOnlyStoredInternalFileIDIsAvailable(final DownloadLink link, final Account account) {
         /* 2022-03-04: Tested */
         return true;
+    }
+
+    @Override
+    protected void hookBeforeCaptchaFormSubmit(final Browser br, final Form captchaForm) {
+        if (captchaForm.hasInputFieldByName("adcopy_challenge") && br.containsHTML("g-recaptcha-response") && !captchaForm.hasInputFieldByName("g-recaptcha-response")) {
+            /* E.g. mediafile.cc */
+            captchaForm.put("g-recaptcha-response", "1");
+        }
     }
 }

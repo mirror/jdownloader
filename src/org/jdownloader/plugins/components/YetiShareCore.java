@@ -812,6 +812,7 @@ public abstract class YetiShareCore extends antiDDoSForHost {
                             continueform.put("g-recaptcha-response", recaptchaV2Response);
                             continueform.setMethod(MethodType.POST);
                             br.setFollowRedirects(true);
+                            hookBeforeCaptchaFormSubmit(br, continueform);
                             dl = jd.plugins.BrowserAdapter.openDownload(br, link, continueform, resume, maxchunks);
                             numberofCaptchasRequested++;
                         } else if (containsSolvemediaCaptcha(continueform) || this.containsSolvemediaCaptcha(br.getRequest().getHtmlCode())) {
@@ -840,7 +841,7 @@ public abstract class YetiShareCore extends antiDDoSForHost {
                                 if (e.getLinkStatus() == LinkStatus.ERROR_CAPTCHA) {
                                     logger.info("Wrong captcha");
                                     if (captchaAttemptCounter >= maxCaptchaAttempts) {
-                                        logger.info("Ending main loop because: Many wrong captchas");
+                                        logger.info("Ending main loop because: Too many wrong captchas");
                                         throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                                     } else {
                                         this.invalidateLastChallengeResponse();
@@ -855,6 +856,7 @@ public abstract class YetiShareCore extends antiDDoSForHost {
                             continueform.put("adcopy_response", Encoding.urlEncode(code));
                             continueform.setMethod(MethodType.POST);
                             br.setFollowRedirects(true);
+                            hookBeforeCaptchaFormSubmit(br, continueform);
                             dl = jd.plugins.BrowserAdapter.openDownload(br, link, continueform, resume, maxchunks);
                             numberofCaptchasRequested++;
                         } else if (continueform != null && continueform.getMethod() == MethodType.POST) {
@@ -862,6 +864,7 @@ public abstract class YetiShareCore extends antiDDoSForHost {
                             loopLog += " --> Form_POST";
                             waitTime(this.br, link, timeBeforeCaptchaInput);
                             br.setFollowRedirects(true);
+                            hookBeforeCaptchaFormSubmit(br, continueform);
                             dl = jd.plugins.BrowserAdapter.openDownload(br, link, continueform, resume, maxchunks);
                         } else {
                             logger.warning("Unknown state");
@@ -892,7 +895,7 @@ public abstract class YetiShareCore extends antiDDoSForHost {
                                 logger.info("Ending main loop because: Too many pre-download-pages");
                                 break;
                             } else if (captchaAttemptCounter >= maxCaptchaAttempts) {
-                                logger.info("Ending main loop because: Many wrong captchas");
+                                logger.info("Ending main loop because: Too many wrong captchas");
                                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                             } else {
                                 /* Captcha logger */
@@ -941,6 +944,10 @@ public abstract class YetiShareCore extends antiDDoSForHost {
         }
         dl.setFilenameFix(isContentDispositionFixRequired(dl, dl.getConnection(), link));
         dl.startDownload();
+    }
+
+    /** Use this if you want to add/modify the captcha form just before it gets submitted. */
+    protected void hookBeforeCaptchaFormSubmit(final Browser br, final Form captchaForm) {
     }
 
     private String regexInternalFileID(final Browser br) {
@@ -1030,13 +1037,18 @@ public abstract class YetiShareCore extends antiDDoSForHost {
             if (continue_link != null) {
                 ret.setAction(continue_link);
             }
-            ret.put("submit", "Submit");
-            ret.put("submitted", "1");
-            ret.put("d", "1");
+            /* Enable hidden fields so they get submitted later on. */
             for (final InputField field : continueform.getInputFields()) {
                 if (field.getKey() != null && ret.getInputField(field.getKey()) != null) {
                     ret.addInputField(field);
                 }
+            }
+            ret.put("submit", "Submit");
+            if (!ret.hasInputFieldByName("submitted")) {
+                ret.put("submitted", "1");
+            }
+            if (!ret.hasInputFieldByName("d")) {
+                ret.put("d", "1");
             }
             return ret;
         }
@@ -1163,7 +1175,7 @@ public abstract class YetiShareCore extends antiDDoSForHost {
         int wait;
         if (waitStr != null && waitStr.matches("\\d+")) {
             int passedTime = (int) ((Time.systemIndependentCurrentJVMTimeMillis() - timeBefore) / 1000) - extraWaitSeconds;
-            logger.info("Found waittime, parsing waittime: " + waitStr);
+            logger.info("Found waittime [seconds]: " + waitStr);
             wait = Integer.parseInt(waitStr);
             /*
              * Check how much time has passed during eventual captcha event before this function has been called and see how much time is

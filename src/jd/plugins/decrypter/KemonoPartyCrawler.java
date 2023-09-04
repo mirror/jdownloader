@@ -110,7 +110,7 @@ public class KemonoPartyCrawler extends PluginForDecrypt {
     private ArrayList<DownloadLink> crawlProfile(final CryptedLink param) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final Regex urlinfo = new Regex(param.getCryptedUrl(), TYPE_PROFILE);
-        if (!urlinfo.matches()) {
+        if (!urlinfo.patternFind()) {
             /* Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
