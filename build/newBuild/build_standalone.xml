@@ -6,12 +6,13 @@
 	<property name="debug" value="true" />
 
 
-	<property name="working" value="dist/standalone" />
+	<property name="working" value="standalone" />
 
 	<property name="cls" value="${working}/bin" />
 	<property name="dist" value="${working}/dist" />
 	<property name="res" value="ressourcen" />
 	<property name="pluginres" value="${dist}/pluginressourcen" />
+	
 	
 	<property name="jvm_target" value="1.8" />
 	<property name="jvm_source" value="1.8" />
@@ -22,10 +23,7 @@
 		<fileset dir="${cls}" />
 		<!-- Dependencies -->
 		<fileset dir="${dep.awu}/libs" includes="**/*.jar" />
-
 		<fileset dir="${dep.browser}/libs" includes="**/*.jar" />
-
-
 		<fileset dir="${res}/libs" includes="**/*.jar" />
 		<fileset dir="${res}/libs_ext" includes="**/*.jar" />
 	</path>
@@ -89,18 +87,19 @@
 
 		<copy todir="${dist}/libs">
 			<fileset dir="${res}/libs" includes="**/*">
-				<exclude name="**/*.info" />
+				<exclude name="proxyVole.jar" />			
+				<exclude name="**/*.info" />				
 			</fileset>
 		</copy>
 		<copy todir="${dist}/libs">
 			<fileset dir="${dep.awu}/libs" includes="**/*.jar">
-				<exclude name="miglayout.jar" />
-				<exclude name="**/*.info" />
+				<exclude name="miglayout.jar" />				
+				<exclude name="**/*.info" />				
 			</fileset>
 		</copy>
 		<copy todir="${dist}/libs">
 			<fileset dir="${dep.browser}/libs" includes="**/*.jar">
-				<exclude name="**/*.info" />
+				<exclude name="**/*.info" />				
 			</fileset>
 		</copy>
 
@@ -331,7 +330,7 @@
 
 		<jar duplicate="fail" file="${dist}/JDownloader.jar" manifest="${dist}/Manifest.MF">
 			<zipfileset src="${dep.awu}/libs/miglayout.jar" excludes="META-INF/*" />
-			<zipfileset src="${dep.awu}/libs/proxyVole.jar" excludes="META-INF/*" />
+			<zipfileset src="${res}/libs/proxyVole.jar" excludes="META-INF/*" />
 			<fileset dir="${working}">
 				<include name="version.nfo" />
 				<include name="classpath" />
