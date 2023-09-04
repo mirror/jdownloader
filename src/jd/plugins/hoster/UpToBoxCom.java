@@ -15,6 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.awt.Color;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -24,24 +25,6 @@ import java.util.Map;
 
 import javax.swing.JComponent;
 import javax.swing.JLabel;
-
-import jd.PluginWrapper;
-import jd.gui.swing.components.linkbutton.JLink;
-import jd.http.Browser;
-import jd.nutils.encoding.Encoding;
-import jd.parser.html.Form;
-import jd.plugins.Account;
-import jd.plugins.Account.AccountType;
-import jd.plugins.AccountInfo;
-import jd.plugins.AccountInvalidException;
-import jd.plugins.AccountRequiredException;
-import jd.plugins.AccountUnavailableException;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 
 import org.appwork.storage.JSonMapperException;
 import org.appwork.storage.TypeRef;
@@ -62,6 +45,24 @@ import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
+
+import jd.PluginWrapper;
+import jd.gui.swing.components.linkbutton.JLink;
+import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
+import jd.parser.html.Form;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
+import jd.plugins.AccountRequiredException;
+import jd.plugins.AccountUnavailableException;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class UpToBoxCom extends PluginForHost {
@@ -818,15 +819,19 @@ public class UpToBoxCom extends PluginForHost {
         synchronized (account) {
             br.setFollowRedirects(true);
             br.setCookiesExclusive(true);
-            final String apikey = account.getPass();
-            if (StringUtils.isEmpty(apikey)) {
+            account.setPass(correctPassword(account.getPass()));
+            final String apitoken = account.getPass();
+            if (!isAPIToken(apitoken)) {
+                throw new AccountInvalidException("Invalid token format! You can find your token here: " + this.getPreferredDomain() + "/my_account -> Token");
+            }
+            if (StringUtils.isEmpty(apitoken)) {
                 throw new AccountInvalidException();
             } else if (!verifySession) {
                 logger.info("Trust apikey without verification");
                 return null;
             } else {
                 logger.info("Performing full login");
-                br.getPage(this.getAPIBase() + "/user/me?token=" + Encoding.urlEncode(apikey));
+                br.getPage(this.getAPIBase() + "/user/me?token=" + Encoding.urlEncode(apitoken));
                 this.checkErrorsAPI(br, null, account);
                 account.setProperty(PROPERTY_timestamp_lastcheck, System.currentTimeMillis());
                 return restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
@@ -1090,15 +1095,14 @@ public class UpToBoxCom extends PluginForHost {
     public static class UptoboxAccountFactory extends MigPanel implements AccountBuilderInterface {
         private static final long serialVersionUID = 1L;
         private final String      PINHELP          = "Enter your token";
+        private final JLabel      apikeyLabel;
 
         private String getPassword() {
             if (this.pass == null) {
                 return null;
+            } else {
+                return correctPassword(new String(this.pass.getPassword()));
             }
-            if (EMPTYPW.equals(new String(this.pass.getPassword()))) {
-                return null;
-            }
-            return new String(this.pass.getPassword());
         }
 
         public boolean updateAccount(Account input, Account output) {
@@ -1115,7 +1119,6 @@ public class UpToBoxCom extends PluginForHost {
         }
 
         private final ExtPasswordField pass;
-        private static String          EMPTYPW = "                 ";
 
         public UptoboxAccountFactory(final InputChangedCallbackInterface callback) {
             super("ins 0, wrap 2", "[][grow,fill]", "");
@@ -1123,7 +1126,7 @@ public class UpToBoxCom extends PluginForHost {
             add(new JLink("https://" + UpToBoxComConfig.PreferredDomain.DEFAULT.getDomain() + "/my_account"));
             add(new JLabel("Click here to get help:"));
             add(new JLink("https://uptobox.help/"));
-            add(new JLabel("Token:"));
+            add(apikeyLabel = new JLabel("Token:"));
             add(this.pass = new ExtPasswordField() {
                 @Override
                 public void onChanged() {
@@ -1148,18 +1151,37 @@ public class UpToBoxCom extends PluginForHost {
 
         @Override
         public boolean validateInputs() {
-            // final String userName = getUsername();
-            // if (userName == null || !userName.trim().matches("^\\d{9}$")) {
-            // idLabel.setForeground(Color.RED);
-            // return false;
-            // }
-            // idLabel.setForeground(Color.BLACK);
-            return getPassword() != null;
+            final String pw = getPassword();
+            if (UpToBoxCom.isAPIToken(pw)) {
+                apikeyLabel.setForeground(Color.BLACK);
+                return true;
+            } else {
+                apikeyLabel.setForeground(Color.RED);
+                return false;
+            }
         }
 
         @Override
         public Account getAccount() {
             return new Account(null, getPassword());
+        }
+    }
+
+    private static boolean isAPIToken(final String str) {
+        if (str == null) {
+            return false;
+        } else if (str.matches("[a-z0-9]{33,39}")) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    private static String correctPassword(final String pw) {
+        if (pw != null) {
+            return pw.trim();
+        } else {
+            return null;
         }
     }
 
