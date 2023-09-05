@@ -595,7 +595,7 @@ public class EHentaiOrg extends PluginForHost {
 
     private void checkForCachedAccountLimits(final Account account, final DownloadLink link, final String url, final boolean userPrefersOriginalImages) throws PluginException {
         final boolean isEhentai = url.contains(this.host_ehentai);
-        if (this.requiresImagePoints(url, userPrefersOriginalImages)) {
+        if (Boolean.TRUE.equals(this.requiresImagePoints(url, userPrefersOriginalImages))) {
             /* Image points are required to download original images from e-hentai.org -> Check cached limits. */
             final int imagePointsLeft = this.getImagePointsLeft(account);
             if (imagePointsLeft <= 0) {
