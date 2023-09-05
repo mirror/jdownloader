@@ -3,9 +3,12 @@
   "filter":["flatlaf.jar"],
   "installed":{
     "date":"2023-09-05T09:26:46 CEST",
-    "dependencies":"[]",
+    "dependencies":[],
     "hashes":{"flatlaf.jar":"7d8317fe13b26088994d66663af8e87c12390ee8087f7ba74b68638f4a55f440"},
-    "licenses":"[{\r\n  \"license\":{\r\n    \"name\":\"The Apache License, Version 2.0\",\r\n    \"url\":\"https://www.apache.org/licenses/LICENSE-2.0.txt\"\r\n  }\r\n}]",
+    "licenses":[{
+      "name":"The Apache License, Version 2.0",
+      "url":"https://www.apache.org/licenses/LICENSE-2.0.txt"
+    }],
     "minJRE":"JVM_1_8",
     "version":"3.2.1"
   },

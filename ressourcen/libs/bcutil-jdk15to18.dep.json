@@ -3,9 +3,18 @@
   "filter":null,
   "installed":{
     "date":"2023-09-04T11:08:34 CEST",
-    "dependencies":"[{\r\n  \"dependency\":{\r\n    \"groupId\":\"org.bouncycastle\",\r\n    \"artifactId\":\"bcprov-jdk15to18\",\r\n    \"version\":1.76,\r\n    \"type\":\"jar\"\r\n  }\r\n}]",
+    "dependencies":[{
+      "groupId":"org.bouncycastle",
+      "artifactId":"bcprov-jdk15to18",
+      "version":1.76,
+      "type":"jar"
+    }],
     "hashes":{"bcutil-jdk15on.jar":"1a3a1935c4abf195d7d564b56a19cb676c9727dd7c60d7d0f67efaea342ff804"},
-    "licenses":"[{\r\n  \"license\":{\r\n    \"name\":\"Bouncy Castle Licence\",\r\n    \"url\":\"http://www.bouncycastle.org/licence.html\",\r\n    \"distribution\":\"repo\"\r\n  }\r\n}]",
+    "licenses":[{
+      "name":"Bouncy Castle Licence",
+      "url":"http://www.bouncycastle.org/licence.html",
+      "distribution":"repo"
+    }],
     "minJRE":"JVM_1_5",
     "version":"1.76"
   },

@@ -3,9 +3,13 @@
   "filter":null,
   "installed":{
     "date":"2023-09-04T11:08:34 CEST",
-    "dependencies":"[]",
+    "dependencies":[],
     "hashes":{"bcprov-jdk15on.jar":"1c43883ac1c69ed43a13d48d130420ff3562422d0a7d2910cfa77a3e3ee6400a"},
-    "licenses":"[{\r\n  \"license\":{\r\n    \"name\":\"Bouncy Castle Licence\",\r\n    \"url\":\"http://www.bouncycastle.org/licence.html\",\r\n    \"distribution\":\"repo\"\r\n  }\r\n}]",
+    "licenses":[{
+      "name":"Bouncy Castle Licence",
+      "url":"http://www.bouncycastle.org/licence.html",
+      "distribution":"repo"
+    }],
     "minJRE":"JVM_1_5",
     "version":"1.76"
   },

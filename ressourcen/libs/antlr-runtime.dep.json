@@ -3,9 +3,22 @@
   "filter":null,
   "installed":{
     "date":"2023-09-04T11:08:34 CEST",
-    "dependencies":"[\r\n  {\r\n    \"dependency\":{\r\n      \"groupId\":\"org.antlr\",\r\n      \"artifactId\":\"stringtemplate\",\r\n      \"version\":\"3.2.1\",\r\n      \"scope\":\"compile\"\r\n    }\r\n  },\r\n  {\r\n    \"dependency\":{\r\n      \"groupId\":\"antlr\",\r\n      \"artifactId\":\"antlr\",\r\n      \"version\":\"2.7.7\",\r\n      \"scope\":\"compile\"\r\n    }\r\n  }\r\n]",
+    "dependencies":[
+      {
+        "groupId":"org.antlr",
+        "artifactId":"stringtemplate",
+        "version":"3.2.1",
+        "scope":"compile"
+      },
+      {
+        "groupId":"antlr",
+        "artifactId":"antlr",
+        "version":"2.7.7",
+        "scope":"compile"
+      }
+    ],
     "hashes":{"antlr-runtime.jar":"5b7cf53b7b30b034023f58030c8147c433f2bee0fe7dec8fae6bebf3708c5a63"},
-    "licenses":"[]",
+    "licenses":[],
     "minJRE":"JVM_1_4",
     "version":"3.4"
   },

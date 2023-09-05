@@ -3,9 +3,9 @@
   "filter":null,
   "installed":{
     "date":"2023-09-04T11:08:34 CEST",
-    "dependencies":"null",
+    "dependencies":null,
     "hashes":{"image4j.jar":"88f9d391a1bde218ae2bf1207415b7900282bd6be5c1c0efabab5efee7632d2d"},
-    "licenses":"null",
+    "licenses":["LGPL"],
     "minJRE":"JVM_1_6",
     "version":"0.7-appworkjre1.6"
   },

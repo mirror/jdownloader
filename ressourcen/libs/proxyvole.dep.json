@@ -3,9 +3,9 @@
   "filter":null,
   "installed":{
     "date":"2023-09-04T11:08:34 CEST",
-    "dependencies":"null",
+    "dependencies":null,
     "hashes":{"proxyVole.jar":"a59e60c3436335df10627478373d70193cc68ede00588bbe787e04c50e84da57"},
-    "licenses":"null",
+    "licenses":["Apache License, Version 2.0"],
     "minJRE":"JVM_1_6",
     "version":"1.0.5-appwork.0.1"
   },

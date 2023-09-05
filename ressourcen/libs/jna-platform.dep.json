@@ -3,9 +3,26 @@
   "filter":null,
   "installed":{
     "date":"2023-09-04T11:08:34 CEST",
-    "dependencies":"[{\r\n  \"dependency\":{\r\n    \"groupId\":\"net.java.dev.jna\",\r\n    \"artifactId\":\"jna\",\r\n    \"version\":\"5.13.0\"\r\n  }\r\n}]",
+    "dependencies":[{
+      "groupId":"net.java.dev.jna",
+      "artifactId":"jna",
+      "version":"5.13.0"
+    }],
     "hashes":{"jna_platform.jar":"474d7b88f6e97009b6ec1d98c3024dd95c23187c65dabfbc35331bcac3d173dd"},
-    "licenses":"[\r\n  {\r\n    \"license\":{\r\n      \"name\":\"LGPL-2.1-or-later\",\r\n      \"url\":\"https://www.gnu.org/licenses/old-licenses/lgpl-2.1\",\r\n      \"distribution\":\"repo\",\r\n      \"comments\":\"\\n        Java Native Access (JNA) is licensed under the LGPL, version 2.1 or\\n        later, or the Apache License, version 2.0. You can freely decide which\\n        license you want to apply to the project.\\n      \"\r\n    }\r\n  },\r\n  {\r\n    \"license\":{\r\n      \"name\":\"Apache-2.0\",\r\n      \"url\":\"https://www.apache.org/licenses/LICENSE-2.0.txt\",\r\n      \"distribution\":\"repo\",\r\n      \"comments\":\"\\n        Java Native Access (JNA) is licensed under the LGPL, version 2.1 or\\n        later, or the Apache License, version 2.0. You can freely decide which\\n        license you want to apply to the project.\\n      \"\r\n    }\r\n  }\r\n]",
+    "licenses":[
+      {
+        "name":"LGPL-2.1-or-later",
+        "url":"https://www.gnu.org/licenses/old-licenses/lgpl-2.1",
+        "distribution":"repo",
+        "comments":"\n        Java Native Access (JNA) is licensed under the LGPL, version 2.1 or\n        later, or the Apache License, version 2.0. You can freely decide which\n        license you want to apply to the project.\n      "
+      },
+      {
+        "name":"Apache-2.0",
+        "url":"https://www.apache.org/licenses/LICENSE-2.0.txt",
+        "distribution":"repo",
+        "comments":"\n        Java Native Access (JNA) is licensed under the LGPL, version 2.1 or\n        later, or the Apache License, version 2.0. You can freely decide which\n        license you want to apply to the project.\n      "
+      }
+    ],
     "minJRE":"JVM_1_6",
     "version":"5.13.0"
   },

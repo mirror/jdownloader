@@ -3,9 +3,41 @@
   "filter":null,
   "installed":{
     "date":"2023-09-04T11:08:34 CEST",
-    "dependencies":"[\r\n  {\r\n    \"dependency\":{\r\n      \"groupId\":\"junit\",\r\n      \"artifactId\":\"junit\",\r\n      \"version\":\"4.8.2\",\r\n      \"scope\":\"test\"\r\n    }\r\n  },\r\n  {\r\n    \"dependency\":{\r\n      \"groupId\":\"org.xerial\",\r\n      \"artifactId\":\"sqlite-jdbc\",\r\n      \"version\":\"3.7.2\",\r\n      \"scope\":\"test\"\r\n    }\r\n  },\r\n  {\r\n    \"dependency\":{\r\n      \"groupId\":\"org.easymock\",\r\n      \"artifactId\":\"easymock\",\r\n      \"version\":2.4,\r\n      \"scope\":\"test\"\r\n    }\r\n  },\r\n  {\r\n    \"dependency\":{\r\n      \"groupId\":\"org.antlr\",\r\n      \"artifactId\":\"antlr-runtime\",\r\n      \"version\":3.4,\r\n      \"scope\":\"compile\",\r\n      \"exclusions\":{\r\n        \"artifactId\":\"ST4\",\r\n        \"groupId\":\"org.antlr\"\r\n      }\r\n    }\r\n  }\r\n]",
+    "dependencies":[
+      {
+        "groupId":"junit",
+        "artifactId":"junit",
+        "version":"4.8.2",
+        "scope":"test"
+      },
+      {
+        "groupId":"org.xerial",
+        "artifactId":"sqlite-jdbc",
+        "version":"3.7.2",
+        "scope":"test"
+      },
+      {
+        "groupId":"org.easymock",
+        "artifactId":"easymock",
+        "version":2.4,
+        "scope":"test"
+      },
+      {
+        "groupId":"org.antlr",
+        "artifactId":"antlr-runtime",
+        "version":3.4,
+        "scope":"compile",
+        "exclusions":{
+          "artifactId":"ST4",
+          "groupId":"org.antlr"
+        }
+      }
+    ],
     "hashes":{"sqljet.jar":"df7463424e3560f5e8c8003e1816c0a6ea6e84673921ca5af05b90b0892b3c97"},
-    "licenses":"[{\r\n  \"license\":{\r\n    \"name\":\"GPL (with dual licensing option)\",\r\n    \"url\":\"http://www.gnu.org/licenses/gpl.html\"\r\n  }\r\n}]",
+    "licenses":[{
+      "name":"GPL (with dual licensing option)",
+      "url":"http://www.gnu.org/licenses/gpl.html"
+    }],
     "minJRE":"JVM_1_5",
     "version":"1.1.10"
   },

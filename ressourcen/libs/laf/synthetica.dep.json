@@ -3,9 +3,9 @@
   "filter":null,
   "installed":{
     "date":"2023-09-04T11:08:34 CEST",
-    "dependencies":"null",
+    "dependencies":null,
     "hashes":{"synthetica.jar":"ae423de80385c34a925d2776b29bcca83707dcde60011a81f453a9a19819c66e"},
-    "licenses":"null",
+    "licenses":["Licensed by AppWork GmbH for all AppWork products."],
     "minJRE":"JVM_1_5",
     "version":"2.34.0"
   },

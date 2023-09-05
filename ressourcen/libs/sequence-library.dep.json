@@ -3,9 +3,17 @@
   "filter":null,
   "installed":{
     "date":"2023-09-04T11:08:34 CEST",
-    "dependencies":"[{\r\n  \"dependency\":{\r\n    \"groupId\":\"junit\",\r\n    \"artifactId\":\"junit\",\r\n    \"version\":\"3.8.2\",\r\n    \"scope\":\"test\"\r\n  }\r\n}]",
+    "dependencies":[{
+      "groupId":"junit",
+      "artifactId":"junit",
+      "version":"3.8.2",
+      "scope":"test"
+    }],
     "hashes":{"sequence-library.jar":"2f36485bec6bb5f7ba97a40241462f3ce8b4dde2ad1acfe08ea3712450d9e7ea"},
-    "licenses":"[{\r\n  \"license\":{\r\n    \"name\":\"Sequence Library License\",\r\n    \"url\":\"http://www.svnkit.com/SEQUENCE-LICENSE.txt\"\r\n  }\r\n}]",
+    "licenses":[{
+      "name":"Sequence Library License",
+      "url":"http://www.svnkit.com/SEQUENCE-LICENSE.txt"
+    }],
     "minJRE":"JVM_1_4",
     "version":"1.0.2"
   },

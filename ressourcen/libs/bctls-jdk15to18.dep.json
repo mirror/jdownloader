@@ -3,9 +3,26 @@
   "filter":null,
   "installed":{
     "date":"2023-09-04T11:08:34 CEST",
-    "dependencies":"[\r\n  {\r\n    \"dependency\":{\r\n      \"groupId\":\"org.bouncycastle\",\r\n      \"artifactId\":\"bcprov-jdk15to18\",\r\n      \"version\":1.76,\r\n      \"type\":\"jar\"\r\n    }\r\n  },\r\n  {\r\n    \"dependency\":{\r\n      \"groupId\":\"org.bouncycastle\",\r\n      \"artifactId\":\"bcutil-jdk15to18\",\r\n      \"version\":1.76,\r\n      \"type\":\"jar\"\r\n    }\r\n  }\r\n]",
+    "dependencies":[
+      {
+        "groupId":"org.bouncycastle",
+        "artifactId":"bcprov-jdk15to18",
+        "version":1.76,
+        "type":"jar"
+      },
+      {
+        "groupId":"org.bouncycastle",
+        "artifactId":"bcutil-jdk15to18",
+        "version":1.76,
+        "type":"jar"
+      }
+    ],
     "hashes":{"bctls-jdk15on.jar":"2483a68259ba39d19efb19c09401307bb833b7aa6eb60e12c43c8ea37a8e43be"},
-    "licenses":"[{\r\n  \"license\":{\r\n    \"name\":\"Bouncy Castle Licence\",\r\n    \"url\":\"http://www.bouncycastle.org/licence.html\",\r\n    \"distribution\":\"repo\"\r\n  }\r\n}]",
+    "licenses":[{
+      "name":"Bouncy Castle Licence",
+      "url":"http://www.bouncycastle.org/licence.html",
+      "distribution":"repo"
+    }],
     "minJRE":"JVM_1_5",
     "version":"1.76"
   },
