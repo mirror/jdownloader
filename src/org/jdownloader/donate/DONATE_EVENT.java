@@ -28,18 +28,26 @@ public enum DONATE_EVENT {
             if (year == 2019) {
                 if ((month == Calendar.SEPTEMBER && day >= 21) || (month == Calendar.OCTOBER && day <= 6)) {
                     return true;
-                }
-            } else if (year == 2020) {
-                if ((month == Calendar.SEPTEMBER && day >= 19) || (month == Calendar.OCTOBER && day <= 4)) {
-                    // Corona
+                } else {
                     return false;
                 }
+            } else if (year == 2020) {
+                // Corona
+                return false;
             } else if (year == 2021) {
                 // Corona
                 return false;
             } else if (year == 2022) {
                 if ((month == Calendar.SEPTEMBER && day >= 17) || (month == Calendar.OCTOBER && day <= 3)) {
                     return true;
+                } else {
+                    return false;
+                }
+            } else if (year == 2023) {
+                if ((month == Calendar.SEPTEMBER && day >= 16) || (month == Calendar.OCTOBER && day <= 3)) {
+                    return true;
+                } else {
+                    return false;
                 }
             }
             return false;
