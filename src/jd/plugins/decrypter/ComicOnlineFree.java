@@ -67,7 +67,7 @@ public class ComicOnlineFree extends antiDDoSForDecrypt {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/[\\w\\-]+/[\\w\\-]+");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/[\\w\\-]+/issue-[\\w\\-]+");
         }
         return ret.toArray(new String[0]);
     }

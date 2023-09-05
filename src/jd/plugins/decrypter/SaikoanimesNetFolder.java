@@ -20,6 +20,7 @@ import java.util.List;
 
 import org.appwork.utils.Regex;
 import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.parser.UrlQuery;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -116,6 +117,19 @@ public class SaikoanimesNetFolder extends PluginForDecrypt {
                     }
                     if (fp != null) {
                         file._setFilePackage(fp);
+                    }
+                    /* Try to set fileID for dupe-detection */
+                    String uniqueFileIdentifier = null;
+                    final String urlb64 = UrlQuery.parse(url).get("url");
+                    if (urlb64 != null) {
+                        final String urlDecoded = Encoding.Base64Decode(urlb64);
+                        uniqueFileIdentifier = new Regex(urlDecoded, "/download/([\\w]+)").getMatch(0);
+                    }
+                    if (uniqueFileIdentifier == null) {
+                        uniqueFileIdentifier = filename;
+                    }
+                    if (uniqueFileIdentifier != null) {
+                        file.setLinkID(CloudSaikoanimesNetFolder.DUPE_IDENTIFIER + folderID + "/" + uniqueFileIdentifier);
                     }
                     ret.add(file);
                 }

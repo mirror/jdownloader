@@ -59,10 +59,20 @@ public class ComunidadmontepinarEs extends antiDDoSForDecrypt {
             final Browser brc2 = br.cloneBrowser();
             getPage(brc2, m3u8IframeURLOld.replaceFirst("index\\.html$", "static/load.js"));
             String hlsMaster = brc2.getRegex("\\?u=\"\\s*\\+\\s*\"(https?://[^\"]+\\.m3u8)").getMatch(0);
-            if (hlsMaster == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (hlsMaster != null) {
+                hlsMaster += "?" + token;
+            } else {
+                /**
+                 * Older items such as: </br>
+                 * https://comunidadmontepinar.es/episodios/10x07/ </br>
+                 * and: https://comunidadmontepinar.es/episodios/10x11
+                 */
+                getPage(m3u8IframeURLOld);
+                hlsMaster = br.getRegex("\"(https?://[^\"]+\\.m3u8)").getMatch(0);
+                if (hlsMaster == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
-            hlsMaster += "?" + token;
             // final String src = br.getRegex("source\\s*src\\s*=\\s*\"([^\"]*\\.m3u8)").getMatch(0);
             // if (src == null) {
             // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

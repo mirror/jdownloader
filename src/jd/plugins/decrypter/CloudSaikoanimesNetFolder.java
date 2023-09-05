@@ -44,6 +44,8 @@ public class CloudSaikoanimesNetFolder extends PluginForDecrypt {
         super(wrapper);
     }
 
+    public static final String DUPE_IDENTIFIER = "saikoanimes://";
+
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
@@ -125,13 +127,15 @@ public class CloudSaikoanimesNetFolder extends PluginForDecrypt {
                 final String name = attributes.get("name").toString();
                 final DownloadLink downloadLink;
                 if ("folder".equalsIgnoreCase(type)) {
+                    /* Folder */
                     final Number numberOfItems = (Number) attributes.get("items");
                     if (numberOfItems == null || numberOfItems.longValue() == 0) {
                         logger.info("Skip empty folder:" + name + "|" + id);
                     }
                     downloadLink = this.createDownloadlink(br.getURL("/share/" + folderID + "/files/" + id).toString());
                 } else {
-                    downloadLink = this.createDownloadlink("directhttp://" + attributes.get("file_url").toString());
+                    /* File */
+                    downloadLink = this.createDownloadlink(DirectHTTP.createURLForThisPlugin(attributes.get("file_url").toString()));
                     downloadLink.setFinalFileName(name);
                     downloadLink.setProperty(DirectHTTP.FIXNAME, name);
                     downloadLink.setDownloadSize(SizeFormatter.getSize(attributes.get("filesize").toString()));
@@ -139,6 +143,7 @@ public class CloudSaikoanimesNetFolder extends PluginForDecrypt {
                 }
                 downloadLink._setFilePackage(fp);
                 downloadLink.setRelativeDownloadFolderPath(subfolderPath);
+                downloadLink.setLinkID(DUPE_IDENTIFIER + folderID + "/" + id);
                 distribute(downloadLink);
                 ret.add(downloadLink);
             }
