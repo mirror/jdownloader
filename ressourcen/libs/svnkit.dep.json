@@ -2,10 +2,11 @@
   "artefact":"org.tmatesoft.svnkit/svnkit",
   "filter":null,
   "installed":{
-    "date":null,
+    "date":"2023-09-04T11:08:34 CEST",
+    "dependencies":"[\r\n  {\r\n    \"dependency\":{\r\n      \"groupId\":\"com.jcraft\",\r\n      \"artifactId\":\"jsch.agentproxy.svnkit-trilead-ssh2\",\r\n      \"version\":\"0.0.7\",\r\n      \"scope\":\"compile\"\r\n    }\r\n  },\r\n  {\r\n    \"dependency\":{\r\n      \"groupId\":\"net.java.dev.jna\",\r\n      \"artifactId\":\"jna-platform\",\r\n      \"version\":\"4.1.0\",\r\n      \"scope\":\"compile\"\r\n    }\r\n  },\r\n  {\r\n    \"dependency\":{\r\n      \"groupId\":\"net.java.dev.jna\",\r\n      \"artifactId\":\"jna\",\r\n      \"version\":\"4.1.0\",\r\n      \"scope\":\"compile\"\r\n    }\r\n  },\r\n  {\r\n    \"dependency\":{\r\n      \"groupId\":\"com.trilead\",\r\n      \"artifactId\":\"trilead-ssh2\",\r\n      \"version\":\"1.0.0-build219\",\r\n      \"scope\":\"compile\"\r\n    }\r\n  },\r\n  {\r\n    \"dependency\":{\r\n      \"groupId\":\"com.jcraft\",\r\n      \"artifactId\":\"jsch.agentproxy.connector-factory\",\r\n      \"version\":\"0.0.7\",\r\n      \"scope\":\"compile\"\r\n    }\r\n  },\r\n  {\r\n    \"dependency\":{\r\n      \"groupId\":\"junit\",\r\n      \"artifactId\":\"junit\",\r\n      \"version\":4.8,\r\n      \"scope\":\"test\"\r\n    }\r\n  },\r\n  {\r\n    \"dependency\":{\r\n      \"groupId\":\"de.regnis.q.sequence\",\r\n      \"artifactId\":\"sequence-library\",\r\n      \"version\":\"1.0.3\",\r\n      \"scope\":\"compile\"\r\n    }\r\n  },\r\n  {\r\n    \"dependency\":{\r\n      \"groupId\":\"org.tmatesoft.sqljet\",\r\n      \"artifactId\":\"sqljet\",\r\n      \"version\":\"1.1.10\",\r\n      \"scope\":\"compile\"\r\n    }\r\n  }\r\n]",
     "hashes":{"svnkit.jar":"09cb0908ec713b6aa307881c3fbd3f7b504430beae1d51120b974e2fc541fb6e"},
-    "license":"\n    <license>\n      <name>TMate Open Source License (with dual licensing option)</name>\n      <url>http://www.svnkit.com/license.html</url>\n    </license>\n  ",
-    "minJRE":"16000000",
+    "licenses":"[{\r\n  \"license\":{\r\n    \"name\":\"TMate Open Source License (with dual licensing option)\",\r\n    \"url\":\"http://www.svnkit.com/license.html\"\r\n  }\r\n}]",
+    "minJRE":"JVM_1_6",
     "version":"1.8.10"
   },
   "minJRE":"1.6",

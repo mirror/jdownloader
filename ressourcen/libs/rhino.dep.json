@@ -2,10 +2,11 @@
   "artefact":"org.mozilla/rhino",
   "filter":null,
   "installed":{
-    "date":null,
+    "date":"2023-09-04T11:08:34 CEST",
+    "dependencies":"[]",
     "hashes":{"js.jar":"5c6dae050ceb71774a5fc82ce6e3f0392daf0ffa9ec3596f70d4d07ee50b8970"},
-    "license":"\n    <license>\n      <name>Mozilla Public License, Version 2.0</name>\n      <url>http://www.mozilla.org/MPL/2.0/index.txt</url>\n    </license>\n  ",
-    "minJRE":"16000000",
+    "licenses":"[{\r\n  \"license\":{\r\n    \"name\":\"Mozilla Public License, Version 2.0\",\r\n    \"url\":\"http://www.mozilla.org/MPL/2.0/index.txt\"\r\n  }\r\n}]",
+    "minJRE":"JVM_1_6",
     "version":"1.7.7.2"
   },
   "minJRE":"1.6",

@@ -2,10 +2,11 @@
   "artefact":"com.jhlabs/filters",
   "filter":null,
   "installed":{
-    "date":null,
+    "date":"2023-09-04T11:08:34 CEST",
+    "dependencies":"[{\r\n  \"dependency\":{\r\n    \"groupId\":\"junit\",\r\n    \"artifactId\":\"junit\",\r\n    \"version\":\"3.8.1\",\r\n    \"scope\":\"test\"\r\n  }\r\n}]",
     "hashes":{"Filters.jar":"a37202f03eae99ab1faf2a89eeaee3665c8489f45b1aeb0d5926d78a54c613bf"},
-    "license":"\n    <license>\n      <name>Apache License, Version 2.0</name>\n      <url>http://www.apache.org/licenses/LICENSE-2.0</url>\n      <distribution>repo</distribution>\n    </license>\n  ",
-    "minJRE":"16000000",
+    "licenses":"[{\r\n  \"license\":{\r\n    \"name\":\"Apache License, Version 2.0\",\r\n    \"url\":\"http://www.apache.org/licenses/LICENSE-2.0\",\r\n    \"distribution\":\"repo\"\r\n  }\r\n}]",
+    "minJRE":"JVM_1_6",
     "version":"2.0.235-1"
   },
   "minJRE":"1.6",

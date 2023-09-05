@@ -2,10 +2,11 @@
   "artefact":"com.github.markusbernhardt/proxyvole",
   "filter":null,
   "installed":{
-    "date":null,
+    "date":"2023-09-04T11:08:34 CEST",
+    "dependencies":"null",
     "hashes":{"proxyVole.jar":"a59e60c3436335df10627478373d70193cc68ede00588bbe787e04c50e84da57"},
-    "license":"Apache License, Version 2.0",
-    "minJRE":"16000000",
+    "licenses":"null",
+    "minJRE":"JVM_1_6",
     "version":"1.0.5-appwork.0.1"
   },
   "minJRE":"1.6",

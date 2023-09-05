@@ -2,10 +2,11 @@
   "artefact":"net.sourceforge.htmlunit/htmlunit-core-js",
   "filter":null,
   "installed":{
-    "date":null,
+    "date":"2023-09-04T11:08:34 CEST",
+    "dependencies":"[]",
     "hashes":{"htmlunit-core-js.jar":"32fd749af1599ab0daf22b60cbe97b6792cb9fe8b4220496a3adb667e58a5c3c"},
-    "license":"\n        <license>\n            <name>Mozilla Public License version 2.0</name>\n            <url>http://www.mozilla.org/MPL/2.0/</url>\n            <distribution>repo</distribution>\n        </license>\n    ",
-    "minJRE":"15000000",
+    "licenses":"[{\r\n  \"license\":{\r\n    \"name\":\"Mozilla Public License version 2.0\",\r\n    \"url\":\"http://www.mozilla.org/MPL/2.0/\",\r\n    \"distribution\":\"repo\"\r\n  }\r\n}]",
+    "minJRE":"JVM_1_5",
     "version":"2.17"
   },
   "minJRE":"1.6",

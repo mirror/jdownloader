@@ -2,10 +2,11 @@
   "artefact":"net.java.dev.jna/jna",
   "filter":null,
   "installed":{
-    "date":null,
+    "date":"2023-09-04T11:08:34 CEST",
+    "dependencies":"[]",
     "hashes":{"jna.jar":"66d4f819a062a51a1d5627bffc23fac55d1677f0e0a1feba144aabdd670a64bb"},
-    "license":"\n    <license>\n      <name>LGPL-2.1-or-later</name>\n      <url>https://www.gnu.org/licenses/old-licenses/lgpl-2.1</url>\n      <distribution>repo</distribution>\n      <comments>\n        Java Native Access (JNA) is licensed under the LGPL, version 2.1 or\n        later, or the Apache License, version 2.0. You can freely decide which\n        license you want to apply to the project.\n      </comments>\n    </license>\n    <license>\n      <name>Apache-2.0</name>\n      <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>\n      <distribution>repo</distribution>\n      <comments>\n        Java Native Access (JNA) is licensed under the LGPL, version 2.1 or\n        later, or the Apache License, version 2.0. You can freely decide which\n        license you want to apply to the project.\n      </comments>\n    </license>\n  ",
-    "minJRE":"16000000",
+    "licenses":"[\r\n  {\r\n    \"license\":{\r\n      \"name\":\"LGPL-2.1-or-later\",\r\n      \"url\":\"https://www.gnu.org/licenses/old-licenses/lgpl-2.1\",\r\n      \"distribution\":\"repo\",\r\n      \"comments\":\"\\n        Java Native Access (JNA) is licensed under the LGPL, version 2.1 or\\n        later, or the Apache License, version 2.0. You can freely decide which\\n        license you want to apply to the project.\\n      \"\r\n    }\r\n  },\r\n  {\r\n    \"license\":{\r\n      \"name\":\"Apache-2.0\",\r\n      \"url\":\"https://www.apache.org/licenses/LICENSE-2.0.txt\",\r\n      \"distribution\":\"repo\",\r\n      \"comments\":\"\\n        Java Native Access (JNA) is licensed under the LGPL, version 2.1 or\\n        later, or the Apache License, version 2.0. You can freely decide which\\n        license you want to apply to the project.\\n      \"\r\n    }\r\n  }\r\n]",
+    "minJRE":"JVM_1_6",
     "version":"5.13.0"
   },
   "minJRE":"1.6",

@@ -2,10 +2,11 @@
   "artefact":"net.lingala.zip4j/zip4j",
   "filter":null,
   "installed":{
-    "date":null,
+    "date":"2023-09-04T11:08:34 CEST",
+    "dependencies":"[]",
     "hashes":{"zip4j.jar":"fb90f436e328d4041db802ce9b571ddb3a580703935ddc37df5183155638af0e"},
-    "license":null,
-    "minJRE":"17000000",
+    "licenses":"[]",
+    "minJRE":"JVM_1_7",
     "version":"1.3.3"
   },
   "minJRE":"1.7",
