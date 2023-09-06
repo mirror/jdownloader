@@ -98,7 +98,13 @@ public class KemonoParty extends PluginForHost {
     public String getLinkID(final DownloadLink link) {
         final String fid = getFID(link);
         if (fid != null) {
-            return this.getHost() + "://" + fid;
+            final boolean useLegacyLinkidsForNonTextFiles = true;
+            if (!this.isTextFile(link) && useLegacyLinkidsForNonTextFiles) {
+                /* Keep backward compatibility to non-text items added as DirectHTTP URLs until including revision 48248 . */
+                return super.getLinkID(link);
+            } else {
+                return this.getHost() + "://" + fid;
+            }
         } else {
             return super.getLinkID(link);
         }
