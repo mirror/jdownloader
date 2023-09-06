@@ -22,6 +22,7 @@ import java.util.List;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
+import org.jdownloader.plugins.components.config.XFSConfigVideo.DownloadMode;
 import org.jdownloader.plugins.components.config.XFSConfigVideoFilemoonSx;
 
 import jd.PluginWrapper;
@@ -200,8 +201,15 @@ public class FilemoonSx extends XFileSharingProBasic {
     public void doFree(final DownloadLink link, final Account account) throws Exception, PluginException {
         /* First bring up saved final links */
         String dllink = checkDirectLink(link, account);
-        if (StringUtils.isEmpty(dllink)) {
+        String streamDownloadurl = null;
+        grabOfficialVideoDownloadDirecturl: if (StringUtils.isEmpty(dllink)) {
             requestFileInformationWebsite(link, account, true);
+            final DownloadMode mode = this.getPreferredDownloadModeFromConfig();
+            streamDownloadurl = this.getDllink(link, account, br, br.getRequest().getHtmlCode());
+            if (mode == DownloadMode.STREAM && !StringUtils.isEmpty(streamDownloadurl)) {
+                /* User prefers to download stream -> We can skip the captcha required to find official video downloadurl. */
+                break grabOfficialVideoDownloadDirecturl;
+            }
             this.checkErrors(br, this.getCorrectBR(br), link, account, false);
             this.getPage("/download/" + this.getFUIDFromURL(link));
             final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, "6LdiBGAgAAAAAIQm_arJfGYrzjUNP_TCwkvPlv8k").getToken();
@@ -213,11 +221,20 @@ public class FilemoonSx extends XFileSharingProBasic {
             this.submitForm(dlform);
             if (isSpecialError404(br)) {
                 /* 2023-05-04 */
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Error 404 download impossible at this moment");
+                if (streamDownloadurl != null) {
+                    logger.info("Official download is not possible -> Fallback to stream download");
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Error 404 download impossible at this moment");
+                }
             }
             dllink = this.getDllink(link, account, br, br.getRequest().getHtmlCode());
+            if (StringUtils.isEmpty(dllink) && !StringUtils.isEmpty(streamDownloadurl)) {
+                logger.info("Failed to find official downloadurl -> Fallback to stream download");
+                // dllink = streamDownloadurl;
+                /* Fallback happens in upper code */
+            }
         }
-        handleDownload(link, account, dllink, null);
+        handleDownload(link, account, dllink, streamDownloadurl, null);
     }
 
     @Override
