@@ -7,14 +7,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import org.appwork.storage.TypeRef;
-import org.appwork.storage.config.JsonConfig;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
-import org.jdownloader.plugins.components.usenet.UsenetServer;
-import org.jdownloader.settings.GraphicalUserInterfaceSettings;
-import org.jdownloader.settings.GraphicalUserInterfaceSettings.SIZEUNIT;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -27,6 +19,13 @@ import jd.plugins.AccountInvalidException;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
+import org.jdownloader.plugins.components.usenet.UsenetServer;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings.SIZEUNIT;
+import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "freediscussions.com" }, urls = { "" })
 public class FreediscussionsCom extends UseNet {
@@ -122,7 +121,7 @@ public class FreediscussionsCom extends UseNet {
             }
             ai.setTrafficLeft(trafficleft);
             ai.setTrafficMax(trafficmax);
-            final SIZEUNIT maxSizeUnit = JsonConfig.create(GraphicalUserInterfaceSettings.class).getMaxSizeUnit();
+            final SIZEUNIT maxSizeUnit = (SIZEUNIT) CFG_GUI.MAX_SIZE_UNIT.getValue();
             ai.setStatus(account.getType().getLabel() + " | Extra traffic: " + SIZEUNIT.formatValue(maxSizeUnit, remainingExtraTraffic));
         } catch (final PluginException e) {
             if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {

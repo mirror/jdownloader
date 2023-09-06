@@ -23,18 +23,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.storage.JSonMapperException;
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.storage.config.JsonConfig;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.settings.GraphicalUserInterfaceSettings;
-import org.jdownloader.settings.GraphicalUserInterfaceSettings.SIZEUNIT;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -50,6 +38,17 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
+
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.storage.JSonMapperException;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings.SIZEUNIT;
+import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "leechall.io" }, urls = { "" })
 public class LeechallIo extends PluginForHost {
@@ -221,8 +220,7 @@ public class LeechallIo extends PluginForHost {
             account.setType(AccountType.FREE);
             /**
              * Free users cannot download anything thus adding such accounts to JDownloader doesn't make any sense -> Mark them as expired.
-             * </br>
-             * Website says: https://leechall.io/downloader --> "Please upgrade premium to use this service."
+             * </br> Website says: https://leechall.io/downloader --> "Please upgrade premium to use this service."
              */
             ai.setExpired(true);
         }
@@ -230,7 +228,7 @@ public class LeechallIo extends PluginForHost {
         if (!StringUtils.isEmpty(expiredate)) {
             ai.setValidUntil(TimeFormatter.getMilliSeconds(expiredate, "yyyy-MM-dd HH:mm:ss", Locale.US), br);
         }
-        final SIZEUNIT maxSizeUnit = JsonConfig.create(GraphicalUserInterfaceSettings.class).getMaxSizeUnit();
+        final SIZEUNIT maxSizeUnit = (SIZEUNIT) CFG_GUI.MAX_SIZE_UNIT.getValue();
         ai.setStatus(account.getType().getLabel() + " | Total downloaded: " + SIZEUNIT.formatValue(maxSizeUnit, total_downloadedBytes) + " | Files: " + total_files);
         final Map<String, Object> respbandwidth = this.accessAPI("/user/bandwidth");
         final Map<String, Object> bandwidth = (Map<String, Object>) respbandwidth.get("bandwidth");
