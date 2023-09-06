@@ -160,4 +160,9 @@ public class PandafilesCom extends XFileSharingProBasic {
     public int getMaxSimultanPremiumDownloadNum() {
         return 10;
     }
+
+    @Override
+    protected boolean supportsShortURLs() {
+        return true;
+    }
 }

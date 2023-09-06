@@ -24,6 +24,7 @@ import java.util.Set;
 
 import org.appwork.storage.JSonMapperException;
 import org.appwork.storage.TypeRef;
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DefaultStringValue;
@@ -42,6 +43,8 @@ import org.jdownloader.plugins.config.AccountConfigInterface;
 import org.jdownloader.plugins.config.Order;
 import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings.SIZEUNIT;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -246,7 +249,8 @@ public class PremiumTo extends UseNet {
         account.setProperty(PROPERTY_specialTraffic, spT);
         String additionalAccountStatus = "";
         if (nT > 0 && spT > 0) {
-            additionalAccountStatus = String.format(" | Normal Traffic: %d MiB Special Traffic: %d MiB", nT, spT);
+            final SIZEUNIT maxSizeUnit = JsonConfig.create(GraphicalUserInterfaceSettings.class).getMaxSizeUnit();
+            additionalAccountStatus = String.format(" | Normal Traffic: %s Special Traffic: %s", SIZEUNIT.formatValue(maxSizeUnit, nT), SIZEUNIT.formatValue(maxSizeUnit, spT));
         }
         final String apikey = this.getAPIKey(account);
         final String userid = this.getUserID(account);

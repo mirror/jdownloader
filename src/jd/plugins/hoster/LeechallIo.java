@@ -27,11 +27,13 @@ import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.storage.JSonMapperException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
+import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings.SIZEUNIT;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -211,7 +213,7 @@ public class LeechallIo extends PluginForHost {
         if (!status.equalsIgnoreCase("active")) {
             throw new AccountInvalidException("Account is not active");
         }
-        final Number total_downloadedBytes = (Number) data.get("total_downloaded");
+        final long total_downloadedBytes = ((Number) data.get("total_downloaded")).longValue();
         final Number total_files = (Number) data.get("total_files");
         if (Boolean.TRUE.equals(data.get("has_premium"))) {
             account.setType(AccountType.PREMIUM);
@@ -228,7 +230,8 @@ public class LeechallIo extends PluginForHost {
         if (!StringUtils.isEmpty(expiredate)) {
             ai.setValidUntil(TimeFormatter.getMilliSeconds(expiredate, "yyyy-MM-dd HH:mm:ss", Locale.US), br);
         }
-        ai.setStatus(account.getType().getLabel() + " | Total downloaded: " + SizeFormatter.formatBytes(total_downloadedBytes.longValue()) + " | Files: " + total_files);
+        final SIZEUNIT maxSizeUnit = JsonConfig.create(GraphicalUserInterfaceSettings.class).getMaxSizeUnit();
+        ai.setStatus(account.getType().getLabel() + " | Total downloaded: " + SIZEUNIT.formatValue(maxSizeUnit, total_downloadedBytes) + " | Files: " + total_files);
         final Map<String, Object> respbandwidth = this.accessAPI("/user/bandwidth");
         final Map<String, Object> bandwidth = (Map<String, Object>) respbandwidth.get("bandwidth");
         final long dailytrafficmaxbytes = Long.parseLong(bandwidth.get("maximum").toString());

@@ -87,6 +87,12 @@ public class NovaFileCom extends XFileSharingProBasicSpecialFilejoker {
         }
     }
 
+    @Override
+    protected boolean supportsShortURLs() {
+        /* 2023-05-18: Legacy: Those URLs are now processed by separate crawler plugin NfileCc. */
+        return true;
+    }
+
     protected String getFUID(final String url, URL_TYPE type) {
         if (url != null && type != null) {
             try {
