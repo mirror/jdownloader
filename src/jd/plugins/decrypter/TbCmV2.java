@@ -533,19 +533,19 @@ public class TbCmV2 extends PluginForDecrypt {
                     videoIdsToAdd.addAll(playlist);
                     final ChannelPlaylistCrawlerPackagingMode mode = cfg.getChannelPlaylistCrawlerPackagingMode();
                     if (mode == ChannelPlaylistCrawlerPackagingMode.AUTO || mode == ChannelPlaylistCrawlerPackagingMode.GROUP_ALL_VIDEOS_AS_SINGLE_PACKAGE) {
-                        final String channelOrPlaylistPackageNamePattern;
+                        String channelOrPlaylistPackageNamePattern;
                         if (this.playlistID != null) {
                             channelOrPlaylistPackageNamePattern = cfg.getPackagePatternForPlaylists();
                         } else {
                             channelOrPlaylistPackageNamePattern = cfg.getPackagePatternForChannels();
                         }
+                        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                            /* Dev only: Include number of expected items in packagename for better overview/debugging. */
+                            channelOrPlaylistPackageNamePattern = "[" + videoIdsToAdd.size() + " videos] " + channelOrPlaylistPackageNamePattern;
+                        }
                         if (mode == ChannelPlaylistCrawlerPackagingMode.AUTO && YoutubeHelper.namePatternContainsSingleVideoSpecificEntries(channelOrPlaylistPackageNamePattern)) {
                             logger.info("User put video-specific replacement patterns into channel/playlist package name pattern in auto mode -> Using that pattern as single video pattern instead: " + channelOrPlaylistPackageNamePattern);
                             singleVideoPackageNamePatternOverride = channelOrPlaylistPackageNamePattern;
-                            if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-                                /* Dev only: Include number of expected items in packagename for better overview/debugging. */
-                                singleVideoPackageNamePatternOverride = "[" + videoIdsToAdd.size() + " videos] " + singleVideoPackageNamePatternOverride;
-                            }
                         } else {
                             channelOrPlaylistPackage = FilePackage.getInstance();
                             channelOrPlaylistPackage.setAllowMerge(true);
@@ -584,10 +584,6 @@ public class TbCmV2 extends PluginForDecrypt {
                             final String playlistDescription = (String) globalPropertiesForDownloadLink.get(YoutubeHelper.YT_PLAYLIST_DESCRIPTION);
                             if (playlistDescription != null) {
                                 channelOrPlaylistPackage.setComment(playlistDescription);
-                            }
-                            if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-                                /* Dev only: Include number of expected items in packagename for better overview/debugging. */
-                                channelOrPlaylistPackage.setName("[" + videoIdsToAdd.size() + " videos] " + channelOrPlaylistPackage.getName());
                             }
                         }
                     }
