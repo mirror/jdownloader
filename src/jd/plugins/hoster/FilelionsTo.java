@@ -44,7 +44,7 @@ public class FilelionsTo extends XFileSharingProBasic {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "filelions.to", "filelions.com" });
+        ret.add(new String[] { "filelions.to", "filelions.com", "alions.pro" });
         return ret;
     }
 
@@ -64,7 +64,7 @@ public class FilelionsTo extends XFileSharingProBasic {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:d|e|f)/([a-z0-9]{12})");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:d|e|f|v)/([a-z0-9]{12})");
         }
         return ret.toArray(new String[0]);
     }

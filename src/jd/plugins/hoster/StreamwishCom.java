@@ -43,7 +43,7 @@ public class StreamwishCom extends XFileSharingProBasic {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "streamwish.com", "streamwish.to" });
+        ret.add(new String[] { "streamwish.com", "streamwish.to", "awish.pro" });
         return ret;
     }
 
@@ -103,5 +103,21 @@ public class StreamwishCom extends XFileSharingProBasic {
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
+    }
+
+    @Override
+    protected boolean supports_availablecheck_filesize_html() {
+        /* 2023-09-06 */
+        return false;
+    }
+
+    @Override
+    public String[] scanInfo(final String html, final String[] fileInfo) {
+        super.scanInfo(html, fileInfo);
+        final String betterFilename = br.getRegex("<h1 class=\"h5 mb-3\">([^<]+)</h1>").getMatch(0);
+        if (betterFilename != null) {
+            fileInfo[0] = betterFilename;
+        }
+        return fileInfo;
     }
 }
