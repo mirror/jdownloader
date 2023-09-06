@@ -15,25 +15,55 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Pattern;
+
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
+import jd.plugins.decrypter.MyzukaClubCrawler;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "myzuka.club", "myzcloud.me" }, urls = { "https?://(?:www\\.)?myzuka\\.(?:ru|org|fm|me|club)/Song/(\\d+)", "https?://(?:www\\.)?myzcloud\\.me/(?:[a-z]{2}/)?Song/(\\d+)" })
-public class MyzcloudMe extends antiDDoSForHost {
-    public MyzcloudMe(PluginWrapper wrapper) {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
+@PluginDependencies(dependencies = { MyzukaClubCrawler.class })
+public class MyzukaClub extends antiDDoSForHost {
+    public MyzukaClub(PluginWrapper wrapper) {
         super(wrapper);
         /* 2020-03-04: Try to avoid IP block: https://board.jdownloader.org/showthread.php?t=80894 */
         this.setStartIntervall(10 * 1000l);
+    }
+
+    private static List<String[]> getPluginDomains() {
+        return MyzukaClubCrawler.getPluginDomains();
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : getPluginDomains()) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/Song/(\\d+)");
+        }
+        return ret.toArray(new String[0]);
     }
 
     @Override
@@ -46,12 +76,9 @@ public class MyzcloudMe extends antiDDoSForHost {
         return "http://myzcloud.me/Contacts";
     }
 
-    @SuppressWarnings("deprecation")
-    public void correctDownloadLink(final DownloadLink link) {
-        /* Forced https */
-        final String newURL = "https://" + this.getHost() + "/Song/" + new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
-        link.setUrlDownload(newURL);
-        link.setPluginPatternMatcher(newURL);
+    private String getContentURL(final DownloadLink link) {
+        final String oldHost = Browser.getHost(link.getPluginPatternMatcher(), false);
+        return link.getPluginPatternMatcher().replaceFirst(Pattern.quote(oldHost), this.getHost());
     }
 
     @Override
@@ -84,7 +111,7 @@ public class MyzcloudMe extends antiDDoSForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setAllowedResponseCodes(new int[] { 500 });
-        getPage(link.getPluginPatternMatcher());
+        getPage(getContentURL(link));
         if (br.getHttpConnection().getResponseCode() == 500 || br.getHttpConnection().getResponseCode() == 400) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML("Трек удален по просьбе правообладателя")) {
@@ -159,7 +186,7 @@ public class MyzcloudMe extends antiDDoSForHost {
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-        } else if (dl.getConnection().getContentType().contains("gif")) {
+        } else if (StringUtils.containsIgnoreCase(dl.getConnection().getContentType(), "gif")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 15 * 60 * 1000l);
         }
         dl.startDownload();

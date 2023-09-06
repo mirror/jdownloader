@@ -16,23 +16,52 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Pattern;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "myzcloud.me", "myzuka.club" }, urls = { "https?://(?:www\\.)?myzcloud\\.(?:me|pro)/(?:[a-z]{2}/)?Album/(\\d+)(/[A-Za-z0-9\\-]+)?", "https?://(?:www\\.)?myzuka\\.(?:ru|org|fm|me|club)/(?:[a-z]{2}/)?Album/(\\d+)(/[A-Za-z0-9\\-]+)?" })
-public class MyzcloudMe extends antiDDoSForDecrypt {
-    public MyzcloudMe(PluginWrapper wrapper) {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
+public class MyzukaClubCrawler extends antiDDoSForDecrypt {
+    public MyzukaClubCrawler(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "myzuka.club", "myzuka.ru", "myzuka.org", "myzuka.fm", "myzuka.me" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : getPluginDomains()) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:[a-z]{2}/)?Album/(\\d+)(/[A-Za-z0-9\\-]+)?");
+        }
+        return ret.toArray(new String[0]);
     }
 
     @Override
@@ -48,10 +77,10 @@ public class MyzcloudMe extends antiDDoSForDecrypt {
     }
 
     /** 2020-02-27: This service is blocking all but turkish IPs! Turkish Proxy/VPN required or every request will return 404! */
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        /* Forced https */
-        final String parameter = param.toString().replace("http://", "https://");
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final String hostOld = Browser.getHost(param.getCryptedUrl(), false);
+        final String parameter = param.getCryptedUrl().replaceFirst("(?)http://", "https://").replaceFirst(Pattern.quote(hostOld), this.getHost());
         br.setFollowRedirects(true);
         getPage(parameter);
         final String albumID = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
@@ -67,18 +96,14 @@ public class MyzcloudMe extends antiDDoSForDecrypt {
         }
         /* offline|abused */
         if (br.getHttpConnection().getResponseCode() == 403 || br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("Альбом удален по просьбе правообладателя")) {
-            final DownloadLink offline = this.createOfflinelink(parameter);
-            offline.setFinalFileName(new Regex(parameter, "https?://[^<>\"/]+/(.+)").getMatch(0));
-            decryptedLinks.add(offline);
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String[] info = br.getRegex("(<div id=\"playerDiv\\d+\".*?)</div>\\s*</div>\\s*</div>").getColumn(0);
         if (info == null || info.length == 0) {
             info = br.getRegex("(<div id=\"playerDiv\\d+\".*?)</a>\\s+</div>").getColumn(0);
         }
         if (info == null || info.length == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         String fpName = br.getRegex("class=\"content__title\">\\s*?<h1>\\s*([^<>\"]+)\\s*<").getMatch(0);
         if (fpName == null) {
@@ -92,34 +117,39 @@ public class MyzcloudMe extends antiDDoSForDecrypt {
             /* Final fallback */
             fpName = albumID;
         }
-        for (final String singleLink : info) {
-            final String url = new Regex(singleLink, "(/Song/\\d+/[^<>]+)\"").getMatch(0);
-            final String title = new Regex(singleLink, "href=\"[^\"]*?Song/\\d+/[^<>]+\">([^<>\"]*?)<").getMatch(0);
-            final String artist = new Regex(singleLink, "data-artist=\"([^<>\"]+)\"").getMatch(0);
-            String filesize = new Regex(singleLink, "class=\"time\">([^<>\"]*?)<").getMatch(0);
-            if (url == null || title == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                continue;
+        for (final String html : info) {
+            final String url = new Regex(html, "(/Song/\\d+/[^<>\"]+)\"").getMatch(0);
+            final String artist = new Regex(html, "data-artist=\"([^<>\"]+)\"").getMatch(0);
+            String filesize = new Regex(html, "class=\"time\">([^<>\"]*?)<").getMatch(0);
+            if (url == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            String filename = null;
+            final String[] titles = new Regex(html, "href=\"" + Pattern.quote(url) + "\"[^>]*>([^<]+)<").getColumn(0);
             filesize = new Regex(filesize, "(\\d+(?:,\\d+)?)").getMatch(0) + "MB";
-            String filename = "";
-            if (artist != null) {
-                filename += Encoding.htmlDecode(artist) + " - ";
+            if (titles != null && titles.length > 0) {
+                final String title = titles[titles.length - 1];
+                filename = "";
+                if (artist != null) {
+                    filename += Encoding.htmlDecode(artist) + " - ";
+                }
+                filename += Encoding.htmlDecode(title) + ".mp3";
             }
-            filename += Encoding.htmlDecode(title) + ".mp3";
             final DownloadLink fina = createDownloadlink(br.getURL(Encoding.htmlDecode(url)).toString());
-            fina.setName(filename);
+            if (filename != null) {
+                fina.setName(filename);
+            }
             if (filesize != null) {
                 fina.setDownloadSize(SizeFormatter.getSize(filesize));
             }
             fina.setAvailable(true);
-            decryptedLinks.add(fina);
+            ret.add(fina);
         }
-        if (fpName != null && decryptedLinks.size() > 0) {
+        if (fpName != null && ret.size() > 0) {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName.trim()));
-            fp.addLinks(decryptedLinks);
+            fp.addLinks(ret);
         }
-        return decryptedLinks;
+        return ret;
     }
 }

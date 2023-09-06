@@ -62,8 +62,8 @@ public class DownmagazNet extends PluginForDecrypt {
         return ret.toArray(new String[0]);
     }
 
-    private final String TYPE_MULTIPLE = "https?://[^/]+/([a-z0-9\\-_]+)/(\\d+)-([a-z0-9\\-_]+)\\.html";
-    private final String TYPE_REDIRECT = "https?://[^/]+/out\\.php\\?f=[a-z0-9]+\\&down=(\\d+)";
+    private final String TYPE_MULTIPLE = "(?i)https?://[^/]+/([a-z0-9\\-_]+)/(\\d+)-([a-z0-9\\-_]+)\\.html";
+    private final String TYPE_REDIRECT = "(?i)https?://[^/]+/out\\.php\\?f=[a-z0-9]+\\&down=(\\d+)";
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
