@@ -507,7 +507,9 @@ public class EHentaiOrg extends PluginForHost {
         if (storedDirecturl == null) {
             /* E.g. when user wanted original but original is not available so normal quality was downloaded. */
             directurlproperty = link.getStringProperty(PROPERTY_FORCED_DIRECTURL_PROPERTY);
-            storedDirecturl = link.getStringProperty(directurlproperty);
+            if (directurlproperty != null) {
+                storedDirecturl = link.getStringProperty(directurlproperty);
+            }
         }
         String directurl;
         if (storedDirecturl != null) {
