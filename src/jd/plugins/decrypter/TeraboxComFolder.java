@@ -21,7 +21,6 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.Time;
@@ -54,7 +53,7 @@ public class TeraboxComFolder extends PluginForDecrypt {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "terabox.com", "dubox.com", "4funbox.com", "mirrobox.com", "1024tera.com" });
+        ret.add(new String[] { "terabox.com", "teraboxapp.com", "dubox.com", "4funbox.com", "mirrobox.com", "1024tera.com" });
         return ret;
     }
 
