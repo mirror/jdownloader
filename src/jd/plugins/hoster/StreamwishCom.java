@@ -125,4 +125,29 @@ public class StreamwishCom extends XFileSharingProBasic {
         fileInfo[1] = null;
         return fileInfo;
     }
+
+    @Override
+    protected String buildURLPath(final DownloadLink link, final String fuid, final URL_TYPE type) {
+        if (type == URL_TYPE.OFFICIAL_VIDEO_DOWNLOAD) {
+            /* 2023-09-07: Special: They do not have working "/d/..." links anymore but users are still spreading them. */
+            return buildNormalURLPath(link, fuid);
+        } else {
+            return super.buildURLPath(link, fuid, type);
+        }
+    }
+
+    @Override
+    protected boolean supportsShortURLs() {
+        return false;
+    }
+
+    @Override
+    protected boolean supports_availablecheck_alt() {
+        return false;
+    }
+
+    @Override
+    protected boolean supports_availablecheck_filename_abuse() {
+        return false;
+    }
 }
