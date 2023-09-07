@@ -78,7 +78,7 @@ public class DownmagazNet extends PluginForDecrypt {
             if (multiplicatorStr == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            final String[] mirrorIDs = br.getRegex("href=\"[^\"]*\" data-field=\"([a-z0-9]+)\" data-down=\"\\d+\"").getColumn(0);
+            final String[] mirrorIDs = br.getRegex("href[^>]* data-field=\"([a-z0-9]+)\" data-down=\"\\d+\"").getColumn(0);
             if (mirrorIDs != null && mirrorIDs.length > 0) {
                 /* Old handling */
                 final String contentIDStr = br.getRegex("data-down=\"(\\d+)\"").getMatch(0);

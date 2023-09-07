@@ -497,7 +497,7 @@ public class EHentaiOrg extends PluginForHost {
         if (account != null) {
             checkForCachedAccountLimits(account, link, link.getPluginPatternMatcher(), cfg.isAccountDownloadsPreferOriginalQuality());
         }
-        final String directurlproperty;
+        String directurlproperty;
         if (account != null && cfg.isAccountDownloadsPreferOriginalQuality()) {
             directurlproperty = directurlpropertyOriginal;
         } else {
@@ -506,11 +506,12 @@ public class EHentaiOrg extends PluginForHost {
         String storedDirecturl = link.getStringProperty(directurlproperty);
         if (storedDirecturl == null) {
             /* E.g. when user wanted original but original is not available so normal quality was downloaded. */
-            storedDirecturl = link.getStringProperty(link.getStringProperty(PROPERTY_FORCED_DIRECTURL_PROPERTY));
+            directurlproperty = link.getStringProperty(PROPERTY_FORCED_DIRECTURL_PROPERTY);
+            storedDirecturl = link.getStringProperty(directurlproperty);
         }
         String directurl;
         if (storedDirecturl != null) {
-            logger.info("Trying to re-use stored directurl: " + storedDirecturl);
+            logger.info("Trying to re-use stored directurl via property: " + directurlproperty + " | URL: " + storedDirecturl);
             directurl = storedDirecturl;
         } else {
             requestFileInformation(link, account, true);
@@ -520,7 +521,11 @@ public class EHentaiOrg extends PluginForHost {
                 checkErrors(br, link, account);
                 this.handleErrorsLastResort(link, account, this.br);
             }
-            if (!StringUtils.isEmpty(this.dllinkOriginal) && cfg.isAccountDownloadsPreferOriginalQuality()) {
+            /*
+             * Some original images can be downloaded without account but most of them can only be downloaded via account so this handling
+             * will assume that an account is always needed.
+             */
+            if (account != null && !StringUtils.isEmpty(this.dllinkOriginal) && cfg.isAccountDownloadsPreferOriginalQuality()) {
                 /* No need to check here as we've checked cached limits before already. */
                 // checkForCachedAccountLimits(account, this.dllinkOriginal);
                 directurl = this.dllinkOriginal;
