@@ -224,7 +224,7 @@ public class TeraboxComFolder extends PluginForDecrypt {
         queryFolder.add("scene", "purchased_list");
         queryFolder.add("by", "name");
         queryFolder.add("order", "time");
-        // queryFolder.add("desc", "1");
+        queryFolder.add("desc", "1");
         queryFolder.add("shorturl", surl);
         if (!StringUtils.isEmpty(preGivenPath)) {
             queryFolder.add("dir", preGivenPath);

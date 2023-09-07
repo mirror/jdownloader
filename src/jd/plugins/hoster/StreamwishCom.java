@@ -118,6 +118,11 @@ public class StreamwishCom extends XFileSharingProBasic {
         if (betterFilename != null) {
             fileInfo[0] = betterFilename;
         }
+        /**
+         * Small workarounds for "sharebox2" regex in upper code which needs to be improved. </br>
+         * It can catch wrong information.
+         */
+        fileInfo[1] = null;
         return fileInfo;
     }
 }

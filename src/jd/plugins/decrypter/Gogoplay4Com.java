@@ -48,7 +48,7 @@ public class Gogoplay4Com extends PluginForDecrypt {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "gogoplay4.com", "gogoplay5.com", "gogoplay1.com", "goload.pro", "asianwatch.net", "dembed1.com", "membed.net", "asianplay.net", "asianplay.pro", "gogohd.net", "anihdplay.com" });
+        ret.add(new String[] { "gogoplay4.com", "gogoplay5.com", "gogoplay1.com", "goload.pro", "asianwatch.net", "dembed1.com", "membed.net", "asianplay.net", "asianplay.pro", "gogohd.net", "anihdplay.com", "goone.pro" });
         ret.add(new String[] { "asianload.net", "asianembed.io", "k-vid.net", "asianhdplay.net", "asianhdplay.pro" });
         return ret;
     }
@@ -74,10 +74,10 @@ public class Gogoplay4Com extends PluginForDecrypt {
         return ret.toArray(new String[0]);
     }
 
-    private static final String TYPE_DOWNLOAD         = "(?:https?://[^/]+)?/download\\?id=[\\w\\-]+.*";
-    private static final String TYPE_EMBEDPLUS        = "(?:https?://[^/]+)?/embedplus\\?id=[\\w\\-]+.*";
-    private static final String TYPE_STREAMING        = "(?:https?://[^/]+)?/streaming\\.php\\?id=[\\w\\-]+.*";
-    private static final String TYPE_STREAM_SELFEMBED = "https?://[^/]+/videos/[\\w\\-]+";
+    private static final String TYPE_DOWNLOAD         = "(?i)(?:https?://[^/]+)?/download\\?id=[\\w\\-]+.*";
+    private static final String TYPE_EMBEDPLUS        = "(?i)(?:https?://[^/]+)?/embedplus\\?id=[\\w\\-]+.*";
+    private static final String TYPE_STREAMING        = "(?i)(?:https?://[^/]+)?/streaming\\.php\\?id=[\\w\\-]+.*";
+    private static final String TYPE_STREAM_SELFEMBED = "(?i)https?://[^/]+/videos/([\\w\\-]+)";
 
     /**
      * Domain independent handling: Checks if URL looks like it can be handled by this plugin without taking care about whether or not we
