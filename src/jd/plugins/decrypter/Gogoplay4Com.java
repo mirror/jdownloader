@@ -145,6 +145,35 @@ public class Gogoplay4Com extends PluginForDecrypt {
             /* Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setPackageKey("gogoplay4://" + id);
+        fp.setName(id);
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        if (param.getCryptedUrl().matches(TYPE_STREAMING)) {
+            /* This step doesn't require a captcha to be solved. */
+            logger.info("Looking for streamingURLs");
+            try {
+                br.getPage(param.getCryptedUrl());
+                final String[] embedurls = br.getRegex("data-video=\"(https?://[^\"]+)").getColumn(0);
+                if (embedurls != null && embedurls.length > 0) {
+                    for (final String embedurl : embedurls) {
+                        if (embedurl.equals(param.getCryptedUrl()) || embedurl.contains("id=" + id)) {
+                            logger.info("Found origin again; skipping it: " + embedurl);
+                            continue;
+                        }
+                        final DownloadLink stream = this.createDownloadlink(embedurl);
+                        stream._setFilePackage(fp);
+                        ret.add(stream);
+                        distribute(stream);
+                    }
+                } else {
+                    logger.info("Failed to find any streamURLs");
+                }
+            } catch (final Exception e) {
+                logger.log(e);
+                logger.info("Stream crawler failed");
+            }
+        }
         br.getPage("https://" + hostInsideAddedURL + "/download?" + query.toString());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -192,12 +221,11 @@ public class Gogoplay4Com extends PluginForDecrypt {
         if (streamLinks == null || streamLinks.length == 0) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         for (final String streamLink : streamLinks) {
             final DownloadLink link;
             if (streamLink.matches("^https?://gogo-cdn\\.com/.*")) {
                 link = createDownloadlink(DirectHTTP.createURLForThisPlugin(streamLink));
-            } else if (streamLink.matches("(?i)https?://gogodownload\\.net/download\\.php\\?url=.+")) {
+            } else if (streamLink.matches("(?i)https?://(gogodownload\\.net|godownload\\.pro)/download\\.php\\?url=.+")) {
                 /* 2023-08-17 */
                 link = createDownloadlink(DirectHTTP.createURLForThisPlugin(streamLink));
             } else {
@@ -205,13 +233,10 @@ public class Gogoplay4Com extends PluginForDecrypt {
             }
             /* Important otherwise we cannot use their selfhosted URLs! */
             link.setReferrerUrl(param.getCryptedUrl());
-            decryptedLinks.add(link);
+            ret.add(link);
         }
-        if (packageName != null) {
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(packageName).trim());
-            fp.addLinks(decryptedLinks);
-        }
-        return decryptedLinks;
+        fp.setName(Encoding.htmlDecode(packageName).trim());
+        fp.addLinks(ret);
+        return ret;
     }
 }
