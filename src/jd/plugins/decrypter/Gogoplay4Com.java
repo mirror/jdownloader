@@ -171,7 +171,7 @@ public class Gogoplay4Com extends PluginForDecrypt {
                 }
             } catch (final Exception e) {
                 logger.log(e);
-                logger.info("Stream crawler failed");
+                logger.warning("Stream crawler failed");
             }
         }
         br.getPage("https://" + hostInsideAddedURL + "/download?" + query.toString());
