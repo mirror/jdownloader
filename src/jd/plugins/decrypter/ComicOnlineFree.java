@@ -115,8 +115,8 @@ public class ComicOnlineFree extends antiDDoSForDecrypt {
         }
         String[] images = br.getRegex("<img[^>]+class\\s*=\\s*\"[^\"]+chapter_img\"[^>]+data-original\\s*=\\s*\"([^\"]+)\"[^>]*>").getColumn(0);
         if (images == null || images.length == 0) {
-            /* 2023-08-30: viewcomics.co */
-            images = br.getRegex("<img src=\"(https?://[^\"]+)\" alt=\"").getColumn(0);
+            /* 2023-08-30: viewcomics.org */
+            images = br.getRegex("<img src=\"(https?://[^/]*\\.blogspot\\.com/[^\"]+)\" alt=").getColumn(0);
         }
         if (images != null && images.length > 0) {
             final String chapter_name = fpName;

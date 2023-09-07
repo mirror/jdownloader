@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.parser.UrlQuery;
@@ -158,7 +157,7 @@ public class TeraboxCom extends PluginForHost {
             }
             try {
                 /* 2021-04-24: Handling has been changed so array should only contain the one element we need! */
-                final ArrayList<DownloadLink> items = ((jd.plugins.decrypter.TeraboxComFolder) decrypter).crawlFolder(param, account, this.getFID(link));
+                final ArrayList<DownloadLink> items = ((jd.plugins.decrypter.TeraboxComFolder) decrypter).crawlFolder(this, param, account, this.getFID(link));
                 DownloadLink target = null;
                 for (final DownloadLink tmp : items) {
                     if (StringUtils.equals(this.getFID(tmp), this.getFID(link))) {
@@ -249,7 +248,7 @@ public class TeraboxCom extends PluginForHost {
                 showCookieLoginInfo();
                 throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_required());
             }
-            br.setCookies(userCookies);
+            setCookies(userCookies);
             if (!force) {
                 return null;
             }
@@ -261,13 +260,6 @@ public class TeraboxCom extends PluginForHost {
             // }
             // }
             logger.info("Performing full user-cookie login");
-            /* Set given cookies for all domains we know. */
-            final List<String[]> domains = TeraboxComFolder.getPluginDomains();
-            for (final String[] domainsarray : domains) {
-                for (final String domain : domainsarray) {
-                    br.setCookies(domain, userCookies);
-                }
-            }
             br.getPage("https://www." + this.getHost() + "/disk/home");
             final String bdstoken = br.getRegex("\"bdstoken\":\"([a-f0-9]{32})\"").getMatch(0);
             if (bdstoken == null) {
@@ -310,6 +302,16 @@ public class TeraboxCom extends PluginForHost {
             }
             ai.setUnlimitedTraffic();
             return ai;
+        }
+    }
+
+    private void setCookies(final Cookies cookies) {
+        /* Set given cookies for all domains we know. */
+        final List<String[]> domains = TeraboxComFolder.getPluginDomains();
+        for (final String[] domainsarray : domains) {
+            for (final String domain : domainsarray) {
+                br.setCookies(domain, cookies);
+            }
         }
     }
 

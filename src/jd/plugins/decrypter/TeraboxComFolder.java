@@ -40,8 +40,10 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
 import jd.plugins.hoster.TeraboxCom;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
@@ -109,10 +111,10 @@ public class TeraboxComFolder extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final Account account = AccountController.getInstance().getValidAccount(this.getHost());
-        return crawlFolder(param, account, null);
+        return crawlFolder(this, param, account, null);
     }
 
-    public ArrayList<DownloadLink> crawlFolder(final CryptedLink param, final Account account, final String targetFileID) throws Exception {
+    public ArrayList<DownloadLink> crawlFolder(final Plugin callingPlugin, final CryptedLink param, final Account account, final String targetFileID) throws Exception {
         final UrlQuery paramsOfAddedURL = UrlQuery.parse(param.getCryptedUrl());
         String surl;
         String preGivenPath = null;
@@ -129,6 +131,10 @@ public class TeraboxComFolder extends PluginForDecrypt {
             if (preGivenPath == null) {
                 preGivenPath = paramsOfAddedURL.get("path");
             }
+        }
+        if (surl == null) {
+            /* Developer mistake */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (!Encoding.isUrlCoded(preGivenPath)) {
             preGivenPath = Encoding.urlEncode(preGivenPath);
@@ -159,7 +165,7 @@ public class TeraboxComFolder extends PluginForDecrypt {
          */
         /* 2023-06-26: Looks like this is not needed anymore. */
         boolean useStrangeSUrlWorkaround = false;
-        if (parent == null && surl.startsWith("1")) {
+        if (surl.startsWith("1") && (parent == null || callingPlugin instanceof PluginForHost)) {
             useStrangeSUrlWorkaround = true;
             // surl = surl.substring(1, surl.length());
         }
@@ -215,8 +221,10 @@ public class TeraboxComFolder extends PluginForDecrypt {
         queryFolder.add("jsToken", jstoken != null ? jstoken : "");
         queryFolder.add("dp-logid", "");
         queryFolder.add("site_referer", "");
+        queryFolder.add("scene", "purchased_list");
+        queryFolder.add("by", "name");
         queryFolder.add("order", "time");
-        queryFolder.add("desc", "1");
+        // queryFolder.add("desc", "1");
         queryFolder.add("shorturl", surl);
         if (!StringUtils.isEmpty(preGivenPath)) {
             queryFolder.add("dir", preGivenPath);
