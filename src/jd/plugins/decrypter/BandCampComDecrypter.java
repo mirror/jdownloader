@@ -43,7 +43,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.BandCampCom;
 
-import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.Files;
 import org.appwork.utils.StringUtils;
@@ -181,7 +180,6 @@ public class BandCampComDecrypter extends PluginForDecrypt {
         artist = Encoding.htmlDecode(artist).trim();
         album = Encoding.htmlDecode(album).trim();
         final SubConfiguration cfg = SubConfiguration.getConfig(this.getHost());
-        int trackPosition = 1;
         for (final Map<String, Object> audio : audios) {
             String contentUrl = (String) audio.get("title_link");
             final String title = (String) audio.get("title");
@@ -193,6 +191,10 @@ public class BandCampComDecrypter extends PluginForDecrypt {
             if (contentUrl.startsWith("/")) {
                 contentUrl = br.getURL(contentUrl).toString();
             }
+            int track_num = JavaScriptEngineFactory.toInteger(audio.get("track_num"), -1);
+            if (track_num == -1) {
+                track_num = JavaScriptEngineFactory.toInteger(audio.get(" track_number"), -1);
+            }
             final DownloadLink dl = createDownloadlink(contentUrl);
             dl.setProperty("fromdecrypter", true);
             dl.setProperty("directdate", date);
@@ -200,7 +202,7 @@ public class BandCampComDecrypter extends PluginForDecrypt {
             dl.setProperty("directalbum", album);
             dl.setProperty("directname", title);
             dl.setProperty("type", "mp3");
-            dl.setProperty("directtracknumber", StringUtils.formatByPadLength(padLength, trackPosition));
+            dl.setProperty("directtracknumber", StringUtils.formatByPadLength(padLength, track_num));
             String formattedFilename = BandCampCom.getFormattedFilename(this, dl);
             dl.setName(formattedFilename);
             if (cfg.getBooleanProperty(BandCampCom.FASTLINKCHECK, BandCampCom.defaultFASTLINKCHECK)) {
@@ -258,7 +260,7 @@ public class BandCampComDecrypter extends PluginForDecrypt {
                                             extension = "mp4";
                                         }
                                         videoEntry.setProperty("type", extension);
-                                        videoEntry.setProperty("directtracknumber", StringUtils.formatByPadLength(padLength, trackPosition));
+                                        videoEntry.setProperty("directtracknumber", StringUtils.formatByPadLength(padLength, track_num));
                                         formattedFilename = BandCampCom.getFormattedFilename(this, videoEntry);
                                         videoEntry.setFinalFileName(formattedFilename);
                                         if (cfg.getBooleanProperty(BandCampCom.FASTLINKCHECK, BandCampCom.defaultFASTLINKCHECK)) {
@@ -293,7 +295,6 @@ public class BandCampComDecrypter extends PluginForDecrypt {
                     }
                 }
             }
-            trackPosition++;
         }
         final boolean decryptThumb = cfg.getBooleanProperty(BandCampCom.GRABTHUMB, BandCampCom.defaultGRABTHUMB);
         if (decryptThumb) {

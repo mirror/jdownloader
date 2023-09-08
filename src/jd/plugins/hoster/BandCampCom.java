@@ -42,7 +42,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -157,12 +156,15 @@ public class BandCampCom extends PluginForHost {
             dllink = Encoding.htmlDecode(dllink).replace("\\", "");
         }
         if (!link.getBooleanProperty("fromdecrypter", false)) {
-            String tracknumber = br.getRegex("\"track_number\"\\s*:\\s*(\\d+)").getMatch(0);
+            String tracknumber = br.getRegex("\"track_num\"\\s*:\\s*(\\d+)").getMatch(0);
             if (tracknumber == null) {
-                tracknumber = "1";
+                tracknumber = br.getRegex("\"track_number\"\\s*:\\s*(\\d+)").getMatch(0);
+                if (tracknumber == null) {
+                    tracknumber = "1";
+                }
             }
             final int trackNum = Integer.parseInt(tracknumber);
-            final int padLength = Math.max(2, trackNum);
+            final int padLength = Math.max(2, StringUtils.getPadLength(trackNum));
             final String filename = br.getRegex("\"title\"\\s*:\\s*\"([^<>\"]*?)\"").getMatch(0);
             final String json_album = br.getRegex("<script type=\"application/(?:json\\+ld|ld\\+json)\">\\s*(.*?)\\s*</script>").getMatch(0);
             if (json_album == null) {
