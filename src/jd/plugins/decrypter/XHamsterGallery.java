@@ -22,6 +22,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
@@ -86,6 +88,7 @@ public class XHamsterGallery extends PluginForDecrypt {
             sb.append("photos/gallery/[0-9A-Za-z_\\-/]+-\\d+");
             sb.append("|my/favorites/videos(?:/[a-f0-9]{24}-[\\w\\-]+)?");
             sb.append("|users/[^/]+/videos");
+            sb.append("|users/[^/]+/favorites/videos");
             sb.append("|users/[^/]+/photos");
             sb.append("|channels/[^/]+");
             sb.append("|(?:[^/]+/)?pornstars/[^/]+");
@@ -99,6 +102,7 @@ public class XHamsterGallery extends PluginForDecrypt {
     private static final String TYPE_PHOTO_GALLERY             = "(?i)https?://[^/]+/photos/gallery/[0-9A-Za-z_\\-/]+-(\\d+)";
     private static final String TYPE_FAVORITES_OF_CURRENT_USER = "(?i)https?://[^/]+/my/favorites/videos(/[a-f0-9]{24}-([\\w\\-]+))?";
     private static final String TYPE_VIDEOS_OF_USER            = "(?i)https?://[^/]+/users/([^/]+)/videos";
+    private static final String TYPE_VIDEOS_FAVORITES_OF_USER  = "(?i)https?://[^/]+/users/([^/]+)/favorites/videos";
     private static final String TYPE_PHOTO_GALLERIES_OF_USER   = "(?i)https?://[^/]+/users/([^/]+)/photos";
     private static final String TYPE_VIDEOS_OF_CHANNEL         = "(?i)https?://[^/]+/channels/([^/]+)";
     private static final String TYPE_VIDEOS_OF_USER_PORNSTAR   = "(?i)https?://[^/]+/(?:[^/]+/)?pornstars/([^/]+)";
@@ -139,6 +143,9 @@ public class XHamsterGallery extends PluginForDecrypt {
         if (param.getCryptedUrl().matches(TYPE_VIDEOS_OF_USER)) {
             /* Crawl all videos of a user */
             return crawlUserProfile(param);
+        } else if (param.getCryptedUrl().matches(TYPE_VIDEOS_FAVORITES_OF_USER)) {
+            /* Crawl all videos of a user */
+            return crawlUserProfileFavorites(param);
         } else if (param.getCryptedUrl().matches(TYPE_VIDEOS_OF_USER_PORNSTAR)) {
             /* Crawl all videos of a pornstar profile */
             return this.crawlUserProfilePornstar(param);
@@ -175,6 +182,27 @@ public class XHamsterGallery extends PluginForDecrypt {
         final ArrayList<DownloadLink> ret = this.crawlPagination(param, fp);
         if (ret.isEmpty()) {
             throw new DecrypterRetryException(RetryReason.EMPTY_PROFILE, "EMPTY_PROFILE_" + username);
+        }
+        return ret;
+    }
+
+    private ArrayList<DownloadLink> crawlUserProfileFavorites(final CryptedLink param) throws IOException, PluginException, DecrypterRetryException {
+        final String username = new Regex(param.getCryptedUrl(), TYPE_VIDEOS_FAVORITES_OF_USER).getMatch(0);
+        if (username == null) {
+            /* Developer mistake */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        br.getPage(param.getCryptedUrl());
+        if (this.br.getHttpConnection().getResponseCode() == 404) {
+            /* Profile does not exist. */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(username + " - Favorites");
+        final ArrayList<DownloadLink> ret = this.crawlPagination(param, fp);
+        if (ret.isEmpty()) {
+            /* Profile has no favorites set. */
+            throw new DecrypterRetryException(RetryReason.EMPTY_PROFILE, "EMPTY_PROFILE_FAVORITES_" + username);
         }
         return ret;
     }
@@ -257,7 +285,6 @@ public class XHamsterGallery extends PluginForDecrypt {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final HashSet<String> dupes = new HashSet<String>();
         int page = 1;
-        String nextpageurl = null;
         int maxPage = -1;
         final String[] pageNums = br.getRegex("data-page=\"(\\d+)\"").getColumn(0);
         if (pageNums != null && pageNums.length > 0) {
@@ -268,25 +295,54 @@ public class XHamsterGallery extends PluginForDecrypt {
                 }
             }
         }
+        final Pattern ignoreVideo = Pattern.compile("(?i).*/videos/[a-f0-9]{24}-watch-later.*");
         do {
-            if (nextpageurl != null) {
-                br.getPage(nextpageurl);
+            final String json = br.getRegex("window\\.initials=(\\{.*?\\});</script>").getMatch(0);
+            if (json != null && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                /* 2023-09-08: Experimenting with nicer data source */
+                int numberofDeletedItems = 0;
+                final Map<String, Object> entries = restoreFromString(json, TypeRef.MAP);
+                final List<Map<String, Object>> ressourcelist = (List<Map<String, Object>>) entries.get("userVideoCollection");
+                for (final Map<String, Object> vid : ressourcelist) {
+                    final String title = vid.get("title").toString();
+                    final String url = (String) vid.get("pageURL");
+                    final String icon = (String) vid.get("icon");
+                    if (url == null && StringUtils.equalsIgnoreCase(icon, "deleted")) {
+                        logger.info("Skipping deleted item: " + title);
+                        numberofDeletedItems++;
+                        continue;
+                    }
+                    final DownloadLink video = this.createDownloadlink(url);
+                    video.setName(title + ".mp4");
+                    video.setAvailable(true);
+                    video._setFilePackage(fp);
+                    // ret.add(video);
+                    // distribute(video);
+                }
+                // if (numberofDeletedItems == ressourcelist.size()) {
+                // /* This should be a super rare case */
+                // logger.info("All favorites of this user have been deleted");
+                // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                // }
             }
-            final String[] urlParts = br.getRegex("/videos/([^<>\"']+)").getColumn(0);
+            final String[] urlParts = br.getRegex("(/videos/[^<>\"']+)").getColumn(0);
             if (urlParts == null || urlParts.length == 0) {
                 logger.info("Stopping because: Failed to find any items on current page");
                 break;
             }
             int numberofNewItems = 0;
             for (String urlPart : urlParts) {
-                if (!dupes.add(urlPart)) {
+                if (new Regex(urlPart, ignoreVideo).patternFind()) {
+                    continue;
+                } else if (!dupes.add(urlPart)) {
                     /* Skip dupes */
                     continue;
                 }
                 numberofNewItems++;
-                final DownloadLink dl = this.createDownloadlink(br.getURL("/videos/" + urlPart).toString());
+                final DownloadLink dl = this.createDownloadlink(br.getURL(urlPart).toString());
                 /* Set temp. name -> Will change once user starts downloading. */
-                dl.setName(urlPart.replace("-", " ") + ".mp4");
+                final String titleFromURL = urlPart.replaceFirst("/videos/", "").replace("-", " ");
+                dl.setName(titleFromURL + ".mp4");
                 dl.setAvailable(true);
                 dl._setFilePackage(fp);
                 ret.add(dl);
@@ -294,7 +350,7 @@ public class XHamsterGallery extends PluginForDecrypt {
             }
             logger.info("Crawled page: " + page + "/" + maxPage + " | Found items on this page: " + numberofNewItems + " | Total: " + ret.size());
             page++;
-            nextpageurl = br.getRegex("class=\"xh-paginator-button[^\"]*\"[^>]*href=\"(https?://[^<>\"]+/" + page + ")\" data-page=\"" + page + "\">").getMatch(0);
+            String nextpageurl = br.getRegex("class=\"xh-paginator-button[^\"]*\"[^>]*href=\"(https?://[^<>\"]+/" + page + ")\" data-page=\"" + page + "\">").getMatch(0);
             if (nextpageurl == null) {
                 final String maybeNextPage = br.getURL().replaceFirst("/\\d*$", "") + "/" + page;
                 if (br.containsHTML(Pattern.quote(maybeNextPage))) {
@@ -313,6 +369,7 @@ public class XHamsterGallery extends PluginForDecrypt {
                 break;
             } else {
                 /* Continue with next page */
+                br.getPage(nextpageurl);
             }
         } while (!this.isAbort());
         return ret;
