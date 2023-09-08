@@ -546,7 +546,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
          * Grabbing hls means we make an extra http request --> Only do this if wished by the user or if the user set bad plugin settings!
          */
         final boolean grabHLS = grabHlsAudio || ((grabHls170 || grabHls270 || grabHls360 || grabHls480 || grabHls570 || grabHls720) && !grabBest);
-        final Map<String, Object> audioVideoMap = new HashMap<String, Object>();
+        final Map<String, List<Object>> audioVideoMap = new HashMap<String, List<Object>>();
         final String filename_packagename_base_title = date_formatted + "_" + tv_station + "_" + title;
         boolean grabDownloadUrlsPossible = false;
         final List<String> hlsDupeArray = new ArrayList<String>();
@@ -629,7 +629,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                             }
                             final List<Object> qualitiesForThisLang;
                             if (audioVideoMap.containsKey(audio_class)) {
-                                qualitiesForThisLang = (List<Object>) audioVideoMap.get(audio_class);
+                                qualitiesForThisLang = audioVideoMap.get(audio_class);
                             } else {
                                 qualitiesForThisLang = new ArrayList<Object>();
                                 audioVideoMap.put(audio_class, qualitiesForThisLang);
@@ -647,9 +647,9 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
         final ArrayList<String> directurlDupesList = new ArrayList<String>();
         final boolean grabUnknownQualities = cfg.isAddUnknownQualitiesEnabled();
         final ArrayList<DownloadLink> userSelectedQualities = new ArrayList<DownloadLink>();
-        final Iterator<Entry<String, Object>> iterator = audioVideoMap.entrySet().iterator();
+        final Iterator<Entry<String, List<Object>>> iterator = audioVideoMap.entrySet().iterator();
         while (iterator.hasNext()) {
-            final Entry<String, Object> entry = iterator.next();
+            final Entry<String, List<Object>> entry = iterator.next();
             final String audio_class = entry.getKey();
             /* Skip here if we're allowed to -> Skips crawl processes of HLS versions for unwanted video-versions -> Saves time */
             if (atLeastOneSelectedVideoAudioVersionIsAvailable && !selectedAudioVideoVersions.contains(audio_class)) {
@@ -658,26 +658,22 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
             }
             final ArrayList<DownloadLink> userSelectedQualitiesTmp = new ArrayList<DownloadLink>();
             final HashMap<String, DownloadLink> selectedQualitiesMapTmp = new HashMap<String, DownloadLink>();
-            final List<Object> qualitiesList = (List<Object>) entry.getValue();
+            final List<Object> qualitiesList = entry.getValue();
             DownloadLink highestHlsDownload = null;
             DownloadLink highestHTTPDownloadLink = null;
             int highestHlsBandwidth = 0;
             int highestHTTPQualityValue = 0;
             final Set<String> httpQualities = new HashSet<String>();
             for (final Object qualityO : qualitiesList) {
-                final Map<String, Object> quality = (Map<String, Object>) qualityO;
-                final boolean isAdaptive = ((Boolean) quality.get("isAdaptive"));
-                final String type = (String) quality.get("type");
-                String protocol = "http";
+                final Map<String, Object> qualitymap = (Map<String, Object>) qualityO;
+                final boolean isAdaptive = ((Boolean) qualitymap.get("isAdaptive"));
+                final String type = (String) qualitymap.get("type");
                 /* First check for global skip conditions */
                 if (isAdaptive && !type.contains("m3u8")) {
                     /* 2017-02-03: Skip HDS as HLS already contains all segment qualities. */
                     continue;
                 }
                 /* Now set some properties that are relevant for all items that are processed in this loop. */
-                if (isAdaptive) {
-                    protocol = "hls";
-                }
                 String ext;
                 if (type.contains("vorbis")) {
                     /* http webm streams. */
@@ -686,8 +682,8 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                     /* http mp4- and segment streams. */
                     ext = "mp4";
                 }
-                final String language = (String) quality.get("language");
-                String uri = (String) quality.get("uri");
+                final String language = (String) qualitymap.get("language");
+                String uri = (String) qualitymap.get("uri");
                 if (StringUtils.isEmpty(audio_class) || StringUtils.isEmpty(language) || StringUtils.isEmpty(uri)) {
                     /* Skip invalid objects */
                     continue;
@@ -698,8 +694,8 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                     continue;
                 }
                 directurlDupesList.add(uriDeduped);
-                final String cdn = (String) quality.get("cdn");
-                long filesize = JavaScriptEngineFactory.toLong(quality.get("filesize"), 0);
+                final String cdn = (String) qualitymap.get("cdn");
+                long filesize = JavaScriptEngineFactory.toLong(qualitymap.get("filesize"), 0);
                 final String audio_class_user_readable = convertInternalAudioClassToUserReadable(audio_class);
                 String linkid;
                 String final_filename;
@@ -709,7 +705,9 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                  * Each final filename should contain: filename_packagename_base_title, protocol, resolution, language,
                  * audio_class_user_readable, ext
                  */
+                final String protocol;
                 if (isAdaptive) {
+                    protocol = "hls";
                     if (!grabHLS) {
                         /* Skip hls if not required by the user. */
                         continue;
@@ -779,17 +777,20 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                      * Extra check for abort here to abort hls crawling as it needs one extra http request to crawl each HLS-master.
                      */
                     if (this.isAbort()) {
+                        logger.info("Stopping because: Aborted by user");
                         break;
                     }
                 } else {
                     /* http download */
-                    final String realQuality = ((String) quality.get("quality")).toLowerCase(Locale.ENGLISH);
+                    protocol = "http";
+                    final String realQuality = ((String) qualitymap.get("quality")).toLowerCase(Locale.ENGLISH);
                     final ArrayList<Object[]> qualities = new ArrayList<Object[]>();
                     /**
-                     * Sometimes we can modify the final downloadurls and thus get higher quality streams. We want to keep all versions
-                     * though!
+                     * Sometimes we can modify the final downloadurls and thus get higher quality streams. </br>
+                     * We want to keep all versions though!
                      */
                     final List<String[]> betterQualities = getBetterQualities(uri);
+                    final HashSet<String> optimizedQualityIdentifiers = new HashSet<String>();
                     if (betterQualities != null) {
                         /* We cannot be 100% sure if these will work thus let's check... */
                         for (final String[] betterQualityEntry : betterQualities) {
@@ -800,22 +801,32 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                                     logger.info("Optimization for: " + realQuality + "(" + uri + ")->" + betterQuality + "(" + betterQualityEntry[0] + ")");
                                     qualities.add(new Object[] { betterQuality, betterQualityEntry[0], filesizeNew });
                                     httpQualities.add(betterQuality);
+                                    optimizedQualityIdentifiers.add(betterQuality);
                                 }
+                            }
+                            if (this.isAbort()) {
+                                throw new InterruptedException();
                             }
                         }
                     }
-                    if (!httpQualities.contains(realQuality)) {
+                    if (httpQualities.contains(realQuality)) {
+                        logger.info("Skipping given quality because it was optimized");
+                    } else {
                         qualities.add(new Object[] { realQuality, uri, filesize });
                         httpQualities.add(realQuality);
                     }
                     for (final Object[] qualityInfo : qualities) {
                         final String httpQualityIdentifierWeak = qualityInfo[0].toString();
                         final String finalDownloadURL = qualityInfo[1].toString();
-                        filesize = ((Number) qualityInfo[2]).longValue();
+                        final long thisFilesize = ((Number) qualityInfo[2]).longValue();
                         linkid = this.getHost() + "://" + String.format(linkid_format, internalVideoID, type, cdn, language, audio_class, protocol, httpQualityIdentifierWeak);
                         final String qualityIdentifierForFilename;
                         if (cfg.isUseVideoResolutionAsQualityModifierForHTTPVideoStreams()) {
-                            qualityIdentifierForFilename = convertInternalHttpQualityIdentifierToVideoResolution(httpQualityIdentifierWeak);
+                            if (optimizedQualityIdentifiers.contains(httpQualityIdentifierWeak)) {
+                                qualityIdentifierForFilename = convertInternalHttpQualityIdentifierToVideoResolution(httpQualityIdentifierWeak, true);
+                            } else {
+                                qualityIdentifierForFilename = convertInternalHttpQualityIdentifierToVideoResolution(httpQualityIdentifierWeak, false);
+                            }
                         } else {
                             qualityIdentifierForFilename = httpQualityIdentifierWeak;
                         }
@@ -826,9 +837,9 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                          * Usually filesize is only given for the official downloads.</br>
                          * Only set it here if we haven't touched the original downloadurls!
                          */
-                        if (filesize > 0) {
+                        if (thisFilesize > 0) {
                             dl.setAvailable(true);
-                            dl.setVerifiedFileSize(filesize);
+                            dl.setVerifiedFileSize(thisFilesize);
                         }
                         setDownloadlinkProperties(dl, final_filename, type, linkid, title, tv_show, date_formatted, tv_station);
                         final String qualitySelectorString = generateQualitySelectorString(protocol, ext, httpQualityIdentifierWeak, language, audio_class);
@@ -840,6 +851,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                         } else if (grabUnknownQualities && !containsQuality(allKnownQualities, qualitySelectorString)) {
                             userSelectedQualitiesTmp.add(dl);
                         }
+                        /* Find highest quality. */
                         final int httpQualityValueTmp = convertInternalHttpQualityIdentifierToIntegerValue(httpQualityIdentifierWeak);
                         if (httpQualityValueTmp > highestHTTPQualityValue) {
                             highestHTTPQualityValue = httpQualityValueTmp;
@@ -905,6 +917,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
         }
     }
 
+    /** Returns filesize if given URL looks to be downloadable (= leads to accepted file content). */
     private long checkDownloadable(final String url) {
         URLConnectionAdapter con = null;
         final Browser br2 = this.br.cloneBrowser();
@@ -1091,7 +1104,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
         }
     }
 
-    private static String convertInternalHttpQualityIdentifierToVideoResolution(final String httpQualityIdentifier) {
+    private static String convertInternalHttpQualityIdentifierToVideoResolution(final String httpQualityIdentifier, final boolean wasOptimized) {
         if (httpQualityIdentifier == null) {
             return null;
         } else if (httpQualityIdentifier.equalsIgnoreCase("low")) {
@@ -1104,7 +1117,11 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
         } else if (httpQualityIdentifier.equalsIgnoreCase("veryhigh")) {
             return "1024x576";
         } else if (httpQualityIdentifier.equalsIgnoreCase("hd")) {
-            return "1280x720";
+            if (wasOptimized) {
+                return "1920x1080";
+            } else {
+                return "1280x720";
+            }
         } else {
             /* Unknown quality identifier! */
             return null;
