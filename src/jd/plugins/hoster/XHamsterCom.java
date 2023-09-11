@@ -1141,7 +1141,11 @@ public class XHamsterCom extends PluginForHost {
             br.getPage("https://" + freeDomain + "/");
         }
         final String urlBeforeLogin = br.getURL();
-        final String siteKeyV3 = PluginJSonUtils.getJson(br, "recaptchaKeyV3");
+        String siteKeyV3 = PluginJSonUtils.getJson(br, "recaptchaKeyV3");
+        if (StringUtils.isEmpty(siteKeyV3)) {
+            /* 2023-09-11 */
+            siteKeyV3 = PluginJSonUtils.getJson(br, "recaptchaEnterpriseKeyV3");
+        }
         final String siteKey = PluginJSonUtils.getJson(br, "recaptchaKey");
         final String id = createID();
         final String requestdataFormat = "[{\"name\":\"authorizedUserModelSync\",\"requestData\":{\"model\":{\"id\":null,\"$id\":\"%s\",\"modelName\":\"authorizedUserModel\",\"itemState\":\"unchanged\"},\"trusted\":true,\"username\":\"%s\",\"password\":\"%s\",\"remember\":1,\"redirectURL\":null,\"captcha\":\"\",\"g-recaptcha-response\":\"%s\"}}]";
