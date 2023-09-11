@@ -195,8 +195,8 @@ public class BunkrAlbum extends PluginForDecrypt {
                     }
                 }
                 if (directurl != null) {
-                    final String filesize = new Regex(html, "<p class=\"mt-0 dark:text-white-900\"[^>]*>\\s*([^<]*?)\\s*</p>").getMatch(0);
-                    add(ret, dups, directurl, filename, null, filesize, true);
+                    final String filesizeStr = new Regex(html, "<p class=\"mt-0 dark:text-white-900\"[^>]*>\\s*([^<]*?)\\s*</p>").getMatch(0);
+                    add(ret, dups, directurl, filename, null, filesizeStr, true);
                 } else {
                     logger.warning("html Parser broken? HTML: " + html);
                 }
@@ -227,7 +227,7 @@ public class BunkrAlbum extends PluginForDecrypt {
         return ret;
     }
 
-    private DownloadLink add(final List<DownloadLink> ret, Set<String> dups, final String directurl, String filename, final String filesizeBytes, final String filesize, final Boolean setOnlineStatus) throws Exception {
+    private DownloadLink add(final List<DownloadLink> ret, Set<String> dups, final String directurl, String filename, final String filesizeBytesStr, final String filesizeStr, final Boolean setOnlineStatus) throws Exception {
         if (dups != null && !dups.add(directurl)) {
             return null;
         }
@@ -253,10 +253,16 @@ public class BunkrAlbum extends PluginForDecrypt {
             dl.setProperty(Bunkr.PROPERTY_FILENAME_FROM_ALBUM, filename);
             Bunkr.setFilename(dl, filename, false, false);
         }
-        if (filesizeBytes != null) {
-            dl.setVerifiedFileSize(Long.parseLong(filesizeBytes));
-        } else if (filesize != null) {
-            dl.setDownloadSize(SizeFormatter.getSize(filesize));
+        long parsedFilesize = -1;
+        if (filesizeBytesStr != null) {
+            parsedFilesize = Long.parseLong(filesizeBytesStr);
+            dl.setVerifiedFileSize(parsedFilesize);
+        } else if (filesizeStr != null) {
+            parsedFilesize = SizeFormatter.getSize(filesizeStr);
+            dl.setDownloadSize(parsedFilesize);
+        }
+        if (parsedFilesize != -1) {
+            dl.setProperty(Bunkr.PROPERTY_PARSED_FILESIZE, parsedFilesize);
         }
         ret.add(dl);
         return dl;

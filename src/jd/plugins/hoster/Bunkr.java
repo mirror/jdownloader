@@ -197,6 +197,7 @@ public class Bunkr extends PluginForHost {
     private final String       PROPERTY_LAST_GRABBED_DIRECTURL    = "last_grabbed_directurl";
     private final String       PROPERTY_LAST_USED_SINGLE_FILE_URL = "last_used_single_file_url";
     public static final String PROPERTY_FILENAME_FROM_ALBUM       = "filename_from_album";
+    public static final String PROPERTY_PARSED_FILESIZE           = "parsed_filesize";
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
@@ -228,7 +229,7 @@ public class Bunkr extends PluginForHost {
                 } else {
                     con = br.openGetConnection(lastCachedDirecturl);
                 }
-                handleConnectionErrors(br, con);
+                handleConnectionErrors(link, br, con);
                 logger.info("Successfully re-used last cached directurl");
                 if (con.getCompleteContentLength() > 0) {
                     link.setVerifiedFileSize(con.getCompleteContentLength());
@@ -278,7 +279,7 @@ public class Bunkr extends PluginForHost {
                 con = br.openGetConnection(directurl);
             }
             try {
-                handleConnectionErrors(br, con);
+                handleConnectionErrors(link, br, con);
             } catch (final PluginException e) {
                 /* E.g. redirect from cdn8.bunkr.ru/... to bukrr.su/v/... resulting in new final URL media-files8.bunkr.ru/... */
                 if (e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
@@ -310,7 +311,7 @@ public class Bunkr extends PluginForHost {
                     } else {
                         con = br.openGetConnection(freshDirecturl);
                     }
-                    handleConnectionErrors(br, con);
+                    handleConnectionErrors(link, br, con);
                 }
             }
             if (con.getCompleteContentLength() > 0) {
@@ -378,7 +379,9 @@ public class Bunkr extends PluginForHost {
             filesize = br.getRegex("class=\"[^>]*text[^>]*\"[^>]*>\\s*([0-9\\.]+\\s+[MKG]B)").getMatch(0);
         }
         if (filesize != null) {
-            link.setDownloadSize(SizeFormatter.getSize(filesize));
+            final long parsedFilesize = SizeFormatter.getSize(filesize);
+            link.setDownloadSize(parsedFilesize);
+            link.setProperty(PROPERTY_PARSED_FILESIZE, parsedFilesize);
         }
         if (directurl == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -466,7 +469,8 @@ public class Bunkr extends PluginForHost {
         }
     }
 
-    private void handleConnectionErrors(final Browser br, final URLConnectionAdapter con) throws PluginException, IOException {
+    private void handleConnectionErrors(final DownloadLink link, final Browser br, final URLConnectionAdapter con) throws PluginException, IOException {
+        final long parsedExpectedFilesize = link.getLongProperty(PROPERTY_PARSED_FILESIZE, -1);
         if (!this.looksLikeDownloadableContent(con)) {
             br.followConnection(true);
             if (con.getResponseCode() == 403) {
@@ -487,6 +491,8 @@ public class Bunkr extends PluginForHost {
             con.disconnect();
             /* https://bnkr.b-cdn.net/maintenance-vid.mp4 */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Media temporarily not available due to ongoing server maintenance.", 2 * 60 * 60 * 1000l);
+        } else if (parsedExpectedFilesize > 0 && con.getCompleteContentLength() > 0 && con.getCompleteContentLength() < (parsedExpectedFilesize * 0.75)) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File is too small: File under maintenance?", 1 * 60 * 60 * 1000l);
         }
     }
 
