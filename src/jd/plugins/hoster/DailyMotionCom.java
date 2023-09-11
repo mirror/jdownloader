@@ -20,13 +20,14 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
 import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.downloader.hls.M3U8Playlist;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.controller.LazyPlugin;
 
@@ -243,13 +244,16 @@ public class DailyMotionCom extends PluginForHost {
         if (isHLS(link)) {
             /* Make sure to follow redirects! */
             this.br.setFollowRedirects(true);
-            String directurl = getDirectlink(link);
-            if (directurl == null) {
-                directurl = this.findFreshDirectlink(link);
+            String hlsurl = getDirectlink(link);
+            final Browser brc = br.cloneBrowser();
+            brc.getPage(hlsurl);
+            if (!brc.getHttpConnection().isOK()) {
+                hlsurl = this.findFreshDirectlink(link);
+                brc.getPage(hlsurl);
             }
             checkFFmpeg(link, "Check a HLS Stream");
-            final Browser brc = br.cloneBrowser();
-            final HLSDownloader downloader = new HLSDownloader(link, brc, directurl);
+            final List<M3U8Playlist> playList = M3U8Playlist.parseM3U8(brc);
+            final HLSDownloader downloader = new HLSDownloader(link, brc, hlsurl, playList);
             final StreamInfo streamInfo = downloader.getProbe();
             if (link.getBooleanProperty("encrypted")) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Encrypted HLS is not supported");
