@@ -72,8 +72,16 @@ public class EHentaiOrg extends PluginForHost {
     @Override
     public Browser createNewBrowserInstance() {
         final Browser br = new Browser();
+        prepBR(br);
+        return br;
+    }
+
+    public static Browser prepBR(final Browser br) {
         br.setReadTimeout(3 * 60 * 1000);
         br.setFollowRedirects(true);
+        /* Skips "adult content warning" */
+        br.setCookie(host_ehentai, "nw", "1");
+        br.setCookie(host_exhentai, "nw", "1");
         return br;
     }
 
@@ -674,10 +682,10 @@ public class EHentaiOrg extends PluginForHost {
         }
     }
 
-    private final String host_ehentai      = "e-hentai.org";
-    private final String MAINPAGE_ehentai  = "https://" + host_ehentai;
-    private final String host_exhentai     = "exhentai.org";
-    private final String MAINPAGE_exhentai = "https://" + host_exhentai;
+    private final static String host_ehentai      = "e-hentai.org";
+    private final static String MAINPAGE_ehentai  = "https://" + host_ehentai;
+    private final static String host_exhentai     = "exhentai.org";
+    private final String        MAINPAGE_exhentai = "https://" + host_exhentai;
 
     /** 2019-11-26: Alternative way to login: https://e-hentai.org/bounce_login.php?b=d&bt=1-1 */
     public void login(final Browser br, final Account account, final boolean force) throws Exception {

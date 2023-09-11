@@ -91,7 +91,7 @@ public class EHentaiOrgCrawler extends PluginForDecrypt {
             /* Account required to crawl URLs of this host! */
             throw new AccountRequiredException();
         }
-        this.br.setFollowRedirects(true);
+        EHentaiOrg.prepBR(br);
         br.getPage(parameter);
         if (EHentaiOrg.isOffline(br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

@@ -66,7 +66,7 @@ public class QiwiGg extends PluginForHost {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/file/([A-Za-z0-9]+)-(\\d+)-([\\w\\-]+)");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/file/([\\w\\-]+)");
         }
         return ret.toArray(new String[0]);
     }
@@ -93,7 +93,7 @@ public class QiwiGg extends PluginForHost {
     }
 
     private String getFID(final DownloadLink link) {
-        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(1);
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
     @Override
@@ -112,7 +112,7 @@ public class QiwiGg extends PluginForHost {
         if (title == null) {
             title = HTMLSearch.searchMetaTag(br, "og:title");
         }
-        String filesize = br.getRegex(">\\s*Download \\([^0-9]*(\\d+\\.[0-9]{2} [A-Za-z]{2,5})").getMatch(0);
+        String filesize = br.getRegex(">\\s*Download (?:\\([^0-9]*)?(\\d+\\.[0-9]{1,2} [A-Za-z]{2,5})").getMatch(0);
         if (title != null) {
             title = Encoding.htmlDecode(title).trim();
             title = title.replaceFirst("(?i) • Download$", "");
@@ -133,9 +133,7 @@ public class QiwiGg extends PluginForHost {
         if (!attemptStoredDownloadurlDownload(link, directlinkproperty)) {
             requestFileInformation(link);
             // 2023-07-31: See: https://qiwi.gg/_next/static/chunks/app/file/%5Bslug%5D/page-b157d4d328d1d6f4.js
-            final Regex urlinfo = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks());
-            String dllink = "https://spyderrock.com/" + urlinfo.getMatch(0) + "-" + urlinfo.getMatch(1);
-            dllink += "-" + urlinfo.getMatch(2);
+            String dllink = "https://spyderrock.com/" + this.getFID(link);
             dllink = Plugin.getCorrectOrApplyFileNameExtension(dllink, Plugin.getFileNameExtensionFromString(link.getName()));
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
@@ -149,6 +147,7 @@ public class QiwiGg extends PluginForHost {
             }
             link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
         }
+        dl.setFilenameFix(true);
         dl.startDownload();
     }
 

@@ -61,6 +61,7 @@ public class CompuPasteCom extends PluginForDecrypt {
         /* 2023-08-09 */
         ret.add(new String[] { "avohdlinks.latinomegahd.net" });
         ret.add(new String[] { "hopepaste.download" });
+        ret.add(new String[] { "fullpaste.todofullxd.com" });
         return ret;
     }
 
