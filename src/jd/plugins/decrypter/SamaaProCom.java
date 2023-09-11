@@ -31,12 +31,17 @@ public class SamaaProCom extends MightyScriptAdLinkFly {
     }
 
     @Override
+    protected String getContentURL(final CryptedLink param) {
+        final String contenturl = super.getContentURL(param);
+        return contenturl.replaceFirst("(?i)http://", "https://");
+    }
+
+    @Override
     protected ArrayList<DownloadLink> handlePreCrawlProcess(final CryptedLink param) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        param.setCryptedUrl(param.getCryptedUrl().replaceFirst("http://", "https://"));
         br.setFollowRedirects(false);
         /* Pre-set Referer to skip multiple ad pages e.g. try2link.com -> forex-gold.net -> try2link.com */
-        getPage(param.getCryptedUrl());
+        getPage(this.getContentURL(param));
         String location = br.getRequest().getLocation();
         String timestamp = new Regex(location, "done=(\\d+)").getMatch(0);
         String shortId = new Regex(location, "link=([^&]+)").getMatch(0);

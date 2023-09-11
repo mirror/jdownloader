@@ -62,13 +62,14 @@ public class UiiIo extends MightyScriptAdLinkFly {
     }
 
     @Override
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         if (param.getCryptedUrl().matches("https?://[^/]+/full\\?api=[a-f0-9]+\\&url=[a-zA-Z0-9_/\\+\\=\\-%]+\\&type=1")) {
-            final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+            final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+            final String contentURL = this.getContentURL(param);
             /* Final URL is base64 encrypted in given URL -> No http request required */
-            final String urlBase64 = UrlQuery.parse(param.getCryptedUrl()).get("url");
-            decryptedLinks.add(this.createDownloadlink(Encoding.Base64Decode(urlBase64)));
-            return decryptedLinks;
+            final String urlBase64 = UrlQuery.parse(contentURL).get("url");
+            ret.add(this.createDownloadlink(Encoding.Base64Decode(urlBase64)));
+            return ret;
         } else {
             /* Default handling */
             return super.decryptIt(param, progress);

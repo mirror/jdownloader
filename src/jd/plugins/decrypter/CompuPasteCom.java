@@ -60,6 +60,7 @@ public class CompuPasteCom extends PluginForDecrypt {
         ret.add(new String[] { "pfree.gatonplayseries.com" });
         /* 2023-08-09 */
         ret.add(new String[] { "avohdlinks.latinomegahd.net" });
+        ret.add(new String[] { "hopepaste.download" });
         return ret;
     }
 
@@ -79,7 +80,7 @@ public class CompuPasteCom extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://" + buildHostsPatternPart(domains) + "/(?:index\\.php)?\\?v=[A-Za-z0-9]+");
+            ret.add("https?://" + buildHostsPatternPart(domains) + "/(?:index\\.php)?\\?v=([A-Za-z0-9]+)");
         }
         return ret.toArray(new String[0]);
     }

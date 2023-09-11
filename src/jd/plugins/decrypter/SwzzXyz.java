@@ -71,12 +71,12 @@ public class SwzzXyz extends MightyScriptAdLinkFly {
     }
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        final String url = param.getCryptedUrl();
-        if (url.matches("https?://[^/]+/[A-Za-z0-9]+/?$")) {
+        final String contentURL = this.getContentURL(param);
+        if (contentURL.matches("https?://[^/]+/[A-Za-z0-9]+/?$")) {
             final ArrayList<DownloadLink> ret = super.decryptIt(param, progress);
             if (ret.size() == 1) {
                 /* Check for invalid links */
-                final String hostFromOriginalURL = Browser.getHost(url);
+                final String hostFromOriginalURL = Browser.getHost(contentURL);
                 final String resultURL = ret.get(0).getPluginPatternMatcher();
                 if (resultURL.matches("(?i)^https?://[^/]+/t/[A-Za-z0-9]+$") && resultURL.contains(hostFromOriginalURL)) {
                     /* Broken website/link -> It would lead to page with error 403 */
@@ -91,7 +91,7 @@ public class SwzzXyz extends MightyScriptAdLinkFly {
         } else {
             final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
             br.setFollowRedirects(true);
-            getPage(url);
+            getPage(contentURL);
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else if (br.containsHTML("(?i)<em>\\s*Questo Link Non è ancora attivo\\.\\.\\.riprova tra qualche istante!<em>")) {

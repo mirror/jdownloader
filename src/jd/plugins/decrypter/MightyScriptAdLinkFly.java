@@ -75,16 +75,16 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
 
     private String appVars = null;
 
-    /** Use this to correct URL added by user if necessary. */
-    protected void correctURL(final CryptedLink param) {
+    protected String getContentURL(final CryptedLink param) {
         final ArrayList<String> deadDomains = this.getDeadDomains();
         if (deadDomains != null) {
             /* Change domain in added URL if we know that the domain inside added URL is dead. */
-            final String domain = Browser.getHost(param.getCryptedUrl(), true);
+            final String domain = Browser.getHost(param.getCryptedUrl(), false);
             if (deadDomains.contains(domain)) {
-                param.setCryptedUrl(param.getCryptedUrl().replaceFirst(org.appwork.utils.Regex.escape(domain) + "/", this.getHost() + "/"));
+                return param.getCryptedUrl().replaceFirst(Pattern.quote(domain) + "/", this.getHost() + "/");
             }
         }
+        return param.getCryptedUrl();
     }
 
     /**
@@ -185,8 +185,6 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final String sourceHost = Browser.getHost(param.getCryptedUrl());
-        correctURL(param);
         ret.addAll(handlePreCrawlProcess(param));
         if (!ret.isEmpty()) {
             /* E.g. direct redirect */
@@ -211,7 +209,8 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
         /* 2018-07-18: Not all sites require a captcha to be solved */
         CaptchaType captchaType = getCaptchaType(null);
         Form lastSubmitForm = null;
-        if (evalulateCaptcha(captchaType, param.getCryptedUrl())) {
+        final String contentURL = this.getContentURL(param);
+        if (evalulateCaptcha(captchaType, contentURL)) {
             logger.info("Looks like captcha might be required");
             Boolean requiresCaptchaWhichCanFail = null;
             Boolean captchaFailed = null;
@@ -308,8 +307,7 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
             }
         }
         hookAfterCaptcha(this.br, lastSubmitForm);
-        final boolean skipWait = waittimeIsSkippable(sourceHost);
-        /** TODO: Fix waittime-detection for tmearn.com */
+        final boolean skipWait = waittimeIsSkippable(Browser.getHost(contentURL));
         Form f2 = getContinueForm(param, lastSubmitForm, br);
         if (f2 != null) {
             br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
@@ -434,7 +432,8 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
             br.getHeaders().put("Referer", getSpecialReferer());
         }
         br.setFollowRedirects(false);
-        getPage(param.getCryptedUrl());
+        final String contentURL = this.getContentURL(param);
+        getPage(contentURL);
         // 2019-11-13: http->https->different domain(https)
         // 2019-11-13: http->https->different domain(http)->different domain(https)
         String firstRedirect = null;
@@ -487,7 +486,7 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
                 logger.info("Checking if redirect is external redirect or redirect to fake blog");
                 br.getHeaders().put("Referer", firstRedirect);
                 br.setFollowRedirects(false);
-                getPage(param.getCryptedUrl());
+                getPage(contentURL);
                 final String secondRedirect = br.getRedirectLocation();
                 if (secondRedirect != null) {
                     if (!StringUtils.equalsIgnoreCase(firstRedirect, secondRedirect)) {

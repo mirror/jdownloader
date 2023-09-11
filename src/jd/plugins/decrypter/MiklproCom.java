@@ -35,11 +35,17 @@ public class MiklproCom extends MightyScriptAdLinkFly {
     }
 
     @Override
+    protected String getContentURL(final CryptedLink param) {
+        String contenturl = super.getContentURL(param);
+        return contenturl.replaceFirst("(?i)http://", "https://");
+    }
+
+    @Override
     protected ArrayList<DownloadLink> handlePreCrawlProcess(final CryptedLink param) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        param.setCryptedUrl(param.getCryptedUrl().replaceFirst("http://", "https://"));
+        final String contentURL = this.getContentURL(param);
         br.setFollowRedirects(false);
-        getPage(param.getCryptedUrl());
+        getPage(contentURL);
         final String location = br.getRequest().getLocation();
         final UrlQuery query = UrlQuery.parse(location);
         final String base64Str = query.get("k");
@@ -51,7 +57,7 @@ public class MiklproCom extends MightyScriptAdLinkFly {
             timestamp = Encoding.Base64Decode(timestamp);
         }
         br.setFollowRedirects(true);
-        getPage(param.getCryptedUrl() + "/?d=" + timestamp);
+        getPage(contentURL + "/?d=" + timestamp);
         if (br.containsHTML("(?i)>\\s*Please close VPN or proxy")) {
             /* 2022-10-05 */
             throw new DecrypterRetryException(RetryReason.GEO);

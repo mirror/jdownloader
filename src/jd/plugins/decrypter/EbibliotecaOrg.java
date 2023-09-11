@@ -20,6 +20,7 @@ import java.util.List;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -65,12 +66,22 @@ public class EbibliotecaOrg extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        br.setFollowRedirects(true);
+        br.setFollowRedirects(false);
         br.getPage(param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (br.getHttpConnection().getRequest().getHtmlCode().length() <= 200) {
+        }
+        if (br.getRedirectLocation() == null && looksLikeOfflineContent(br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        br.setFollowRedirects(true);
+        if (br.getRedirectLocation() != null) {
+            br.followRedirect();
+            if (looksLikeOfflineContent(br)) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (!this.canHandle(br.getURL())) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
         }
         String fpName = br.getRegex("<h3[^>]*><strong>([^<]+)</strong></h3>").getMatch(0);
         final String[] htmls = br.getRegex("openUnload\\(([0-9, ]+)\\)").getColumn(0);
@@ -105,5 +116,15 @@ public class EbibliotecaOrg extends PluginForDecrypt {
             fp.addLinks(ret);
         }
         return ret;
+    }
+
+    private boolean looksLikeOfflineContent(final Browser br) {
+        if (br.containsHTML("ERROR - No se pudo encontrar informaci")) {
+            return true;
+        } else if (br.getHttpConnection().getRequest().getHtmlCode().length() <= 200) {
+            return true;
+        } else {
+            return false;
+        }
     }
 }

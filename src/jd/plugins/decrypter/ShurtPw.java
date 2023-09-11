@@ -19,22 +19,21 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
-import jd.parser.html.Form;
+import jd.controlling.ProgressController;
+import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
+import jd.plugins.DownloadLink;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class OiiIo extends MightyScriptAdLinkFly {
-    public OiiIo(PluginWrapper wrapper) {
+public class ShurtPw extends MightyScriptAdLinkFly {
+    public ShurtPw(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "oii.io" });
+        ret.add(new String[] { "shurt.pw" });
         return ret;
     }
 
@@ -54,23 +53,12 @@ public class OiiIo extends MightyScriptAdLinkFly {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/([A-Za-z0-9]+)");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/u/([A-Za-z0-9]+)");
         }
         return ret.toArray(new String[0]);
     }
 
-    @Override
-    protected void hookAfterCaptcha(final Browser br, final Form form) throws Exception {
-        /* A 2nd captcha can be required. */
-        final Form captcha2 = br.getFormbyProperty("id", "link-view");
-        final CaptchaType captchaType = getCaptchaType(captcha2);
-        if (captcha2 != null && captchaType != null) {
-            if (captchaType == CaptchaType.reCaptchaV2 || captchaType == CaptchaType.reCaptchaV2_invisible) {
-                handleRecaptcha(captchaType, br, captcha2);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unsupported:" + captchaType);
-            }
-            submitForm(captcha2);
-        }
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        return super.decryptIt(param, progress);
     }
 }

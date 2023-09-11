@@ -72,8 +72,8 @@ public class AdshortCo extends MightyScriptAdLinkFly {
     @Override
     protected ArrayList<DownloadLink> handlePreCrawlProcess(final CryptedLink param) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        param.setCryptedUrl(param.getCryptedUrl().replaceFirst("http://", "https://"));
-        if (param.getCryptedUrl().matches("https?://[^/]+/[a-z0-9]+")) {
+        final String contentURL = this.getContentURL(param).replaceFirst("http://", "https://");
+        if (contentURL.matches("https?://[^/]+/[a-z0-9]+")) {
             /**
              * Only lowercase contentID -> Invalid e.g.: </br>
              * https://adshort.co/anunciantes </br>
@@ -84,7 +84,7 @@ public class AdshortCo extends MightyScriptAdLinkFly {
         br.setFollowRedirects(true);
         /* 2023-08-16: This referer skips captcha & two redirect-forms */
         br.getHeaders().put("Referer", "https://techgeek.digital/");
-        getPage(param.getCryptedUrl());
+        getPage(contentURL);
         /* 2022-06-23: Extra step needed */
         Form preForm = br.getFormByInputFieldKeyValue("submit", "continue");
         if (preForm == null) {
@@ -104,6 +104,7 @@ public class AdshortCo extends MightyScriptAdLinkFly {
         return ret;
     }
 
+    @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         return super.decryptIt(param, progress);
     }

@@ -99,32 +99,14 @@ public class FcLc extends antiDDoSForDecrypt {
 
     private String appVars = null;
 
-    private String correctURL(final String input) {
-        final String output;
-        if (input.contains("linkdrop.net")) {
-            /* 2018-12-11: Their https is broken */
-            output = input.replace("https://", "http://");
-        } else if (input.contains("curs.io")) {
-            /*
-             * 2019-02-21: curs.io is a cut-urls.com domain which is down but the URLs can still be online so we need to replace it with one
-             * of their working domains.
-             */
-            output = input.replace("curs.io", "cuto.io");
-        } else {
-            /* Nothing to correct */
-            output = input;
-        }
-        return output;
-    }
-
     @Override
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         br = new Browser();
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = correctURL(param.toString());
-        final String source_host = Browser.getHost(parameter);
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final String contentURL = param.getCryptedUrl();
+        final String source_host = Browser.getHost(contentURL);
         br.setFollowRedirects(false);
-        getPage(parameter);
+        getPage(contentURL);
         // 2019-11-13: http->https->different domain(https)
         // 2019-11-13: http->https->different domain(http)->different domain(https)
         while (true) {
@@ -145,8 +127,8 @@ public class FcLc extends antiDDoSForDecrypt {
                  * 2018-07-18: Direct redirect without captcha or any Form e.g. vivads.net OR redirect to other domain of same service e.g.
                  * wi.cr --> wicr.me
                  */
-                decryptedLinks.add(this.createDownloadlink(redirect));
-                return decryptedLinks;
+                ret.add(this.createDownloadlink(redirect));
+                return ret;
             } else {
                 if (redirect != null) {
                     getPage(redirect);
@@ -161,8 +143,7 @@ public class FcLc extends antiDDoSForDecrypt {
         } else if (br.toString().length() < 100) {
             /* 2020-05-29: E.g. https://uii.io/full */
             logger.info("Invalid HTML - probably offline content");
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final Form beforeCaptcha = br.getFormbyProperty("id", "before-captcha");
         if (beforeCaptcha != null) {
@@ -195,7 +176,7 @@ public class FcLc extends antiDDoSForDecrypt {
         if (form == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (!this.evalulateCaptcha(CaptchaType.reCaptchaV2, parameter)) {
+        if (!this.evalulateCaptcha(CaptchaType.reCaptchaV2, contentURL)) {
             /* 2020-10-26: short.fc-lc.com */
             this.submitForm(form);
         }
@@ -219,17 +200,17 @@ public class FcLc extends antiDDoSForDecrypt {
             if (finallink == null) {
                 if (br.containsHTML("<script>alert\\('(?:Link not found)\\s*!'\\);")) {
                     // invalid link
-                    logger.warning("Invalid link : " + parameter);
-                    return decryptedLinks;
+                    logger.warning("Invalid link : " + contentURL);
+                    return ret;
                 }
-                logger.warning("Decrypter broken for link: " + parameter);
+                logger.warning("Decrypter broken for link: " + contentURL);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            decryptedLinks.add(createDownloadlink(finallink));
+            ret.add(createDownloadlink(finallink));
         } else {
             /* 2020-07-06: Static attempt */
             final CaptchaType captchaType = CaptchaType.reCaptchaV2;
-            if (evalulateCaptcha(captchaType, parameter)) {
+            if (evalulateCaptcha(captchaType, contentURL)) {
                 logger.info("Captcha required");
                 boolean requiresCaptchaWhichCanFail = false;
                 boolean captchaFailed = false;
@@ -318,7 +299,6 @@ public class FcLc extends antiDDoSForDecrypt {
                 // this.submitForm(form);
             }
             final boolean skipWait = waittimeIsSkippable(source_host);
-            /** TODO: Fix waittime-detection for tmearn.com */
             /* 2018-07-18: It is very important to keep this exact as some websites have "ad-forms" e.g. urlcloud.us !! */
             Form f2 = br.getFormbyKey("_Token[fields]");
             if (f2 == null) {
@@ -379,14 +359,14 @@ public class FcLc extends antiDDoSForDecrypt {
             if (finallink == null) {
                 if (br.containsHTML("<h1>Whoops, looks like something went wrong\\.</h1>")) {
                     logger.warning("Hoster has issue");
-                    return decryptedLinks;
+                    return ret;
                 }
-                logger.warning("Decrypter broken for link: " + parameter);
+                logger.warning("Decrypter broken for link: " + contentURL);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            decryptedLinks.add(createDownloadlink(finallink));
+            ret.add(createDownloadlink(finallink));
         }
-        return decryptedLinks;
+        return ret;
     }
 
     private boolean waittimeIsSkippable(final String source_host) {

@@ -53,7 +53,7 @@ public class ClicksflyCom extends MightyScriptAdLinkFly {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/([A-Za-z0-9]+)");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(entrar/[A-Za-z0-9\\-]+|(?!full)[a-zA-Z0-9]{2,}/?)");
         }
         return ret.toArray(new String[0]);
     }
@@ -68,7 +68,7 @@ public class ClicksflyCom extends MightyScriptAdLinkFly {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final boolean followRedirectsOld = br.isFollowingRedirects();
         br.setFollowRedirects(true);
-        br.getPage(param.getCryptedUrl());
+        br.getPage(this.getContentURL(param));
         Form form = br.getForm(0);
         form.setAction(Encoding.urlDecode(form.getInputField("url").getValue(), true));
         submitForm(form);

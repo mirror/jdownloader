@@ -248,6 +248,7 @@ public class DailyMotionCom extends PluginForHost {
             final Browser brc = br.cloneBrowser();
             brc.getPage(hlsurl);
             if (!brc.getHttpConnection().isOK()) {
+                /* Typically response 403 when directurl is expired. */
                 hlsurl = this.findFreshDirectlink(link);
                 brc.getPage(hlsurl);
             }

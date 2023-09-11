@@ -35,7 +35,7 @@ public class Bestcash2020Com extends MightyScriptAdLinkFly {
         final boolean followRedirectsOld = br.isFollowingRedirects();
         try {
             br.setFollowRedirects(true);
-            br.getPage(param.getCryptedUrl());
+            br.getPage(this.getContentURL(param));
             refererHost = br.getRequest().getLocation();
         } finally {
             br.setFollowRedirects(followRedirectsOld);

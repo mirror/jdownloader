@@ -40,7 +40,9 @@ public class MightyScriptAdLinkFlyDefault extends MightyScriptAdLinkFly {
         return new String[] { "cut-urls.com" };
     }
 
-    private static final String[]     domains                    = { "shorts-link.com", "easy4earn.com", "linkat4all.com", "linkdrop.net", "shrtz.me", "ctkings.com", "linksad.net", "paylink.pro", "123link.pro", "donia2link.com", "cutpaid.com", "shortadz.org", "itiurl.co", "shortli.net", "cutearn.ca", "icutit.ca", "cut-one.com", "cll.press", "link-zero.com", "linktor.io", "cash4url.com", "cashat.net", "123short.com", "skip-url.me", "msms4.com", "empireshort.com", "loadurl.com", "cutt.us.com", "arabdollar.com", "shortenow.com", "best3link.com", "solo-link.com", "best5link.com", "lkky.co", "win4cut.com", "adlink.guru", "tmearn.com", "ibly.co", "urle.co", "mitly.us", "zlshorte.net", "igram.im", "gram.im", "adbilty.me", "linclik.com", "oke.io", "pnd.tl", "met.bz", "urlcloud.us", "clik.pw", "z2i.com", "fant1asy.com",
+    private static final String[]     domains                    = { "shorts-link.com", "easy4earn.com", "linkat4all.com", "shrtz.me", "ctkings.com", "linksad.net", "paylink.pro", "123link.pro", "donia2link.com", "cutpaid.com", "shortadz.org", "itiurl.co", "shortli.net", "cutearn.ca", "icutit.ca", "cut-one.com", "cll.press", "link-zero.com", "linktor.io", "cash4url.com", "cashat.net", "123short.com", "skip-url.me", "msms4.com", "empireshort.com", "loadurl.com", "cutt.us.com", "arabdollar.com", "shortenow.com", "best3link.com", "solo-link.com", "best5link.com", "lkky.co", "win4cut.com", "adlink.guru", "ibly.co", "urle.co", "mitly.us", "zlshorte.net", "igram.im", "gram.im", "adbilty.me", "linclik.com", "oke.io", "pnd.tl", "met.bz", "urlcloud.us", "clik.pw", "z2i.com", "fant1asy.com",
+            /** 2023-09-11: tmearn.com domains */
+            "tmearn.com", "tmearn.net",
             /** 2022-07-13 */
             "linkshrink.ca",
             /** 2021-08-26: rapid-cut.com domains */
@@ -142,20 +144,13 @@ public class MightyScriptAdLinkFlyDefault extends MightyScriptAdLinkFly {
     private static final List<String> domains_captcha_skippable  = Arrays.asList(new String[] { "safelinku.com", "idsly.bid", "idsly.net" });
 
     @Override
-    protected void correctURL(final CryptedLink param) {
-        if (param.getCryptedUrl().contains("linkdrop.net")) {
-            /* 2018-12-11: Their https is broken */
-            param.setCryptedUrl(param.getCryptedUrl().replace("https://", "http://"));
-        } else if (param.getCryptedUrl().contains("curs.io")) {
-            /*
-             * 2019-02-21: curs.io is a cut-urls.com domain which is down but the URLs can still be online so we need to replace it with one
-             * of their working domains.
-             */
-            param.setCryptedUrl(param.getCryptedUrl().replace("curs.io", "cuto.io"));
-        } else if (param.getCryptedUrl().contains("shortawy.com/s/") || param.getCryptedUrl().contains("up4cash.com/s/")) {
-            param.setCryptedUrl(param.getCryptedUrl().replace("s/", ""));
+    protected String getContentURL(final CryptedLink param) {
+        final String contenturlFromUpperClass = super.getContentURL(param);
+        if (contenturlFromUpperClass.contains("up4cash.com/s/")) {
+            return contenturlFromUpperClass.replace("s/", "");
         } else {
             /* Nothing to correct */
+            return contenturlFromUpperClass;
         }
     }
 
@@ -168,7 +163,7 @@ public class MightyScriptAdLinkFlyDefault extends MightyScriptAdLinkFly {
         final String host = getHostsPattern();
         /* [a-zA-Z0-9]{2,} will work for 99% but site shortit.ca is not compatible. */
         /* 2019-04-25: Added special pattern for direct-redirects of clicksfly.com domains('/entrar/...') */
-        return new String[] { host + "/(entrar/[A-Za-z0-9\\-]+|(?!full)[a-zA-Z0-9]{2,}/?)" };
+        return new String[] { host + "/(?!full)[a-zA-Z0-9]{2,}/?" };
     }
 
     private static String getHostsPattern() {

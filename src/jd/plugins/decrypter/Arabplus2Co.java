@@ -31,7 +31,7 @@ public class Arabplus2Co extends MightyScriptAdLinkFly {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         br.setCookie(br.getHost(), "iwashere", "yes");
-        br.getPage(param.getCryptedUrl());
+        br.getPage(this.getContentURL(param));
         return super.decryptIt(param, progress);
     }
 

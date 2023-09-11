@@ -30,8 +30,9 @@ public class LinkjustCom extends MightyScriptAdLinkFly {
     }
 
     @Override
-    protected void correctURL(final CryptedLink param) {
-        param.setCryptedUrl(param.getCryptedUrl().replaceFirst("http://", "https://"));
+    protected String getContentURL(final CryptedLink param) {
+        String contenturl = super.getContentURL(param);
+        return contenturl.replaceFirst("(?i)http://", "https://");
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {

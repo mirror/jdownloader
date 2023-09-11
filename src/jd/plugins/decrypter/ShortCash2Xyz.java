@@ -30,11 +30,16 @@ public class ShortCash2Xyz extends MightyScriptAdLinkFly {
     }
 
     @Override
+    protected String getContentURL(final CryptedLink param) {
+        String contenturl = super.getContentURL(param);
+        return contenturl.replaceFirst("(?i)http://", "https://").replace("short2.cash", "short-cash2.xyz");
+    }
+
+    @Override
     protected ArrayList<DownloadLink> handlePreCrawlProcess(final CryptedLink param) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        param.setCryptedUrl(param.getCryptedUrl().replaceFirst("http://", "https://").replace("short2.cash", "short-cash2.xyz"));
         br.setFollowRedirects(true);
-        getPage(param.getCryptedUrl());
+        getPage(this.getContentURL(param));
         if (this.regexAppVars(this.br) == null) {
             logger.warning("Possible crawler failure...");
         }

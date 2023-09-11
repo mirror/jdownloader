@@ -34,7 +34,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pasted.co", "paste3.org" }, urls = { "https?://(?:www\\.)?(?:tinypaste\\.com|tny\\.cz|pasted\\.co|controlc\\.com)/(?!tools|terms|api|contact|login|register|press)([0-9a-z]+|.*?id=[0-9a-z]+)", "https?://(?:www\\.)?paste3\\.org/\\d+/?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pasted.co", "paste3.org" }, urls = { "https?://(?:www\\.)?(?:tinypaste\\.com|tny\\.cz|pasted\\.co|controlc\\.com|binbox\\.io)/(?!tools|terms|api|contact|login|register|press)([0-9a-z]+|.*?id=[0-9a-z]+)", "https?://(?:www\\.)?paste3\\.org/\\d+/?" })
 public class PastedCo extends PluginForDecrypt {
     public PastedCo(PluginWrapper wrapper) {
         super(wrapper);
@@ -83,8 +83,13 @@ public class PastedCo extends PluginForDecrypt {
             pasteFrame = br.getRegex("\"(https?://(?:www\\.)?[^/]+/[a-z0-9]+/fullscreen\\.php\\?hash=[a-z0-9]+\\&linenum=(false|true))\"").getMatch(0);
         }
         if (pasteFrame == null) {
-            logger.warning("Decrypter broken for link: " + param);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (!this.canHandle(br.getURL())) {
+                /* E.g. redirect to mainpage */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else {
+                logger.warning("Decrypter broken for link: " + param);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         br.getPage(pasteFrame.trim());
         String[] links = HTMLParser.getHttpLinks(br.toString(), null);
@@ -92,7 +97,7 @@ public class PastedCo extends PluginForDecrypt {
         if (links == null || links.length == 0) {
             return ret;
         }
-        final Set<String> pws = PasswordUtils.getPasswords(br.toString());
+        final Set<String> pws = PasswordUtils.getPasswords(br.getRequest().getHtmlCode());
         for (String element : links) {
             final DownloadLink dl = createDownloadlink(element);
             if (pws != null && pws.size() > 0) {

@@ -17,6 +17,8 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -24,8 +26,6 @@ import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "short.es" }, urls = { "https?://(?:www\\.)?short\\.es/[A-Za-z0-9]+" })
 public class ShortEs extends MightyScriptAdLinkFly {
@@ -38,7 +38,7 @@ public class ShortEs extends MightyScriptAdLinkFly {
     }
 
     @Override
-    protected void hookAfterCaptcha(final Browser br, Form form) throws Exception {
+    protected void hookAfterCaptcha(final Browser br, final Form form) throws Exception {
         /* 2021-12-10: Major workaround */
         final Form captchaForm = this.getCaptchaForm(br, param);
         if (captchaForm != null) {

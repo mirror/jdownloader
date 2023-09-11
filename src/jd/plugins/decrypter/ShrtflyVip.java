@@ -70,11 +70,11 @@ public class ShrtflyVip extends MightyScriptAdLinkFly {
     @Override
     protected ArrayList<DownloadLink> handlePreCrawlProcess(final CryptedLink param) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final String parameter = param.getCryptedUrl();
+        final String contentURL = this.getContentURL(param);
         br.setFollowRedirects(true);
         /* Pre-setting Referer was an attempt to skip their captcha but this did not work. */
         // br.getHeaders().put("Referer", "https://itsguider.com/");
-        getPage(parameter);
+        getPage(contentURL);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }

@@ -36,12 +36,18 @@ public class Try2LinkCom extends MightyScriptAdLinkFly {
     }
 
     @Override
+    protected String getContentURL(final CryptedLink param) {
+        final String contenturl = super.getContentURL(param);
+        return contenturl.replaceFirst("(?i)http://", "https://");
+    }
+
+    @Override
     protected ArrayList<DownloadLink> handlePreCrawlProcess(final CryptedLink param) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        param.setCryptedUrl(param.getCryptedUrl().replaceFirst("http://", "https://"));
         br.setFollowRedirects(false);
         // /* Pre-set Referer to skip multiple ad pages e.g. try2link.com -> forex-gold.net -> try2link.com */
-        getPage(param.getCryptedUrl());
+        final String contentURL = this.getContentURL(param);
+        getPage(contentURL);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -56,7 +62,7 @@ public class Try2LinkCom extends MightyScriptAdLinkFly {
             timestamp = Encoding.Base64Decode(timestampBase64);
         }
         br.setFollowRedirects(true);
-        getPage(param.getCryptedUrl() + "/?d=" + timestamp);
+        getPage(contentURL + "/?d=" + timestamp);
         if (this.regexAppVars(this.br) == null) {
             logger.warning("Possible crawler failure...");
         }

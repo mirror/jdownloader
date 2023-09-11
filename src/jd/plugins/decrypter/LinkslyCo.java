@@ -59,18 +59,20 @@ public class LinkslyCo extends MightyScriptAdLinkFly {
     }
 
     @Override
-    protected void correctURL(final CryptedLink param) {
-        super.correctURL(param);
-        final String domainWithSubdomain = Browser.getHost(param.getCryptedUrl(), true);
-        final String newURL = param.getCryptedUrl().replaceFirst(Pattern.quote(domainWithSubdomain) + "/", "go." + this.getHost() + "/");
-        if (!newURL.equals(param.getCryptedUrl())) {
-            logger.info("Changed URL: Old: " + param.getCryptedUrl() + " | New: " + newURL);
-            param.setCryptedUrl(newURL);
+    protected String getContentURL(final CryptedLink param) {
+        final String contenturlOld = super.getContentURL(param);
+        final String domainWithSubdomain = Browser.getHost(contenturlOld, true);
+        final String contenturlNew = contenturlOld.replaceFirst(Pattern.quote(domainWithSubdomain) + "/", "go." + this.getHost() + "/");
+        if (!contenturlNew.equals(contenturlOld)) {
+            logger.info("Changed URL: Old: " + contenturlOld + " | New: " + contenturlNew);
+            return contenturlNew;
+        } else {
+            return contenturlOld;
         }
     }
 
     @Override
     protected String getSpecialReferer() {
-        return "https://themezon.net/";
+        return "https://en.themezon.net/";
     }
 }
