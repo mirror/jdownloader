@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
@@ -63,6 +64,18 @@ import jd.plugins.components.PluginJSonUtils;
 public abstract class XvideosCore extends PluginForHost {
     public XvideosCore(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public String getPluginContentURL(final DownloadLink link) {
+        /* TODO: Add plugin setting for this. */
+        final boolean exposeDirecturlToUser = false;
+        final String directurl = link.getStringProperty(PROPERTY_LAST_USED_DIRECTURL);
+        if (exposeDirecturlToUser && directurl != null) {
+            return directurl;
+        } else {
+            return super.getPluginContentURL(link);
+        }
     }
 
     @Override
@@ -177,12 +190,13 @@ public abstract class XvideosCore extends PluginForHost {
     public static final String  PROPERTY_USERNAME               = "username";
     private static final String PROPERTY_TAGS                   = "tags";
     private static final String PROPERTY_VIDEOID                = "videoid";
+    private static final String PROPERTY_LAST_USED_DIRECTURL    = "last_used_directurl";
     private final String        PROPERTY_ACCOUNT_PREMIUM_DOMAIN = "premium_domain";
 
-    @Override
-    public void correctDownloadLink(final DownloadLink link) {
-        if (!link.getPluginPatternMatcher().matches(type_normal)) {
-            final String urlHost = Browser.getHost(link.getPluginPatternMatcher());
+    protected String getContentURL(final DownloadLink link) {
+        String url = link.getPluginPatternMatcher();
+        if (!url.matches(type_normal)) {
+            final String urlHost = Browser.getHost(url);
             final String videoID = this.getVideoID(link);
             if (videoID != null) {
                 /* 2021-07-23: This needs to end with a slash otherwise the URL will be invalid! */
@@ -194,7 +208,7 @@ public abstract class XvideosCore extends PluginForHost {
                     /* URL needs to contain a title otherwise we'll get error 404! */
                     newURL += "/dummytext";
                 }
-                link.setPluginPatternMatcher(newURL);
+                url = newURL;
             }
         }
         /*
@@ -203,14 +217,13 @@ public abstract class XvideosCore extends PluginForHost {
          */
         if (getDeadDomains() != null) {
             for (final String deadDomain : this.getDeadDomains()) {
-                if (link.getPluginPatternMatcher().contains(deadDomain)) {
-                    final String newURL = link.getPluginPatternMatcher().replaceFirst("(?i)" + org.appwork.utils.Regex.escape(deadDomain) + "/", this.getHost() + "/");
-                    link.setPluginPatternMatcher(newURL);
-                    link.setContentUrl(newURL);
+                if (url.contains(deadDomain)) {
+                    url = url.replaceFirst("(?i)" + Pattern.quote(deadDomain) + "/", this.getHost() + "/");
                     break;
                 }
             }
         }
+        return url;
     }
 
     private boolean isValidVideoURL(final DownloadLink link, final String url, final boolean setFilesize) throws Exception {
@@ -262,27 +275,7 @@ public abstract class XvideosCore extends PluginForHost {
     }
 
     private AvailableStatus requestFileInformation(final DownloadLink link, Account account, final boolean isDownload) throws Exception {
-        /* Some workarounds for broken URLs */
-        final Regex brokenURL = new Regex(link.getPluginPatternMatcher(), "(https?://[^/]+/video\\d+)//(.+)");
-        final Regex brokenURL2 = new Regex(link.getPluginPatternMatcher(), "^https?://[^/]+/video(\\d+)/?$");
-        if (brokenURL.matches()) {
-            /**
-             * 2021-11-29: Hotfix for broken URLs due to bug in correctDownloadLink! </br>
-             * TODO: Remove this in 2022-02
-             */
-            final String newURL = brokenURL.getMatch(0) + "/" + brokenURL.getMatch(1);
-            logger.info("Fixing broken URL#1: OLD: " + link.getPluginPatternMatcher() + " | NEW: " + newURL);
-            link.setPluginPatternMatcher(newURL);
-        } else if (brokenURL2.matches()) {
-            /*
-             * 2021-12-08: Commonly used URLs which worked like this in the past. Now they contain all the info we need but are broken:
-             * Those URLs have to end with a trailing slash + at least one char.
-             */
-            final String thisVideoID = brokenURL2.getMatch(0);
-            final String newURL = "https://www." + Browser.getHost(link.getPluginPatternMatcher()) + "/video" + thisVideoID + "/xy";
-            logger.info("Fixing broken URL#2: OLD: " + link.getPluginPatternMatcher() + " | NEW: " + newURL);
-            link.setPluginPatternMatcher(newURL);
-        }
+        final String contentURL = this.getContentURL(link);
         final String urlTitle = getURLTitle(link);
         if (!link.isNameSet() && urlTitle != null) {
             link.setName(urlTitle + ".mp4");
@@ -301,9 +294,9 @@ public abstract class XvideosCore extends PluginForHost {
              * 2021-07-07: Not yet required - only in crawler plugin: Seems like they set the language for the main website/video overview
              * based on IP and for single videos, default is English(?)
              */
-            disableAutoTranslation(this, Browser.getHost(link.getPluginPatternMatcher()), br);
+            disableAutoTranslation(this, Browser.getHost(contentURL), br);
         }
-        br.getPage(link.getPluginPatternMatcher());
+        br.getPage(contentURL);
         int counter = 0;
         String videoID = this.getVideoID(link);
         while (br.getRedirectLocation() != null) {
@@ -413,9 +406,11 @@ public abstract class XvideosCore extends PluginForHost {
                         chosenQuality = HlsContainer.findBestVideoByBandwidth(hlsqualities);
                         logger.info("Failed to find user-selected HLS quality --> Fallback to BEST: " + chosenQuality.getHeight());
                     }
+                    link.setProperty(PROPERTY_LAST_USED_DIRECTURL, chosenQuality.getDownloadurl());
                     if (isDownload) {
                         this.hlsContainer = chosenQuality;
                     }
+                    /* Set estimated filesize. */
                     final List<M3U8Playlist> playLists = M3U8Playlist.loadM3U8(chosenQuality.getDownloadurl(), m3u8);
                     long estimatedSize = -1;
                     for (M3U8Playlist playList : playLists) {
@@ -514,6 +509,9 @@ public abstract class XvideosCore extends PluginForHost {
                     videoURL = Encoding.htmlOnlyDecode(httpVideoURL);
                 }
             }
+            if (videoURL != null) {
+                link.setProperty(PROPERTY_LAST_USED_DIRECTURL, videoURL);
+            }
             if (StringUtils.isEmpty(videoURL)) {
                 throw new AccountRequiredException();
             } else if (lowQualityBlockDetected) {
@@ -549,7 +547,8 @@ public abstract class XvideosCore extends PluginForHost {
     }
 
     private void handleDownload(final DownloadLink link, final Account account) throws Exception {
-        if (Browser.getHost(link.getPluginPatternMatcher()).equalsIgnoreCase(this.getPremiumDomain(account)) && (account == null || account.getType() != AccountType.PREMIUM) && this.streamURL == null && this.hlsContainer == null) {
+        final String contentURL = this.getContentURL(link);
+        if (Browser.getHost(contentURL).equalsIgnoreCase(this.getPremiumDomain(account)) && (account == null || account.getType() != AccountType.PREMIUM) && this.streamURL == null && this.hlsContainer == null) {
             throw new AccountRequiredException();
         }
         if (streamURL != null) {
@@ -581,6 +580,7 @@ public abstract class XvideosCore extends PluginForHost {
             dl = new HLSDownloader(link, br, m3u8);
             dl.startDownload();
         } else {
+            /* This should never happen! */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
     }
