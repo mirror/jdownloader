@@ -67,7 +67,7 @@ public class CivitaiCom extends PluginForHost {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/image/\\d+.*");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/images/\\d+.*");
         }
         return ret.toArray(new String[0]);
     }
