@@ -79,7 +79,7 @@ public class DropmefilesCom extends PluginForHost {
         String filename = setDllinkAndReturnFilename();
         String filesize = br.getRegex("class=\"fileSize\">([^<>\"]*?)<").getMatch(0);
         if (filename != null) {
-            link.setName(Encoding.htmlDecode(filename.trim()));
+            link.setName(Encoding.htmlDecode(filename).trim());
         }
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
@@ -139,7 +139,7 @@ public class DropmefilesCom extends PluginForHost {
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
         if (!this.looksLikeDownloadableContent(dl.getConnection()) && dl.getConnection().getLongContentLength() < 1000) {
-            br.followConnection();
+            br.followConnection(true);
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server issue", 1 * 60 * 1000l);
         }
         dl.startDownload();

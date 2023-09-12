@@ -33,6 +33,8 @@ import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
@@ -223,7 +225,10 @@ public class DlPrteCom extends antiDDoSForDecrypt {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         String passCode = null;
-        if (CaptchaHelperCrawlerPluginRecaptchaV2.containsRecaptchaV2Class(br)) {
+        if (br.containsHTML("cloudflare\\.com/turnstile/")) {
+            /* https://svn.jdownloader.org/issues/90281 */
+            throw new DecrypterRetryException(RetryReason.BLOCKED_BY, "Cloudflare Turnstile captcha is not supported");
+        } else if (CaptchaHelperCrawlerPluginRecaptchaV2.containsRecaptchaV2Class(br)) {
             final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
             continueForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
         } else if (continueForm.hasInputFieldByName("password")) {

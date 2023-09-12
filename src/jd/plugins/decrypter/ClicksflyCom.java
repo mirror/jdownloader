@@ -28,6 +28,8 @@ import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class ClicksflyCom extends MightyScriptAdLinkFly {
@@ -89,6 +91,10 @@ public class ClicksflyCom extends MightyScriptAdLinkFly {
                     logger.info("alias form detected again?! Possible plugin failure!");
                 }
             }
+        }
+        if (br.getURL().matches("(?i)https?://[^/]+/?$")) {
+            /* Redirect to mainpage -> Invalid link */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         br.setFollowRedirects(followRedirectsOld);
         return ret;

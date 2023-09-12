@@ -18,6 +18,11 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.appwork.utils.Hash;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -30,11 +35,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.hoster.DirectHTTP;
 import jd.plugins.hoster.GenericM3u8;
-
-import org.appwork.utils.Hash;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ero-video.net" }, urls = { "https?://(?:[a-z0-9]+\\.)?ero\\-video\\.net/movie/\\?mcd=[A-Za-z0-9]+" })
 public class EroVideoNet extends PornEmbedParser {
@@ -50,7 +50,7 @@ public class EroVideoNet extends PornEmbedParser {
     }
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         this.br.setCookiesExclusive(true);
         br.setFollowRedirects(true);
         br.getPage(param.getCryptedUrl());
@@ -66,11 +66,11 @@ public class EroVideoNet extends PornEmbedParser {
         } else {
             title = title.replace("- Movie - Free Porn Video sharing site ero-video.net", "").trim();
         }
-        decryptedLinks.addAll(findEmbedUrls());
-        if (decryptedLinks.isEmpty()) {
+        ret.addAll(findEmbedUrls());
+        if (ret.isEmpty()) {
             final String externID = this.br.getRegex("<a href=\"(http[^<>\"]+)\"[^>]+>[\t\n\r ]*?<i[^<>]+></i>Original URL</a>").getMatch(0);
             if (externID != null) {
-                decryptedLinks.add(this.createDownloadlink(externID));
+                ret.add(this.createDownloadlink(externID));
             }
             String delimiter = DELIMITER.get();
             if (delimiter == null) {
@@ -78,11 +78,11 @@ public class EroVideoNet extends PornEmbedParser {
                     delimiter = DELIMITER.get();
                     if (delimiter == null) {
                         final byte[] evplayer = new jd.utils.SWFDecompressor().decompress("http://ero-video.net/swf/evplayer.swf");
-                        final String ret = new Regex(new String(evplayer, "UTF-8"), "delimiter(.*?)").getMatch(0);
-                        if (StringUtils.isEmpty(ret)) {
+                        final String thisRet = new Regex(new String(evplayer, "UTF-8"), "delimiter(.*?)").getMatch(0);
+                        if (StringUtils.isEmpty(thisRet)) {
                             delimiter = "";
                         } else {
-                            delimiter = ret;
+                            delimiter = thisRet;
                         }
                         DELIMITER.set(delimiter);
                     }
@@ -106,7 +106,7 @@ public class EroVideoNet extends PornEmbedParser {
                                 link.setProperty(DirectHTTP.PROPERTY_CUSTOM_HOST, getHost());
                                 link.setFinalFileName(title + "_" + movieURL[0] + Plugin.getFileNameExtensionFromURL(movieURL[2]));
                                 link.setContentUrl(param.getCryptedUrl());
-                                decryptedLinks.add(link);
+                                ret.add(link);
                             }
                         }
                     }
@@ -118,15 +118,16 @@ public class EroVideoNet extends PornEmbedParser {
                 br.getPage(hlsURL);
                 final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
                 final DownloadLink link = this.createDownloadlink(GenericM3u8.createURLForThisPlugin(hlsbest.getDownloadurl()));
+                link.setContentUrl(param.getCryptedUrl());
                 link.setProperty(GenericM3u8.PROPERTY_CUSTOM_HOST, getHost());
                 if (title != null) {
                     link.setFinalFileName(title + ".mp4");
                 }
                 link.setAvailable(true);
-                decryptedLinks.add(link);
+                ret.add(link);
             }
         }
-        return decryptedLinks;
+        return ret;
     }
 
     private String st(String delimiter, String mcd, String pt) {

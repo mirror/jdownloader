@@ -17,11 +17,13 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -59,10 +61,13 @@ public class EbibliotecaOrg extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/lecturas/\\?/v/\\d+");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(lecturas/\\?/v/\\d+|descargar\\.php\\?x=\\d+\\&sec=\\d+)");
         }
         return ret.toArray(new String[0]);
     }
+
+    private final Pattern TYPE_COLLECTION = Pattern.compile("https?://[^/]+/lecturas/\\?/v/(\\d+)");
+    private final Pattern TYPE_SINGLE     = Pattern.compile("https?://[^/]+/descargar\\.php\\?x=\\d+\\&sec=\\d+");
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
@@ -83,39 +88,61 @@ public class EbibliotecaOrg extends PluginForDecrypt {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
         }
-        String fpName = br.getRegex("<h3[^>]*><strong>([^<]+)</strong></h3>").getMatch(0);
-        final String[] htmls = br.getRegex("openUnload\\(([0-9, ]+)\\)").getColumn(0);
-        if (htmls == null || htmls.length == 0) {
-            if (br.containsHTML("(?i)>\\s*Este enlace externo fue eliminado a pedido del autor o de la editorial")) {
-                /* Looks like all external URLs have been deleted -> Nothing we can do about that. */
+        if (new Regex(param.getCryptedUrl(), TYPE_COLLECTION).patternFind()) {
+            String fpName = br.getRegex("<h3[^>]*><strong>([^<]+)</strong></h3>").getMatch(0);
+            final String[] htmls = br.getRegex("openUnload\\(([0-9, ]+)\\)").getColumn(0);
+            if (htmls == null || htmls.length == 0) {
+                if (br.containsHTML("(?i)>\\s*Este enlace externo fue eliminado a pedido del autor o de la editorial")) {
+                    /* Looks like all external URLs have been deleted -> Nothing we can do about that. */
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+            }
+            FilePackage fp = null;
+            if (fpName != null) {
+                fp = FilePackage.getInstance();
+                fp.setName(Encoding.htmlDecode(fpName).trim());
+            }
+            int progr = 1;
+            for (final String html : htmls) {
+                logger.info("Crawling item " + progr + "/" + htmls.length);
+                final String[] vars = html.replace(" ", "").split(",");
+                final String x = vars[0];
+                final String cual = vars[1];
+                br.getPage("/descargar.php?x=" + x + "&cual=" + cual + "&sec=" + System.currentTimeMillis());
+                final String finallink = regexSingleFinalURL(br);
+                final DownloadLink link = createDownloadlink(finallink);
+                if (fp != null) {
+                    link._setFilePackage(fp);
+                }
+                ret.add(link);
+                distribute(link);
+                if (this.isAbort()) {
+                    break;
+                } else {
+                    progr++;
+                }
+            }
+        } else if (new Regex(param.getCryptedUrl(), TYPE_SINGLE).patternFind()) {
+            if (br.containsHTML(">\\s*Error 399")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-        }
-        int progr = 1;
-        for (final String html : htmls) {
-            logger.info("Crawling item " + progr + "/" + htmls.length);
-            final String[] vars = html.replace(" ", "").split(",");
-            final String x = vars[0];
-            final String cual = vars[1];
-            br.getPage("/descargar.php?x=" + x + "&cual=" + cual + "&sec=" + System.currentTimeMillis());
-            final String finallink = br.getRegex("Descargar\\(\\)\\s*\\{\\s*window\\.location = '(http[^\\']+)'").getMatch(0);
-            if (finallink == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            ret.add(createDownloadlink(finallink));
-            if (this.isAbort()) {
-                break;
-            }
-            progr++;
-        }
-        if (fpName != null) {
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName).trim());
-            fp.addLinks(ret);
+            final String finallink = regexSingleFinalURL(br);
+            ret.add(this.createDownloadlink(finallink));
+        } else {
+            /* Developer mistake */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         return ret;
+    }
+
+    private String regexSingleFinalURL(final Browser br) throws PluginException {
+        final String url = br.getRegex("Descargar\\(\\)\\s*\\{\\s*window\\.location = '(http[^\\']+)'").getMatch(0);
+        if (url == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        return url;
     }
 
     private boolean looksLikeOfflineContent(final Browser br) {

@@ -16,8 +16,13 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -28,9 +33,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dropmefiles.com.ua" }, urls = { "https?://(?:www\\.)?dropmefiles\\.com\\.ua/(?:en/)?([A-Za-z0-9]{3,})" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class DropmefilesComUa extends PluginForHost {
     public DropmefilesComUa(PluginWrapper wrapper) {
         super(wrapper);
@@ -38,7 +41,7 @@ public class DropmefilesComUa extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://dropmefiles.com/";
+        return "https://dropmefiles.com.ua/";
     }
 
     /* Connection stuff */
@@ -61,23 +64,56 @@ public class DropmefilesComUa extends PluginForHost {
         return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
-    @SuppressWarnings("deprecation")
+    private static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "dropmefiles.com.ua", "dropmefiles.net", "dropmefiles.top" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : getPluginDomains()) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:[a-z]{2}//?)?([A-Za-z0-9]{3,})");
+        }
+        return ret.toArray(new String[0]);
+    }
+
+    private String getContentURL(final DownloadLink link) {
+        final String domain = Browser.getHost(link.getPluginPatternMatcher(), true);
+        final String fid = this.getFID(link);
+        /* Prefer English language. */
+        return "https://" + domain + "/en/" + fid;
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         dllink = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setCookie(getHost(), "language", "en");
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("assets/images/404\\.png") || br.getHttpConnection().getResponseCode() == 404) {
+        br.getPage(getContentURL(link));
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("assets/images/404\\.png")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("\"Download file ([^\"]+)\";").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("document\\.title = \"([^\"]+)").getMatch(0);
+        }
         String filesize = br.getRegex("/div></td><td style=\"font-size:70%;\">([^<>\"]+)</td>").getMatch(0);
         this.dllink = br.getRegex("class=\"hidden-link\"[^>]*data-link=\"(https?://[^\"]+)").getMatch(0);
         if (filename != null) {
             /* 2020-07-21: Set final filename here as host seems to tag filenames */
-            link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
+            link.setFinalFileName(Encoding.htmlDecode(filename).trim());
         }
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));

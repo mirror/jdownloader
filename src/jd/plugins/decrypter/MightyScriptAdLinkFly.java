@@ -18,6 +18,7 @@ package jd.plugins.decrypter;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
 import org.appwork.storage.TypeRef;
@@ -155,6 +156,9 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
             final String reCaptchaSiteURL;
             if (this.getSpecialReferer() != null) {
                 /* Required e.g. for sh2rt.com. */
+                reCaptchaSiteURL = br.getBaseURL();
+            } else if (this.autoDetectedSpecialReferer.get() != null) {
+                /* E.g. up4cash.com */
                 reCaptchaSiteURL = br.getBaseURL();
             } else {
                 /* Fine for most of all websites. */
@@ -425,6 +429,8 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
     protected void hookAfterCaptcha(final Browser br, Form form) throws Exception {
     }
 
+    protected final AtomicReference<String> autoDetectedSpecialReferer = new AtomicReference<String>();
+
     /** Accesses input URL and handles "Pre-AdLinkFly" redirects. */
     protected ArrayList<DownloadLink> handlePreCrawlProcess(final CryptedLink param) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
@@ -489,18 +495,25 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
                 getPage(contentURL);
                 final String secondRedirect = br.getRedirectLocation();
                 if (secondRedirect != null) {
-                    if (!StringUtils.equalsIgnoreCase(firstRedirect, secondRedirect)) {
-                        logger.warning("Got different redirect on 2nd attempt: First: " + firstRedirect + " | Second: " + secondRedirect);
-                        ret.add(this.createDownloadlink(firstRedirect));
-                        ret.add(this.createDownloadlink(secondRedirect));
-                    } else {
+                    if (StringUtils.equalsIgnoreCase(firstRedirect, secondRedirect)) {
                         logger.info("Same redirect happens even with Referer --> Returning final result: " + secondRedirect);
                         ret.add(this.createDownloadlink(firstRedirect));
+                    } else {
+                        logger.warning("Got different redirect on 2nd attempt: First: " + firstRedirect + " | Second: " + secondRedirect);
+                        /*
+                         * Add both redirects as results assuming both of them lead to external websites which we might be able to handle
+                         * with another crawler plugin.
+                         */
+                        ret.add(this.createDownloadlink(firstRedirect));
+                        ret.add(this.createDownloadlink(secondRedirect));
                     }
-                } else if (regexAppVars(this.br) == null) {
-                    logger.warning("Result looks like plugin failure");
                 } else {
-                    logger.info("Referer auto handling successful | Correct referer: " + firstRedirect);
+                    if (regexAppVars(this.br) == null) {
+                        logger.warning("Result looks like plugin failure");
+                    } else {
+                        logger.info("Referer auto handling successful | Correct referer: " + firstRedirect);
+                    }
+                    this.autoDetectedSpecialReferer.set(firstRedirect);
                 }
             }
         }

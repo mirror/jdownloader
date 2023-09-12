@@ -59,7 +59,9 @@ import jd.http.requests.PostRequest;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.AccountRequiredException;
+import jd.plugins.AccountUnavailableException;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DecrypterRetryException;
@@ -233,7 +235,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
 
     // https://www.diggernaut.com/blog/how-to-scrape-pages-infinite-scroll-extracting-data-from-instagram/
     // https://git.kaki87.net/KaKi87/ig-scraper/src/branch/master/index.js#L190
-    private Qdb getQueryHash(Browser br, Qdb.QUERY query) throws Exception {
+    private Qdb getQueryHash(final Browser br, final Qdb.QUERY query) throws Exception {
         synchronized (QUERY_HASH) {
             final String userQuery = br.getRegex("(/static/bundles/([^/]+/)?ConsumerLibCommons\\.js/[a-f0-9]+.js)").getMatch(0);
             if (userQuery != null && Qdb.QUERY.USER.equals(query)) {
@@ -296,7 +298,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         final AtomicBoolean loggedIN = new AtomicBoolean(false);
         final Account account = AccountController.getInstance().getValidAccount(getHost());
         /* Correct URL added by user if necessary */
-        String newURL = param.toString().replaceFirst("^http://", "https://").replaceFirst("://in", "://www.in");
+        String newURL = param.getCryptedUrl().replaceFirst("(?i)^http://", "https://").replaceFirst("://in", "://www.in");
         if (!newURL.endsWith("/")) {
             /* Add slash to the end to prevent 302 redirect to speed up the crawl process a tiny bit. */
             newURL = newURL + "/";
@@ -311,24 +313,39 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         }
         InstaGramCom.prepBRWebsite(this.br);
         br.addAllowedResponseCodes(new int[] { 502 });
-        if (param.getCryptedUrl().matches(TYPE_SAVED_OBJECTS)) {
-            return this.crawlUserSavedObjects(param, account, loggedIN);
-        } else if (param.getCryptedUrl().matches(TYPE_GALLERY)) {
-            /* Crawl single images & galleries */
-            return crawlGallery(param, account, loggedIN);
-        } else if (param.getCryptedUrl().matches(TYPE_HASHTAG)) {
-            return crawlHashtag(param, account, loggedIN);
-        } else if (param.getCryptedUrl().matches(TYPE_STORY_HIGHLIGHTS)) {
-            return this.crawlStoryHighlight(param, account, loggedIN);
-        } else if (param.getCryptedUrl().matches(TYPE_STORY)) {
-            return this.crawlStory(param, account, loggedIN, true);
-        } else if (param.getCryptedUrl().matches(TYPE_PROFILE_REELS)) {
-            return this.crawlUserReels(param, account, loggedIN);
-        } else if (param.getCryptedUrl().matches(TYPE_PROFILE_TAGGED)) {
-            return this.crawlUserTagged(param, account, loggedIN);
-        } else {
-            return this.crawlUser(param, account, loggedIN);
+        try {
+            if (param.getCryptedUrl().matches(TYPE_SAVED_OBJECTS)) {
+                return this.crawlUserSavedObjects(param, account, loggedIN);
+            } else if (param.getCryptedUrl().matches(TYPE_GALLERY)) {
+                /* Crawl single images & galleries */
+                return crawlGallery(param, account, loggedIN);
+            } else if (param.getCryptedUrl().matches(TYPE_HASHTAG)) {
+                return crawlHashtag(param, account, loggedIN);
+            } else if (param.getCryptedUrl().matches(TYPE_STORY_HIGHLIGHTS)) {
+                return this.crawlStoryHighlight(param, account, loggedIN);
+            } else if (param.getCryptedUrl().matches(TYPE_STORY)) {
+                return this.crawlStory(param, account, loggedIN, true);
+            } else if (param.getCryptedUrl().matches(TYPE_PROFILE_REELS)) {
+                return this.crawlUserReels(param, account, loggedIN);
+            } else if (param.getCryptedUrl().matches(TYPE_PROFILE_TAGGED)) {
+                return this.crawlUserTagged(param, account, loggedIN);
+            } else {
+                return this.crawlUser(param, account, loggedIN);
+            }
+        } catch (final AccountUnavailableException e) {
+            if (account != null) {
+                handleAccountException(account, e);
+            } else {
+                throw e;
+            }
+        } catch (final AccountInvalidException e) {
+            if (account != null) {
+                handleAccountException(account, e);
+            } else {
+                throw e;
+            }
         }
+        return null;
     }
 
     /**
