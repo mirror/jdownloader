@@ -380,7 +380,12 @@ public class TwitterComCrawler extends PluginForDecrypt {
             final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
             final Map<String, Object> tweetMap = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "data/tweetResult/result/legacy");
             if (tweetMap == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (br.containsHTML("NsfwLoggedOut")) {
+                    /* E.g. {"data":{"tweetResult":{"result":{"__typename":"TweetUnavailable","reason":"NsfwLoggedOut"}}}} */
+                    throw new AccountRequiredException();
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
             return this.crawlTweetMap(username, tweetMap, null, null);
         } else {

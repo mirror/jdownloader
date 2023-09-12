@@ -197,10 +197,6 @@ public class BunkrAlbum extends PluginForDecrypt {
                             break;
                         }
                     }
-                    // directurl = new Regex(html, "href\\s*=\\s*\"(/(?:d|i|v)/[^\"]+)\"").getMatch(0);
-                    // if (directurl != null) {
-                    // directurl = br.getURL(directurl).toExternalForm();
-                    // }
                 }
                 if (directurl != null) {
                     final String filesizeStr = new Regex(html, "<p class=\"mt-0 dark:text-white-900\"[^>]*>\\s*([^<]*?)\\s*</p>").getMatch(0);
