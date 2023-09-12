@@ -38,6 +38,7 @@ import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
+import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DecrypterRetryException;
@@ -93,8 +94,8 @@ public class BunkrAlbum extends PluginForDecrypt {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
             String regex = "https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/a/[A-Za-z0-9]+";
-            regex += "|https?://(\\w+\\.)?" + buildHostsPatternPart(domains) + "/(?:v|d)/[^/#\\?\"\\']+\\." + EXTENSIONS;
-            regex += "|https?://(\\w+\\.)?" + buildHostsPatternPart(domains) + "/(?:v|d)/[^/#\\?\"\\']+"; // Same but wider
+            regex += "|https?://(\\w+\\.)?" + buildHostsPatternPart(domains) + "/(?:d|i|v)/[^/#\\?\"\\']+\\." + EXTENSIONS;
+            regex += "|https?://(\\w+\\.)?" + buildHostsPatternPart(domains) + "/(?:d|i|v)/[^/#\\?\"\\']+"; // Same but wider
             regex += "|https?://c(?:dn)?(\\d+)?\\." + buildHostsPatternPart(domains) + "/[^/#\\?\"\\']+";// TYPE_CDN
             regex += "|https?://media-files\\d*\\." + buildHostsPatternPart(domains) + "/[^/#\\?\"\\']+";// TYPE_MEDIA_FILES
             ret.add(regex);
@@ -102,14 +103,14 @@ public class BunkrAlbum extends PluginForDecrypt {
         return ret.toArray(new String[0]);
     }
 
-    public static final String TYPE_ALBUM                   = "(?i)https?://[^/]+/a/([A-Za-z0-9]+)";
+    public static final String  TYPE_ALBUM                   = "(?i)https?://[^/]+/a/([A-Za-z0-9]+)";
     /* 2023-03-24: bunkr, files subdomain seems outdated? */
-    public static final String TYPE_SINGLE_FILE             = "(?i)https?://([^/]+)/(d|v)/([^/#\\?\"\\']+).*";
-    public static final String TYPE_CDN_WITHOUT_EXT         = "(?i)https?://c(?:dn)?(\\d+)?\\.[^/]+/[^/#\\?\"\\']+";
-    public static final String TYPE_CDN_WITH_EXT            = TYPE_CDN_WITHOUT_EXT + "(\\." + EXTENSIONS + ")";
-    public static final String TYPE_MEDIA_FILES_WITHOUT_EXT = "(?i)https?://media-files(\\d*)\\.[^/]+/[^/#\\?\"\\']+";
-    public static final String TYPE_MEDIA_FILES_WITH_EXT    = TYPE_MEDIA_FILES_WITHOUT_EXT + "(\\." + EXTENSIONS + ")";
-    private PluginForHost      plugin                       = null;
+    public static final Pattern PATTERN_SINGLE_FILE          = Pattern.compile("(?i)https?://([^/]+)/(d|i|v)/([^/#\\?\"\\']+).*");
+    public static final Pattern PATTERN_CDN_WITHOUT_EXT      = Pattern.compile("(?i)https?://c(?:dn)?(\\d+)?\\.[^/]+/[^/#\\?\"\\']+");
+    public static final String  TYPE_CDN_WITH_EXT            = PATTERN_CDN_WITHOUT_EXT + "(\\." + EXTENSIONS + ")";
+    public static final String  TYPE_MEDIA_FILES_WITHOUT_EXT = "(?i)https?://media-files(\\d*)\\.[^/]+/[^/#\\?\"\\']+";
+    public static final String  TYPE_MEDIA_FILES_WITH_EXT    = TYPE_MEDIA_FILES_WITHOUT_EXT + "(\\." + EXTENSIONS + ")";
+    private PluginForHost       plugin                       = null;
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
@@ -189,10 +190,17 @@ public class BunkrAlbum extends PluginForDecrypt {
                 String filename = new Regex(html, "<div\\s*class\\s*=\\s*\"[^\"]*details\"\\s*>\\s*<p\\s*class[^>]*>\\s*(.*?)\\s*<").getMatch(0);
                 String directurl = new Regex(html, "href\\s*=\\s*\"(https?://[^\"]+)\"").getMatch(0);
                 if (directurl == null) {
-                    directurl = new Regex(html, "href\\s*=\\s*\"(/(?:d|v)/[^\"]+)\"").getMatch(0);
-                    if (directurl != null) {
-                        directurl = br.getURL(directurl).toExternalForm();
+                    final String[] urls = HTMLParser.getHttpLinks(html, br.getURL());
+                    for (final String url : urls) {
+                        if (new Regex(url, BunkrAlbum.PATTERN_SINGLE_FILE).patternFind()) {
+                            directurl = url;
+                            break;
+                        }
                     }
+                    // directurl = new Regex(html, "href\\s*=\\s*\"(/(?:d|i|v)/[^\"]+)\"").getMatch(0);
+                    // if (directurl != null) {
+                    // directurl = br.getURL(directurl).toExternalForm();
+                    // }
                 }
                 if (directurl != null) {
                     final String filesizeStr = new Regex(html, "<p class=\"mt-0 dark:text-white-900\"[^>]*>\\s*([^<]*?)\\s*</p>").getMatch(0);
@@ -207,6 +215,10 @@ public class BunkrAlbum extends PluginForDecrypt {
                 } else {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
+            }
+            if (numberofFiles > 0 && ret.size() != numberofFiles) {
+                /* This should never happen. */
+                logger.warning("Some files were not found: " + (numberofFiles - ret.size()));
             }
             final FilePackage fp = FilePackage.getInstance();
             if (albumTitle != null) {
@@ -275,9 +287,9 @@ public class BunkrAlbum extends PluginForDecrypt {
     private String isSingleMediaURL(final String url) {
         if (url == null) {
             return null;
-        } else if (url.matches(TYPE_SINGLE_FILE)) {
+        } else if (new Regex(url, PATTERN_SINGLE_FILE).patternFind()) {
             return url;
-        } else if (url.matches(TYPE_CDN_WITH_EXT) || url.matches(TYPE_CDN_WITHOUT_EXT)) {
+        } else if (url.matches(TYPE_CDN_WITH_EXT) || new Regex(url, PATTERN_CDN_WITHOUT_EXT).patternFind()) {
             /* cdn can be empty(!) -> cdn.bunkr.is -> media-files.bunkr.is */
             return url;
         } else if (url.matches(TYPE_MEDIA_FILES_WITH_EXT) || url.matches(TYPE_MEDIA_FILES_WITHOUT_EXT)) {

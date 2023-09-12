@@ -65,8 +65,11 @@ public class Etsy extends antiDDoSForDecrypt {
         // Detail page images
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         ArrayList<String> links = new ArrayList<String>();
+        /* Images */
         Collections.addAll(links, br.getRegex("data-src-zoom-image\\s*=\\s*\"([^\"]+)\"").getColumn(0));
-        for (String link : links) {
+        /* Videos */
+        Collections.addAll(links, br.getRegex("<source src=\"(https?://[^\"]+)\"[^>]*type=.video/mp4").getColumn(0));
+        for (final String link : links) {
             ret.add(createDownloadlink(Encoding.htmlDecode(link)));
         }
         if (ret.isEmpty()) {

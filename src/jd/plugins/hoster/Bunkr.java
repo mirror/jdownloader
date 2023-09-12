@@ -148,7 +148,7 @@ public class Bunkr extends PluginForHost {
     }
 
     private String getFilenameFromURL(final String url) {
-        String filenameFromURL = new Regex(url, BunkrAlbum.TYPE_SINGLE_FILE).getMatch(2);
+        String filenameFromURL = new Regex(url, BunkrAlbum.PATTERN_SINGLE_FILE).getMatch(2);
         if (filenameFromURL == null) {
             filenameFromURL = new Regex(url, "(?i)https?://[^/]+/(.+)").getMatch(0);
         }
@@ -165,7 +165,7 @@ public class Bunkr extends PluginForHost {
 
     private String getContentURL(final DownloadLink link) {
         final String url = Encoding.htmlOnlyDecode(link.getPluginPatternMatcher());
-        final Regex singleFileRegex = new Regex(url, BunkrAlbum.TYPE_SINGLE_FILE);
+        final Regex singleFileRegex = new Regex(url, BunkrAlbum.PATTERN_SINGLE_FILE);
         final String hostFromAddedURLWithoutSubdomain = Browser.getHost(url, false);
         if (singleFileRegex.patternFind()) {
             final List<String> deadDomains = BunkrAlbum.getDeadDomains();
@@ -253,7 +253,7 @@ public class Bunkr extends PluginForHost {
             }
         }
         String directurl;
-        if (link.getPluginPatternMatcher().matches(BunkrAlbum.TYPE_SINGLE_FILE)) {
+        if (new Regex(link.getPluginPatternMatcher(), BunkrAlbum.PATTERN_SINGLE_FILE).patternFind()) {
             directurl = getDirecturlFromSingleFileAvailablecheck(link, contenturl, true);
             if (!isDownload) {
                 return AvailableStatus.TRUE;
@@ -285,7 +285,7 @@ public class Bunkr extends PluginForHost {
                 if (e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
                     /* Dead end */
                     throw e;
-                } else if (!br.getURL().matches(BunkrAlbum.TYPE_SINGLE_FILE)) {
+                } else if (new Regex(br.getURL(), BunkrAlbum.PATTERN_SINGLE_FILE).patternFind()) {
                     /* Unknown URL format -> We most likely won't be able to refresh directurl from this format. */
                     logger.info("Directurl redirected to URL with unknown format -> We most likely won't be able to refresh directurl from this format. URL: " + br.getURL());
                     throw e;
@@ -343,9 +343,7 @@ public class Bunkr extends PluginForHost {
         if (accessURL) {
             br.getPage(singleFileURL);
         }
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
+        handleResponsecodeErrors(br.getHttpConnection());
         String directurl = br.getRegex("(?i)href\\s*=\\s*\"(https?://[^\"]+)[^>]*>\\s*Download").getMatch(0);
         if (directurl == null) {
             /* Video stream (For "/v/ URLs."URL is usually the same as downloadurl.) */
@@ -360,7 +358,7 @@ public class Bunkr extends PluginForHost {
                         if (url.matches(BunkrAlbum.TYPE_MEDIA_FILES_WITH_EXT) || url.matches(BunkrAlbum.TYPE_CDN_WITH_EXT)) {
                             directurl = url;
                             break;
-                        } else if (url.matches(BunkrAlbum.TYPE_MEDIA_FILES_WITHOUT_EXT) || url.matches(BunkrAlbum.TYPE_CDN_WITHOUT_EXT)) {
+                        } else if (url.matches(BunkrAlbum.TYPE_MEDIA_FILES_WITHOUT_EXT) || new Regex(url, BunkrAlbum.PATTERN_CDN_WITHOUT_EXT).patternFind()) {
                             directurlForFileWithoutExtOrUnknownExt = url;
                         }
                     }
@@ -473,26 +471,29 @@ public class Bunkr extends PluginForHost {
         final long parsedExpectedFilesize = link.getLongProperty(PROPERTY_PARSED_FILESIZE, -1);
         if (!this.looksLikeDownloadableContent(con)) {
             br.followConnection(true);
-            if (con.getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 10 * 60 * 1000l);
-            } else if (con.getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else if (con.getResponseCode() == 416) {
-                /* This should never happen! */
-                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Error 416", 30 * 1000l);
-            } else if (con.getResponseCode() == 429) {
-                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Error 429 too many requests", 30 * 1000l);
-            } else if (con.getResponseCode() == 503) {
-                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Error 503 too many connections", 60 * 1000l);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File broken or temporarily unavailable", 2 * 60 * 60 * 1000l);
-            }
+            handleResponsecodeErrors(con);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File broken or temporarily unavailable", 2 * 60 * 60 * 1000l);
         } else if (con.getURL().getPath().equalsIgnoreCase("/maintenance-vid.mp4") || con.getURL().getPath().equalsIgnoreCase("/v/maintenance-kek-bunkr.webm") || con.getURL().getPath().equalsIgnoreCase("/maintenance.mp4")) {
             con.disconnect();
             /* https://bnkr.b-cdn.net/maintenance-vid.mp4 */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Media temporarily not available due to ongoing server maintenance.", 2 * 60 * 60 * 1000l);
         } else if (parsedExpectedFilesize > 0 && con.getCompleteContentLength() > 0 && con.getCompleteContentLength() < (parsedExpectedFilesize * 0.75)) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File is too small: File under maintenance?", 1 * 60 * 60 * 1000l);
+        }
+    }
+
+    private void handleResponsecodeErrors(final URLConnectionAdapter con) throws PluginException {
+        if (con.getResponseCode() == 403) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 10 * 60 * 1000l);
+        } else if (con.getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (con.getResponseCode() == 416) {
+            /* This should never happen! */
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Error 416", 30 * 1000l);
+        } else if (con.getResponseCode() == 429) {
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Error 429 too many requests", 30 * 1000l);
+        } else if (con.getResponseCode() == 503) {
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Error 503 too many connections", 60 * 1000l);
         }
     }
 

@@ -16,20 +16,26 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.decrypter.ImagenetzDeCrawler;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imagenetz.de" }, urls = { "https?://(?:www\\.)?imagenetz\\.de/([A-Za-z0-9]+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
+@PluginDependencies(dependencies = { ImagenetzDeCrawler.class })
 public class ImageNetzDe extends PluginForHost {
     public ImageNetzDe(PluginWrapper wrapper) {
         super(wrapper);
@@ -37,7 +43,29 @@ public class ImageNetzDe extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.imagenetz.de/agb.php";
+        return "https://www.imagenetz.de/agb.php";
+    }
+
+    private static List<String[]> getPluginDomains() {
+        return ImagenetzDeCrawler.getPluginDomains();
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : getPluginDomains()) {
+            /* URLs get added solely via crawler-plugin. */
+            ret.add("");
+        }
+        return ret.toArray(new String[0]);
     }
 
     @Override
@@ -56,7 +84,7 @@ public class ImageNetzDe extends PluginForHost {
     }
 
     private String getFID(final DownloadLink link) {
-        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+        return new Regex(link.getPluginPatternMatcher(), "https?://[^/]+/(.+)").getMatch(0);
     }
 
     @Override
@@ -64,10 +92,12 @@ public class ImageNetzDe extends PluginForHost {
         this.setBrowserExclusive();
         this.br.setFollowRedirects(true);
         br.getPage(link.getPluginPatternMatcher());
-        if (br.containsHTML("Diese Datei existiert nicht mehr") || br.getHttpConnection().getResponseCode() == 404 || !br.getURL().contains(this.getFID(link))) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        final String description = br.getRegex("<strong>Beschreibung:</strong>\\s*([^<>\"]+)\\s*<").getMatch(0);
+        ImagenetzDeCrawler.checkOffline(br, this.getFID(link));
+        return AvailableStatus.TRUE;
+    }
+
+    public static void parseFileInfo(final Browser br, final DownloadLink link) throws PluginException {
+        final String description = br.getRegex("<strong>\\s*Beschreibung:\\s*</strong>\\s*([^<>\"]+)\\s*<").getMatch(0);
         String filename = br.getRegex("class='dfname'>([^<>\"]+)<").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("data-title=\"([^<>\"]+)\"").getMatch(0);
@@ -86,7 +116,6 @@ public class ImageNetzDe extends PluginForHost {
         if (description != null && StringUtils.isEmpty(link.getComment())) {
             link.setComment(description);
         }
-        return AvailableStatus.TRUE;
     }
 
     @Override
@@ -108,6 +137,7 @@ public class ImageNetzDe extends PluginForHost {
             br.followConnection(true);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        dl.setAllowFilenameFromURL(true);
         dl.startDownload();
     }
 

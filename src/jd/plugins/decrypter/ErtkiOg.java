@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -26,29 +25,29 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.hoster.DirectHTTP;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "erotelki.org" }, urls = { "http://(www\\.)?erotelki\\.org/([\\w\\-]+/([\\w\\-]+/)?\\d+\\-[\\w+\\-]+\\.html|engine/go\\.php\\?url=[^<>\"\\']+)" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "erotelki.org" }, urls = { "http://(www\\.)?erotelki\\.org/([\\w\\-]+/([\\w\\-]+/)?\\d+\\-[\\w+\\-]+\\.html|engine/go\\.php\\?url=[^<>\"\\']+)" })
 public class ErtkiOg extends PluginForDecrypt {
-
     public ErtkiOg(PluginWrapper wrapper) {
         super(wrapper);
     }
-
     // DEV NOTES
     // newer content is base64encoded with occasional htmlencoding characters at
     // the end of string, mainly for =chars
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         String parameter = param.toString();
         br.setFollowRedirects(false);
         br.setCookiesExclusive(true);
         if (parameter.matches("http://(www\\.)?erotelki\\.org/[\\w\\-]+/([\\w\\-]+/)?\\d+\\-[\\w+\\-]+\\.html")) {
             br.getPage(parameter);
             if (br.containsHTML(">К сожалению, данная страница для Вас не доступна, возможно был изменен ее адрес или она была удалена\\.") || this.br.getHttpConnection().getResponseCode() == 404) {
-                decryptedLinks.add(this.createOfflinelink(parameter));
-                return decryptedLinks;
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             // set packagename
             String fpName = br.getRegex("<title>(.*?) \\&raquo\\;").getMatch(0);
@@ -73,31 +72,28 @@ public class ErtkiOg extends PluginForDecrypt {
                             final_link = Encoding.Base64Decode(Encoding.htmlDecode(link));
                         } else {
                             final_link = link;
-                            if (final_link.matches(".+erotelki\\.org/uploads/.+")) {
-                                final_link = "directhttp://" + final_link;
+                            if (final_link.matches("(?i).+erotelki\\.org/uploads/.+")) {
+                                final_link = DirectHTTP.createURLForThisPlugin(final_link);
                             }
                         }
-                        decryptedLinks.add(createDownloadlink(final_link));
+                        ret.add(createDownloadlink(final_link));
                     }
                 }
             }
-
             if (fpName != null) {
                 FilePackage fp = FilePackage.getInstance();
                 fp.setName(fpName);
-                fp.addLinks(decryptedLinks);
+                fp.addLinks(ret);
             }
         } else {
             String finallink = Encoding.Base64Decode(Encoding.htmlDecode(new Regex(parameter, "url=([^<>\"\\']+)").getMatch(0)));
-            decryptedLinks.add(createDownloadlink(finallink));
+            ret.add(createDownloadlink(finallink));
         }
-
-        return decryptedLinks;
+        return ret;
     }
 
-    /* NO OVERRIDE!! */
+    @Override
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }
