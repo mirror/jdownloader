@@ -101,9 +101,10 @@ public class CivitaiCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        final String imageID = this.getFID(link);
         if (!link.isNameSet()) {
             /* Fallback */
-            link.setName(this.getFID(link));
+            link.setName(imageID + ".jpg");
         }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -115,11 +116,17 @@ public class CivitaiCom extends PluginForHost {
         final Map<String, Object> entries = restoreFromString(json, TypeRef.MAP);
         final Map<String, Object> imagemap = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "props/pageProps/trpcState/json/queries/{0}/state/data");
         final Map<String, Object> metadata = (Map<String, Object>) imagemap.get("metadata");
-        String filename = imagemap.get("name").toString();
+        String filename = (String) imagemap.get("name");
         final Number filesize = (Number) metadata.get("size");
-        if (filename != null) {
+        if (!StringUtils.isEmpty(filename)) {
             filename = Encoding.htmlDecode(filename).trim();
             link.setName(filename);
+        } else {
+            final String mimeType = (String) imagemap.get("mimeType");
+            final String ext = Plugin.getExtensionFromMimeTypeStatic(mimeType);
+            if (ext != null) {
+                link.setName(imageID + "." + ext);
+            }
         }
         if (filesize != null) {
             link.setDownloadSize(filesize.longValue());
