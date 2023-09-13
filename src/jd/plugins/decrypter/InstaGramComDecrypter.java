@@ -335,17 +335,14 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         } catch (final AccountUnavailableException e) {
             if (account != null) {
                 handleAccountException(account, e);
-            } else {
-                throw e;
             }
+            throw e;
         } catch (final AccountInvalidException e) {
             if (account != null) {
                 handleAccountException(account, e);
-            } else {
-                throw e;
             }
+            throw e;
         }
-        return null;
     }
 
     /**
