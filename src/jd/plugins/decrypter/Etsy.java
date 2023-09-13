@@ -33,7 +33,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "etsy.com" }, urls = { "https?://(?:www\\.)?etsy\\.com/[^/]+/listing/[0-9]+/[a-z0-9\\-]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "etsy.com" }, urls = { "https?://(?:www\\.)?etsy\\.com/(?:[^/]+/)?listing/([0-9]+)/([a-z0-9\\-]+)" })
 public class Etsy extends antiDDoSForDecrypt {
     public Etsy(PluginWrapper wrapper) {
         super(wrapper);
@@ -55,7 +55,7 @@ public class Etsy extends antiDDoSForDecrypt {
             title = br.getRegex("<title>\\s*([^<]+)\\s+-\\s+Etsy\\.\\w+").getMatch(0);
         }
         if (StringUtils.isEmpty(title)) {
-            String[] nameMatches = new Regex(param.getCryptedUrl(), "https?://www\\.?etsy\\.com/[^/]+/listing/([^/]+)(/[^/]+)?").getColumn(0);
+            String[] nameMatches = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getColumn(1);
             if (nameMatches.length > 1) {
                 title = nameMatches[1];
             } else {
