@@ -247,8 +247,8 @@ public class MediafireCom extends PluginForHost {
                 query.add("quick_key", this.getFUID(link));
                 final Map<String, Object> resp = apiCommand(link, account, "file/get_links.php", query);
                 final Map<String, Object> linkmap = (Map<String, Object>) JavaScriptEngineFactory.walkJson(resp, "links/{0}");
-                final String url = (String) linkmap.get("direct_download");
-                if (StringUtils.isEmpty(url)) {
+                finalDownloadurl = (String) linkmap.get("direct_download");
+                if (StringUtils.isEmpty(finalDownloadurl)) {
                     /* Check for errors */
                     // {"response":{"action":"file\/get_links","links":[{"quickkey":"removed","error":"User lacks
                     // permissions"}],"result":"Success","current_api_version":"1.5"}}
