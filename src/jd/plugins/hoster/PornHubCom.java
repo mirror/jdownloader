@@ -76,6 +76,7 @@ import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.AccountInvalidException;
 import jd.plugins.AccountRequiredException;
+import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -1214,9 +1215,9 @@ public class PornHubCom extends PluginForHost {
                 /* 2021-03-08: I also got 7-digit codes... */
                 if (twoFACode == null || !twoFACode.matches("^\\d{4,}$")) {
                     if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiges Format der 2-faktor-Authentifizierung!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        throw new AccountInvalidException("\r\nUngültiges Format der 2-faktor-Authentifizierung!");
                     } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid 2-factor-authentication code format!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        throw new AccountInvalidException("\r\nInvalid 2-factor-authentication code format!");
                     }
                 }
                 final Form loginform2 = new Form();
@@ -1253,14 +1254,17 @@ public class PornHubCom extends PluginForHost {
                 } else {
                     premiumExpired = isPremiumFromURL(redirect) && redirect.contains("expired");
                 }
+                if (premiumExpired) {
+                    logger.info("This free account has been a premium account at some point of time");
+                }
                 getPage(br, redirect);
-                if (premiumExpired && !isPremiumDomain(br.getHost())) {
+                if (premiumExpired && isPremiumDomain(br.getHost())) {
                     /**
                      * Expired pornhub premium --> It should still be a valid free account --> We might need to access a special url which
                      * redirects us to the pornhub free mainpage and sets the cookies. </br>
                      * 2022-06-27: Old code but let's leave it in for now as we can't know if it is still needed.
                      */
-                    logger.info("Expired premium --> Free account (?)");
+                    logger.info("Expired premium --> Free account --> Trying to ensure that free login works");
                     final String pornhubMainpageCookieRedirectUrl = br.getRegex("\\'pornhubLink\\'\\s*?:\\s*?(?:\"|\\')(https?://(?:www\\.)?pornhub\\.(?:com|org)/[^<>\"\\']+)(?:\"|\\')").getMatch(0);
                     if (pornhubMainpageCookieRedirectUrl != null) {
                         getPage(br, pornhubMainpageCookieRedirectUrl);
@@ -1274,15 +1278,17 @@ public class PornHubCom extends PluginForHost {
             }
             if (!isLoggedInHtml(br)) {
                 if (twoStepVerification != null && twoStepVerification.intValue() == 1) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "Invalid 2-factor-authentication code", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    throw new AccountInvalidException("Invalid 2-factor-authentication code");
                 } else {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    /* This should not happen. */
+                    logger.warning("Ajax login successful but we are not logged in according to html code");
+                    throw new AccountInvalidException();
                 }
             }
             /* Check if we're really logged in and set account type. */
             if (!checkLoginSetAccountTypeAndSaveCookies(br, account, false)) {
                 if (isAccountAgeVerificationRequired(br, account)) {
-                    throw new AccountInvalidException("Please verify your age to access Pornhub Premium");
+                    throw new AccountUnavailableException("Please verify your age to access Pornhub Premium", 3 * 60 * 1000l);
                 } else {
                     /* This should never happen */
                     logger.warning("Invalid logins although full login seemed to be successful");

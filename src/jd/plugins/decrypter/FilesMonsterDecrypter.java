@@ -39,6 +39,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.UserAgents;
+import jd.plugins.hoster.FilesMonsterCom;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filesmonster.com" }, urls = { "https?://(?:www\\.)?filesmonster\\.com/(?:download\\.php\\?id=[A-Za-z0-9_-]+(?:\\&wbst=[^\\&]+)?|player/v\\d+/video/[A-Za-z0-9_-]+|dl/[A-Za-z0-9_-]+/free/.+)" })
 public class FilesMonsterDecrypter extends PluginForDecrypt {
@@ -55,9 +56,9 @@ public class FilesMonsterDecrypter extends PluginForDecrypt {
      * TODO: Seems like some urls only have a free download option available if a certain Referer is present e.g.
      * https://board.jdownloader.org/showpost.php?p=343469&postcount=6
      */
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         br = new Browser();
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         String FAILED = null;
         final String referer_url = UrlQuery.parse(param.toString()).get("wbst");
         final boolean onlyAddNeededLinks = SubConfiguration.getConfig(this.getHost()).getBooleanProperty(ADDLINKSACCOUNTDEPENDANT, false);
@@ -127,7 +128,7 @@ public class FilesMonsterDecrypter extends PluginForDecrypt {
             br.setCurrentURL(browserReferrer);
         }
         br.getHeaders().put("User-Agent", UserAgents.stringUserAgent());
-        jd.plugins.hoster.FilesMonsterCom.prepBR(br);
+        FilesMonsterCom.prepBR(br);
         if (referer_url != null) {
             logger.info("Accessing URL with referer: " + referer_url);
             br.getPage(parameter + "&wbst=" + referer_url);
@@ -139,8 +140,8 @@ public class FilesMonsterDecrypter extends PluginForDecrypt {
         if (jd.plugins.hoster.FilesMonsterCom.isOffline(this.br)) {
             final DownloadLink finalOne = this.createOfflinelink(parameter);
             finalOne.setName(main_id);
-            decryptedLinks.add(finalOne);
-            return decryptedLinks;
+            ret.add(finalOne);
+            return ret;
         }
         final String fname = jd.plugins.hoster.FilesMonsterCom.getFileName(br);
         final String fsize = jd.plugins.hoster.FilesMonsterCom.getFileSize(br);
@@ -178,8 +179,7 @@ public class FilesMonsterDecrypter extends PluginForDecrypt {
                     String filesize = new Regex(fileInfo, "\"size\":(\")?(\\d+)").getMatch(1);
                     String filelinkPart = new Regex(fileInfo, "\"dlcode\":\"(.*?)\"").getMatch(0);
                     if (filename == null || filesize == null || filelinkPart == null || filename.length() == 0 || filesize.length() == 0 || filelinkPart.length() == 0) {
-                        logger.warning("FilesMonsterDecrypter failed while decrypting link:" + parameter);
-                        return null;
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                     String dllink = protocol + "://filesmonsterdecrypted.com/dl/" + theImportantPartOfTheMainLink + "/free/2/" + filelinkPart;
                     final DownloadLink finalOne = createDownloadlink(dllink);
@@ -197,11 +197,10 @@ public class FilesMonsterDecrypter extends PluginForDecrypt {
                     if (title != null) {
                         finalOne.setComment(title);
                     }
-                    decryptedLinks.add(finalOne);
+                    ret.add(finalOne);
                 }
                 if (decryptedStuff == null || decryptedStuff.length == 0) {
-                    logger.warning("Decrypter broken for link: " + parameter);
-                    return null;
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             } else {
                 logger.info("Failed to get free links because: " + FAILED);
@@ -219,7 +218,7 @@ public class FilesMonsterDecrypter extends PluginForDecrypt {
             if (!StringUtils.isEmpty(title)) {
                 premiumDownloadURL.setComment(title);
             }
-            decryptedLinks.add(premiumDownloadURL);
+            ret.add(premiumDownloadURL);
         }
         /** All those links belong to the same file so lets make a package. */
         final String fpName;
@@ -229,12 +228,12 @@ public class FilesMonsterDecrypter extends PluginForDecrypt {
             /* Fallback */
             fpName = main_id;
         }
-        if (decryptedLinks.size() > 1) {
+        if (ret.size() > 1) {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(fpName);
-            fp.addLinks(decryptedLinks);
+            fp.addLinks(ret);
         }
-        return decryptedLinks;
+        return ret;
     }
 
     /* NO OVERRIDE!! */

@@ -64,6 +64,18 @@ public class FilesMonsterCom extends PluginForHost {
         this.enablePremium("http://filesmonster.com/service.php");
     }
 
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = new Browser();
+        prepBR(br);
+        return br;
+    }
+
+    public static void prepBR(Browser br) {
+        br.setReadTimeout(3 * 60 * 1000);
+        br.setCookie("http://filesmonster.com/", "yab_ulanguage", "en");
+    }
+
     public void correctDownloadLink(final DownloadLink link) {
         link.setUrlDownload(link.getDownloadURL().replace("filesmonsterdecrypted.com/", "filesmonster.com/").replace("http://", "https://").replaceFirst("www\\.", ""));
     }
@@ -73,7 +85,7 @@ public class FilesMonsterCom extends PluginForHost {
         return "http://filesmonster.com/rules.php";
     }
 
-    // @Override to keep compatible to stable
+    @Override
     public boolean canHandle(final DownloadLink downloadLink, final Account account) throws Exception {
         if (downloadLink.getBooleanProperty("PREMIUMONLY", false) && account == null) {
             /* premium only */
@@ -105,7 +117,6 @@ public class FilesMonsterCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
         correctDownloadLink(downloadLink);
-        prepBR(br);
         br.setFollowRedirects(false);
         downloadLink.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
         // br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:51.0) Gecko/20100101 Firefox/51.0");
@@ -396,8 +407,6 @@ public class FilesMonsterCom extends PluginForHost {
     private void login(final Account account, final boolean force) throws Exception {
         synchronized (account) {
             try {
-                /** Load cookies */
-                prepBR(br);
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
                     br.setCookies(cookies);
@@ -633,11 +642,6 @@ public class FilesMonsterCom extends PluginForHost {
             account.setAccountInfo(ai);
         }
         return ai;
-    }
-
-    public static void prepBR(Browser br) {
-        br.setReadTimeout(3 * 60 * 1000);
-        br.setCookie("http://filesmonster.com/", "yab_ulanguage", "en");
     }
 
     private String[] getTempLinks() throws Exception {
