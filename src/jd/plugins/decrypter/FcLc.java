@@ -21,10 +21,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -40,6 +36,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class FcLc extends antiDDoSForDecrypt {
@@ -212,9 +212,11 @@ public class FcLc extends antiDDoSForDecrypt {
         } else {
             /* 2020-07-06: Static attempt */
             final boolean forceRecaptchaV2 = false;
-            CaptchaType captchaType = null;
+            final CaptchaType captchaType;
             if (forceRecaptchaV2) {
                 captchaType = CaptchaType.reCaptchaV2;
+            } else {
+                captchaType = null;
             }
             if (evalulateCaptcha(captchaType, contentURL)) {
                 logger.info("Captcha required");
