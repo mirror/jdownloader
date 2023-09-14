@@ -33,6 +33,8 @@ import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
@@ -41,7 +43,7 @@ import jd.plugins.components.SiteType.SiteTemplate;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class FcLc extends antiDDoSForDecrypt {
-    private static final String[]     domains                    = { "fc.lc", "fcc.lc", "short.fc-lc.com", "short.articlix.com", "fc-lc.com" };
+    private static final String[]     domains                    = { "fc.lc", "fcc.lc", "short.fc-lc.com", "short.articlix.com", "fc-lc.com", "fc-lc.xyz" };
     /** List of services for which waittime is skippable. */
     private static final List<String> domains_waittime_skippable = Arrays.asList(new String[] { "fcc.lc" });
     // /** List of services for which captcha is skippable or not required. */
@@ -209,7 +211,11 @@ public class FcLc extends antiDDoSForDecrypt {
             ret.add(createDownloadlink(finallink));
         } else {
             /* 2020-07-06: Static attempt */
-            final CaptchaType captchaType = CaptchaType.reCaptchaV2;
+            final boolean forceRecaptchaV2 = false;
+            CaptchaType captchaType = null;
+            if (forceRecaptchaV2) {
+                captchaType = CaptchaType.reCaptchaV2;
+            }
             if (evalulateCaptcha(captchaType, contentURL)) {
                 logger.info("Captcha required");
                 boolean requiresCaptchaWhichCanFail = false;
@@ -290,13 +296,8 @@ public class FcLc extends antiDDoSForDecrypt {
                     throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                 }
             } else if (form != null) {
-                /* 2019-01-30: E.g. "safelinku.com", "idsly.bid", "idsly.net" */
                 logger.info("No captcha required");
-                /*
-                 * 2020-04-01: This would lead to a failure. I was not able to reproduce this with safelinku.com anymore - it would
-                 * sometimes submit this form which == f2 --> Failure e.g. za.gl
-                 */
-                // this.submitForm(form);
+                this.submitForm(form);
             }
             final boolean skipWait = waittimeIsSkippable(source_host);
             /* 2018-07-18: It is very important to keep this exact as some websites have "ad-forms" e.g. urlcloud.us !! */
@@ -359,10 +360,11 @@ public class FcLc extends antiDDoSForDecrypt {
             if (finallink == null) {
                 if (br.containsHTML("<h1>Whoops, looks like something went wrong\\.</h1>")) {
                     logger.warning("Hoster has issue");
-                    return ret;
+                    throw new DecrypterRetryException(RetryReason.HOST);
+                } else {
+                    logger.warning("Decrypter broken for link: " + contentURL);
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                logger.warning("Decrypter broken for link: " + contentURL);
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             ret.add(createDownloadlink(finallink));
         }

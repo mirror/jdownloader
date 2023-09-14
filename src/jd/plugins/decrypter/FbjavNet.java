@@ -33,6 +33,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.hoster.DirectHTTP;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fbjav.net" }, urls = { "https?://(www\\.)?fbjav\\.(?:net|com)/\\w+-\\d+[^/]*" })
 public class FbjavNet extends antiDDoSForDecrypt {
@@ -40,15 +41,24 @@ public class FbjavNet extends antiDDoSForDecrypt {
         super(wrapper);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final String parameter = param.getCryptedUrl();
         br.setFollowRedirects(true);
         getPage(parameter);
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String fpName = null;
         fpName = br.getRegex("<title>\\s*([^<]+)\\s*").getMatch(0);
         if (fpName != null) {
             fpName = Encoding.htmlDecode(fpName).trim();
+        }
+        final String thumbnailurl = br.getRegex("\"thumbnailUrl\"\\s*:\\s*\"(https?://[^\"]+)").getMatch(0);
+        if (thumbnailurl != null) {
+            final DownloadLink thumbnail = this.createDownloadlink(DirectHTTP.createURLForThisPlugin(thumbnailurl));
+            thumbnail.setAvailable(true);
+            ret.add(thumbnail);
         }
         String[][] videoSources = br.getRegex("eid\\s*=\\s*[\"']*(\\d+)[\"']*\\s+dtl\\s*=\\s*[\"']*(\\w+)[\"']*").getMatches();
         if (videoSources != null && videoSources.length > 0) {
@@ -66,19 +76,22 @@ public class FbjavNet extends antiDDoSForDecrypt {
                     if (result.contains("imfb.xyz") && fpName != null) {
                         dl.setFinalFileName(fpName + ".mp4");
                     }
-                    decryptedLinks.add(dl);
+                    ret.add(dl);
                 } catch (Exception e) {
                     getLogger().log(e);
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, null, e);
                 }
             }
         }
+        if (ret.isEmpty()) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
+        }
         if (StringUtils.isNotEmpty(fpName)) {
             final FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName.trim()));
-            fp.addLinks(decryptedLinks);
+            fp.setName(Encoding.htmlDecode(fpName).trim());
+            fp.addLinks(ret);
         }
-        return decryptedLinks;
+        return ret;
     }
 
     private String getDecryptJS(Browser br) throws Exception {

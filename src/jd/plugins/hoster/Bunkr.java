@@ -358,12 +358,12 @@ public class Bunkr extends PluginForHost {
                         if (url.matches(BunkrAlbum.TYPE_MEDIA_FILES_WITH_EXT) || url.matches(BunkrAlbum.TYPE_CDN_WITH_EXT)) {
                             directurl = url;
                             break;
+                        } else if (url.matches(BunkrAlbum.TYPE_MEDIA_FILES_WITHOUT_EXT) || new Regex(url, BunkrAlbum.PATTERN_CDN_WITHOUT_EXT).patternFind()) {
+                            directurlForFileWithoutExtOrUnknownExt = url;
                         } else if (StringUtils.containsIgnoreCase(url, "download=true")) {
                             /* Image URLs: bunkr.bla/i/... */
                             directurl = url;
                             break;
-                        } else if (url.matches(BunkrAlbum.TYPE_MEDIA_FILES_WITHOUT_EXT) || new Regex(url, BunkrAlbum.PATTERN_CDN_WITHOUT_EXT).patternFind()) {
-                            directurlForFileWithoutExtOrUnknownExt = url;
                         }
                     }
                     if (directurl == null && directurlForFileWithoutExtOrUnknownExt != null) {

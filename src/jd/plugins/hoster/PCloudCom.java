@@ -535,6 +535,9 @@ public class PCloudCom extends PluginForHost {
                     statusMessage = "\r\nYour account has no free space anymore!";
                 }
                 throw new AccountInvalidException(statusMessage);
+            case 2009:
+                /* { "result": 2009, "error": "File not found."} */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             case STATUS_CODE_WRONG_LOCATION:
                 // wrong location
                 /*
