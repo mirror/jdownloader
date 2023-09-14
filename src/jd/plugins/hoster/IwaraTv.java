@@ -177,7 +177,10 @@ public class IwaraTv extends PluginForHost {
             br.getPage(WEBAPI_BASE + "/image/" + this.getFID(link));
         }
         if (br.getHttpConnection().getResponseCode() == 404) {
-            /* Offline */
+            /*
+             * Offline. In some very rare cases, API will return status 404 for anonymous users while the content is available for users who
+             * are logged in.
+             */
             // {"message":"errors.notFound"}
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
