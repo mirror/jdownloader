@@ -21,6 +21,7 @@ import java.util.List;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
@@ -133,5 +134,14 @@ public class FileaxaCom extends XFileSharingProBasic {
     @Override
     protected boolean supportsAPISingleLinkcheck() {
         return isAPIKey(this.getAPIKey());
+    }
+
+    @Override
+    public boolean isPremiumOnly(final Browser br) {
+        if (br.containsHTML("(?i)This file is\\s*available for.*Premium Users only")) {
+            return true;
+        } else {
+            return super.isPremiumOnly(br);
+        }
     }
 }
