@@ -1,6 +1,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -150,7 +151,11 @@ public class Bunkr extends PluginForHost {
     private String getFilenameFromURL(final String url) {
         String filenameFromURL = new Regex(url, BunkrAlbum.PATTERN_SINGLE_FILE).getMatch(2);
         if (filenameFromURL == null) {
-            filenameFromURL = new Regex(url, "(?i)https?://[^/]+/(.+)").getMatch(0);
+            try {
+                filenameFromURL = Plugin.getFileNameFromURL(url);
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+            }
         }
         if (filenameFromURL != null) {
             return Encoding.htmlDecode(filenameFromURL).trim();
@@ -192,6 +197,14 @@ public class Bunkr extends PluginForHost {
 
     private String generateSingleFileURL(final String filename) {
         return "https://" + getHost() + "/d/" + filename;
+    }
+
+    private String generateSingleImageURL(final String filename) {
+        return "https://" + getHost() + "/i/" + filename;
+    }
+
+    private String generateSingleVideoURL(final String filename) {
+        return "https://" + getHost() + "/v/" + filename;
     }
 
     private final String       PROPERTY_LAST_GRABBED_DIRECTURL    = "last_grabbed_directurl";
