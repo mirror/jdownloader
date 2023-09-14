@@ -20,15 +20,16 @@ import java.util.List;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.parser.Regex;
 import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class FileUploadNetFolder extends PluginForDecrypt {
@@ -59,29 +60,38 @@ public class FileUploadNetFolder extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/gal-\\d+/[a-z0-9]+/\\d+\\.html");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(gal-\\d+)/([a-z0-9]+)/(\\d+)\\.html");
         }
         return ret.toArray(new String[0]);
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
-        final PluginForHost plg = JDUtilities.getPluginForHost(this.getHost());
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final String parameter = param.getCryptedUrl();
+        br.setFollowRedirects(true);
+        final String folderSlug = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
+        final PluginForHost plg = this.getNewPluginForHostInstance(this.getHost());
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String[] links = HTMLParser.getHttpLinks(br.toString(), br.getURL());
+        String title = br.getRegex("<title>File-Upload\\.net - Ordner ([^<]+)</title>").getMatch(0);
+        if (title == null) {
+            /* Fallback */
+            title = folderSlug.replace("-", " ");
+        }
+        final String[] links = HTMLParser.getHttpLinks(br.getRequest().getHtmlCode(), br.getURL());
         if (links == null || links.length == 0) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         for (final String singleLink : links) {
             if (plg.canHandle(singleLink)) {
-                decryptedLinks.add(createDownloadlink(singleLink));
+                ret.add(createDownloadlink(singleLink));
             }
         }
-        return decryptedLinks;
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(title);
+        fp.addLinks(ret);
+        return ret;
     }
 }
