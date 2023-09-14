@@ -115,13 +115,13 @@ public class FilesMonsterCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink downloadLink) throws Exception {
-        correctDownloadLink(downloadLink);
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        correctDownloadLink(link);
         br.setFollowRedirects(false);
-        downloadLink.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
+        link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
         // br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:51.0) Gecko/20100101 Firefox/51.0");
-        if (downloadLink.getDownloadURL().contains("/free/2/")) {
-            br.getPage(downloadLink.getStringProperty("mainlink"));
+        if (link.getDownloadURL().contains("/free/2/")) {
+            br.getPage(link.getStringProperty("mainlink"));
             // Link offline 404
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -132,13 +132,13 @@ public class FilesMonsterCom extends PluginForHost {
                 }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            downloadLink.setName(downloadLink.getName());
-            downloadLink.setDownloadSize(downloadLink.getDownloadSize());
+            link.setName(link.getName());
+            link.setDownloadSize(link.getDownloadSize());
         } else {
-            if (downloadLink.getBooleanProperty("offline", false)) {
+            if (link.getBooleanProperty("offline", false)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            br.getPage(downloadLink.getDownloadURL());
+            br.getPage(link.getDownloadURL());
             if (isOffline(this.br)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -156,17 +156,17 @@ public class FilesMonsterCom extends PluginForHost {
             final String filename = getFileName(br);
             final String filesize = getFileSize(br);
             if (filename != null) {
-                downloadLink.setFinalFileName(Encoding.htmlDecode(filename.trim()));
+                link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
             }
             if (filesize != null) {
-                downloadLink.setDownloadSize(SizeFormatter.getSize(filesize.trim()));
+                link.setDownloadSize(SizeFormatter.getSize(filesize.trim()));
             }
         }
         if (br.containsHTML(TEMPORARYUNAVAILABLE)) {
-            downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.filesmonstercom.temporaryunavailable", "Download not available at the moment"));
+            link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.filesmonstercom.temporaryunavailable", "Download not available at the moment"));
         }
-        if (downloadLink.getBooleanProperty("PREMIUMONLY", false)) {
-            downloadLink.getLinkStatus().setStatusText(JDL.L("plugins.hoster.filesmonstercom.only4premium", PREMIUMONLYUSERTEXT));
+        if (link.getBooleanProperty("PREMIUMONLY", false)) {
+            link.getLinkStatus().setStatusText(JDL.L("plugins.hoster.filesmonstercom.only4premium", PREMIUMONLYUSERTEXT));
         }
         return AvailableStatus.TRUE;
     }

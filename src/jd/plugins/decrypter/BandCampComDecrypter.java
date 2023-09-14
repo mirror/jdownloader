@@ -25,6 +25,14 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.regex.Pattern;
+
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Files;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
@@ -42,19 +50,20 @@ import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.BandCampCom;
-
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Files;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
+import jd.plugins.hoster.DirectHTTP;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 @PluginDependencies(dependencies = { BandCampCom.class })
 public class BandCampComDecrypter extends PluginForDecrypt {
     public BandCampComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = new Browser();
+        br.setFollowRedirects(true);
+        return br;
     }
 
     public static List<String[]> getPluginDomains() {
@@ -78,7 +87,7 @@ public class BandCampComDecrypter extends PluginForDecrypt {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
             final String domainspart = buildHostsPatternPart(domains);
-            ret.add("https?://(([a-z0-9\\-]+\\.)?" + domainspart + "/(?:album|track)/[a-z0-9\\-_]+|(?!www\\.)?[a-z0-9\\-]+\\." + domainspart + "/?$)|https?://(?:www\\.)?" + domainspart + "/EmbeddedPlayer(?:\\.html)?[^\\?#]*/(?:album|track)=\\d+");
+            ret.add("https?://(([a-z0-9\\-]+\\.)?" + domainspart + "/(?:(?:album|track)/[a-z0-9\\-_]+|\\?show=\\d+)|(?!www\\.)?[a-z0-9\\-]+\\." + domainspart + "/?$)|https?://(?:www\\.)?" + domainspart + "/EmbeddedPlayer(?:\\.html)?[^\\?#]*/(?:album|track)=\\d+");
         }
         return ret.toArray(new String[0]);
     }
@@ -94,24 +103,63 @@ public class BandCampComDecrypter extends PluginForDecrypt {
         return 1;
     }
 
-    private final String                   TYPE_EMBED         = "https?://(?:www\\.)?bandcamp\\.com/EmbeddedPlayer(?:\\.html)?.*?/(?:album|track)=\\d+.*";
+    private final Pattern                  TYPE_EMBED         = Pattern.compile("(?i)https?://[^/]+/EmbeddedPlayer(?:\\.html)?.*?/(?:album|track)=\\d+.*");
+    private final Pattern                  TYPE_SHOW          = Pattern.compile("(?i)https?://[^/]+/\\?show=(\\d+)");
     private static AtomicReference<String> videoSupportBroken = new AtomicReference<String>();
 
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final Regex show = new Regex(param.getCryptedUrl(), TYPE_SHOW);
+        if (show.patternFind()) {
+            return crawlShow(show.getMatch(0));
+        } else {
+            return crawlAlbumOrTrack(param);
+        }
+    }
+
+    public ArrayList<DownloadLink> crawlShow(final String showID) throws Exception {
+        br.getPage("https://" + this.getHost() + "/api/bcweekly/2/get?id=" + showID + "&lo=1&lo_action_url=https://" + this.getHost());
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        br.setFollowRedirects(true);
-        if (param.getCryptedUrl().matches(TYPE_EMBED)) {
+        final Map<String, Object> show = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+        final Object error = show.get("error");
+        if (error != null) {
+            /* E.g. {"error":true} */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final String audio_title = show.get("audio_title").toString();
+        final Map<String, Object> audio_stream = (Map<String, Object>) show.get("audio_stream");
+        final String directurl = audio_stream.get("mp3-128").toString();
+        final String desc = (String) show.get("desc");
+        final DownloadLink showcomplete = this.createDownloadlink(DirectHTTP.createURLForThisPlugin(Encoding.htmlOnlyDecode(directurl)));
+        showcomplete.setFinalFileName(audio_title + ".mp3");
+        final int duration = ((Number) show.get("audio_duration")).intValue();
+        final long length = 128 * 1024l / 8 * duration;
+        showcomplete.setDownloadSize(length);
+        showcomplete.setAvailable(true);
+        if (desc != null) {
+            showcomplete.setComment(desc);
+        }
+        ret.add(showcomplete);
+        return ret;
+    }
+
+    public ArrayList<DownloadLink> crawlAlbumOrTrack(final CryptedLink param) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        String contentURL = param.getCryptedUrl();
+        if (new Regex(param.getCryptedUrl(), TYPE_EMBED).patternFind()) {
             br.getPage(param.getCryptedUrl());
             final String originalURL = br.getRegex("\\&quot;linkback\\&quot;:\\&quot;(https?://[^/]+/(?:album|track)/[a-z0-9\\-_]+)").getMatch(0);
             if (originalURL == null) {
                 /* Assume that this content is offline or url is invalid */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            param.setCryptedUrl(originalURL);
+            contentURL = originalURL;
             br.clearCookies(br.getHost());
         }
-        br.getPage(param.getCryptedUrl());
+        br.getPage(contentURL);
         if (br.containsHTML(">\\s*Sorry\\s*,\\s*that something isn('|’)t here|trackinfo\\s*:\\s*\\[\\],") || this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -131,25 +179,24 @@ public class BandCampComDecrypter extends PluginForDecrypt {
             if (!this.canHandle(br.getURL())) {
                 logger.info("Invalid URL or URL doesn't contain any downloadable content");
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else {
-                /* Let's see if there is anything else other than music that we may be able to download. */
-                if (artistList.length > 0) {
-                    for (String artistURL : artistList) {
-                        artistURL += "/";
-                        ret.add(this.createDownloadlink(artistURL));
-                    }
-                    return ret;
-                } else if (albumList.length > 0) {
-                    for (String albumURL : albumList) {
-                        albumURL = br.getURL(albumURL).toString();
-                        ret.add(this.createDownloadlink(albumURL));
-                    }
-                    return ret;
-                } else {
-                    /* E.g. "https://daily.bandcamp.com/" */
-                    logger.info("Failed to find any downloadable content");
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            /* Let's see if there is anything else other than music that we may be able to download. */
+            if (artistList.length > 0) {
+                for (String artistURL : artistList) {
+                    artistURL += "/";
+                    ret.add(this.createDownloadlink(artistURL));
                 }
+                return ret;
+            } else if (albumList.length > 0) {
+                for (String albumURL : albumList) {
+                    albumURL = br.getURL(albumURL).toString();
+                    ret.add(this.createDownloadlink(albumURL));
+                }
+                return ret;
+            } else {
+                /* E.g. "https://daily.bandcamp.com/" */
+                logger.info("Failed to find any downloadable content");
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
         } else if (Encoding.isHtmlEntityCoded(json)) {
             json = Encoding.htmlDecode(json);
@@ -183,7 +230,7 @@ public class BandCampComDecrypter extends PluginForDecrypt {
         for (final Map<String, Object> audio : audios) {
             String contentUrl = (String) audio.get("title_link");
             final String title = (String) audio.get("title");
-            final long duration = JavaScriptEngineFactory.toLong(audio.get("duration"), 0);
+            final int duration = ((Number) audio.get("duration")).intValue();
             if (StringUtils.isEmpty(contentUrl) || StringUtils.isEmpty(title)) {
                 /* Skip invalid objects */
                 continue;
@@ -195,25 +242,24 @@ public class BandCampComDecrypter extends PluginForDecrypt {
             if (track_num == -1) {
                 track_num = JavaScriptEngineFactory.toInteger(audio.get(" track_number"), -1);
             }
-            final DownloadLink dl = createDownloadlink(contentUrl);
-            dl.setProperty("fromdecrypter", true);
-            dl.setProperty("directdate", date);
-            dl.setProperty("directartist", artist);
-            dl.setProperty("directalbum", album);
-            dl.setProperty("directname", title);
-            dl.setProperty("type", "mp3");
-            dl.setProperty("directtracknumber", StringUtils.formatByPadLength(padLength, track_num));
-            String formattedFilename = BandCampCom.getFormattedFilename(this, dl);
-            dl.setName(formattedFilename);
+            final DownloadLink audiotrack = createDownloadlink(contentUrl);
+            audiotrack.setProperty("fromdecrypter", true);
+            audiotrack.setProperty("directdate", date);
+            audiotrack.setProperty("directartist", artist);
+            audiotrack.setProperty("directalbum", album);
+            audiotrack.setProperty("directname", title);
+            audiotrack.setProperty("type", "mp3");
+            audiotrack.setProperty("directtracknumber", StringUtils.formatByPadLength(padLength, track_num));
+            String formattedFilename = BandCampCom.getFormattedFilename(this, audiotrack);
+            audiotrack.setName(formattedFilename);
             if (cfg.getBooleanProperty(BandCampCom.FASTLINKCHECK, BandCampCom.defaultFASTLINKCHECK)) {
-                dl.setAvailable(true);
+                audiotrack.setAvailable(true);
             }
             if (duration > 0) {
-                final long length = 128 * 1024l / 8 * duration;
-                dl.setDownloadSize(length);
-                dl.setAvailable(true);
+                audiotrack.setDownloadSize(128 * 1024l / 8 * duration);
             }
-            ret.add(dl);
+            audiotrack.setAvailable(true);
+            ret.add(audiotrack);
             final String videoSourceID = (String) audio.get("video_source_id");
             if (StringUtils.isNotEmpty(videoSourceID)) {
                 synchronized (videoSupportBroken) {
@@ -320,8 +366,9 @@ public class BandCampComDecrypter extends PluginForDecrypt {
         }
         fp.setName(formattedpackagename);
         fp.addLinks(ret);
-        if (ret.size() == 0) {
+        if (ret.isEmpty()) {
             logger.info("Failed to find any downloadable content: Empty album?");
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         return ret;
     }
@@ -382,7 +429,7 @@ public class BandCampComDecrypter extends PluginForDecrypt {
         return formattedpackagename;
     }
 
-    /* NO OVERRIDE!! */
+    @Override
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }

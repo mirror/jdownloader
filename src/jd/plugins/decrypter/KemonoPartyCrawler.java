@@ -80,8 +80,8 @@ public class KemonoPartyCrawler extends PluginForDecrypt {
         return ret.toArray(new String[0]);
     }
 
-    private final String TYPE_PROFILE = "(?:https?://[^/]+)?/([^/]+)/user/([^/\\?]+)(\\?o=(\\d+))?$";
-    private final String TYPE_POST    = "(?:https?://[^/]+)?/([^/]+)/user/([^/]+)/post/(\\d+)$";
+    private final String TYPE_PROFILE = "(?i)(?:https?://[^/]+)?/([^/]+)/user/([^/\\?]+)(\\?o=(\\d+))?$";
+    private final String TYPE_POST    = "(?i)(?:https?://[^/]+)?/([^/]+)/user/([^/]+)/post/(\\d+)$";
     private KemonoParty  hostPlugin   = null;
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {

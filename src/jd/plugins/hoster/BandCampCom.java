@@ -118,6 +118,7 @@ public class BandCampCom extends PluginForHost {
         br.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
+            /* Check if the link we got is a direct-URL. */
             con = br.openGetConnection(link.getPluginPatternMatcher());
             if (looksLikeDownloadableContent(con)) {
                 dllink = link.getPluginPatternMatcher();
@@ -141,7 +142,7 @@ public class BandCampCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         /* 2020-09-23: Decode html encoded json strings */
-        br.getRequest().setHtmlCode(Encoding.htmlOnlyDecode(br.toString()));
+        br.getRequest().setHtmlCode(Encoding.htmlOnlyDecode(br.getRequest().getHtmlCode()));
         final String file = br.getRegex("\"file\"\\s*:\\s*(null|\".*?\"|\\{.*?\\})").getMatch(0);
         if (file == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -151,10 +152,9 @@ public class BandCampCom extends PluginForHost {
         dllink = new Regex(file, "((https?:)?//[^\"]*?)\"").getMatch(0);
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        } else {
-            logger.info("dllink = " + dllink);
-            dllink = Encoding.htmlDecode(dllink).replace("\\", "");
         }
+        logger.info("dllink = " + dllink);
+        dllink = Encoding.htmlDecode(dllink).replace("\\", "");
         if (!link.getBooleanProperty("fromdecrypter", false)) {
             /* Parse possibly missing metadata here. */
             String tracknumber = br.getRegex("\"track_num\"\\s*:\\s*(\\d+)").getMatch(0);
@@ -207,7 +207,6 @@ public class BandCampCom extends PluginForHost {
                 if (con.getCompleteContentLength() > 0) {
                     link.setVerifiedFileSize(con.getCompleteContentLength());
                 }
-                return AvailableStatus.TRUE;
             } else {
                 br2.followConnection(true);
                 /*
@@ -222,6 +221,7 @@ public class BandCampCom extends PluginForHost {
             } catch (Throwable e) {
             }
         }
+        return AvailableStatus.TRUE;
     }
 
     @Override
