@@ -25,6 +25,12 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -41,12 +47,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class BandCampCom extends PluginForHost {
@@ -156,6 +156,7 @@ public class BandCampCom extends PluginForHost {
             dllink = Encoding.htmlDecode(dllink).replace("\\", "");
         }
         if (!link.getBooleanProperty("fromdecrypter", false)) {
+            /* Parse possibly missing metadata here. */
             String tracknumber = br.getRegex("\"track_num\"\\s*:\\s*(\\d+)").getMatch(0);
             if (tracknumber == null) {
                 tracknumber = br.getRegex("\"track_number\"\\s*:\\s*(\\d+)").getMatch(0);

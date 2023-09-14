@@ -15,7 +15,14 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -29,10 +36,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.LazyPlugin;
+import jd.plugins.decrypter.MixCloudComCrawler;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mixcloud.com" }, urls = { "https?://stream\\d+\\.mixcloud\\.com/.+|https://thumbnailer\\.mixcloud\\.com/unsafe/.+" })
 public class MixCloudCom extends antiDDoSForHost {
@@ -64,9 +68,12 @@ public class MixCloudCom extends antiDDoSForHost {
         return "https://www.mixcloud.com/";
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        return requestFileInformation(link, false);
+    }
+
+    private AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
         dllink = null;
         server_issues = false;
         br.setFollowRedirects(true);
@@ -94,24 +101,35 @@ public class MixCloudCom extends antiDDoSForHost {
         }
         dllink = Encoding.htmlDecode(dllink);
         link.setFinalFileName(filename);
-        URLConnectionAdapter con = null;
-        try {
-            con = openAntiDDoSRequestConnection(br, br.createHeadRequest(dllink));
-            if (this.looksLikeDownloadableContent(con)) {
+        if (!isDownload) {
+            URLConnectionAdapter con = null;
+            try {
+                con = br.openHeadConnection(this.dllink);
+                handleConnectionErrors(br, con);
                 if (con.getCompleteContentLength() > 0) {
                     link.setVerifiedFileSize(con.getCompleteContentLength());
                 }
-                link.setProperty("directlink", dllink);
-            } else {
-                server_issues = true;
-            }
-        } finally {
-            try {
-                con.disconnect();
-            } catch (final Throwable e) {
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
             }
         }
         return AvailableStatus.TRUE;
+    }
+
+    private void handleConnectionErrors(final Browser br, final URLConnectionAdapter con) throws PluginException, IOException {
+        if (!this.looksLikeDownloadableContent(con)) {
+            br.followConnection(true);
+            if (con.getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+            } else if (con.getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Audio broken?");
+            }
+        }
     }
 
     @Override
@@ -123,16 +141,7 @@ public class MixCloudCom extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxchunks);
-        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            br.followConnection(true);
-            if (dl.getConnection().getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-        }
+        handleConnectionErrors(br, dl.getConnection());
         dl.startDownload();
     }
 
@@ -160,17 +169,13 @@ public class MixCloudCom extends antiDDoSForHost {
                         return false;
                     }
                     getPage("https://" + this.getHost() + "/");
-                    csrftoken = br.getCookie(br.getHost(), "csrftoken", Cookies.NOTDELETEDPATTERN);
-                    br.getHeaders().put("x-requested-with", "XMLHttpRequest");
-                    br.getHeaders().put("x-csrftoken", csrftoken);
-                    br.getHeaders().put("accept", "application/json");
-                    br.getHeaders().put("content-type", "application/json");
+                    csrftoken = MixCloudComCrawler.findCsrftoken(br);
                     this.postPageRaw("https://www.mixcloud.com/graphql", "{\"id\":\"q33\",\"query\":\"query DashboardStatsCardQuery {viewer {id,...F1}} fragment F0 on Stats {comments {totalCount},favorites {totalCount},reposts {totalCount},plays {totalCount},minutes {totalCount},__typename} fragment F1 on Viewer {me {username,hasProFeatures,isUploader,stats {...F0},id},id}\",\"variables\":{}}");
                     final String username = PluginJSonUtils.getJson(br, "username");
                     if (!StringUtils.isEmpty(username)) {
                         logger.info("Cookie login successful");
                         /* Refresh cookie timestamp */
-                        account.saveCookies(this.br.getCookies(this.getHost()), "");
+                        account.saveCookies(this.br.getCookies(br.getHost()), "");
                         return true;
                     } else {
                         logger.info("Cookie login failed");
@@ -178,13 +183,11 @@ public class MixCloudCom extends antiDDoSForHost {
                 }
                 logger.info("Performing full login");
                 getPage("https://" + this.getHost() + "/");
-                csrftoken = br.getCookie(br.getHost(), "csrftoken", Cookies.NOTDELETEDPATTERN);
+                csrftoken = MixCloudComCrawler.findCsrftoken(br);
                 if (csrftoken == null) {
                     logger.warning("Failed to find csrftoken");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                br.getHeaders().put("x-requested-with", "XMLHttpRequest");
-                br.getHeaders().put("x-csrftoken", csrftoken);
                 postPage("/authentication/email-login/", "email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
                 /*
                  * E.g. {"data": {"password": "test123456", "$valid": false, "email": "test123456", "$errors": {"email":
@@ -194,7 +197,7 @@ public class MixCloudCom extends antiDDoSForHost {
                 if (!StringUtils.equalsIgnoreCase(isValid, "true")) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-                account.saveCookies(this.br.getCookies(this.getHost()), "");
+                account.saveCookies(this.br.getCookies(br.getHost()), "");
                 return true;
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {

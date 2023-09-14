@@ -33,6 +33,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.DirectHTTP;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fbjav.net" }, urls = { "https?://(www\\.)?fbjav\\.(?:net|com)/\\w+-\\d+[^/]*" })
@@ -49,10 +50,9 @@ public class FbjavNet extends antiDDoSForDecrypt {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String fpName = null;
-        fpName = br.getRegex("<title>\\s*([^<]+)\\s*").getMatch(0);
-        if (fpName != null) {
-            fpName = Encoding.htmlDecode(fpName).trim();
+        String title = br.getRegex("<title>\\s*([^<]+)\\s*").getMatch(0);
+        if (title != null) {
+            title = Encoding.htmlDecode(title).trim();
         }
         final String thumbnailurl = br.getRegex("\"thumbnailUrl\"\\s*:\\s*\"(https?://[^\"]+)").getMatch(0);
         if (thumbnailurl != null) {
@@ -60,57 +60,74 @@ public class FbjavNet extends antiDDoSForDecrypt {
             thumbnail.setAvailable(true);
             ret.add(thumbnail);
         }
-        String[][] videoSources = br.getRegex("eid\\s*=\\s*[\"']*(\\d+)[\"']*\\s+dtl\\s*=\\s*[\"']*(\\w+)[\"']*").getMatches();
+        // final String[][] videoSources = br.getRegex("eid\\s*=\\s*[\"']*(\\d+)[\"']*\\s+dtl\\s*=\\s*[\"']*(\\w+)[\"']*").getMatches();
+        final String[][] videoSources = br.getRegex("dtl\\s*=(\\w+)").getMatches();
         if (videoSources != null && videoSources.length > 0) {
+            PluginForDecrypt specialCrawlerplugin = this.getNewPluginForDecryptInstance(ImcontentMe.getPluginDomains().get(0)[0]);
             final ScriptEngine engine = JavaScriptEngineFactory.getScriptEngineManager(null).getEngineByName("javascript");
-            final String decodeJS = getDecryptJS(br);
+            final String decodeJS = getDecryptJS(br.cloneBrowser());
             engine.eval(decodeJS);
             for (String[] videoSource : videoSources) {
-                String eid = videoSource[0];
-                String dtl = videoSource[1];
+                // String eid = videoSource[0];
+                String dtl = videoSource[0];
                 try {
                     engine.eval("var res = link_decode(\"" + dtl + "\");");
-                    String result = engine.get("res").toString();
-                    final DownloadLink dl = createDownloadlink(result);
+                    final String resultURL = engine.get("res").toString();
+                    logger.info("resultURL: " + resultURL);
+                    final DownloadLink dl = createDownloadlink(resultURL);
                     /* Workaround as their own cdn-API does not return any filenames! */
-                    if (result.contains("imfb.xyz") && fpName != null) {
-                        dl.setFinalFileName(fpName + ".mp4");
+                    // if (result.contains("imfb.xyz") && fpName != null) {
+                    // dl.setFinalFileName(fpName + ".mp4");
+                    // }
+                    if (specialCrawlerplugin.canHandle(resultURL) && title != null) {
+                        dl.setProperty(ImcontentMe.PROPERTY_TITLE, title);
                     }
                     ret.add(dl);
-                } catch (Exception e) {
-                    getLogger().log(e);
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, null, e);
+                } catch (final Exception e) {
+                    logger.log(e);
                 }
             }
         }
         if (ret.isEmpty()) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
         }
-        if (StringUtils.isNotEmpty(fpName)) {
+        if (StringUtils.isNotEmpty(title)) {
             final FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName).trim());
+            fp.setName(Encoding.htmlDecode(title).trim());
             fp.addLinks(ret);
         }
         return ret;
     }
 
-    private String getDecryptJS(Browser br) throws Exception {
+    private String getDecryptJS(final Browser br) throws Exception {
         final StringBuilder str = new StringBuilder();
-        final Browser brc = br.cloneBrowser();
-        brc.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         // final String scriptURL = "https://static.fbjav.com/wp-content/themes/fbjav/assets/js/custom28919.js";
-        /* 2021-03-15 */
-        final String scriptURL = "https://fbjav.com/wp-content/themes/fbjav/assets/js/custom.min.js?v11020";
-        getPage(brc, scriptURL);
-        str.append(brc.getRegex("(function\\s*reverse\\s*\\(\\s*t\\s*\\)\\s*\\{\\s*return[^\\}]+\\s*\\})").getMatch(0));
+        // final String scriptURL = "https://fbjav.com/wp-content/themes/fbjav/assets/js/custom.min.js?v11020";
+        /* 2023-09-14 */
+        final String scriptURL = "https://fbjav.com/wp-content/cache/minify/b3895.js";
+        getPage(br, scriptURL);
+        final String func1 = br.getRegex("(function\\s*reverse\\s*\\(\\s*t\\s*\\)\\s*\\{\\s*return[^\\}]+\\s*\\})").getMatch(0);
+        if (func1 == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        str.append(func1);
         str.append("\r\n");
-        str.append(brc.getRegex("(function\\s*strtr[^\\{]+\\{.*?)function link_decode").getMatch(0));
+        final String func2 = br.getRegex("(function\\s*strtr[^\\{]+\\{.*?)function link_decode").getMatch(0);
+        if (func2 == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        str.append(func2);
         str.append("\r\n");
-        str.append(brc.getRegex("(function\\s*link_decode\\(t\\)\\s*\\{[^\\}]+\\})").getMatch(0));
+        final String func3 = br.getRegex("(function\\s*link_decode\\([^\\)]+\\)\\s*\\{.*?)\\s*function").getMatch(0);
+        if (func3 == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        str.append(func3);
         /* Finally add base64 decode function */
         str.append("\r\n");
         str.append("function atob (f){var g={},b=65,d=0,a,c=0,h,e='',k=String.fromCharCode,l=f.length;for(a='';91>b;)a+=k(b++);a+=a.toLowerCase()+'0123456789+/';for(b=0;64>b;b++)g[a.charAt(b)]=b;for(a=0;a<l;a++)for(b=g[f.charAt(a)],d=(d<<6)+b,c+=6;8<=c;)((h=d>>>(c-=8)&255)||a<l-2)&&(e+=k(h));return e};");
-        final String result = str.toString().trim().replace("window.location.host", "\"" + brc.getHost() + "\"");
+        final String result = str.toString().trim().replace("window.location.host", "\"" + br.getHost() + "\"");
         if (StringUtils.isEmpty(result)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

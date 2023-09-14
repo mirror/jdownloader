@@ -15,13 +15,13 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.parser.UrlQuery;
@@ -32,6 +32,7 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.requests.PostRequest;
 import jd.nutils.encoding.Encoding;
@@ -119,14 +120,10 @@ public class MixCloudComCrawler extends antiDDoSForDecrypt {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String csrftoken = br.getCookie(br.getHost(), "csrftoken", Cookies.NOTDELETEDPATTERN);
+        final String csrftoken = findCsrftoken(br);
         if (csrftoken == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        br.getHeaders().put("x-requested-with", "XMLHttpRequest");
-        br.getHeaders().put("x-csrftoken", csrftoken);
-        br.getHeaders().put("accept", "application/json");
-        br.getHeaders().put("content-type", "application/json");
         br.postPageRaw("/graphql",
                 "{\"query\":\"query UserProfileHeaderQuery(  $lookup: UserLookup!) {  user: userLookup(lookup: $lookup) {    id    displayName    username    isBranded    isStaff    isFollowing    isViewer    followers {      totalCount    }    hasCoverPicture    hasPremiumFeatures    hasProFeatures    picture {      primaryColor      ...UGCImage_picture    }    coverPicture {      urlRoot    }    ...UserBadge_user    ...ProfileNavigation_user    ...ShareUserButton_user    ...ProfileRegisterUpsellComponent_user    ...FollowButton_user    ...SelectUpsellButton_user  }  viewer {    ...ProfileRegisterUpsellComponent_viewer    ...FollowButton_viewer    id  }}fragment FollowButton_user on User {  id  isFollowed  isFollowing  isViewer  followers {    totalCount  }  username  displayName}fragment FollowButton_viewer on Viewer {  me {    id  }}fragment ProfileNavigation_user on User {  id  username  stream {    totalCount  }  favorites {    totalCount  }  listeningHistory {    totalCount  }  uploads {    totalCount  }  posts {    totalCount  }  profileNavigation {    menuItems {      __typename      ... on NavigationItemInterface {        __isNavigationItemInterface: __typename        inDropdown      }      ... on HideableNavigationItemInterface {        __isHideableNavigationItemInterface: __typename        hidden      }      ... on PlaylistNavigationItem {        count        playlist {          id          name          slug        }      }    }  }}fragment ProfileRegisterUpsellComponent_user on User {  id  displayName  followers {    totalCount  }}fragment ProfileRegisterUpsellComponent_viewer on Viewer {  me {    id  }}fragment SelectUpsellButton_user on User {  username  isSelect  isSubscribedTo  selectUpsell {    planInfo {      displayAmount    }  }}fragment ShareUserButton_user on User {  biog  username  displayName  id  isUploader  picture {    urlRoot  }}fragment UGCImage_picture on Picture {  urlRoot  primaryColor}fragment UserBadge_user on User {  username  hasProFeatures  hasPremiumFeatures  isStaff  isSelect}\",\"variables\":{\"lookup\":{\"username\":\""
                         + username + "\"}}}");
@@ -204,14 +201,11 @@ public class MixCloudComCrawler extends antiDDoSForDecrypt {
             slug = Encoding.urlDecode(slug, false);
         }
         String title = slug;
-        final String csrftoken = br.getCookie(br.getHost(), "csrftoken", Cookies.NOTDELETEDPATTERN);
+        final String csrftoken = findCsrftoken(br);
         if (csrftoken == null || username == null || slug == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        br.getHeaders().put("x-requested-with", "XMLHttpRequest");
-        br.getHeaders().put("x-csrftoken", csrftoken);
-        br.getHeaders().put("accept", "application/json");
-        br.getHeaders().put("content-type", "application/json");
+        br.setFollowRedirects(true);
         final String postdata = String.format(
                 "{\"id\":\"q13\",\"query\":\"query HeaderQuery($lookup_0:CloudcastLookup!,$lighten_1:Int!,$alpha_2:Float!) {cloudcastLookup(lookup:$lookup_0) {id,...Fn}} fragment F0 on Cloudcast {picture {urlRoot,primaryColor},id} fragment F1 on Cloudcast {id,name,slug,owner {username,id}} fragment F2 on Cloudcast {owner {id,displayName,followers {totalCount}},id} fragment F3 on Cloudcast {restrictedReason,owner {displayName,country,username,isSubscribedTo,isViewer,id},slug,id,isAwaitingAudio,isDraft,isPlayable,streamInfo {hlsUrl,dashUrl,url,uuid},audioLength,currentPosition,proportionListened,repeatPlayAmount,hasPlayCompleted,seekRestriction,previewUrl,isExclusivePreviewOnly,isExclusive,picture {primaryColor,isLight,_primaryColor2pfPSM:primaryColor(lighten:$lighten_1),_primaryColor3Yfcks:primaryColor(alpha:$alpha_2)}} fragment F4 on Node {id,__typename} fragment F5 on Cloudcast {id,isFavorited,isPublic,hiddenStats,favorites {totalCount},slug,owner {id,isFollowing,username,isSelect,displayName,isViewer}} fragment F6 on Cloudcast {id,isUnlisted,isPublic} fragment F7 on Cloudcast {id,isReposted,isPublic,hiddenStats,reposts {totalCount},owner {isViewer,id}} fragment F8 on Cloudcast {id,isUnlisted,isPublic,slug,description,picture {urlRoot},owner {displayName,isViewer,username,id}} fragment F9 on Cloudcast {id,slug,isSpam,owner {username,isViewer,id}} fragment Fa on Cloudcast {owner {isViewer,isSubscribedTo,username,hasProFeatures,isBranded,id},sections {__typename,...F4},id,slug,isExclusive,isUnlisted,isShortLength,...F5,...F6,...F7,...F8,...F9} fragment Fb on Cloudcast {qualityScore,listenerMinutes,id} fragment Fc on Cloudcast {slug,plays,publishDate,hiddenStats,owner {username,id},id,...Fb} fragment Fd on User {id} fragment Fe on User {username,hasProFeatures,hasPremiumFeatures,isStaff,isSelect,id} fragment Ff on User {id,isFollowed,isFollowing,isViewer,followers {totalCount},username,displayName} fragment Fg on Cloudcast {isExclusive,isExclusivePreviewOnly,slug,id,owner {username,id}} fragment Fh on Cloudcast {isExclusive,owner {id,username,displayName,...Fd,...Fe,...Ff},id,...Fg} fragment Fi on Cloudcast {id,streamInfo {uuid,url,hlsUrl,dashUrl},audioLength,seekRestriction,currentPosition} fragment Fj on Cloudcast {owner {displayName,isSelect,username,id},seekRestriction,id} fragment Fk on Cloudcast {id,waveformUrl,previewUrl,audioLength,isPlayable,streamInfo {hlsUrl,dashUrl,url,uuid},restrictedReason,seekRestriction,currentPosition,...Fj} fragment Fl on Cloudcast {__typename,isExclusivePreviewOnly,isExclusive,owner {isSelect,isSubscribedTo,username,displayName,isViewer,id},id} fragment Fm on Cloudcast {owner {username,displayName,isSelect,id},id} fragment Fn on Cloudcast {id,name,picture {isLight,primaryColor,urlRoot,primaryColor},owner {displayName,isViewer,isBranded,selectUpsell {text},id},repeatPlayAmount,restrictedReason,seekRestriction,...F0,...F1,...F2,...F3,...Fa,...Fc,...Fh,...Fi,...Fk,...Fl,...Fm}\",\"variables\":{\"lookup_0\":{\"username\":\"%s\",\"slug\":\"%s\"},\"lighten_1\":15,\"alpha_2\":0.3}}",
                 username, slug);
@@ -287,7 +281,7 @@ public class MixCloudComCrawler extends antiDDoSForDecrypt {
                 if (true) {
                     break;
                 }
-                String xcsrftoken = br.getCookie(br.getHost(), "csrftoken");
+                String xcsrftoken = br.getCookie(br.getHost(), "csrftoken", Cookies.NOTDELETEDPATTERN);
                 // br.setCookie(br.getHost(), "previmpr", "");
                 // final String authJson = "{\"id\":\"0\",\"query\":\"mutation UnknownFile($input_0:SetExperimentGoalMutationInput!)
                 // {setExperimentGoal(input:$input_0)
@@ -365,6 +359,30 @@ public class MixCloudComCrawler extends antiDDoSForDecrypt {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         return ret;
+    }
+
+    public static void prepBrAjax(final Browser br, final String csrftoken) {
+        br.getHeaders().put("x-requested-with", "XMLHttpRequest");
+        br.getHeaders().put("accept", "application/json");
+        br.getHeaders().put("content-type", "application/json");
+        if (csrftoken != null) {
+            br.getHeaders().put("x-csrftoken", csrftoken);
+        }
+    }
+
+    public static String findCsrftoken(final Browser br) throws PluginException, IOException {
+        String csrftoken = br.getCookie(br.getHost(), "csrftoken", Cookies.NOTDELETEDPATTERN);
+        if (csrftoken == null) {
+            /* 2023-09-14: Extra step needed to get csrftoken */
+            prepBrAjax(br, null);
+            br.postPageRaw("https://app.mixcloud.com/graphql", "{\"query\":\"query GoogleAdSdkQuery {  viewer {    ads {      targeting {        key        value      }    }    id  }}\",\"variables\":{}}");
+            csrftoken = br.getCookie(br.getHost(), "csrftoken", Cookies.NOTDELETEDPATTERN);
+            if (csrftoken == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            prepBrAjax(br, csrftoken);
+        }
+        return csrftoken;
     }
 
     private void processAudioObjects(final ArrayList<DownloadLink> decryptedLinks, final List<Object> audio_objects, final FilePackage fp, final ArrayList<String> dupes) {
