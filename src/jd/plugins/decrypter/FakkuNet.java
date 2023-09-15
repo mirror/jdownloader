@@ -53,9 +53,9 @@ public class FakkuNet extends antiDDoSForDecrypt {
 
     @SuppressWarnings({ "deprecation", "unchecked" })
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         /* Forced HTTPS */
-        param.setCryptedUrl(param.getCryptedUrl().replace("http://", "https://"));
+        final String contenturl = param.getCryptedUrl().replaceFirst("(?i)http://", "https://");
         final Regex urlinfo = new Regex(param.getCryptedUrl(), "https?://[^/]+/([^/]+)/([^/]+)");
         final String contentGenre = urlinfo.getMatch(0);
         final String url_title = urlinfo.getMatch(1);
@@ -70,7 +70,7 @@ public class FakkuNet extends antiDDoSForDecrypt {
         }
         br.setFollowRedirects(true);
         br.setAllowedResponseCodes(410);
-        getPage(param.getCryptedUrl());
+        getPage(contenturl);
         if (br.getHttpConnection().getResponseCode() == 410) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("id=\"error\"")) {
@@ -104,17 +104,17 @@ public class FakkuNet extends antiDDoSForDecrypt {
                 final String final_filename = fpName + " - " + df.format(counter) + ".jpg";
                 dl.setFinalFileName(final_filename);
                 dl.setAvailable(true);
-                dl.setContentUrl(param.getCryptedUrl());
+                dl.setContentUrl(contenturl);
                 dl.setProperty("mainlink", "https://www.fakku.net/manga/" + url_title + "/read");
                 dl.setProperty("decrypterfilename", final_filename);
-                decryptedLinks.add(dl);
+                ret.add(dl);
             }
         } else {
             if (fpName == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             main_part = Request.getLocation(main_part, br.getRequest());
-            fpName = Encoding.htmlDecode(fpName.trim());
+            fpName = Encoding.htmlDecode(fpName).trim();
             final String allThumbs[] = PluginJSonUtils.getJsonResultsFromArray(json_array);
             if (allThumbs.length == 0) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -125,17 +125,17 @@ public class FakkuNet extends antiDDoSForDecrypt {
                 final DownloadLink dl = createDownloadlink("directhttp://" + main_part + thumb_number + ".jpg");
                 dl.setFinalFileName(fpName + " - " + df.format(counter) + ".jpg");
                 dl.setAvailable(true);
-                decryptedLinks.add(dl);
+                ret.add(dl);
                 counter++;
             }
             final FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName.trim()));
-            fp.addLinks(decryptedLinks);
+            fp.setName(Encoding.htmlDecode(fpName).trim());
+            fp.addLinks(ret);
         }
-        return decryptedLinks;
+        return ret;
     }
 
-    /* NO OVERRIDE!! */
+    @Override
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }

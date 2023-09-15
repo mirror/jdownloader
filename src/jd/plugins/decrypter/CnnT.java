@@ -24,6 +24,8 @@ import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
@@ -67,17 +69,17 @@ public class CnnT extends PluginForDecrypt {
 
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String host = new Regex(param.getCryptedUrl(), "https?://([^/]+)/").getMatch(0);
         final String kat_id = new Regex(param.getCryptedUrl(), "kat_id=(\\d+)").getMatch(0);
         final String fid = new Regex(param.getCryptedUrl(), "fileid=(\\d+)").getMatch(0);
-        param.setCryptedUrl("https://" + host + "/links.php?action=popup&kat_id=" + kat_id + "&fileid=" + fid);
+        final String contentURL = "https://" + host + "/links.php?action=popup&kat_id=" + kat_id + "&fileid=" + fid;
         boolean valid = false;
         br.setFollowRedirects(true);
-        br.getPage(param.getCryptedUrl());
+        br.getPage(contentURL);
         if (br.containsHTML("(?i)>Versuche es in wenigen Minuten nochmals")) {
             logger.info("Website overloaded at the moment: " + param.getCryptedUrl());
-            return decryptedLinks;
+            throw new DecrypterRetryException(RetryReason.HOST);
         }
         if (this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -94,8 +96,7 @@ public class CnnT extends PluginForDecrypt {
                 }
                 final String captchaUrlPart = br.getRegex("\"(securimage_show\\.php\\?sid=[a-z0-9]+)\"").getMatch(0);
                 if (captchaUrlPart == null || captchaForm == null) {
-                    logger.warning("Decrypter broken for link: " + param.getCryptedUrl());
-                    return null;
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 final String captchaurl;
                 if (this.br.getURL().contains("/cpuser/")) {
@@ -110,32 +111,31 @@ public class CnnT extends PluginForDecrypt {
                 br.submitForm(captchaForm);
                 if (br.containsHTML("(?u)Der Sicherheitscode ist falsch")) {
                     /* Falscher Captcha, Seite neu laden */
-                    br.getPage(param.getCryptedUrl());
+                    br.getPage(contentURL);
                 } else {
                     valid = true;
                     String finallink = br.getRegex("URL=(.*?)\"").getMatch(0);
                     if (finallink != null) {
-                        decryptedLinks.add(createDownloadlink(finallink));
+                        ret.add(createDownloadlink(finallink));
                     }
                     String links[] = br.getRegex("<a target=\"_blank\" href=\"(.*?)\">").getColumn(0);
                     if (links != null && links.length != 0) {
                         for (String link : links) {
-                            decryptedLinks.add(createDownloadlink(link));
+                            ret.add(createDownloadlink(link));
                         }
                     }
                     break;
                 }
                 if (this.isAbort()) {
                     /* Aborted by user */
-                    return decryptedLinks;
+                    return ret;
                 }
             }
         }
         if (!valid) {
-            logger.info("Captcha for the following link was entered wrong for >= " + maxAttempts + " times: " + param.getCryptedUrl());
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
-        return decryptedLinks;
+        return ret;
     }
 
     public boolean hasCaptcha(final CryptedLink link, final jd.plugins.Account acc) {

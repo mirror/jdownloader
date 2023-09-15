@@ -121,8 +121,9 @@ public class FileCryptCc extends PluginForDecrypt {
          */
         final String folderID = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
         final String mirrorIdFromURL = UrlQuery.parse(param.getCryptedUrl()).get("mirror");
-        if (mirrorIdFromURL == null) {
-            param.setCryptedUrl(param.getCryptedUrl() + ".html");
+        String contenturl = param.getCryptedUrl();
+        if (mirrorIdFromURL == null && !StringUtils.endsWithCaseInsensitive(contenturl, ".html")) {
+            contenturl += ".html";
         }
         String successfullyUsedPassword = null;
         int cutCaptchaRetryIndex = -1;
@@ -132,12 +133,12 @@ public class FileCryptCc extends PluginForDecrypt {
             br.setLoadLimit(br.getLoadLimit() * 2);
             br.getHeaders().put("Accept-Encoding", "gzip, deflate");
             /* Website has no language selection as it auto-chooses based on IP and/or URL but we can force English language. */
-            br.setCookie(Browser.getHost(param.getCryptedUrl()), "lang", "en");
+            br.setCookie(Browser.getHost(contenturl), "lang", "en");
             br.setFollowRedirects(true);
             br.addAllowedResponseCodes(500);// submit captcha responds with 500 code
             /* Use new User-Agent for each attempt */
             br.getHeaders().put("User-Agent", UserAgents.stringUserAgent(BrowserName.Chrome));
-            this.getPage(param.getCryptedUrl());
+            this.getPage(contenturl);
             if (br.getHttpConnection().getResponseCode() == 404 || br.getURL().matches("(?i)https?://[^/]+/404\\.html.*")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else if (br.containsHTML("(?i)>\\s*Dieser Ordner enthält keine Mirror")) {
@@ -295,7 +296,7 @@ public class FileCryptCc extends PluginForDecrypt {
                     captchaForm.put("adcopy_response", Encoding.urlEncode(code));
                     captchaForm.put("adcopy_challenge", chid);
                 } else if (captchaForm != null && captchaForm.containsHTML("capcode")) {
-                    Challenge<String> challenge = new KeyCaptcha(this, br, createDownloadlink(param.getCryptedUrl())).createChallenge(this);
+                    Challenge<String> challenge = new KeyCaptcha(this, br, createDownloadlink(contenturl)).createChallenge(this);
                     try {
                         final String result = handleCaptchaChallenge(challenge);
                         if (challenge.isRefreshTrigger(result)) {
@@ -374,9 +375,9 @@ public class FileCryptCc extends PluginForDecrypt {
             /* Fallback -> Only 1 mirror available */
             availableMirrors = new String[1];
             if (mirrorIdFromURL != null) {
-                availableMirrors[0] = param.getCryptedUrl();
+                availableMirrors[0] = contenturl;
             } else {
-                availableMirrors[0] = param.getCryptedUrl() + "?mirror=0";
+                availableMirrors[0] = contenturl + "?mirror=0";
             }
         }
         final List<String> mirrors = new ArrayList<String>();
@@ -407,7 +408,7 @@ public class FileCryptCc extends PluginForDecrypt {
                 logger.info("Crawling mirror " + progressNumber + "/" + mirrors.size() + " | " + mirrorURL);
                 br.getPage(mirrorURL);
                 /* Use clicknload first as it doesn't rely on JD service.jdownloader.org, which can go down! */
-                final ArrayList<DownloadLink> cnlResults = handleCnl2(param.getCryptedUrl(), successfullyUsedPassword);
+                final ArrayList<DownloadLink> cnlResults = handleCnl2(contenturl, successfullyUsedPassword);
                 if (!cnlResults.isEmpty()) {
                     logger.info("CNL success");
                     ret.addAll(cnlResults);
@@ -626,11 +627,11 @@ public class FileCryptCc extends PluginForDecrypt {
     }
 
     private final boolean containsCaptcha() {
-        return new Regex(cleanHTML, ">(?:Sicherheitsüberprüfung|Security prompt)</").matches();
+        return new Regex(cleanHTML, ">\\s*(?:Sicherheitsüberprüfung|Security prompt)\\s*</").patternFind();
     }
 
     private final boolean containsPassword() {
-        return new Regex(cleanHTML, "(?i)>(?:Passwort erforderlich|Password required)</").matches();
+        return new Regex(cleanHTML, "(?i)>\\s*(?:Passwort erforderlich|Password required)\\s*</").patternFind();
     }
 
     private String cleanHTML = null;

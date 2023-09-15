@@ -7,8 +7,6 @@ import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
-import jd.parser.Regex;
-import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
@@ -27,6 +25,13 @@ public class BurningCamelCom extends PornEmbedParser {
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
         ret.add(new String[] { "burningcamel.com", "camelstyle.net" });
         return ret;
+    }
+
+    @Override
+    protected ArrayList<String> getDeadDomains() {
+        final ArrayList<String> deadDomains = new ArrayList<String>();
+        deadDomains.add("camelstyle.net");
+        return deadDomains;
     }
 
     public static String[] getAnnotationNames() {
@@ -48,12 +53,6 @@ public class BurningCamelCom extends PornEmbedParser {
             ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/video/([a-z0-9\\-]+(/\\d+)?)");
         }
         return ret.toArray(new String[0]);
-    }
-
-    protected void correctCryptedLink(final CryptedLink param) {
-        final String fid = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
-        /* Important as some of their domains are offline */
-        param.setCryptedUrl(getContentURL(fid));
     }
 
     protected boolean isOffline(final Browser br) {

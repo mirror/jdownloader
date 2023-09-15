@@ -134,9 +134,13 @@ public class BandCampCom extends PluginForHost {
                 if (con.getCompleteContentLength() > 0) {
                     link.setVerifiedFileSize(con.getCompleteContentLength());
                 }
-                link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
+                final String filenameFromHeader = getFileNameFromHeader(con);
+                if (filenameFromHeader != null) {
+                    link.setFinalFileName(Encoding.htmlDecode(filenameFromHeader).trim());
+                }
                 return AvailableStatus.TRUE;
             } else {
+                /* URL we have is not direct-downloadable. */
                 br.followConnection(true);
             }
         } catch (final Exception e) {
@@ -164,7 +168,7 @@ public class BandCampCom extends PluginForHost {
         }
         logger.info("dllink = " + dllink);
         dllink = Encoding.htmlDecode(dllink).replace("\\", "");
-        /* Parse possibly missing metadata here. */
+        /** Parse possibly missing metadata here. Do not overwrite existing properties with wrong- or null values!! */
         String tracknumberStr = br.getRegex("\"track_num\"\\s*:\\s*(\\d+)").getMatch(0);
         if (tracknumberStr == null) {
             tracknumberStr = br.getRegex("\"track_number\"\\s*:\\s*(\\d+)").getMatch(0);
@@ -175,7 +179,6 @@ public class BandCampCom extends PluginForHost {
         } else {
             tracknumber = 1;
         }
-        final int padLength = Math.max(2, StringUtils.getPadLength(tracknumber));
         final String trackTitle = br.getRegex("\"title\"\\s*:\\s*\"([^<>\"]*?)\"").getMatch(0);
         final String json_album = br.getRegex("<script type=\"application/(?:json\\+ld|ld\\+json)\">\\s*(.*?)\\s*</script>").getMatch(0);
         if (json_album == null) {
@@ -206,8 +209,10 @@ public class BandCampCom extends PluginForHost {
         if (trackTitle != null) {
             link.setProperty(PROPERTY_TITLE, Encoding.htmlDecode(trackTitle).trim());
         }
+        if (!link.hasProperty(PROPERTY_ALBUM_TRACK_POSITION)) {
+            link.setProperty(PROPERTY_ALBUM_TRACK_POSITION, tracknumber);
+        }
         link.setProperty(PROPERTY_FILE_TYPE, "mp3");
-        link.setProperty(PROPERTY_ALBUM_TRACK_POSITION, tracknumber);
         final String filename = getFormattedFilename(link);
         link.setFinalFileName(filename);
         // In case the link redirects to the finallink
@@ -216,17 +221,9 @@ public class BandCampCom extends PluginForHost {
             br2.setFollowRedirects(true);
             /* Server does NOT like HEAD requests! */
             con = br2.openGetConnection(dllink);
-            if (looksLikeDownloadableContent(con)) {
-                if (con.getCompleteContentLength() > 0) {
-                    link.setVerifiedFileSize(con.getCompleteContentLength());
-                }
-            } else {
-                br2.followConnection(true);
-                /*
-                 * 2020-04-23: Chances are high that the track cannot be downloaded because user needs to purchase it first. There is no
-                 * errormessage or anything on their website.
-                 */
-                throw new AccountRequiredException();
+            handleConnectionErrors(br, con);
+            if (con.getCompleteContentLength() > 0) {
+                link.setVerifiedFileSize(con.getCompleteContentLength());
             }
         } finally {
             try {
@@ -241,11 +238,21 @@ public class BandCampCom extends PluginForHost {
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
-        if (!looksLikeDownloadableContent(dl.getConnection())) {
-            br.followConnection(true);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
+        handleConnectionErrors(br, dl.getConnection());
         dl.startDownload();
+    }
+
+    private void handleConnectionErrors(final Browser br, final URLConnectionAdapter con) throws PluginException, IOException {
+        if (!this.looksLikeDownloadableContent(con)) {
+            br.followConnection(true);
+            if (con.getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+            } else if (con.getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Video broken?");
+            }
+        }
     }
 
     public static String getFormattedFilename(final DownloadLink link) throws ParseException {

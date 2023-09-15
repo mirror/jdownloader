@@ -24,6 +24,7 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+import jd.plugins.decrypter.FrprnComCrawler;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class FrprnCom extends KernelVideoSharingComV2 {
@@ -64,15 +65,20 @@ public class FrprnCom extends KernelVideoSharingComV2 {
     @Override
     public void correctDownloadLink(final DownloadLink link) {
         /** 2021-03-02: Website is broken - only embed URLs are working! */
+        // TODO: Remove this and make use of getContentURL
         final String newURL = "https://" + this.getHost() + "/embed/" + this.getFUID(link);
         link.setPluginPatternMatcher(newURL);
         link.setContentUrl(newURL);
     }
 
     @Override
+    protected String getContentURL(final DownloadLink link) {
+        return "https://" + this.getHost() + "/embed/" + this.getFUID(link);
+    }
+
+    @Override
     protected String regexEmbedTitleWebsite(final Browser br) {
-        /* 2021-03-02 */
-        return br.getRegex("<title>(.*?)</title>").getMatch(0);
+        return FrprnComCrawler.regexTitle(br);
     }
 
     @Override

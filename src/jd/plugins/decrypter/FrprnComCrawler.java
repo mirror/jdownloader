@@ -63,12 +63,32 @@ public class FrprnComCrawler extends PornEmbedParser {
 
     @Override
     protected String getFileTitle(final CryptedLink param, final Browser br) {
-        return new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
+        String title = regexTitle(br);
+        if (title == null) {
+            title = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
+        }
+        return title;
+    }
+
+    public static String regexTitle(final Browser br) {
+        return br.getRegex("<title>(.*?)</title>").getMatch(0);
     }
 
     @Override
     protected boolean isOffline(final Browser br) {
         if (br.getHttpConnection().getResponseCode() == 404) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public static final String TYPE_EMBED = "(?:https?://[^/]+)?/embed/(\\d+)/?";
+
+    @Override
+    protected boolean isSelfhosted(final Browser br) {
+        final String embedURL = br.getRegex(FrprnComCrawler.TYPE_EMBED).getMatch(-1);
+        if (embedURL != null && embedURL.contains(br.getHost())) {
             return true;
         } else {
             return false;
