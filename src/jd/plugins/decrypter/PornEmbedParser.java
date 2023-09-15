@@ -67,20 +67,22 @@ public abstract class PornEmbedParser extends PluginForDecrypt {
         return false;
     }
 
-    /** Use this if you want to change the URL added by the user before processing it. */
-    protected void correctCryptedLink(final CryptedLink param) {
+    protected String getContentURL(final CryptedLink param) {
         final String addedLinkDomain = Browser.getHost(param.getCryptedUrl(), true);
         final ArrayList<String> deadDomains = this.getDeadDomains();
         if (deadDomains != null && deadDomains.contains(addedLinkDomain)) {
-            param.setCryptedUrl(param.getCryptedUrl().replaceFirst(Pattern.quote(addedLinkDomain), this.getHost()));
+            /* Change domain in URL. */
+            return param.getCryptedUrl().replaceFirst(Pattern.quote(addedLinkDomain), this.getHost());
         }
+        return param.getCryptedUrl();
     }
 
     protected ArrayList<DownloadLink> preProcessCryptedLink(final CryptedLink param) throws Exception {
         prepareBrowser(br);
+        final String contentURL = this.getContentURL(param);
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         if (returnRedirectToUnsupportedLinkAsResult()) {
-            br.getPage(param.getCryptedUrl());
+            br.getPage(contentURL);
             int redirectCounter = 0;
             while (true) {
                 if (br.getRedirectLocation() == null) {
@@ -102,7 +104,7 @@ public abstract class PornEmbedParser extends PluginForDecrypt {
             }
         } else {
             br.setFollowRedirects(true);
-            br.getPage(param.getCryptedUrl());
+            br.getPage(contentURL);
         }
         if (this.isOffline(br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

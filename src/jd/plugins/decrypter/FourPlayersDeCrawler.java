@@ -46,6 +46,7 @@ public class FourPlayersDeCrawler extends PluginForDecrypt {
         return ret;
     }
 
+    @Override
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }

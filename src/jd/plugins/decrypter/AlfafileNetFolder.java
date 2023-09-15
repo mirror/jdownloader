@@ -69,9 +69,9 @@ public class AlfafileNetFolder extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        param.setCryptedUrl(param.getCryptedUrl().replaceFirst("http://", "https://"));
+        final String url = param.getCryptedUrl().replaceFirst("(?i)http://", "https://");
         br.setFollowRedirects(true);
-        br.getPage(param.getCryptedUrl());
+        br.getPage(url);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }

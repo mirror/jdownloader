@@ -15,11 +15,8 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
-import java.io.IOException;
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -28,7 +25,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
 import org.appwork.storage.TypeRef;
-import org.appwork.utils.Files;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.plugins.controller.LazyPlugin;
@@ -38,14 +34,16 @@ import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
@@ -129,20 +127,45 @@ public class BandCampComDecrypter extends PluginForDecrypt {
             /* E.g. {"error":true} */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String audio_title = show.get("audio_title").toString();
+        // TODO: Maybe also/optinally add all audio tracks contained in that show. This would enable the user to also get all tracks
+        // individually and [optionally] with thumbnail.
+        // final List<Map<String, Object>> audiotracks = (List<Map<String, Object>>) show.get("tracks");
+        final String published_date = show.get("published_date").toString();
+        final long dateTimestamp = dateToTimestamp(published_date);
+        final String title = show.get("audio_title").toString();
         final Map<String, Object> audio_stream = (Map<String, Object>) show.get("audio_stream");
         final String directurl = audio_stream.get("mp3-128").toString();
-        final String desc = (String) show.get("desc");
         final DownloadLink showcomplete = this.createDownloadlink(DirectHTTP.createURLForThisPlugin(Encoding.htmlOnlyDecode(directurl)));
-        showcomplete.setFinalFileName(audio_title + ".mp3");
+        showcomplete.setProperty(BandCampCom.PROPERTY_FILE_TYPE, "mp3");
         final int duration = ((Number) show.get("audio_duration")).intValue();
         final long length = 128 * 1024l / 8 * duration;
         showcomplete.setDownloadSize(length);
-        showcomplete.setAvailable(true);
-        if (desc != null) {
-            showcomplete.setComment(desc);
-        }
         ret.add(showcomplete);
+        final String imageID = show.get("show_v2_image_id").toString();
+        final SubConfiguration cfg = SubConfiguration.getConfig(this.getHost());
+        final boolean grabThumbnail = cfg.getBooleanProperty(BandCampCom.GRABTHUMB, BandCampCom.defaultGRABTHUMB);
+        if (grabThumbnail) {
+            final String thumbnailURL = "https://f4.bcbits.com/img/" + imageID + "_0";
+            final DownloadLink thumb = createDownloadlink(DirectHTTP.createURLForThisPlugin(thumbnailURL));
+            thumb.setProperties(ret.get(0).getProperties());
+            thumb.setProperty(BandCampCom.PROPERTY_FILE_TYPE, "jpg");
+            ret.add(thumb);
+        }
+        for (final DownloadLink result : ret) {
+            result.setProperty(BandCampCom.PROPERTY_TITLE, title);
+            result.setProperty(BandCampCom.PROPERTY_DATE_TIMESTAMP, dateTimestamp);
+            result.setProperty(BandCampCom.PROPERTY_ALBUM_TRACK_POSITION, 0);
+            final String formattedFilename = BandCampCom.getFormattedFilename(result);
+            result.setFinalFileName(formattedFilename);
+            result.setAvailable(true);
+        }
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(getFormattedPackagename(ret.get(ret.size() - 1), cfg));
+        final String description = (String) show.get("desc");
+        if (!StringUtils.isEmpty(description)) {
+            fp.setComment(description);
+        }
+        fp.addLinks(ret);
         return ret;
     }
 
@@ -210,24 +233,25 @@ public class BandCampComDecrypter extends PluginForDecrypt {
         if (artist == null) {
             artist = br.getRegex("name\\s*=\\s*\"title\"\\s*content\\s*=\\s*\"[^\"]+,\\s*by\\s*([^<>\"]+)\\s*\"").getMatch(0);
         }
-        String album = (String) JavaScriptEngineFactory.walkJson(albumInfo, "inAlbum/name");
-        if (album == null) {
-            album = br.getRegex("<title>\\s*(.*?)\\s*\\|.*?</title>").getMatch(0);
-            if (album == null) {
-                album = br.getRegex("<title>\\s*(.*?)\\s*</title>").getMatch(0);
+        String albumTitle = (String) JavaScriptEngineFactory.walkJson(albumInfo, "inAlbum/name");
+        if (albumTitle == null) {
+            albumTitle = br.getRegex("<title>\\s*(.*?)\\s*\\|.*?</title>").getMatch(0);
+            if (albumTitle == null) {
+                albumTitle = br.getRegex("<title>\\s*(.*?)\\s*</title>").getMatch(0);
             }
         }
-        String date = (String) JavaScriptEngineFactory.walkJson(albumInfo, "datePublished");
-        if (date == null) {
-            date = br.getRegex("<meta itemprop=\"datePublished\" content=\"(\\d+)\"/>").getMatch(0);
+        final String dateStr = (String) JavaScriptEngineFactory.walkJson(albumInfo, "datePublished");
+        Long dateTimestamp = null;
+        if (dateStr != null) {
+            dateTimestamp = dateToTimestamp(dateStr);
         }
-        final List<Map<String, Object>> audios = (List<Map<String, Object>>) JavaScriptEngineFactory.jsonToJavaObject(json);
+        final List<Map<String, Object>> albumtracks = (List<Map<String, Object>>) JavaScriptEngineFactory.jsonToJavaObject(json);
         // keep old two digits for less than 10 items compatibility
-        final int padLength = Math.max(2, StringUtils.getPadLength(audios.size()));
         artist = Encoding.htmlDecode(artist).trim();
-        album = Encoding.htmlDecode(album).trim();
+        albumTitle = Encoding.htmlDecode(albumTitle).trim();
         final SubConfiguration cfg = SubConfiguration.getConfig(this.getHost());
-        for (final Map<String, Object> audio : audios) {
+        int tracknumber = 1;
+        for (final Map<String, Object> audio : albumtracks) {
             String contentUrl = (String) audio.get("title_link");
             final String title = (String) audio.get("title");
             final int duration = ((Number) audio.get("duration")).intValue();
@@ -240,21 +264,20 @@ public class BandCampComDecrypter extends PluginForDecrypt {
             }
             int track_num = JavaScriptEngineFactory.toInteger(audio.get("track_num"), -1);
             if (track_num == -1) {
+                /* Field with space (wtf) */
                 track_num = JavaScriptEngineFactory.toInteger(audio.get(" track_number"), -1);
             }
             final DownloadLink audiotrack = createDownloadlink(contentUrl);
-            audiotrack.setProperty("fromdecrypter", true);
-            audiotrack.setProperty("directdate", date);
-            audiotrack.setProperty("directartist", artist);
-            audiotrack.setProperty("directalbum", album);
-            audiotrack.setProperty("directname", title);
-            audiotrack.setProperty("type", "mp3");
-            audiotrack.setProperty("directtracknumber", StringUtils.formatByPadLength(padLength, track_num));
-            String formattedFilename = BandCampCom.getFormattedFilename(this, audiotrack);
+            audiotrack.setProperty(BandCampCom.PROPERTY_DATE_TIMESTAMP, dateTimestamp);
+            audiotrack.setProperty(BandCampCom.PROPERTY_ARTIST, artist);
+            audiotrack.setProperty(BandCampCom.PROPERTY_ALBUM_TITLE, albumTitle);
+            audiotrack.setProperty(BandCampCom.PROPERTY_TITLE, title);
+            audiotrack.setProperty(BandCampCom.PROPERTY_FILE_TYPE, "mp3");
+            audiotrack.setProperty(BandCampCom.PROPERTY_ALBUM_TRACK_POSITION, tracknumber);
+            audiotrack.setProperty(BandCampCom.PROPERTY_ALBUM_NUMBEROF_TRACKS, albumtracks.size());
+            String formattedFilename = BandCampCom.getFormattedFilename(audiotrack);
             audiotrack.setName(formattedFilename);
-            if (cfg.getBooleanProperty(BandCampCom.FASTLINKCHECK, BandCampCom.defaultFASTLINKCHECK)) {
-                audiotrack.setAvailable(true);
-            }
+            audiotrack.setAvailable(true);
             if (duration > 0) {
                 audiotrack.setDownloadSize(128 * 1024l / 8 * duration);
             }
@@ -283,82 +306,60 @@ public class BandCampComDecrypter extends PluginForDecrypt {
                                     final String videoURL = StringUtils.valueOfOrNull(photo.get("video_" + format + "_download"));
                                     if (StringUtils.isNotEmpty(videoURL)) {
                                         final DownloadLink videoEntry = createDownloadlink(brc.getURL(videoURL).toString());
-                                        videoEntry.setProperty("video_format", format);
+                                        /* Inherent all properties of corresponding audiotrack, then add video specific properties. */
+                                        videoEntry.setProperties(audiotrack.getProperties());
+                                        videoEntry.setProperty(BandCampCom.PROPERTY_VIDEO_FORMAT, format);
                                         final Object video_width = photo.get("video_" + format + "_width");
-                                        if (video_width != null) {
-                                            videoEntry.setProperty("video_width", video_width.toString());
-                                        }
                                         final Object video_height = photo.get("video_" + format + "_height");
+                                        if (video_width != null) {
+                                            videoEntry.setProperty(BandCampCom.PROPERTY_VIDEO_WIDTH, video_width.toString());
+                                        }
                                         if (video_height != null) {
-                                            videoEntry.setProperty("video_height", video_height.toString());
+                                            videoEntry.setProperty(BandCampCom.PROPERTY_VIDEO_HEIGHT, video_height.toString());
                                         }
                                         final long fileSize = JavaScriptEngineFactory.toLong(photo.get("video_" + format + "_size"), -1l);
                                         if (fileSize > 0) {
                                             videoEntry.setDownloadSize(fileSize);
                                         }
-                                        videoEntry.setProperty("fromdecrypter", true);
-                                        videoEntry.setProperty("directdate", date);
-                                        videoEntry.setProperty("directartist", artist);
-                                        videoEntry.setProperty("directalbum", album);
-                                        videoEntry.setProperty("directname", title);
-                                        String extension = Files.getExtension(videoURL);
-                                        if (extension == null) {
-                                            extension = "mp4";
+                                        String fileExtension = Plugin.getFileNameExtensionFromURL(videoURL);
+                                        if (fileExtension == null) {
+                                            fileExtension = "mp4";
                                         }
-                                        videoEntry.setProperty("type", extension);
-                                        videoEntry.setProperty("directtracknumber", StringUtils.formatByPadLength(padLength, track_num));
-                                        formattedFilename = BandCampCom.getFormattedFilename(this, videoEntry);
+                                        videoEntry.setProperty(BandCampCom.PROPERTY_FILE_TYPE, fileExtension);
+                                        formattedFilename = BandCampCom.getFormattedFilename(videoEntry);
                                         videoEntry.setFinalFileName(formattedFilename);
-                                        if (cfg.getBooleanProperty(BandCampCom.FASTLINKCHECK, BandCampCom.defaultFASTLINKCHECK)) {
-                                            videoEntry.setAvailable(true);
-                                            ret.add(videoEntry);
-                                        } else {
-                                            final Browser br2 = brc.cloneBrowser();
-                                            br2.setFollowRedirects(true);
-                                            URLConnectionAdapter con = null;
-                                            try {
-                                                con = br2.openHeadConnection(videoEntry.getPluginPatternMatcher());
-                                                if (looksLikeDownloadableContent(con)) {
-                                                    videoEntry.setAvailable(true);
-                                                    videoEntry.setVerifiedFileSize(con.getCompleteContentLength());
-                                                    ret.add(videoEntry);
-                                                }
-                                            } catch (IOException e) {
-                                                logger.log(e);
-                                            } finally {
-                                                if (con != null) {
-                                                    con.disconnect();
-                                                }
-                                            }
-                                        }
+                                        videoEntry.setAvailable(true);
+                                        ret.add(videoEntry);
                                     }
                                 }
                             }
-                        } catch (Exception e) {
+                        } catch (final Exception e) {
                             logger.log(e);
                             videoSupportBroken.set(getPluginVersionHash());
                         }
                     }
                 }
             }
+            tracknumber++;
         }
-        final boolean decryptThumb = cfg.getBooleanProperty(BandCampCom.GRABTHUMB, BandCampCom.defaultGRABTHUMB);
-        if (decryptThumb) {
-            String thumbnail = br.getRegex("<a class=\"popupImage\" href=\"(https?://[^<>\"]*?\\.jpg)\"").getMatch(0);
-            if (thumbnail != null) {
-                thumbnail = thumbnail.replaceFirst("(_\\d+)(\\.\\w+)$", "_0$2");
-                final DownloadLink thumb = createDownloadlink(thumbnail);
+        final boolean grabThumbnail = cfg.getBooleanProperty(BandCampCom.GRABTHUMB, BandCampCom.defaultGRABTHUMB);
+        if (grabThumbnail) {
+            String thumbnailURL = br.getRegex("(?i)<a class=\"popupImage\" href=\"(https?://[^<>\"]*?\\.jpg)\"").getMatch(0);
+            if (thumbnailURL != null) {
+                thumbnailURL = thumbnailURL.replaceFirst("(_\\d+)(\\.\\w+)$", "_0$2");
+                final DownloadLink thumb = createDownloadlink(thumbnailURL);
                 thumb.setProperties(ret.get(0).getProperties());
-                thumb.setProperty("type", "jpg");
-                thumb.removeProperty("directname");// only use album name for art
-                thumb.setProperty("directtracknumber", StringUtils.formatByPadLength(padLength, 0));
-                final String formattedFilename = BandCampCom.getFormattedFilename(this, thumb);
+                thumb.setProperty(BandCampCom.PROPERTY_FILE_TYPE, "jpg");
+                thumb.removeProperty(BandCampCom.PROPERTY_TITLE);// only use album name for art
+                thumb.setProperty(BandCampCom.PROPERTY_ALBUM_TRACK_POSITION, 0);
+                final String formattedFilename = BandCampCom.getFormattedFilename(thumb);
                 thumb.setFinalFileName(formattedFilename);
+                thumb.setAvailable(true);
                 ret.add(thumb);
             }
         }
         final FilePackage fp = FilePackage.getInstance();
-        final String formattedpackagename = getFormattedPackagename(this, cfg, artist, album, date);
+        final String formattedpackagename = getFormattedPackagename(ret.get(ret.size() - 1), cfg);
         if (!cfg.getBooleanProperty(BandCampCom.CLEANPACKAGENAME, BandCampCom.defaultCLEANPACKAGENAME)) {
             fp.setCleanupPackageName(false);
         } else {
@@ -368,57 +369,22 @@ public class BandCampComDecrypter extends PluginForDecrypt {
         fp.addLinks(ret);
         if (ret.isEmpty()) {
             logger.info("Failed to find any downloadable content: Empty album?");
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER);
         }
         return ret;
     }
 
-    public static String getFormattedPackagename(final PluginForDecrypt plugin, final SubConfiguration cfg, final String artist, final String album, final String dateString) throws ParseException {
-        String formattedpackagename = cfg.getStringProperty(BandCampCom.CUSTOM_PACKAGENAME, BandCampCom.defaultCustomPackagename);
-        if (formattedpackagename == null || formattedpackagename.equals("")) {
-            formattedpackagename = BandCampCom.defaultCustomPackagename;
-        }
-        if (!formattedpackagename.contains("*artist*") && !formattedpackagename.contains("*album*")) {
-            formattedpackagename = BandCampCom.defaultCustomPackagename;
-        }
-        if (dateString != null && formattedpackagename.contains("*date*")) {
-            Date date = TimeFormatter.parseDateString(dateString);
-            if (date == null) {
-                try {
-                    final SimpleDateFormat oldFormat = new SimpleDateFormat("yyyyMMdd");
-                    date = oldFormat.parse(dateString);
-                } catch (Exception e) {
-                    plugin.getLogger().log(e);
-                }
-            }
-            if (date != null) {
-                final String userDefinedDateFormat = cfg.getStringProperty(BandCampCom.CUSTOM_DATE, BandCampCom.defaultCUSTOM_DATE);
-                String formattedDate = null;
-                for (final String format : new String[] { userDefinedDateFormat, "yyyyMMdd" }) {
-                    if (format != null) {
-                        try {
-                            final SimpleDateFormat formatter = new SimpleDateFormat(userDefinedDateFormat);
-                            formattedDate = formatter.format(date);
-                            if (formattedDate != null) {
-                                break;
-                            }
-                        } catch (Exception e) {
-                            plugin.getLogger().log(e);
-                        }
-                    }
-                }
-                if (formattedDate != null) {
-                    formattedpackagename = formattedpackagename.replace("*date*", formattedDate);
-                } else {
-                    formattedpackagename = formattedpackagename.replace("*date*", "");
-                }
-            }
-        }
-        if (formattedpackagename.contains("*artist*")) {
-            formattedpackagename = formattedpackagename.replace("*artist*", artist);
+    public static final long dateToTimestamp(final String dateStr) {
+        return TimeFormatter.getMilliSeconds(dateStr, "dd MMM yyyy HH:mm:ss ZZZ", Locale.ENGLISH);
+    }
+
+    public static String getFormattedPackagename(final DownloadLink link, final SubConfiguration cfg) throws ParseException {
+        String formatString = cfg.getStringProperty(BandCampCom.CUSTOM_PACKAGENAME, BandCampCom.defaultCustomPackagename);
+        if (StringUtils.isEmpty(formatString)) {
+            formatString = BandCampCom.defaultCustomPackagename;
         }
         // Insert albumname at the end to prevent errors with tags
-        formattedpackagename = formattedpackagename.replace("*album*", album);
+        String formattedpackagename = BandCampCom.getFormattedBaseString(link, formatString);
         if (cfg.getBooleanProperty(BandCampCom.PACKAGENAMELOWERCASE, BandCampCom.defaultPACKAGENAMELOWERCASE)) {
             formattedpackagename = formattedpackagename.toLowerCase(Locale.ENGLISH);
         }

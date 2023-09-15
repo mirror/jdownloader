@@ -19,6 +19,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -30,15 +32,14 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.jdownloader.plugins.controller.LazyPlugin;
+import jd.plugins.decrypter.FreeViewMoviesComCrawler;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 @PluginDependencies(dependencies = { jd.plugins.decrypter.FreeViewMoviesComCrawler.class })
 public class FreeViewMoviesCom extends PluginForHost {
     private String              dllink      = null;
     public static final String  TYPE_EMBED  = "(?:https?://[^/]+)?/embed/(\\d+)/?";
-    private static final String TYPE_NORMAL = "(?:https?://[^/]+)?/video/(\\d+)/([a-z0-9\\-]+)";
+    private static final String TYPE_NORMAL = "(?:https?://[^/]+)?/videos?/(\\d+)/([a-z0-9\\-]+)";
 
     public FreeViewMoviesCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -50,7 +51,7 @@ public class FreeViewMoviesCom extends PluginForHost {
     }
 
     public static List<String[]> getPluginDomains() {
-        return jd.plugins.decrypter.FreeViewMoviesComCrawler.getPluginDomains();
+        return FreeViewMoviesComCrawler.getPluginDomains();
     }
 
     public static String[] getAnnotationNames() {
@@ -69,7 +70,7 @@ public class FreeViewMoviesCom extends PluginForHost {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:video/\\d+/[a-z0-9\\-]+|embed/\\d+/?)");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:videos?/\\d+/[a-z0-9\\-]+|embed/\\d+/?)");
         }
         return ret.toArray(new String[0]);
     }
@@ -152,19 +153,18 @@ public class FreeViewMoviesCom extends PluginForHost {
             link.setFinalFileName(titleByURL.replace("-", " ").trim() + ".mp4");
         }
         dllink = br.getRegex("<source src=\"(https?://[^\"]+freeviewmovies[^\"]+)\"[^>]*type=\"video/mp4").getMatch(0);
+        if (dllink == null) {
+            /* 2023-09-15 */
+            dllink = br.getRegex("\"contentUrl\"\\s*:\\s*\"(https?://[^\"]+)").getMatch(0);
+        }
         if (this.dllink != null) {
             br.setFollowRedirects(true);
             URLConnectionAdapter con = null;
             try {
                 con = br.openHeadConnection(dllink);
-                if (this.looksLikeDownloadableContent(con)) {
-                    if (con.getCompleteContentLength() > 0) {
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
-                    }
-                } else if (con.getResponseCode() == 404) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404");
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
+                handleConnectionErrors(br, con);
+                if (con.getCompleteContentLength() > 0) {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
                 }
             } finally {
                 try {
@@ -174,6 +174,19 @@ public class FreeViewMoviesCom extends PluginForHost {
             }
         }
         return AvailableStatus.TRUE;
+    }
+
+    private void handleConnectionErrors(final Browser br, final URLConnectionAdapter con) throws PluginException, IOException {
+        if (!this.looksLikeDownloadableContent(con)) {
+            br.followConnection(true);
+            if (con.getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+            } else if (con.getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Video broken?");
+            }
+        }
     }
 
     public static boolean isOffline(final Browser br) {
@@ -196,10 +209,7 @@ public class FreeViewMoviesCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
-        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            br.followConnection(true);
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
-        }
+        handleConnectionErrors(br, dl.getConnection());
         dl.startDownload();
     }
 

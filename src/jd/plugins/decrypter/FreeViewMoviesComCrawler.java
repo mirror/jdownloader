@@ -25,6 +25,7 @@ import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
+import jd.plugins.hoster.FreeViewMoviesCom;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class FreeViewMoviesComCrawler extends PornEmbedParser {
@@ -60,28 +61,43 @@ public class FreeViewMoviesComCrawler extends PornEmbedParser {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/video/(\\d+)/([a-z0-9\\-]+)");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/videos?/(\\d+)/([a-z0-9\\-]+)");
         }
         return ret.toArray(new String[0]);
     }
 
     @Override
     protected boolean isOffline(final Browser br) {
-        return jd.plugins.hoster.FreeViewMoviesCom.isOffline(br);
+        return FreeViewMoviesCom.isOffline(br);
     }
 
     @Override
     protected String getFileTitle(final CryptedLink param, final Browser br) {
         return new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(1).replace("-", " ").trim();
     }
+    // @Override
+    // protected boolean isSelfhosted(final Browser br) {
+    // final String embedURL = br.getRegex(FreeViewMoviesCom.TYPE_EMBED).getMatch(-1);
+    // if (embedURL != null && embedURL.contains(br.getHost())) {
+    // return true;
+    // } else {
+    // return false;
+    // }
+    // }
 
     @Override
-    protected boolean isSelfhosted(final Browser br) {
-        final String embedURL = br.getRegex(jd.plugins.hoster.FreeViewMoviesCom.TYPE_EMBED).getMatch(-1);
-        if (embedURL != null && embedURL.contains(br.getHost())) {
-            return true;
-        } else {
+    protected boolean allowResult(final String url) {
+        final String embedregex = "https?://(?:www\\.)?" + buildHostsPatternPart(getPluginDomains().get(0)) + "/embed/\\d+";
+        if (url.matches(embedregex)) {
+            /* Do not allow self-embedded URLs. */
             return false;
+        } else {
+            return super.allowResult(url);
         }
+    }
+
+    @Override
+    protected boolean assumeSelfhostedContentOnNoResults() {
+        return true;
     }
 }

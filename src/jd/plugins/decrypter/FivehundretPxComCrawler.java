@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
@@ -21,16 +20,23 @@ import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "500px.com" }, urls = { "https?://(?:www\\.)?500px\\.com/p/([^/\\?]+)(/galleries/[^/]+)?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "500px.com" }, urls = { "https?://(?:www\\.)?500px\\.com/p/([^/\\?]+).*" })
 public class FivehundretPxComCrawler extends PluginForDecrypt {
     public FivehundretPxComCrawler(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public void init() {
+        Browser.setRequestIntervalLimitGlobal("api.500px.com", 250);
     }
 
     @Override
@@ -81,7 +87,7 @@ public class FivehundretPxComCrawler extends PluginForDecrypt {
                 userID = "";
                 final Browser brc = br.cloneBrowser();
                 brc.getPage("https://api.500px.com/v1/users/search?term=" + URLEncode.encodeURIComponent(username));
-                final Map<String, Object> map = restoreFromString(brc.toString(), TypeRef.MAP);
+                final Map<String, Object> map = restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.MAP);
                 final List<Map<String, Object>> users = (List<Map<String, Object>>) map.get("users");
                 for (Map<String, Object> user : users) {
                     final String realUserName = StringUtils.valueOfOrNull(user.get("username"));
@@ -95,15 +101,9 @@ public class FivehundretPxComCrawler extends PluginForDecrypt {
             }
             if (StringUtils.isEmpty(userID)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else {
-                return userID;
             }
+            return userID;
         }
-    }
-
-    @Override
-    public void init() {
-        Browser.setRequestIntervalLimitGlobal("https://api.500px.com", 250);
     }
 
     private DownloadLink parsePhoto(Map<String, Object> photo, final String userID, final String userName) throws Exception {
@@ -132,26 +132,33 @@ public class FivehundretPxComCrawler extends PluginForDecrypt {
         return downloadLink;
     }
 
+    /** Docs of public API used down below: https://github.com/500px/legacy-api-documentation/tree/master */
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         photoBaseURL = new URL("https://" + this.getHost());
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
-        String userName = new Regex(param.toString(), this.getSupportedLinks()).getMatch(0);
-        final String userID = getUserID(br, param.toString(), userName);
-        userName = getUserName(userID);
-        if (param.toString().matches(".+/galleries/.+")) {
+        final String userNameFromURL = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
+        if (userNameFromURL == null) {
+            /* Developer mistake */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final String gallerySlug = new Regex(param.getCryptedUrl(), "(?i)/galleries/([\\w\\-]+)").getMatch(0);
+        final String userID = getUserID(br, param.getCryptedUrl(), userNameFromURL);
+        final String userName = getUserName(userID); // Now get serverside username with camelcase
+        final boolean isAllGalleriesOfAUser = gallerySlug == null && StringUtils.containsIgnoreCase(param.getCryptedUrl(), "?view=galleries");
+        final int itemsPerPage = 50;
+        if (gallerySlug != null) {
             /* Crawl a gallery of a user */
             String galleryName = null;
-            if (param.toString().matches(".+/featured")) {
+            if (param.getCryptedUrl().matches(".+/featured")) {
                 galleryName = br.getRegex("<option selected value='\\d+'>\\s*(.*?)\\s*</option").getMatch(0);
-                if (galleryName != null) {
-                    galleryName = galleryName.replace(" ", "").replace("-", "_");
-                } else {
+                if (galleryName == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
+                galleryName = galleryName.replace(" ", "").replace("-", "_");
             } else {
-                galleryName = new Regex(param.toString(), ".+/galleries/(.+)").getMatch(0);
+                galleryName = new Regex(param.getCryptedUrl(), ".+/galleries/(.+)").getMatch(0);
             }
             br.getPage("https://api.500px.com/v1/users/" + userID + "/galleries/" + galleryName + "?include_user=true&include_cover=1&cover_size=2048");
             checkErrorsAPI(br);
@@ -173,11 +180,12 @@ public class FivehundretPxComCrawler extends PluginForDecrypt {
                 }
             }
             fp.setName(fpName);
-            int page = 0;
+            fp.setPackageKey("500px://gallery/" + galleryID);
+            int page = 1;
             while (!isAbort()) {
-                br.getPage("https://api.500px.com/v1/users/" + userID + "/galleries/" + galleryID + "/items?rpp=50&image_size[]=1&image_size[]=2&image_size[]=32&image_size[]=31&image_size[]=33&image_size[]=34&image_size[]=35&image_size[]=36&image_size[]=2048&image_size[]=4&image_size[]=14&include_licensing=true&formats=jpeg,lytro&sort=position&sort_direction=asc&page=" + page++ + "&rpp=50");
+                br.getPage("https://api.500px.com/v1/users/" + userID + "/galleries/" + galleryID + "/items?rpp=" + itemsPerPage + "&image_size[]=1&image_size[]=2&image_size[]=32&image_size[]=31&image_size[]=33&image_size[]=34&image_size[]=35&image_size[]=36&image_size[]=2048&image_size[]=4&image_size[]=14&include_licensing=true&formats=jpeg,lytro&sort=position&sort_direction=asc&page=" + page + "&rpp=50");
                 checkErrorsAPI(br);
-                final Map<String, Object> map = restoreFromString(br.toString(), TypeRef.MAP);
+                final Map<String, Object> map = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
                 final List<Map<String, Object>> photos = (List<Map<String, Object>>) map.get("photos");
                 if (photos == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -189,25 +197,63 @@ public class FivehundretPxComCrawler extends PluginForDecrypt {
                     ret.add(downloadLink);
                 }
                 final Number total_pages = (Number) map.get("total_pages");
-                if (total_pages == null || page > total_pages.intValue()) {
+                logger.info("Crawled page " + page + "/" + total_pages + " | Found items so far: " + ret.size());
+                if (page >= total_pages.intValue()) {
+                    logger.info("Stopping because: Reached end");
+                    break;
+                } else {
+                    page++;
+                    continue;
+                }
+            }
+            if (ret.isEmpty()) {
+                throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER);
+            }
+        } else if (isAllGalleriesOfAUser) {
+            /* Crawl all galleries of a user */
+            int page = 1;
+            while (!isAbort()) {
+                br.getPage("https://api.500px.com/v1/users/" + userID + "/galleries?rpp=" + itemsPerPage + "&page=" + page++);
+                checkErrorsAPI(br);
+                final Map<String, Object> map = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+                final List<Map<String, Object>> galleries = (List<Map<String, Object>>) map.get("galleries");
+                if (galleries == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                for (final Map<String, Object> gallerymap : galleries) {
+                    /*
+                     * Do not set any FilePackage here as each gallery will go through this crawler again and go into its own package in the
+                     * end.
+                     */
+                    final DownloadLink gallery = this.createDownloadlink("https://" + this.getHost() + "/p/" + userNameFromURL + "/galleries/" + gallerymap.get("custom_path"));
+                    distribute(gallery);
+                    ret.add(gallery);
+                }
+                final Number total_pages = (Number) map.get("total_pages");
+                logger.info("Crawled page " + page + "/" + total_pages + " | Found items so far: " + ret.size());
+                if (page >= total_pages.intValue()) {
+                    logger.info("Stopping because: Reached end");
                     break;
                 }
+            }
+            if (ret.isEmpty()) {
+                throw new DecrypterRetryException(RetryReason.EMPTY_PROFILE);
             }
         } else {
             /* Crawl all images of a user */
             final FilePackage fp = FilePackage.getInstance();
-            if (StringUtils.isNotEmpty(userName)) {
-                fp.setName(userName);
-            }
+            fp.setName(userNameFromURL);
+            fp.setPackageKey("500px://user/" + userID);
             br.setAllowedResponseCodes(new int[] { 500 });
             int page = 0;
             while (!isAbort()) {
                 logger.info("Crawling page: " + page);
-                br.getPage("https://api.500px.com/v1/photos?feature=user&stream=photos&username=" + userName + "&include_states=true&image_size[]=1&image_size[]=2&image_size[]=32&image_size[]=31&image_size[]=33&image_size[]=34&image_size[]=35&image_size[]=36&image_size[]=2048&image_size[]=4&image_size[]=14&include_licensing=true&page=" + page++ + "&rpp=50");
+                br.getPage("https://api.500px.com/v1/photos?feature=user&stream=photos&username=" + userNameFromURL + "&include_states=true&image_size[]=1&image_size[]=2&image_size[]=32&image_size[]=31&image_size[]=33&image_size[]=34&image_size[]=35&image_size[]=36&image_size[]=2048&image_size[]=4&image_size[]=14&include_licensing=true&page=" + page++ + "&rpp=" + itemsPerPage);
                 checkErrorsAPI(br);
-                final Map<String, Object> map = restoreFromString(br.toString(), TypeRef.MAP);
+                final Map<String, Object> map = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
                 final List<Map<String, Object>> photos = (List<Map<String, Object>>) map.get("photos");
                 if (photos == null) {
+                    /* This should never happen! */
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 for (final Map<String, Object> photo : photos) {
@@ -217,9 +263,14 @@ public class FivehundretPxComCrawler extends PluginForDecrypt {
                     ret.add(downloadLink);
                 }
                 final Number total_pages = (Number) map.get("total_pages");
-                if (total_pages == null || page > total_pages.intValue()) {
+                logger.info("Crawled page " + page + "/" + total_pages + " | Found items so far: " + ret.size());
+                if (page >= total_pages.intValue()) {
+                    logger.info("Stopping because: Reached end");
                     break;
                 }
+            }
+            if (ret.isEmpty()) {
+                throw new DecrypterRetryException(RetryReason.EMPTY_PROFILE);
             }
         }
         return ret;
