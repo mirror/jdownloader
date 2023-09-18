@@ -1493,7 +1493,7 @@ public class GoogleDrive extends PluginForHost {
             this.handleErrorsAPI(this.br, link, account);
         }
         this.handleErrorsWebsite(this.br, link, account);
-        if (this.dl.getConnection().getResponseCode() == 416) {
+        if (this.dl != null && this.dl.getConnection().getResponseCode() == 416) {
             this.dl.getConnection().disconnect();
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 416", 5 * 60 * 1000l);
         } else {

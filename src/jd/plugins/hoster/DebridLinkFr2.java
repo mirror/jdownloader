@@ -25,23 +25,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
-import jd.PluginWrapper;
-import jd.http.Browser;
-import jd.nutils.encoding.Encoding;
-import jd.plugins.Account;
-import jd.plugins.Account.AccountType;
-import jd.plugins.AccountInfo;
-import jd.plugins.AccountUnavailableException;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
-import jd.plugins.components.MultiHosterManagement;
-
 import org.appwork.storage.JSonMapperException;
-import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
@@ -58,6 +42,21 @@ import org.jdownloader.plugins.components.realDebridCom.api.json.TokenResponse;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.controller.LazyPlugin;
+
+import jd.PluginWrapper;
+import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
+import jd.plugins.AccountUnavailableException;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
+import jd.plugins.components.MultiHosterManagement;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 4, names = { "debrid-link.fr" }, urls = { "" })
 public class DebridLinkFr2 extends PluginForHost {
@@ -193,11 +192,11 @@ public class DebridLinkFr2 extends PluginForHost {
             final boolean isFreeHost = ((Boolean) entries.get("isFree")).booleanValue();
             /* Don't add hosts if they are down or disabled, */
             if (status == -1 || status == 0) {
-                // logger.info("NOT adding host " + name + " to host array because it is down or disabled");
+                logger.info("NOT adding host " + hostname + " to host array because it is down or disabled");
                 continue;
             } else if (isFree && !isFreeHost) {
                 /* Don't add hosts which are not supported via the current account type - important for free accounts. */
-                // logger.info("NOT adding host " + name + " to host array because user has a free account and this is not a free host");
+                logger.info("NOT adding host " + hostname + " to host array because user has a free account and this is not a free host");
                 continue;
             } else {
                 /* Add all domains of this host */
@@ -263,8 +262,8 @@ public class DebridLinkFr2 extends PluginForHost {
             }
         }
         /**
-         * 2021-02-23: This service doesn't allow users to use it whenever they use a VPN/Proxy. </br> Accounts can be checked but downloads
-         * will not work!
+         * 2021-02-23: This service doesn't allow users to use it whenever they use a VPN/Proxy. </br>
+         * Accounts can be checked but downloads will not work!
          */
         if (serverDetected != null && serverDetected instanceof Boolean && ((Boolean) serverDetected).booleanValue()) {
             throw new AccountUnavailableException("VPN/Proxy detected: Turn it off to be able to use this account", 5 * 60 * 1000l);
@@ -409,13 +408,20 @@ public class DebridLinkFr2 extends PluginForHost {
     }
 
     /**
-     * Sets token validity. </br> 2021-02-19: Token validity is set to 1 month via: https://debrid-link.fr/webapp/account/apps
+     * Sets token validity. </br>
+     * 2021-02-19: Token validity is set to 1 month via: https://debrid-link.fr/webapp/account/apps
      */
     private void accountSetTokenValidity(final Account account, final long expiresIn) {
         account.setProperty(PROPERTY_ACCOUNT_ACCESS_TOKEN_TIMESTAMP_VALID_UNTIL, System.currentTimeMillis() + expiresIn * 1000l);
     }
 
     private Thread showPINLoginInformation(final String pin_url, final String user_code) {
+        final String pin_url_to_open_in_browser;
+        if (!pin_url.contains(user_code) && !pin_url.contains("#")) {
+            pin_url_to_open_in_browser = pin_url + "#?code=" + user_code;
+        } else {
+            pin_url_to_open_in_browser = pin_url;
+        }
         final Thread thread = new Thread() {
             public void run() {
                 try {
@@ -439,7 +445,7 @@ public class DebridLinkFr2 extends PluginForHost {
                     final ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, title, message);
                     dialog.setTimeout(2 * 60 * 1000);
                     if (CrossSystem.isOpenBrowserSupported() && !Application.isHeadless()) {
-                        CrossSystem.openURL(pin_url);
+                        CrossSystem.openURL(pin_url_to_open_in_browser);
                     }
                     final ConfirmDialogInterface ret = UIOManager.I().show(ConfirmDialogInterface.class, dialog);
                     ret.throwCloseExceptions();

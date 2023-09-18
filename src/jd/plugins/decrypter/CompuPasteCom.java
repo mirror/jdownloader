@@ -93,7 +93,16 @@ public class CompuPasteCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
-        br.getPage(param.getCryptedUrl());
+        String contenturl = param.getCryptedUrl();
+        if (this.getHost().equalsIgnoreCase("hopepaste.download")) {
+            contenturl = contenturl.replaceFirst("(?i)http://", "https://");
+        }
+        br.getPage(contenturl);
+        if (this.getHost().equalsIgnoreCase("hopepaste.download") && br.getHttpConnection().getResponseCode() == 403 && br.getURL().contains("/.?")) {
+            /* 2023-09-18: Small workaround for buggy website when redirect from http to https is supposed to happen. */
+            contenturl = br.getURL().replace("/.?", "/?");
+            br.getPage(contenturl);
+        }
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(?i)no existe\\s*<")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }

@@ -18,6 +18,9 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.HashSet;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -27,9 +30,6 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 /**
  *
@@ -41,7 +41,7 @@ import org.jdownloader.plugins.controller.LazyPlugin;
  * @author raztoki
  *
  */
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rawBase64", "noriskdomain.com", "yourporntube.com", "djurl.com", "hbrowse.com", "bookgn.com", "vip-files.net", "psdkeys.com", "hovatek.com", "ctvout.buzz" }, urls = { "(^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$)", "https?://(?:www\\.)?noriskdomain\\.com/[a-f0-9]{32}/analyze\\?u=([a-zA-Z0-9_/\\+\\=\\-%]+)", "https?://(?:www\\.)?yourporntube\\.com/video/\\?id=([a-zA-Z0-9_/\\+\\=\\-%]+)", "https?://(?:\\w+\\.)?djurl\\.com/\\?r=([a-zA-Z0-9_/\\+\\=\\-%]+)", "https?://(?:\\w+\\.)?hbrowse\\.com/redirect/([a-zA-Z0-9_/\\+\\=\\-%]+)", "http://(?:www\\.)?bookgn\\.com/engine/go\\.php\\?url=([a-zA-Z0-9_/\\+\\=\\-%]+)", "http://(?:www\\.)?vip-files\\.net/download\\.php\\?e=([a-zA-Z0-9_/\\+\\=\\-%]+)", "https?://(?:www\\.)?psdkeys\\.com/engine/go\\.php\\?url=([a-zA-Z0-9_/\\+\\=\\-%]+)",
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rawBase64", "noriskdomain.com", "yourporntube.com", "djurl.com", "hbrowse.com", "bookgn.com", "vip-files.net", "psdkeys.com", "hovatek.com", "ctvout.buzz" }, urls = { "(^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$)", "https?://(?:www\\.)?noriskdomain\\.com/[a-f0-9]{32}/analyze\\?u=([a-zA-Z0-9_/\\+\\=\\-%]+)", "https?://(?:www\\.)?yourporntube\\.com/video/\\?id=([a-zA-Z0-9_/\\+\\=\\-%]+)", "https?://(?:\\w+\\.)?djurl\\.com/\\?r=([a-zA-Z0-9_/\\+\\=\\-%]+)", "https?://(?:\\w+\\.)?hbrowse\\.com/redirect/([a-zA-Z0-9_/\\+\\=\\-%]+)", "https?://(?:www\\.)?bookgn\\.com/engine/go\\.php\\?url=([a-zA-Z0-9_/\\+\\=\\-%]+)", "http://(?:www\\.)?vip-files\\.net/download\\.php\\?e=([a-zA-Z0-9_/\\+\\=\\-%]+)", "https?://(?:www\\.)?psdkeys\\.com/engine/go\\.php\\?url=([a-zA-Z0-9_/\\+\\=\\-%]+)",
         "https?://(?:www\\.)?hovatek\\.com/redirectcode\\.php\\?link=([a-zA-Z0-9_/\\+\\=\\-%]+)", "https?://(?:www\\.)?ctvout\\.buzz/#([a-zA-Z0-9_/\\+\\=\\-%]+)" })
 public class GenericBase64Decrypter extends PluginForDecrypt {
     @Override
