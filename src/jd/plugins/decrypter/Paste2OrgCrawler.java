@@ -74,7 +74,7 @@ public class Paste2OrgCrawler extends AbstractPastebinCrawler {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String text = br.getRegex("(?i)<ol class='highlight code'>(.*?)</div></li></ol>").getMatch(0);
+        String text = br.getRegex("(?i)<ol class=.highlight code.[^>]*>(.*?)</div></li></ol>").getMatch(0);
         if (text == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

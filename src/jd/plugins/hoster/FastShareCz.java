@@ -26,6 +26,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 
 import jd.PluginWrapper;
+import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
@@ -100,9 +101,18 @@ public class FastShareCz extends PluginForHost {
         return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
+    private String getContentURL(final DownloadLink link) {
+        return link.getPluginPatternMatcher().replaceFirst("(?i)http://", "https://");
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        return requestFileInformation(link, null);
+        /*
+         * 2023-09-18: Only registered users can see/download files. For non-logged-in-users it seems like all files are displayed as
+         * offline (website redirects to mainpage).
+         */
+        final Account account = AccountController.getInstance().getValidAccount(this.getHost());
+        return requestFileInformation(link, account);
     }
 
     private AvailableStatus requestFileInformation(final DownloadLink link, final Account account) throws Exception {
@@ -113,7 +123,8 @@ public class FastShareCz extends PluginForHost {
             this.login(account, false);
         }
         br.setFollowRedirects(true);
-        br.getPage(link.getPluginPatternMatcher().replaceFirst("http://", "https://"));
+        final String contenturl = getContentURL(link);
+        br.getPage(contenturl);
         int numberofRedirects = 0;
         do {
             final String redirect = br.getRequest().getHTMLRefresh();
@@ -227,16 +238,16 @@ public class FastShareCz extends PluginForHost {
                 br.setCustomCharset("utf-8");
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
-                    br.setCookies(getHost(), cookies);
+                    setCookies(br, cookies);
                     if (!force) {
-                        logger.info("Trust cookies without checking");
+                        /* Do not validate cookies. */
                         return;
                     }
                     logger.info("Attempting cookie login...");
                     br.getPage("https://" + this.getHost() + "/user");
                     if (this.isLoggedIN(br)) {
                         logger.info("Cookie login successful");
-                        account.saveCookies(br.getCookies(br.getURL()), "");
+                        account.saveCookies(br.getCookies(br.getHost()), "");
                         return;
                     } else {
                         logger.info("Cookie login failed");
@@ -252,12 +263,23 @@ public class FastShareCz extends PluginForHost {
                 if (!isLoggedIN(br)) {
                     throw new AccountInvalidException();
                 }
-                account.saveCookies(br.getCookies(getHost()), "");
+                final Cookies freshCookies = br.getCookies(br.getHost());
+                account.saveCookies(freshCookies, "");
+                setCookies(br, freshCookies);
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
                     account.clearCookies("");
                 }
                 throw e;
+            }
+        }
+    }
+
+    /** Sets given cookies on all domains we support. */
+    private void setCookies(final Browser br, final Cookies cookies) {
+        for (final String[] domains : getPluginDomains()) {
+            for (final String domain : domains) {
+                br.setCookies(domain, cookies);
             }
         }
     }
@@ -325,7 +347,7 @@ public class FastShareCz extends PluginForHost {
             requestFileInformation(link);
             login(account, false);
             br.setFollowRedirects(false);
-            br.getPage(link.getPluginPatternMatcher().replaceFirst("http://", "https://"));
+            br.getPage(getContentURL(link));
             checkErrors(br, link, account);
             /* Maybe user has direct downloads active */
             String dllink = br.getRedirectLocation();

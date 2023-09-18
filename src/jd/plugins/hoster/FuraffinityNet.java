@@ -15,6 +15,12 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
+import java.util.Locale;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -32,13 +38,10 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
+import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "furaffinity.net" }, urls = { "https?://(?:www\\.)?furaffinity\\.net/view/(\\d+)" })
-public class FuraffinityNet extends antiDDoSForHost {
+public class FuraffinityNet extends PluginForHost {
     public FuraffinityNet(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.furaffinity.net/register");
@@ -86,7 +89,7 @@ public class FuraffinityNet extends antiDDoSForHost {
         dllink = null;
         br.setFollowRedirects(true);
         br.setAllowedResponseCodes(new int[] { 503 });
-        getPage(link.getPluginPatternMatcher());
+        br.getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 503) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error 503 too many requests", 5 * 60 * 1000l);
         } else if (br.getHttpConnection().getResponseCode() == 404 || !br.getURL().contains(this.getFID(link)) || br.containsHTML("<(title|h2)>\\s*System Error")) {
@@ -120,11 +123,10 @@ public class FuraffinityNet extends antiDDoSForHost {
             try {
                 final Browser br2 = br.cloneBrowser();
                 br2.setFollowRedirects(true);
-                con = openAntiDDoSRequestConnection(br2, br2.createHeadRequest(dllink));
-                if (!this.looksLikeDownloadableContent(con)) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Broken media file?");
-                } else {
-                    link.setDownloadSize(con.getCompleteContentLength());
+                con = br.openHeadConnection(dllink);
+                handleConnectionErrors(br, con);
+                if (con.getCompleteContentLength() > 0) {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
                 }
             } finally {
                 try {
@@ -134,6 +136,16 @@ public class FuraffinityNet extends antiDDoSForHost {
             }
         }
         return AvailableStatus.TRUE;
+    }
+
+    @Override
+    protected boolean looksLikeDownloadableContent(final URLConnectionAdapter con) {
+        final boolean expectsTextContent = con.getURL().toExternalForm().toLowerCase(Locale.ENGLISH).contains(".txt");
+        if (expectsTextContent && con.getContentType().contains("text")) {
+            return true;
+        } else {
+            return super.looksLikeDownloadableContent(con);
+        }
     }
 
     @Override
@@ -156,17 +168,21 @@ public class FuraffinityNet extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
-        if (!looksLikeDownloadableContent(dl.getConnection())) {
+        handleConnectionErrors(br, dl.getConnection());
+        dl.startDownload();
+    }
+
+    private void handleConnectionErrors(final Browser br, final URLConnectionAdapter con) throws PluginException, IOException {
+        if (!this.looksLikeDownloadableContent(con)) {
             br.followConnection(true);
-            if (dl.getConnection().getResponseCode() == 403) {
+            if (con.getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
+            } else if (con.getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             } else {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Broken file?");
             }
         }
-        dl.startDownload();
     }
 
     public boolean login(final Account account, final boolean force) throws Exception {
@@ -186,7 +202,7 @@ public class FuraffinityNet extends antiDDoSForHost {
                     if (this.isLoggedin(br)) {
                         logger.info("Cookie login successful");
                         /* Refresh cookie timestamp */
-                        account.saveCookies(this.br.getCookies(this.getHost()), "");
+                        account.saveCookies(this.br.getCookies(br.getHost()), "");
                         return true;
                     } else {
                         logger.info("Cookie login failed");
@@ -200,27 +216,15 @@ public class FuraffinityNet extends antiDDoSForHost {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 /* Handle login-captcha if required */
-                final DownloadLink dlinkbefore = this.getDownloadLink();
-                try {
-                    final DownloadLink dl_dummy;
-                    if (dlinkbefore != null) {
-                        dl_dummy = dlinkbefore;
-                    } else {
-                        dl_dummy = new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true);
-                        this.setDownloadLink(dl_dummy);
-                    }
-                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-                    loginform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-                } finally {
-                    this.setDownloadLink(dlinkbefore);
-                }
+                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                loginform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                 loginform.put("name", Encoding.urlEncode(account.getUser()));
                 loginform.put("pass", Encoding.urlEncode(account.getPass()));
                 br.submitForm(loginform);
                 if (!isLoggedin(br)) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-                account.saveCookies(this.br.getCookies(this.getHost()), "");
+                account.saveCookies(this.br.getCookies(br.getHost()), "");
                 return true;
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
@@ -241,7 +245,6 @@ public class FuraffinityNet extends antiDDoSForHost {
         login(account, true);
         ai.setUnlimitedTraffic();
         account.setType(AccountType.FREE);
-        ai.setStatus("Registered (free) user");
         return ai;
     }
 

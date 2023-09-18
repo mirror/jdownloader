@@ -38,10 +38,11 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uploadonall.com" }, urls = { "https?://(www\\.)?uploadonall\\.com/(download|files)/[A-Z0-9]{8}" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uploadonall.com" }, urls = { "https?://(?:www\\.)?uploadonall\\.com/((download|files)/|download\\.php\\?uid=)[A-Z0-9]{8}" })
 public class GeneralMultiuploadDecrypter extends antiDDoSForDecrypt {
     public GeneralMultiuploadDecrypter(PluginWrapper wrapper) {
         super(wrapper);
@@ -70,62 +71,55 @@ public class GeneralMultiuploadDecrypter extends antiDDoSForDecrypt {
 
     // This decrypter should handle nearly all sites using the qooy.com script!
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
-        br = new Browser();
         this.param = param;
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final LinkedHashSet<String> dupeList = new LinkedHashSet<String>();
-        Browser brc;
-        final String parameter = param.toString().replaceAll("(/dl/|/mirror/|/download/)", "/files/");
+        final String parameter = param.getCryptedUrl().replaceAll("(/dl/|/mirror/|/download/)", "/files/");
         String id = new Regex(parameter, "https?://.+/(\\?go=|download\\.php\\?uid=)?([0-9A-Za-z]{8,18})").getMatch(1);
         // This should never happen but in case a dev changes the plugin without
         // much testing he'll see the error later!
         if (id == null) {
-            logger.warning("A critical error happened! Please inform the support. : " + param.toString());
-            return null;
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         String customFileName = null;
-        brc = br.cloneBrowser();
-        getPage(brc, Request.getLocation("/status.php?uid=" + id, br.createGetRequest(parameter)));
+        getPage(br, Request.getLocation("/status.php?uid=" + id, br.createGetRequest(parameter)));
         /* Error handling */
-        if (!br.containsHTML("<img src=") && !br.containsHTML("<td class=\"host\">")) {
-            logger.info("The following link should be offline: " + param.toString());
-            decryptedLinks.add(createOfflinelink(parameter));
-            return decryptedLinks;
-        }
+        final boolean looksLikeOffline = !br.containsHTML("<img src=") && !br.containsHTML("<td class=\"host\">");
         br.setFollowRedirects(false);
-        final ArrayList<String> redirectLinks = getRedirectsLinks(brc);
+        final ArrayList<String> redirectLinks = getRedirectsLinks(br);
         if (redirectLinks == null || redirectLinks.isEmpty()) {
             // So far only tested for maxmirror.com, happens when all links have "Unavailable" status
             // and go4up.com when all links have !"ok" status
-            if (br.containsHTML("<td><img src=/images/Upload\\.gif") || notOK) {
-                logger.info("All links are unavailable: " + parameter);
-                decryptedLinks.add(createOfflinelink(parameter));
-                return decryptedLinks;
+            if (looksLikeOffline) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (br.containsHTML("<td><img src=/images/Upload\\.gif") || notOK) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             throw new DecrypterException("Decrypter broken for link: " + parameter);
         }
         logger.info("Found " + redirectLinks.size() + " " + " links to decrypt...");
         String fileName = customFileName;
+        int numberofUnavailableItems = 0;
         for (String singleLink : redirectLinks) {
             if (!dupeList.add(singleLink)) {
                 continue;
             }
             singleLink = singleLink.replace("\"", "").trim();
-            brc = br.cloneBrowser();
             String dllink = null;
             // Handling for links that need to be regexed or that need to be get by redirect
             if (singleLink.matches("(?i)/(redirect|rd?|dl|mirror).+")) {
-                getPage(brc, singleLink);
-                handleCaptcha(brc);
-                dllink = decryptLink(brc, parameter);
+                getPage(br, singleLink);
+                handleCaptcha(br);
+                dllink = decryptLink(br, parameter);
             } else {
                 // Handling for already regexed final-links
                 dllink = singleLink;
             }
             if (dllink == null || dllink.equals("")) {
                 // Continue away, randomised pages can cause failures.
-                if (brc.containsHTML("Error link not available")) {
+                if (br.containsHTML("Error link not available")) {
                     logger.info("No link Available");
+                    numberofUnavailableItems++;
                 } else {
                     logger.warning("Possible plugin error: " + param.toString());
                 }
@@ -136,10 +130,13 @@ public class GeneralMultiuploadDecrypter extends antiDDoSForDecrypt {
             if (fileName != null) {
                 link.setName(fileName);
             }
-            decryptedLinks.add(link);
+            ret.add(link);
         }
-        logger.info("Task Complete! : " + param.toString());
-        return decryptedLinks;
+        if (numberofUnavailableItems == redirectLinks.size()) {
+            /* All items are unavailable -> Content is offline. */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        return ret;
     }
 
     /**

@@ -37,7 +37,7 @@ public class GdflixCoCrawler extends PluginForDecrypt {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "gdflix.co" });
+        ret.add(new String[] { "gdflix.co", "gdflix.cc" });
         return ret;
     }
 
