@@ -76,23 +76,23 @@ public class SerienStreamTo extends PluginForDecrypt {
         return ret.toArray(new String[0]);
     }
 
-    private final String TYPE_SINGLE_REDIRECT = "https?://[^/]+/redirect/(\\d+).*";
+    private final String TYPE_SINGLE_REDIRECT = "(?i)https?://[^/]+/redirect/(\\d+).*";
 
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
-        /* 2021-11-08: Do NOT enforce HTTPS! */
-        param.setCryptedUrl(param.getCryptedUrl().replaceAll("[/]+$", ""));
+        final String contenturl = param.getCryptedUrl().replaceAll("[/]+$", "");
         if (param.getCryptedUrl().matches(TYPE_SINGLE_REDIRECT)) {
             final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-            ret.add(this.crawlSingleRedirect(param.getCryptedUrl(), br));
+            ret.add(this.crawlSingleRedirect(contenturl, br));
             return ret;
         } else {
-            return this.crawlMirrors(param);
+            return this.crawlMirrors(contenturl);
         }
     }
 
     private DownloadLink crawlSingleRedirect(String url, final Browser br) throws PluginException, InterruptedException, DecrypterException, IOException {
         br.setFollowRedirects(false);
+        /* Enforce https */
         url = url.replaceFirst("http://", "https://");
         final String initialHost = Browser.getHost(url, true);
         String redirectPage = br.getPage(url);
@@ -129,9 +129,9 @@ public class SerienStreamTo extends PluginForDecrypt {
         return createDownloadlink(finallink);
     }
 
-    private ArrayList<DownloadLink> crawlMirrors(final CryptedLink param) throws PluginException, InterruptedException, DecrypterException, IOException {
+    private ArrayList<DownloadLink> crawlMirrors(final String contenturl) throws PluginException, InterruptedException, DecrypterException, IOException {
         br.setFollowRedirects(true);
-        br.getPage(param.getCryptedUrl());
+        br.getPage(contenturl);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }

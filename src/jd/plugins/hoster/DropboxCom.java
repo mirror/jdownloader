@@ -48,7 +48,6 @@ import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.AccountInvalidException;
-import jd.plugins.DefaultEditAccountPanel;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -102,11 +101,11 @@ public class DropboxCom extends PluginForHost {
     }
 
     @Override
-    public AccountBuilderInterface getAccountFactory(InputChangedCallbackInterface callback) {
+    public AccountBuilderInterface getAccountFactory(final InputChangedCallbackInterface callback) {
         if (useAPI()) {
             return new DropboxAccountFactory(callback);
         } else {
-            return new DefaultEditAccountPanel(callback, !getAccountwithoutUsername());
+            return super.getAccountFactory(callback);
         }
     }
 
