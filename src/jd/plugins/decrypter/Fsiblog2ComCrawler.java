@@ -40,7 +40,7 @@ public class Fsiblog2ComCrawler extends PluginForDecrypt {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "fsiblog2.com" });
+        ret.add(new String[] { "fsiblog.club", "fsiblog2.com" });
         return ret;
     }
 
@@ -66,19 +66,19 @@ public class Fsiblog2ComCrawler extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
         br.getPage(param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String titleFromURL = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(1).replace("-", " ").trim();
         final String videoURL = br.getRegex("\"(https?://[^\"]+\\.mp4)").getMatch(0);
         if (videoURL != null) {
             final DownloadLink video = this.createDownloadlink(videoURL);
             video.setFinalFileName(titleFromURL + ".mp4");
             video.setAvailable(true);
-            decryptedLinks.add(video);
+            ret.add(video);
         } else {
             final String[] photos = br.getRegex("class=\"e-gallery-item elementor-gallery-item elementor-animated-content\" href=\"(https?://[^\"]+)\"").getColumn(0);
             if (photos.length == 0) {
@@ -87,12 +87,12 @@ public class Fsiblog2ComCrawler extends PluginForDecrypt {
             for (final String singleLink : photos) {
                 final DownloadLink link = createDownloadlink(singleLink);
                 link.setAvailable(true);
-                decryptedLinks.add(link);
+                ret.add(link);
             }
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(titleFromURL);
-        fp.addLinks(decryptedLinks);
-        return decryptedLinks;
+        fp.addLinks(ret);
+        return ret;
     }
 }

@@ -19,6 +19,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.requests.PutRequest;
@@ -30,10 +34,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.FromsmashComFolder;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class FromsmashCom extends PluginForHost {
@@ -65,7 +65,7 @@ public class FromsmashCom extends PluginForHost {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/([^/]+)#fileid=([A-Za-z0-9\\-_]+)");
+            ret.add("https?://(?:[\\w\\-]+\\.)?" + buildHostsPatternPart(domains) + "/([^/]+)#fileid=([A-Za-z0-9\\-_]+)");
         }
         return ret.toArray(new String[0]);
     }
