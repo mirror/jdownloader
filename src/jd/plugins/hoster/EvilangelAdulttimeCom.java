@@ -26,8 +26,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class AdulttimeCom extends EvilangelCore {
-    public AdulttimeCom(PluginWrapper wrapper) {
+public class EvilangelAdulttimeCom extends EvilangelCore {
+    public EvilangelAdulttimeCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.adulttime.com/en/join");
     }

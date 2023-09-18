@@ -19,23 +19,23 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.jdownloader.plugins.components.config.EvilangelCoreConfig;
-import org.jdownloader.plugins.components.config.EvilangelCoreConfigXempireCom;
+import org.jdownloader.plugins.components.config.EvilangelCoreConfigFilthykingsCom;
 
 import jd.PluginWrapper;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class XempireCom extends EvilangelCore {
-    public XempireCom(PluginWrapper wrapper) {
+public class EvilangelFilthykingsCom extends EvilangelCore {
+    public EvilangelFilthykingsCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("https://www.xempire.com/en/join");
+        this.enablePremium("https://www.filthykings.com/en/join");
     }
 
     private static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "xempire.com" });
+        ret.add(new String[] { "filthykings.com" });
         return ret;
     }
 
@@ -62,6 +62,6 @@ public class XempireCom extends EvilangelCore {
 
     @Override
     public Class<? extends EvilangelCoreConfig> getConfigInterface() {
-        return EvilangelCoreConfigXempireCom.class;
+        return EvilangelCoreConfigFilthykingsCom.class;
     }
 }

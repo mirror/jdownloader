@@ -73,11 +73,11 @@ public class RapidGatorNetFolder extends antiDDoSForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        param.setCryptedUrl(param.getCryptedUrl().replace("http://", "https://"));
-        final String folderID = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
+        final String contenturl = param.getCryptedUrl().replaceFirst("(?i)http://", "https://");
+        final String folderID = new Regex(contenturl, this.getSupportedLinks()).getMatch(0);
         final RapidGatorNet plugin = (RapidGatorNet) this.getNewPluginForHostInstance(this.getHost());
         br.setFollowRedirects(true);
-        plugin.getPage(param.getCryptedUrl());
+        plugin.getPage(contenturl);
         String title = br.getRegex("(?i)Downloading\\s*:\\s*</strong>(.*?)</p>").getMatch(0);
         if (title == null) {
             title = br.getRegex("(?i)<title>Download file (.*?)</title>").getMatch(0);

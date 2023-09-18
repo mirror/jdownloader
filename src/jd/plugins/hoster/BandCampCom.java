@@ -281,7 +281,7 @@ public class BandCampCom extends PluginForHost {
         return formattedFilename;
     }
 
-    public static String getFormattedBaseString(final DownloadLink link, String formattedString) {
+    public static String getFormattedBaseString(final DownloadLink link, String formattedBaseString) {
         final String songTitle = link.getStringProperty(PROPERTY_TITLE);
         final String tracknumberFormatted = getFormattedTrackNumber(link);
         final String artist = link.getStringProperty(PROPERTY_ARTIST);
@@ -289,18 +289,6 @@ public class BandCampCom extends PluginForHost {
         final String video_width = link.getStringProperty(PROPERTY_VIDEO_WIDTH);
         final String video_height = link.getStringProperty(PROPERTY_VIDEO_HEIGHT);
         final SubConfiguration cfg = SubConfiguration.getConfig("bandcamp.com");
-        String formattedBaseString;
-        if (video_height != null || video_width != null) {
-            formattedBaseString = cfg.getStringProperty(CUSTOM_VIDEO_FILENAME_PATTERN, defaultCustomVideoFilename);
-            if (StringUtils.isEmpty(formattedBaseString)) {
-                formattedBaseString = defaultCustomVideoFilename;
-            }
-        } else {
-            formattedBaseString = cfg.getStringProperty(CUSTOM_FILENAME_PATTERN, defaultCustomFilename);
-            if (StringUtils.isEmpty(formattedBaseString)) {
-                formattedBaseString = defaultCustomFilename;
-            }
-        }
         String ext = link.getStringProperty(PROPERTY_FILE_TYPE);
         if (ext != null) {
             ext = "." + ext;

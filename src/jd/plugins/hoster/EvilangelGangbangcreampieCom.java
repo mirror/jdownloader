@@ -18,27 +18,24 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.Regex;
 import org.jdownloader.plugins.components.config.EvilangelCoreConfig;
-import org.jdownloader.plugins.components.config.EvilangelCoreConfigWicked;
+import org.jdownloader.plugins.components.config.EvilangelCoreConfigTabooheatCom;
 
 import jd.PluginWrapper;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class WickedCom extends EvilangelCore {
-    public WickedCom(PluginWrapper wrapper) {
+public class EvilangelGangbangcreampieCom extends EvilangelCore {
+    public EvilangelGangbangcreampieCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("https://www.wicked.com/en/join");
+        this.enablePremium("https://www.gangbangcreampie.com/en/join");
     }
-
-    private static final String URL_MOVIE = "https?://members\\.[^/]+/[a-z]{2}/movie/([A-Za-z0-9\\-_]+)/(\\d+)";
 
     private static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "wicked.com" });
+        ret.add(new String[] { "gangbangcreampie.com" });
         return ret;
     }
 
@@ -56,20 +53,6 @@ public class WickedCom extends EvilangelCore {
     }
 
     @Override
-    protected String getURLTitle(final DownloadLink link) {
-        if (link.getPluginPatternMatcher().matches(URL_MOVIE)) {
-            return new Regex(link.getPluginPatternMatcher(), URL_MOVIE).getMatch(0);
-        } else {
-            return super.getURLTitle(link);
-        }
-    }
-
-    @Override
-    protected boolean allowCookieLoginOnly() {
-        return true;
-    }
-
-    @Override
     public void reset() {
     }
 
@@ -79,6 +62,6 @@ public class WickedCom extends EvilangelCore {
 
     @Override
     public Class<? extends EvilangelCoreConfig> getConfigInterface() {
-        return EvilangelCoreConfigWicked.class;
+        return EvilangelCoreConfigTabooheatCom.class;
     }
 }

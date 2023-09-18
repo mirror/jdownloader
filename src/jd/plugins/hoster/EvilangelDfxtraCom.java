@@ -26,8 +26,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class DfxtraCom extends EvilangelCore {
-    public DfxtraCom(PluginWrapper wrapper) {
+public class EvilangelDfxtraCom extends EvilangelCore {
+    public EvilangelDfxtraCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.dfxtra.com/en/join");
     }

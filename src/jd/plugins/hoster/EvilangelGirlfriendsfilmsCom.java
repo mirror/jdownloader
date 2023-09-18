@@ -26,8 +26,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class GirlfriendsfilmsCom extends EvilangelCore {
-    public GirlfriendsfilmsCom(PluginWrapper wrapper) {
+public class EvilangelGirlfriendsfilmsCom extends EvilangelCore {
+    public EvilangelGirlfriendsfilmsCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.girlfriendsfilms.com/en/join");
     }

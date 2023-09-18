@@ -85,16 +85,15 @@ public class MirroredTo extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         try {
             this.param = param;
-            br = new Browser();
-            uid = new Regex(param.toString(), "([A-Z0-9]{8})$").getMatch(0);
+            uid = new Regex(param.getCryptedUrl(), "([A-Z0-9]{8})$").getMatch(0);
             decryptedLinks = new ArrayList<DownloadLink>();
             if (userAgent == null) {
                 userAgent = UserAgents.stringUserAgent();
             }
             br.getHeaders().put("User-Agent", userAgent);
-            if (param.toString().contains("/multilinks/")) {
+            if (param.getCryptedUrl().contains("/multilinks/")) {
                 br.setFollowRedirects(true);
-                br.getPage(param.toString());
+                br.getPage(param.getCryptedUrl());
                 final String[] urls = br.getRegex("(https?://[^<>\"]+/files/[^<>\"]+|https?://mir\\.cr/[A-Za-z0-9]+)").getColumn(0);
                 if (urls == null || urls.length == 0) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -105,10 +104,9 @@ public class MirroredTo extends PluginForDecrypt {
                 /* These URLs will go back into this decrypter! */
                 return decryptedLinks;
             }
-            final String parameter = "https://www.mirrored.to/download.php?uid=" + uid;
-            param.setCryptedUrl(parameter);
+            final String contenturl = "https://www.mirrored.to/download.php?uid=" + uid;
             br.setFollowRedirects(true);
-            br.getPage(parameter);
+            br.getPage(contenturl);
             br.setFollowRedirects(false);
             String filename = br.getRegex("<title>\\s*([^<>\"]*?)\\s*\\-\\s*Mirrored\\.to").getMatch(0);
             final String filesize = br.getRegex("<span>(\\d+(\\.\\d{1,2})? [MBTGK]+)</span><br>").getMatch(0);
@@ -200,7 +198,7 @@ public class MirroredTo extends PluginForDecrypt {
                     }
                 }
             }
-            logger.info("Task Complete! : " + parameter);
+            logger.info("Task Complete! : " + contenturl);
         } catch (final AbortException a) {
             logger.info("User Aborted task!");
         }
@@ -280,8 +278,7 @@ public class MirroredTo extends PluginForDecrypt {
             }
             if (StringUtils.isEmpty(dllink)) {
                 // Continue away, randomised pages can cause failures.
-                logger.warning("Possible plugin error: " + param.toString());
-                logger.warning("Continuing...");
+                logger.warning("Possible plugin error: " + br.getURL());
                 continue;
             }
             final DownloadLink dl = createDownloadlink(dllink);

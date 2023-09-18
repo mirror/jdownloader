@@ -26,16 +26,16 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class TabooheatCom extends EvilangelCore {
-    public TabooheatCom(PluginWrapper wrapper) {
+public class EvilangelGloryholesecretsCom extends EvilangelCore {
+    public EvilangelGloryholesecretsCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("https://www.tabooheat.com/en/join");
+        this.enablePremium("https://www.gangbangcreampie.com/en/join");
     }
 
     private static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "tabooheat.com" });
+        ret.add(new String[] { "gangbangcreampie.com" });
         return ret;
     }
 

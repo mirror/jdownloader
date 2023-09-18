@@ -26,8 +26,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class MypervyfamilyCom extends EvilangelCore {
-    public MypervyfamilyCom(PluginWrapper wrapper) {
+public class EvilangelMypervyfamilyCom extends EvilangelCore {
+    public EvilangelMypervyfamilyCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.mypervyfamily.com/en/join");
     }

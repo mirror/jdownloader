@@ -19,23 +19,24 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.jdownloader.plugins.components.config.EvilangelCoreConfig;
-import org.jdownloader.plugins.components.config.EvilangelCoreConfigFilthykingsCom;
+import org.jdownloader.plugins.components.config.EvilangelCoreConfigBlowpass;
 
 import jd.PluginWrapper;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class FilthykingsCom extends EvilangelCore {
-    public FilthykingsCom(PluginWrapper wrapper) {
+public class EvilangelBlowpassCom extends EvilangelCore {
+    public EvilangelBlowpassCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("https://www.filthykings.com/en/join");
+        this.enablePremium("https://www.blowpass.com/en/join");
     }
 
     private static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "filthykings.com" });
+        // also known as "throated.com"
+        ret.add(new String[] { "blowpass.com" });
         return ret;
     }
 
@@ -62,6 +63,6 @@ public class FilthykingsCom extends EvilangelCore {
 
     @Override
     public Class<? extends EvilangelCoreConfig> getConfigInterface() {
-        return EvilangelCoreConfigFilthykingsCom.class;
+        return EvilangelCoreConfigBlowpass.class;
     }
 }
