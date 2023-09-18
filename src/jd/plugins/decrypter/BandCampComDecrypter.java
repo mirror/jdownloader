@@ -127,40 +127,74 @@ public class BandCampComDecrypter extends PluginForDecrypt {
             /* E.g. {"error":true} */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        // TODO: Maybe also/optinally add all audio tracks contained in that show. This would enable the user to also get all tracks
-        // individually and [optionally] with thumbnail.
-        // final List<Map<String, Object>> audiotracks = (List<Map<String, Object>>) show.get("tracks");
+        final int showDurationSeconds = ((Number) show.get("audio_duration")).intValue();
         final String published_date = show.get("published_date").toString();
         final long dateTimestamp = dateToTimestamp(published_date);
-        final String title = show.get("audio_title").toString();
+        final String showTitle = show.get("audio_title").toString();
         final Map<String, Object> audio_stream = (Map<String, Object>) show.get("audio_stream");
         final String directurl = audio_stream.get("mp3-128").toString();
         final DownloadLink showcomplete = this.createDownloadlink(DirectHTTP.createURLForThisPlugin(Encoding.htmlOnlyDecode(directurl)));
         showcomplete.setProperty(BandCampCom.PROPERTY_FILE_TYPE, "mp3");
-        final int duration = ((Number) show.get("audio_duration")).intValue();
-        final long length = 128 * 1024l / 8 * duration;
-        showcomplete.setDownloadSize(length);
+        showcomplete.setProperty(BandCampCom.PROPERTY_TITLE, showTitle);
+        showcomplete.setProperty(BandCampCom.PROPERTY_DATE_TIMESTAMP, dateTimestamp);
+        showcomplete.setProperty(BandCampCom.PROPERTY_ALBUM_TRACK_POSITION, 0);
+        showcomplete.setDownloadSize(128 * 1024l / 8 * showDurationSeconds);
         ret.add(showcomplete);
+        /* Crawl individual tracks which were played in this show. */
+        final List<Map<String, Object>> audiotracks = (List<Map<String, Object>>) show.get("tracks");
+        for (int index = 0; index < audiotracks.size(); index++) {
+            /* Some tracks can be offline but we will set all items as online anyways because most of them can expected to be online. */
+            final Map<String, Object> trackmap = audiotracks.get(index);
+            final DownloadLink track = this.createDownloadlink(trackmap.get("track_url").toString());
+            track.setProperty(BandCampCom.PROPERTY_CONTENT_ID, trackmap.get("track_id"));
+            track.setProperty(BandCampCom.PROPERTY_ALBUM_ID, trackmap.get("album_id"));
+            track.setProperty(BandCampCom.PROPERTY_ARTIST, trackmap.get("artist"));
+            track.setProperty(BandCampCom.PROPERTY_ALBUM_TITLE, trackmap.get("album_title"));
+            track.setProperty(BandCampCom.PROPERTY_TITLE, trackmap.get("title"));
+            track.setProperty(BandCampCom.PROPERTY_FILE_TYPE, "mp3");
+            track.setProperty(BandCampCom.PROPERTY_ALBUM_TRACK_POSITION, index + 1);
+            track.setProperty(BandCampCom.PROPERTY_ALBUM_NUMBEROF_TRACKS, audiotracks.size());
+            /* Calculate track-duration */
+            final int timecode = ((Number) trackmap.get("timecode")).intValue();
+            final boolean isLastItem = index == audiotracks.size() - 1;
+            final int trackDurationSeconds;
+            if (isLastItem) {
+                trackDurationSeconds = showDurationSeconds - timecode;
+            } else {
+                /* Get timecode from next item to calculate duration of this item. */
+                final Map<String, Object> nextItem = audiotracks.get(index + 1);
+                trackDurationSeconds = ((Number) nextItem.get("timecode")).intValue() - timecode;
+            }
+            track.setDownloadSize(128 * 1024l / 8 * trackDurationSeconds);
+            ret.add(track);
+        }
+        /* Add thumbnail if user wants it. */
         final String imageID = show.get("show_v2_image_id").toString();
         final SubConfiguration cfg = SubConfiguration.getConfig(this.getHost());
         final boolean grabThumbnail = cfg.getBooleanProperty(BandCampCom.GRABTHUMB, BandCampCom.defaultGRABTHUMB);
         if (grabThumbnail) {
             final String thumbnailURL = "https://f4.bcbits.com/img/" + imageID + "_0";
             final DownloadLink thumb = createDownloadlink(DirectHTTP.createURLForThisPlugin(thumbnailURL));
-            thumb.setProperties(ret.get(0).getProperties());
+            thumb.setProperty(BandCampCom.PROPERTY_TITLE, showTitle);
+            thumb.setProperty(BandCampCom.PROPERTY_DATE_TIMESTAMP, dateTimestamp);
+            thumb.setProperty(BandCampCom.PROPERTY_ALBUM_TRACK_POSITION, 0);
             thumb.setProperty(BandCampCom.PROPERTY_FILE_TYPE, "jpg");
             ret.add(thumb);
         }
+        /* Add additional properties and set filename. */
         for (final DownloadLink result : ret) {
-            result.setProperty(BandCampCom.PROPERTY_TITLE, title);
-            result.setProperty(BandCampCom.PROPERTY_DATE_TIMESTAMP, dateTimestamp);
-            result.setProperty(BandCampCom.PROPERTY_ALBUM_TRACK_POSITION, 0);
             final String formattedFilename = BandCampCom.getFormattedFilename(result);
             result.setFinalFileName(formattedFilename);
             result.setAvailable(true);
         }
+        /* Set FilePackage with package name. */
         final FilePackage fp = FilePackage.getInstance();
-        fp.setName(getFormattedPackagename(ret.get(ret.size() - 1), cfg));
+        final String userDefinedPackagename = getFormattedPackagename(ret.get(ret.size() - 1), cfg);
+        if (!StringUtils.isEmpty(userDefinedPackagename)) {
+            fp.setName(userDefinedPackagename);
+        } else {
+            fp.setName(showTitle);
+        }
         final String description = (String) show.get("desc");
         if (!StringUtils.isEmpty(description)) {
             fp.setComment(description);
@@ -251,6 +285,7 @@ public class BandCampComDecrypter extends PluginForDecrypt {
         artist = Encoding.htmlDecode(artist).trim();
         albumTitle = Encoding.htmlDecode(albumTitle).trim();
         final SubConfiguration cfg = SubConfiguration.getConfig(this.getHost());
+        final boolean grabThumbnail = cfg.getBooleanProperty(BandCampCom.GRABTHUMB, BandCampCom.defaultGRABTHUMB);
         int tracknumber = 1;
         for (final Map<String, Object> audio : albumtracks) {
             String contentUrl = (String) audio.get("title_link");
@@ -343,7 +378,7 @@ public class BandCampComDecrypter extends PluginForDecrypt {
             }
             tracknumber++;
         }
-        final boolean grabThumbnail = cfg.getBooleanProperty(BandCampCom.GRABTHUMB, BandCampCom.defaultGRABTHUMB);
+        /* Single song or album thumbnail. */
         if (grabThumbnail) {
             String thumbnailURL = br.getRegex("(?i)<a class=\"popupImage\" href=\"(https?://[^<>\"]*?\\.jpg)\"").getMatch(0);
             if (thumbnailURL != null) {

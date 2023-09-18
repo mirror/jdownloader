@@ -99,8 +99,10 @@ public class BandCampCom extends PluginForHost {
     public static final String FILENAMESPACE                  = "FILENAMESPACE";
     public static final String PACKAGENAMESPACE               = "PACKAGENAMESPACE";
     public static final String CLEANPACKAGENAME               = "CLEANPACKAGENAME";
+    public static final String PROPERTY_CONTENT_ID            = "content_id";
     public static final String PROPERTY_TITLE                 = "directname";
     public static final String PROPERTY_ARTIST                = "directartist";
+    public static final String PROPERTY_ALBUM_ID              = "album_id";
     public static final String PROPERTY_ALBUM_TITLE           = "directalbum";
     public static final String PROPERTY_ALBUM_TRACK_POSITION  = "album_track_number";
     public static final String PROPERTY_ALBUM_NUMBEROF_TRACKS = "album_numberof_tracks";
@@ -119,6 +121,19 @@ public class BandCampCom extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return -1;
+    }
+
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String album_id = link.getStringProperty(PROPERTY_ALBUM_ID);
+        final String contentid = link.getStringProperty(PROPERTY_CONTENT_ID);
+        if (album_id != null && contentid != null) {
+            return "bandcamp://album/" + album_id + "/track/" + contentid;
+        } else if (contentid != null) {
+            return "bandcamp://track/" + contentid;
+        } else {
+            return super.getLinkID(link);
+        }
     }
 
     @Override
@@ -213,6 +228,10 @@ public class BandCampCom extends PluginForHost {
             link.setProperty(PROPERTY_ALBUM_TRACK_POSITION, tracknumber);
         }
         link.setProperty(PROPERTY_FILE_TYPE, "mp3");
+        final String trackID = br.getRegex("<\\!-- track id (\\d+) -->").getMatch(0);
+        if (trackID != null && !link.hasProperty(PROPERTY_CONTENT_ID)) {
+            link.setProperty(PROPERTY_CONTENT_ID, trackID);
+        }
         final String filename = getFormattedFilename(link);
         link.setFinalFileName(filename);
         // In case the link redirects to the finallink

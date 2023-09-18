@@ -22,6 +22,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.DebugMode;
@@ -112,6 +113,15 @@ public class XvideosComProfile extends PluginForDecrypt {
         return Browser.getHost(param.getCryptedUrl()).equals("xvideos.red");
     }
 
+    private String getContentURL(final CryptedLink param, final PluginForHost plg) {
+        for (final String deadDomain : ((XvideosCom) plg).getDeadDomains()) {
+            if (param.getCryptedUrl().contains(deadDomain)) {
+                return param.getCryptedUrl().replaceFirst(Pattern.quote(deadDomain) + "/", this.getHost() + "/");
+            }
+        }
+        return param.getCryptedUrl();
+    }
+
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final String singleVideoQuickieVideoID = new Regex(param.getCryptedUrl(), TYPE_SINGLE_VIDEO_QUICKIE).getMatch(0);
         if (singleVideoQuickieVideoID != null) {
@@ -125,19 +135,14 @@ public class XvideosComProfile extends PluginForDecrypt {
          * domain for such cases
          */
         final PluginForHost plg = this.getNewPluginForHostInstance(this.getHost());
-        for (final String deadDomain : ((jd.plugins.hoster.XvideosCom) plg).getDeadDomains()) {
-            if (param.getCryptedUrl().contains(deadDomain)) {
-                param.setCryptedUrl(param.getCryptedUrl().replaceFirst(org.appwork.utils.Regex.escape(deadDomain) + "/", this.getHost() + "/"));
-                break;
-            }
-        }
+        final String contenturl = getContentURL(param, plg);
         final boolean accountRequired = this.requiresAccount(param);
         final boolean premiumAccountRequired = this.requiresPremiumAccount(param);
         br.addAllowedResponseCodes(new int[] { 400 });
         br.setFollowRedirects(true);
         final Account account = AccountController.getInstance().getValidAccount(getHost());
         if (account != null) {
-            ((jd.plugins.hoster.XvideosCom) plg).login(account, false);
+            ((XvideosCom) plg).login(account, false);
         }
         if (accountRequired && account == null) {
             /* Account required! */
@@ -146,8 +151,8 @@ public class XvideosComProfile extends PluginForDecrypt {
             logger.info("Account available but free account and premium is required to crawl current URL");
             throw new AccountRequiredException();
         }
-        XvideosCom.disableAutoTranslation(this, Browser.getHost(param.getCryptedUrl()), br);
-        br.getPage(param.getCryptedUrl());
+        XvideosCom.disableAutoTranslation(this, Browser.getHost(contenturl), br);
+        br.getPage(contenturl);
         if (br.getHttpConnection().getResponseCode() == 403) {
             /* E.g. no permission to access private favorites list of another user. */
             throw new AccountRequiredException();
@@ -161,14 +166,15 @@ public class XvideosComProfile extends PluginForDecrypt {
         } else if (param.getCryptedUrl().matches(TYPE_FAVOURITES_ACCOUNT)) {
             if (account == null) {
                 throw new AccountRequiredException();
+            } else {
+                return crawlFavouritesAccount(param);
             }
-            return crawlFavouritesAccount(param);
-        } else if (param.getCryptedUrl().matches(".+/photos/.+")) {
-            return crawlPhotos(param.getCryptedUrl());
+        } else if (param.getCryptedUrl().matches("(?i).+/photos/.+")) {
+            return crawlPhotos(contenturl);
         } else if ((param.getCryptedUrl().matches(TYPE_USER) && premiumAccountActive) || param.getCryptedUrl().matches(TYPE_USER_PREMIUM)) {
             return crawlChannelPremium(param);
         } else {
-            return crawlChannel(param.getCryptedUrl());
+            return crawlChannel(contenturl);
         }
     }
 

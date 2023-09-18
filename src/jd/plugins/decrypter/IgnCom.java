@@ -93,19 +93,20 @@ public class IgnCom extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         String fpName;
-        if (param.getCryptedUrl().matches(TYPE_EMBED)) {
+        String contenturl = param.getCryptedUrl();
+        if (contenturl.matches(TYPE_EMBED)) {
             /* Embed URL: Redirects to extern video provider such as twitch.tv. */
-            param.setCryptedUrl(param.getCryptedUrl().replaceFirst("http://", "https://"));
+            contenturl = contenturl.replaceFirst("(?i)http://", "https://");
             br.setFollowRedirects(false);
-            br.getPage(param.getCryptedUrl());
+            br.getPage(contenturl);
             final String finallink = br.getRedirectLocation();
             if (finallink == null) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             ret.add(super.createDownloadlink(finallink));
-        } else if (!param.getCryptedUrl().matches(TYPE_OLD)) {
+        } else if (!contenturl.matches(TYPE_OLD)) {
             br.setFollowRedirects(true);
-            br.getPage(param.getCryptedUrl());
+            br.getPage(contenturl);
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -171,7 +172,7 @@ public class IgnCom extends PluginForDecrypt {
             }
         } else {
             br.setFollowRedirects(true);
-            br.getPage(param.getCryptedUrl());
+            br.getPage(contenturl);
             if (br.getHttpConnection().getResponseCode() == 404 || br.toString().length() <= 100) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }

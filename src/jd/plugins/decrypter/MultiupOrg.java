@@ -17,6 +17,13 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.hcaptcha.AbstractHCaptcha;
+import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperCrawlerPluginHCaptcha;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -28,13 +35,6 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.hcaptcha.AbstractHCaptcha;
-import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperCrawlerPluginHCaptcha;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "multiup.org" }, urls = { "https?://(www\\.)?multiup\\.(org|eu)/(?:en|fr/)?(fichiers/download/[a-z0-9]{32}_[^<> \"'&%]+|([a-z]{2}/)?(download|mirror)/[a-z0-9]{32}(/[^<> \"'&%]+)?|\\?lien=[a-z0-9]{32}_[^<> \"'&%]+|[a-f0-9]{32})" })
 public class MultiupOrg extends antiDDoSForDecrypt {
@@ -52,28 +52,27 @@ public class MultiupOrg extends antiDDoSForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
-        String parameter = param.toString().replaceFirst("://multiup", "://www.multiup");
-        parameter = parameter.replaceFirst("\\.org/en/", ".org/");
-        parameter = parameter.replaceFirst("\\.org/fr/", ".org/");
-        parameter = parameter.replaceFirst("\\.eu/en/", ".eu/");
-        parameter = parameter.replaceFirst("\\.eu/fr/", ".eu/");
-        parameter = parameter.replaceFirst("http://", "https://");
-        final String uid = getFUID(parameter);
+        String contenturl = param.getCryptedUrl().replaceFirst("://multiup", "://www.multiup");
+        contenturl = contenturl.replaceFirst("\\.org/en/", ".org/");
+        contenturl = contenturl.replaceFirst("\\.org/fr/", ".org/");
+        contenturl = contenturl.replaceFirst("\\.eu/en/", ".eu/");
+        contenturl = contenturl.replaceFirst("\\.eu/fr/", ".eu/");
+        contenturl = contenturl.replaceFirst("(?i)http://", "https://");
+        final String uid = getFUID(contenturl);
         if (uid == null) {
-            logger.info("URL is invalid, must contain 'uid' to be valid " + parameter);
-            return decryptedLinks;
+            logger.info("URL is invalid, must contain 'uid' to be valid " + contenturl);
+            return ret;
         }
-        String filename = getFilename(parameter);
-        String filesize = getFileSize(parameter);
+        String filename = getFilename(contenturl);
+        String filesize = getFileSize(contenturl);
         if (filename != null) {
-            parameter = new Regex(parameter, "(https?://[^/]+)").getMatch(0) + "/download/" + uid + "/" + filename;
-            param.setCryptedUrl(parameter);
+            contenturl = new Regex(contenturl, "(https?://[^/]+)").getMatch(0) + "/download/" + uid + "/" + filename;
         }
-        getPage(parameter);
+        getPage(contenturl);
         final String csrftoken = br.getRegex("_csrf_token\"\\s*value\\s*=\\s*\"(.*?)\"").getMatch(0);
-        final String mirror = parameter.replace("/en/download/", "/en/mirror/").replace("/download/", "/en/mirror/");
+        final String mirror = contenturl.replace("/en/download/", "/en/mirror/").replace("/download/", "/en/mirror/");
         if (csrftoken != null) {
             postPage(mirror, "_csrf_token=" + Encoding.urlEncode(csrftoken));
         } else {
@@ -88,8 +87,8 @@ public class MultiupOrg extends antiDDoSForDecrypt {
             filesize = webSiteFileSize;
         }
         if (br.containsHTML("The file does not exist any more\\.<|<h1>The server returned a \"404 Not Found\"\\.</h2>|<h1>Oops! An Error Occurred</h1>|>File not found|>No link currently available")) {
-            decryptedLinks.add(createOfflinelink(parameter));
-            return decryptedLinks;
+            ret.add(createOfflinelink(contenturl));
+            return ret;
         }
         if (AbstractHCaptcha.containsHCaptcha(br)) {
             final Form form = br.getFormbyActionRegex("/mirror/");
@@ -113,7 +112,7 @@ public class MultiupOrg extends antiDDoSForDecrypt {
         if (links == null || links.length == 0) {
             links = br.getRegex("\\s+href\\s*=\\s*\"([^\"]+)\"\\s+").getColumn(0);
             if (links == null || links.length == 0) {
-                logger.info("Could not find links, please report this to JDownloader Development Team. " + parameter);
+                logger.info("Could not find links, please report this to JDownloader Development Team. " + contenturl);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
@@ -175,10 +174,10 @@ public class MultiupOrg extends antiDDoSForDecrypt {
                     downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
                 }
                 distribute(downloadLink);
-                decryptedLinks.add(downloadLink);
+                ret.add(downloadLink);
             }
         }
-        return decryptedLinks;
+        return ret;
     }
 
     private String multiNewsWorkaround = null;
