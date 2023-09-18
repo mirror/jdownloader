@@ -21,6 +21,7 @@ import java.util.List;
 import org.jdownloader.plugins.components.config.XvideosComXnxxGoldConfig;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
@@ -86,6 +87,25 @@ public class XnxxGold extends XvideosCore {
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
+    }
+
+    @Override
+    protected String buildNormalContentURL(final DownloadLink link) {
+        final String urlHost = Browser.getHost(link.getPluginPatternMatcher(), false);
+        final String videoID = this.getVideoidFromURL(link.getPluginPatternMatcher());
+        if (videoID != null) {
+            /* 2021-07-23: This needs to end with a slash otherwise the URL will be invalid! */
+            String newURL = "https://www." + urlHost + "/video-" + videoID;
+            final String urlTitle = getURLTitle(link);
+            if (urlTitle != null) {
+                newURL += "/" + urlTitle;
+            } else {
+                /* URL needs to contain a title otherwise we'll get error 404! */
+                newURL += "/dummytext";
+            }
+            return newURL;
+        }
+        return null;
     }
 
     @Override

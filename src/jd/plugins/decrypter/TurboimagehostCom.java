@@ -20,8 +20,11 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.appwork.utils.Regex;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -29,8 +32,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-
-import org.appwork.utils.Regex;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "turboimagehost.com", "turboimagehost.com" }, urls = { "https?://(?:www\\.)?turboimagehost\\.com/p/\\d+/[^/]+\\.html|https?://[a-z0-9\\-]+\\.turboimg\\.net/t1/\\d+_[^/]+", "https?://(?:www\\.)?turboimagehost\\.com/album/\\d+/[^/]+" })
 public class TurboimagehostCom extends PluginForDecrypt {
@@ -49,9 +50,7 @@ public class TurboimagehostCom extends PluginForDecrypt {
     private ArrayList<DownloadLink> crawlAlbum(CryptedLink param) throws Exception {
         br.setFollowRedirects(true);
         br.getPage(param.getCryptedUrl());
-        if (br.getHttpConnection().getResponseCode() == 404 || br.getURL().matches("^/?$")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
+        checkOffline(br);
         String galleryTitle = br.getRegex("class\\s*=\\s*\"galleryTitle\">\\s*<h1>\\s*(.*?)\\s*</h1>").getMatch(0);
         final FilePackage fp = FilePackage.getInstance();
         if (galleryTitle == null) {
@@ -78,33 +77,40 @@ public class TurboimagehostCom extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    private ArrayList<DownloadLink> crawlImage(CryptedLink param) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+    private ArrayList<DownloadLink> crawlImage(final CryptedLink param) throws Exception {
         final Regex thumbnail = new Regex(param.getCryptedUrl(), "https?://[a-z0-9\\-]+\\.turboimg\\.net/t1/(\\d+)_([^/]+)");
-        if (thumbnail.matches()) {
+        final String contenturl;
+        if (thumbnail.patternFind()) {
             /* Change thumbnail --> Normal URL --> Then we can crawl the fullsize URL. */
-            final String newURL = "https://www." + this.getHost() + "/p/" + thumbnail.getMatch(0) + "/" + thumbnail.getMatch(1) + ".html";
-            param.setCryptedUrl(newURL);
+            contenturl = "https://www." + this.getHost() + "/p/" + thumbnail.getMatch(0) + "/" + thumbnail.getMatch(1) + ".html";
+        } else {
+            contenturl = param.getCryptedUrl();
         }
         br.setFollowRedirects(true);
-        br.getPage(param.getCryptedUrl());
-        if (br.getHttpConnection().getResponseCode() == 404 || br.getURL().matches("^/?$")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
+        br.getPage(contenturl);
+        checkOffline(br);
         final String finallink = this.br.getRegex("\"(https?://s\\d+d\\d+\\.(?:turboimagehost\\.com|turboimg\\.net)/sp/[a-z0-9]+/.*?)\"").getMatch(0);
         if (finallink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        } else {
-            final DownloadLink link = createDownloadlink(finallink);
-            String filename = getFileNameFromURL(new URL(finallink));
-            if (filename != null) {
-                filename = filename.replaceFirst("\\.html?$", "");
-                link.setName(filename);
-            }
-            link.setAvailable(true);
-            link.setContentUrl(param.getCryptedUrl());
-            decryptedLinks.add(link);
-            return decryptedLinks;
+        }
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final DownloadLink link = createDownloadlink(finallink);
+        String filename = getFileNameFromURL(new URL(finallink));
+        if (filename != null) {
+            filename = filename.replaceFirst("\\.html?$", "");
+            link.setName(filename);
+        }
+        link.setAvailable(true);
+        link.setContentUrl(contenturl);
+        ret.add(link);
+        return ret;
+    }
+
+    private void checkOffline(final Browser br) throws PluginException {
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.getURL().matches("^/?$")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
     }
 }

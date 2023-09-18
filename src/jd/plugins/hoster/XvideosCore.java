@@ -127,25 +127,29 @@ public abstract class XvideosCore extends PluginForHost {
         }
     }
 
-    private String getVideoID(final DownloadLink link) {
-        if (link.hasProperty(PROPERTY_VIDEOID)) {
-            return link.getStringProperty(PROPERTY_VIDEOID);
+    protected String getVideoID(final DownloadLink link) {
+        final String storedInternalVideoID = link.getStringProperty(PROPERTY_VIDEOID);
+        if (storedInternalVideoID != null) {
+            return storedInternalVideoID;
         } else {
-            final String url = link.getPluginPatternMatcher();
-            if (url == null) {
-                return null;
-            }
-            if (url.matches(type_embed)) {
-                return new Regex(url, type_embed).getMatch(0);
-            } else if (url.matches(type_normal)) {
-                return new Regex(url, type_normal).getMatch(0);
-            } else if (url.matches(type_special1)) {
-                return new Regex(url, type_special1).getMatch(0);
-            } else if (url.matches(type_special2)) {
-                return new Regex(url, type_special2).getMatch(2);
-            } else {
-                return null;
-            }
+            return getVideoidFromURL(link.getPluginPatternMatcher());
+        }
+    }
+
+    protected String getVideoidFromURL(final String url) {
+        if (url == null) {
+            return null;
+        }
+        if (url.matches(type_embed)) {
+            return new Regex(url, type_embed).getMatch(0);
+        } else if (url.matches(type_normal)) {
+            return new Regex(url, type_normal).getMatch(0);
+        } else if (url.matches(type_special1)) {
+            return new Regex(url, type_special1).getMatch(0);
+        } else if (url.matches(type_special2)) {
+            return new Regex(url, type_special2).getMatch(2);
+        } else {
+            return null;
         }
     }
 
@@ -164,7 +168,7 @@ public abstract class XvideosCore extends PluginForHost {
         }
     }
 
-    private String getURLTitle(final DownloadLink link) {
+    protected String getURLTitle(final DownloadLink link) {
         final String url = link.getPluginPatternMatcher();
         if (url == null) {
             return null;
@@ -180,7 +184,9 @@ public abstract class XvideosCore extends PluginForHost {
 
     private static final String type_normal                     = "https?://[^/]+/video(\\d+)(/(.+))?$";
     /* xnxx.gold */
-    private static final String type_normal_2                   = "https?://[^/]+/video-([a-z0-9\\-]+)(/[^/]+)?$";                          // xnxx.gold
+    private static final String type_normal_2                   = "https?://[^/]+/video-([a-z0-9\\-]+)(/[^/]+)?$";                          // xnxx.com
+                                                                                                                                            // and
+                                                                                                                                            // xnxx.gold
     private static final String type_embed                      = "https?://[^/]+/embedframe/(\\d+)";
     private static final String type_special1                   = "https?://[^/]+/[^/]+/upload/[^/]+/(\\d+)/([^/]+)";
     private static final String type_special2                   = "https?://[^/]+/[^/]+/(upload|pornstar|model)/([a-z0-9\\-\\_]+)/(\\d+).*";
@@ -195,20 +201,10 @@ public abstract class XvideosCore extends PluginForHost {
 
     protected String getContentURL(final DownloadLink link) {
         String url = link.getPluginPatternMatcher();
-        if (!url.matches(type_normal)) {
-            final String urlHost = Browser.getHost(url);
-            final String videoID = this.getVideoID(link);
-            if (videoID != null) {
-                /* 2021-07-23: This needs to end with a slash otherwise the URL will be invalid! */
-                String newURL = "https://www." + urlHost + "/video" + videoID;
-                final String urlTitle = getURLTitle(link);
-                if (urlTitle != null) {
-                    newURL += "/" + urlTitle;
-                } else {
-                    /* URL needs to contain a title otherwise we'll get error 404! */
-                    newURL += "/dummytext";
-                }
-                url = newURL;
+        if (!url.matches(type_normal) && !url.matches(type_normal_2)) {
+            final String normalContentURL = buildNormalContentURL(link);
+            if (normalContentURL != null) {
+                url = normalContentURL;
             }
         }
         /*
@@ -225,6 +221,8 @@ public abstract class XvideosCore extends PluginForHost {
         }
         return url;
     }
+
+    abstract String buildNormalContentURL(final DownloadLink link);
 
     private boolean isValidVideoURL(final DownloadLink link, final String url, final boolean setFilesize) throws Exception {
         if (StringUtils.isEmpty(url)) {

@@ -158,11 +158,11 @@ public class FileCryptCc extends PluginForDecrypt {
                  * that are typically associated with folders published by those sources.
                  */
                 final String customLogoID = br.getRegex("custom/([a-z0-9]+)\\.png").getMatch(0);
-                if ("53d1b".equals(customLogoID) || "80d13".equals(customLogoID)) {
-                    logger.info("Found presumed password by custom logo: " + customLogoID);
+                if ("53d1b".equals(customLogoID) || "80d13".equals(customLogoID) || "fde1d".equals(customLogoID)) {
+                    logger.info("Found presumed password by custom logoID: " + customLogoID);
                     passwords.add(0, "serienfans.org");
                 } else if ("51967".equals(customLogoID)) {
-                    logger.info("Found presumed password by custom logo: " + customLogoID);
+                    logger.info("Found presumed password by custom logoID: " + customLogoID);
                     passwords.add(0, "kellerratte");
                 }
                 if (successfullyUsedPassword != null) {

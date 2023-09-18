@@ -125,6 +125,11 @@ public class FreeViewMoviesCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        return requestFileInformation(link, false);
+    }
+
+    private AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws IOException, PluginException {
+        this.dllink = null;
         if (!link.isNameSet()) {
             link.setName(getWeakFilename(link));
         }
@@ -157,7 +162,7 @@ public class FreeViewMoviesCom extends PluginForHost {
             /* 2023-09-15 */
             dllink = br.getRegex("\"contentUrl\"\\s*:\\s*\"(https?://[^\"]+)").getMatch(0);
         }
-        if (this.dllink != null) {
+        if (this.dllink != null && !isDownload) {
             br.setFollowRedirects(true);
             URLConnectionAdapter con = null;
             try {
@@ -201,7 +206,7 @@ public class FreeViewMoviesCom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
-        requestFileInformation(link);
+        requestFileInformation(link, true);
         if (this.dllink == null) {
             if (br.containsHTML("id=\"reportabuse\"")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Broken video content");

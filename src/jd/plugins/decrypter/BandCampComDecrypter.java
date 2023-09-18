@@ -204,13 +204,13 @@ public class BandCampComDecrypter extends PluginForDecrypt {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             /* Let's see if there is anything else other than music that we may be able to download. */
-            if (artistList.length > 0) {
+            if (artistList != null && artistList.length > 0) {
                 for (String artistURL : artistList) {
                     artistURL += "/";
                     ret.add(this.createDownloadlink(artistURL));
                 }
                 return ret;
-            } else if (albumList.length > 0) {
+            } else if (albumList != null && albumList.length > 0) {
                 for (String albumURL : albumList) {
                     albumURL = br.getURL(albumURL).toString();
                     ret.add(this.createDownloadlink(albumURL));
@@ -221,7 +221,8 @@ public class BandCampComDecrypter extends PluginForDecrypt {
                 logger.info("Failed to find any downloadable content");
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-        } else if (Encoding.isHtmlEntityCoded(json)) {
+        }
+        if (Encoding.isHtmlEntityCoded(json)) {
             json = Encoding.htmlDecode(json);
         }
         final String json_album = br.getRegex("<script type=\"application/(?:json\\+ld|ld\\+json)\">\\s*(.*?)\\s*</script>").getMatch(0);

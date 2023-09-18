@@ -58,22 +58,21 @@ public class JumploadsComFolder extends PluginForDecrypt {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/folder/[A-Za-z0-9]+/[^/]+");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/folder/([A-Za-z0-9]+)/([^/]+)");
         }
         return ret.toArray(new String[0]);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         /* 2021-04-20: Main domain has changed from goloady.com to jumploads.com */
         final String oldDomain = Browser.getHost(param.getCryptedUrl());
-        param.setCryptedUrl(param.getCryptedUrl().replace(oldDomain + "/", this.getHost() + "/"));
-        br.getPage(param.getCryptedUrl());
+        final String contenturl = param.getCryptedUrl().replace(oldDomain + "/", this.getHost() + "/");
+        br.getPage(contenturl);
         if (br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(param.getCryptedUrl()));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String fpName = new Regex(param.getCryptedUrl(), "/([^/]+)$").getMatch(0);
+        final String titleFromURL = Encoding.htmlDecode(new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(1)).trim();
         final String[] htmls = br.getRegex("<li>.*?</li>").getColumn(-1);
         if (htmls == null || htmls.length == 0) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -103,13 +102,11 @@ public class JumploadsComFolder extends PluginForDecrypt {
             if (filesize != null) {
                 dl.setDownloadSize(SizeFormatter.getSize(filesize));
             }
-            decryptedLinks.add(dl);
+            ret.add(dl);
         }
-        if (fpName != null) {
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName.trim()));
-            fp.addLinks(decryptedLinks);
-        }
-        return decryptedLinks;
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(titleFromURL);
+        fp.addLinks(ret);
+        return ret;
     }
 }

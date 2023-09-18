@@ -32,20 +32,20 @@ public class RGhostNetCrawler extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        param.setCryptedUrl(RGhostNet.correctAddedURL(param.getCryptedUrl()));
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         RGhostNet.prepBR(this.br);
-        br.getPage(param.getCryptedUrl());
+        final String contenturl = RGhostNet.correctAddedURL(param.getCryptedUrl());
+        br.getPage(contenturl);
         /* Check if the file is hosted on this website (selfhosted) or on an external website such as Google Drive. */
         final String externallyHostedFileURL = br.getRegex("href=\"(https?://drive\\.google\\.com/[^\"]+)\"><i class=\"fab fa-google-drive\"").getMatch(0);
         if (externallyHostedFileURL != null) {
             final DownloadLink externallyHosted = this.createDownloadlink(externallyHostedFileURL);
-            decryptedLinks.add(externallyHosted);
+            ret.add(externallyHosted);
         } else {
-            final DownloadLink selfhosted = this.createDownloadlink(param.getCryptedUrl());
+            final DownloadLink selfhosted = this.createDownloadlink(contenturl);
             RGhostNet.parseFileInfo(selfhosted, br);
-            decryptedLinks.add(selfhosted);
+            ret.add(selfhosted);
         }
-        return decryptedLinks;
+        return ret;
     }
 }
