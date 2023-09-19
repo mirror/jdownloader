@@ -16,6 +16,7 @@
 package jd.plugins.hoster;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.net.URLEncoder;
@@ -289,7 +290,7 @@ public class DeviantArtCom extends PluginForHost {
 
     public AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
         if (!link.isNameSet()) {
-            link.setName(new URL(link.getPluginPatternMatcher()).getPath() + this.getAssumedFileExtension(account, link));
+            link.setName(new URL(link.getPluginPatternMatcher()).getPath() + getAssumedFileExtension(account, link));
         }
         this.setBrowserExclusive();
         prepBR(this.br);
@@ -389,7 +390,7 @@ public class DeviantArtCom extends PluginForHost {
         if (StringUtils.isEmpty(officialDownloadurl)) {
             officialDownloadurl = br.getRegex("data-hook=\"download_button\"[^>]*href=\"(https?://[^\"]+)").getMatch(0);
             if (officialDownloadurl != null) {
-                officialDownloadurl = officialDownloadurl.replace("&amp;", "&");
+                officialDownloadurl = Encoding.htmlOnlyDecode(officialDownloadurl);
             }
         }
         link.setProperty(PROPERTY_OFFICIAL_DOWNLOADURL, officialDownloadurl);
@@ -415,7 +416,7 @@ public class DeviantArtCom extends PluginForHost {
         }
         String dllink = null;
         try {
-            dllink = this.getDirecturl(br, downloadHTML, link, account);
+            dllink = getDirecturl(br, downloadHTML, link, account);
         } catch (final PluginException e) {
             /**
              * This will happen if the item is not downloadable. </br>
@@ -444,18 +445,15 @@ public class DeviantArtCom extends PluginForHost {
                 link.setVerifiedFileSize(displayedVideoSize.longValue());
             } else if (isImage && unlimitedImageSize != null && dllink != null && !dllink.matches("(?i).*/v1/.+")) {
                 link.setVerifiedFileSize(unlimitedImageSize.longValue());
-            }
-            if (cfg.isFastLinkcheckForSingleItems() == false && !isDownload && !StringUtils.isEmpty(dllink)) {
+            } else if (cfg.isFastLinkcheckForSingleItems() == false && !isDownload && !StringUtils.isEmpty(dllink)) {
+                /* No filesize value given -> Obtain from header */
                 final Browser br2 = br.cloneBrowser();
                 /* Workaround for old downloadcore bug that can lead to incomplete files */
                 br2.getHeaders().put("Accept-Encoding", "identity");
                 URLConnectionAdapter con = null;
                 try {
                     con = br2.openHeadConnection(dllink);
-                    if (!looksLikeDownloadableContent(con)) {
-                        br2.followConnection(true);
-                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    }
+                    handleConnectionErrors(br2, con);
                     if (con.getCompleteContentLength() > 0) {
                         link.setVerifiedFileSize(con.getCompleteContentLength());
                     }
@@ -627,10 +625,11 @@ public class DeviantArtCom extends PluginForHost {
             } else if (account != null && officialDownloadurl != null) {
                 dllink = officialDownloadurl;
             } else {
+                final boolean devAllowUnlimitedJwtImageURL = false; // 2023-09-19: Doesn't work anymore
                 final String unlimitedURL = link.getStringProperty(PROPERTY_UNLIMITED_JWT_IMAGE_URL);
                 final String imageURL = link.getStringProperty(PROPERTY_IMAGE_DISPLAY_OR_PREVIEW_URL);
                 String ret = imageURL;
-                if ((imageURL == null || imageURL.matches("(?i).+/v1/.+")) && unlimitedURL != null) {
+                if (devAllowUnlimitedJwtImageURL && (imageURL == null || imageURL.matches("(?i).+/v1/.+")) && unlimitedURL != null) {
                     ret = unlimitedURL;
                 }
                 dllink = ret;
@@ -668,11 +667,7 @@ public class DeviantArtCom extends PluginForHost {
             /* Remove hashInfo before download in case quality/mirror/user settings have changed. will be updated again on download */
             link.setHashInfo(null);
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, isResumeable(link, account), 1);
-            if (!looksLikeDownloadableContent(dl.getConnection())) {
-                handleServerErrors(dl.getConnection());
-                br.followConnection(true);
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
+            handleConnectionErrors(br, dl.getConnection());
             /* Add a download slot */
             controlMaxFreeDownloads(account, link, +1);
             try {
@@ -737,12 +732,18 @@ public class DeviantArtCom extends PluginForHost {
         this.handleDownload(link, account);
     }
 
-    private void handleServerErrors(final URLConnectionAdapter con) throws PluginException {
-        /* Happens sometimes - download should work fine later though. */
-        if (con.getResponseCode() == 403) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 10 * 60 * 1000l);
-        } else if (con.getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 1 * 60 * 1000l);
+    private void handleConnectionErrors(final Browser br, final URLConnectionAdapter con) throws PluginException, IOException {
+        if (!this.looksLikeDownloadableContent(con)) {
+            br.followConnection(true);
+            if (con.getResponseCode() == 401) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 401", 10 * 60 * 1000l);
+            } else if (con.getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 10 * 60 * 1000l);
+            } else if (con.getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 1 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Media broken?");
+            }
         }
     }
 
