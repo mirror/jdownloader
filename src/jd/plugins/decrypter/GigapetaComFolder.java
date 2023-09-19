@@ -16,6 +16,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 
 import jd.PluginWrapper;
@@ -74,17 +75,17 @@ public class GigapetaComFolder extends PluginForDecrypt {
         br.setFollowRedirects(true);
         br.setCookie(this.getHost(), "lang", "en");
         br.getPage(param.getCryptedUrl());
-        String folderName = br.getRegex("id=\"content\"><h1>([^<]+)</h1>").getMatch(0);
-        if (folderName != null) {
-            folderName = Encoding.htmlDecode(folderName).trim();
+        String folderTitle = br.getRegex("id=\"content\"><h1>([^<]+)</h1>").getMatch(0);
+        if (folderTitle != null) {
+            folderTitle = Encoding.htmlDecode(folderTitle).trim();
         }
         // br.getPage("/?lang=en");//sets lang cookie
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML("(?i)>\\s*You haven\\&#96;t uploaded any file")) {
             /* Empty folder */
-            if (folderName != null) {
-                throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER, folderName);
+            if (folderTitle != null) {
+                throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER, folderTitle);
             } else {
                 throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER);
             }
@@ -110,22 +111,60 @@ public class GigapetaComFolder extends PluginForDecrypt {
                 throw new DecrypterException(DecrypterException.PASSWORD);
             }
         }
-        final String[] urls = br.getRegex("(/dl/[a-f0-9]{10,})").getColumn(0);
-        if (urls == null || urls.length == 0) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        FilePackage fp = null;
+        if (folderTitle != null) {
+            fp = FilePackage.getInstance();
+            fp.setName(folderTitle);
         }
-        for (final String url : urls) {
-            final DownloadLink link = createDownloadlink(br.getURL(url).toString());
-            if (passCode != null) {
-                link.setDownloadPassword(passCode);
+        int maxpage = 1;
+        final String[] pages = br.getRegex("\\?p=(\\d+)").getColumn(0);
+        for (final String pageStr : pages) {
+            final int pageTmp = Integer.parseInt(pageStr);
+            if (pageTmp > maxpage) {
+                maxpage = pageTmp;
             }
-            ret.add(link);
         }
-        if (folderName != null) {
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName(folderName);
-            fp.addLinks(ret);
-        }
+        final HashSet<String> dupes = new HashSet<String>();
+        final String baseurl = br.getURL();
+        int page = 1;
+        do {
+            final String[] urls = br.getRegex("(?i)(/dl/[a-f0-9]{10,})").getColumn(0);
+            if (urls == null || urls.length == 0) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            int numberofNewItems = 0;
+            for (final String url : urls) {
+                if (!dupes.add(url)) {
+                    /* Skip dupes */
+                    continue;
+                }
+                final DownloadLink link = createDownloadlink(br.getURL(url).toString());
+                if (passCode != null) {
+                    link.setDownloadPassword(passCode);
+                }
+                if (fp != null) {
+                    link._setFilePackage(fp);
+                }
+                ret.add(link);
+                distribute(link);
+                numberofNewItems++;
+            }
+            logger.info("Crawled page " + page + "/" + maxpage + " | Found items so far: " + ret.size());
+            if (numberofNewItems == 0) {
+                logger.info("Stopping because: Failed to find any new items on current page");
+                break;
+            } else if (page >= maxpage) {
+                logger.info("Stopping because: Reached last page");
+                break;
+            } else if (this.isAbort()) {
+                logger.info("Stopping because: Aborted by user");
+                break;
+            } else {
+                /* Continue to next page */
+                page++;
+                br.getPage(baseurl + "?p=" + page);
+            }
+        } while (!this.isAbort());
         return ret;
     }
 

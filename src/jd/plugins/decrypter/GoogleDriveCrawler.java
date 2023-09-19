@@ -88,11 +88,12 @@ public class GoogleDriveCrawler extends PluginForDecrypt {
     // - with /edit?pli=1 they provide via javascript section partly escaped
     // - with /list?rm=whitebox&hl=en_GB&forcehl=1&pref=2&pli=1"; - not used and commented out, supported except for scanLinks
     // language determined by the accept-language
-    private static final String  TYPE_FOLDER_NORMAL               = "https?://(?:www\\.)?docs\\.google\\.com/folder/d/([a-zA-Z0-9\\-_]+)";
-    private static final String  TYPE_FOLDER_OLD                  = "https?://(?:www\\.)?docs\\.google\\.com/(?:embedded)?folderview\\?(pli=1\\&id=[A-Za-z0-9_]+(\\&tid=[A-Za-z0-9]+)?|id=[A-Za-z0-9_]+\\&usp=sharing)";
-    private static final String  TYPE_FOLDER_CURRENT              = "https?://[^/]+/drive/(?:[\\w\\-]+/)*folders/([^/?]+)(\\?resourcekey=[A-Za-z0-9_\\-]+)?";
+    private static final String  TYPE_FOLDER_NORMAL               = "(?i)https?://[^/]+/folder/d/([a-zA-Z0-9\\-_]+)";
+    /* Usually with old docs.google.com domain. */
+    private static final String  TYPE_FOLDER_OLD                  = "(?i)https?://[^/]+/(?:embedded)?folderview\\?(pli=1\\&id=[A-Za-z0-9_]+(\\&tid=[A-Za-z0-9]+)?|id=[A-Za-z0-9_]+\\&usp=sharing)";
+    private static final String  TYPE_FOLDER_CURRENT              = "(?i)https?://[^/]+/drive/(?:[\\w\\-]+/)*folders/([^/?]+)(\\?resourcekey=[A-Za-z0-9_\\-]+)?";
     /* 2021-02-26: Theoretically, "leaf?" does the same but for now we'll only handle "open=" as TYPE_REDIRECT */
-    private static final String  TYPE_REDIRECT                    = "https?://[^/]+/open\\?id=([a-zA-Z0-9\\-_]+)";
+    private static final String  TYPE_REDIRECT                    = "(?i)https?://[^/]+/open\\?id=([a-zA-Z0-9\\-_]+)";
     private final String         PROPERTY_SPECIAL_SHORTCUT_FOLDER = "special_shortcut_folder";
     /* Developer: Set this to false if for some reason, private folders cannot be crawled with this plugin (anymore/temporarily). */
     private static final boolean CAN_HANDLE_PRIVATE_FOLDERS       = true;
@@ -170,6 +171,7 @@ public class GoogleDriveCrawler extends PluginForDecrypt {
         }
     }
 
+    /** Extracts folderID from given URL. */
     private String getFolderID(final String url) {
         if (url.matches(TYPE_FOLDER_NORMAL)) {
             return new Regex(url, TYPE_FOLDER_NORMAL).getMatch(0);

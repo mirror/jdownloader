@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
@@ -162,13 +161,15 @@ public class GigafileNu extends PluginForHost {
                     logger.info("This is a folder containing " + ressourcelist.size() + " files --> Download .zip file containing all files");
                 }
             }
+            if (fileIDForDownload == null && mainFileID == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             final String dllink;
             if (fileIDForDownload == null) {
                 /* .zip download */
-                if (mainFileID == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                dllink = "/dl_zip.php?file=" + mainFileID;
+                /* 2023-09-19: Now both ways are the same??! */
+                // dllink = "/dl_zip.php?file=" + mainFileID;
+                dllink = "/download.php?file=" + mainFileID;
             } else {
                 /* Single file download */
                 dllink = "/download.php?file=" + fileIDForDownload;

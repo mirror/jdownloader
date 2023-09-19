@@ -149,7 +149,8 @@ public class DeviantArtCom extends PluginForHost {
     /**
      * github.com/mikf/gallery-dl/blob/master/gallery_dl/extractor/deviantart.py
      *
-     * All credit goes to @Ironchest337
+     * All credit goes to @Ironchest337 </br>
+     * 2023-09-19: Doesn't work anymore(?) Ticket: https://svn.jdownloader.org/issues/90403
      */
     public static String buildUnlimitedJWT(final DownloadLink link, final String url) throws UnsupportedEncodingException {
         final String path = new Regex(url, "(/f/.+)").getMatch(0);

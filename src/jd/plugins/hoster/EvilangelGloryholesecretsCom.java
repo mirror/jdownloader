@@ -29,13 +29,13 @@ import jd.plugins.HostPlugin;
 public class EvilangelGloryholesecretsCom extends EvilangelCore {
     public EvilangelGloryholesecretsCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("https://www.gangbangcreampie.com/en/join");
+        this.enablePremium("https://www.gloryholesecrets.com/en/join");
     }
 
     private static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "gangbangcreampie.com" });
+        ret.add(new String[] { "gloryholesecrets.com" });
         return ret;
     }
 
@@ -63,5 +63,10 @@ public class EvilangelGloryholesecretsCom extends EvilangelCore {
     @Override
     public Class<? extends EvilangelCoreConfig> getConfigInterface() {
         return EvilangelCoreConfigTabooheatCom.class;
+    }
+
+    @Override
+    protected boolean allowCookieLoginOnly() {
+        return true;
     }
 }

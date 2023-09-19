@@ -18,17 +18,15 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
-import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.controlling.linkcrawler.LinkCrawler;
 import jd.http.Browser;
 import jd.http.Request;
 import jd.http.requests.PostRequest;
@@ -40,7 +38,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "girlsreleased.com" }, urls = { "https?://(?:www\\.)?girlsreleased\\.com/#(set|site|model)s?/?.*" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "girlsreleased.com" }, urls = { "https?://(?:www\\.)?girlsreleased\\.com/.*#?(set|site|model)s?/?.*" })
 public class GirlsReleasedCom extends antiDDoSForDecrypt {
     public GirlsReleasedCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -54,16 +52,16 @@ public class GirlsReleasedCom extends antiDDoSForDecrypt {
         GR_MODELS,
         GR_UNKNOWN;
 
-        private static PageType parse(final String link) {
-            if (StringUtils.containsIgnoreCase(link, "/#set/")) {
+        private final static PageType parse(final String url) {
+            if (new Regex(url, PATTERN_SET).patternFind()) {
                 return GR_SET;
-            } else if (StringUtils.containsIgnoreCase(link, "/#site/")) {
+            } else if (new Regex(url, PATTERN_SITE).patternFind()) {
                 return GR_SITE;
-            } else if (StringUtils.containsIgnoreCase(link, "/#sites")) {
+            } else if (new Regex(url, PATTERN_SITES).patternFind()) {
                 return GR_SITES;
-            } else if (StringUtils.containsIgnoreCase(link, "/#model/")) {
+            } else if (new Regex(url, PATTERN_MODEL).patternFind()) {
                 return GR_MODEL;
-            } else if (StringUtils.containsIgnoreCase(link, "/#models")) {
+            } else if (new Regex(url, PATTERN_MODELS).patternFind()) {
                 return GR_MODELS;
             } else {
                 return GR_UNKNOWN;
@@ -71,10 +69,16 @@ public class GirlsReleasedCom extends antiDDoSForDecrypt {
         }
     }
 
+    private final static Pattern PATTERN_SET    = Pattern.compile("(?i)https?://[^/]+/.*#?set/(\\d+)");
+    private final static Pattern PATTERN_SITE   = Pattern.compile("(?i)https?://[^/]+/.*#?sites/(\\d+)");
+    private final static Pattern PATTERN_SITES  = Pattern.compile("(?i)https?://[^/]+/.*#?sites/(\\d+)");
+    private final static Pattern PATTERN_MODEL  = Pattern.compile("(?i)https?://[^/]+/.*#?model/(\\d+)(/([^/]+))?");
+    private final static Pattern PATTERN_MODELS = Pattern.compile("(?i)https?://[^/]+/.*#?models/(\\d+)(/([^/]+))?");
+
     @Override
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        String parameter = param.getCryptedUrl();
         br.setFollowRedirects(true);
         final PageType pageType = PageType.parse(parameter);
         if (pageType == PageType.GR_UNKNOWN) {
@@ -95,6 +99,9 @@ public class GirlsReleasedCom extends antiDDoSForDecrypt {
                     payload = "{\"tasks\":[\"getset\"],\"set\":{\"id\":\"" + setID + "\"},\"w\":\"" + timestamp + "\"}";
                 }
             }
+            if (setID == null) {
+                setID = new Regex(param.getCryptedUrl(), PATTERN_SET).getMatch(0);
+            }
         } else if (pageType == PageType.GR_SITE) {
             if (idList != null && idList.length > 0) {
                 payload = "{\"tasks\":[\"getsets\"],\"sets\":{\"count\":999999999,\"site\":\"" + idList[0][0] + "\"}}";
@@ -111,18 +118,14 @@ public class GirlsReleasedCom extends antiDDoSForDecrypt {
         } else if (pageType == PageType.GR_MODELS) {
             payload = "{\"tasks\":[\"getmodels\"],\"models\":{\"page\":0,\"count\":999999999,\"site\":null,\"sort\":null,\"search\":null}}";
         }
-        if (payload == null) {
-            getLogger().warning("Unable to build payload!");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
         // Get API result
         final Browser br2 = br.cloneBrowser();
         if (pageType == PageType.GR_SET) {
             final Request request = br2.createGetRequest("https://girlsreleased.com/api/0.1/set/" + setID);
             sendRequest(br2, request);
-            final Map<String, Object> entries = restoreFromString(br2.toString(), TypeRef.MAP);
-            Map<String, Object> infomap = (Map<String, Object>) entries.get("set");
-            List<List<Object>> imgs = (List<List<Object>>) infomap.get("images");
+            final Map<String, Object> entries = restoreFromString(br2.getRequest().getHtmlCode(), TypeRef.MAP);
+            final Map<String, Object> infomap = (Map<String, Object>) entries.get("set");
+            final List<List<Object>> imgs = (List<List<Object>>) infomap.get("images");
             for (final List<Object> imgInfo : imgs) {
                 String link = Encoding.htmlDecode(imgInfo.get(4).toString());
                 if (link.startsWith("/")) {
@@ -131,17 +134,33 @@ public class GirlsReleasedCom extends antiDDoSForDecrypt {
                 if (this.canHandle(link)) {
                     continue;
                 } else {
-                    decryptedLinks.add(createDownloadlink(link));
+                    ret.add(createDownloadlink(link));
                 }
             }
             final List<Object> modelInfo = (List<Object>) JavaScriptEngineFactory.walkJson(infomap, "models/{0}");
             final String fpName = infomap.get("site") + " - " + modelInfo.get(1) + " - " + "Set " + setID;
             final FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName.trim()));
+            fp.setName(Encoding.htmlDecode(fpName).trim());
             fp.setAllowMerge(true);
-            fp.addLinks(decryptedLinks);
+            fp.addLinks(ret);
+        } else if (pageType == PageType.GR_MODEL) {
+            /* Crawl all sets of a model. */
+            final String modelID = new Regex(param.getCryptedUrl(), PATTERN_MODEL).getMatch(0);
+            final Request request = br2.createGetRequest("https://girlsreleased.com/api/0.1/sets/model/" + modelID);
+            sendRequest(br2, request);
+            final Map<String, Object> entries = restoreFromString(br2.toString(), TypeRef.MAP);
+            final List<List<Object>> sets = (List<List<Object>>) entries.get("sets");
+            for (final List<Object> setInfo : sets) {
+                final String url = "https://girlsreleased.com/set/" + setInfo.get(0).toString();
+                ret.add(createDownloadlink(url));
+            }
         } else {
+            /* Old handling */
             // TODO timestamp/signature
+            if (payload == null) {
+                getLogger().warning("Unable to build payload!");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             final String postURL = "https://girlsreleased.com/";
             final PostRequest post = new PostRequest(postURL);
             post.getHeaders().put("X-Requested-With", "XMLHttpRequest");
@@ -164,12 +183,6 @@ public class GirlsReleasedCom extends antiDDoSForDecrypt {
                 for (int i = 0; i < rawLlinks.length; i++) {
                     links[i] = "https://girlsreleased.com/#set/" + rawLlinks[i];
                 }
-            } else if (pageType == PageType.GR_MODEL) {
-                String[] rawLlinks = new Regex(apiResult, "\\[(\\d+)").getColumn(0);
-                links = new String[rawLlinks.length];
-                for (int i = 0; i < rawLlinks.length; i++) {
-                    links[i] = "https://girlsreleased.com/#set/" + rawLlinks[i];
-                }
             }
             if (links != null && links.length > 0) {
                 for (String link : links) {
@@ -177,10 +190,10 @@ public class GirlsReleasedCom extends antiDDoSForDecrypt {
                     if (link.startsWith("/")) {
                         link = br.getURL(link).toString();
                     }
-                    decryptedLinks.add(createDownloadlink(link));
+                    ret.add(createDownloadlink(link));
                 }
             }
         }
-        return decryptedLinks;
+        return ret;
     }
 }

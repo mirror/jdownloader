@@ -64,4 +64,9 @@ public class EvilangelGangbangcreampieCom extends EvilangelCore {
     public Class<? extends EvilangelCoreConfig> getConfigInterface() {
         return EvilangelCoreConfigTabooheatCom.class;
     }
+
+    @Override
+    protected boolean allowCookieLoginOnly() {
+        return true;
+    }
 }
