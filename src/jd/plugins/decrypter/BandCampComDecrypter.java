@@ -111,7 +111,7 @@ public class BandCampComDecrypter extends PluginForDecrypt {
         if (show.patternFind()) {
             return crawlShow(show.getMatch(0));
         } else {
-            return crawlAlbumOrTrack(param);
+            return crawlAlbumOrTrack(param.getCryptedUrl());
         }
     }
 
@@ -153,7 +153,6 @@ public class BandCampComDecrypter extends PluginForDecrypt {
             track.setProperty(BandCampCom.PROPERTY_TITLE, trackmap.get("title"));
             track.setProperty(BandCampCom.PROPERTY_FILE_TYPE, "mp3");
             track.setProperty(BandCampCom.PROPERTY_ALBUM_TRACK_POSITION, index + 1);
-            track.setProperty(BandCampCom.PROPERTY_ALBUM_NUMBEROF_TRACKS, audiotracks.size());
             /* Calculate track-duration */
             final int timecode = ((Number) trackmap.get("timecode")).intValue();
             final boolean isLastItem = index == audiotracks.size() - 1;
@@ -183,6 +182,7 @@ public class BandCampComDecrypter extends PluginForDecrypt {
         }
         /* Add additional properties and set filename. */
         for (final DownloadLink result : ret) {
+            result.setProperty(BandCampCom.PROPERTY_ALBUM_NUMBEROF_TRACKS, audiotracks.size());
             final String formattedFilename = BandCampCom.getFormattedFilename(result);
             result.setFinalFileName(formattedFilename);
             result.setAvailable(true);
@@ -203,11 +203,11 @@ public class BandCampComDecrypter extends PluginForDecrypt {
         return ret;
     }
 
-    public ArrayList<DownloadLink> crawlAlbumOrTrack(final CryptedLink param) throws Exception {
+    public ArrayList<DownloadLink> crawlAlbumOrTrack(final String url) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        String contentURL = param.getCryptedUrl();
-        if (new Regex(param.getCryptedUrl(), TYPE_EMBED).patternFind()) {
-            br.getPage(param.getCryptedUrl());
+        String contentURL = url;
+        if (new Regex(contentURL, TYPE_EMBED).patternFind()) {
+            br.getPage(contentURL);
             final String originalURL = br.getRegex("\\&quot;linkback\\&quot;:\\&quot;(https?://[^/]+/(?:album|track)/[a-z0-9\\-_]+)").getMatch(0);
             if (originalURL == null) {
                 /* Assume that this content is offline or url is invalid */
@@ -264,29 +264,37 @@ public class BandCampComDecrypter extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final Map<String, Object> albumInfo = restoreFromString(json_album, TypeRef.MAP);
-        String artist = (String) JavaScriptEngineFactory.walkJson(albumInfo, "byArtist/name");
-        if (artist == null) {
-            artist = br.getRegex("name\\s*=\\s*\"title\"\\s*content\\s*=\\s*\"[^\"]+,\\s*by\\s*([^<>\"]+)\\s*\"").getMatch(0);
-        }
-        String albumTitle = (String) JavaScriptEngineFactory.walkJson(albumInfo, "inAlbum/name");
-        if (albumTitle == null) {
-            albumTitle = br.getRegex("<title>\\s*(.*?)\\s*\\|.*?</title>").getMatch(0);
-            if (albumTitle == null) {
-                albumTitle = br.getRegex("<title>\\s*(.*?)\\s*</title>").getMatch(0);
+        String artistFullName = null;
+        String albumOrTrackTitle = (String) JavaScriptEngineFactory.walkJson(albumInfo, "inAlbum/name");
+        if (albumOrTrackTitle == null) {
+            albumOrTrackTitle = br.getRegex("<title>\\s*(.*?)\\s*\\|.*?</title>").getMatch(0);
+            if (albumOrTrackTitle == null) {
+                albumOrTrackTitle = br.getRegex("<title>\\s*(.*?)\\s*</title>").getMatch(0);
             }
         }
+        albumOrTrackTitle = Encoding.htmlDecode(albumOrTrackTitle).trim();
         final String dateStr = (String) JavaScriptEngineFactory.walkJson(albumInfo, "datePublished");
         Long dateTimestamp = null;
         if (dateStr != null) {
             dateTimestamp = dateToTimestamp(dateStr);
         }
         final List<Map<String, Object>> albumtracks = (List<Map<String, Object>>) JavaScriptEngineFactory.jsonToJavaObject(json);
-        // keep old two digits for less than 10 items compatibility
-        artist = Encoding.htmlDecode(artist).trim();
-        albumTitle = Encoding.htmlDecode(albumTitle).trim();
+        if (albumtracks == null || albumtracks.size() == 0) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final String type = albumInfo.get("@type").toString();
+        final boolean isSingleTrack;
+        if (type.equalsIgnoreCase("MusicRecording") && albumtracks.size() == 1) {
+            isSingleTrack = true;
+        } else {
+            isSingleTrack = false;
+        }
+        if (!isSingleTrack) {
+            artistFullName = (String) JavaScriptEngineFactory.walkJson(albumInfo, "byArtist/name");
+            artistFullName = Encoding.htmlDecode(artistFullName).trim();
+        }
         final SubConfiguration cfg = SubConfiguration.getConfig(this.getHost());
         final boolean grabThumbnail = cfg.getBooleanProperty(BandCampCom.GRABTHUMB, BandCampCom.defaultGRABTHUMB);
-        int tracknumber = 1;
         for (final Map<String, Object> audio : albumtracks) {
             String contentUrl = (String) audio.get("title_link");
             final String title = (String) audio.get("title");
@@ -298,26 +306,24 @@ public class BandCampComDecrypter extends PluginForDecrypt {
             if (contentUrl.startsWith("/")) {
                 contentUrl = br.getURL(contentUrl).toString();
             }
-            int track_num = JavaScriptEngineFactory.toInteger(audio.get("track_num"), -1);
-            if (track_num == -1) {
+            int trackPosition = JavaScriptEngineFactory.toInteger(audio.get("track_num"), -1);
+            if (trackPosition == -1) {
                 /* Field with space (wtf) */
-                track_num = JavaScriptEngineFactory.toInteger(audio.get(" track_number"), -1);
+                trackPosition = JavaScriptEngineFactory.toInteger(audio.get(" track_number"), -1);
             }
             final DownloadLink audiotrack = createDownloadlink(contentUrl);
+            if (isSingleTrack) {
+                BandCampCom.parseAndSetSingleTrackInfo(audiotrack, br);
+            }
+            /* Add some properties we know better. */
             audiotrack.setProperty(BandCampCom.PROPERTY_DATE_TIMESTAMP, dateTimestamp);
-            audiotrack.setProperty(BandCampCom.PROPERTY_ARTIST, artist);
-            audiotrack.setProperty(BandCampCom.PROPERTY_ALBUM_TITLE, albumTitle);
+            audiotrack.setProperty(BandCampCom.PROPERTY_ALBUM_TITLE, albumOrTrackTitle);
             audiotrack.setProperty(BandCampCom.PROPERTY_TITLE, title);
             audiotrack.setProperty(BandCampCom.PROPERTY_FILE_TYPE, "mp3");
-            audiotrack.setProperty(BandCampCom.PROPERTY_ALBUM_TRACK_POSITION, tracknumber);
-            audiotrack.setProperty(BandCampCom.PROPERTY_ALBUM_NUMBEROF_TRACKS, albumtracks.size());
-            String formattedFilename = BandCampCom.getFormattedFilename(audiotrack);
-            audiotrack.setName(formattedFilename);
-            audiotrack.setAvailable(true);
+            audiotrack.setProperty(BandCampCom.PROPERTY_ALBUM_TRACK_POSITION, trackPosition);
             if (duration > 0) {
                 audiotrack.setDownloadSize(128 * 1024l / 8 * duration);
             }
-            audiotrack.setAvailable(true);
             ret.add(audiotrack);
             final String videoSourceID = (String) audio.get("video_source_id");
             if (StringUtils.isNotEmpty(videoSourceID)) {
@@ -362,9 +368,6 @@ public class BandCampComDecrypter extends PluginForDecrypt {
                                             fileExtension = "mp4";
                                         }
                                         videoEntry.setProperty(BandCampCom.PROPERTY_FILE_TYPE, fileExtension);
-                                        formattedFilename = BandCampCom.getFormattedFilename(videoEntry);
-                                        videoEntry.setFinalFileName(formattedFilename);
-                                        videoEntry.setAvailable(true);
                                         ret.add(videoEntry);
                                     }
                                 }
@@ -376,7 +379,6 @@ public class BandCampComDecrypter extends PluginForDecrypt {
                     }
                 }
             }
-            tracknumber++;
         }
         /* Single song or album thumbnail. */
         if (grabThumbnail) {
@@ -386,13 +388,27 @@ public class BandCampComDecrypter extends PluginForDecrypt {
                 final DownloadLink thumb = createDownloadlink(thumbnailURL);
                 thumb.setProperties(ret.get(0).getProperties());
                 thumb.setProperty(BandCampCom.PROPERTY_FILE_TYPE, "jpg");
-                thumb.removeProperty(BandCampCom.PROPERTY_TITLE);// only use album name for art
                 thumb.setProperty(BandCampCom.PROPERTY_ALBUM_TRACK_POSITION, 0);
-                final String formattedFilename = BandCampCom.getFormattedFilename(thumb);
-                thumb.setFinalFileName(formattedFilename);
-                thumb.setAvailable(true);
                 ret.add(thumb);
             }
+        }
+        String usernamePretty = null;
+        final String json_band = br.getRegex("data-band=\"(\\{[^\"]+)").getMatch(0);
+        if (json_band != null) {
+            final Map<String, Object> bandInfo = restoreFromString(Encoding.htmlOnlyDecode(json_band), TypeRef.MAP);
+            usernamePretty = (String) bandInfo.get("name");
+        } else {
+            logger.warning("Failed to find usernamePretty");
+        }
+        /* Set additional properties, filename and online-status. */
+        for (final DownloadLink result : ret) {
+            if (!StringUtils.isEmpty(usernamePretty)) {
+                result.setProperty(BandCampCom.PROPERTY_USERNAME_PRETTY, usernamePretty);
+            }
+            result.setProperty(BandCampCom.PROPERTY_ALBUM_NUMBEROF_TRACKS, albumtracks.size());
+            final String formattedFilename = BandCampCom.getFormattedFilename(result);
+            result.setFinalFileName(formattedFilename);
+            result.setAvailable(true);
         }
         final FilePackage fp = FilePackage.getInstance();
         final String formattedpackagename = getFormattedPackagename(ret.get(ret.size() - 1), cfg);
@@ -408,6 +424,10 @@ public class BandCampComDecrypter extends PluginForDecrypt {
             throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER);
         }
         return ret;
+    }
+
+    public static final String regexUsernameFromURL(final String url) {
+        return new Regex(url, "https?://([^/]*?)\\.[^/]+/").getMatch(0);
     }
 
     public static final long dateToTimestamp(final String dateStr) {

@@ -27,7 +27,6 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.http.Browser;
 import jd.http.Request;
 import jd.http.requests.PostRequest;
 import jd.nutils.encoding.Encoding;
@@ -118,12 +117,13 @@ public class GirlsReleasedCom extends antiDDoSForDecrypt {
         } else if (pageType == PageType.GR_MODELS) {
             payload = "{\"tasks\":[\"getmodels\"],\"models\":{\"page\":0,\"count\":999999999,\"site\":null,\"sort\":null,\"search\":null}}";
         }
-        // Get API result
-        final Browser br2 = br.cloneBrowser();
         if (pageType == PageType.GR_SET) {
-            final Request request = br2.createGetRequest("https://girlsreleased.com/api/0.1/set/" + setID);
-            sendRequest(br2, request);
-            final Map<String, Object> entries = restoreFromString(br2.getRequest().getHtmlCode(), TypeRef.MAP);
+            final Request request = br.createGetRequest("https://girlsreleased.com/api/0.1/set/" + setID);
+            sendRequest(br, request);
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
             final Map<String, Object> infomap = (Map<String, Object>) entries.get("set");
             final List<List<Object>> imgs = (List<List<Object>>) infomap.get("images");
             for (final List<Object> imgInfo : imgs) {
@@ -146,9 +146,12 @@ public class GirlsReleasedCom extends antiDDoSForDecrypt {
         } else if (pageType == PageType.GR_MODEL) {
             /* Crawl all sets of a model. */
             final String modelID = new Regex(param.getCryptedUrl(), PATTERN_MODEL).getMatch(0);
-            final Request request = br2.createGetRequest("https://girlsreleased.com/api/0.1/sets/model/" + modelID);
-            sendRequest(br2, request);
-            final Map<String, Object> entries = restoreFromString(br2.toString(), TypeRef.MAP);
+            final Request request = br.createGetRequest("https://girlsreleased.com/api/0.1/sets/model/" + modelID);
+            sendRequest(br, request);
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
             final List<List<Object>> sets = (List<List<Object>>) entries.get("sets");
             for (final List<Object> setInfo : sets) {
                 final String url = "https://girlsreleased.com/set/" + setInfo.get(0).toString();
@@ -166,9 +169,12 @@ public class GirlsReleasedCom extends antiDDoSForDecrypt {
             post.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             post.setContentType("application/json");
             post.setPostDataString(payload);
-            br2.setRequest(post);
-            postPage(br2, postURL, payload);
-            String apiResult = br2.toString();
+            br.setRequest(post);
+            postPage(br, postURL, payload);
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            String apiResult = br.toString();
             apiResult = apiResult.replaceAll("\\\\/", "/");
             String[] links = null;
             if (pageType == PageType.GR_SITE || pageType == PageType.GR_MODELS) {
