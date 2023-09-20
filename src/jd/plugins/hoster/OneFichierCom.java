@@ -65,7 +65,6 @@ import jd.plugins.AccountInfo;
 import jd.plugins.AccountInvalidException;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.AccountUnavailableException;
-import jd.plugins.DefaultEditAccountPanel;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -1478,11 +1477,11 @@ public class OneFichierCom extends PluginForHost {
     }
 
     @Override
-    public AccountBuilderInterface getAccountFactory(InputChangedCallbackInterface callback) {
+    public AccountBuilderInterface getAccountFactory(final InputChangedCallbackInterface callback) {
         if (PluginJsonConfig.get(getLazyP(), OneFichierConfigInterface.class).isUsePremiumAPIEnabled()) {
             return new OnefichierAccountFactory(callback);
         } else {
-            return new DefaultEditAccountPanel(callback, !getAccountwithoutUsername());
+            return super.getAccountFactory(callback);
         }
     }
 

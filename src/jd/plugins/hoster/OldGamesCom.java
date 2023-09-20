@@ -20,8 +20,6 @@ import java.net.MalformedURLException;
 import java.net.URL;
 
 import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.gui.InputChangedCallbackInterface;
-import org.jdownloader.plugins.accounts.AccountBuilderInterface;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -33,10 +31,10 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
-import jd.plugins.LetitBitAccountBuilderImpl;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
@@ -46,11 +44,7 @@ public class OldGamesCom extends PluginForHost {
     public OldGamesCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.old-games.com/");
-    }
-
-    @Override
-    public AccountBuilderInterface getAccountFactory(InputChangedCallbackInterface callback) {
-        return new LetitBitAccountBuilderImpl(callback);
+        this.setAccountwithoutUsername(true);
     }
 
     @Override
@@ -80,7 +74,6 @@ public class OldGamesCom extends PluginForHost {
         return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
@@ -127,7 +120,7 @@ public class OldGamesCom extends PluginForHost {
             if (this.br.containsHTML("(?i)Download limit exceeded")) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Download limit exceeded");
             }
-            dllink = getFinalDownloadlink();
+            dllink = getFinalDownloadlink(br);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
         if (!looksLikeDownloadableContent(dl.getConnection())) {
@@ -152,7 +145,7 @@ public class OldGamesCom extends PluginForHost {
         return "https://www.old-games.com/getfile/" + this.getFID(link);
     }
 
-    private String getFinalDownloadlink() throws PluginException, MalformedURLException {
+    private String getFinalDownloadlink(final Browser br) throws PluginException, MalformedURLException {
         String dllink = br.getRegex("\"(https?://[a-z0-9\\-]+\\.old\\-games\\.com/[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) {
             dllink = br.getRegex("\"(https?://[^<>\"]*?)\">DOWNLOAD").getMatch(0);
@@ -201,6 +194,7 @@ public class OldGamesCom extends PluginForHost {
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null && !force) {
+                    /* Do not validate cookies. */
                     br.setCookies(cookies);
                     return;
                 }
@@ -208,11 +202,7 @@ public class OldGamesCom extends PluginForHost {
                 this.br.setCookie(this.getHost(), "acc", account.getPass());
                 br.getPage("http://www.old-games.com/getfile/10");
                 if (this.br.containsHTML("name=\"acc\"")) {
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
+                    throw new AccountInvalidException();
                 }
                 account.saveCookies(br.getCookies(br.getHost()), "");
             } catch (final PluginException e) {
@@ -232,7 +222,6 @@ public class OldGamesCom extends PluginForHost {
         account.setType(AccountType.PREMIUM);
         account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
         account.setConcurrentUsePossible(true);
-        ai.setStatus("Premium account");
         return ai;
     }
 
@@ -242,7 +231,7 @@ public class OldGamesCom extends PluginForHost {
         login(account, false);
         br.setFollowRedirects(false);
         br.getPage(getGetfileURL(link));
-        final String dllink = getFinalDownloadlink();
+        final String dllink = getFinalDownloadlink(br);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
         if (!looksLikeDownloadableContent(dl.getConnection())) {
             logger.warning("The final dllink seems not to be a file!");

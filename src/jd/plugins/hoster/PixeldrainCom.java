@@ -57,7 +57,6 @@ import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.AccountInvalidException;
 import jd.plugins.AccountUnavailableException;
-import jd.plugins.DefaultEditAccountPanel;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -654,7 +653,7 @@ public class PixeldrainCom extends PluginForHost {
         if (useAPIForLogin()) {
             return new PixeldrainAccountFactory(callback);
         } else {
-            return new DefaultEditAccountPanel(callback, !getAccountwithoutUsername());
+            return super.getAccountFactory(callback);
         }
     }
 
