@@ -39,6 +39,8 @@ import jd.parser.html.HTMLParser;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
@@ -53,9 +55,9 @@ public class ArtstationComCrawler extends antiDDoSForDecrypt {
         super(wrapper);
     }
 
-    private static final String TYPE_ARTIST      = "(?i)https?://(?:www\\.)?artstation\\.com/artist/[^/]+";
-    private static final String TYPE_ALBUM       = "(?i)https?://(?:www\\.)?artstation\\.com/artwork/([a-zA-Z0-9]+)";
-    private static final String TYPE_MARKETPLACE = "(?i)https?://(?:www\\.)?artstation\\.com/marketplace/p/([a-zA-Z0-9\\-]+)/([a-zA-Z0-9\\-]+)";
+    private static final String TYPE_ARTIST      = "(?i)https?://[^/]+/(?:artist/)?([^/]+)(/likes)?$";
+    private static final String TYPE_ALBUM       = "(?i)https?://[^/]+/artwork/([a-zA-Z0-9]+)";
+    private static final String TYPE_MARKETPLACE = "(?i)https?://[^/]+/marketplace/p/([a-zA-Z0-9\\-]+)/([a-zA-Z0-9\\-]+)";
     Object                      modifier         = null;
 
     @Override
@@ -77,13 +79,13 @@ public class ArtstationComCrawler extends antiDDoSForDecrypt {
     @SuppressWarnings({ "unchecked", "rawtypes" })
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final String parameter = param.getCryptedUrl().replaceFirst("http:", "https:");
+        final String contenturl = param.getCryptedUrl().replaceFirst("(?i)http:", "https:");
         final Account aa = AccountController.getInstance().getValidAccount(this.getHost());
         if (aa != null) {
             /* Login whenever possible - this may unlock some otherwise hidden user content. */
             try {
                 ArtstationCom.login(this.br, aa, false);
-            } catch (PluginException e) {
+            } catch (final PluginException e) {
                 handleAccountException(aa, e);
             }
         }
@@ -91,19 +93,19 @@ public class ArtstationComCrawler extends antiDDoSForDecrypt {
             // getPage("https://www.artstation.com/");
         }
         try {
-            getPage(parameter);
+            getPage(contenturl);
         } catch (PluginException e) {
             // we can still access the json api
             logger.log(e);
-            br.setCurrentURL(parameter);
+            br.setCurrentURL(contenturl);
         }
         if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setAllowInheritance(true);
-        if (parameter.matches(TYPE_ALBUM)) {
-            final String project_id = new Regex(parameter, TYPE_ALBUM).getMatch(0);
+        if (contenturl.matches(TYPE_ALBUM)) {
+            final String project_id = new Regex(contenturl, TYPE_ALBUM).getMatch(0);
             if (inValidate(project_id)) {
                 return ret;
             }
@@ -185,7 +187,7 @@ public class ArtstationComCrawler extends antiDDoSForDecrypt {
                 if (fid.equals("-1") || url == null || Boolean.FALSE.equals(hasImage)) {
                     continue;
                 } else if (hasVideo || "video_clip".equals(asset_type)) {
-                    // skip thumbnai
+                    // skip thumbnail
                     continue;
                 } else if (width > 1920 && StringUtils.containsIgnoreCase(url, "/large/") && !StringUtils.containsIgnoreCase(url, "/assets/images/")) {
                     logger.info("Auto 4k for '" + url + "' because width>1920=" + width);
@@ -236,12 +238,12 @@ public class ArtstationComCrawler extends antiDDoSForDecrypt {
                 }
             }
             fp.setName(packageName);
-        } else if (parameter.matches(TYPE_ARTIST)) {
-            final String username = new Regex(parameter, "https?://[^/]+/([^/]+)").getMatch(0);
+        } else if (contenturl.matches(TYPE_ARTIST)) {
+            final String username = new Regex(contenturl, TYPE_ARTIST).getMatch(0);
             ArtstationCom.setHeaders(this.br);
             getPage("https://www.artstation.com/users/" + username + ".json");
             if (br.getRequest().getHttpConnection().getResponseCode() == 404) {
-                return ret;
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             final Map<String, Object> json = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.getRequest().getHtmlCode());
             final String full_name_of_username_in_url = (String) json.get("full_name");
@@ -252,7 +254,7 @@ public class ArtstationComCrawler extends antiDDoSForDecrypt {
             int page = 1;
             /* Either all of user or only "likes" */
             String type = "projects";
-            if (parameter.endsWith("/likes")) {
+            if (contenturl.endsWith("/likes")) {
                 type = "likes";
             }
             do {
@@ -262,6 +264,9 @@ public class ArtstationComCrawler extends antiDDoSForDecrypt {
                 if (ret.size() == 0) {
                     /* We're crawling the first page */
                     entries_total = (int) JavaScriptEngineFactory.toLong(pageJson.get("total_count"), 0);
+                    if (entries_total == 0) {
+                        throw new DecrypterRetryException(RetryReason.EMPTY_PROFILE);
+                    }
                 }
                 final List<Object> ressourcelist = (List) pageJson.get("data");
                 for (final Object resource : ressourcelist) {
@@ -293,7 +298,6 @@ public class ArtstationComCrawler extends antiDDoSForDecrypt {
                     if (description != null) {
                         dl.setComment(description);
                     }
-                    dl.setLinkID(id);
                     dl.setName(filename);
                     dl.setProperty("full_name", full_name_of_uploader);
                     // dl.setAvailable(true);
@@ -319,10 +323,10 @@ public class ArtstationComCrawler extends antiDDoSForDecrypt {
                 }
             }
             fp.setName(packageName);
-        } else if (parameter.matches(TYPE_MARKETPLACE)) {
+        } else if (contenturl.matches(TYPE_MARKETPLACE)) {
             String itemname = br.getRegex("<h1[^>]+class\\s*=\\s*\"productPage-title\"[^>]+itemprop\\s*=\\s*\"name\"[^>]*>\\s*([^<]+)\\s*").getMatch(0);
             if (StringUtils.isEmpty(itemname)) {
-                itemname = new Regex(parameter, "https?://[^/]+/([^/]+)").getMatch(0);
+                itemname = new Regex(contenturl, "https?://[^/]+/([^/]+)").getMatch(0);
             }
             if (StringUtils.isNotEmpty(itemname)) {
                 fp.setName(itemname);
@@ -344,6 +348,9 @@ public class ArtstationComCrawler extends antiDDoSForDecrypt {
                 ret.add(dl);
                 distribute(dl);
             }
+        } else {
+            /* Developer mistake */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         return ret;
     }

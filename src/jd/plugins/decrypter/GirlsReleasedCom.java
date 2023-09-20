@@ -121,7 +121,7 @@ public class GirlsReleasedCom extends antiDDoSForDecrypt {
             final Request request = br.createGetRequest("https://girlsreleased.com/api/0.1/set/" + setID);
             sendRequest(br, request);
             if (br.getHttpConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
             final Map<String, Object> infomap = (Map<String, Object>) entries.get("set");

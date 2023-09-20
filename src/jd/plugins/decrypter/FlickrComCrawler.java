@@ -25,7 +25,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -102,8 +101,8 @@ public class FlickrComCrawler extends PluginForDecrypt {
      */
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        correctAddedURL(param);
-        if (param.getCryptedUrl().matches(INVALIDLINKS) || param.getCryptedUrl().matches("(?i)^https://[^/]+/photos/groups/$") || param.getCryptedUrl().contains("/map")) {
+        final String contenturl = correctAddedURL(param);
+        if (contenturl.matches(INVALIDLINKS) || contenturl.matches("(?i)^https://[^/]+/photos/groups/$") || contenturl.contains("/map")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         prepBrowserAPI(this.br);
@@ -114,30 +113,31 @@ public class FlickrComCrawler extends PluginForDecrypt {
             logger.info("Account available -> Logging in");
             try {
                 ((jd.plugins.hoster.FlickrCom) flickrHostPlugin).login(account, true);
-            } catch (final Throwable ignore) {
-                logger.log(ignore);
+            } catch (final Throwable e) {
+                logger.log(e);
                 logger.info("Can't use existing account because login failed");
                 account = null;
+                this.handleAccountException(account, e);
             }
         }
-        if (flickrHostPlugin.canHandle(param.getCryptedUrl())) {
+        if (flickrHostPlugin.canHandle(contenturl)) {
             /* Pass to hostplugin */
             final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-            ret.add(createDownloadlink(param.getCryptedUrl()));
+            ret.add(createDownloadlink(contenturl));
             return ret;
         } else {
-            if (param.getCryptedUrl().matches(TYPE_SETS_OF_USER_ALL)) {
-                return apiCrawlSetsOfUser(param, account);
+            if (contenturl.matches(TYPE_SETS_OF_USER_ALL)) {
+                return apiCrawlSetsOfUser(param, contenturl, account);
             } else {
-                return crawlStreamsAPI(param, account);
+                return crawlStreamsAPI(param, contenturl, account);
             }
         }
     }
 
     /** Corrects links added by the user. */
-    private void correctAddedURL(final CryptedLink param) {
+    private String correctAddedURL(final CryptedLink param) {
         String remove_string = null;
-        String newurl = Encoding.htmlDecode(param.getCryptedUrl()).replace("http://", "https://");
+        String newurl = Encoding.htmlDecode(param.getCryptedUrl()).replaceFirst("(?i)http://", "https://");
         newurl = newurl.replace("secure.flickr.com/", this.getHost() + "/");
         final String[] removeStuff = { "(/player/.+)", "(/with/.+)" };
         for (final String removethis : removeStuff) {
@@ -152,7 +152,7 @@ public class FlickrComCrawler extends PluginForDecrypt {
                 newurl = newurl.replace(remove_string, "");
             }
         }
-        param.setCryptedUrl(newurl);
+        return newurl;
     }
 
     /**
@@ -160,7 +160,7 @@ public class FlickrComCrawler extends PluginForDecrypt {
      *
      * @throws Exception
      */
-    private ArrayList<DownloadLink> crawlStreamsAPI(final CryptedLink param, final Account account) throws Exception {
+    private ArrayList<DownloadLink> crawlStreamsAPI(final CryptedLink param, final String contenturl, final Account account) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String apikey = getPublicAPIKey(this, this.br);
         if (StringUtils.isEmpty(apikey)) {
@@ -191,10 +191,10 @@ public class FlickrComCrawler extends PluginForDecrypt {
             query.add("csrf", "");
         }
         final FlickrAlbum album = new FlickrAlbum();
-        if (param.getCryptedUrl().matches(TYPE_SET_SINGLE)) {
+        if (contenturl.matches(TYPE_SET_SINGLE)) {
             album.setType(AlbumType.SET);
-            usernameFromURL = new Regex(param.getCryptedUrl(), TYPE_SET_SINGLE).getMatch(0);
-            album.setSetID(new Regex(param.getCryptedUrl(), TYPE_SET_SINGLE).getMatch(1));
+            usernameFromURL = new Regex(contenturl, TYPE_SET_SINGLE).getMatch(0);
+            album.setSetID(new Regex(contenturl, TYPE_SET_SINGLE).getMatch(1));
             /* This request is only needed to get the title and owner of the photoset */
             query.add("photoset_id", album.getSetID());
             final UrlQuery paramsSetInfo = query;
@@ -212,10 +212,10 @@ public class FlickrComCrawler extends PluginForDecrypt {
             nameOfMainMap = "photoset";
             alreadyAccessedFirstPage = false;
             givenUsernameDataIsValidForAllMediaItems = true;
-        } else if (param.getCryptedUrl().matches(TYPE_GALLERY)) {
+        } else if (contenturl.matches(TYPE_GALLERY)) {
             album.setType(AlbumType.GALLERY);
-            usernameFromURL = new Regex(param.getCryptedUrl(), TYPE_GALLERY).getMatch(0);
-            album.setGalleryID(new Regex(param.getCryptedUrl(), TYPE_GALLERY).getMatch(1));
+            usernameFromURL = new Regex(contenturl, TYPE_GALLERY).getMatch(0);
+            album.setGalleryID(new Regex(contenturl, TYPE_GALLERY).getMatch(1));
             query.add("method", "flickr.galleries.getPhotos");
             query.add("gallery_id", album.getGalleryID());
             final UrlQuery specialQueryForFirstRequest = query;
@@ -232,18 +232,18 @@ public class FlickrComCrawler extends PluginForDecrypt {
             nameOfMainMap = "photos";
             alreadyAccessedFirstPage = true;
             givenUsernameDataIsValidForAllMediaItems = false;
-        } else if (param.getCryptedUrl().matches(TYPE_FAVORITES)) {
+        } else if (contenturl.matches(TYPE_FAVORITES)) {
             album.setType(AlbumType.USER_FAVORITES);
-            usernameFromURL = new Regex(param.getCryptedUrl(), TYPE_FAVORITES).getMatch(0);
+            usernameFromURL = new Regex(contenturl, TYPE_FAVORITES).getMatch(0);
             usernameInternal = this.lookupUser(usernameFromURL, account);
             query.add("method", "flickr.favorites.getList");
             query.add("user_id", Encoding.urlEncode(usernameInternal));
             nameOfMainMap = "photos";
             alreadyAccessedFirstPage = false;
             givenUsernameDataIsValidForAllMediaItems = false;
-        } else if (param.getCryptedUrl().matches(TYPE_GROUPS)) {
+        } else if (contenturl.matches(TYPE_GROUPS)) {
             album.setType(AlbumType.GROUPS);
-            usernameFromURL = new Regex(param.getCryptedUrl(), TYPE_GROUPS).getMatch(0);
+            usernameFromURL = new Regex(contenturl, TYPE_GROUPS).getMatch(0);
             usernameInternal = this.lookupGroup(usernameFromURL, account);
             query.add("group_id", Encoding.urlEncode(usernameInternal));
             query.add("method", "flickr.groups.pools.getPhotos");
@@ -264,10 +264,10 @@ public class FlickrComCrawler extends PluginForDecrypt {
             nameOfMainMap = "photos";
             alreadyAccessedFirstPage = true;
             givenUsernameDataIsValidForAllMediaItems = false;
-        } else if (param.getCryptedUrl().matches(TYPE_USER)) {
+        } else if (contenturl.matches(TYPE_USER)) {
             album.setType(AlbumType.USER);
             /* Crawl all items of a user */
-            usernameFromURL = new Regex(param.getCryptedUrl(), TYPE_USER).getMatch(0);
+            usernameFromURL = new Regex(contenturl, TYPE_USER).getMatch(0);
             usernameInternal = this.lookupUser(usernameFromURL, account);
             query.add("user_id", usernameInternal);
             query.add("method", "flickr.people.getPublicPhotos"); // Alternative: flickr.people.getPhotos
@@ -422,9 +422,9 @@ public class FlickrComCrawler extends PluginForDecrypt {
     }
 
     /** Crawls all sets/albums of a user. */
-    private ArrayList<DownloadLink> apiCrawlSetsOfUser(final CryptedLink param, final Account account) throws Exception {
+    private ArrayList<DownloadLink> apiCrawlSetsOfUser(final CryptedLink param, final String contenturl, final Account account) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final String username = new Regex(param.getCryptedUrl(), TYPE_SETS_OF_USER_ALL).getMatch(0);
+        final String username = new Regex(contenturl, TYPE_SETS_OF_USER_ALL).getMatch(0);
         if (username == null) {
             /* Most likely developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -459,8 +459,8 @@ public class FlickrComCrawler extends PluginForDecrypt {
             final List<Map<String, Object>> sets = (List<Map<String, Object>>) setInfo.get("photoset");
             for (final Map<String, Object> set : sets) {
                 /* Those ones go back into our crawler. */
-                final String contenturl = "https://www." + this.getHost() + "/photos/" + username + "/sets/" + set.get("id") + "/";
-                final DownloadLink fina = createDownloadlink(contenturl);
+                final String contenturlSet = "https://www." + this.getHost() + "/photos/" + username + "/sets/" + set.get("id") + "/";
+                final DownloadLink fina = createDownloadlink(contenturlSet);
                 ret.add(fina);
             }
             if (this.isAbort()) {
@@ -696,18 +696,18 @@ public class FlickrComCrawler extends PluginForDecrypt {
     @SuppressWarnings({ "unchecked" })
     @Deprecated
     /** Deprecated! Uses website without ajax requests! */
-    private ArrayList<DownloadLink> crawlStreamsWebsite(final CryptedLink param, final Account account) throws Exception {
+    private ArrayList<DownloadLink> crawlStreamsWebsite(final CryptedLink param, final String contenturl, final Account account) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         prepBrowserWebsite(this.br);
         // if not logged in this is 25... need to confirm for logged in -raztoki20160717
         int maxEntriesPerPage = 25;
         String fpName;
-        br.getPage(param.getCryptedUrl());
+        br.getPage(contenturl);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if ((br.containsHTML("class=\"ThinCase Interst\"") || br.getURL().contains("/login.yahoo.com/"))) {
             throw new AccountRequiredException();
-        } else if (param.getCryptedUrl().matches(TYPE_FAVORITES) && br.containsHTML("id=\"no\\-faves\"")) {
+        } else if (contenturl.matches(TYPE_FAVORITES) && br.containsHTML("id=\"no\\-faves\"")) {
             /* Favourite link but user has no favourites */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -715,8 +715,8 @@ public class FlickrComCrawler extends PluginForDecrypt {
         String picCount = br.getRegex("\"total\":(\")?(\\d+)").getMatch(1);
         fpName = br.getRegex("<title>(.*?) \\| Flickr</title>").getMatch(0);
         String username = null;
-        if (param.getCryptedUrl().matches(TYPE_FAVORITES)) {
-            username = new Regex(param.getCryptedUrl(), TYPE_FAVORITES).getMatch(0);
+        if (contenturl.matches(TYPE_FAVORITES)) {
+            username = new Regex(contenturl, TYPE_FAVORITES).getMatch(0);
             fpName = "favourites of user " + username;
         } else {
             /* Unsupported URL type/developer mistake */
@@ -737,14 +737,14 @@ public class FlickrComCrawler extends PluginForDecrypt {
          * Handling for albums/sets: Only decrypt all pages if user did NOT add a direct page link
          */
         int currentPage = -1;
-        if (param.getCryptedUrl().contains("/page")) {
-            currentPage = Integer.parseInt(new Regex(param.getCryptedUrl(), "page(\\d+)").getMatch(0));
+        if (contenturl.contains("/page")) {
+            currentPage = Integer.parseInt(new Regex(contenturl, "page(\\d+)").getMatch(0));
         }
-        String getPage = param.getCryptedUrl().replaceFirst("/page\\d+", "") + "/page%s";
-        if (param.getCryptedUrl().matches(TYPE_GROUPS) && param.getCryptedUrl().endsWith("/")) {
+        String getPage = contenturl.replaceFirst("/page\\d+", "") + "/page%s";
+        if (contenturl.matches(TYPE_GROUPS) && contenturl.endsWith("/")) {
             // Try other way of loading more pictures for groups links
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            getPage = param.getCryptedUrl() + "page%s/?fragment=1";
+            getPage = contenturl + "page%s/?fragment=1";
         }
         int i = (currentPage != -1 ? currentPage : 1);
         /* We don't know the total count before so let's always use 4 digits. */

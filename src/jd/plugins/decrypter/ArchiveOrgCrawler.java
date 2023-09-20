@@ -87,10 +87,10 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         br.setFollowRedirects(true);
         /* 2023-07-10: looks like some detail pages return 503 instead of 200 */
         br.setAllowedResponseCodes(503);
-        param.setCryptedUrl(param.getCryptedUrl().replace("://www.", "://").replaceFirst("/(stream|embed)/", "/download/"));
-        if (new Regex(param.getCryptedUrl(), PATTERN_DOWNLOAD).patternFind()) {
-            return crawlPatternSlashDownload(param);
-        } else if (param.getCryptedUrl().matches(PATTERN_SEARCH)) {
+        final String contenturl = param.getCryptedUrl().replace("://www.", "://").replaceFirst("/(stream|embed)/", "/download/");
+        if (new Regex(contenturl, PATTERN_DOWNLOAD).patternFind()) {
+            return crawlPatternSlashDownload(contenturl);
+        } else if (contenturl.matches(PATTERN_SEARCH)) {
             return this.crawlSearchQueryURL(br, param);
         } else {
             /*
@@ -102,13 +102,13 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                 hostPlugin.login(account, false);
             }
             URLConnectionAdapter con = null;
-            boolean isArchiveContent = isArchiveURL(param.getCryptedUrl());
+            boolean isArchiveContent = isArchiveURL(contenturl);
             if (isArchiveContent) {
-                br.getPage(param.getCryptedUrl());
+                br.getPage(contenturl);
             } else {
                 try {
                     /* Check if we have a direct URL --> Host plugin */
-                    con = br.openGetConnection(param.getCryptedUrl());
+                    con = br.openGetConnection(contenturl);
                     isArchiveContent = isArchiveURL(con.getURL().toString());
                     /*
                      * 2020-03-04: E.g. directurls will redirect to subdomain e.g. ia800503.us.archive.org --> Sometimes the only way to
@@ -117,7 +117,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                     final String host = Browser.getHost(con.getURL(), true);
                     if (!isArchiveContent && (this.looksLikeDownloadableContent(con) || con.getLongContentLength() > br.getLoadLimit() || !host.equals("archive.org"))) {
                         // final DownloadLink fina = this.createDownloadlink(parameter.replace("archive.org", host_decrypted));
-                        final DownloadLink dl = new DownloadLink(hostPlugin, null, hostPlugin.getHost(), param.getCryptedUrl(), true);
+                        final DownloadLink dl = new DownloadLink(hostPlugin, null, hostPlugin.getHost(), contenturl, true);
                         if (this.looksLikeDownloadableContent(con)) {
                             if (con.getCompleteContentLength() > 0) {
                                 dl.setVerifiedFileSize(con.getCompleteContentLength());
@@ -183,10 +183,10 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                 }
             } else if (isArchiveContent) {
                 return crawlArchiveContent();
-            } else if (StringUtils.containsIgnoreCase(param.getCryptedUrl(), "/details/")) {
+            } else if (StringUtils.containsIgnoreCase(contenturl, "/details/")) {
                 return crawlDetails(br, param);
             } else {
-                return crawlFiles(param);
+                return crawlFiles(contenturl);
             }
         }
     }
@@ -197,12 +197,12 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         }
     }
 
-    private ArrayList<DownloadLink> crawlPatternSlashDownload(final CryptedLink param) throws Exception {
-        if (!new Regex(param.getCryptedUrl(), PATTERN_DOWNLOAD).patternFind()) {
+    private ArrayList<DownloadLink> crawlPatternSlashDownload(final String url) throws Exception {
+        if (!new Regex(url, PATTERN_DOWNLOAD).patternFind()) {
             /* Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        String path = new URL(param.getCryptedUrl()).getPath();
+        String path = new URL(url).getPath();
         path = path.replaceFirst("^/download/", "/");
         final boolean allowCheckForDirecturl = true;
         if (path.contains("/") && allowCheckForDirecturl) {
@@ -214,11 +214,11 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
             logger.info("Path contains subpath -> Checking for single directurl");
             URLConnectionAdapter con = null;
             try {
-                con = br.openHeadConnection(param.getCryptedUrl());
+                con = br.openHeadConnection(url);
                 ensureInitHosterplugin();
                 if (this.looksLikeDownloadableContent(con)) {
                     logger.info("URL is directurl");
-                    final DownloadLink dl = new DownloadLink(hostPlugin, null, hostPlugin.getHost(), param.getCryptedUrl(), true);
+                    final DownloadLink dl = new DownloadLink(hostPlugin, null, hostPlugin.getHost(), url, true);
                     if (con.getCompleteContentLength() > 0) {
                         dl.setVerifiedFileSize(con.getCompleteContentLength());
                     }
@@ -248,23 +248,24 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                 }
             }
         }
-        return crawlXML(param, br, path);
+        return crawlXML(url, br, path);
     }
 
     /** Crawls all files from "/download/..." URLs. */
-    private ArrayList<DownloadLink> crawlFiles(final CryptedLink param) throws Exception {
+    @Deprecated
+    private ArrayList<DownloadLink> crawlFiles(final String contenturl) throws Exception {
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(?i)>\\s*The item is not available")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (!br.containsHTML("\"/download/")) {
-            logger.info("Maybe invalid link or nothing there to download: " + param.getCryptedUrl());
+            logger.info("Maybe invalid link or nothing there to download: " + contenturl);
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String subfolderPathURLEncoded = new Regex(param.getCryptedUrl(), "(?i)https?://[^/]+/(?:download|details)/(.*?)/?$").getMatch(0);
-        final String titleSlug = new Regex(param.getCryptedUrl(), "(?i)https?://[^/]+/(?:download|details)/([^/]+)").getMatch(0);
+        final String subfolderPathURLEncoded = new Regex(contenturl, "(?i)https?://[^/]+/(?:download|details)/(.*?)/?$").getMatch(0);
+        final String titleSlug = new Regex(contenturl, "(?i)https?://[^/]+/(?:download|details)/([^/]+)").getMatch(0);
         if (titleSlug == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        return crawlXML(param, br, subfolderPathURLEncoded);
+        return crawlXML(br.getURL(), br, subfolderPathURLEncoded);
     }
 
     private ArrayList<DownloadLink> crawlDetails(final Browser br, final CryptedLink param) throws Exception {
@@ -276,7 +277,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         final String downloadurl = br.getURL("/download/" + titleSlug).toString();
         if (br.containsHTML("id=\"gamepadtext\"")) {
             /* 2020-09-29: Rare case: Download browser emulated games */
-            return this.crawlXML(param, br, titleSlug);
+            return this.crawlXML(br.getURL(), br, titleSlug);
         }
         final ArrayList<DownloadLink> playlistStreams = new ArrayList<DownloadLink>();
         final ArchiveOrgConfig cfg = PluginJsonConfig.get(ArchiveOrgConfig.class);
@@ -887,7 +888,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         }
     }
 
-    private ArrayList<DownloadLink> crawlXML(final CryptedLink param, final Browser xmlbr, final String path) throws IOException, PluginException, DecrypterRetryException {
+    private ArrayList<DownloadLink> crawlXML(final String contenturl, final Browser xmlbr, final String path) throws IOException, PluginException, DecrypterRetryException {
         if (xmlbr == null) {
             /* Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -1073,8 +1074,8 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
              * Force auto package handling for single items e.g. if user only added a single file which is part of a huge folder. </br>
              * Reference: https://board.jdownloader.org/showthread.php?t=92666&page=2
              */
-            final Regex typeDownload = new Regex(param.getCryptedUrl(), PATTERN_DOWNLOAD);
-            if (typeDownload.patternFind() && StringUtils.equalsIgnoreCase(ret.get(0).getPluginPatternMatcher(), param.getCryptedUrl())) {
+            final Regex typeDownload = new Regex(contenturl, PATTERN_DOWNLOAD);
+            if (typeDownload.patternFind() && StringUtils.equalsIgnoreCase(ret.get(0).getPluginPatternMatcher(), contenturl)) {
                 CrawledLink source = getCurrentLink().getSourceLink();
                 boolean crawlerSource = false;
                 while (source != null) {

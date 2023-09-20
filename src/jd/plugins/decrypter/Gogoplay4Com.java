@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
@@ -34,6 +35,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.DirectHTTP;
@@ -145,9 +147,24 @@ public class Gogoplay4Com extends PluginForDecrypt {
             /* Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        final String titleFromQuery = query.get("title");
+        String packageName;
+        if (titleFromQuery != null) {
+            /* Use title in query as packagename */
+            packageName = titleFromQuery;
+        } else {
+            /* Get packagename from HTML */
+            packageName = br.getRegex("<title>([^<>\"]+)</title>").getMatch(0);
+        }
         final FilePackage fp = FilePackage.getInstance();
         fp.setPackageKey("gogoplay4://" + id);
-        fp.setName(id);
+        if (packageName != null) {
+            packageName = Encoding.htmlDecode(packageName).trim();
+            fp.setName(packageName);
+        } else {
+            /* Fallback */
+            fp.setName(id);
+        }
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         if (param.getCryptedUrl().matches(TYPE_STREAMING)) {
             /* This step doesn't require a captcha to be solved. */
@@ -177,15 +194,6 @@ public class Gogoplay4Com extends PluginForDecrypt {
         br.getPage("https://" + hostInsideAddedURL + "/download?" + query.toString());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        final String titleFromQuery = query.get("title");
-        final String packageName;
-        if (titleFromQuery != null) {
-            /* Use title in query as packagename */
-            packageName = titleFromQuery;
-        } else {
-            /* Get packagename from HTML */
-            packageName = br.getRegex("<title>([^<>\"]+)</title>").getMatch(0);
         }
         /* 0-2 captchas are required */
         if (AbstractRecaptchaV2.containsRecaptchaV2Class(br) || (br.containsHTML("grecaptcha\\.execute") && br.containsHTML("captcha_v3"))) {
@@ -223,11 +231,21 @@ public class Gogoplay4Com extends PluginForDecrypt {
         }
         for (final String streamLink : streamLinks) {
             final DownloadLink link;
-            if (streamLink.matches("^https?://gogo-cdn\\.com/.*")) {
+            if (streamLink.matches("(?i)^https?://gogo-cdn\\.com/.*")) {
                 link = createDownloadlink(DirectHTTP.createURLForThisPlugin(streamLink));
-            } else if (streamLink.matches("(?i)https?://(gogodownload\\.net|godownload\\.pro)/download\\.php\\?url=.+")) {
+            } else if (streamLink.matches("(?i)https?://[^/]+/download\\.php\\?url=[a-zA-Z0-9_/\\+\\=\\-%]+")) {
                 /* 2023-08-17 */
                 link = createDownloadlink(DirectHTTP.createURLForThisPlugin(streamLink));
+                /* Extract some additional information so we can skip linkcheck. */
+                final String b64 = UrlQuery.parse(streamLink).get("url");
+                final String b64decodedURL = Encoding.Base64Decode(b64);
+                final String filename = Plugin.getFileNameFromURL(b64decodedURL);
+                if (filename != null && StringUtils.endsWithCaseInsensitive(filename, ".mp4")) {
+                    link.setName(filename);
+                    link.setAvailable(true);
+                } else {
+                    logger.warning("Failed to find filename in: " + b64decodedURL);
+                }
             } else {
                 link = createDownloadlink(streamLink);
             }
@@ -235,7 +253,6 @@ public class Gogoplay4Com extends PluginForDecrypt {
             link.setReferrerUrl(param.getCryptedUrl());
             ret.add(link);
         }
-        fp.setName(Encoding.htmlDecode(packageName).trim());
         fp.addLinks(ret);
         return ret;
     }

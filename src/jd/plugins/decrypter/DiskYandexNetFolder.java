@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
-import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.URLEncode;
@@ -97,11 +96,11 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
     }
 
     /** Usually docviewer.yandex.xy but we're supporting so many domains and subdomains that a generic RegEx works better. */
-    private static final String type_docviewer    = "https?://[^/]+/\\?url=ya\\-disk\\-public%3A%2F%2F([^/\"\\&]+).*?";
-    private final String        type_primaryURLs  = ".+?public/?(\\?hash=.+|#.+)";
-    private final String        type_shortURLs_d  = "https?://[^/]+/d/[A-Za-z0-9\\-_]+((/[^/]+){0,})";
-    private final String        type_shortURLs_i  = "https?://[^/]+/i/[A-Za-z0-9\\-_]+";
-    private final String        type_yadi_sk_mail = "https?://[^/]+/mail/\\?hash=.+";
+    private static final String type_docviewer    = "(?i)https?://[^/]+/\\?url=ya\\-disk\\-public%3A%2F%2F([^/\"\\&]+).*?";
+    private final String        type_primaryURLs  = "(?i).+?public/?(\\?hash=.+|#.+)";
+    private final String        type_shortURLs_d  = "(?i)https?://[^/]+/d/[A-Za-z0-9\\-_]+((/[^/]+){0,})";
+    private final String        type_shortURLs_i  = "(?i)https?://[^/]+/i/[A-Za-z0-9\\-_]+";
+    private final String        type_yadi_sk_mail = "(?i)https?://[^/]+/mail/\\?hash=.+";
     private static final String JSON_TYPE_DIR     = "dir";
 
     /** Using API: https://tech.yandex.ru/disk/api/reference/public-docpage/ */
@@ -110,7 +109,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
         br.setFollowRedirects(true);
         /* Load hosterplugin to use same browser headers/settings. */
         this.getNewPluginForHostInstance(this.getHost());
-        final String parameter = param.getCryptedUrl();
+        String contenturl = param.getCryptedUrl();
         /* Do some URL corrections */
         if (param.getCryptedUrl().matches(type_docviewer)) {
             /* Documents in web view mode --> File-URLs! */
@@ -128,23 +127,23 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                 }
             }
             final String hashRoot = URLDecoder.decode(hash, "UTF-8");
-            param.setCryptedUrl(generateContentURL(hashRoot));
+            contenturl = generateContentURL(hashRoot);
         }
         /**
          * 2021-02-09: New: Prefer website if we do now know whether we got a file or a folder! API will fail in case it is a single file &&
          * is currently quota-limited!
          */
-        if (StringUtils.isEmpty(this.getAdoptedCloudFolderStructure()) || StringUtils.isEmpty(getHashFromURL(parameter))) {
+        if (StringUtils.isEmpty(this.getAdoptedCloudFolderStructure()) || StringUtils.isEmpty(getHashFromURL(contenturl))) {
             logger.info("Using website crawler because we cannot know whether we got a single file- or a folder");
-            return this.crawlFilesFoldersWebsite(param);
+            return this.crawlFilesFoldersWebsite(param, contenturl);
         } else {
             logger.info("Using API crawler");
-            return this.crawlFilesFoldersAPI(param);
+            return this.crawlFilesFoldersAPI(param, contenturl);
         }
     }
 
-    private ArrayList<DownloadLink> crawlFilesFoldersWebsite(final CryptedLink param) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+    private ArrayList<DownloadLink> crawlFilesFoldersWebsite(final CryptedLink param, final String contenturl) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         String relativeDownloadPath = this.getAdoptedCloudFolderStructure();
         if (relativeDownloadPath == null) {
             relativeDownloadPath = "";
@@ -155,7 +154,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
          * until file is found but this takes too much time and effort for us so we'll just add everything. The user can then sort/find that
          * file in the LinkGrabber.
          */
-        br.getPage(param.getCryptedUrl());
+        br.getPage(contenturl);
         if (isOfflineWebsite(this.br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -226,7 +225,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                     final String folderlink = this.generateContentURL(path);
                     final DownloadLink dl = createDownloadlink(folderlink);
                     dl.setRelativeDownloadFolderPath(relativeDownloadPath + "/" + name);
-                    decryptedLinks.add(dl);
+                    ret.add(dl);
                     distribute(dl);
                 } else {
                     offset += 1;
@@ -269,7 +268,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                         }
                         dl._setFilePackage(fp);
                     }
-                    decryptedLinks.add(dl);
+                    ret.add(dl);
                     distribute(dl);
                 }
             }
@@ -317,20 +316,20 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
             }
             page += 1;
         } while (!this.isAbort());
-        return decryptedLinks;
+        return ret;
     }
 
-    private ArrayList<DownloadLink> crawlFilesFoldersAPI(final CryptedLink param) throws Exception {
+    private ArrayList<DownloadLink> crawlFilesFoldersAPI(final CryptedLink param2, final String contenturl) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         String relativeDownloadPath = this.getAdoptedCloudFolderStructure();
         if (relativeDownloadPath == null) {
             relativeDownloadPath = "";
         }
         String hashWithPath;
-        if (param.getCryptedUrl().matches(type_yadi_sk_mail)) {
-            hashWithPath = getHashFromURL(param.getCryptedUrl());
-        } else if (param.getCryptedUrl().matches(type_shortURLs_d) || param.getCryptedUrl().matches(type_shortURLs_i)) {
-            br.getPage(param.getCryptedUrl());
+        if (contenturl.matches(type_yadi_sk_mail)) {
+            hashWithPath = getHashFromURL(contenturl);
+        } else if (contenturl.matches(type_shortURLs_d) || contenturl.matches(type_shortURLs_i)) {
+            br.getPage(contenturl);
             if (isOfflineWebsite(this.br)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -339,15 +338,15 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         } else {
-            hashWithPath = getHashFromURL(param.getCryptedUrl());
+            hashWithPath = getHashFromURL(contenturl);
         }
         if (hashWithPath == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final String hashWithoutPath = getHashWithoutPath(hashWithPath);
         String internalPath = null;
-        if (param.getCryptedUrl().matches(type_shortURLs_d)) {
-            internalPath = new Regex(param.getCryptedUrl(), type_shortURLs_d).getMatch(1);
+        if (contenturl.matches(type_shortURLs_d)) {
+            internalPath = new Regex(contenturl, type_shortURLs_d).getMatch(1);
             internalPath = URLDecoder.decode(internalPath, "UTF-8");
             /* Remove parameter(s) */
             if (internalPath.contains("?")) {

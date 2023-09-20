@@ -160,6 +160,10 @@ public class TwitterComCrawler extends PluginForDecrypt {
         return ret.toArray(new String[0]);
     }
 
+    private String getContentURL(final CryptedLink param) {
+        return param.getCryptedUrl().replaceFirst("(?i)https?://(www\\.|mobile\\.)?twitter\\.com/", "https://" + this.getHost() + "/");
+    }
+
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         this.resumeURL = param.getDownloadLink() != null ? param.getDownloadLink().getStringProperty(PROPERTY_RESUME_URL) : null;
@@ -198,7 +202,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
         } catch (final Throwable ignore) {
         }
         br.setAllowedResponseCodes(new int[] { 429 });
-        final String newURL = param.getCryptedUrl().replaceFirst("(?i)https?://(www\\.|mobile\\.)?twitter\\.com/", "https://" + this.getHost() + "/");
+        final String newURL = getContentURL(param);
         if (!newURL.equals(param.getCryptedUrl())) {
             logger.info("Currected URL: Old: " + param.getCryptedUrl() + " | New: " + newURL);
             param.setCryptedUrl(newURL);
