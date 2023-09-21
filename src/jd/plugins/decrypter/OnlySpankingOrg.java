@@ -15,6 +15,7 @@ import jd.parser.html.Form;
 import jd.parser.html.Form.MethodType;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -60,8 +61,8 @@ public class OnlySpankingOrg extends antiDDoSForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
-        param.setCryptedUrl(param.getCryptedUrl().replace("http://", "https://"));
-        getPage(param.getCryptedUrl());
+        final String contenturl = param.getCryptedUrl().replaceFirst("(?i)http://", "https://");
+        getPage(contenturl);
         final String startURL = br.getURL();
         final String dle_skin = br.getRegex("var\\s*dle_skin\\s*=\\s*'(.*?)'").getMatch(0);
         if (dle_skin == null) {
@@ -70,7 +71,7 @@ public class OnlySpankingOrg extends antiDDoSForDecrypt {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String ajax_action = null;
-        boolean success = false;
+        boolean captchaSuccess = false;
         for (int i = 0; i <= 2; i++) {
             /* Important! */
             br.getHeaders().put("Referer", startURL);
@@ -89,7 +90,7 @@ public class OnlySpankingOrg extends antiDDoSForDecrypt {
                 br.getHeaders().put("Referer", startURL);
                 submitForm(br, captchaform);
                 /* Do not allow retries for reCaptcha and assume it is solved correctly with one attempt. */
-                success = true;
+                captchaSuccess = true;
                 break;
             } else {
                 /* Simple image captcha */
@@ -106,11 +107,11 @@ public class OnlySpankingOrg extends antiDDoSForDecrypt {
                 logger.info("Wrong captcha | Run: " + i);
                 continue;
             } else {
-                success = true;
+                captchaSuccess = true;
                 break;
             }
         }
-        if (!success) {
+        if (!captchaSuccess) {
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
         String finallink = null;
@@ -132,7 +133,7 @@ public class OnlySpankingOrg extends antiDDoSForDecrypt {
                 }
                 if (ubiqfile_premium_mail == null) {
                     logger.info("Content is premiumonly and user does not own premium access");
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+                    throw new AccountRequiredException();
                 }
                 logger.info("Content is premiumonly and user should have premium access via mail: " + ubiqfile_premium_mail);
                 final Form premiumForm = new Form();
@@ -158,10 +159,9 @@ public class OnlySpankingOrg extends antiDDoSForDecrypt {
         }
         if (finallink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        } else {
-            ret.add(createDownloadlink(finallink));
-            return ret;
         }
+        ret.add(createDownloadlink(finallink));
+        return ret;
     }
 
     private Form getCaptchaForm(final Browser br) {

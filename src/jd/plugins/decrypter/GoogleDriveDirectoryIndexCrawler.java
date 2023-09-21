@@ -32,7 +32,6 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.URLEncode;
 import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
 import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.FunctionObject;
@@ -56,11 +55,12 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
+import jd.plugins.PluginForDecrypt;
+import jd.plugins.hoster.GoogleDriveDirectoryIndex;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 @PluginDependencies(dependencies = { jd.plugins.hoster.GoogleDriveDirectoryIndex.class })
-public class GoogleDriveDirectoryIndex extends antiDDoSForDecrypt {
+public class GoogleDriveDirectoryIndexCrawler extends PluginForDecrypt {
     private static final String PROPERTY_FOLDER_USE_OLD_POST_REQUEST = "folder_use_old_post_request";
 
     private static List<String[]> getPluginDomains() {
@@ -90,7 +90,7 @@ public class GoogleDriveDirectoryIndex extends antiDDoSForDecrypt {
      * https://github.com/alx-xlx/goindex </br>
      * Be sure to add all domains to host plugin GoogleDriveDirectoryIndex.java too!
      */
-    public GoogleDriveDirectoryIndex(PluginWrapper wrapper) {
+    public GoogleDriveDirectoryIndexCrawler(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -167,7 +167,7 @@ public class GoogleDriveDirectoryIndex extends antiDDoSForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         if (param.toString().contains("?")) {
             /* Remove all URL parameters */
             param.setCryptedUrl(param.getCryptedUrl().substring(0, param.getCryptedUrl().lastIndexOf("?")));
@@ -175,8 +175,8 @@ public class GoogleDriveDirectoryIndex extends antiDDoSForDecrypt {
         br.setAllowedResponseCodes(new int[] { 500 });
         final Account acc = AccountController.getInstance().getValidAccount(this.getHost());
         if (acc != null) {
-            final PluginForHost plg = this.getNewPluginForHostInstance(this.getHost());
-            ((jd.plugins.hoster.GoogleDriveDirectoryIndex) plg).login(acc, false);
+            final GoogleDriveDirectoryIndex plg = (GoogleDriveDirectoryIndex) this.getNewPluginForHostInstance(this.getHost());
+            plg.login(acc);
         }
         boolean useOldPostRequest;
         /* Check if we maybe already know which request type is the right one so we need less http requests. */
@@ -189,47 +189,36 @@ public class GoogleDriveDirectoryIndex extends antiDDoSForDecrypt {
         /* Older versions required urlquery, newer expect json POST body */
         URLConnectionAdapter con = null;
         try {
-            con = openAntiDDoSRequestConnection(br, br.createGetRequest(param.getCryptedUrl()));
+            con = br.openGetConnection(param.getCryptedUrl());
             DownloadLink direct = getDirectDownload(con);
             if (direct != null) {
-                decryptedLinks.add(direct);
-                return decryptedLinks;
+                ret.add(direct);
+                return ret;
             } else {
                 // initial get request (same as in browser) can set cookies/referer that might avoid 401
-                try {
-                    br.followConnection(true);
-                } catch (IOException e) {
-                    logger.log(e);
-                }
+                br.followConnection(true);
             }
             if (useOldPostRequest) {
-                con = openAntiDDoSRequestConnection(br, br.createPostRequest(param.getCryptedUrl(), this.getPaginationPostDataQuery(0, "")));
+                con = br.openPostConnection(param.getCryptedUrl(), this.getPaginationPostDataQuery(0, ""));
             } else {
-                con = openAntiDDoSRequestConnection(br, br.createPostRequest(param.getCryptedUrl(), this.getPaginationPostDataJson(0, "")));
+                con = br.openRequestConnection(br.createPostRequest(param.getCryptedUrl(), this.getPaginationPostDataJson(0, "")));
                 if (con.getResponseCode() == 500) {
-                    try {
-                        br.followConnection(true);
-                    } catch (IOException e) {
-                        logger.log(e);
-                    }
+                    br.followConnection(true);
                     logger.info("Error 500 -> Trying again via old POST request method");
-                    con = openAntiDDoSRequestConnection(br, br.createPostRequest(param.getCryptedUrl(), this.getPaginationPostDataQuery(0, "")));
+                    con = br.openPostConnection(param.getCryptedUrl(), this.getPaginationPostDataQuery(0, ""));
+                    /* Make sure that subsequent requests will be sent in the correct form right away. */
                     useOldPostRequest = true;
                 }
             }
             if (con.getResponseCode() == 401) {
                 // POST request failed but simple GET may work fine
-                try {
-                    br.followConnection(true);
-                } catch (IOException e) {
-                    logger.log(e);
-                }
-                con = openAntiDDoSRequestConnection(br, br.createGetRequest(param.getCryptedUrl()));
+                br.followConnection(true);
+                con = br.openGetConnection(param.getCryptedUrl());
             }
             direct = getDirectDownload(con);
             if (direct != null) {
-                decryptedLinks.add(direct);
-                return decryptedLinks;
+                ret.add(direct);
+                return ret;
             } else {
                 br.followConnection();
             }
@@ -364,9 +353,9 @@ public class GoogleDriveDirectoryIndex extends antiDDoSForDecrypt {
                 page += 1;
                 /* Older versions required urlquery, newer expect json POST body */
                 if (useOldPOSTRequest) {
-                    sendRequest(br.createPostRequest(br.getURL(), this.getPaginationPostDataQuery(page, nextPageToken)));
+                    br.postPage(br.getURL(), this.getPaginationPostDataQuery(page, nextPageToken));
                 } else {
-                    sendRequest(br.createPostRequest(br.getURL(), this.getPaginationPostDataJson(page, nextPageToken)));
+                    br.postPageRaw(br.getURL(), this.getPaginationPostDataJson(page, nextPageToken));
                 }
             }
         } while (true);

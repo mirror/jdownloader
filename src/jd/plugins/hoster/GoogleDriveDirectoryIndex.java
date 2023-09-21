@@ -15,18 +15,20 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -34,9 +36,10 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class GoogleDriveDirectoryIndex extends antiDDoSForHost {
+public class GoogleDriveDirectoryIndex extends PluginForHost {
     public GoogleDriveDirectoryIndex(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium();
@@ -86,12 +89,10 @@ public class GoogleDriveDirectoryIndex extends antiDDoSForHost {
      * Be sure to add all domains to crawler plugin GoogleDriveDirectoryIndex.java too!
      */
     /* Connection stuff */
-    private final boolean FREE_RESUME               = true;
-    private final int     FREE_MAXCHUNKS            = 0;
-    private final int     FREE_MAXDOWNLOADS         = 20;
-    private final boolean ACCOUNT_FREE_RESUME       = true;
-    private final int     ACCOUNT_FREE_MAXCHUNKS    = 0;
-    private final int     ACCOUNT_FREE_MAXDOWNLOADS = 20;
+    private final boolean FREE_RESUME            = true;
+    private final int     FREE_MAXCHUNKS         = 0;
+    private final boolean ACCOUNT_FREE_RESUME    = true;
+    private final int     ACCOUNT_FREE_MAXCHUNKS = 0;
 
     @Override
     public String getLinkID(final DownloadLink link) {
@@ -109,25 +110,25 @@ public class GoogleDriveDirectoryIndex extends antiDDoSForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        return requestFileInformation(link, null);
+    }
+
+    private AvailableStatus requestFileInformation(final DownloadLink link, final Account account) throws Exception {
         this.setBrowserExclusive();
+        if (account != null) {
+            login(account);
+        }
         URLConnectionAdapter con = null;
         try {
-            con = openAntiDDoSRequestConnection(br, br.createGetRequest(link.getPluginPatternMatcher()));
-            if (con.getResponseCode() == 401) {
-                br.followConnection(true);
-                throw new AccountRequiredException();
-            } else if (!this.looksLikeDownloadableContent(con)) {
-                br.followConnection(true);
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else {
-                if (con.getCompleteContentLength() > 0) {
-                    link.setVerifiedFileSize(con.getCompleteContentLength());
-                }
-                /* Usually final filename is already set by crawler plugin. */
-                final String fname = Plugin.getFileNameFromDispositionHeader(con);
-                if (fname != null && link.getFinalFileName() == null) {
-                    link.setFinalFileName(fname);
-                }
+            con = br.openGetConnection(link.getPluginPatternMatcher());
+            handleConnectionErrors(br, con, null);
+            if (con.getCompleteContentLength() > 0) {
+                link.setVerifiedFileSize(con.getCompleteContentLength());
+            }
+            /* Usually final filename is already set by crawler plugin. */
+            final String fname = Plugin.getFileNameFromDispositionHeader(con);
+            if (fname != null) {
+                link.setFinalFileName(fname);
             }
         } finally {
             try {
@@ -140,17 +141,26 @@ public class GoogleDriveDirectoryIndex extends antiDDoSForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        requestFileInformation(link);
-        doFree(link, FREE_RESUME, FREE_MAXCHUNKS);
+        handleDownload(link, null, FREE_RESUME, FREE_MAXCHUNKS);
     }
 
-    private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks) throws Exception, PluginException {
+    private void handleDownload(final DownloadLink link, final Account account, final boolean resumable, final int maxchunks) throws Exception, PluginException {
+        requestFileInformation(link, account);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher(), resumable, maxchunks);
-        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+        handleConnectionErrors(br, dl.getConnection(), account);
+        dl.startDownload();
+    }
+
+    private void handleConnectionErrors(final Browser br, final URLConnectionAdapter con, final Account account) throws PluginException, IOException {
+        if (!this.looksLikeDownloadableContent(con)) {
             br.followConnection(true);
             if (dl.getConnection().getResponseCode() == 401) {
                 /* Account required or existent account is missing rights to access that content! */
-                throw new AccountRequiredException();
+                if (account != null) {
+                    throw new AccountInvalidException();
+                } else {
+                    throw new AccountRequiredException();
+                }
             } else if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
@@ -159,15 +169,14 @@ public class GoogleDriveDirectoryIndex extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Final downloadurl did not lead to file");
             }
         }
-        dl.startDownload();
     }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return FREE_MAXDOWNLOADS;
+        return Integer.MAX_VALUE;
     }
 
-    public boolean login(final Account account, final boolean force) throws Exception {
+    public boolean login(final Account account) throws Exception {
         synchronized (account) {
             /* It is impossible to check this account - just set the required header. */
             br.getHeaders().put("Authorization", "Basic " + Encoding.Base64Encode(account.getUser() + ":" + account.getPass()));
@@ -178,23 +187,20 @@ public class GoogleDriveDirectoryIndex extends antiDDoSForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        login(account, true);
+        login(account);
         account.setType(AccountType.FREE);
-        account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
         account.setConcurrentUsePossible(true);
-        ai.setStatus("Registered (free) user");
         return ai;
     }
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        login(account, false);
-        this.doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS);
+        this.handleDownload(link, account, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS);
     }
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
+        return Integer.MAX_VALUE;
     }
 
     @Override
