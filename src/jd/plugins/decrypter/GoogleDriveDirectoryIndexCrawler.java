@@ -144,7 +144,7 @@ public class GoogleDriveDirectoryIndexCrawler extends PluginForDecrypt {
     private DownloadLink getDirectDownload(URLConnectionAdapter con) throws IOException {
         if (con != null && looksLikeDownloadableContent(con)) {
             con.disconnect();
-            final DownloadLink direct = this.createDownloadlink(con.getURL().toString());
+            final DownloadLink direct = this.createDownloadlink(con.getURL().toExternalForm());
             final DispositionHeader dispositionHeader = Plugin.parseDispositionHeader(con);
             if (dispositionHeader != null && StringUtils.isNotEmpty(dispositionHeader.getFilename())) {
                 direct.setFinalFileName(dispositionHeader.getFilename());
@@ -167,10 +167,12 @@ public class GoogleDriveDirectoryIndexCrawler extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final String contenturl;
         if (param.toString().contains("?")) {
             /* Remove all URL parameters */
-            param.setCryptedUrl(param.getCryptedUrl().substring(0, param.getCryptedUrl().lastIndexOf("?")));
+            contenturl = param.getCryptedUrl().substring(0, param.getCryptedUrl().lastIndexOf("?"));
+        } else {
+            contenturl = param.getCryptedUrl();
         }
         br.setAllowedResponseCodes(new int[] { 500 });
         final Account acc = AccountController.getInstance().getValidAccount(this.getHost());
@@ -189,9 +191,10 @@ public class GoogleDriveDirectoryIndexCrawler extends PluginForDecrypt {
         /* Older versions required urlquery, newer expect json POST body */
         URLConnectionAdapter con = null;
         try {
-            con = br.openGetConnection(param.getCryptedUrl());
+            con = br.openGetConnection(contenturl);
             DownloadLink direct = getDirectDownload(con);
             if (direct != null) {
+                final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
                 ret.add(direct);
                 return ret;
             } else {
@@ -199,13 +202,13 @@ public class GoogleDriveDirectoryIndexCrawler extends PluginForDecrypt {
                 br.followConnection(true);
             }
             if (useOldPostRequest) {
-                con = br.openPostConnection(param.getCryptedUrl(), this.getPaginationPostDataQuery(0, ""));
+                con = br.openPostConnection(contenturl, this.getPaginationPostDataQuery(0, ""));
             } else {
-                con = br.openRequestConnection(br.createPostRequest(param.getCryptedUrl(), this.getPaginationPostDataJson(0, "")));
+                con = br.openRequestConnection(br.createPostRequest(contenturl, this.getPaginationPostDataJson(0, "")));
                 if (con.getResponseCode() == 500) {
                     br.followConnection(true);
                     logger.info("Error 500 -> Trying again via old POST request method");
-                    con = br.openPostConnection(param.getCryptedUrl(), this.getPaginationPostDataQuery(0, ""));
+                    con = br.openPostConnection(contenturl, this.getPaginationPostDataQuery(0, ""));
                     /* Make sure that subsequent requests will be sent in the correct form right away. */
                     useOldPostRequest = true;
                 }
@@ -213,10 +216,11 @@ public class GoogleDriveDirectoryIndexCrawler extends PluginForDecrypt {
             if (con.getResponseCode() == 401) {
                 // POST request failed but simple GET may work fine
                 br.followConnection(true);
-                con = br.openGetConnection(param.getCryptedUrl());
+                con = br.openGetConnection(contenturl);
             }
             direct = getDirectDownload(con);
             if (direct != null) {
+                final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
                 ret.add(direct);
                 return ret;
             } else {
@@ -240,20 +244,17 @@ public class GoogleDriveDirectoryIndexCrawler extends PluginForDecrypt {
         } else if (br.containsHTML("\"rateLimitExceeded\"")) {
             throw new DecrypterRetryException(RetryReason.HOST_RATE_LIMIT);
         }
-        return crawlFolder(param, useOldPostRequest);
-    }
-
-    private ArrayList<DownloadLink> crawlFolder(final CryptedLink param, final boolean useOldPOSTRequest) throws Exception {
+        /* Looks like folder should be available -> Crawl it */
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final FilePackage fp = FilePackage.getInstance();
-        final boolean isParameterFile = !param.getCryptedUrl().endsWith("/");
+        final boolean isParameterFile = !contenturl.endsWith("/");
         String subFolderPath = getAdoptedCloudFolderStructure();
         /*
          * If the user imports a link just by itself should it also be placed into the correct package. We can determine this via url
          * structure, else base folder with files wont be packaged together just based on filename....
          */
         if (subFolderPath == null) {
-            final Regex typicalUrlStructure = new Regex(param.getCryptedUrl(), "https?://[^/]+/0:(/.*)");
+            final Regex typicalUrlStructure = new Regex(contenturl, "(?i)https?://[^/]+/0:(/.*)");
             if (typicalUrlStructure.matches()) {
                 /*
                  * Set correct (root) folder structure e.g. https://subdomain.example.site/0:/subfolder1/subfolder2 --> Path:
@@ -261,7 +262,7 @@ public class GoogleDriveDirectoryIndexCrawler extends PluginForDecrypt {
                  */
                 subFolderPath = Encoding.urlDecode(typicalUrlStructure.getMatch(0), false);
             } else {
-                final String[] split = param.getCryptedUrl().split("/");
+                final String[] split = contenturl.split("/");
                 subFolderPath = Encoding.urlDecode(split[split.length - (isParameterFile ? 2 : 1)], false);
             }
             fp.setName(subFolderPath.replaceAll("(^/)|(/$)", ""));
@@ -271,10 +272,10 @@ public class GoogleDriveDirectoryIndexCrawler extends PluginForDecrypt {
         }
         final String baseUrl;
         /* urls can already be encoded which breaks stuff, only encode non-encoded content */
-        if (!new Regex(param.getCryptedUrl(), "%[a-z0-9]{2}").matches()) {
-            baseUrl = URLEncode.encodeURIComponent(param.getCryptedUrl());
+        if (!new Regex(contenturl, "%[a-z0-9]{2}").matches()) {
+            baseUrl = URLEncode.encodeURIComponent(contenturl);
         } else {
-            baseUrl = param.getCryptedUrl();
+            baseUrl = contenturl;
         }
         int page = 0;
         do {
@@ -325,7 +326,7 @@ public class GoogleDriveDirectoryIndexCrawler extends PluginForDecrypt {
                     final String thisfolder = subFolderPath + "/" + name;
                     dl.setRelativeDownloadFolderPath(thisfolder);
                     /* Save this so we need less requests for the next subfolder levels... */
-                    if (useOldPOSTRequest) {
+                    if (useOldPostRequest) {
                         dl.setProperty(PROPERTY_FOLDER_USE_OLD_POST_REQUEST, true);
                     }
                 } else {
@@ -352,7 +353,7 @@ public class GoogleDriveDirectoryIndexCrawler extends PluginForDecrypt {
             } else {
                 page += 1;
                 /* Older versions required urlquery, newer expect json POST body */
-                if (useOldPOSTRequest) {
+                if (useOldPostRequest) {
                     br.postPage(br.getURL(), this.getPaginationPostDataQuery(page, nextPageToken));
                 } else {
                     br.postPageRaw(br.getURL(), this.getPaginationPostDataJson(page, nextPageToken));

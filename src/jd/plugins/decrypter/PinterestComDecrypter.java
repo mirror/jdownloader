@@ -94,9 +94,9 @@ public class PinterestComDecrypter extends PluginForDecrypt {
     private ArrayList<String>       dupeList                            = new ArrayList<String>();
     private boolean                 enable_description_inside_filenames = false;
     private boolean                 enable_crawl_alternative_URL        = false;
-    public static final String      TYPE_PIN                            = "https?://[^/]+/pin/([A-Za-z0-9\\-_]+)/?";
-    private static final String     TYPE_BOARD                          = "https?://[^/]+/([^/]+)/([^/]+)/?";
-    private static final String     TYPE_BOARD_SECTION                  = "https?://[^/]+/[^/]+/[^/]+/([^/]+)/?";
+    public static final String      TYPE_PIN                            = "(?i)https?://[^/]+/pin/([A-Za-z0-9\\-_]+)/?";
+    private static final String     TYPE_BOARD                          = "(?i)https?://[^/]+/([^/]+)/([^/]+)/?";
+    private static final String     TYPE_BOARD_SECTION                  = "(?i)https?://[^/]+/[^/]+/[^/]+/([^/]+)/?";
 
     @SuppressWarnings({ "deprecation" })
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {

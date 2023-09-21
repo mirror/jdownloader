@@ -234,6 +234,9 @@ public class BandCampComDecrypter extends PluginForDecrypt {
         final String[] artistList = br.getRegex("(https?://[^/]+\\.bandcamp\\.com)\\?label=\\d+").getColumn(0);
         final String[] albumList = br.getRegex("(/album/[^<>\"\\']+)").getColumn(0);
         final String albumID = br.getRegex("<\\!-- album id (\\d+) -->").getMatch(0);
+        if (albumID == null) {
+            logger.warning("Failed to find albumID");
+        }
         if (json == null) {
             if (!this.canHandle(br.getURL())) {
                 logger.info("Invalid URL or URL doesn't contain any downloadable content");

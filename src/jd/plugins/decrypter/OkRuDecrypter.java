@@ -48,8 +48,8 @@ public class OkRuDecrypter extends PluginForDecrypt {
     private static final String TYPE_CHANNEL  = "https?://[^/]+/video/c(\\d+)";
     private static final String TYPE_PLAYLIST = "https?://[^/]+/profile/(\\d+)/video/(c\\d+)";
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final Account account = AccountController.getInstance().getValidAccount(this.getHost());
         if (account != null) {
             final PluginForHost plugin = this.getNewPluginForHostInstance(this.getHost());
@@ -61,8 +61,7 @@ public class OkRuDecrypter extends PluginForDecrypt {
             /* Crawl channel -> Assume that all videos are selfhosted */
             br.getPage(param.getCryptedUrl());
             if (br.getHttpConnection().getResponseCode() == 404) {
-                decryptedLinks.add(this.createOfflinelink(param.getCryptedUrl()));
-                return decryptedLinks;
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             final ArrayList<String> dupes = new ArrayList<String>();
             final String channelID = new Regex(param.getCryptedUrl(), TYPE_CHANNEL).getMatch(0);
@@ -116,7 +115,7 @@ public class OkRuDecrypter extends PluginForDecrypt {
                     dl.setAvailable(true);
                     dl._setFilePackage(fp);
                     distribute(dl);
-                    decryptedLinks.add(dl);
+                    ret.add(dl);
                 }
                 if (addedItems == 0) {
                     logger.info("Stopping because failed to find any new items on current page");
@@ -127,8 +126,7 @@ public class OkRuDecrypter extends PluginForDecrypt {
         } else if (param.getCryptedUrl().matches(TYPE_PLAYLIST)) {
             br.getPage(param.getCryptedUrl());
             if (br.getHttpConnection().getResponseCode() == 404) {
-                decryptedLinks.add(this.createOfflinelink(param.getCryptedUrl()));
-                return decryptedLinks;
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             final ArrayList<String> dupes = new ArrayList<String>();
             final String albumID = new Regex(param.getCryptedUrl(), TYPE_PLAYLIST).getMatch(1);
@@ -174,7 +172,7 @@ public class OkRuDecrypter extends PluginForDecrypt {
                     dl.setAvailable(true);
                     dl._setFilePackage(fp);
                     distribute(dl);
-                    decryptedLinks.add(dl);
+                    ret.add(dl);
                 }
                 // lastElementID = br.getRequest().getResponseHeader("lastelem").toString();
             } else {
@@ -197,18 +195,16 @@ public class OkRuDecrypter extends PluginForDecrypt {
                     dl.setAvailable(true);
                     dl._setFilePackage(fp);
                     distribute(dl);
-                    decryptedLinks.add(dl);
+                    ret.add(dl);
                 }
             }
         } else {
             /* Crawl single video -> Check for embedded content on external websites */
-            final String vid = new Regex(param.toString(), this.getSupportedLinks()).getMatch(0);
-            final String parameter = "https://ok.ru/video/" + vid;
-            param.setCryptedUrl(parameter);
-            br.getPage("https://ok.ru/video/" + vid);
+            final String vid = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
+            final String contenturl = "https://ok.ru/video/" + vid;
+            br.getPage(contenturl);
             if (jd.plugins.hoster.OkRu.isOffline(br)) {
-                decryptedLinks.add(this.createOfflinelink(parameter));
-                return decryptedLinks;
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             String externID = null;
             String provider = null;
@@ -218,8 +214,8 @@ public class OkRuDecrypter extends PluginForDecrypt {
                 externID = (String) JavaScriptEngineFactory.walkJson(entries, "movie/contentId");
             }
             if ("USER_YOUTUBE".equalsIgnoreCase(provider) && !StringUtils.isEmpty(externID)) {
-                decryptedLinks.add(createDownloadlink(YoutubeDashV2.generateContentURL(externID)));
-                return decryptedLinks;
+                ret.add(createDownloadlink(YoutubeDashV2.generateContentURL(externID)));
+                return ret;
             }
             /* 2019-10-15: TODO: Check if this is still working */
             externID = this.br.getRegex("coubID=([A-Za-z0-9]+)").getMatch(0);
@@ -227,17 +223,17 @@ public class OkRuDecrypter extends PluginForDecrypt {
                 externID = this.br.getRegex("coub\\.com%2Fview%2F([A-Za-z0-9]+)").getMatch(0);
             }
             if (externID != null) {
-                decryptedLinks.add(createDownloadlink(String.format("https://coub.com/view/%s", externID)));
-                return decryptedLinks;
+                ret.add(createDownloadlink(String.format("https://coub.com/view/%s", externID)));
+                return ret;
             }
             /* No external hosting provider found --> Content should be hosted by ok.ru --> Pass over to hosterplugin. */
-            final DownloadLink main = createDownloadlink(param.toString());
+            final DownloadLink main = createDownloadlink(contenturl);
             main.setName(vid);
             if (jd.plugins.hoster.OkRu.isOffline(this.br)) {
                 main.setAvailable(false);
             }
-            decryptedLinks.add(main);
+            ret.add(main);
         }
-        return decryptedLinks;
+        return ret;
     }
 }

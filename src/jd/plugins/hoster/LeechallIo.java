@@ -18,10 +18,23 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.storage.JSonMapperException;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings.SIZEUNIT;
+import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -38,17 +51,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
-
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.storage.JSonMapperException;
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.settings.GraphicalUserInterfaceSettings.SIZEUNIT;
-import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "leechall.io" }, urls = { "" })
 public class LeechallIo extends PluginForHost {
@@ -220,7 +222,8 @@ public class LeechallIo extends PluginForHost {
             account.setType(AccountType.FREE);
             /**
              * Free users cannot download anything thus adding such accounts to JDownloader doesn't make any sense -> Mark them as expired.
-             * </br> Website says: https://leechall.io/downloader --> "Please upgrade premium to use this service."
+             * </br>
+             * Website says: https://leechall.io/downloader --> "Please upgrade premium to use this service."
              */
             ai.setExpired(true);
         }
@@ -383,6 +386,7 @@ public class LeechallIo extends PluginForHost {
 
     private Map<String, Object> checkErrorsWebapi(final Map<String, Object> entries, final DownloadLink link) throws PluginException, InterruptedException {
         final Boolean success = (Boolean) entries.get("success");
+        final Map<String, Object> errormap;
         if (Boolean.FALSE.equals(success)) {
             final String errormessage = entries.get("message").toString();
             if (link == null) {
@@ -398,6 +402,19 @@ public class LeechallIo extends PluginForHost {
                     /* Should never happens. Can only happen if a wrong mega.nz link is supplied. */
                     logger.warning("Somehow a wrong mega(?) link was sent to " + this.getHost());
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errormessage);
+                } else {
+                    mhm.handleErrorGeneric(null, link, errormessage, 50);
+                }
+            }
+        } else if ((errormap = (Map<String, Object>) entries.get("errors")) != null) {
+            /* For example {"message":"The given data was invalid.","errors":{"email":["The email must be a valid email address."]}} */
+            final Iterator<Entry<String, Object>> iterator = errormap.entrySet().iterator();
+            while (iterator.hasNext()) {
+                final Entry<String, Object> entry = iterator.next();
+                final List<String> errors = (List<String>) entry.getValue();
+                final String errormessage = errors.get(0);
+                if (link == null) {
+                    throw new AccountInvalidException(errormessage);
                 } else {
                     mhm.handleErrorGeneric(null, link, errormessage, 50);
                 }

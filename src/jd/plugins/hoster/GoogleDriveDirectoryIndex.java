@@ -54,9 +54,6 @@ public class GoogleDriveDirectoryIndex extends PluginForHost {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
         ret.add(new String[] { "workers.dev", "workers.cloudflare.com" });
-        ret.add(new String[] { "dragsterps-team.tk" });
-        ret.add(new String[] { "get.tgdrive.tech" });
-        ret.add(new String[] { "mirror.sparrowisland.ga" });
         ret.add(new String[] { "cdn.web-dl.eu.org" });
         return ret;
     }
