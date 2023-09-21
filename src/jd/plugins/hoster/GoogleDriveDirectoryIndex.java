@@ -154,16 +154,16 @@ public class GoogleDriveDirectoryIndex extends PluginForHost {
     private void handleConnectionErrors(final Browser br, final URLConnectionAdapter con, final Account account) throws PluginException, IOException {
         if (!this.looksLikeDownloadableContent(con)) {
             br.followConnection(true);
-            if (dl.getConnection().getResponseCode() == 401) {
+            if (con.getResponseCode() == 401) {
                 /* Account required or existent account is missing rights to access that content! */
                 if (account != null) {
                     throw new AccountInvalidException();
                 } else {
                     throw new AccountRequiredException();
                 }
-            } else if (dl.getConnection().getResponseCode() == 403) {
+            } else if (con.getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
+            } else if (con.getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Final downloadurl did not lead to file");
