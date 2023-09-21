@@ -177,7 +177,15 @@ public class BandCampCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         link.removeProperty(PROPERTY_DATE_DIRECTURL);
-        parseAndSetSingleTrackInfo(link, br);
+        final int trackNumber = link.getIntegerProperty(PROPERTY_ALBUM_TRACK_POSITION, -1);
+        final int trackIndex;
+        if (trackNumber > 0) {
+            trackIndex = trackNumber - 1;
+        } else {
+            /* Unknown track-number/index */
+            trackIndex = -1;
+        }
+        parseAndSetSingleTrackInfo(link, br, trackIndex);
         dllink = link.getStringProperty(PROPERTY_DATE_DIRECTURL);
         final String filename = getFormattedFilename(link);
         link.setFinalFileName(filename);
@@ -201,13 +209,9 @@ public class BandCampCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    public static void parseAndSetSingleTrackInfo(final DownloadLink link, final Browser br) {
+    public static void parseAndSetSingleTrackInfo(final DownloadLink link, final Browser br, final int trackIndex) {
         /** Parse possibly missing metadata here. Do not overwrite existing properties with wrong- or null values!! */
         final String htmlEntityDecoded = Encoding.htmlOnlyDecode(br.getRequest().getHtmlCode());
-        String tracknumberStr = new Regex(htmlEntityDecoded, "\"track_num\"\\s*:\\s*(\\d+)").getMatch(0);
-        if (tracknumberStr == null) {
-            tracknumberStr = new Regex(htmlEntityDecoded, "\"track_number\"\\s*:\\s*(\\d+)").getMatch(0);
-        }
         final String trackTitle = new Regex(htmlEntityDecoded, "\"title\"\\s*:\\s*\"([^<>\"]*?)\"").getMatch(0);
         final String json_album = br.getRegex("<script type=\"application/(?:json\\+ld|ld\\+json)\">\\s*(.*?)\\s*</script>").getMatch(0);
         final Map<String, Object> albumInfo = JSonStorage.restoreFromString(json_album, TypeRef.MAP);
@@ -236,29 +240,49 @@ public class BandCampCom extends PluginForHost {
         if (trackTitle != null) {
             link.setProperty(PROPERTY_TITLE, Encoding.htmlDecode(trackTitle).trim());
         }
-        if (!link.hasProperty(PROPERTY_ALBUM_TRACK_POSITION) && tracknumberStr != null) {
-            link.setProperty(PROPERTY_ALBUM_TRACK_POSITION, Integer.parseInt(tracknumberStr));
-        }
         link.setProperty(PROPERTY_FILE_TYPE, "mp3");
-        final String trackID = br.getRegex("<\\!-- track id (\\d+) -->").getMatch(0);
-        if (trackID != null && !link.hasProperty(PROPERTY_CONTENT_ID)) {
-            link.setProperty(PROPERTY_CONTENT_ID, trackID);
+        final String trackIDFromHTML = br.getRegex("<\\!-- track id (\\d+) -->").getMatch(0);
+        if (trackIDFromHTML != null && !link.hasProperty(PROPERTY_CONTENT_ID)) {
+            link.setProperty(PROPERTY_CONTENT_ID, trackIDFromHTML);
         }
         final String trackJson = br.getRegex("data-tralbum=\"([^\"]+)").getMatch(0);
         if (trackJson != null) {
+            final String targetTrackID;
+            if (trackIDFromHTML != null) {
+                targetTrackID = trackIDFromHTML;
+            } else {
+                targetTrackID = link.getStringProperty(PROPERTY_CONTENT_ID);
+            }
             final Map<String, Object> trackInfo0 = JSonStorage.restoreFromString(Encoding.htmlOnlyDecode(trackJson), TypeRef.MAP);
             artistFullName = trackInfo0.get("artist").toString();
             link.setProperty(PROPERTY_ARTIST, artistFullName);
-            final Map<String, Object> trackInfo1 = (Map<String, Object>) JavaScriptEngineFactory.walkJson(trackInfo0, "trackinfo/{0}");
-            link.setProperty(PROPERTY_CONTENT_ID, trackInfo1.get("id").toString());
-            final String directurl = (String) JavaScriptEngineFactory.walkJson(trackInfo1, "file/mp3-128");
-            if (directurl != null && directurl.startsWith("http")) {
-                link.setProperty(PROPERTY_DATE_DIRECTURL, directurl);
+            final List<Map<String, Object>> tracklist = (List<Map<String, Object>>) trackInfo0.get("trackinfo");
+            Map<String, Object> trackInfo1 = null;
+            if (targetTrackID != null) {
+                for (final Map<String, Object> trackInfo : tracklist) {
+                    final String thisTrackID = trackInfo.get("id").toString();
+                    if (thisTrackID.equals(targetTrackID)) {
+                        trackInfo1 = trackInfo;
+                        break;
+                    }
+                }
             }
-            /* Calculate filesize */
-            final int duration = ((Number) trackInfo1.get("duration")).intValue();
-            if (duration > 0) {
-                link.setDownloadSize(128 * 1024l / 8 * duration);
+            if (trackInfo1 == null && trackIndex >= 0 && trackIndex < tracklist.size() - 1) {
+                /* Get track by position (unsafer method) */
+                trackInfo1 = tracklist.get(trackIndex);
+            }
+            if (trackInfo1 != null) {
+                link.setProperty(PROPERTY_CONTENT_ID, trackInfo1.get("id").toString());
+                link.setProperty(PROPERTY_ALBUM_TRACK_POSITION, trackInfo1.get("track_num"));
+                final String directurl = (String) JavaScriptEngineFactory.walkJson(trackInfo1, "file/mp3-128");
+                if (directurl != null && directurl.startsWith("http")) {
+                    link.setProperty(PROPERTY_DATE_DIRECTURL, directurl);
+                }
+                /* Calculate filesize */
+                final int duration = ((Number) trackInfo1.get("duration")).intValue();
+                if (duration > 0) {
+                    link.setDownloadSize(128 * 1024l / 8 * duration);
+                }
             }
         }
     }

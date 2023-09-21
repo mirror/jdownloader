@@ -189,7 +189,7 @@ public class BandCampComDecrypter extends PluginForDecrypt {
         }
         /* Set FilePackage with package name. */
         final FilePackage fp = FilePackage.getInstance();
-        final String userDefinedPackagename = getFormattedPackagename(ret.get(ret.size() - 1), cfg);
+        final String userDefinedPackagename = getFormattedPackagename(ret.get(0), cfg);
         if (!StringUtils.isEmpty(userDefinedPackagename)) {
             fp.setName(userDefinedPackagename);
         } else {
@@ -199,6 +199,7 @@ public class BandCampComDecrypter extends PluginForDecrypt {
         if (!StringUtils.isEmpty(description)) {
             fp.setComment(description);
         }
+        fp.setPackageKey("bandcamp://show/" + showID);
         fp.addLinks(ret);
         return ret;
     }
@@ -232,6 +233,7 @@ public class BandCampComDecrypter extends PluginForDecrypt {
          */
         final String[] artistList = br.getRegex("(https?://[^/]+\\.bandcamp\\.com)\\?label=\\d+").getColumn(0);
         final String[] albumList = br.getRegex("(/album/[^<>\"\\']+)").getColumn(0);
+        final String albumID = br.getRegex("<\\!-- album id (\\d+) -->").getMatch(0);
         if (json == null) {
             if (!this.canHandle(br.getURL())) {
                 logger.info("Invalid URL or URL doesn't contain any downloadable content");
@@ -264,7 +266,6 @@ public class BandCampComDecrypter extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final Map<String, Object> albumInfo = restoreFromString(json_album, TypeRef.MAP);
-        String artistFullName = null;
         String albumOrTrackTitle = (String) JavaScriptEngineFactory.walkJson(albumInfo, "inAlbum/name");
         if (albumOrTrackTitle == null) {
             albumOrTrackTitle = br.getRegex("<title>\\s*(.*?)\\s*\\|.*?</title>").getMatch(0);
@@ -289,12 +290,9 @@ public class BandCampComDecrypter extends PluginForDecrypt {
         } else {
             isSingleTrack = false;
         }
-        if (!isSingleTrack) {
-            artistFullName = (String) JavaScriptEngineFactory.walkJson(albumInfo, "byArtist/name");
-            artistFullName = Encoding.htmlDecode(artistFullName).trim();
-        }
         final SubConfiguration cfg = SubConfiguration.getConfig(this.getHost());
         final boolean grabThumbnail = cfg.getBooleanProperty(BandCampCom.GRABTHUMB, BandCampCom.defaultGRABTHUMB);
+        int index = 0;
         for (final Map<String, Object> audio : albumtracks) {
             String contentUrl = (String) audio.get("title_link");
             final String title = (String) audio.get("title");
@@ -306,21 +304,13 @@ public class BandCampComDecrypter extends PluginForDecrypt {
             if (contentUrl.startsWith("/")) {
                 contentUrl = br.getURL(contentUrl).toString();
             }
-            int trackPosition = JavaScriptEngineFactory.toInteger(audio.get("track_num"), -1);
-            if (trackPosition == -1) {
-                /* Field with space (wtf) */
-                trackPosition = JavaScriptEngineFactory.toInteger(audio.get(" track_number"), -1);
-            }
             final DownloadLink audiotrack = createDownloadlink(contentUrl);
-            if (isSingleTrack) {
-                BandCampCom.parseAndSetSingleTrackInfo(audiotrack, br);
-            }
+            BandCampCom.parseAndSetSingleTrackInfo(audiotrack, br, index);
             /* Add some properties we know better. */
             audiotrack.setProperty(BandCampCom.PROPERTY_DATE_TIMESTAMP, dateTimestamp);
             audiotrack.setProperty(BandCampCom.PROPERTY_ALBUM_TITLE, albumOrTrackTitle);
             audiotrack.setProperty(BandCampCom.PROPERTY_TITLE, title);
             audiotrack.setProperty(BandCampCom.PROPERTY_FILE_TYPE, "mp3");
-            audiotrack.setProperty(BandCampCom.PROPERTY_ALBUM_TRACK_POSITION, trackPosition);
             if (duration > 0) {
                 audiotrack.setDownloadSize(128 * 1024l / 8 * duration);
             }
@@ -379,6 +369,7 @@ public class BandCampComDecrypter extends PluginForDecrypt {
                     }
                 }
             }
+            index++;
         }
         /* Single song or album thumbnail. */
         if (grabThumbnail) {
@@ -406,18 +397,24 @@ public class BandCampComDecrypter extends PluginForDecrypt {
                 result.setProperty(BandCampCom.PROPERTY_USERNAME_PRETTY, usernamePretty);
             }
             result.setProperty(BandCampCom.PROPERTY_ALBUM_NUMBEROF_TRACKS, albumtracks.size());
+            if (albumID != null) {
+                result.setProperty(BandCampCom.PROPERTY_ALBUM_ID, albumID);
+            }
             final String formattedFilename = BandCampCom.getFormattedFilename(result);
             result.setFinalFileName(formattedFilename);
             result.setAvailable(true);
         }
         final FilePackage fp = FilePackage.getInstance();
-        final String formattedpackagename = getFormattedPackagename(ret.get(ret.size() - 1), cfg);
+        final String formattedpackagename = getFormattedPackagename(ret.get(0), cfg);
         if (!cfg.getBooleanProperty(BandCampCom.CLEANPACKAGENAME, BandCampCom.defaultCLEANPACKAGENAME)) {
             fp.setCleanupPackageName(false);
         } else {
             fp.setCleanupPackageName(true);
         }
         fp.setName(formattedpackagename);
+        if (albumID != null) {
+            fp.setPackageKey("bandcamp://album/" + albumID);
+        }
         fp.addLinks(ret);
         if (ret.isEmpty()) {
             logger.info("Failed to find any downloadable content: Empty album?");

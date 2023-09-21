@@ -25,6 +25,7 @@ import org.appwork.utils.StringUtils;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Request;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -84,15 +85,16 @@ public class Hentai2ReadCom extends PluginForDecrypt {
                         final String result = results.get(i);
                         // for first one we need to decide base
                         if (base == null) {
-                            base = br.getRegex("\"([^\"]+)" + Pattern.quote(result) + "[^\"]*\"").getMatch(0);
-                            if (base == null) {
-                                // better than returning null?
-                                base = "//hentaicdn.com/hentai";
-                            }
+                            // base = br.getRegex("\"([^\"]+)" + Pattern.quote(result) + "[^\"]*\"").getMatch(0);
+                            // if (base == null) {
+                            // /* Static fallback */
+                            // base = "//static.hentaicdn.com/hentai";
+                            // }
+                            base = "//static.hentaicdn.com/hentai";
                         }
-                        final String escaped = br.getURL(result).toExternalForm();
-                        final DownloadLink dl = createDownloadlink(DirectHTTP.createURLForThisPlugin(escaped));
-                        final String extension = getFileNameExtensionFromURL(escaped);
+                        final String fullURL = Request.getLocation(base + result, br.getRequest());
+                        final DownloadLink dl = createDownloadlink(DirectHTTP.createURLForThisPlugin(fullURL));
+                        final String extension = getFileNameExtensionFromURL(fullURL);
                         dl.setFinalFileName(seriesTitleCamelcase + "_CH" + chapterNum + "_" + df.format(i) + extension);
                         dl.setAvailable(true);
                         ret.add(dl);
