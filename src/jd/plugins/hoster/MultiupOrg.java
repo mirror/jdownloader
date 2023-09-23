@@ -23,6 +23,12 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -41,12 +47,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "multiup.org" }, urls = { "" })
 public class MultiupOrg extends PluginForHost {
@@ -132,7 +132,7 @@ public class MultiupOrg extends PluginForHost {
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, defaultRESUME, defaultMAXCHUNKS);
         link.setProperty(this.getHost() + "directlink", dl.getConnection().getURL().toString());
-        if (dl.getConnection().getContentType().contains("html")) {
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             /* 402 - Payment required */
             if (dl.getConnection().getResponseCode() == 402) {
                 /* 2019-05-03: E.g. free account[or expired premium], only 1 download per day (?) possible */
@@ -148,7 +148,7 @@ public class MultiupOrg extends PluginForHost {
                     mhm.handleErrorGeneric(account, link, "untrusted_error_responsecode_402", 20, 5 * 60 * 1000l);
                 }
             }
-            br.followConnection();
+            br.followConnection(true);
             handleKnownErrors(this.br, account, link);
             mhm.handleErrorGeneric(account, link, "unknown_dl_error", 10, 5 * 60 * 1000l);
         }
@@ -242,7 +242,7 @@ public class MultiupOrg extends PluginForHost {
         /* Continue via API */
         this.getAPISafe(API_BASE + "/get-list-hosts-debrid", account, null);
         try {
-            Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.getRequest().getHtmlCode());
             final Object hostsO = entries.get("hosts");
             final ArrayList<String> supportedhostslist = new ArrayList<String>();
             if (hostsO instanceof Map) {

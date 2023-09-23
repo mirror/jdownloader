@@ -16,6 +16,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
@@ -36,8 +37,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "multiup.org" }, urls = { "https?://(www\\.)?multiup\\.(org|eu)/(?:en|fr/)?(fichiers/download/[a-z0-9]{32}_[^<> \"'&%]+|([a-z]{2}/)?(download|mirror)/[a-z0-9]{32}(/[^<> \"'&%]+)?|\\?lien=[a-z0-9]{32}_[^<> \"'&%]+|[a-f0-9]{32})" })
-public class MultiupOrg extends antiDDoSForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
+public class MultiupOrgCrawler extends antiDDoSForDecrypt {
     // DEV NOTES:
     // DO NOT REMOVE COMPONENTS YOU DONT UNDERSTAND! When in doubt ask raztoki to fix.
     //
@@ -47,23 +48,44 @@ public class MultiupOrg extends antiDDoSForDecrypt {
     // (/fr)?/download/d249b81f92d7789a1233e500a0319906/FIQHwASOOL_75_rar, = new link structure!
     //
     // uid and filename are required to be a valid links for all link structures!
-    public MultiupOrg(PluginWrapper wrapper) {
+    public MultiupOrgCrawler(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    private static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "multiup.org", "multiup.eu", "multiup.io" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : getPluginDomains()) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:en|fr/)?(fichiers/download/[a-z0-9]{32}_[^<> \"'&%]+|([a-z]{2}/)?(download|mirror)/[a-z0-9]{32}(/[^<> \"'&%]+)?|\\?lien=[a-z0-9]{32}_[^<> \"'&%]+|[a-f0-9]{32})");
+        }
+        return ret.toArray(new String[0]);
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
-        String contenturl = param.getCryptedUrl().replaceFirst("://multiup", "://www.multiup");
-        contenturl = contenturl.replaceFirst("\\.org/en/", ".org/");
-        contenturl = contenturl.replaceFirst("\\.org/fr/", ".org/");
-        contenturl = contenturl.replaceFirst("\\.eu/en/", ".eu/");
-        contenturl = contenturl.replaceFirst("\\.eu/fr/", ".eu/");
+        String contenturl = param.getCryptedUrl();
+        contenturl = contenturl.replaceFirst("/(en|fr)/", "/");
         contenturl = contenturl.replaceFirst("(?i)http://", "https://");
         final String uid = getFUID(contenturl);
         if (uid == null) {
-            logger.info("URL is invalid, must contain 'uid' to be valid " + contenturl);
-            return ret;
+            /* Developer mistake */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         String filename = getFilename(contenturl);
         String filesize = getFileSize(contenturl);
@@ -87,8 +109,7 @@ public class MultiupOrg extends antiDDoSForDecrypt {
             filesize = webSiteFileSize;
         }
         if (br.containsHTML("The file does not exist any more\\.<|<h1>The server returned a \"404 Not Found\"\\.</h2>|<h1>Oops! An Error Occurred</h1>|>File not found|>No link currently available")) {
-            ret.add(createOfflinelink(contenturl));
-            return ret;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (AbstractHCaptcha.containsHCaptcha(br)) {
             final Form form = br.getFormbyActionRegex("/mirror/");
@@ -112,7 +133,6 @@ public class MultiupOrg extends antiDDoSForDecrypt {
         if (links == null || links.length == 0) {
             links = br.getRegex("\\s+href\\s*=\\s*\"([^\"]+)\"\\s+").getColumn(0);
             if (links == null || links.length == 0) {
-                logger.info("Could not find links, please report this to JDownloader Development Team. " + contenturl);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
@@ -267,7 +287,7 @@ public class MultiupOrg extends antiDDoSForDecrypt {
         return fuid;
     }
 
-    /* NO OVERRIDE!! */
+    @Override
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
