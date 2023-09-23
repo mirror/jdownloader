@@ -40,6 +40,7 @@ import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -225,6 +226,9 @@ public class BandCampCom extends PluginForHost {
                 albumTitle = br.getRegex("<title>\\s*(.*?)\\s*</title>").getMatch(0);
             }
         }
+        if (trackIndex == 18) {
+            System.out.print("");
+        }
         if (dateStr != null) {
             link.setProperty(PROPERTY_DATE_TIMESTAMP, BandCampComDecrypter.dateToTimestamp(dateStr));
         }
@@ -245,7 +249,7 @@ public class BandCampCom extends PluginForHost {
         if (trackIDFromHTML != null && !link.hasProperty(PROPERTY_CONTENT_ID)) {
             link.setProperty(PROPERTY_CONTENT_ID, trackIDFromHTML);
         }
-        final String trackJson = br.getRegex("data-tralbum=\"([^\"]+)").getMatch(0);
+        String trackJson = br.getRegex("data-tralbum=\"([^\"]+)").getMatch(0);
         if (trackJson != null) {
             final String targetTrackID;
             if (trackIDFromHTML != null) {
@@ -253,7 +257,8 @@ public class BandCampCom extends PluginForHost {
             } else {
                 targetTrackID = link.getStringProperty(PROPERTY_CONTENT_ID);
             }
-            final Map<String, Object> trackInfo0 = JSonStorage.restoreFromString(Encoding.htmlOnlyDecode(trackJson), TypeRef.MAP);
+            trackJson = Encoding.htmlOnlyDecode(trackJson);
+            final Map<String, Object> trackInfo0 = JSonStorage.restoreFromString(trackJson, TypeRef.MAP);
             artistFullName = trackInfo0.get("artist").toString();
             link.setProperty(PROPERTY_ARTIST, artistFullName);
             final List<Map<String, Object>> tracklist = (List<Map<String, Object>>) trackInfo0.get("trackinfo");
@@ -267,7 +272,7 @@ public class BandCampCom extends PluginForHost {
                     }
                 }
             }
-            if (trackInfo1 == null && trackIndex >= 0 && trackIndex < tracklist.size() - 1) {
+            if (trackInfo1 == null && trackIndex >= 0 && trackIndex <= tracklist.size() - 1) {
                 /* Get track by position (unsafer method) */
                 trackInfo1 = tracklist.get(trackIndex);
             }
@@ -291,7 +296,8 @@ public class BandCampCom extends PluginForHost {
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
         if (StringUtils.isEmpty(dllink)) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            /* Paid content. */
+            throw new AccountRequiredException();
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
         handleConnectionErrors(br, dl.getConnection());

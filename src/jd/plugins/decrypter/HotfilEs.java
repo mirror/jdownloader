@@ -35,18 +35,16 @@ public class HotfilEs extends PluginForDecrypt {
         super(wrapper);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final String parameter = param.getCryptedUrl();
         this.br.setFollowRedirects(true);
         br.getPage(parameter);
         final String fid = new Regex(br.getURL(), "(\\d+)$").getMatch(0);
         if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML(">A PHP Error was encountered")) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (fid == null) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         this.br.setFollowRedirects(false);
         String fpName = new Regex(parameter, "/download/([^/]+)/\\d+").getMatch(0);
@@ -58,19 +56,20 @@ public class HotfilEs extends PluginForDecrypt {
             this.br.getPage("/fisier/redirect/" + singleHost + "/" + fid);
             final String finallink = this.br.getRedirectLocation();
             if (finallink == null || new Regex(finallink, this.getSupportedLinks()).matches()) {
+                /* Skip invalid items. */
                 continue;
             }
-            decryptedLinks.add(createDownloadlink(finallink));
+            ret.add(createDownloadlink(finallink));
             if (this.isAbort()) {
                 logger.info("Decrtyption aborted by user");
-                return decryptedLinks;
+                return ret;
             }
         }
         if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName.trim()));
-            fp.addLinks(decryptedLinks);
+            fp.setName(Encoding.htmlDecode(fpName).trim());
+            fp.addLinks(ret);
         }
-        return decryptedLinks;
+        return ret;
     }
 }

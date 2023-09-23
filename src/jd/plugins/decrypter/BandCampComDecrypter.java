@@ -296,6 +296,7 @@ public class BandCampComDecrypter extends PluginForDecrypt {
         final SubConfiguration cfg = SubConfiguration.getConfig(this.getHost());
         final boolean grabThumbnail = cfg.getBooleanProperty(BandCampCom.GRABTHUMB, BandCampCom.defaultGRABTHUMB);
         int index = 0;
+        int numberOfUnPlayableTracks = 0;
         for (final Map<String, Object> audio : albumtracks) {
             String contentUrl = (String) audio.get("title_link");
             final String title = (String) audio.get("title");
@@ -309,6 +310,9 @@ public class BandCampComDecrypter extends PluginForDecrypt {
             }
             final DownloadLink audiotrack = createDownloadlink(contentUrl);
             BandCampCom.parseAndSetSingleTrackInfo(audiotrack, br, index);
+            if (!audiotrack.hasProperty(BandCampCom.PROPERTY_DATE_DIRECTURL)) {
+                numberOfUnPlayableTracks++;
+            }
             /* Add some properties we know better. */
             audiotrack.setProperty(BandCampCom.PROPERTY_DATE_TIMESTAMP, dateTimestamp);
             audiotrack.setProperty(BandCampCom.PROPERTY_ALBUM_TITLE, albumOrTrackTitle);
@@ -374,6 +378,7 @@ public class BandCampComDecrypter extends PluginForDecrypt {
             }
             index++;
         }
+        logger.info("Number of un-playable tracks in this album: " + numberOfUnPlayableTracks);
         /* Single song or album thumbnail. */
         if (grabThumbnail) {
             String thumbnailURL = br.getRegex("(?i)<a class=\"popupImage\" href=\"(https?://[^<>\"]*?\\.jpg)\"").getMatch(0);

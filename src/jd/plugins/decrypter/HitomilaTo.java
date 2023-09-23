@@ -29,6 +29,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.hoster.DirectHTTP;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class HitomilaTo extends PluginForDecrypt {
@@ -81,8 +82,9 @@ public class HitomilaTo extends PluginForDecrypt {
             final String ext = Plugin.getFileNameExtensionFromURL(url);
             /* Change thumbnail-URL to fullsize URL. */
             url = url.replaceFirst("t" + ext + "$", ext);
-            final DownloadLink image = createDownloadlink(url);
+            final DownloadLink image = createDownloadlink(DirectHTTP.createURLForThisPlugin(url));
             image.setAvailable(true);
+            image.setProperty(DirectHTTP.NOCHUNKS, true);
             ret.add(image);
         }
         if (fpName != null) {
