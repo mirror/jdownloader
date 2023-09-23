@@ -192,6 +192,16 @@ public class TbCmV2 extends PluginForDecrypt {
 
     public static final String VIDEO_ID_PATTERN = "([A-Za-z0-9\\-_]{11})";
 
+    public static boolean isValidVideoID(final String id) {
+        if (id == null) {
+            return false;
+        } else if (id.matches(VIDEO_ID_PATTERN)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     private String getVideoIDFromUrl(final String url) {
         String vuid = new Regex(url, "(?i)v=" + VIDEO_ID_PATTERN).getMatch(0);
         if (vuid == null) {

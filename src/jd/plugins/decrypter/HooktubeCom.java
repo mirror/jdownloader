@@ -24,6 +24,8 @@ import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.YoutubeDashV2;
 
@@ -62,6 +64,9 @@ public class HooktubeCom extends PluginForDecrypt {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String parameter = param.getCryptedUrl();
         final String videoID = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
+        if (!TbCmV2.isValidVideoID(videoID)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         ret.add(createDownloadlink(YoutubeDashV2.generateContentURL(videoID)));
         return ret;
     }
