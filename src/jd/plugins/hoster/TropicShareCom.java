@@ -18,6 +18,8 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -26,6 +28,7 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -37,13 +40,11 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.UserAgents;
 import jd.plugins.components.UserAgents.BrowserName;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tropicshare.com" }, urls = { "https?://(?:www\\.)?tropicshare\\.com/files/(\\d+)" })
 public class TropicShareCom extends PluginForHost {
     public TropicShareCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("http://tropicshare.com/users/premium");
+        this.enablePremium("https://tropicshare.com/users/premium");
     }
 
     @Override
@@ -98,14 +99,16 @@ public class TropicShareCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link);
-        int wait = 60;
-        final String regexedwait = br.getRegex("<count>(\\d+)</count").getMatch(0);
-        if (regexedwait != null) {
-            wait = Integer.parseInt(regexedwait);
-        }
         final String fid = br.getRegex("fileid=\"(\\d+)\"").getMatch(0);
         if (fid == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        int wait = 60;
+        final String regexedwaitStr = br.getRegex("<count>(\\d+)</count").getMatch(0);
+        if (regexedwaitStr != null) {
+            wait = Integer.parseInt(regexedwaitStr);
+        } else {
+            logger.warning("Failed to find pre-download-wait-seconds in HTML code");
         }
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.postPage("/files/time/", "id=" + fid);
@@ -142,40 +145,34 @@ public class TropicShareCom extends PluginForHost {
 
     private void login(final Account account, final boolean force) throws Exception {
         synchronized (account) {
-            try {
-                br.setCookiesExclusive(true);
-                prepBR(br);
-                final Cookies cookies = account.loadCookies("");
-                if (cookies != null) {
-                    logger.info("Attempting cookie login");
-                    this.br.setCookies(this.getHost(), cookies);
-                    if (!force) {
-                        logger.info("Trust cookies without check");
+            br.setCookiesExclusive(true);
+            prepBR(br);
+            final Cookies cookies = account.loadCookies("");
+            if (cookies != null) {
+                logger.info("Attempting cookie login");
+                this.br.setCookies(this.getHost(), cookies);
+                if (!force) {
+                    /* Do not validate cookies. */
+                    return;
+                } else {
+                    br.getPage("https://" + this.getHost() + "/");
+                    if (this.isLoggedin(br)) {
+                        logger.info("Cookie login successful");
+                        /* Refresh cookie timestamp */
+                        account.saveCookies(this.br.getCookies(br.getHost()), "");
                         return;
                     } else {
-                        br.getPage("http://" + this.getHost() + "/");
-                        if (this.isLoggedin(br)) {
-                            logger.info("Cookie login successful");
-                            /* Refresh cookie timestamp */
-                            account.saveCookies(this.br.getCookies(this.getHost()), "");
-                            return;
-                        } else {
-                            logger.info("Cookie login failed");
-                        }
+                        logger.info("Cookie login failed");
+                        account.clearCookies("");
                     }
                 }
-                br.setFollowRedirects(false);
-                br.postPage("http://" + this.getHost() + "/users/login", "email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-                if (br.getCookie(br.getHost(), "login_sid", Cookies.NOTDELETEDPATTERN) == null) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-                account.saveCookies(this.br.getCookies(this.getHost()), "");
-            } catch (final PluginException e) {
-                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
-                    account.clearCookies("");
-                }
-                throw e;
             }
+            br.setFollowRedirects(false);
+            br.postPage("http://" + this.getHost() + "/users/login", "email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+            if (br.getCookie(br.getHost(), "login_sid", Cookies.NOTDELETEDPATTERN) == null) {
+                throw new AccountInvalidException();
+            }
+            account.saveCookies(this.br.getCookies(br.getHost()), "");
         }
     }
 
@@ -187,16 +184,13 @@ public class TropicShareCom extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         login(account, true);
-        if (br.getURL() == null || !br.getURL().equals("http://" + this.getHost() + "/")) {
-            br.getPage("http://" + this.getHost() + "/");
-        }
         final Regex expireInfo = br.getRegex("(?i)Remain:\\s*<span>\\s*(\\d+)\\s*</span>\\s*Months?\\s*<span>\\s*(\\d+)\\s*</span>\\s*Days?");
         if (!br.containsHTML("<span>\\s*Premium") || expireInfo.getMatches().length != 1) {
             final String lang = System.getProperty("user.language");
             if ("de".equalsIgnoreCase(lang)) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNicht unterstützter Accounttyp!\r\nJDownloader unterstützt nur premium Accounts dieses Anbieters!\r\nFalls du denkst diese Meldung sei falsch die Unterstützung dieses Account-Typs sich\r\ndeiner Meinung nach aus irgendeinem Grund lohnt,\r\nkontaktiere uns über das support Forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                throw new AccountInvalidException("\r\nNicht unterstützter Accounttyp!\r\nJDownloader unterstützt nur premium Accounts dieses Anbieters!\r\nFalls du denkst diese Meldung sei falsch die Unterstützung dieses Account-Typs sich\r\ndeiner Meinung nach aus irgendeinem Grund lohnt,\r\nkontaktiere uns über das support Forum.");
             } else {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnsupported account type!\r\nJDownloader is only supporting premium accounts of this provider!\r\nIf you think this message is incorrect or it makes sense to add support for this account type\r\ncontact us via our support forum.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                throw new AccountInvalidException("\r\nUnsupported account type!\r\nJDownloader is only supporting premium accounts of this provider!\r\nIf you think this message is incorrect or it makes sense to add support for this account type\r\ncontact us via our support forum.");
             }
         }
         ai.setUnlimitedTraffic();
@@ -217,7 +211,10 @@ public class TropicShareCom extends PluginForHost {
         login(account, true);
         br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher(), true, -4);
-        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+        if (this.looksLikeDownloadableContent(dl.getConnection())) {
+            logger.info("User has direct downloads ENABLED");
+        } else {
+            logger.info("User has direct downloads DISABLED (or something else went wrong)");
             br.followConnection(true);
             final String fid = br.getRegex("fileid=\"(\\d+)\"").getMatch(0);
             if (fid == null) {
@@ -228,7 +225,7 @@ public class TropicShareCom extends PluginForHost {
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 logger.warning("The final dllink seems not to be a file!");
                 br.followConnection(true);
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error: Got html code instead of file");
             }
         }
         dl.startDownload();
