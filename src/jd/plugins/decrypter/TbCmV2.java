@@ -148,7 +148,7 @@ public class TbCmV2 extends PluginForDecrypt {
             pattern += "embed(\\?v=|/)" + VIDEO_ID_PATTERN + ".*";
             pattern += "|watch.*";
             pattern += "|shorts/" + VIDEO_ID_PATTERN + ".*";
-            pattern += "|(?:view_play_list|playlist)\\?(p|list)=.+";
+            pattern += "|(?:view_play_list|playlist)\\?.+";
             pattern += "|watch_videos\\?.+";
             pattern += "|video_ids=.+";
             pattern += "|channel/.+";
@@ -156,8 +156,6 @@ public class TbCmV2 extends PluginForDecrypt {
             pattern += "|user/.+";
             pattern += "|@.+";
             pattern += ")";
-            /* Let's allow variant information to be present at the end of any item. */
-            pattern += "(\\#variant=\\S+)?";
             ret.add(pattern);
         }
         return ret.toArray(new String[0]);
@@ -184,7 +182,7 @@ public class TbCmV2 extends PluginForDecrypt {
                 playlistID = query.get("p");
             }
             return playlistID;
-        } catch (MalformedURLException e) {
+        } catch (final MalformedURLException e) {
             e.printStackTrace();
             return null;
         }
@@ -346,7 +344,10 @@ public class TbCmV2 extends PluginForDecrypt {
         }
         helper.login(getLogger(), false);
         if (StringUtils.isEmpty(channelID) && StringUtils.isEmpty(userName) && StringUtils.isEmpty(playlistID) && StringUtils.isEmpty(videoID)) {
-            /* This should be a rare case but it can happen since we are supporting a lot of different URL formats. */
+            /*
+             * This should be a rare case but it can happen since we are supporting a lot of different URL formats and parameters inside
+             * those URLs can be anywhere.
+             */
             logger.info("Unsupported URL");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
