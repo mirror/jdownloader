@@ -301,6 +301,7 @@ downloadlink_status_error_fatal=Fatalna greška
 downloadlink_status_error_file_exists=Dokument već postoji
 downloadlink_status_error_file_not_found=Dokument nije pronađen
 downloadlink_status_error_hoster_temp_unavailable=Download sa ovog domaćina trenutno nije moguć
+downloadlink_status_error_multihost_queue_download_pending=Slijedi niz za download ove stavke sa servera
 downloadlink_status_error_temp_unavailable=Privremeno nedostupan
 exe_description=Exe dokumenti: exe, msi, bin,...
 getNextSortIdentifier_sort_warning_rly_msg=Da li stvarno želite da sortirate sve Linkove i Pakete u '%s1'?
