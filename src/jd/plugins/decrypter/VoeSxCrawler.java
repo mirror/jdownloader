@@ -97,6 +97,7 @@ public class VoeSxCrawler extends PluginForDecrypt {
         ret.add(link);
         String[] subtitleHTMLs = br.getRegex("<track kind=\"(captions|subtitles)\"[^<]+/>").getColumn(-1);
         if (subtitleHTMLs == null || subtitleHTMLs.length == 0) {
+            /* 2023-09-25 */
             subtitleHTMLs = br.getRegex("<track[^<]+kind=\"(captions|subtitles)\"[^<]*/>").getColumn(-1);
         }
         if (subtitleHTMLs != null && subtitleHTMLs.length > 0) {
