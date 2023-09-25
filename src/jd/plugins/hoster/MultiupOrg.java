@@ -39,6 +39,7 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -48,10 +49,10 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "multiup.org" }, urls = { "" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "multiup.io" }, urls = { "" })
 public class MultiupOrg extends PluginForHost {
-    private static final String          API_BASE            = "http://multiup.org/api";
-    private static MultiHosterManagement mhm                 = new MultiHosterManagement("multiup.org");
+    private static final String          API_BASE            = "https://multiup.io/api";
+    private static MultiHosterManagement mhm                 = new MultiHosterManagement("multiup.io");
     /** 2019-04-24: According to support: max con per file:3, max per account: 15 */
     private static final int             defaultMAXDOWNLOADS = 5;
     private static final int             defaultMAXCHUNKS    = -3;
@@ -231,7 +232,6 @@ public class MultiupOrg extends PluginForHost {
             // ai.setTrafficLeft(0);
         } else {
             account.setType(AccountType.PREMIUM);
-            ai.setStatus("Premium account");
             account.setMaxSimultanDownloads(defaultMAXDOWNLOADS);
             /* Expiredate may not always be found! */
             if (validuntil > System.currentTimeMillis()) {
@@ -279,27 +279,25 @@ public class MultiupOrg extends PluginForHost {
         }
     }
 
-    private static Object acclock = new Object();
-
     /**
      * Only use this if the API fails or is buggy at some point. THIS IS ONLY A WORKAROUND!
      *
      * @throws PluginException
      */
     private void loginWebsite(final Account account) throws IOException, PluginException {
-        synchronized (acclock) {
+        synchronized (account) {
             try {
                 br.setFollowRedirects(true);
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
                     this.br.setCookies(this.getHost(), cookies);
-                    br.getPage("https://" + account.getHoster() + "/en/profile/my-profile");
+                    br.getPage("https://" + getHost() + "/en/profile/my-profile");
                     /* 2019-04-24: Debug code */
                     // br.setCookie(br.getURL(), "REMEMBERME_MULTIDOMAIN", "true");
                     // br.setCookie(br.getURL(), "premium_available", "true");
                     if (isLoggedinHTML(this.br)) {
-                        account.saveCookies(this.br.getCookies(this.getHost()), "");
+                        account.saveCookies(this.br.getCookies(br.getHost()), "");
                         return;
                     }
                 }
@@ -315,11 +313,9 @@ public class MultiupOrg extends PluginForHost {
                 loginform.put("_remember_me", "on");
                 br.submitForm(loginform);
                 if (!isLoggedinHTML(this.br)) {
-                    // throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    logger.info("Website login failed");
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                    throw new AccountInvalidException();
                 }
-                account.saveCookies(this.br.getCookies(this.getHost()), "");
+                account.saveCookies(this.br.getCookies(br.getHost()), "");
             } catch (final PluginException e) {
                 account.clearCookies("");
                 throw e;
@@ -367,10 +363,6 @@ public class MultiupOrg extends PluginForHost {
             /* Everything ok */
             return 0;
         }
-    }
-
-    private String getErrormessage(final Browser br) {
-        return PluginJSonUtils.getJson(br, "details");
     }
 
     @Override

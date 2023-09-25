@@ -838,12 +838,12 @@ public class TiktokComCrawler extends PluginForDecrypt {
             }
             br.setFollowRedirects(true);
             /* Find userID */
-            final Browser website = br.cloneBrowser();
-            TiktokCom.prepBRWebAPI(website);
+            final Browser websitebrowser = br.cloneBrowser();
+            TiktokCom.prepBRWebAPI(websitebrowser);
             final UrlQuery query = TiktokCom.getWebsiteQuery();
             query.add("keyword", Encoding.urlEncode(usernameSlug));
-            website.getPage("https://www." + this.getHost() + "/api/search/user/preview/?" + query.toString());
-            final Map<String, Object> searchResults = restoreFromString(website.getRequest().getHtmlCode(), TypeRef.MAP);
+            websitebrowser.getPage("https://www." + this.getHost() + "/api/search/user/preview/?" + query.toString());
+            final Map<String, Object> searchResults = restoreFromString(websitebrowser.getRequest().getHtmlCode(), TypeRef.MAP);
             final List<Map<String, Object>> sug_list = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(searchResults, "sug_list/");
             for (Map<String, Object> sug : sug_list) {
                 final Map<String, Object> info = (Map<String, Object>) sug.get("extra_info");
@@ -855,16 +855,17 @@ public class TiktokComCrawler extends PluginForDecrypt {
             }
             if (user_id == null) {
                 logger.info("Using fallback method to find userID!");
-                website.getPage(param.getCryptedUrl());
-                user_id = website.getRegex("\"authorId\"\\s*:\\s*\"(.*?)\"").getMatch(0);
-                if (user_id == null && TiktokCom.isBotProtectionActive(website)) {
+                websitebrowser.getPage(param.getCryptedUrl());
+                user_id = websitebrowser.getRegex("\"authorId\"\\s*:\\s*\"(.*?)\"").getMatch(0);
+                if (user_id == null && TiktokCom.isBotProtectionActive(websitebrowser)) {
                     sleep(1000, param);// this somehow bypass the protection, maybe calling api twice sets a cookie?
-                    website.getPage("https://www." + this.getHost() + "/api/search/general/preview/?" + query.toString());
-                    website.getPage(param.getCryptedUrl());
-                    user_id = website.getRegex("\"authorId\"\\s*:\\s*\"(.*?)\"").getMatch(0);
+                    websitebrowser.getPage("https://www." + this.getHost() + "/api/search/general/preview/?" + query.toString());
+                    websitebrowser.getPage(param.getCryptedUrl());
+                    user_id = websitebrowser.getRegex("\"authorId\"\\s*:\\s*\"(.*?)\"").getMatch(0);
                 }
             }
             if (user_id == null) {
+                this.botProtectionCheck(websitebrowser);
                 logger.info("Profile doesn't exist or it's a private profile");
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }

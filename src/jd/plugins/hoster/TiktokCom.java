@@ -1007,6 +1007,9 @@ public class TiktokCom extends PluginForHost {
     public static boolean isBotProtectionActive(final Browser br) {
         if (br.containsHTML("pageDescKey\\s*=\\s*'user_verify_page_description';|class=\"verify-wrap\"")) {
             return true;
+        } else if (br.containsHTML("class=\"_wafchallengeid\"")) {
+            /* 2023-09-25: Not a captcha but a JS-challenge similar to Cloudflare stuff. */
+            return true;
         } else {
             return false;
         }

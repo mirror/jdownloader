@@ -160,7 +160,11 @@ public class TwitterCom extends PluginForHost {
 
     @Override
     public boolean isResumeable(final DownloadLink link, final Account account) {
-        return true;
+        if (PluginJsonConfig.get(TwitterConfigInterface.class).isPreferHLSVideoDownload() && link.hasProperty(PROPERTY_DIRECTURL_hls_master)) {
+            return false;
+        } else {
+            return true;
+        }
     }
 
     public static boolean isText(final DownloadLink link) {

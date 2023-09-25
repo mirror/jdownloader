@@ -37,7 +37,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pasfox.com" }, urls = { "https?://(?:www\\.)?pasfox\\.com/([A-Za-z0-9]+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class PasfoxCom extends PluginForDecrypt {
     public PasfoxCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -48,9 +48,33 @@ public class PasfoxCom extends PluginForDecrypt {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.PASTEBIN };
     }
 
+    private static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "pasfox.com", "pasfox.co" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : getPluginDomains()) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/([A-Za-z0-9]+)");
+        }
+        return ret.toArray(new String[0]);
+    }
+
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final String parameter = param.getCryptedUrl().replaceFirst("http://", "https://");
+        final String parameter = param.getCryptedUrl().replaceFirst("(?i)http://", "https://");
         br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
