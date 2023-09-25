@@ -228,9 +228,6 @@ public class FilestoreTo extends PluginForHost {
             String filename = new Regex(html, "class=\"file\">\\s*(.*?)\\s*</").getMatch(0);
             if (filename == null) {
                 filename = new Regex(html, "\\s*(File:|Filename:?|Dateiname:?)\\s*(.*?)\\s*(Dateigr??e|(File)?size|Gr??e):?\\s*(\\d+(,\\d+)? (B|KB|MB|GB))").getMatch(1);
-                if (filename == null) {
-                    filename = new Regex(html, "und starte dann den Download\\.\\.\\.\\.\\s*[A-Za-z]+:?\\s*([^<>\"/]*\\.(3gp|7zip|7z|abr|ac3|aiff|aifc|aif|ai|au|avi|bin|bat|bz2|cbr|cbz|ccf|chm|cso|cue|cvd|dta|deb|divx|djvu|dlc|dmg|doc|docx|dot|eps|epub|exe|ff|flv|flac|f4v|gsd|gif|gz|iwd|idx|iso|ipa|ipsw|java|jar|jpg|jpeg|load|m2ts|mws|mv|m4v|m4a|mkv|mp2|mp3|mp4|mobi|mov|movie|mpeg|mpe|mpg|mpq|msi|msu|msp|nfo|npk|oga|ogg|ogv|otrkey|par2|pkg|png|pdf|pptx|ppt|pps|ppz|pot|psd|qt|rmvb|rm|rar|ram|ra|rev|rnd|[r-z]\\d{2}|r\\d+|rpm|run|rsdf|reg|rtf|shnf|sh(?!tml)|ssa|smi|sub|srt|snd|sfv|swf|tar\\.gz|tar\\.bz2|tar\\.xz|tar|tgz|tiff|tif|ts|txt|viv|vivo|vob|webm|wav|wmv|wma|xla|xls|xpi|zeno|zip|z\\d+|_[_a-z]{2}))").getMatch(0);
-                }
             }
             String filesizeStr = new Regex(html, "<small>\\s*(?:Dateigröße|Filesize)\\s*</small>\\s*<div\\s*class\\s*=\\s*\"size\"\\s*>\\s*(\\d+[^<]+)<").getMatch(0);
             if (filesizeStr == null) {
@@ -283,7 +280,6 @@ public class FilestoreTo extends PluginForHost {
     private void handleDownload(final DownloadLink link, final Account account, final boolean resume, int maxChunks) throws Exception {
         final String errorMsg = br.getRegex("class=\"alert alert-danger page-alert mb-2\">\\s*<strong>([^<>]+)</strong>").getMatch(0);
         if (errorMsg != null) {
-            /* Check if we should retry */
             if (errorMsg.matches("(?i)Datei noch nicht bereit")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errorMsg, 5 * 60 * 1000l);
             } else {

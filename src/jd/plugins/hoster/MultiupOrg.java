@@ -23,23 +23,23 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.appwork.storage.JSonMapperException;
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
-import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookies;
-import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.AccountInvalidException;
+import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -47,33 +47,34 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
-import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "multiup.io" }, urls = { "" })
 public class MultiupOrg extends PluginForHost {
-    private static final String          API_BASE            = "https://multiup.io/api";
-    private static MultiHosterManagement mhm                 = new MultiHosterManagement("multiup.io");
+    private static final String          API_BASE                   = "https://multiup.io/api";
+    private static MultiHosterManagement mhm                        = new MultiHosterManagement("multiup.io");
     /** 2019-04-24: According to support: max con per file:3, max per account: 15 */
-    private static final int             defaultMAXDOWNLOADS = 5;
-    private static final int             defaultMAXCHUNKS    = -3;
-    private static final boolean         defaultRESUME       = true;
+    private static final int             defaultMAXDOWNLOADSPremium = 5;
+    private static final int             defaultMAXCHUNKS           = -3;
+    private static final boolean         defaultRESUME              = true;
+
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = new Browser();
+        br.setCookiesExclusive(true);
+        br.getHeaders().put("User-Agent", "JDownloader");
+        br.setFollowRedirects(true);
+        return br;
+    }
 
     @SuppressWarnings("deprecation")
     public MultiupOrg(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("https://multiup.org/en/premium");
+        this.enablePremium("https://" + this.getHost() + "/en/premium");
     }
 
     @Override
     public String getAGBLink() {
-        return "https://multiup.org/en/terms-and-conditions";
-    }
-
-    private Browser newBrowser() {
-        br = new Browser();
-        br.setCookiesExclusive(true);
-        br.getHeaders().put("User-Agent", "JDownloader");
-        return br;
+        return "https://" + this.getHost() + "/en/terms-and-conditions";
     }
 
     @Override
@@ -93,6 +94,7 @@ public class MultiupOrg extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
+        /* This should never get called. */
         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
 
@@ -103,55 +105,70 @@ public class MultiupOrg extends PluginForHost {
     }
 
     private void handleDL(final Account account, final DownloadLink link) throws Exception {
-        String dllink = checkDirectLink(link, this.getHost() + "directlink");
-        br.setFollowRedirects(true);
-        if (dllink == null) {
+        final String directlinkproperty = this.getHost() + "directlink";
+        final String storedDirecturl = link.getStringProperty(directlinkproperty);
+        String dllink;
+        if (storedDirecturl != null) {
+            logger.info("Using previously generated final downloadurl: " + storedDirecturl);
+            dllink = storedDirecturl;
+        } else {
+            logger.info("Generating fresh directurl");
             final boolean use_website_workaround = false;
+            final String url = link.getDefaultPlugin().buildExternalDownloadURL(link, this);
             if (use_website_workaround) {
                 loginWebsite(account);
-                br.setFollowRedirects(false);
-                final String urlDoubleB64 = Encoding.Base64Encode(Encoding.Base64Encode(link.getPluginPatternMatcher()));
-                dllink = "https://debrid.multiup.org/" + urlDoubleB64;
+                final String urlDoubleB64 = Encoding.Base64Encode(Encoding.Base64Encode(url));
+                dllink = "https://debrid." + this.getHost() + "/" + urlDoubleB64;
             } else {
                 this.loginAPI(account);
                 final UrlQuery dlQuery = new UrlQuery();
-                dlQuery.add("link", link.getPluginPatternMatcher());
-                final String passCode = link.getDownloadPassword();
-                if (passCode != null) {
-                    dlQuery.add("password", passCode);
+                dlQuery.add("link", Encoding.urlEncode(url));
+                if (link.getDownloadPassword() != null) {
+                    dlQuery.add("password", Encoding.urlEncode(link.getDownloadPassword()));
                 }
                 /**
                  * 2019-04-24: WTF this also works without login --> According to admin, once logged in once, current IP gets unlocked for
                  * premium download. Without this happening, used is a free-user and can only download one file at the time.
                  */
                 br.postPage(API_BASE + "/generate-debrid-link", dlQuery);
-                dllink = PluginJSonUtils.getJsonValue(br, "debrid_link");
-            }
-            if (StringUtils.isEmpty(dllink)) {
-                mhm.handleErrorGeneric(account, link, "dllinknull", 10, 5 * 60 * 1000l);
-            }
-        }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, defaultRESUME, defaultMAXCHUNKS);
-        link.setProperty(this.getHost() + "directlink", dl.getConnection().getURL().toString());
-        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            /* 402 - Payment required */
-            if (dl.getConnection().getResponseCode() == 402) {
-                /* 2019-05-03: E.g. free account[or expired premium], only 1 download per day (?) possible */
-                /*
-                 * 2019-11-03: We cannot trust this error as it may even occur on premium account download attempts. Rather wait than temp.
-                 * disabling account.
-                 */
-                final boolean trust_402_message = false;
-                if (trust_402_message) {
-                    account.getAccountInfo().setTrafficLeft(0);
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "No traffic left", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-                } else {
-                    mhm.handleErrorGeneric(account, link, "untrusted_error_responsecode_402", 20, 5 * 60 * 1000l);
+                final Map<String, Object> entries = this.checkErrorsAPI(br, account, link);
+                dllink = (String) entries.get("debrid_link");
+                if (StringUtils.isEmpty(dllink)) {
+                    /* This should never happen. */
+                    mhm.handleErrorGeneric(account, link, "Failed to find final downloadurl", 50, 5 * 60 * 1000l);
                 }
             }
-            br.followConnection(true);
-            handleKnownErrors(this.br, account, link);
-            mhm.handleErrorGeneric(account, link, "unknown_dl_error", 10, 5 * 60 * 1000l);
+        }
+        try {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, defaultRESUME, defaultMAXCHUNKS);
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                /* 402 - Payment required */
+                if (dl.getConnection().getResponseCode() == 402) {
+                    /* 2019-05-03: E.g. free account[or expired premium], only 1 download per day (?) possible */
+                    /*
+                     * 2019-11-03: We cannot trust this error as it may even occur on premium account download attempts. Rather wait than
+                     * temp. disabling account.
+                     */
+                    final boolean trust_402_message = false;
+                    final String errortext = "Error 402 payment required";
+                    if (trust_402_message || account.getType() == AccountType.FREE) {
+                        throw new AccountUnavailableException(errortext, 5 * 60 * 1000l);
+                    } else {
+                        mhm.handleErrorGeneric(account, link, errortext, 10, 5 * 60 * 1000l);
+                    }
+                }
+                br.followConnection(true);
+                checkErrorsAPI(this.br, account, link);
+                mhm.handleErrorGeneric(account, link, "unknown_dl_error", 10, 5 * 60 * 1000l);
+            }
+            link.setProperty(directlinkproperty, dl.getConnection().getURL().toExternalForm());
+        } catch (final Exception e) {
+            if (storedDirecturl != null) {
+                link.removeProperty(directlinkproperty);
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Stored directurl expired");
+            } else {
+                throw e;
+            }
         }
         this.dl.startDownload();
     }
@@ -163,37 +180,16 @@ public class MultiupOrg extends PluginForHost {
 
     @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
-        this.br = newBrowser();
         mhm.runCheck(account, link);
         handleDL(account, link);
     }
 
-    private String checkDirectLink(final DownloadLink downloadLink, final String property) {
-        String dllink = downloadLink.getStringProperty(property);
-        if (dllink != null) {
-            try {
-                final Browser br2 = br.cloneBrowser();
-                URLConnectionAdapter con = br2.openHeadConnection(dllink);
-                if (con.getContentType().contains("html") || con.getResponseCode() == 404 || con.getLongContentLength() == -1) {
-                    downloadLink.setProperty(property, Property.NULL);
-                    dllink = null;
-                }
-                con.disconnect();
-            } catch (final Exception e) {
-                downloadLink.setProperty(property, Property.NULL);
-                dllink = null;
-            }
-        }
-        return dllink;
-    }
-
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        this.br = newBrowser();
         final AccountInfo ai = new AccountInfo();
-        loginAPI(account);
+        final Map<String, Object> usermap = loginAPI(account);
         boolean is_premium = false;
-        long validuntil = 0;
+        long validuntiltimestamp = 0;
         String validuntilStr = null;
         /**
          * TODO: 2019-04-04: Admin has updated API so this workaround is not required anymore but we will keep this boolean as a switch just
@@ -207,76 +203,66 @@ public class MultiupOrg extends PluginForHost {
             }
             validuntilStr = br.getRegex("<td>(\\d{2}/\\d{2}/\\d{4} \\d{2}:\\d{2}:\\d{2})</td>\\s*?<td>\\d+</td>\\s*?<td>\\+\\d+ days?</td").getMatch(0);
             if (validuntilStr != null) {
-                validuntil = TimeFormatter.getMilliSeconds(validuntilStr, "dd/MM/yyyy HH:mm:ss", Locale.ENGLISH);
+                validuntiltimestamp = TimeFormatter.getMilliSeconds(validuntilStr, "dd/MM/yyyy HH:mm:ss", Locale.ENGLISH);
             }
-            is_premium = validuntil > System.currentTimeMillis();
+            is_premium = validuntiltimestamp > System.currentTimeMillis();
             if (!is_premium) {
                 is_premium = br.containsHTML("class=\"role\">\\s*?Premium user");
             }
         } else {
-            final String account_type = PluginJSonUtils.getJson(br, "account_type");
-            final String premium_days_left = PluginJSonUtils.getJson(br, "premium_days_left");
+            final String account_type = (String) usermap.get("account_type");
+            final String premium_days_left = usermap.get("premium_days_left").toString();
             is_premium = account_type != null && account_type.equalsIgnoreCase("premium");
             if (premium_days_left != null && premium_days_left.matches("\\d+")) {
-                validuntil = System.currentTimeMillis() + Integer.parseInt(premium_days_left) * 24 * 60 * 60 * 1000l;
+                validuntiltimestamp = System.currentTimeMillis() + Integer.parseInt(premium_days_left) * 24 * 60 * 60 * 1000l;
             }
         }
-        if (!is_premium) {
+        if (is_premium) {
+            account.setType(AccountType.PREMIUM);
+            account.setMaxSimultanDownloads(defaultMAXDOWNLOADSPremium);
+            /* Expiredate may not always be found! */
+            if (validuntiltimestamp > System.currentTimeMillis()) {
+                ai.setValidUntil(validuntiltimestamp, this.br);
+            }
+            ai.setUnlimitedTraffic();
+        } else {
             account.setType(AccountType.FREE);
             /*
-             * 2019-05-07: Limit according to: https://multiup.org/en/premium - once this limit is reached, website will return
+             * 2019-05-07: Limit according to: https://multiup.io/en/premium - once this limit is reached, website will return
              * "402 payment required" on further download attempts.
              */
             ai.setStatus("Free account (max. 1 download per day)");
             account.setMaxSimultanDownloads(1);
             // ai.setTrafficLeft(0);
+        }
+        /* Find list of supported hosts */
+        br.getPage(API_BASE + "/get-list-hosts-debrid");
+        final Map<String, Object> resp = this.checkErrorsAPI(br, account, null);
+        final Object hostsO = resp.get("hosts");
+        final ArrayList<String> supportedhostslist = new ArrayList<String>();
+        if (hostsO instanceof Map) {
+            final Map<String, Object> hostermap = (Map<String, Object>) hostsO;
+            final Iterator<Entry<String, Object>> iterator = hostermap.entrySet().iterator();
+            while (iterator.hasNext()) {
+                final Entry<String, Object> entry = iterator.next();
+                final String host = entry.getKey();
+                supportedhostslist.add(host);
+            }
         } else {
-            account.setType(AccountType.PREMIUM);
-            account.setMaxSimultanDownloads(defaultMAXDOWNLOADS);
-            /* Expiredate may not always be found! */
-            if (validuntil > System.currentTimeMillis()) {
-                ai.setValidUntil(validuntil, this.br);
-            }
-            ai.setUnlimitedTraffic();
+            final List<String> hostlist = (List<String>) hostsO;
+            supportedhostslist.addAll(hostlist);
         }
-        /* Continue via API */
-        this.getAPISafe(API_BASE + "/get-list-hosts-debrid", account, null);
-        try {
-            Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.getRequest().getHtmlCode());
-            final Object hostsO = entries.get("hosts");
-            final ArrayList<String> supportedhostslist = new ArrayList<String>();
-            if (hostsO instanceof Map) {
-                entries = (Map<String, Object>) hostsO;
-                final Iterator<Entry<String, Object>> iterator = entries.entrySet().iterator();
-                while (iterator.hasNext()) {
-                    final Entry<String, Object> entry = iterator.next();
-                    final String host = entry.getKey();
-                    supportedhostslist.add(host);
-                }
-            } else {
-                final List<Object> hostlistO = (List<Object>) hostsO;
-                for (final Object hostO : hostlistO) {
-                    supportedhostslist.add((String) hostO);
-                }
-            }
-            ai.setMultiHostSupport(this, supportedhostslist);
-        } catch (final Throwable e) {
-        }
+        ai.setMultiHostSupport(this, supportedhostslist);
         account.setConcurrentUsePossible(true);
         return ai;
     }
 
-    private void loginAPI(final Account account) throws IOException, PluginException {
-        br.setFollowRedirects(true);
+    private Map<String, Object> loginAPI(final Account account) throws IOException, PluginException, InterruptedException {
         final UrlQuery loginQuery = new UrlQuery();
         loginQuery.add("username", account.getUser());
         loginQuery.add("password", account.getPass());
         br.postPage(API_BASE + "/login", loginQuery);
-        final String error = PluginJSonUtils.getJson(br, "error");
-        if (!"success".equalsIgnoreCase(error)) {
-            /* E.g. {"error":"bad username OR bad password"} */
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        }
+        return this.checkErrorsAPI(br, account, null);
     }
 
     /**
@@ -327,42 +313,46 @@ public class MultiupOrg extends PluginForHost {
         return br.containsHTML("/logout");
     }
 
-    private void getAPISafe(final String accesslink, final Account account, final DownloadLink link) throws IOException, PluginException, InterruptedException {
-        this.br.getPage(accesslink);
-        handleKnownErrors(this.br, account, link);
-    }
-
-    private void handleKnownErrors(final Browser br, final Account account, final DownloadLink link) throws PluginException, InterruptedException {
-        final int errorcode = getErrorcode(br);
-        // final String errormsg = getErrormessage(this.br);
-        switch (errorcode) {
-        case 0:
-            break;
-        case 401:
-            /* Login failed */
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-        case 400:
-            /* Bad request, this should never happen */
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        case 404:
-            mhm.handleErrorGeneric(account, link, "hoster_offline_or_unsupported", 10, 5 * 60 * 1000l);
-        case 503:
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "503 - Service unavailable");
-        default:
-            /* Unknown issue */
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+    private Map<String, Object> checkErrorsAPI(final Browser br, final Account account, final DownloadLink link) throws PluginException, InterruptedException {
+        Map<String, Object> entries = null;
+        try {
+            entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+        } catch (final JSonMapperException ignore) {
+            /* This should never happen. */
+            throw new AccountUnavailableException("Invalid API response", 60 * 1000);
         }
-    }
-
-    private int getErrorcode(final Browser br) {
-        String status = PluginJSonUtils.getJson(br, "status");
-        if (status != null) {
-            /* Return errorcode */
-            return Integer.parseInt(status);
-        } else {
-            /* Everything ok */
-            return 0;
+        final String statuscode = (String) entries.get("status");
+        if (statuscode != null && statuscode.matches("\\d+")) {
+            /* Old handling */
+            final int errorcode = Integer.parseInt(statuscode);
+            // final String errormsg = getErrormessage(this.br);
+            switch (errorcode) {
+            case 0:
+                break;
+            case 401:
+                /* Login failed */
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            case 400:
+                /* Bad request, this should never happen */
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            case 404:
+                mhm.handleErrorGeneric(account, link, "hoster_offline_or_unsupported", 10, 5 * 60 * 1000l);
+            case 503:
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "503 - Service unavailable");
+            default:
+                /* Unknown issue */
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
+        final String statustext = (String) entries.get("error");
+        if (!"success".equalsIgnoreCase(statustext)) {
+            if (link != null) {
+                mhm.handleErrorGeneric(account, link, statustext, 10, 5 * 60 * 1000l);
+            } else {
+                throw new AccountInvalidException(statustext);
+            }
+        }
+        return entries;
     }
 
     @Override

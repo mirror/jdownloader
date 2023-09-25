@@ -1286,11 +1286,10 @@ public class OneFichierCom extends PluginForHost {
         if (StringUtils.isEmpty(url)) {
             return false;
         }
-        final boolean preferSSL = PluginJsonConfig.get(OneFichierConfigInterface.class).isPreferSSLEnabled();
-        if (preferSSL) {
-            url = url.replaceFirst("http://", "https://");
+        if (PluginJsonConfig.get(OneFichierConfigInterface.class).isPreferSSLEnabled()) {
+            url = url.replaceFirst("(?i)http://", "https://");
         } else {
-            url = url.replaceFirst("https://", "http://");
+            url = url.replaceFirst("(?i)https://", "http://");
         }
         try {
             final Browser brc = br.cloneBrowser();
