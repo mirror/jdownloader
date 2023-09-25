@@ -383,11 +383,13 @@ public class TiktokComCrawler extends PluginForDecrypt {
         return ret;
     }
 
-    private void checkErrorsWebsite(final Browser br) throws PluginException {
+    private void checkErrorsWebsite(final Browser br) throws PluginException, DecrypterRetryException {
         if (this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML("pageDescKey\\s*=\\s*'user_verify_page_description';|class=\"verify-wrap\"")) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Captcha-blocked");
+        } else if (TiktokCom.isBotProtectionActive(br)) {
+            throw new DecrypterRetryException(RetryReason.CAPTCHA, "Bot protection active, cannot crawl any items", "Bot protection active, cannot crawl any items", null);
         }
     }
 
@@ -638,7 +640,7 @@ public class TiktokComCrawler extends PluginForDecrypt {
         }
         final String usernameSlug = new Regex(br.getURL(), TYPE_USER_USERNAME).getMatch(0);
         if (usernameSlug == null) {
-            /* Redirect to somewhere else */
+            /* Redirect to somewhere else -> Probably profile does not exist */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (TiktokCom.isBotProtectionActive(this.br)) {
@@ -649,7 +651,7 @@ public class TiktokComCrawler extends PluginForDecrypt {
             br.getPage("https://www." + this.getHost() + "/api/search/general/preview/?" + query.toString());
             br.getPage(param.getCryptedUrl());
         }
-        this.botProtectionCheck(br);
+        this.checkErrorsWebsite(br);
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final TiktokConfig cfg = PluginJsonConfig.get(TiktokConfig.class);
         FilePackage fp = null;
@@ -685,7 +687,7 @@ public class TiktokComCrawler extends PluginForDecrypt {
                     result._setFilePackage(fp);
                     distribute(result);
                 }
-                if (ret.size() == cfg.getProfileCrawlerMaxItemsLimit()) {
+                if ((mediaIndex + 1) == cfg.getProfileCrawlerMaxItemsLimit()) {
                     logger.info("Stopping because: Reached user defined max items limit: " + cfg.getProfileCrawlerMaxItemsLimit());
                     return ret;
                 }
@@ -837,7 +839,7 @@ public class TiktokComCrawler extends PluginForDecrypt {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             br.setFollowRedirects(true);
-            /* Find userID */
+            /* Find userID via website */
             final Browser websitebrowser = br.cloneBrowser();
             TiktokCom.prepBRWebAPI(websitebrowser);
             final UrlQuery query = TiktokCom.getWebsiteQuery();
@@ -858,14 +860,14 @@ public class TiktokComCrawler extends PluginForDecrypt {
                 websitebrowser.getPage(param.getCryptedUrl());
                 user_id = websitebrowser.getRegex("\"authorId\"\\s*:\\s*\"(.*?)\"").getMatch(0);
                 if (user_id == null && TiktokCom.isBotProtectionActive(websitebrowser)) {
-                    sleep(1000, param);// this somehow bypass the protection, maybe calling api twice sets a cookie?
+                    sleep(1000, param);// This used to somehow bypass the protection, maybe calling api twice sets a cookie?
                     websitebrowser.getPage("https://www." + this.getHost() + "/api/search/general/preview/?" + query.toString());
                     websitebrowser.getPage(param.getCryptedUrl());
                     user_id = websitebrowser.getRegex("\"authorId\"\\s*:\\s*\"(.*?)\"").getMatch(0);
                 }
             }
             if (user_id == null) {
-                this.botProtectionCheck(websitebrowser);
+                this.checkErrorsWebsite(websitebrowser);
                 logger.info("Profile doesn't exist or it's a private profile");
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -893,10 +895,14 @@ public class TiktokComCrawler extends PluginForDecrypt {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             final List<Map<String, Object>> videos = (List<Map<String, Object>>) entries.get("aweme_list");
+            if (videos == null) {
+                /* Profile does not exist. */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             if (videos.isEmpty()) {
                 if (ret.isEmpty()) {
                     /* User has no video uploads at all. */
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    throw new DecrypterRetryException(RetryReason.EMPTY_PROFILE);
                 } else {
                     /* This should never happen! */
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -953,7 +959,7 @@ public class TiktokComCrawler extends PluginForDecrypt {
         }
         prepBRWebsite(br);
         br.getPage(param.getCryptedUrl());
-        botProtectionCheck(br);
+        checkErrorsWebsite(br);
         final String tagID = br.getRegex("snssdk\\d+://challenge/detail/(\\d+)").getMatch(0);
         if (tagID == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -1070,13 +1076,6 @@ public class TiktokComCrawler extends PluginForDecrypt {
         final DownloadLink link = this.createDownloadlink(getContentURL(author.get("unique_id").toString(), aweme_detail.get("aweme_id").toString()));
         TiktokCom.parseFileInfoAPI(this, link, aweme_detail);
         return link;
-    }
-
-    /* Throws exception if bot protection is active according to given browser instances' html code. */
-    private void botProtectionCheck(final Browser br) throws DecrypterRetryException {
-        if (TiktokCom.isBotProtectionActive(br)) {
-            throw new DecrypterRetryException(RetryReason.CAPTCHA, "Bot protection active, cannot crawl any items", null, null);
-        }
     }
 
     private FilePackage getFilePackage(final String name) {

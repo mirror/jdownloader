@@ -199,7 +199,7 @@ public class TropicShareCom extends PluginForHost {
         final long monthsSeconds = Integer.parseInt(months) * 31 * 24 * 60 * 60;
         final long daysSeconds = Integer.parseInt(days) * 24 * 60 * 60;
         final long expireMilliseconds = (monthsSeconds + daysSeconds) * 1001;
-        ai.setValidUntil(System.currentTimeMillis() + expireMilliseconds);
+        ai.setValidUntil(System.currentTimeMillis() + expireMilliseconds, br);
         account.setType(AccountType.PREMIUM);
         return ai;
     }
