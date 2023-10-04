@@ -1,5 +1,5 @@
 //jDownloader - Downloadmanager
-//Copyright (C) 2013  JD-Team support@jdownloader.org
+//Copyright (C) 2016  JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -18,34 +18,33 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
+import org.jdownloader.plugins.components.YetiShareCore;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class FilestoreMe extends XFileSharingProBasic {
-    public FilestoreMe(final PluginWrapper wrapper) {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
+public class TerabytezOrg extends YetiShareCore {
+    public TerabytezOrg(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium(super.getPurchasePremiumURL());
+        this.enablePremium(getPurchasePremiumURL());
     }
 
     /**
-     * DEV NOTES XfileSharingProBasic Version SEE SUPER-CLASS<br />
+     * DEV NOTES YetiShare<br />
+     ****************************
      * mods: See overridden functions<br />
-     * limit-info:<br />
-     * captchatype-info: 2023-07-24: null <br />
-     * other:<br />
+     * limit-info 2023-10-04: untested :<br />
+     * captchatype-info: null solvemedia reCaptchaV2, hcaptcha<br />
+     * other: <br />
      */
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "filestore.me" });
+        ret.add(new String[] { "terabytez.org" });
         return ret;
     }
 
@@ -59,16 +58,15 @@ public class FilestoreMe extends XFileSharingProBasic {
     }
 
     public static String[] getAnnotationUrls() {
-        return XFileSharingProBasic.buildAnnotationUrls(getPluginDomains());
+        return YetiShareCore.buildAnnotationUrls(getPluginDomains());
     }
 
     @Override
     public boolean isResumeable(final DownloadLink link, final Account account) {
-        final AccountType type = account != null ? account.getType() : null;
-        if (AccountType.FREE.equals(type)) {
+        if (account != null && account.getType() == AccountType.FREE) {
             /* Free Account */
             return true;
-        } else if (AccountType.PREMIUM.equals(type) || AccountType.LIFETIME.equals(type)) {
+        } else if (account != null && account.getType() == AccountType.PREMIUM) {
             /* Premium account */
             return true;
         } else {
@@ -77,27 +75,24 @@ public class FilestoreMe extends XFileSharingProBasic {
         }
     }
 
-    @Override
     public int getMaxChunks(final Account account) {
-        final AccountType type = account != null ? account.getType() : null;
-        if (AccountType.FREE.equals(type)) {
+        if (account != null && account.getType() == AccountType.FREE) {
             /* Free Account */
-            return 1;
-        } else if (AccountType.PREMIUM.equals(type) || AccountType.LIFETIME.equals(type)) {
+            return 0;
+        } else if (account != null && account.getType() == AccountType.PREMIUM) {
             /* Premium account */
-            return 1;
+            return 0;
         } else {
             /* Free(anonymous) and unknown account type */
-            return 1;
+            return 0;
         }
     }
 
     @Override
-    public int getMaxSimultaneousFreeAnonymousDownloads() {
+    public int getMaxSimultanFreeDownloadNum() {
         return -1;
     }
 
-    @Override
     public int getMaxSimultaneousFreeAccountDownloads() {
         return -1;
     }
@@ -105,26 +100,5 @@ public class FilestoreMe extends XFileSharingProBasic {
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
-    }
-
-    @Override
-    protected String getDllink(final DownloadLink link, final Account account, final Browser br, String src) {
-        String dllink = super.getDllink(link, account, br, src);
-        /**
-         * 2023-07-25: Small workaround: They can sometimes provide embedded PDF URLs. Those are direct-URLs and work just fine but using
-         * them will result in corrupt filenames. </br>
-         * Doing what we do here results in the upper handling using the "official download button" instead.
-         */
-        if (dllink != null && !StringUtils.containsIgnoreCase(dllink, "embedded=true")) {
-            return dllink;
-        } else {
-            return null;
-        }
-    }
-
-    @Override
-    protected boolean supports_availablecheck_filesize_html() {
-        /* 2023-10-04 */
-        return false;
     }
 }
