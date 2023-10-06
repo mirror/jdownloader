@@ -310,12 +310,6 @@ public class RapidGatorNet extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    private void errorIfNotLoggedIn(final Browser br) throws AccountUnavailableException {
-        if (!this.isLoggedINWebsite(br)) {
-            throw new AccountUnavailableException("Session expired?", 1 * 60 * 1000l);
-        }
-    }
-
     private void parseFileInfo(final Browser br, final DownloadLink link) throws PluginException {
         link.removeProperty(PROPERTY_HOTLINK);
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("File not found")) {
@@ -405,8 +399,8 @@ public class RapidGatorNet extends PluginForHost {
                     logger.info("blockedIPsMap: " + blockedIPsMap);
                 }
                 handleErrorsWebsite(this.br, link, account, currentIP);
-                if (account != null) {
-                    errorIfNotLoggedIn(br);
+                if (account != null && !this.isLoggedINWebsite(br)) {
+                    throw new AccountUnavailableException("Session expired?", 1 * 60 * 1000l);
                 }
                 if (PluginJsonConfig.get(RapidGatorConfig.class).isActivateExperimentalWaittimeHandling()) {
                     final long lastdownload_timestamp = getPluginSavedLastDownloadTimestamp(currentIP);

@@ -27,6 +27,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hulkshare.com" }, urls = { "https?://(?:www\\.)?(?:hulkshare\\.com|hu\\.lk)/[A-Za-z0-9_\\-]+(?:/[^<>\"/]+)?" })
@@ -39,21 +41,20 @@ public class HulkShareComFolder extends PluginForDecrypt {
     private static final String TYPE_SECONDSINGLELINK = "https?://[^/]+/[a-z0-9\\-_]+/[^<>\"/]+";
     private static final String TYPE_PLAYLIST         = "https?://[^/]+/playlist/\\d+(.+)?";
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString().replaceFirst("hu\\.lk/", "hulkshare\\.com/");
-        final String fid = new Regex(parameter, "hulkshare\\.com/dl/([a-z0-9]{12})").getMatch(0);
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        String parameter = param.getCryptedUrl().replaceFirst("hu\\.lk/", "hulkshare\\.com/");
+        final String fid = new Regex(parameter, "(?i)hulkshare\\.com/dl/([a-z0-9]{12})").getMatch(0);
         if (fid != null) {
             parameter = "https://www." + this.getHost() + "/" + fid;
         } else if (!parameter.matches(HULKSHAREDOWNLOADLINK) && !parameter.matches(TYPE_PLAYLIST)) {
         }
         if (parameter.matches("https?://(?:www\\.)?(hulkshare\\.com|hu\\/lk)/(static|browse|images|terms|contact|audible|search|people|upload|featured|mobile|group|explore|sitemaps).*?")) {
             logger.info("Invalid link: " + parameter);
-            decryptedLinks.add(getOffline(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (new Regex(parameter, HULKSHAREDOWNLOADLINK).matches()) {
-            decryptedLinks.add(createDownloadlink(parameter.replace("hulkshare.com/", "hulksharedecrypted.com/")));
-            return decryptedLinks;
+            ret.add(createDownloadlink(parameter.replace("hulkshare.com/", "hulksharedecrypted.com/")));
+            return ret;
         }
         br.setFollowRedirects(true);
         br.setCookie(this.getHost(), "lang", "english");
@@ -63,8 +64,8 @@ public class HulkShareComFolder extends PluginForDecrypt {
         final String longLink = br.getRegex("longLink = \\'(https?://(?:www\\.)?hulkshare\\.com/[a-z0-9]{12})\\'").getMatch(0);
         if ((new Regex(parameter, Pattern.compile(TYPE_SECONDSINGLELINK, Pattern.CASE_INSENSITIVE)).matches()) && longLink != null) {
             /* We have a single mp3 link */
-            decryptedLinks.add(createDownloadlink(longLink.replace("hulkshare.com/", "hulksharedecrypted.com/")));
-            return decryptedLinks;
+            ret.add(createDownloadlink(longLink.replace("hulkshare.com/", "hulksharedecrypted.com/")));
+            return ret;
         } else if (!(new Regex(parameter, Pattern.compile(TYPE_PLAYLIST, Pattern.CASE_INSENSITIVE)).matches()) && (new Regex(parameter, Pattern.compile(TYPE_SECONDSINGLELINK, Pattern.CASE_INSENSITIVE)).matches()) && longLink == null) {
             /*
              * Either an offline singleLink or a 'wrong' user-link e.g. http://www.hulkshare.com/any_user_name/followers --> Try to correct
@@ -76,32 +77,20 @@ public class HulkShareComFolder extends PluginForDecrypt {
         }
         if (br.getHttpConnection().getContentType().equals("text/javascript") || br.getHttpConnection().getContentType().equals("text/css") || this.br.getURL().contains("/404.php")) {
             logger.info("Invalid link: " + parameter);
-            decryptedLinks.add(getOffline(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (br.containsHTML("class=\"bigDownloadBtn") || br.containsHTML(">\\s*The owner of this file doesn\\'t allow downloading")) {
-            logger.info("Link offline: " + parameter);
-            decryptedLinks.add(createDownloadlink(parameter.replace("hulkshare.com/", "hulksharedecrypted.com/")));
-            decryptedLinks.add(getOffline(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML("You have reached the download\\-limit")) {
-            logger.info("Link offline: " + parameter);
-            decryptedLinks.add(getOffline(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (this.br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">Page not found") || br.containsHTML(">This file has been subject to a DMCA notice") || br.containsHTML("<h2>Error</h2>") || br.containsHTML(">We\\'re sorry but this page is not accessible") || br.containsHTML(">Error<")) {
-            logger.info("Link offline: " + parameter);
-            decryptedLinks.add(getOffline(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         // Mainpage
         if (br.containsHTML("<title>Online Music, Free Internet Radio, Discover Artists \\- Hulkshare")) {
-            logger.info("Link offline: " + parameter);
-            decryptedLinks.add(getOffline(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML("class=\"nhsUploadLink signupPopLink\">Sign up for Hulkshare<")) {
-            logger.info("Link doesn't contain any downloadable content: " + parameter);
-            decryptedLinks.add(getOffline(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (new Regex(parameter, Pattern.compile(TYPE_PLAYLIST, Pattern.CASE_INSENSITIVE)).matches()) {
             String fpName = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
             if (fpName == null) {
@@ -109,30 +98,35 @@ public class HulkShareComFolder extends PluginForDecrypt {
             }
             final String pllist = br.getRegex("class=\"newPlayer\" id=\"hsPlayer[A-Za-z0-9\\-_]+\" pid=\"\\d+\" rel=\"([^<>\"]*?)\"").getMatch(0);
             if (pllist == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             final String[] playlistids = pllist.split(",");
             for (final String pllistid : playlistids) {
-                decryptedLinks.add(createDownloadlink("http://hulksharedecrypted.com/playlistsong/" + pllistid));
+                ret.add(createDownloadlink("http://hulksharedecrypted.com/playlistsong/" + pllistid));
             }
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName.trim()));
-            fp.addLinks(decryptedLinks);
-            return decryptedLinks;
+            fp.addLinks(ret);
+            return ret;
         }
+        /* Maybe album? */
         final String uid = br.getRegex("\\?uid=(\\d+)").getMatch(0);
         if (uid == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            if (longLink != null && longLink.matches(HULKSHAREDOWNLOADLINK)) {
+                /* We have a single mp3 link */
+                ret.add(createDownloadlink(longLink.replace("hulkshare.com/", "hulksharedecrypted.com/")));
+                return ret;
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         final int count_tracks = Integer.parseInt(br.getRegex(">All Music <i>(\\d+)</i>").getMatch(0));
         if (count_tracks == 0) {
             final DownloadLink dl = createDownloadlink("directhttp://" + parameter);
             dl.setProperty("offline", true);
             dl.setAvailable(false);
-            decryptedLinks.add(dl);
-            return decryptedLinks;
+            ret.add(dl);
+            return ret;
         }
         final int entries_per_page = 25;
         final BigDecimal bd = new BigDecimal((double) count_tracks / entries_per_page);
@@ -176,7 +170,7 @@ public class HulkShareComFolder extends PluginForDecrypt {
                     fina._setFilePackage(fp);
                     fina.setLinkID("hulksharecom_" + fcode);
                     distribute(fina);
-                    decryptedLinks.add(fina);
+                    ret.add(fina);
                     added_links_count++;
                 }
             }
@@ -185,22 +179,15 @@ public class HulkShareComFolder extends PluginForDecrypt {
                 break;
             } else if (this.isAbort()) {
                 logger.info("Decryption aborted for link: " + parameter);
-                return decryptedLinks;
+                return ret;
             }
         }
-        if (decryptedLinks.size() == 0) {
+        if (ret.size() == 0) {
             logger.warning("Possible Plugin Defect, please confirm in your browser. If there are files present within '" + parameter + "' please report this issue to JDownloader Development Team!");
-            return null;
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        fp.addLinks(decryptedLinks);
-        return decryptedLinks;
-    }
-
-    private DownloadLink getOffline(final String parameter) {
-        final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
-        offline.setAvailable(false);
-        offline.setProperty("offline", true);
-        return offline;
+        fp.addLinks(ret);
+        return ret;
     }
 
     /* NO OVERRIDE!! */

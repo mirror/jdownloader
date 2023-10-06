@@ -17,6 +17,8 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
@@ -27,8 +29,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imagevenue.com" }, urls = { "https?://(www\\.)?(img\\d+\\.)?imagevenue\\.com/(galshow\\.php\\?gal=gallery_.+|GA[A-Za-z0-9]+)" })
 public class ImageVenueComGallery extends PluginForDecrypt {
@@ -41,9 +41,9 @@ public class ImageVenueComGallery extends PluginForDecrypt {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.IMAGE_GALLERY };
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        String parameter = param.getCryptedUrl().replaceFirst("(?i)http://", "https://");
         final String format = new Regex(parameter, "(format=[A-Za-z0-9]+)").getMatch(0);
         if (format != null) {
             parameter = parameter.replace(format, "format=show");
@@ -54,20 +54,21 @@ public class ImageVenueComGallery extends PluginForDecrypt {
         if (redirect != null) {
             /* 2020-07-13: New */
             if (redirect.contains("/no_image.jpg")) {
-                decryptedLinks.add(this.createOfflinelink(parameter));
-                return decryptedLinks;
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             br.setFollowRedirects(true);
             br.getPage(redirect);
         }
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+        if (br.getHttpConnection().getResponseCode() == 403) {
+            /* Invalid link */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String[] links = br.getRegex("<a href=\"(https?://img\\d+\\.imagevenue\\.com/img\\.php\\?image=[^<>\"]*?)\" target=\"_blank\"><img src=\"").getColumn(0);
         if (links != null) {
             for (String singleLink : links) {
-                decryptedLinks.add(createDownloadlink(singleLink));
+                ret.add(createDownloadlink(singleLink));
             }
         }
         final String images[][] = br.getRegex("<a href\\s*=\\s*\"(https:?//(?:www\\.)?" + getHost() + "/[A-Za-z0-9]+)\"\\s*>\\s*<img[^>]*>\\s*<span>\\s*(.*?)\\s*</span>").getMatches();
@@ -76,10 +77,10 @@ public class ImageVenueComGallery extends PluginForDecrypt {
                 final DownloadLink link = createDownloadlink(image[0]);
                 link.setAvailable(true);
                 link.setName(image[1]);
-                decryptedLinks.add(link);
+                ret.add(link);
             }
         }
-        if (decryptedLinks.size() == 0) {
+        if (ret.size() == 0) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         String title = br.getRegex("<title>\\s*(?:ImageVenue.com\\s*-)?\\s*(.*?)\\s*</title>").getMatch(0);
@@ -89,9 +90,9 @@ public class ImageVenueComGallery extends PluginForDecrypt {
         if (title != null) {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(title);
-            fp.addLinks(decryptedLinks);
+            fp.addLinks(ret);
         }
-        return decryptedLinks;
+        return ret;
     }
 
     /* NO OVERRIDE!! */

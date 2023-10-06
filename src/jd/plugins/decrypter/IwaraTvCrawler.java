@@ -140,6 +140,9 @@ public class IwaraTvCrawler extends PluginForDecrypt {
                 if (!dupes.add(videoID) || "thumbnails".equals(videoID)) {
                     continue;
                 }
+                if (videoID.contains("rgkp9tgqkfzvyvo4")) {
+                    logger.warning("WTF");
+                }
                 /* Assume all items are selfhosted and thus do not have to go through this crawler again. */
                 final String videoURL = "https://" + br.getHost() + "/video/" + videoID;
                 /*
@@ -147,7 +150,9 @@ public class IwaraTvCrawler extends PluginForDecrypt {
                  * video-description.
                  */
                 final DownloadLink dl;
+                boolean addResultForFurtherProcessing = true;
                 if (cfg.isScanForDownloadableLinksInContentDescription()) {
+                    /* In order to find the video description, items need to be processed one by one by this crawler. */
                     dl = this.createDownloadlink(videoURL);
                 } else {
                     dl = new DownloadLink(plg, this.getHost(), this.getHost(), videoURL, true);
@@ -157,6 +162,7 @@ public class IwaraTvCrawler extends PluginForDecrypt {
                     final String embedUrl = dl.getStringProperty(IwaraTv.PROPERTY_EMBED_URL);
                     if (embedUrl != null) {
                         /* Video is not hosted on iwara.tv but on a 3rd party website. */
+                        addResultForFurtherProcessing = false;
                         if (cfg.isProfileCrawlerSkipExternalURLs()) {
                             logger.info("Skipping externally hosted item: " + embedUrl);
                             numberofSkippedExternalLinksThisPage++;
@@ -172,9 +178,11 @@ public class IwaraTvCrawler extends PluginForDecrypt {
                         }
                     }
                 }
-                dl._setFilePackage(fp);
-                ret.add(dl);
-                distribute(dl);
+                if (addResultForFurtherProcessing) {
+                    dl._setFilePackage(fp);
+                    ret.add(dl);
+                    distribute(dl);
+                }
                 foundNumberofNewItemsThisPage++;
             }
             numberofSkippedExternalLinks += numberofSkippedExternalLinksThisPage;

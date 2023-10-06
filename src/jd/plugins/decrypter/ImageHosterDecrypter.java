@@ -17,6 +17,8 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -26,10 +28,9 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.hoster.DirectHTTP;
 
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "imagecurl.com", "twitpic.com", "girlswithmuscle.com" }, urls = { "http://(?:www\\.)?imagecurl\\.com/viewer\\.php\\?file=[\\w-]+\\.[a-z]{2,4}", "https?://(www\\.)?twitpic\\.com/show/[a-z]+/[a-z0-9]+", "https?://(www.)?girlswithmuscle\\.com/\\d+/?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "imagecurl.com", "girlswithmuscle.com" }, urls = { "http://(?:www\\.)?imagecurl\\.com/viewer\\.php\\?file=[\\w-]+\\.[a-z]{2,4}", "https?://(www.)?girlswithmuscle\\.com/\\d+/?" })
 public class ImageHosterDecrypter extends antiDDoSForDecrypt {
     public ImageHosterDecrypter(final PluginWrapper wrapper) {
         super(wrapper);
@@ -37,16 +38,12 @@ public class ImageHosterDecrypter extends antiDDoSForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        String parameter = param.getCryptedUrl();
         br.setFollowRedirects(false);
         String finallink = null;
         String finalfilename = null;
-        if (parameter.contains("twitpic.com/")) {
-            br.setFollowRedirects(false);
-            br.getPage(parameter);
-            finallink = br.getRedirectLocation();
-        } else if (parameter.contains("imagecurl.com/")) {
+        if (parameter.contains("imagecurl.com/")) {
             br.setFollowRedirects(true);
             br.getPage(parameter);
             finallink = br.getRegex("\\('<br/><a href=\"(https?://cdn\\.imagecurl\\.com/images/\\w+\\.[a-z]{2,4})\">").getMatch(0);
@@ -60,21 +57,26 @@ public class ImageHosterDecrypter extends antiDDoSForDecrypt {
             }
             br.setFollowRedirects(true);
             br.getPage(parameter);
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             finallink = br.getRegex("<a href=\"([^\"]+)\">Link to full-size").getMatch(0);
             String ext = new Regex(finallink, "(\\.[a-z0-9]+$)").getMatch(0);
             finalfilename = fuid + " " + br.getRegex("<title>([^<>]+)</title>").getMatch(0) + ext;
+        } else {
+            /* Unsupported URL -> This should never happen. */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (finallink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        finallink = Encoding.htmlDecode("directhttp://" + finallink);
+        finallink = Encoding.htmlDecode(DirectHTTP.createURLForThisPlugin(finallink));
         final DownloadLink dl = createDownloadlink(finallink);
-        dl.setUrlDownload(finallink);
         if (finalfilename != null) {
             dl.setFinalFileName(Encoding.htmlDecode(finalfilename));
         }
-        decryptedLinks.add(dl);
-        return decryptedLinks;
+        ret.add(dl);
+        return ret;
     }
 
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {

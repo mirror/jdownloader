@@ -265,8 +265,15 @@ public class BandCampComDecrypter extends PluginForDecrypt {
             json = Encoding.htmlDecode(json);
         }
         final String json_album = br.getRegex("<script type=\"application/(?:json\\+ld|ld\\+json)\">\\s*(.*?)\\s*</script>").getMatch(0);
+        final String errorAlbumUnavailable = br.getRegex("<h4 class=\"notable\">([^<]+)</h4>").getMatch(0);
         if (json_album == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (errorAlbumUnavailable != null) {
+                /* E.g. "Sold out": https://baritalia.bandcamp.com/album/cdr */
+                logger.info("Item unavailable because: " + errorAlbumUnavailable);
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         final Map<String, Object> albumInfo = restoreFromString(json_album, TypeRef.MAP);
         String albumOrTrackTitle = (String) JavaScriptEngineFactory.walkJson(albumInfo, "inAlbum/name");
@@ -284,7 +291,12 @@ public class BandCampComDecrypter extends PluginForDecrypt {
         }
         final List<Map<String, Object>> albumtracks = (List<Map<String, Object>>) JavaScriptEngineFactory.jsonToJavaObject(json);
         if (albumtracks == null || albumtracks.size() == 0) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (errorAlbumUnavailable != null) {
+                /* E.g. "Sold out": https://baritalia.bandcamp.com/album/cdr */
+                logger.info("Item unavailable because: " + errorAlbumUnavailable);
+            }
+            /* E.g. album without any streamable tracks: https://midsummerex.bandcamp.com/album/intl */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String type = albumInfo.get("@type").toString();
         final boolean isSingleTrack;

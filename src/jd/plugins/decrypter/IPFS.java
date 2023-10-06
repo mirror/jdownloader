@@ -2,19 +2,21 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.DirectHTTP;
-
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ipfs.io", "ipfs.io" }, urls = { "https?://(cloudflare-ipfs.com|ipfs.io|ipfs.video|gateway.ipfs.io)/ipfs/[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+(\\?filename=.+|/.+)?", "ipfs://[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+(/.+)?" })
 public class IPFS extends PluginForDecrypt {
@@ -27,7 +29,7 @@ public class IPFS extends PluginForDecrypt {
     private final String base58Pattern = "[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+";
 
     @Override
-    public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink parameter, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String cid = new Regex(parameter.getCryptedUrl(), "(?:/ipfs/|ipfs://)(" + base58Pattern + ")").getMatch(0);
         final String filename = URLEncode.decodeURIComponent(new Regex(parameter.getCryptedUrl(), "\\?filename=(.+)").getMatch(0));
@@ -45,47 +47,52 @@ public class IPFS extends PluginForDecrypt {
             probeURL = "https://" + ipfsGateWay + "/ipfs/" + cid;
         }
         br.setFollowRedirects(true);
-        URLConnectionAdapter con = br.openHeadConnection(probeURL);
-        try {
-            if (con.getResponseCode() == 200 && !StringUtils.equalsIgnoreCase(con.getContentType(), "text/html")) {
-                final DownloadLink downloadLink = createDownloadlink("directhttp://" + probeURL);
-                if (con.getCompleteContentLength() > 0) {
-                    downloadLink.setVerifiedFileSize(con.getCompleteContentLength());
-                }
-                String name = filename;
-                if (name == null) {
-                    if (resourcePath != null) {
-                        name = getFileNameFromURL(br._getURL());
-                    }
-                    if (name == null) {
-                        final String extension = getExtensionFromMimeType(con.getContentType());
-                        name = cid + (extension != null ? ("." + extension) : "");
-                    }
-                }
-                if (name != null) {
-                    downloadLink.setFinalFileName(name);
-                    downloadLink.setProperty(DirectHTTP.FIXNAME, name);
-                }
-                downloadLink.setAvailable(true);
-                ret.add(downloadLink);
-                return ret;
+        URLConnectionAdapter con = br.openGetConnection(probeURL);
+        if (this.looksLikeDownloadableContent(con)) {
+            final DownloadLink singleFile = createDownloadlink(DirectHTTP.createURLForThisPlugin(probeURL));
+            if (con.getCompleteContentLength() > 0) {
+                singleFile.setVerifiedFileSize(con.getCompleteContentLength());
             }
-        } finally {
-            br.followConnection();
+            String name = filename;
+            if (name == null) {
+                if (resourcePath != null) {
+                    name = getFileNameFromURL(br._getURL());
+                }
+                if (name == null) {
+                    final String extension = getExtensionFromMimeType(con.getContentType());
+                    name = cid + (extension != null ? ("." + extension) : "");
+                }
+            }
+            if (name != null) {
+                singleFile.setFinalFileName(name);
+                singleFile.setProperty(DirectHTTP.FIXNAME, name);
+            }
+            singleFile.setAvailable(true);
+            ret.add(singleFile);
+            return ret;
         }
-        br.getPage(probeURL);
+        br.followConnection();
         if (br.containsHTML("Index\\s*of\\s*/ipfs/.*?>\\s*" + cid + "\\s*<")) {
+            final String folderTitle = br.getRegex("<title>([^<]+)</title>").getMatch(0);
+            FilePackage fp = null;
+            if (folderTitle != null) {
+                fp = FilePackage.getInstance();
+                fp.setName(Encoding.htmlDecode(folderTitle).trim());
+            }
             final String files[][] = br.getRegex("/ipfs/(" + base58Pattern + ")\\?filename=(.*?)\"").getMatches();
             DownloadLink foundMatch = null;
             for (final String[] file : files) {
-                final DownloadLink downloadLink = createDownloadlink("directhttp://https://" + ipfsGateWay + "/ipfs/" + file[0] + "/");
+                final DownloadLink link = createDownloadlink(DirectHTTP.createURLForThisPlugin("http://https://" + ipfsGateWay + "/ipfs/" + file[0] + "/"));
                 final String name = URLEncode.decodeURIComponent(file[1]);
-                downloadLink.setFinalFileName(name);
-                downloadLink.setProperty(DirectHTTP.FIXNAME, name);
-                downloadLink.setAvailable(true);
-                ret.add(downloadLink);
+                link.setFinalFileName(Encoding.htmlDecode(name));
+                link.setProperty(DirectHTTP.FIXNAME, name);
+                link.setAvailable(true);
+                ret.add(link);
+                if (fp != null) {
+                    link._setFilePackage(fp);
+                }
                 if (StringUtils.equals(filename, name)) {
-                    foundMatch = downloadLink;
+                    foundMatch = link;
                     break;
                 }
             }
@@ -94,7 +101,7 @@ public class IPFS extends PluginForDecrypt {
                 ret.add(foundMatch);
             }
         } else {
-            final DownloadLink downloadLink = createDownloadlink("directhttp://" + probeURL);
+            final DownloadLink downloadLink = createDownloadlink(DirectHTTP.createURLForThisPlugin(probeURL));
             String name = filename;
             if (name == null && resourcePath != null) {
                 name = getFileNameFromURL(br._getURL());

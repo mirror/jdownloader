@@ -79,16 +79,18 @@ public class HuabanComDecrypter extends PluginForDecrypt {
                 logger.info("Decryption aborted by user: " + parameter);
                 return ret;
             }
+            final List<Object> resource_data_list;
             if (page == 0) {
-                json_source = br.getRegex("app\\.page\\[\"board\"\\] = (\\{.*?\\});[\t\n\r]+").getMatch(0);
+                json_source = br.getRegex("type=\"application/json\">(\\{.*?\\})</script>").getMatch(0);
                 if (json_source == null) {
-                    break;
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json_source);
                 lnumberof_pins = JavaScriptEngineFactory.toLong(entries.get("pin_count"), 0);
                 if (lnumberof_pins == 0) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
+                resource_data_list = (List) JavaScriptEngineFactory.walkJson(entries, "props/pageProps/serverSidePins");
             } else {
                 this.br.getHeaders().put("Accept", "application/json");
                 this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
@@ -100,8 +102,8 @@ public class HuabanComDecrypter extends PluginForDecrypt {
                 }
                 entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json_source);
                 entries = (Map<String, Object>) entries.get("board");
+                resource_data_list = (List) entries.get("pins");
             }
-            final List<Object> resource_data_list = (List) entries.get("pins");
             for (final Object pint : resource_data_list) {
                 final Map<String, Object> single_pin_data = (Map<String, Object>) pint;
                 final String pin_directlink = getDirectlinkFromJson(single_pin_data);

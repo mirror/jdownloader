@@ -19,6 +19,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
@@ -28,10 +30,9 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.hoster.DirectHTTP;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hypem.com" }, urls = { "https?://(www\\.)?hypem\\.com/((track|item)/[a-z0-9]+|go/[a-z0-9]+/[A-Za-z0-9]+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "hypem.com" }, urls = { "https?://(?:www\\.)?hypem\\.com/((track|item)/[a-z0-9]+|go/[a-z0-9]+/[A-Za-z0-9]+)" })
 public class HypemCom extends PluginForDecrypt {
     public HypemCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -40,21 +41,26 @@ public class HypemCom extends PluginForDecrypt {
     private static final String type_redirect = "http://(www\\.)?hypem\\.com/go/[a-z0-9]+/[A-Za-z0-9]+";
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
-        br.setFollowRedirects(false);
-        br.getPage(parameter);
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final String parameter = param.getCryptedUrl().replaceFirst("(?i)http://", "https://");
         if (parameter.matches(type_redirect)) {
+            br.setFollowRedirects(false);
+            br.getPage(parameter);
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             final String finallink = br.getRedirectLocation();
             if (finallink == null || finallink.contains("hypem.com/")) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            decryptedLinks.add(createDownloadlink(finallink));
+            ret.add(createDownloadlink(finallink));
         } else {
+            br.setFollowRedirects(true);
+            br.getPage(parameter);
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             String js = br.getRegex("id=\"displayList\\-data\">\\s*(.*?)\\s*</script").getMatch(0);
             Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(js);
             final List<Object> ressourcelist = (List) entries.get("tracks");
@@ -73,12 +79,12 @@ public class HypemCom extends PluginForDecrypt {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             if (!finallink.contains("soundcloud.com/")) {
-                finallink = "directhttp://" + finallink;
+                finallink = DirectHTTP.createURLForThisPlugin(finallink);
             }
             final DownloadLink dl = createDownloadlink(finallink);
             dl.setFinalFileName(artist + " - " + title + ".mp3");
-            decryptedLinks.add(dl);
+            ret.add(dl);
         }
-        return decryptedLinks;
+        return ret;
     }
 }

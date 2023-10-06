@@ -357,6 +357,7 @@ public class Bunkr extends PluginForHost {
             br.getPage(singleFileURL);
         }
         handleResponsecodeErrors(br.getHttpConnection());
+        final String filenameFromURL = Plugin.getFileNameFromURL(br.getURL());
         String directurl = br.getRegex("(?i)href\\s*=\\s*\"(https?://[^\"]+)[^>]*>\\s*Download").getMatch(0);
         if (directurl == null) {
             /* Video stream (For "/v/ URLs."URL is usually the same as downloadurl.) */
@@ -366,6 +367,7 @@ public class Bunkr extends PluginForHost {
                 directurl = br.getRegex("<source src\\s*=\\s*\"(https?://[^\"]+)\"[^>]*type=.video/mp4").getMatch(0);
                 if (directurl == null) {
                     String directurlForFileWithoutExtOrUnknownExt = null;
+                    String unsafeDirecturlResult = null;
                     final String[] urls = HTMLParser.getHttpLinks(br.getRequest().getHtmlCode(), br.getURL());
                     for (final String url : urls) {
                         if (url.matches(BunkrAlbum.TYPE_MEDIA_FILES_WITH_EXT) || url.matches(BunkrAlbum.TYPE_CDN_WITH_EXT)) {
@@ -377,15 +379,26 @@ public class Bunkr extends PluginForHost {
                             /* Image URLs: bunkr.bla/i/... */
                             directurl = url;
                             break;
+                        } else if (filenameFromURL != null && url.contains(filenameFromURL) && !url.equals(br.getURL())) {
+                            unsafeDirecturlResult = url;
                         }
                     }
                     if (directurl == null && directurlForFileWithoutExtOrUnknownExt != null) {
                         /* File without extension or extension we don't know. */
                         directurl = directurlForFileWithoutExtOrUnknownExt;
                     }
+                    if (directurl == null && unsafeDirecturlResult != null) {
+                        logger.info("Using unsafeDirecturlResult as directurl");
+                        directurl = unsafeDirecturlResult;
+                    }
                 }
+                /* Last chance */
                 if (directurl == null) {
                     directurl = br.getRegex("class=\"text-white hover:[^\"]*justify-center rounded[^\"]*\" href=\"(https?://[^\"]+)\">").getMatch(0);
+                    if (directurl == null && filenameFromURL != null) {
+                        /* 2023-10-06 */
+                        directurl = br.getRegex("(https?://burger\\.[^/]+/" + Pattern.quote(filenameFromURL) + ")").getMatch(0);
+                    }
                 }
             }
         }

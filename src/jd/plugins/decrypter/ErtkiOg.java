@@ -41,7 +41,7 @@ public class ErtkiOg extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+        String parameter = param.getCryptedUrl();
         br.setFollowRedirects(false);
         br.setCookiesExclusive(true);
         if (parameter.matches("http://(www\\.)?erotelki\\.org/[\\w\\-]+/([\\w\\-]+/)?\\d+\\-[\\w+\\-]+\\.html")) {

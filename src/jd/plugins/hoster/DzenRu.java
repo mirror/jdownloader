@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.downloader.hls.HLSDownloader;
@@ -116,10 +115,15 @@ public class DzenRu extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String[] jsons = br.getRegex("var data = (\\{.*?\\});").getColumn(0);
-        final String json = jsons[jsons.length - 1];
-        final Object entries = restoreFromString(json, TypeRef.OBJECT);
-        final Map<String, Object> videomap = (Map<String, Object>) findVideoMapRecursive(entries, videoid);
+        final String[] jsons = br.getRegex("(\\{\"data\".*?)\\)\\}\\(\\);</script>").getColumn(0);
+        Map<String, Object> videomap = null;
+        for (final String json : jsons) {
+            final Object entries = restoreFromString(json, TypeRef.OBJECT);
+            videomap = (Map<String, Object>) findVideoMapRecursive(entries, videoid);
+            if (videomap != null) {
+                break;
+            }
+        }
         String dateFormatted = null;
         String title = (String) JavaScriptEngineFactory.walkJson(videomap, "rawStreams/SingleStream/{0}/Title");
         String description = (String) videomap.get("description");

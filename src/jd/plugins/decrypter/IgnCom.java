@@ -43,6 +43,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.IgnVariant;
+import jd.plugins.hoster.DirectHTTP;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class IgnCom extends PluginForDecrypt {
@@ -191,26 +192,36 @@ public class IgnCom extends PluginForDecrypt {
             }
             fpName = fpName.trim();
             String configUrl = br.getRegex("\"config_episodic\":\"(http:.*?)\"").getMatch(0);
-            if (configUrl == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            configUrl = configUrl.replace("\\", "");
-            br.getPage(configUrl);
-            boolean failed = true;
-            String regexes[] = { "<downloadable src=\"(http://.*?)\"", "format\\-height=\"\\d+\" mime-type=\"video/mp4\" src=\"(http://.*?)\"" };
-            for (String regex : regexes) {
-                String[] links = br.getRegex(regex).getColumn(0);
-                if (links != null && links.length != 0) {
-                    failed = false;
-                    for (String singleLink : links) {
-                        final DownloadLink dlink = createDownloadlink("directhttp://" + singleLink);
-                        dlink.setFinalFileName(fpName + singleLink.substring(singleLink.length() - 4, singleLink.length()));
-                        ret.add(dlink);
+            if (configUrl != null) {
+                configUrl = configUrl.replace("\\", "");
+                br.getPage(configUrl);
+                boolean failed = true;
+                String regexes[] = { "<downloadable src=\"(http://.*?)\"", "format\\-height=\"\\d+\" mime-type=\"video/mp4\" src=\"(http://.*?)\"" };
+                for (String regex : regexes) {
+                    String[] links = br.getRegex(regex).getColumn(0);
+                    if (links != null && links.length != 0) {
+                        failed = false;
+                        for (String singleLink : links) {
+                            final DownloadLink dlink = createDownloadlink(DirectHTTP.createURLForThisPlugin(singleLink));
+                            dlink.setFinalFileName(fpName + singleLink.substring(singleLink.length() - 4, singleLink.length()));
+                            ret.add(dlink);
+                        }
                     }
                 }
-            }
-            if (failed) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (failed) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+            } else {
+                /* 2023-10-06 */
+                final String[] links = br.getRegex("\"(http[^\"]+\\.mp4)").getColumn(0);
+                if (links == null || links.length == 0) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                for (String singleLink : links) {
+                    final DownloadLink dlink = createDownloadlink(DirectHTTP.createURLForThisPlugin(singleLink));
+                    // dlink.setFinalFileName(fpName + singleLink.substring(singleLink.length() - 4, singleLink.length()));
+                    ret.add(dlink);
+                }
             }
         }
         final FilePackage fp = FilePackage.getInstance();
