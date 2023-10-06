@@ -796,7 +796,7 @@ public class RapidGatorNet extends PluginForHost {
                 ai.setUsedSpace(((Number) storagemap.get("total")).longValue() - ((Number) storagemap.get("left")).longValue());
             }
             final Map<String, Object> usermap = (Map<String, Object>) responsemap.get("user");
-            final String expire_date = (String) usermap.get("premium_end_time");
+            final Number premium_end_time_timestamp = (Number) usermap.get("premium_end_time");
             boolean is_premium = false;
             final Object is_premiumO = usermap.get("is_premium");
             if (is_premiumO != null && is_premiumO instanceof Boolean) {
@@ -817,12 +817,12 @@ public class RapidGatorNet extends PluginForHost {
             Object traffic_leftO = JavaScriptEngineFactory.walkJson(usermap, "traffic/left");
             long traffic_max = JavaScriptEngineFactory.toLong(JavaScriptEngineFactory.walkJson(usermap, "traffic/total"), 0);
             if (is_premium) {
-                if (!StringUtils.isEmpty(expire_date) && expire_date.matches("\\d+")) {
+                if (premium_end_time_timestamp != null) {
                     /*
                      * 2019-12-23: Premium accounts expire too early if we just set the expire-date. Using their Android App even they will
                      * display the wrong expire date there. We have to add 24 hours to correct this.
                      */
-                    ai.setValidUntil(Long.parseLong(expire_date) * 1000 + (24 * 60 * 60 * 1000l), br);
+                    ai.setValidUntil(premium_end_time_timestamp.longValue() * 1000 + (24 * 60 * 60 * 1000l), br);
                 }
                 long traffic_left = 0;
                 if (traffic_leftO != null) {
