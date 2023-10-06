@@ -989,11 +989,14 @@ public class RapidGatorNet extends PluginForHost {
                     } else {
                         br.postPage("/auth/login", loginPostData);
                     }
-                    if (isLoggedINWebsite(br)) {
+                    if (!isLoggedINWebsite(br)) {
+                        logger.info("Login failed");
                         continue;
+                    } else {
+                        logger.info("Login success");
+                        loginSuccess = true;
+                        break;
                     }
-                    loginSuccess = true;
-                    break;
                 }
                 if (!loginSuccess) {
                     throw new AccountInvalidException();
