@@ -163,7 +163,7 @@ public class TropicShareCom extends PluginForHost {
                         return;
                     } else {
                         logger.info("Cookie login failed");
-                        account.clearCookies("");
+                        account.clearCookies(null);
                     }
                 }
             }
@@ -184,6 +184,8 @@ public class TropicShareCom extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         login(account, true);
+        /* Make sure we are on the main page. */
+        br.getPage("/");
         final Regex expireInfo = br.getRegex("(?i)Remain:\\s*<span>\\s*(\\d+)\\s*</span>\\s*Months?\\s*<span>\\s*(\\d+)\\s*</span>\\s*Days?");
         if (!br.containsHTML("<span>\\s*Premium") || expireInfo.getMatches().length != 1) {
             final String lang = System.getProperty("user.language");

@@ -17,9 +17,11 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -64,7 +66,7 @@ public class HifToShortlinks extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.setFollowRedirects(false);
-        br.getPage(param.getCryptedUrl().replaceFirst("http://", "https://"));
+        br.getPage(param.getCryptedUrl().replaceFirst("(?i)http://", "https://"));
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -73,6 +75,12 @@ public class HifToShortlinks extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         ret.add(createDownloadlink(finallink));
+        /*
+         * Small hack: We know that the result is supposed to be an item supported by the turbobit.net plugin but our result item may
+         * contain an unsupported domain so let's add a 2nd result with the turbobit.net main domain to increase the chances of it working.
+         */
+        final String domainFromURL = Browser.getHost(finallink, false);
+        ret.add(this.createDownloadlink(finallink.replaceFirst(Pattern.quote(domainFromURL), "turbobit.net")));
         return ret;
     }
 }

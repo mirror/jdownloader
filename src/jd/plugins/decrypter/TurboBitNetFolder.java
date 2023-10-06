@@ -20,7 +20,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.parser.UrlQuery;
@@ -93,10 +92,10 @@ public class TurboBitNetFolder extends antiDDoSForDecrypt {
         super(wrapper);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.setAllowedResponseCodes(new int[] { 400 });
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String folderID = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
         if (folderID == null) {
             /* Developer mistake! */
@@ -135,11 +134,11 @@ public class TurboBitNetFolder extends antiDDoSForDecrypt {
                 path = currentFolderName;
             }
             if (numberofItemsOnCurrentPage == 0) {
-                if (decryptedLinks.isEmpty()) {
+                if (ret.isEmpty()) {
                     /* Happened on first page */
                     final DownloadLink dummy = this.createOfflinelink(param.getCryptedUrl(), "EMPTY_FOLDER_" + path, "This folder is empty.");
-                    decryptedLinks.add(dummy);
-                    return decryptedLinks;
+                    ret.add(dummy);
+                    return ret;
                 } else {
                     /* This should never happen */
                     logger.info("Stopping because: Current page contains zero items");
@@ -157,7 +156,7 @@ public class TurboBitNetFolder extends antiDDoSForDecrypt {
                     /* Folder */
                     final DownloadLink folder = this.createDownloadlink("https://" + br.getHost() + "/download/folder/" + id);
                     folder.setRelativeDownloadFolderPath(path);
-                    decryptedLinks.add(folder);
+                    ret.add(folder);
                     distribute(folder);
                 } else {
                     /* File */
@@ -173,11 +172,11 @@ public class TurboBitNetFolder extends antiDDoSForDecrypt {
                     file.setAvailable(true);
                     file.setRelativeDownloadFolderPath(path);
                     file._setFilePackage(fp);
-                    decryptedLinks.add(file);
+                    ret.add(file);
                     distribute(file);
                 }
             }
-            logger.info("Crawled page " + page + "/" + maxPage + " | Found items: " + decryptedLinks.size() + "/" + numberofItemsOnCurrentPage);
+            logger.info("Crawled page " + page + "/" + maxPage + " | Found items: " + ret.size() + "/" + numberofItemsOnCurrentPage);
             if (this.isAbort()) {
                 break;
             } else if (page >= maxPage) {
@@ -190,10 +189,10 @@ public class TurboBitNetFolder extends antiDDoSForDecrypt {
             }
             page++;
         } while (true);
-        return decryptedLinks;
+        return ret;
     }
 
-    /* NO OVERRIDE!! */
+    @Override
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }

@@ -1303,7 +1303,8 @@ public class RapidGatorNet extends PluginForHost {
                 }
             }
             br.getPage(getAPIBase() + "file/download?token=" + session_id + "&file_id=" + Encoding.urlEncode(this.getFID(link)));
-            final Map<String, Object> response = handleErrors_api(session_id, link, account, br);
+            // TODO: Use json parser
+            // final Map<String, Object> response = handleErrors_api(session_id, link, account, br);
             directurl = PluginJSonUtils.getJsonValue(br, "url");
             if (StringUtils.isEmpty(directurl)) {
                 /* 2019-12-14: APIv2 */
