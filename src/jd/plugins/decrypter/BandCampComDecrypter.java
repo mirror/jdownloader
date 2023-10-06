@@ -298,28 +298,23 @@ public class BandCampComDecrypter extends PluginForDecrypt {
         int index = 0;
         int numberOfUnPlayableTracks = 0;
         for (final Map<String, Object> audio : albumtracks) {
-            String contentUrl = (String) audio.get("title_link");
-            final String title = (String) audio.get("title");
-            final int duration = ((Number) audio.get("duration")).intValue();
-            if (StringUtils.isEmpty(contentUrl) || StringUtils.isEmpty(title)) {
+            String contentUrl = audio.get("title_link").toString();
+            if (StringUtils.isEmpty(contentUrl)) {
                 /* Skip invalid objects */
                 continue;
             }
             if (contentUrl.startsWith("/")) {
-                contentUrl = br.getURL(contentUrl).toString();
+                contentUrl = br.getURL(contentUrl).toExternalForm();
             }
             final DownloadLink audiotrack = createDownloadlink(contentUrl);
             BandCampCom.parseAndSetSingleTrackInfo(audiotrack, br, index);
             if (!audiotrack.hasProperty(BandCampCom.PROPERTY_DATE_DIRECTURL)) {
                 numberOfUnPlayableTracks++;
             }
-            /* Add some properties we know better. */
+            /* Add some properties if they are missing. */
             audiotrack.setProperty(BandCampCom.PROPERTY_DATE_TIMESTAMP, dateTimestamp);
-            audiotrack.setProperty(BandCampCom.PROPERTY_ALBUM_TITLE, albumOrTrackTitle);
-            audiotrack.setProperty(BandCampCom.PROPERTY_TITLE, title);
-            audiotrack.setProperty(BandCampCom.PROPERTY_FILE_TYPE, "mp3");
-            if (duration > 0) {
-                audiotrack.setDownloadSize(128 * 1024l / 8 * duration);
+            if (!isSingleTrack) {
+                audiotrack.setProperty(BandCampCom.PROPERTY_ALBUM_TITLE, albumOrTrackTitle);
             }
             ret.add(audiotrack);
             final String videoSourceID = (String) audio.get("video_source_id");

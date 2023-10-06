@@ -18,6 +18,7 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
@@ -27,6 +28,7 @@ import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.parser.html.HTMLParser;
@@ -51,7 +53,7 @@ public class PasfoxCom extends PluginForDecrypt {
     private static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "pasfox.com", "pasfox.co" });
+        ret.add(new String[] { "pasfox.co", "pasfox.com" });
         return ret;
     }
 
@@ -74,7 +76,10 @@ public class PasfoxCom extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final String parameter = param.getCryptedUrl().replaceFirst("(?i)http://", "https://");
+        String parameter = param.getCryptedUrl().replaceFirst("(?i)http://", "https://");
+        /* 2023-10-05: pasfox.com domain is down but content behind it still works with new domain pasfox.co. */
+        final String domainFromURL = Browser.getHost(parameter, false);
+        parameter = parameter.replaceFirst(Pattern.quote(domainFromURL), this.getHost());
         br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
@@ -119,7 +124,7 @@ public class PasfoxCom extends PluginForDecrypt {
         if (html == null) {
             /* Fallback */
             logger.warning("Fallback required! Possible crawler failure!");
-            html = br.toString();
+            html = br.getRequest().getHtmlCode();
         }
         final String[] urls = HTMLParser.getHttpLinks(html, br.getURL());
         for (final String url : urls) {

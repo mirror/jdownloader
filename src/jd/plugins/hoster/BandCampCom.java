@@ -39,7 +39,6 @@ import jd.config.SubConfiguration;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -212,13 +211,13 @@ public class BandCampCom extends PluginForHost {
 
     public static void parseAndSetSingleTrackInfo(final DownloadLink link, final Browser br, final int trackIndex) {
         /** Parse possibly missing metadata here. Do not overwrite existing properties with wrong- or null values!! */
-        final String htmlEntityDecoded = Encoding.htmlOnlyDecode(br.getRequest().getHtmlCode());
-        final String trackTitle = new Regex(htmlEntityDecoded, "\"title\"\\s*:\\s*\"([^<>\"]*?)\"").getMatch(0);
+        // final String albumOrTrackTitle = new Regex(htmlEntityDecoded, "\"title\"\\s*:\\s*\"([^<>\"]*?)\"").getMatch(0);
         final String json_album = br.getRegex("<script type=\"application/(?:json\\+ld|ld\\+json)\">\\s*(.*?)\\s*</script>").getMatch(0);
         final Map<String, Object> albumInfo = JSonStorage.restoreFromString(json_album, TypeRef.MAP);
         String artistFullName = (String) JavaScriptEngineFactory.walkJson(albumInfo, "inAlbum/byArtist/name");
+        /* Can be different in context of album or single track! */
         String usernamePretty = (String) JavaScriptEngineFactory.walkJson(albumInfo, "byArtist/name");
-        final String dateStr = (String) JavaScriptEngineFactory.walkJson(albumInfo, "datePublished");
+        final String albumDatePublishedStr = (String) JavaScriptEngineFactory.walkJson(albumInfo, "datePublished");
         String albumTitle = (String) JavaScriptEngineFactory.walkJson(albumInfo, "inAlbum/name");
         if (albumTitle == null) {
             albumTitle = br.getRegex("<title>\\s*(.*?)\\s*\\|.*?</title>").getMatch(0);
@@ -226,11 +225,8 @@ public class BandCampCom extends PluginForHost {
                 albumTitle = br.getRegex("<title>\\s*(.*?)\\s*</title>").getMatch(0);
             }
         }
-        if (trackIndex == 18) {
-            System.out.print("");
-        }
-        if (dateStr != null) {
-            link.setProperty(PROPERTY_DATE_TIMESTAMP, BandCampComDecrypter.dateToTimestamp(dateStr));
+        if (albumDatePublishedStr != null) {
+            link.setProperty(PROPERTY_DATE_TIMESTAMP, BandCampComDecrypter.dateToTimestamp(albumDatePublishedStr));
         }
         if (artistFullName != null) {
             link.setProperty(PROPERTY_ARTIST, Encoding.htmlDecode(artistFullName).trim());
@@ -240,9 +236,6 @@ public class BandCampCom extends PluginForHost {
         }
         if (albumTitle != null) {
             link.setProperty(PROPERTY_ALBUM_TITLE, Encoding.htmlDecode(albumTitle).trim());
-        }
-        if (trackTitle != null) {
-            link.setProperty(PROPERTY_TITLE, Encoding.htmlDecode(trackTitle).trim());
         }
         link.setProperty(PROPERTY_FILE_TYPE, "mp3");
         final String trackIDFromHTML = br.getRegex("<\\!-- track id (\\d+) -->").getMatch(0);
@@ -262,29 +255,38 @@ public class BandCampCom extends PluginForHost {
             artistFullName = trackInfo0.get("artist").toString();
             link.setProperty(PROPERTY_ARTIST, artistFullName);
             final List<Map<String, Object>> tracklist = (List<Map<String, Object>>) trackInfo0.get("trackinfo");
-            Map<String, Object> trackInfo1 = null;
+            Map<String, Object> trackinfo1 = null;
             if (targetTrackID != null) {
                 for (final Map<String, Object> trackInfo : tracklist) {
                     final String thisTrackID = trackInfo.get("id").toString();
                     if (thisTrackID.equals(targetTrackID)) {
-                        trackInfo1 = trackInfo;
+                        trackinfo1 = trackInfo;
                         break;
                     }
                 }
             }
-            if (trackInfo1 == null && trackIndex >= 0 && trackIndex <= tracklist.size() - 1) {
+            if (trackinfo1 == null && trackIndex >= 0 && trackIndex <= tracklist.size() - 1) {
                 /* Get track by position (unsafer method) */
-                trackInfo1 = tracklist.get(trackIndex);
+                trackinfo1 = tracklist.get(trackIndex);
             }
-            if (trackInfo1 != null) {
-                link.setProperty(PROPERTY_CONTENT_ID, trackInfo1.get("id").toString());
-                link.setProperty(PROPERTY_ALBUM_TRACK_POSITION, trackInfo1.get("track_num"));
-                final String directurl = (String) JavaScriptEngineFactory.walkJson(trackInfo1, "file/mp3-128");
+            if (trackinfo1 != null) {
+                String artistFullNameSource2 = (String) trackinfo1.get("artist");
+                String artistAndTrackTitle = (String) trackinfo1.get("title");
+                if (artistFullNameSource2 != null && artistAndTrackTitle != null) {
+                    artistFullNameSource2 = Encoding.htmlDecode(artistFullNameSource2).trim();
+                    artistAndTrackTitle = Encoding.htmlDecode(artistAndTrackTitle).trim();
+                    link.setProperty(PROPERTY_ARTIST, artistFullNameSource2);
+                    /* Remove artist to get track-title only. */
+                    link.setProperty(PROPERTY_TITLE, artistAndTrackTitle.replaceFirst(Pattern.quote(artistFullNameSource2) + " - ", ""));
+                }
+                link.setProperty(PROPERTY_CONTENT_ID, trackinfo1.get("id").toString());
+                link.setProperty(PROPERTY_ALBUM_TRACK_POSITION, trackinfo1.get("track_num"));
+                final String directurl = (String) JavaScriptEngineFactory.walkJson(trackinfo1, "file/mp3-128");
                 if (directurl != null && directurl.startsWith("http")) {
                     link.setProperty(PROPERTY_DATE_DIRECTURL, directurl);
                 }
                 /* Calculate filesize */
-                final int duration = ((Number) trackInfo1.get("duration")).intValue();
+                final int duration = ((Number) trackinfo1.get("duration")).intValue();
                 if (duration > 0) {
                     link.setDownloadSize(128 * 1024l / 8 * duration);
                 }
