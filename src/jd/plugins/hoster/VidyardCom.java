@@ -15,9 +15,11 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
@@ -54,7 +56,6 @@ public class VidyardCom extends PluginForHost {
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
     private String               dllink            = null;
-    private boolean              server_issues     = false;
 
     @Override
     public String getAGBLink() {
@@ -75,23 +76,59 @@ public class VidyardCom extends PluginForHost {
         return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
-    @SuppressWarnings({ "unchecked" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        if (!link.isNameSet()) {
-            link.setName(getFID(link) + ".mp4");
-        }
+        return requestFileInformation(link, false);
+    }
+
+    private AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
         dllink = null;
-        server_issues = false;
+        final String videoid = this.getFID(link);
+        final String extVideoDefault = ".mp4";
+        if (!link.isNameSet()) {
+            link.setName(videoid + extVideoDefault);
+        }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage("http://" + Browser.getHost(link.getPluginPatternMatcher(), true) + "/watch/" + this.getFID(link));
+        br.getPage("http://" + Browser.getHost(link.getPluginPatternMatcher(), true) + "/watch/" + videoid);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        final String titleFromHTML = br.getRegex("<title>([^<]+)").getMatch(0);
+        if (titleFromHTML != null) {
+            link.setName(Encoding.htmlDecode(titleFromHTML).trim() + extVideoDefault);
+        }
         String fallback_sd_url = this.br.getRegex("property=\"og:video\" content=\"(https[^<>\"]+)\"").getMatch(0);
-        this.br.getPage("https://play.vidyard.com/player/" + this.getFID(link) + ".json");
-        final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.getRequest().getHtmlCode());
+        this.br.getPage("https://play.vidyard.com/player/" + videoid + ".json");
+        Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.getRequest().getHtmlCode());
+        final String type = entries.get("type").toString();
+        if (type.equals("secure")) {
+            link.setPasswordProtected(true);
+            if (!isDownload) {
+                /* Stop here as we do not want to ask users for passwords during linkcheck. */
+                return AvailableStatus.TRUE;
+            }
+            final String jsonplayerurl = br.getURL();
+            String passCode = link.getDownloadPassword();
+            if (passCode == null) {
+                passCode = getUserInput("Password?", link);
+            }
+            final String postData = "{\"uuid\":\"" + videoid + "\",\"token\":\"" + passCode + "\"}";
+            br.postPageRaw("/secure/verify-access-code?disable_popouts=1&disable_analytics=0&preload=auto&disable_larger_player=false&controller=hubs&action=show&type=inline&v=4.3.14", postData);
+            final Map<String, Object> resp = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+            final Object error = resp.get("error");
+            if (error != null) {
+                /* E.g. {"error":"Password is incorrect"} */
+                link.setDownloadPassword(null);
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
+            }
+            /* Save password */
+            link.setDownloadPassword(passCode);
+            br.getPage(jsonplayerurl + "?vyac=" + Encoding.urlEncode(passCode));
+            entries = JavaScriptEngineFactory.jsonToJavaMap(br.getRequest().getHtmlCode());
+        } else {
+            link.setPasswordProtected(false);
+        }
         final Map<String, Object> videomapv1 = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "payload/chapters/{0}");
         final Map<String, Object> videomapv2 = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "payload/vyContext/chapterAttributes/{0}");
         if (videomapv1 == null && videomapv2 == null) {
@@ -157,7 +194,7 @@ public class VidyardCom extends PluginForHost {
         if (StringUtils.equalsIgnoreCase(profile, "mp3")) {
             ext = ".mp3";
         } else {
-            ext = ".mp4";
+            ext = extVideoDefault;
         }
         if (!StringUtils.isEmpty(title)) {
             title = Encoding.htmlDecode(title);
@@ -171,12 +208,9 @@ public class VidyardCom extends PluginForHost {
             URLConnectionAdapter con = null;
             try {
                 con = br2.openHeadConnection(dllink);
-                if (this.looksLikeDownloadableContent(con)) {
-                    if (con.getCompleteContentLength() > 0) {
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
-                    }
-                } else {
-                    server_issues = true;
+                handleConnectionErrors(br2, con);
+                if (con.getCompleteContentLength() > 0) {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
                 }
             } finally {
                 try {
@@ -190,24 +224,26 @@ public class VidyardCom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
-        requestFileInformation(link);
-        if (server_issues) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
-        } else if (StringUtils.isEmpty(dllink)) {
+        requestFileInformation(link, true);
+        if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
-        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+        handleConnectionErrors(br, dl.getConnection());
+        dl.startDownload();
+    }
+
+    private void handleConnectionErrors(final Browser br, final URLConnectionAdapter con) throws PluginException, IOException {
+        if (!this.looksLikeDownloadableContent(con)) {
             br.followConnection(true);
-            if (dl.getConnection().getResponseCode() == 403) {
+            if (con.getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
+            } else if (con.getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             } else {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Media broken?");
             }
         }
-        dl.startDownload();
     }
 
     @Override

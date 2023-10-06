@@ -17,6 +17,8 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -24,21 +26,28 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-import org.appwork.utils.StringUtils;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "katholisch.de" }, urls = { "https?://www.katholisch.de/video/\\d+[a-z0-9\\-]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "katholisch.de" }, urls = { "https?://(?:www\\.)?katholisch.de/video/\\d+[a-z0-9\\-]+" })
 public class KatholischDe extends PluginForDecrypt {
     public KatholischDe(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        br.setFollowRedirects(true);
         br.getPage(param.getCryptedUrl());
-        br.followRedirect();
-        final String title = br.getRegex("<title>\\s*(.*?)\\s*(-\\s*katholisch\\.de)?\\s*</").getMatch(0);
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        String title = br.getRegex("<title>\\s*(.*?)\\s*(-\\s*katholisch\\.de)?\\s*</").getMatch(0);
+        if (title == null) {
+            /* Fallback */
+            title = br._getURL().getPath().replace("-", " ");
+        }
         final String m3u8 = br.getRegex("file\\s*:\\s*'(https?://[^']*\\.m3u8)'").getMatch(0);
         if (StringUtils.isEmpty(title) || StringUtils.isEmpty(m3u8)) {
             return new ArrayList<DownloadLink>();

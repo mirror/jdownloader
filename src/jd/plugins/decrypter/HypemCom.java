@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -73,10 +74,11 @@ public class HypemCom extends PluginForDecrypt {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             br.getPage("https://hypem.com/serve/source/" + fid + "/" + key + "?_=" + System.currentTimeMillis());
-            entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+            entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.getRequest().getHtmlCode());
             String finallink = (String) entries.get("url");
-            if (finallink == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (StringUtils.isEmpty(finallink)) {
+                /* Some items can't be played e.g.: https://hypem.com/track/1xv55/Clean+Bandit+-+Rihanna+feat.+Noonie+Bao */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             if (!finallink.contains("soundcloud.com/")) {
                 finallink = DirectHTTP.createURLForThisPlugin(finallink);

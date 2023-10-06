@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
@@ -33,7 +34,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "javhd.com" }, urls = { "https?://(?:www\\.)?javhd\\.com/[a-z]{2}/(?:id/\\d+/[a-z0-9\\-]+|tourjoin\\?id=\\d+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "javhd.com" }, urls = { "" })
 public class JavhdCom extends PluginForHost {
     public JavhdCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -55,8 +56,8 @@ public class JavhdCom extends PluginForHost {
     private static final int     free_maxchunks    = 1;
     private static final int     free_maxdownloads = -1;
     private String               dllink            = null;
-    private final String         TYPE_OLD          = "https?://(?:www\\.)?javhd\\.com/[a-z]{2}/id/(\\d+)/([a-z0-9\\-]+)";
-    private final String         TYPE_NEW          = "https?://(?:www\\.)?javhd\\.com/[a-z]{2}/tourjoin\\?id=(\\d+)";
+    private final String         TYPE_OLD          = "(?i)https?://[^/]+/[a-z]{2}/id/(\\d+)/([a-z0-9\\-]+)";
+    private final String         TYPE_OLD_2        = "(?i)https?://[^/]+/[a-z]{2}/tourjoin\\?id=(\\d+)";
 
     @Override
     public String getAGBLink() {
@@ -99,64 +100,62 @@ public class JavhdCom extends PluginForHost {
         dllink = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage("https://" + this.getHost() + "/en/player/" + videoid + "?is_trailer=1");
+        br.getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-        final String id = entries.get("id").toString();
+        final String videoID = new Regex(br.getURL(), "video/(\\d+)$").getMatch(0);
+        br.getPage("/en/player_api/creator?videoId=" + videoID + "&is_trailer=1");
+        final Map<String, Object> jsonroot = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+        final String id = jsonroot.get("id").toString();
         if (!id.equals(videoid)) {
             /* Offline = all values will be null */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        try {
+            Object quality_temp_o = null;
+            long quality_temp = 0;
+            String quality_temp_str = null;
+            long quality_best = 0;
+            String dllink_temp = null;
+            final List<Object> ressourcelist = (List) jsonroot.get("sources");
+            for (final Object videoo : ressourcelist) {
+                final Map<String, Object> entries = (Map<String, Object>) videoo;
+                dllink_temp = (String) entries.get("src");
+                quality_temp_o = entries.get("label");
+                if (quality_temp_o != null && quality_temp_o instanceof Number) {
+                    quality_temp = JavaScriptEngineFactory.toLong(quality_temp_o, 0);
+                } else if (quality_temp_o != null && quality_temp_o instanceof String) {
+                    quality_temp_str = (String) quality_temp_o;
+                    if (quality_temp_str.matches("\\d+p.*?")) {
+                        /* E.g. '360p' */
+                        quality_temp = Long.parseLong(new Regex(quality_temp_str, "(\\d+)p").getMatch(0));
+                    } else {
+                        /* Bad / Unsupported format */
+                        continue;
+                    }
+                }
+                if (StringUtils.isEmpty(dllink_temp) || quality_temp == 0) {
+                    continue;
+                } else if (dllink_temp.contains(".m3u8")) {
+                    /* Skip hls */
+                    continue;
+                }
+                if (quality_temp > quality_best) {
+                    quality_best = quality_temp;
+                    dllink = dllink_temp;
+                }
+            }
+            if (!StringUtils.isEmpty(dllink)) {
+                logger.info("BEST handling for multiple video source succeeded");
+            }
+        } catch (final Throwable e) {
+            logger.info("BEST handling for multiple video source failed");
+        }
         final String titleFromURL = this.getTitleFromURL(link);
-        String title = (String) entries.get("title");
+        String title = (String) jsonroot.get("title");
         if (StringUtils.isEmpty(title)) {
             title = titleFromURL;
-        }
-        /* RegExes sometimes used for streaming */
-        final String jssource = br.getRegex("sources(?:\")?\\s*?:\\s*?(\\[.*?\\])").getMatch(0);
-        if (jssource != null) {
-            try {
-                Object quality_temp_o = null;
-                long quality_temp = 0;
-                String quality_temp_str = null;
-                long quality_best = 0;
-                String dllink_temp = null;
-                final List<Object> ressourcelist = (List) entries.get("sources");
-                for (final Object videoo : ressourcelist) {
-                    entries = (Map<String, Object>) videoo;
-                    dllink_temp = (String) entries.get("src");
-                    quality_temp_o = entries.get("label");
-                    if (quality_temp_o != null && quality_temp_o instanceof Number) {
-                        quality_temp = JavaScriptEngineFactory.toLong(quality_temp_o, 0);
-                    } else if (quality_temp_o != null && quality_temp_o instanceof String) {
-                        quality_temp_str = (String) quality_temp_o;
-                        if (quality_temp_str.matches("\\d+p.*?")) {
-                            /* E.g. '360p' */
-                            quality_temp = Long.parseLong(new Regex(quality_temp_str, "(\\d+)p").getMatch(0));
-                        } else {
-                            /* Bad / Unsupported format */
-                            continue;
-                        }
-                    }
-                    if (StringUtils.isEmpty(dllink_temp) || quality_temp == 0) {
-                        continue;
-                    } else if (dllink_temp.contains(".m3u8")) {
-                        /* Skip hls */
-                        continue;
-                    }
-                    if (quality_temp > quality_best) {
-                        quality_best = quality_temp;
-                        dllink = dllink_temp;
-                    }
-                }
-                if (!StringUtils.isEmpty(dllink)) {
-                    logger.info("BEST handling for multiple video source succeeded");
-                }
-            } catch (final Throwable e) {
-                logger.info("BEST handling for multiple video source failed");
-            }
         }
         title = Encoding.htmlDecode(title);
         title = title.trim();

@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.utils.Regex;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -30,27 +29,29 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "javhd.com" }, urls = { "https?://(?:www\\.)?javhd\\.com/[a-z]{2}/id/(\\d+)/([a-z0-9\\-]+)" })
-public class JavhdCom extends PluginForDecrypt {
-    public JavhdCom(PluginWrapper wrapper) {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "javhd.com" }, urls = { "https?://(?:www\\.)?javhd\\.com/[a-z]{2}/(id/\\d+(/[a-z0-9\\-]+)?|studio/room/\\d+/video/\\d+)" })
+public class JavhdComCrawler extends PluginForDecrypt {
+    public JavhdComCrawler(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final String parameter = param.getCryptedUrl();
         br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String fpName = br.getRegex("<title>([^<>\"]+)</title>").getMatch(0);
         if (fpName == null) {
             /* Fallback */
-            fpName = new Regex(parameter, this.getSupportedLinks()).getMatch(1);
+            fpName = br._getURL().getPath();
         }
         final String picsJson = br.getRegex(":images=\"([^\"]+)").getMatch(0);
         if (picsJson != null) {
@@ -68,14 +69,16 @@ public class JavhdCom extends PluginForDecrypt {
                 }
                 dl.setAvailable(true);
                 dl.setFinalFileName(filename);
-                decryptedLinks.add(dl);
+                ret.add(dl);
             }
         }
-        /* Add main URL for hosterplugin to download video */
-        decryptedLinks.add(this.createDownloadlink(parameter));
+        final PluginForHost plg = this.getNewPluginForHostInstance(this.getHost());
+        /* Add main URL for hosterplugin to download video. */
+        final DownloadLink video = new DownloadLink(plg, null, plg.getHost(), br.getURL(), true);
+        ret.add(video);
         final FilePackage fp = FilePackage.getInstance();
-        fp.setName(Encoding.htmlDecode(fpName.trim()));
-        fp.addLinks(decryptedLinks);
-        return decryptedLinks;
+        fp.setName(Encoding.htmlDecode(fpName).trim());
+        fp.addLinks(ret);
+        return ret;
     }
 }

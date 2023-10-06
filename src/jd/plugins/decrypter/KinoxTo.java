@@ -22,6 +22,8 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.controlling.linkcrawler.CrawledLink;
@@ -33,25 +35,59 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "kinox.to" }, urls = { "https?://(?:[w0-9]*\\.)?kino[xyzs]\\.(?:ai|af|am|click|cloud|club|digital|direct|express|fun|fyi|gratis|gs|gy|io|li|lol|me|mobi|ms|nu|pe|party|pub|sg|sh|si|space|sx|to|tube|tv|wtf)/Stream/[A-Za-z0-9\\-_]+\\.html" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class KinoxTo extends antiDDoSForDecrypt {
     public KinoxTo(PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    private static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
+        final String[] names = new String[] { "kinox", "kinoy", "kinoz", "kinos" };
+        final String[] tlds = new String[] { "ai", "af", "am", "click", "cloud", "club", "digital", "direct", "express", "fun", "fyi", "gratis", "gs", "gy", "io", "li", "lol", "me", "mobi", "ms", "nu", "pe", "party", "pub", "sg", "si", "space", "sx", "to", "tube", "tv", "wtf" };
+        final String[] stringarray = new String[names.length * tlds.length];
+        int index = 0;
+        for (final String name : names) {
+            for (final String tld : tlds) {
+                stringarray[index] = name + "." + tld;
+                index++;
+            }
+        }
+        ret.add(stringarray);
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : getPluginDomains()) {
+            ret.add("https?://(?:[w0-9]*\\.)?" + buildHostsPatternPart(domains) + "/Stream/[A-Za-z0-9\\-_]+\\.html");
+        }
+        return ret.toArray(new String[0]);
+    }
+
     private String addr_id;
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final String parameter = param.getCryptedUrl();
+        br.setFollowRedirects(true);
         getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404 || br.getRedirectLocation() != null && br.getRedirectLocation().contains("Error-404")) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String url_name = new Regex(parameter, "kino\\w\\.\\w+/Stream/([A-Za-z0-9\\-_]+)\\.html").getMatch(0);
         addr_id = this.br.getRegex("Addr=([^<>\"\\&]*?)&").getMatch(0);
@@ -68,7 +104,7 @@ public class KinoxTo extends antiDDoSForDecrypt {
         br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         if (this.br.containsHTML("id=\"SeasonSelection\"")) {
             if (series_id == null) {
-                return null;
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             /* Crawl all Seasons | Episodes | Mirrors of a Series */
             final String[][] season_info_all = br2.getRegex("value=\"\\d+\" rel=\"([0-9,]+)\"[^>]*?>Staffel (\\d+)</option>").getMatches();
@@ -90,7 +126,7 @@ public class KinoxTo extends antiDDoSForDecrypt {
                 for (final String episode : season_episodes) {
                     if (this.isAbort()) {
                         getLogger().info("Decryption aborted by user");
-                        return decryptedLinks;
+                        return ret;
                     }
                     if ((season_number_int == firstSeason) && (Integer.parseInt(episode) < firstEpisode)) {
                         continue;
@@ -100,17 +136,17 @@ public class KinoxTo extends antiDDoSForDecrypt {
                     br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                     getPage(br2, "/aGET/MirrorByEpisode/?Addr=" + addr_id + "&SeriesID=" + series_id + "&Season=" + season_number + "&Episode=" + episode);
                     /* Crawl Episode --> Find mirrors */
-                    decryptMirrors(param, decryptedLinks, br2, fpName, season_number, episode);
+                    crawlMirrors(param, ret, br2, fpName, season_number, episode);
                 }
             }
         } else {
             /* Crawl all Mirrors of a movie */
-            decryptMirrors(param, decryptedLinks, br2, fpName, null, null);
+            crawlMirrors(param, ret, br2, fpName, null, null);
         }
-        return decryptedLinks;
+        return ret;
     }
 
-    private void decryptMirrors(CryptedLink param, List<DownloadLink> decryptedLinks, Browser br2, String fpName, final String season_number, final String episode) throws Exception {
+    private void crawlMirrors(CryptedLink param, List<DownloadLink> decryptedLinks, Browser br2, String fpName, final String season_number, final String episode) throws Exception {
         final String[] mirrors = br2.getRegex("(<li id=\"Hoster_\\d+\".*?</div></li>)").getColumn(0);
         if (mirrors == null || mirrors.length == 0) {
             getLogger().info("No mirrors found.");

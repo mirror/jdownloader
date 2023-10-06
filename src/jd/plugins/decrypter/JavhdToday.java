@@ -85,7 +85,7 @@ public class JavhdToday extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final FilePackage fp = FilePackage.getInstance();
-        fp.setName(br._getURL().getPath());
+        fp.setName(br._getURL().getPath().replace("-", " "));
         final ArrayList<DownloadLink> mainResults = findLinks(br);
         for (final DownloadLink result : mainResults) {
             result._setFilePackage(fp);

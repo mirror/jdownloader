@@ -79,6 +79,7 @@ public class IgnCom extends PluginForDecrypt {
             sb.append("https?://(?:[a-z0-9]+)?\\." + domainPattern + "/(");
             sb.append("dor/objects/\\d+/[A-Za-z0-9_\\-]+/videos/.*?\\d+\\.html");
             sb.append("|[a-z0-9\\-]+/\\d+/video/[a-z0-9\\-]+");
+            sb.append("|videos/[a-z0-9\\-]+");
             sb.append(")");
             sb.append("|https?://(?:www\\.)?" + domainPattern + "/videos/\\d{4}/\\d{2}/\\d{2}/[a-z0-9\\-]+");
             ret.add(sb.toString());
@@ -211,17 +212,15 @@ public class IgnCom extends PluginForDecrypt {
                 if (failed) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-            } else {
-                /* 2023-10-06 */
-                final String[] links = br.getRegex("\"(http[^\"]+\\.mp4)").getColumn(0);
-                if (links == null || links.length == 0) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                for (String singleLink : links) {
-                    final DownloadLink dlink = createDownloadlink(DirectHTTP.createURLForThisPlugin(singleLink));
-                    // dlink.setFinalFileName(fpName + singleLink.substring(singleLink.length() - 4, singleLink.length()));
-                    ret.add(dlink);
-                }
+            }
+        }
+        /* 2023-10-06 */
+        final String[] links = br.getRegex("\"(http[^\"]+\\.mp4)").getColumn(0);
+        if (links != null && links.length > 0) {
+            for (String singleLink : links) {
+                final DownloadLink dlink = createDownloadlink(DirectHTTP.createURLForThisPlugin(singleLink));
+                // dlink.setFinalFileName(fpName + singleLink.substring(singleLink.length() - 4, singleLink.length()));
+                ret.add(dlink);
             }
         }
         final FilePackage fp = FilePackage.getInstance();

@@ -13,7 +13,6 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
@@ -24,40 +23,39 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.hoster.DirectHTTP;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "disk.karelia.pro" }, urls = { "http://(www\\.)?(disk\\.karelia\\.pro/fast/[A-Za-z0-9]+|fast\\.karelia\\.pro/[A-Za-z0-9]+/[^<>\"/]*?/)" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "disk.karelia.pro" }, urls = { "http://(www\\.)?(disk\\.karelia\\.pro/fast/[A-Za-z0-9]+|fast\\.karelia\\.pro/[A-Za-z0-9]+/[^<>\"/]*?/)" })
 public class KareliaPro extends PluginForDecrypt {
-
     public KareliaPro(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+        ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final String parameter = param.getCryptedUrl();
         if (parameter.matches("http://(www\\.)?disk\\.karelia\\.pro/fast/[A-Za-z0-9]+")) {
             br.getPage(parameter);
             final String[] links = br.getRegex("18px center no\\-repeat;\">[\t\n\r ]+<a href=\"(http://disk\\.karelia\\.pro/fast/[^<>\"]*?)\"").getColumn(0);
             if ((links == null || links.length == 0) && !br.containsHTML("\"diskFile\"")) {
                 logger.info("Link offline: " + parameter);
-                return decryptedLinks;
+                return ret;
             }
             if (links == null || links.length == 0) {
                 logger.warning("Decrypter broken for link: " + parameter);
                 return null;
             }
-            for (String singleLink : links)
-                decryptedLinks.add(createDownloadlink("directhttp://" + singleLink));
+            for (String singleLink : links) {
+                ret.add(createDownloadlink(DirectHTTP.createURLForThisPlugin(singleLink)));
+            }
         } else {
-            decryptedLinks.add(createDownloadlink("directhttp://" + parameter.replaceAll("(/)$", "").replace("fast.karelia.pro/", "disk.karelia.pro/fast/")));
+            ret.add(createDownloadlink(DirectHTTP.createURLForThisPlugin(parameter.replaceAll("(/)$", "").replace("fast.karelia.pro/", "disk.karelia.pro/fast/"))));
         }
-
-        return decryptedLinks;
+        return ret;
     }
 
-    /* NO OVERRIDE!! */
+    @Override
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
-
 }
