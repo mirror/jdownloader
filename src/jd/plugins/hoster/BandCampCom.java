@@ -269,16 +269,11 @@ public class BandCampCom extends PluginForHost {
                 /* Get track by position (unsafer method) */
                 trackinfo1 = tracklist.get(trackIndex);
             }
+            String artist = null;
+            String artistAndTrackTitle = null;
             if (trackinfo1 != null) {
-                String artistFullNameSource2 = (String) trackinfo1.get("artist");
-                String artistAndTrackTitle = (String) trackinfo1.get("title");
-                if (artistFullNameSource2 != null && artistAndTrackTitle != null) {
-                    artistFullNameSource2 = Encoding.htmlDecode(artistFullNameSource2).trim();
-                    artistAndTrackTitle = Encoding.htmlDecode(artistAndTrackTitle).trim();
-                    link.setProperty(PROPERTY_ARTIST, artistFullNameSource2);
-                    /* Remove artist to get track-title only. */
-                    link.setProperty(PROPERTY_TITLE, artistAndTrackTitle.replaceFirst(Pattern.quote(artistFullNameSource2) + " - ", ""));
-                }
+                artist = (String) trackinfo1.get("artist");
+                artistAndTrackTitle = (String) trackinfo1.get("title");
                 link.setProperty(PROPERTY_CONTENT_ID, trackinfo1.get("id").toString());
                 link.setProperty(PROPERTY_ALBUM_TRACK_POSITION, trackinfo1.get("track_num"));
                 final String directurl = (String) JavaScriptEngineFactory.walkJson(trackinfo1, "file/mp3-128");
@@ -290,6 +285,18 @@ public class BandCampCom extends PluginForHost {
                 if (duration > 0) {
                     link.setDownloadSize(128 * 1024l / 8 * duration);
                 }
+            }
+            if (artist == null) {
+                artist = (String) trackInfo0.get("artist");
+            }
+            if (artist != null) {
+                artist = Encoding.htmlDecode(artist).trim();
+                link.setProperty(PROPERTY_ARTIST, artist);
+            }
+            if (artist != null && artistAndTrackTitle != null) {
+                artistAndTrackTitle = Encoding.htmlDecode(artistAndTrackTitle).trim();
+                /* Remove artist to get track-title only. */
+                link.setProperty(PROPERTY_TITLE, artistAndTrackTitle.replaceFirst(Pattern.quote(artist) + " - ", ""));
             }
         }
     }

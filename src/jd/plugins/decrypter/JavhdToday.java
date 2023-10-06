@@ -15,6 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -22,10 +23,12 @@ import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
@@ -73,14 +76,54 @@ public class JavhdToday extends PluginForDecrypt {
     }
 
     @SuppressWarnings("deprecation")
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final String parameter = param.getCryptedUrl();
         br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.getHttpConnection() == null || br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(?i)404 Not Found<|Page not found")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(br._getURL().getPath());
+        final ArrayList<DownloadLink> mainResults = findLinks(br);
+        for (final DownloadLink result : mainResults) {
+            result._setFilePackage(fp);
+            distribute(result);
+        }
+        ret.addAll(findLinks(br));
+        final ArrayList<String> mirrorsNoDupes = new ArrayList<String>();
+        final String[] mirrorurls = br.getRegex("(/[\\w\\-]+/\\?link=\\d+)").getColumn(0);
+        /* Remove duplicates */
+        for (final String mirrorurl : mirrorurls) {
+            if (!mirrorsNoDupes.contains(mirrorurl)) {
+                mirrorsNoDupes.add(mirrorurl);
+            }
+        }
+        int index = 0;
+        for (final String mirrorurl : mirrorsNoDupes) {
+            logger.info("Crawling mirror " + index + "/" + mirrorsNoDupes.size());
+            br.getPage(mirrorurl);
+            final ArrayList<DownloadLink> thisResults = findLinks(br);
+            if (thisResults.isEmpty()) {
+                logger.warning("Failed to find any results in link: " + br.getURL());
+                continue;
+            }
+            ret.addAll(thisResults);
+            for (final DownloadLink result : thisResults) {
+                result._setFilePackage(fp);
+                distribute(result);
+            }
+            if (this.isAbort()) {
+                logger.info("Stopping because: Aborted by user");
+                break;
+            }
+        }
+        return ret;
+    }
+
+    private ArrayList<DownloadLink> findLinks(final Browser br) throws IOException {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         /** 2021-02-17: Check for extra iframe containing fembed source URL javhd.today ticket 89512 */
         final String iframeRedirect = br.getRegex("<iframe id=\"main-player\" src=\"(https?://player\\.[^/]+/\\d+/?)\"").getMatch(0);
         if (iframeRedirect != null) {
@@ -90,14 +133,10 @@ public class JavhdToday extends PluginForDecrypt {
         final String[] allExternalSources = br.getRegex("playEmbed\\('(https?://[^<>\"\\']+)'\\)").getColumn(0);
         if (allExternalSources.length > 0) {
             for (final String externalSource : allExternalSources) {
-                decryptedLinks.add(this.createDownloadlink(externalSource));
+                ret.add(this.createDownloadlink(externalSource));
             }
-            return decryptedLinks;
+            return ret;
         }
-        // final String title = Encoding.htmlDecode(br.getRegex("<title>(?:Watch Japanese Porn &ndash; )?(.*?)( \\| JAVNEW| &ndash;
-        // JavRave.club| - (JavSeen.Tv|1080HD|Jav Tsunami))?</title>").getMatch(0)).trim();
-        // final FilePackage fp = FilePackage.getInstance();
-        // fp.setName(Encoding.htmlDecode(title).trim());
         String fembed = br.getRegex("<iframe[^<>]*?src=\"([^<>]*?/v/.*?)\"").getMatch(0);
         if (fembed == null) {
             fembed = br.getRegex("allowfullscreen=[^<>]+?(http[^<>]+?)>").getMatch(0); // javr.club
@@ -108,14 +147,14 @@ public class JavhdToday extends PluginForDecrypt {
             for (final String iframe : iframes) {
                 final String[] urls = HTMLParser.getHttpLinks(iframe, br.getURL());
                 for (final String url : urls) {
-                    decryptedLinks.add(this.createDownloadlink(url));
+                    ret.add(this.createDownloadlink(url));
                 }
             }
-            return decryptedLinks;
+            return ret;
         }
         fembed = PluginJSonUtils.unescape(fembed);
-        decryptedLinks.add(this.createDownloadlink(fembed));
+        ret.add(this.createDownloadlink(fembed));
         // fp.addLinks(decryptedLinks);
-        return decryptedLinks;
+        return ret;
     }
 }

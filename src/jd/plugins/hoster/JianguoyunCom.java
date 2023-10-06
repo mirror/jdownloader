@@ -17,6 +17,8 @@ package jd.plugins.hoster;
 
 import java.util.Map;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -33,8 +35,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "jianguoyun.com" }, urls = { "http://jianguoyundecrypted\\.com/\\d+" })
 public class JianguoyunCom extends PluginForHost {
@@ -53,6 +53,17 @@ public class JianguoyunCom extends PluginForHost {
     private String       passCode               = null;
     private boolean      possiblePremiumonly    = false;
     private final String html_passwordprotected = "id=\"pwd\\-verify\\-view\"";
+
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String folderid = link.getStringProperty("folderid");
+        final String relPath = link.getStringProperty("relPath");
+        if (folderid != null && relPath != null) {
+            return "jianguoyun_com://file/folderid" + folderid + "/relPath" + relPath;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {

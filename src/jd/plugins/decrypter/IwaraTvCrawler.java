@@ -140,9 +140,6 @@ public class IwaraTvCrawler extends PluginForDecrypt {
                 if (!dupes.add(videoID) || "thumbnails".equals(videoID)) {
                     continue;
                 }
-                if (videoID.contains("rgkp9tgqkfzvyvo4")) {
-                    logger.warning("WTF");
-                }
                 /* Assume all items are selfhosted and thus do not have to go through this crawler again. */
                 final String videoURL = "https://" + br.getHost() + "/video/" + videoID;
                 /*

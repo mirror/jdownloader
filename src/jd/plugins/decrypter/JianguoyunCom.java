@@ -20,6 +20,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -27,9 +30,9 @@ import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
+import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "jianguoyun.com" }, urls = { "https?://(?:www\\.)?jianguoyun\\.com/p/[A-Za-z0-9\\-_]+(?:#dir=[^<>\"/:]+)?" })
 public class JianguoyunCom extends antiDDoSForDecrypt {
@@ -38,9 +41,9 @@ public class JianguoyunCom extends antiDDoSForDecrypt {
     }
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString().replace("http://", "https://");
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final String parameter = param.getCryptedUrl().replaceFirst("(?i)http://", "https://");
         final String fid = new Regex(parameter, "/p/([A-Za-z0-9\\-_]+)").getMatch(0);
         String subfolder = new Regex(parameter, "#dir=(.+)").getMatch(0);
         if (subfolder == null) {
@@ -50,14 +53,13 @@ public class JianguoyunCom extends antiDDoSForDecrypt {
         }
         subfolder = Encoding.urlEncode(subfolder);
         if (fid == null) {
-            decryptedLinks.add(createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         br.setFollowRedirects(true);
         br.getPage(parameter);
         final String pageJson = jd.plugins.hoster.JianguoyunCom.getWebsiteJson(br);
         DownloadLink dl = null;
-        final String isdir = new Regex(pageJson, "isdir[\t\n\r ]*?:[\t\n\r ]*?(true|false)").getMatch(0);
+        final String isdir = new Regex(pageJson, "isdir\\s*:\\s*(true|false)").getMatch(0);
         if ("false".equals(isdir)) {
             /* Single file */
             dl = createDownloadlink("http://jianguoyundecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(100000));
@@ -66,12 +68,13 @@ public class JianguoyunCom extends antiDDoSForDecrypt {
             dl.setProperty("relPath", subfolder);
             dl.setProperty("mainlink", parameter);
             jd.plugins.hoster.JianguoyunCom.scanFileinfoFromWebsite(br, dl);
-            decryptedLinks.add(dl);
-            return decryptedLinks;
+            ret.add(dl);
+            return ret;
         }
         br.getPage("https://www.jianguoyun.com/d/ajax/dirops/pubDIRBrowse?hash=" + fid + "&relPath=" + subfolder + "&_=" + System.currentTimeMillis());
         Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
         final List<Object> ressourcelist = (List) entries.get("objects");
+        FilePackage fp = null;
         for (final Object foldero : ressourcelist) {
             entries = (Map<String, Object>) foldero;
             final String type = (String) entries.get("type");
@@ -98,11 +101,15 @@ public class JianguoyunCom extends antiDDoSForDecrypt {
                 dl.setProperty("relPath", relPath);
                 dl.setProperty("mainlink", parameter);
                 dl.setContentUrl(contenturl);
-                dl.setLinkID(fid + relPath);
                 dl.setRelativeDownloadFolderPath(relPath);
+                if (fp == null) {
+                    fp = FilePackage.getInstance();
+                    fp.setName(relPath);
+                }
+                dl._setFilePackage(fp);
             }
-            decryptedLinks.add(dl);
+            ret.add(dl);
         }
-        return decryptedLinks;
+        return ret;
     }
 }
