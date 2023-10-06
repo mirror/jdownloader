@@ -1007,6 +1007,7 @@ public abstract class K2SApi extends PluginForHost {
             // getInputStream/getErrorStream call connect!
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Connection is not connected!");
         }
+        ibr.checkForBlockedByBeforeLoadConnection(request);
         final byte[] responseBytes;
         final InputStream is = getInputStream(con, ibr);
         try {
@@ -1016,6 +1017,7 @@ public abstract class K2SApi extends PluginForHost {
         } finally {
             is.close();
         }
+        ibr.checkForBlockedByAfterLoadConnection(request);
         LogInterface log = ibr.getLogger();
         if (log == null) {
             log = logger;

@@ -1252,16 +1252,16 @@ public class RapidGatorNet extends PluginForHost {
 
     public void handlePremium_api(final DownloadLink link, final Account account, final boolean allowWebsiteLinkcheck) throws Exception {
         if (allowWebsiteLinkcheck) {
-            /* Under some circumstances we need to use the website even in API mode. */
+            /**
+             * Under some circumstances we need to use the website even in API mode. </br>
+             * Do not login / provide an account at this stage!!
+             */
             if (link.getBooleanProperty(PROPERTY_HOTLINK, false)) {
                 /* Check availablestatus via website if chances are we have a hotlink */
                 requestFileInformation(link, null);
             } else if (!API_TRUST_404_FILE_OFFLINE) {
                 /* Check availablestatus via website if API cannot be fully trusted! */
                 requestFileInformation(link, null);
-            }
-            if (hotlinkDirectURL == null) {
-                errorIfNotLoggedIn(br);
             }
         }
         String directurl = null;
