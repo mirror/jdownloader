@@ -15,11 +15,7 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -34,7 +30,9 @@ import java.util.WeakHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.storage.JSonMapperException;
 import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.Time;
 import org.appwork.utils.encoding.URLEncode;
@@ -791,96 +789,79 @@ public class RapidGatorNet extends PluginForHost {
 
     public AccountInfo fetchAccountInfo_api(final Account account, final AccountInfo ai) throws Exception {
         synchronized (account) {
-            try {
-                loginAPI(account, false);
-                final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.getRequest().getHtmlCode());
-                final Map<String, Object> responsemap = (Map<String, Object>) entries.get("response");
-                final Map<String, Object> usermap = responsemap != null ? (Map<String, Object>) responsemap.get("user") : null;
-                String expire_date = PluginJSonUtils.getJsonValue(br, "expire_date");
-                if (StringUtils.isEmpty(expire_date) && usermap != null) {
-                    /* APIv2 */
-                    expire_date = (String) usermap.get("premium_end_time");
+            loginAPI(account);
+            final Map<String, Object> responsemap = loginAPI(account);
+            final Map<String, Object> storagemap = (Map<String, Object>) responsemap.get("storage");
+            if (storagemap != null) {
+                ai.setUsedSpace(((Number) storagemap.get("total")).longValue() - ((Number) storagemap.get("left")).longValue());
+            }
+            final Map<String, Object> usermap = (Map<String, Object>) responsemap.get("user");
+            final String expire_date = (String) usermap.get("premium_end_time");
+            boolean is_premium = false;
+            final Object is_premiumO = usermap.get("is_premium");
+            if (is_premiumO != null && is_premiumO instanceof Boolean) {
+                is_premium = ((Boolean) is_premiumO).booleanValue();
+            }
+            /*
+             * E.g. "traffic":{"total":null,"left":null} --> Free Account
+             */
+            /*
+             * 2019-12-16: Traffic is valid for the complete runtime of a premium package. If e.g. user owns a 1-year-account and traffic is
+             * down to 0 after one week, account is still a premium account but worthless. Not even free downloads are possible with such
+             * accounts!
+             */
+            /*
+             * 2019-12-17: They might also have an unofficial daily trafficlimit of 50-100GB. After this the user will first get a new
+             * password via E-Mail and if he continues to download 'too much', account might get temporarily banned.
+             */
+            Object traffic_leftO = JavaScriptEngineFactory.walkJson(usermap, "traffic/left");
+            long traffic_max = JavaScriptEngineFactory.toLong(JavaScriptEngineFactory.walkJson(usermap, "traffic/total"), 0);
+            if (is_premium) {
+                if (!StringUtils.isEmpty(expire_date) && expire_date.matches("\\d+")) {
+                    /*
+                     * 2019-12-23: Premium accounts expire too early if we just set the expire-date. Using their Android App even they will
+                     * display the wrong expire date there. We have to add 24 hours to correct this.
+                     */
+                    ai.setValidUntil(Long.parseLong(expire_date) * 1000 + (24 * 60 * 60 * 1000l), br);
                 }
-                boolean is_premium = false;
-                Object is_premiumO = entries.get("is_premium");
-                if (is_premiumO == null && usermap != null) {
-                    is_premiumO = usermap.get("is_premium");
-                }
-                if (is_premiumO != null && is_premiumO instanceof Boolean) {
-                    is_premium = ((Boolean) is_premiumO).booleanValue();
-                }
-                /*
-                 * E.g. "traffic":{"total":null,"left":null} --> Free Account
-                 */
-                /*
-                 * 2019-12-16: Traffic is valid for the complete runtime of a premium package. If e.g. user owns a 1-year-account and
-                 * traffic is down to 0 after one week, account is still a premium account but worthless. Not even free downloads are
-                 * possible with such accounts!
-                 */
-                /*
-                 * 2019-12-17: They might also have an unofficial daily trafficlimit of 50-100GB. After this the user will first get a new
-                 * password via E-Mail and if he continues to download 'too much', account might get temporarily banned.
-                 */
-                Object traffic_leftO = PluginJSonUtils.getJsonValue(br, "traffic_left");
-                if (traffic_leftO == null && usermap != null) {
-                    traffic_leftO = JavaScriptEngineFactory.toLong(JavaScriptEngineFactory.walkJson(usermap, "traffic/left"), 0);
-                }
-                long traffic_max = usermap != null ? JavaScriptEngineFactory.toLong(JavaScriptEngineFactory.walkJson(usermap, "traffic/total"), 0) : null;
-                if (!StringUtils.isEmpty(expire_date) || is_premium) {
-                    if (!StringUtils.isEmpty(expire_date) && expire_date.matches("\\d+")) {
-                        /*
-                         * 2019-12-23: Premium accounts expire too early if we just set the expire-date. Using their Android App even they
-                         * will display the wrong expire date there. We have to add 24 hours to correct this.
-                         */
-                        ai.setValidUntil(Long.parseLong(expire_date) * 1000 + (24 * 60 * 60 * 1000l), br);
-                    }
-                    long traffic_left = 0;
-                    if (traffic_leftO != null) {
-                        if (traffic_leftO instanceof Number) {
-                            traffic_left = ((Number) traffic_leftO).longValue();
-                        } else {
-                            traffic_left = Long.parseLong((String) traffic_leftO);
-                        }
-                    }
-                    ai.setTrafficLeft(traffic_left);
-                    if (traffic_max > 0) {
-                        /* APIv2 */
-                        ai.setTrafficMax(traffic_max);
+                long traffic_left = 0;
+                if (traffic_leftO != null) {
+                    if (traffic_leftO instanceof Number) {
+                        traffic_left = ((Number) traffic_leftO).longValue();
                     } else {
-                        /* APIv1/Fallback/Hardcoded */
-                        final long TB = 1024 * 1024 * 1024 * 1024l;
-                        if (traffic_left > 3 * TB) {
-                            ai.setTrafficMax(12 * TB);
-                        } else if (traffic_left <= 3 * TB && traffic_left > TB) {
-                            ai.setTrafficMax(3 * TB);
-                        } else {
-                            ai.setTrafficMax(TB);
-                        }
-                    }
-                    if (!ai.isExpired()) {
-                        account.setType(AccountType.PREMIUM);
-                        /* Premium account valid */
-                        account.setMaxSimultanDownloads(-1);
-                        account.setConcurrentUsePossible(true);
-                        if (account.getAccountInfo() == null) {
-                            account.setAccountInfo(ai);
-                        }
-                        return ai;
+                        traffic_left = Long.parseLong((String) traffic_leftO);
                     }
                 }
+                ai.setTrafficLeft(traffic_left);
+                if (traffic_max > 0) {
+                    /* APIv2 */
+                    ai.setTrafficMax(traffic_max);
+                } else {
+                    /* APIv1/Fallback/Hardcoded */
+                    final long TB = 1024 * 1024 * 1024 * 1024l;
+                    if (traffic_left > 3 * TB) {
+                        ai.setTrafficMax(12 * TB);
+                    } else if (traffic_left <= 3 * TB && traffic_left > TB) {
+                        ai.setTrafficMax(3 * TB);
+                    } else {
+                        ai.setTrafficMax(TB);
+                    }
+                }
+                account.setType(AccountType.PREMIUM);
+                account.setMaxSimultanDownloads(-1);
+                account.setConcurrentUsePossible(true);
+            } else {
                 account.setType(AccountType.FREE);
                 account.setMaxSimultanDownloads(1);
                 account.setConcurrentUsePossible(false);
                 /* API returns null value for traffic left for free accounts --> Display them as unlimited traffic! */
                 ai.setUnlimitedTraffic();
-                return ai;
-            } catch (final PluginException e) {
-                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
-                    account.setType(null);
-                    account.setProperty(PROPERTY_sessionid, Property.NULL);
-                }
-                throw e;
             }
+            if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                /* For developers: Display more information in GUI. */
+                ai.setStatus(account.getType().getLabel() + " | Status: " + usermap.get("state_label"));
+            }
+            return ai;
         }
     }
 
@@ -1075,7 +1056,7 @@ public class RapidGatorNet extends PluginForHost {
         }
     }
 
-    private String loginAPI(final Account account, boolean isDownloadMode) throws Exception {
+    private Map<String, Object> loginAPI(final Account account) throws Exception {
         synchronized (account) {
             final long lastPleaseWait = account.getLongProperty("lastPleaseWait", -1);
             final long pleaseWait = lastPleaseWait > 0 ? ((5 * 60 * 1000l) - (System.currentTimeMillis() - lastPleaseWait)) : 0;
@@ -1088,10 +1069,12 @@ public class RapidGatorNet extends PluginForHost {
                 /* Try to re-use last token */
                 br.getPage(getAPIBase() + "user/info?token=" + Encoding.urlEncode(sessionID));
                 try {
-                    handleErrors_api(null, null, account, br.getHttpConnection());
+                    final Map<String, Object> response = handleErrors_api(null, null, account, br);
                     logger.info("Successfully validated last session");
                     if (sessionReUseAllowed(account, PROPERTY_timestamp_session_create_api, API_SESSION_ID_REFRESH_TIMEOUT_MINUTES)) {
-                        return sessionID;
+                        return response;
+                    } else {
+                        logger.info("Existing session looks to be valid but we are not allowed to re-use it");
                     }
                 } catch (final PluginException e) {
                     logger.info("Failed to re-use last session_id");
@@ -1103,33 +1086,22 @@ public class RapidGatorNet extends PluginForHost {
             /* Remove cookies from possible previous attempt to re-use old session_id! */
             br.clearCookies(null);
             br.getPage(getAPIBase() + "user/login?login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-            final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.getRequest().getHtmlCode());
-            final Object status = entries.get("status");
-            final Map<String, Object> response = (Map<String, Object>) entries.get("response");
-            if (response == null) {
-                if ("401".equals(StringUtils.valueOfOrNull(status))) {
-                    throw new AccountInvalidException("Wrong e-mail or password");
-                } else {
-                    throw new AccountInvalidException("Unknown error:" + status);
-                }
-            } else {
-                /* 2019-12-14: session_id == PHPSESSID cookie */
-                sessionID = (String) response.get("session_id");
-                if (StringUtils.isEmpty(sessionID)) {
-                    /* 2019-12-14: APIv2 */
-                    sessionID = (String) response.get("token");
-                }
-                if (StringUtils.isEmpty(sessionID)) {
-                    logger.info("Failed to find session_id");
-                    handleErrors_api(null, null, account, br.getHttpConnection());
-                    logger.warning("Unknown login failure");
-                    throw new AccountInvalidException();
-                }
-                /* Store session_id */
-                account.setProperty(PROPERTY_sessionid, sessionID);
-                account.setProperty(PROPERTY_timestamp_session_create_api, System.currentTimeMillis());
-                return sessionID;
+            final Map<String, Object> response = handleErrors_api(null, null, account, br);
+            /* 2019-12-14: session_id == PHPSESSID cookie */
+            sessionID = (String) response.get("session_id");
+            if (StringUtils.isEmpty(sessionID)) {
+                /* 2019-12-14: APIv2 */
+                sessionID = (String) response.get("token");
             }
+            if (StringUtils.isEmpty(sessionID)) {
+                /* This should never happen */
+                handleErrors_api(null, null, account, br);
+                throw new AccountUnavailableException("Fatal: Failed to find sessionID", 1 * 60 * 1000l);
+            }
+            /* Store session_id */
+            account.setProperty(PROPERTY_sessionid, sessionID);
+            account.setProperty(PROPERTY_timestamp_session_create_api, System.currentTimeMillis());
+            return response;
         }
     }
 
@@ -1154,44 +1126,8 @@ public class RapidGatorNet extends PluginForHost {
         }
     }
 
-    public static String readErrorStream(final URLConnectionAdapter con) throws UnsupportedEncodingException, IOException {
-        if (con == null) {
-            return null;
-        }
-        if (con.getRequest() != null && con.getRequest().getHtmlCode() != null) {
-            return con.getRequest().getHtmlCode();
-        } else if (con.getRequest() != null && !con.getRequest().isRequested()) {
-            throw new IOException("Request not sent yet!");
-        } else if (!con.isConnected()) {
-            // getInputStream/getErrorStream call connect!
-            throw new IOException("Connection is not connected!");
-        }
-        con.setAllowedResponseCodes(new int[] { con.getResponseCode() });
-        try {
-            final InputStream es = con.getErrorStream();
-            if (es == null) {
-                throw new IOException("No errorstream!");
-            }
-            final BufferedReader f = new BufferedReader(new InputStreamReader(es, "UTF8"));
-            String line;
-            final StringBuilder ret = new StringBuilder();
-            final String sep = System.getProperty("line.separator");
-            while ((line = f.readLine()) != null) {
-                if (ret.length() > 0) {
-                    ret.append(sep);
-                }
-                ret.append(line);
-            }
-            return ret.toString();
-        } finally {
-            con.disconnect();
-        }
-    }
-
-    private void handleErrors_api(final String session_id, final DownloadLink link, final Account account, final URLConnectionAdapter con) throws Exception {
-        if (con == null) {
-            return;
-        }
+    private Map<String, Object> handleErrors_api(final String session_id, final DownloadLink link, final Account account, final Browser br) throws Exception {
+        final URLConnectionAdapter con = br.getHttpConnection();
         /* Handle bare responsecodes first, then API */
         if (con.getResponseCode() == 401) {
             /* Invalid logindata */
@@ -1210,67 +1146,81 @@ public class RapidGatorNet extends PluginForHost {
         } else if (con.getResponseCode() == 503) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 503: Service Temporarily Unavailable", 5 * 60 * 1000l);
         }
+        Map<String, Object> entries = null;
+        try {
+            entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+        } catch (final JSonMapperException ignore) {
+            /* This should never happen. */
+            if (link != null) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Invalid API response", 60 * 1000l);
+            } else {
+                throw new AccountUnavailableException("Invalid API response", 60 * 1000);
+            }
+        }
+        final Map<String, Object> response = (Map<String, Object>) entries.get("response");
         synchronized (account) {
-            String errorMessage = RapidGatorNet.readErrorStream(con);
-            final String statusString = new Regex(errorMessage, "status\"\\s*:\\s*\"?(\\d+)").getMatch(0);
-            final String details = new Regex(errorMessage, "details\"\\s*:\\s*\"(.*?)\"").getMatch(0);
-            final long status = statusString != null ? Long.parseLong(statusString) : -1;
+            String errorMessage = (String) entries.get("response_details");
             if (errorMessage == null) {
-                /* 2019-12-17: This String is not allowed to be null! */
-                errorMessage = "None";
+                errorMessage = (String) entries.get("details");
+            }
+            final String details = (String) entries.get("details");
+            final int status = ((Number) entries.get("status")).intValue();
+            if (status == 200) {
+                /* No error */
+                return response;
             }
             logger.info("ErrorMessage: " + errorMessage + "|Status:" + status + "|Details:" + details);
-            if (link != null && (status == 423 || errorMessage.contains("Exceeded traffic"))) {
-                /* 2019-12-16: {"response":null,"status":423,"details":"Error: Exceeded traffic"} */
-                throw new AccountUnavailableException("Reached daily downloadlimit", 5 * 60 * 1000);
-            }
-            if (errorMessage.contains("Denied by IP")) {
-                throw new AccountUnavailableException("Denied by IP", 2 * 60 * 60 * 1000l);
-            } else if (errorMessage.contains("Please wait")) {
-                account.setProperty("lastPleaseWait", System.currentTimeMillis());
-                if (link == null) {
-                    /* we are inside fetchAccountInfo */
-                    throw new AccountUnavailableException("Frequent logins. Please wait", 5 * 60 * 1000l);
-                } else {
-                    /* we are inside handlePremium */
-                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server says: 'Please wait ...'", 10 * 60 * 1000l);
+            if (errorMessage != null) {
+                if (status == 423 || StringUtils.containsIgnoreCase(errorMessage, "Exceeded traffic")) {
+                    /* 2019-12-16: {"response":null,"status":423,"details":"Error: Exceeded traffic"} */
+                    throw new AccountUnavailableException("Reached daily downloadlimit", 5 * 60 * 1000);
                 }
-            } else if (errorMessage.contains("User is not PREMIUM") || errorMessage.contains("This file can be downloaded by premium only") || errorMessage.contains("You can download files up to")) {
-                throw new AccountRequiredException();
-            } else if (errorMessage.contains("Login or password is wrong") || errorMessage.contains("Error: Error e-mail or password")) {
-                throw new AccountInvalidException();
-            } else if (errorMessage.contains("Password cannot be blank")) {
-                throw new AccountInvalidException();
-            } else if (errorMessage.contains("User is FROZEN")) {
-                throw new AccountInvalidException("Account is banned");
-            } else if (StringUtils.containsIgnoreCase(errorMessage, "Error: ACCOUNT LOCKED FOR VIOLATION OF OUR TERMS. PLEASE CONTACT SUPPORT.")) {
-                // most likely account sharing as result of shared account dbs.
-                throw new AccountInvalidException("Account Locked! Violation of ToS!");
-            } else if (errorMessage.contains("Parameter login or password is missing")) {
-                /*
-                 * Unusual case but this may also happen frequently if users use strange chars as username/password so simply treat this as
-                 * "login/password wrong"!
-                 */
-                throw new AccountInvalidException();
-            } else if (status == 401 && StringUtils.containsIgnoreCase(errorMessage, "Wrong e-mail or password")) {
-                /* 2019-12-14: {"response":null,"response_status":401,"response_details":"Error: Wrong e-mail or password."} */
-                throw new AccountInvalidException();
-            } else if (status == 401 || StringUtils.containsIgnoreCase(errorMessage, "Session not exist") || StringUtils.containsIgnoreCase(errorMessage, "Session doesn't exist")) {
-                // {"response":null,"status":401,"details":"Error. Session doesn't exist"}
-                // {"response":null,"status":401,"details":"Error. Session not exist"}
-                handleInvalidSession(link, account, null);
-            } else if (status == 404) {
+                if (errorMessage.contains("Denied by IP")) {
+                    throw new AccountUnavailableException("Denied by IP", 2 * 60 * 60 * 1000l);
+                } else if (errorMessage.contains("Please wait")) {
+                    account.setProperty("lastPleaseWait", System.currentTimeMillis());
+                    if (link == null) {
+                        /* we are inside fetchAccountInfo */
+                        throw new AccountUnavailableException("Frequent logins. Please wait", 5 * 60 * 1000l);
+                    } else {
+                        /* we are inside handlePremium */
+                        throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server says: 'Please wait ...'", 10 * 60 * 1000l);
+                    }
+                } else if (errorMessage.contains("User is not PREMIUM") || errorMessage.contains("This file can be downloaded by premium only") || errorMessage.contains("You can download files up to")) {
+                    throw new AccountRequiredException();
+                } else if (errorMessage.contains("Login or password is wrong") || errorMessage.contains("Error: Error e-mail or password")) {
+                    throw new AccountInvalidException();
+                } else if (errorMessage.contains("Password cannot be blank")) {
+                    throw new AccountInvalidException();
+                } else if (errorMessage.contains("User is FROZEN")) {
+                    throw new AccountInvalidException("Account is banned");
+                } else if (StringUtils.containsIgnoreCase(errorMessage, "Error: ACCOUNT LOCKED FOR VIOLATION OF OUR TERMS. PLEASE CONTACT SUPPORT.")) {
+                    // most likely account sharing as result of shared account dbs.
+                    throw new AccountInvalidException("Account Locked! Violation of ToS!");
+                } else if (errorMessage.contains("Parameter login or password is missing")) {
+                    /*
+                     * Unusual case but this may also happen frequently if users use strange chars as username/password so simply treat this
+                     * as "login/password wrong"!
+                     */
+                    throw new AccountInvalidException();
+                } else if (status == 401 && StringUtils.containsIgnoreCase(errorMessage, "Wrong e-mail or password")) {
+                    /* 2019-12-14: {"response":null,"response_status":401,"response_details":"Error: Wrong e-mail or password."} */
+                    throw new AccountInvalidException();
+                } else if (status == 401 || StringUtils.containsIgnoreCase(errorMessage, "Session not exist") || StringUtils.containsIgnoreCase(errorMessage, "Session doesn't exist")) {
+                    // {"response":null,"status":401,"details":"Error. Session doesn't exist"}
+                    // {"response":null,"status":401,"details":"Error. Session not exist"}
+                    handleInvalidSession(link, account, null);
+                }
+            }
+            if (status == 404) {
                 handle404API(link, account);
             } else if (status == 500) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "API error 500", 5 * 60 * 1000l);
             } else if (status == 503) {
                 // {"response":null,"status":503,"details":"Download temporarily unavailable"}
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, details != null ? details : "Download temporarily unavailable", 30 * 60 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errorMessage, 30 * 60 * 1000l);
             } else if (StringUtils.containsIgnoreCase(errorMessage, "This download session is not for you") || StringUtils.containsIgnoreCase(errorMessage, "Session not found")) {
                 handleInvalidSession(link, account, null);
-            } else if (errorMessage.contains("\"Error: Error e-mail or password")) {
-                /* Usually comes with response_status 401 --> Not exactly sure what it means but probably some kind of account issue. */
-                throw new AccountInvalidException();
             } else if (errorMessage.contains("Error: You requested login to your account from unusual Ip address")) {
                 /* User needs to confirm his current IP. */
                 String statusMessage;
@@ -1280,6 +1230,13 @@ public class RapidGatorNet extends PluginForHost {
                     statusMessage = "\r\nPlease confirm your current IP adress via the activation link you got per mail to continue using this account.";
                 }
                 throw new AccountUnavailableException(statusMessage, 1 * 60 * 1000l);
+            } else {
+                logger.info("Unknown error happened");
+                if (link != null) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errorMessage, 60 * 1000l);
+                } else {
+                    throw new AccountUnavailableException(errorMessage, 60 * 1000);
+                }
             }
             /*
              * Unknown error?! TODO: Throw exception here once Rapidgator plugin runs better with APIv2 and all other glitches have been
@@ -1287,6 +1244,7 @@ public class RapidGatorNet extends PluginForHost {
              */
             // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        return response;
     }
 
     public void handlePremium_api(final DownloadLink link, final Account account, final boolean allowWebsiteLinkcheck) throws Exception {
@@ -1308,11 +1266,8 @@ public class RapidGatorNet extends PluginForHost {
         if (hotlinkDirectURL != null) {
             directurl = hotlinkDirectURL;
         } else {
-            session_id = loginAPI(account, true);
-            if (session_id == null) {
-                /* This should never happen */
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
+            loginAPI(account);
+            session_id = account.getStringProperty(PROPERTY_sessionid);
             /* 2019-12-16: Disabled API availablecheck for now as it is unreliable/returns wrong information! */
             if (false) {
                 String fileName = link.getFinalFileName();
@@ -1348,7 +1303,7 @@ public class RapidGatorNet extends PluginForHost {
                 }
             }
             br.getPage(getAPIBase() + "file/download?token=" + session_id + "&file_id=" + Encoding.urlEncode(this.getFID(link)));
-            handleErrors_api(session_id, link, account, br.getHttpConnection());
+            final Map<String, Object> response = handleErrors_api(session_id, link, account, br);
             directurl = PluginJSonUtils.getJsonValue(br, "url");
             if (StringUtils.isEmpty(directurl)) {
                 /* 2019-12-14: APIv2 */
@@ -1367,9 +1322,9 @@ public class RapidGatorNet extends PluginForHost {
         if (!looksLikeDownloadableContent(dl.getConnection())) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection(true);
+            /* We are not logged in when e.g. hotlink is available. */
             if (session_id != null) {
-                /* session_id is not necessarily available when hotlink is available for downloading. */
-                handleErrors_api(session_id, link, account, br.getHttpConnection());
+                handleErrors_api(session_id, link, account, br);
             }
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server did not respond with file content");
         }
