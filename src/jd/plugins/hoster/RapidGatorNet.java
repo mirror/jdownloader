@@ -794,7 +794,7 @@ public class RapidGatorNet extends PluginForHost {
             try {
                 loginAPI(account, false);
                 final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.getRequest().getHtmlCode());
-                final Map<String, Object> responsemap = (Map<String, Object>) entries.get("responsemap");
+                final Map<String, Object> responsemap = (Map<String, Object>) entries.get("response");
                 final Map<String, Object> usermap = responsemap != null ? (Map<String, Object>) responsemap.get("user") : null;
                 String expire_date = PluginJSonUtils.getJsonValue(br, "expire_date");
                 if (StringUtils.isEmpty(expire_date) && usermap != null) {
