@@ -20,7 +20,6 @@ import java.util.List;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -36,12 +35,13 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
+import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.RapidGatorNet;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 @SuppressWarnings("deprecation")
 @PluginDependencies(dependencies = { RapidGatorNet.class })
-public class RapidGatorNetFolder extends antiDDoSForDecrypt {
+public class RapidGatorNetFolder extends PluginForDecrypt {
     public RapidGatorNetFolder(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -75,21 +75,20 @@ public class RapidGatorNetFolder extends antiDDoSForDecrypt {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String contenturl = param.getCryptedUrl().replaceFirst("(?i)http://", "https://");
         final String folderID = new Regex(contenturl, this.getSupportedLinks()).getMatch(0);
-        final RapidGatorNet plugin = (RapidGatorNet) this.getNewPluginForHostInstance(this.getHost());
         br.setFollowRedirects(true);
-        plugin.getPage(contenturl);
-        String title = br.getRegex("(?i)Downloading\\s*:\\s*</strong>(.*?)</p>").getMatch(0);
-        if (title == null) {
-            title = br.getRegex("(?i)<title>Download file (.*?)</title>").getMatch(0);
+        br.getPage(contenturl);
+        String folderTitle = br.getRegex("(?i)Downloading\\s*:\\s*</strong>(.*?)</p>").getMatch(0);
+        if (folderTitle == null) {
+            folderTitle = br.getRegex("(?i)<title>Download file (.*?)</title>").getMatch(0);
         }
         final String titleForEmptyOrOfflineFolder;
-        if (title != null) {
-            title = Encoding.htmlDecode(title).trim();
-            titleForEmptyOrOfflineFolder = folderID + "_" + title;
+        if (folderTitle != null) {
+            folderTitle = Encoding.htmlDecode(folderTitle).trim();
+            titleForEmptyOrOfflineFolder = folderID + "_" + folderTitle;
         } else {
             /* Fallback */
-            title = folderID;
-            titleForEmptyOrOfflineFolder = title;
+            folderTitle = folderID;
+            titleForEmptyOrOfflineFolder = folderTitle;
         }
         if (br.containsHTML("E_FOLDERNOTFOUND") || br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -97,9 +96,9 @@ public class RapidGatorNetFolder extends antiDDoSForDecrypt {
             throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER, titleForEmptyOrOfflineFolder);
         }
         FilePackage fp;
-        if (title != null) {
+        if (folderTitle != null) {
             fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(title).trim());
+            fp.setName(Encoding.htmlDecode(folderTitle).trim());
             fp.addLinks(ret);
         } else {
             fp = null;
@@ -127,13 +126,9 @@ public class RapidGatorNetFolder extends antiDDoSForDecrypt {
                 logger.info("Stopping because: Reached last page");
                 break;
             } else {
-                try {
-                    sleep(500, param);
-                } catch (InterruptedException e) {
-                    logger.log(e);
-                    break;
-                }
-                plugin.getPage(nextPageURL);
+                /* Small delay between requests */
+                sleep(500, param);
+                br.getPage(nextPageURL);
                 page++;
             }
         } while (true);
