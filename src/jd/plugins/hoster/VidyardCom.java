@@ -114,7 +114,7 @@ public class VidyardCom extends PluginForHost {
                 passCode = getUserInput("Password?", link);
             }
             final String postData = "{\"uuid\":\"" + videoid + "\",\"token\":\"" + passCode + "\"}";
-            br.postPageRaw("/secure/verify-access-code?disable_popouts=1&disable_analytics=0&preload=auto&disable_larger_player=false&controller=hubs&action=show&type=inline&v=4.3.14", postData);
+            br.postPageRaw("/secure/verify-access-code", postData);
             final Map<String, Object> resp = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
             final Object error = resp.get("error");
             if (error != null) {

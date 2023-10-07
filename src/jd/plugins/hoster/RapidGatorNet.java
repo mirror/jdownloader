@@ -438,7 +438,7 @@ public class RapidGatorNet extends PluginForHost {
                 if (StringUtils.isEmpty(sid)) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                final boolean allowSolvemediaCaptchaDuringWait = false;
+                final boolean allowSolvemediaCaptchaDuringWait = true;
                 String solvemediaChid = null;
                 String solvemediaCode = null;
                 if (allowSolvemediaCaptchaDuringWait) {
