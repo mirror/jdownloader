@@ -32,49 +32,78 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "jumpshare.com" }, urls = { "https?://(?:www\\.)?(?:jmp\\.sh/(?!v/)[A-Za-z0-9]+|jumpshare\\.com/b/[A-Za-z0-9]+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "jumpshare.com" }, urls = { "https?://(?:www\\.)?(?:jmp\\.sh/(?!v/)[A-Za-z0-9]+|jumpshare\\.com/b/[A-Za-z0-9/]+)" })
 public class JumpshareComCrawler extends PluginForDecrypt {
     public JumpshareComCrawler(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String TYPE_FOLDER = "https?://(?:www\\.)?jumpshare\\.com/b/[A-Za-z0-9]+";
-    private static final String TYPE_FILE   = "https?://(?:www\\.)?jumpshare\\.com/v/[A-Za-z0-9]+";
+    private static final String TYPE_FOLDER = "https?://(?:www\\.)?jumpshare\\.com/b/([A-Za-z0-9/]+)";
+    private static final String TYPE_FILE   = "https?://(?:www\\.)?jumpshare\\.com/v/([A-Za-z0-9]+)";
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String parameter = param.getCryptedUrl();
+        String path = param.getDownloadLink() != null ? param.getDownloadLink().getRelativeDownloadFolderPath() : null;
         if (parameter.matches(TYPE_FOLDER)) {
             this.br.setFollowRedirects(true);
             br.getPage(parameter);
             if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("Folder Not Found|The folder you are looking for does not exist")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            final String folderid = new Regex(parameter, "([A-Za-z0-9]+)$").getMatch(0);
+            final String folderpathFromURL = new Regex(parameter, "([A-Za-z0-9]+)$").getMatch(0);
             final Form passwordForm = br.getFormbyProperty("id", "folder-unlock-form");
             if (passwordForm != null) {
                 logger.warning("Password protected folders are not yet supported");
-                throw new DecrypterRetryException(RetryReason.PASSWORD, "UNSUPPORTED_PASSWORD_PROTECTED_FOLDER_" + folderid, "Password protected folders of this website aren't supported yet. Contact our support and ask for implementation!");
+                throw new DecrypterRetryException(RetryReason.PASSWORD, "UNSUPPORTED_PASSWORD_PROTECTED_FOLDER_" + folderpathFromURL, "Password protected folders of this website aren't supported yet. Contact our support and ask for implementation!");
             }
-            String fpName = br.getRegex("property=\"og:title\" content=\"([^<>]+)\"").getMatch(0);
-            if (fpName == null) {
-                fpName = folderid;
+            String thisFolderTitle = br.getRegex("property=\"og:title\" content=\"([^<>]+)\"").getMatch(0);
+            if (thisFolderTitle != null) {
+                thisFolderTitle = Encoding.htmlDecode(thisFolderTitle).trim();
+                if (path != null) {
+                    path += "/" + thisFolderTitle;
+                } else {
+                    path = thisFolderTitle;
+                }
             }
-            final String[] links = br.getRegex("/v/([A-Za-z0-9]+)").getColumn(0);
-            if (links == null || links.length == 0) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            final String[] fileids = br.getRegex("/v/([A-Za-z0-9]+)").getColumn(0);
+            if (fileids != null && fileids.length > 0) {
+                for (final String fileid : fileids) {
+                    final String url = br.getURL("/v/" + fileid).toExternalForm();
+                    /* Contenturl for the user to copy - let's use the same urls they use in browser. */
+                    final String url_content = url + "?b=";
+                    final DownloadLink dl = createDownloadlink(url);
+                    dl.setContentUrl(url_content);
+                    if (path != null) {
+                        dl.setRelativeDownloadFolderPath(path);
+                    }
+                    ret.add(dl);
+                }
             }
-            for (final String linkid : links) {
-                final String url = "https://" + this.getHost() + "/v/" + linkid;
-                /* Contenturl for the user to copy - let's use the same urls they use in browser. */
-                final String url_content = url + "?b=";
-                final DownloadLink dl = createDownloadlink(url);
-                dl.setLinkID(linkid);
-                dl.setContentUrl(url_content);
-                ret.add(dl);
+            final String[] subfolderurls = br.getRegex("(/b/" + folderpathFromURL + "/[A-Za-z0-9]+)").getColumn(0);
+            if (subfolderurls != null && subfolderurls.length > 0) {
+                for (final String subfolderurl : subfolderurls) {
+                    final String url = br.getURL(subfolderurl).toExternalForm();
+                    final DownloadLink dl = createDownloadlink(url);
+                    if (path != null) {
+                        dl.setRelativeDownloadFolderPath(path);
+                    }
+                    ret.add(dl);
+                }
+            }
+            if (ret.isEmpty()) {
+                if (br.containsHTML("class=\"content_fluid is-empty\"")) {
+                    throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
             final FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName).trim());
+            if (path != null) {
+                fp.setName(path);
+            } else {
+                fp.setName(folderpathFromURL);
+            }
             fp.addLinks(ret);
         } else {
             this.br.setFollowRedirects(false);
@@ -90,7 +119,11 @@ public class JumpshareComCrawler extends PluginForDecrypt {
             if (!finallink.matches(TYPE_FOLDER) && !finallink.matches(TYPE_FILE) && finallink.contains(this.getHost())) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            ret.add(createDownloadlink(finallink));
+            final DownloadLink singlefile = createDownloadlink(finallink);
+            if (path != null) {
+                singlefile.setRelativeDownloadFolderPath(path);
+            }
+            ret.add(singlefile);
         }
         return ret;
     }

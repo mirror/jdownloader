@@ -33,10 +33,11 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.hoster.JianguoyunCom;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "jianguoyun.com" }, urls = { "https?://(?:www\\.)?jianguoyun\\.com/p/[A-Za-z0-9\\-_]+(?:#dir=[^<>\"/:]+)?" })
-public class JianguoyunCom extends antiDDoSForDecrypt {
-    public JianguoyunCom(PluginWrapper wrapper) {
+public class JianguoyunComCrawler extends antiDDoSForDecrypt {
+    public JianguoyunComCrawler(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -57,24 +58,30 @@ public class JianguoyunCom extends antiDDoSForDecrypt {
         }
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        final String pageJson = jd.plugins.hoster.JianguoyunCom.getWebsiteJson(br);
-        DownloadLink dl = null;
+        final String pageJson = JianguoyunCom.getWebsiteJson(br);
         final String isdir = new Regex(pageJson, "isdir\\s*:\\s*(true|false)").getMatch(0);
         if ("false".equals(isdir)) {
             /* Single file */
-            dl = createDownloadlink("http://jianguoyundecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(100000));
-            dl.setProperty("singlefile", true);
-            dl.setProperty("folderid", fid);
-            dl.setProperty("relPath", subfolder);
-            dl.setProperty("mainlink", parameter);
-            jd.plugins.hoster.JianguoyunCom.scanFileinfoFromWebsite(br, dl);
-            ret.add(dl);
+            final DownloadLink singlefile = createDownloadlink("http://jianguoyundecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(100000));
+            singlefile.setProperty("singlefile", true);
+            singlefile.setProperty("folderid", fid);
+            singlefile.setProperty("relPath", subfolder);
+            singlefile.setProperty("mainlink", parameter);
+            JianguoyunCom.scanFileinfoFromWebsite(br, singlefile);
+            ret.add(singlefile);
             return ret;
         }
+        String currentFolderName = new Regex(pageJson, "name\\s*:\\s*'([^\"\\']+)'").getMatch(0);
+        if (currentFolderName == null) {
+            /* Fallback */
+            currentFolderName = fid;
+        }
+        currentFolderName = Encoding.htmlDecode(currentFolderName).trim();
         br.getPage("https://www.jianguoyun.com/d/ajax/dirops/pubDIRBrowse?hash=" + fid + "&relPath=" + subfolder + "&_=" + System.currentTimeMillis());
         Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
         final List<Object> ressourcelist = (List) entries.get("objects");
-        FilePackage fp = null;
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(currentFolderName);
         for (final Object foldero : ressourcelist) {
             entries = (Map<String, Object>) foldero;
             final String type = (String) entries.get("type");
@@ -83,6 +90,7 @@ public class JianguoyunCom extends antiDDoSForDecrypt {
             if (type == null || relPath == null) {
                 continue;
             }
+            final DownloadLink dl;
             if (type.equals("directory")) {
                 dl = createDownloadlink("https://www.jianguoyun.com/p/" + fid + "#dir=" + Encoding.urlEncode(relPath));
             } else {
@@ -101,11 +109,6 @@ public class JianguoyunCom extends antiDDoSForDecrypt {
                 dl.setProperty("relPath", relPath);
                 dl.setProperty("mainlink", parameter);
                 dl.setContentUrl(contenturl);
-                dl.setRelativeDownloadFolderPath(relPath);
-                if (fp == null) {
-                    fp = FilePackage.getInstance();
-                    fp.setName(relPath);
-                }
                 dl._setFilePackage(fp);
             }
             ret.add(dl);

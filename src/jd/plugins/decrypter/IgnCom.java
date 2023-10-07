@@ -17,6 +17,7 @@ package jd.plugins.decrypter;
 
 import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -94,7 +95,7 @@ public class IgnCom extends PluginForDecrypt {
     @SuppressWarnings({ "unchecked", "rawtypes" })
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        String fpName;
+        String title = null;
         String contenturl = param.getCryptedUrl();
         if (contenturl.matches(TYPE_EMBED)) {
             /* Embed URL: Redirects to extern video provider such as twitch.tv. */
@@ -112,10 +113,10 @@ public class IgnCom extends PluginForDecrypt {
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            fpName = this.br.getRegex("data\\-video\\-title=\"([^<>\"]*?)\"").getMatch(0);
-            if (fpName == null) {
+            title = this.br.getRegex("data\\-video\\-title=\"([^<>\"]*?)\"").getMatch(0);
+            if (title == null) {
                 /* Fallback to url-name */
-                fpName = new Regex(this.br.getURL(), "/([a-z0-9\\-]+)$").getMatch(0);
+                title = new Regex(this.br.getURL(), "/([a-z0-9\\-]+)$").getMatch(0);
             }
             // final String json = br.getRegex("data-video=\\'(\\{.*?\\})\\'[\t\n\r ]+").getMatch(0);
             // final String json = br.getRegex("data-settings=\"(\\{.*?\\})\"[\t\n\r ]+").getMatch(0);
@@ -136,7 +137,7 @@ public class IgnCom extends PluginForDecrypt {
                 }
                 if (StringUtils.isEmpty(fileTitle)) {
                     /* Fallback */
-                    fileTitle = fpName;
+                    fileTitle = title;
                 }
                 if (!StringUtils.isEmpty(directurl)) {
                     final DownloadLink dlink = createDownloadlink("directhttp://" + directurl);
@@ -168,7 +169,7 @@ public class IgnCom extends PluginForDecrypt {
                         continue;
                     }
                     final DownloadLink dlink = createDownloadlink("directhttp://" + finallink);
-                    dlink.setFinalFileName(fpName + "_" + height + ".mp4");
+                    dlink.setFinalFileName(title + "_" + height + ".mp4");
                     ret.add(dlink);
                 }
             }
@@ -178,20 +179,20 @@ public class IgnCom extends PluginForDecrypt {
             if (br.getHttpConnection().getResponseCode() == 404 || br.toString().length() <= 100) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            fpName = br.getRegex("<meta property=\"og:title\" content=\"(.*?) \\- IGN\"").getMatch(0);
-            if (fpName == null) {
-                fpName = br.getRegex("<h1 class=\"grid_16 container hdr\\-video\\-title\">(.*?)</h1>").getMatch(0);
-                if (fpName == null) {
-                    fpName = br.getRegex("var disqus_title=\"(.*?)\";").getMatch(0);
-                    if (fpName == null) {
-                        fpName = br.getRegex("<title>(.*?) Video \\- ").getMatch(0);
+            title = br.getRegex("<meta property=\"og:title\" content=\"(.*?) \\- IGN\"").getMatch(0);
+            if (title == null) {
+                title = br.getRegex("<h1 class=\"grid_16 container hdr\\-video\\-title\">(.*?)</h1>").getMatch(0);
+                if (title == null) {
+                    title = br.getRegex("var disqus_title=\"(.*?)\";").getMatch(0);
+                    if (title == null) {
+                        title = br.getRegex("<title>(.*?) Video \\- ").getMatch(0);
                     }
                 }
             }
-            if (fpName == null) {
+            if (title == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            fpName = fpName.trim();
+            title = title.trim();
             String configUrl = br.getRegex("\"config_episodic\":\"(http:.*?)\"").getMatch(0);
             if (configUrl != null) {
                 configUrl = configUrl.replace("\\", "");
@@ -204,7 +205,7 @@ public class IgnCom extends PluginForDecrypt {
                         failed = false;
                         for (String singleLink : links) {
                             final DownloadLink dlink = createDownloadlink(DirectHTTP.createURLForThisPlugin(singleLink));
-                            dlink.setFinalFileName(fpName + singleLink.substring(singleLink.length() - 4, singleLink.length()));
+                            dlink.setFinalFileName(title + singleLink.substring(singleLink.length() - 4, singleLink.length()));
                             ret.add(dlink);
                         }
                     }
@@ -214,21 +215,36 @@ public class IgnCom extends PluginForDecrypt {
                 }
             }
         }
-        /* 2023-10-06 */
-        final String[] links = br.getRegex("\"(http[^\"]+\\.mp4)").getColumn(0);
+        if (title == null) {
+            title = br.getRegex("<title>([^<]+)").getMatch(0);
+            if (title == null) {
+                title = br._getURL().getPath();
+            }
+        }
+        /* 2023-10-06: Generic handling */
+        final String[] links = br.getRegex("(?i)\"(http[^\"]+\\.mp4)").getColumn(0);
         if (links != null && links.length > 0) {
+            int index = 0;
+            final HashSet<String> dupes = new HashSet<String>();
             for (String singleLink : links) {
+                if (!dupes.add(singleLink)) {
+                    continue;
+                }
+                index++;
                 final DownloadLink dlink = createDownloadlink(DirectHTTP.createURLForThisPlugin(singleLink));
-                // dlink.setFinalFileName(fpName + singleLink.substring(singleLink.length() - 4, singleLink.length()));
+                dlink.setFinalFileName(title + "_ " + index + ".mp4");
                 ret.add(dlink);
             }
         }
-        final FilePackage fp = FilePackage.getInstance();
-        fp.addLinks(ret);
+        if (title != null) {
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName(title);
+            fp.addLinks(ret);
+        }
         return ret;
     }
 
-    /* NO OVERRIDE!! */
+    @Override
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
