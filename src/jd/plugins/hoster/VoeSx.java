@@ -20,12 +20,15 @@ import java.net.URL;
 import java.util.List;
 
 import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 import org.jdownloader.plugins.components.config.XFSConfigVideoVoeSx;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
@@ -34,6 +37,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.VoeSxCrawler;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
@@ -224,6 +228,10 @@ public class VoeSx extends XFileSharingProBasic {
             logger.info("[DownloadMode] Trying to find official video downloads");
             String continueLink = br.getRegex("(?:\"|')(/dl\\?op=download_orig[^\"\\']+)").getMatch(0);
             if (continueLink == null) {
+                /* 2023-10-07 */
+                continueLink = br.getRegex("(?:\"|')((https?://[^/]+)?/[a-z0-9]{12}/download)").getMatch(0);
+            }
+            if (continueLink == null) {
                 /* No official download available */
                 logger.info("Failed to find any official video downloads");
                 return null;
@@ -233,6 +241,16 @@ public class VoeSx extends XFileSharingProBasic {
                 continueLink += "&embed=&adb=0";
             }
             this.getPage(br, continueLink);
+            final Form dlform = br.getFormbyActionRegex(".+/download$");
+            if (dlform != null) {
+                try {
+                    reCaptchaSiteurlWorkaround = br.getURL();
+                    this.handleCaptcha(link, br, dlform);
+                } finally {
+                    reCaptchaSiteurlWorkaround = null;
+                }
+                this.submitForm(br, dlform);
+            }
             String dllink = this.getDllink(link, account, br, br.getRequest().getHtmlCode());
             if (StringUtils.isEmpty(dllink)) {
                 /*
@@ -240,6 +258,13 @@ public class VoeSx extends XFileSharingProBasic {
                  * result.
                  */
                 dllink = br.getRegex("(?i)>\\s*Download Link\\s*</td>\\s*<td><a href=\"(https?://[^\"]+)\"").getMatch(0);
+                if (dllink == null) {
+                    /* 2023-10-07 */
+                    dllink = br.getRegex("<a href=\"(http[^\"]+)\"[^>]*class=\"btn btn-primary\" target=\"_blank\"").getMatch(0);
+                }
+                if (dllink != null) {
+                    dllink = Encoding.htmlOnlyDecode(dllink);
+                }
             }
             if (StringUtils.isEmpty(dllink)) {
                 logger.warning("Failed to find dllink via official video download");
@@ -252,6 +277,22 @@ public class VoeSx extends XFileSharingProBasic {
             }
             return dllink;
         }
+    }
+
+    private String reCaptchaSiteurlWorkaround = null;
+
+    @Override
+    protected CaptchaHelperHostPluginRecaptchaV2 getCaptchaHelperHostPluginRecaptchaV2(PluginForHost plugin, Browser br) throws PluginException {
+        return new CaptchaHelperHostPluginRecaptchaV2(this, br) {
+            @Override
+            protected String getSiteUrl() {
+                if (reCaptchaSiteurlWorkaround != null) {
+                    return reCaptchaSiteurlWorkaround;
+                } else {
+                    return super.getSiteUrl();
+                }
+            }
+        };
     }
 
     @Override

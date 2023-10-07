@@ -232,6 +232,7 @@ public class BandCampCom extends PluginForHost {
             link.setProperty(PROPERTY_ARTIST, Encoding.htmlDecode(artistFullName).trim());
         }
         if (usernamePretty != null) {
+            // TODO: This is wrong. There is no "pretty username"(?)
             link.setProperty(PROPERTY_USERNAME_PRETTY, Encoding.htmlDecode(usernamePretty).trim());
         }
         if (albumTitle != null) {
@@ -293,10 +294,14 @@ public class BandCampCom extends PluginForHost {
                 artist = Encoding.htmlDecode(artist).trim();
                 link.setProperty(PROPERTY_ARTIST, artist);
             }
-            if (artist != null && artistAndTrackTitle != null) {
+            if (artistAndTrackTitle != null) {
                 artistAndTrackTitle = Encoding.htmlDecode(artistAndTrackTitle).trim();
-                /* Remove artist to get track-title only. */
-                link.setProperty(PROPERTY_TITLE, artistAndTrackTitle.replaceFirst(Pattern.quote(artist) + " - ", ""));
+                if (artist != null) {
+                    /* Remove artist to get track-title only. */
+                    link.setProperty(PROPERTY_TITLE, artistAndTrackTitle.replaceFirst(Pattern.quote(artist) + " - ", ""));
+                } else {
+                    link.setProperty(PROPERTY_TITLE, artistAndTrackTitle);
+                }
             }
         }
     }

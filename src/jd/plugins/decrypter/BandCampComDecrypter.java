@@ -238,6 +238,7 @@ public class BandCampComDecrypter extends PluginForDecrypt {
             logger.warning("Failed to find albumID");
         }
         if (json == null) {
+            /* Not a single track or album but a list of albums or users. */
             if (!this.canHandle(br.getURL())) {
                 logger.info("Invalid URL or URL doesn't contain any downloadable content");
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -289,114 +290,98 @@ public class BandCampComDecrypter extends PluginForDecrypt {
         if (dateStr != null) {
             dateTimestamp = dateToTimestamp(dateStr);
         }
+        /**
+         * Not all albums have playable audio tracks so for some, all we can crawl is the album thumbnail. </br>
+         * Example-album without any streamable tracks: https://midsummerex.bandcamp.com/album/intl
+         */
         final List<Map<String, Object>> albumtracks = (List<Map<String, Object>>) JavaScriptEngineFactory.jsonToJavaObject(json);
-        if (albumtracks == null || albumtracks.size() == 0) {
-            if (errorAlbumUnavailable != null) {
-                /* E.g. "Sold out": https://baritalia.bandcamp.com/album/cdr */
-                logger.info("Item unavailable because: " + errorAlbumUnavailable);
+        if (albumtracks != null && albumtracks.size() > 0) {
+            final String type = albumInfo.get("@type").toString();
+            final boolean isSingleTrack;
+            if (type.equalsIgnoreCase("MusicRecording") && albumtracks.size() == 1) {
+                isSingleTrack = true;
+            } else {
+                isSingleTrack = false;
             }
-            /* E.g. album without any streamable tracks: https://midsummerex.bandcamp.com/album/intl */
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        final String type = albumInfo.get("@type").toString();
-        final boolean isSingleTrack;
-        if (type.equalsIgnoreCase("MusicRecording") && albumtracks.size() == 1) {
-            isSingleTrack = true;
-        } else {
-            isSingleTrack = false;
-        }
-        final SubConfiguration cfg = SubConfiguration.getConfig(this.getHost());
-        final boolean grabThumbnail = cfg.getBooleanProperty(BandCampCom.GRABTHUMB, BandCampCom.defaultGRABTHUMB);
-        int index = 0;
-        int numberOfUnPlayableTracks = 0;
-        for (final Map<String, Object> audio : albumtracks) {
-            String contentUrl = audio.get("title_link").toString();
-            if (StringUtils.isEmpty(contentUrl)) {
-                /* Skip invalid objects */
-                continue;
-            }
-            if (contentUrl.startsWith("/")) {
-                contentUrl = br.getURL(contentUrl).toExternalForm();
-            }
-            final DownloadLink audiotrack = createDownloadlink(contentUrl);
-            BandCampCom.parseAndSetSingleTrackInfo(audiotrack, br, index);
-            if (!audiotrack.hasProperty(BandCampCom.PROPERTY_DATE_DIRECTURL)) {
-                numberOfUnPlayableTracks++;
-            }
-            /* Add some properties if they are missing. */
-            audiotrack.setProperty(BandCampCom.PROPERTY_DATE_TIMESTAMP, dateTimestamp);
-            if (!isSingleTrack) {
-                audiotrack.setProperty(BandCampCom.PROPERTY_ALBUM_TITLE, albumOrTrackTitle);
-            }
-            ret.add(audiotrack);
-            final String videoSourceID = (String) audio.get("video_source_id");
-            if (StringUtils.isNotEmpty(videoSourceID)) {
-                synchronized (videoSupportBroken) {
-                    if (videoSupportBroken.get() == null || !getPluginVersionHash().equals(videoSupportBroken.get())) {
-                        try {
-                            String token = new Regex(StringUtils.valueOfOrNull(audio.get("video_poster_url")), "\\d+/\\d+/([^/]+)").getMatch(0);
-                            if (token == null) {
-                                token = new Regex(StringUtils.valueOfOrNull(audio.get("video_mobile_url")), "\\d+/\\d+/([^/]+)").getMatch(0);
-                            }
-                            if (token != null) {
-                                final String playerID = "9891472";
-                                final Browser brc = br.cloneBrowser();
-                                brc.setCookie("bandcamp.23video.com", "uuid", UUID.randomUUID().toString());
-                                brc.setCookie("bandcamp.23video.com", "_visual_swf_referer", "https%3A//bandcamp.com/");
-                                brc.setCurrentURL("https://bandcamp.23video.com/" + playerID + ".ihtml/player.html?token=" + token + "&source=embed&photo_id=" + videoSourceID);
-                                brc.getPage("https://bandcamp.23video.com/api/concatenate?callback=visualplatformconcat_0&format=json&playersettings_0=%2Fapi%2Fplayer%2Fsettings%3Fplayer_id%3D" + playerID + "%26parameters%3Dtoken%253D" + token + "%2526source%253Dembed%2526photo_id%253D" + videoSourceID + "&livelist_1=%2Fapi%2Flive%2Flist%3Ftoken%3D" + token + "%26source%3Dembed%26photo_id%3D" + videoSourceID + "%26upcoming_p%3D1%26ordering%3Dstreaming%26player_id%3D" + playerID + "&photolist_2=%2Fapi%2Fphoto%2Flist%3Fsize%3D10%26include_actions_p%3D1%26token%3D" + token + "%26source%3Dembed%26photo_id%3D" + videoSourceID + "%26upcoming_p%3D1%26ordering%3Dstreaming%26player_id%3D" + playerID);
-                                final String visualplatformconcat_0 = brc.getRegex("visualplatformconcat_0\\(\\s*(\\{.*?\\})\\s*\\)\\s*;\\s*$").getMatch(0);
-                                final Map<String, Object> visualplatformconcat = restoreFromString(visualplatformconcat_0, TypeRef.MAP);
-                                final Map<String, Object> photo = (Map<String, Object>) JavaScriptEngineFactory.walkJson(visualplatformconcat, "photolist_2/photo");
-                                for (final String format : new String[] { "4k", "1080p", "hd"/* 720 */, "medium", "mobile_high", "webm_360p", "webm_720p" }) {
-                                    final String videoURL = StringUtils.valueOfOrNull(photo.get("video_" + format + "_download"));
-                                    if (StringUtils.isNotEmpty(videoURL)) {
-                                        final DownloadLink videoEntry = createDownloadlink(brc.getURL(videoURL).toString());
-                                        /* Inherent all properties of corresponding audiotrack, then add video specific properties. */
-                                        videoEntry.setProperties(audiotrack.getProperties());
-                                        videoEntry.setProperty(BandCampCom.PROPERTY_VIDEO_FORMAT, format);
-                                        final Object video_width = photo.get("video_" + format + "_width");
-                                        final Object video_height = photo.get("video_" + format + "_height");
-                                        if (video_width != null) {
-                                            videoEntry.setProperty(BandCampCom.PROPERTY_VIDEO_WIDTH, video_width.toString());
+            int index = 0;
+            int numberOfUnPlayableTracks = 0;
+            for (final Map<String, Object> audio : albumtracks) {
+                String contentUrl = audio.get("title_link").toString();
+                if (StringUtils.isEmpty(contentUrl)) {
+                    /* Skip invalid objects */
+                    continue;
+                }
+                if (contentUrl.startsWith("/")) {
+                    contentUrl = br.getURL(contentUrl).toExternalForm();
+                }
+                final DownloadLink audiotrack = createDownloadlink(contentUrl);
+                BandCampCom.parseAndSetSingleTrackInfo(audiotrack, br, index);
+                if (!audiotrack.hasProperty(BandCampCom.PROPERTY_DATE_DIRECTURL)) {
+                    numberOfUnPlayableTracks++;
+                }
+                /* Add some properties if they are missing. */
+                audiotrack.setProperty(BandCampCom.PROPERTY_DATE_TIMESTAMP, dateTimestamp);
+                if (!isSingleTrack) {
+                    audiotrack.setProperty(BandCampCom.PROPERTY_ALBUM_TITLE, albumOrTrackTitle);
+                }
+                ret.add(audiotrack);
+                final String videoSourceID = (String) audio.get("video_source_id");
+                if (StringUtils.isNotEmpty(videoSourceID)) {
+                    synchronized (videoSupportBroken) {
+                        if (videoSupportBroken.get() == null || !getPluginVersionHash().equals(videoSupportBroken.get())) {
+                            try {
+                                String token = new Regex(StringUtils.valueOfOrNull(audio.get("video_poster_url")), "\\d+/\\d+/([^/]+)").getMatch(0);
+                                if (token == null) {
+                                    token = new Regex(StringUtils.valueOfOrNull(audio.get("video_mobile_url")), "\\d+/\\d+/([^/]+)").getMatch(0);
+                                }
+                                if (token != null) {
+                                    final String playerID = "9891472";
+                                    final Browser brc = br.cloneBrowser();
+                                    brc.setCookie("bandcamp.23video.com", "uuid", UUID.randomUUID().toString());
+                                    brc.setCookie("bandcamp.23video.com", "_visual_swf_referer", "https%3A//bandcamp.com/");
+                                    brc.setCurrentURL("https://bandcamp.23video.com/" + playerID + ".ihtml/player.html?token=" + token + "&source=embed&photo_id=" + videoSourceID);
+                                    brc.getPage("https://bandcamp.23video.com/api/concatenate?callback=visualplatformconcat_0&format=json&playersettings_0=%2Fapi%2Fplayer%2Fsettings%3Fplayer_id%3D" + playerID + "%26parameters%3Dtoken%253D" + token + "%2526source%253Dembed%2526photo_id%253D" + videoSourceID + "&livelist_1=%2Fapi%2Flive%2Flist%3Ftoken%3D" + token + "%26source%3Dembed%26photo_id%3D" + videoSourceID + "%26upcoming_p%3D1%26ordering%3Dstreaming%26player_id%3D" + playerID + "&photolist_2=%2Fapi%2Fphoto%2Flist%3Fsize%3D10%26include_actions_p%3D1%26token%3D" + token + "%26source%3Dembed%26photo_id%3D" + videoSourceID + "%26upcoming_p%3D1%26ordering%3Dstreaming%26player_id%3D" + playerID);
+                                    final String visualplatformconcat_0 = brc.getRegex("visualplatformconcat_0\\(\\s*(\\{.*?\\})\\s*\\)\\s*;\\s*$").getMatch(0);
+                                    final Map<String, Object> visualplatformconcat = restoreFromString(visualplatformconcat_0, TypeRef.MAP);
+                                    final Map<String, Object> photo = (Map<String, Object>) JavaScriptEngineFactory.walkJson(visualplatformconcat, "photolist_2/photo");
+                                    for (final String format : new String[] { "4k", "1080p", "hd"/* 720 */, "medium", "mobile_high", "webm_360p", "webm_720p" }) {
+                                        final String videoURL = StringUtils.valueOfOrNull(photo.get("video_" + format + "_download"));
+                                        if (StringUtils.isNotEmpty(videoURL)) {
+                                            final DownloadLink videoEntry = createDownloadlink(brc.getURL(videoURL).toString());
+                                            /* Inherent all properties of corresponding audiotrack, then add video specific properties. */
+                                            videoEntry.setProperties(audiotrack.getProperties());
+                                            videoEntry.setProperty(BandCampCom.PROPERTY_VIDEO_FORMAT, format);
+                                            final Object video_width = photo.get("video_" + format + "_width");
+                                            final Object video_height = photo.get("video_" + format + "_height");
+                                            if (video_width != null) {
+                                                videoEntry.setProperty(BandCampCom.PROPERTY_VIDEO_WIDTH, video_width.toString());
+                                            }
+                                            if (video_height != null) {
+                                                videoEntry.setProperty(BandCampCom.PROPERTY_VIDEO_HEIGHT, video_height.toString());
+                                            }
+                                            final long fileSize = JavaScriptEngineFactory.toLong(photo.get("video_" + format + "_size"), -1l);
+                                            if (fileSize > 0) {
+                                                videoEntry.setDownloadSize(fileSize);
+                                            }
+                                            String fileExtension = Plugin.getFileNameExtensionFromURL(videoURL);
+                                            if (fileExtension == null) {
+                                                fileExtension = "mp4";
+                                            }
+                                            videoEntry.setProperty(BandCampCom.PROPERTY_FILE_TYPE, fileExtension);
+                                            ret.add(videoEntry);
                                         }
-                                        if (video_height != null) {
-                                            videoEntry.setProperty(BandCampCom.PROPERTY_VIDEO_HEIGHT, video_height.toString());
-                                        }
-                                        final long fileSize = JavaScriptEngineFactory.toLong(photo.get("video_" + format + "_size"), -1l);
-                                        if (fileSize > 0) {
-                                            videoEntry.setDownloadSize(fileSize);
-                                        }
-                                        String fileExtension = Plugin.getFileNameExtensionFromURL(videoURL);
-                                        if (fileExtension == null) {
-                                            fileExtension = "mp4";
-                                        }
-                                        videoEntry.setProperty(BandCampCom.PROPERTY_FILE_TYPE, fileExtension);
-                                        ret.add(videoEntry);
                                     }
                                 }
+                            } catch (final Exception e) {
+                                logger.log(e);
+                                videoSupportBroken.set(getPluginVersionHash());
                             }
-                        } catch (final Exception e) {
-                            logger.log(e);
-                            videoSupportBroken.set(getPluginVersionHash());
                         }
                     }
                 }
+                index++;
             }
-            index++;
-        }
-        logger.info("Number of un-playable tracks in this album: " + numberOfUnPlayableTracks);
-        /* Single song or album thumbnail. */
-        if (grabThumbnail) {
-            String thumbnailURL = br.getRegex("(?i)<a class=\"popupImage\" href=\"(https?://[^<>\"]*?\\.jpg)\"").getMatch(0);
-            if (thumbnailURL != null) {
-                thumbnailURL = thumbnailURL.replaceFirst("(_\\d+)(\\.\\w+)$", "_0$2");
-                final DownloadLink thumb = createDownloadlink(thumbnailURL);
-                thumb.setProperties(ret.get(0).getProperties());
-                thumb.setProperty(BandCampCom.PROPERTY_FILE_TYPE, "jpg");
-                thumb.setProperty(BandCampCom.PROPERTY_ALBUM_TRACK_POSITION, 0);
-                ret.add(thumb);
-            }
+            logger.info("Number of un-playable tracks in this album: " + numberOfUnPlayableTracks);
         }
         String usernamePretty = null;
         final String json_band = br.getRegex("data-band=\"(\\{[^\"]+)").getMatch(0);
@@ -405,6 +390,26 @@ public class BandCampComDecrypter extends PluginForDecrypt {
             usernamePretty = (String) bandInfo.get("name");
         } else {
             logger.warning("Failed to find usernamePretty");
+        }
+        /* Single song or album thumbnail. Crawl it if user wants it or if no audio/video items were found. */
+        final SubConfiguration cfg = SubConfiguration.getConfig(this.getHost());
+        if (cfg.getBooleanProperty(BandCampCom.GRABTHUMB, BandCampCom.defaultGRABTHUMB) || ret.isEmpty()) {
+            /* TODO: Check filenames */
+            String thumbnailURL = br.getRegex("(?i)<a class=\"popupImage\" href=\"(https?://[^<>\"]*?\\.jpg)\"").getMatch(0);
+            if (thumbnailURL != null) {
+                thumbnailURL = thumbnailURL.replaceFirst("(_\\d+)(\\.\\w+)$", "_0$2");
+                final DownloadLink thumb = createDownloadlink(thumbnailURL);
+                if (ret.size() > 0) {
+                    /* Inherit properties from first crawler audio track. */
+                    thumb.setProperties(ret.get(0).getProperties());
+                }
+                thumb.setProperty(BandCampCom.PROPERTY_ARTIST, usernamePretty);
+                thumb.setProperty(BandCampCom.PROPERTY_TITLE, "coverart");
+                thumb.setProperty(BandCampCom.PROPERTY_ALBUM_TITLE, albumOrTrackTitle);
+                thumb.setProperty(BandCampCom.PROPERTY_FILE_TYPE, "jpg");
+                thumb.setProperty(BandCampCom.PROPERTY_ALBUM_TRACK_POSITION, 0);
+                ret.add(thumb);
+            }
         }
         /* Set additional properties, filename and online-status. */
         for (final DownloadLink result : ret) {
@@ -432,7 +437,12 @@ public class BandCampComDecrypter extends PluginForDecrypt {
         }
         fp.addLinks(ret);
         if (ret.isEmpty()) {
-            logger.info("Failed to find any downloadable content: Empty album?");
+            if (errorAlbumUnavailable != null) {
+                /* E.g. "Sold out": https://baritalia.bandcamp.com/album/cdr */
+                logger.info("Item unavailable because: " + errorAlbumUnavailable);
+            } else {
+                logger.info("Failed to find any downloadable content: Empty album?");
+            }
             throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER);
         }
         return ret;
