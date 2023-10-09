@@ -23,6 +23,11 @@ import java.util.Random;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -40,11 +45,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class ImgSrcRuCrawler extends PluginForDecrypt {
@@ -87,16 +87,16 @@ public class ImgSrcRuCrawler extends PluginForDecrypt {
         return ret.toArray(new String[0]);
     }
 
-    private String        password  = null;
-    private String        username  = null;
-    private String        uid       = null;
-    private String        id        = null;
-    private String        aid       = null;
-    private String        pwd       = null;
-    private PluginForHost plugin    = null;
-    private List<String>  passwords = null;
+    private String        password     = null;
+    private String        username     = null;
+    private String        uid          = null;
+    private String        id           = null;
+    private String        aid          = null;
+    private String        pwd          = null;
+    private PluginForHost plugin       = null;
+    private List<String>  passwords    = null;
     private long          startTime;
-    private final String  TYPE_USER = "https?://[^/]+/main/user\\.php\\?user=([^\\&]+)";
+    private final String  PATTERN_USER = "(?i)https?://[^/]+/main/user\\.php\\?user=([^\\&]+)";
 
     @Override
     public int getMaxConcurrentProcessingInstances() {
@@ -161,7 +161,7 @@ public class ImgSrcRuCrawler extends PluginForDecrypt {
     private String getGalleryName(Browser br) {
         String ret = br.getRegex("from '<strong>([^\r\n]+)</strong>").getMatch(0);
         if (ret == null) {
-            ret = br.getRegex("<title>(.*?)(\\s*@\\s*iMGSRC.RU)?</title>").getMatch(0);
+            ret = br.getRegex("<title>(.*?)(\\s*@\\s*iMGSRC\\.RU)?</title>").getMatch(0);
         }
         return ret;
     }
@@ -169,7 +169,7 @@ public class ImgSrcRuCrawler extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         setInitConstants(param);
         prepBrowser(br, false);
-        if (param.getCryptedUrl().matches(TYPE_USER)) {
+        if (param.getCryptedUrl().matches(PATTERN_USER)) {
             return crawlProfile(param);
         } else {
             return crawlGallery(param);
@@ -177,7 +177,7 @@ public class ImgSrcRuCrawler extends PluginForDecrypt {
     }
 
     private ArrayList<DownloadLink> crawlProfile(final CryptedLink param) throws Exception {
-        final String username = new Regex(param.getCryptedUrl(), TYPE_USER).getMatch(0);
+        final String username = new Regex(param.getCryptedUrl(), PATTERN_USER).getMatch(0);
         if (username == null) {
             /* Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -245,16 +245,15 @@ public class ImgSrcRuCrawler extends PluginForDecrypt {
                 id = uid;
             }
             final String galleryURL = "https://imgsrc.ru/" + username + "/" + id + ".html";
-            param.setCryptedUrl(galleryURL);
             if (!br.getURL().matches(Pattern.quote(galleryURL) + ".*?")) {
                 if (!getPage(galleryURL, param)) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
-            String name = Encoding.htmlDecode(username.trim()) + " @ " + Encoding.htmlDecode(fpName.trim());
+            String name = Encoding.htmlDecode(username.trim()) + " @ " + Encoding.htmlDecode(fpName).trim();
             FilePackage fp = FilePackage.getInstance();
             fp.setAllowMerge(true);
-            fp.setName(Encoding.htmlDecode(name.trim()));
+            fp.setName(Encoding.htmlDecode(name).trim());
             final Set<String> pagesDone = new HashSet<String>();
             final List<String> pagesTodo = new ArrayList<String>();
             do {
@@ -270,7 +269,6 @@ public class ImgSrcRuCrawler extends PluginForDecrypt {
             }
             fp.addLinks(ret);
             if (ret.size() == 0) {
-                logger.warning("Decrypter broken for link: " + galleryURL);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         } catch (PluginException e) {
@@ -283,7 +281,7 @@ public class ImgSrcRuCrawler extends PluginForDecrypt {
 
     private ArrayList<DownloadLink> crawlImages(final CryptedLink param) {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        ArrayList<String> imgs = new ArrayList<String>();
+        final ArrayList<String> imgs = new ArrayList<String>();
         // first link = album uid (uaid), these uid's are not transferable to picture ids (upid). But once you are past album page
         // br.getURL() is the correct upid.
         if (br.getURL().contains("/" + id)) {
@@ -316,7 +314,7 @@ public class ImgSrcRuCrawler extends PluginForDecrypt {
         }
         if (imgs.size() != 0) {
             final String currentLink = br.getURL();
-            for (String dl : imgs) {
+            for (final String dl : imgs) {
                 String upid = new Regex(dl, "/(\\d+)\\.html").getMatch(0);
                 final DownloadLink img = createDownloadlink("https://decryptedimgsrc.ru" + dl);
                 img.setReferrerUrl(currentLink);
@@ -332,7 +330,7 @@ public class ImgSrcRuCrawler extends PluginForDecrypt {
         return ret;
     }
 
-    private boolean parseNextPage(CryptedLink param, Set<String> pagesDone, List<String> pagesTodo) throws Exception {
+    private boolean parseNextPage(final CryptedLink param, Set<String> pagesDone, List<String> pagesTodo) throws Exception {
         String nextPage = br.getRegex("<a [^>]*href=\\s*(\"|'|)?(/" + Pattern.quote(username) + "/\\d+\\.html(?:\\?pwd=[a-z0-9]{32}[^>]*?|\\?)?)\\1\\s*>\\s*(▶|&#9654;?|&#9658;?|<i\\s*class\\s*=\\s*\"material-icons\"\\s*>\\s*&#xe5cc;?)").getMatch(1);
         String previousPage = br.getRegex("<a [^>]*href=\\s*(\"|'|)?(/" + Pattern.quote(username) + "/\\d+\\.html(?:\\?pwd=[a-z0-9]{32}[^>]*?|\\?)?)\\1\\s*>\\s*(◄|&#9664;?|&#9668;?|<i\\s*class\\s*=\\s*\"material-icons\"\\s*>\\s*&#xe5cb;?)").getMatch(1);
         if (previousPage != null && !pagesTodo.contains(previousPage) && !pagesDone.contains(previousPage)) {
@@ -353,7 +351,7 @@ public class ImgSrcRuCrawler extends PluginForDecrypt {
         }
     }
 
-    private boolean isPasswordProtected(Browser br) {
+    private boolean isPasswordProtected(final Browser br) {
         return jd.plugins.hoster.ImgSrcRu.isPasswordProtected(br);
     }
 
@@ -531,7 +529,7 @@ public class ImgSrcRuCrawler extends PluginForDecrypt {
         return true;
     }
 
-    /* NO OVERRIDE!! */
+    @Override
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }

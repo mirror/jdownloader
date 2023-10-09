@@ -21,6 +21,7 @@ import org.appwork.utils.StringUtils;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -29,6 +30,8 @@ import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "linkhub.icu" }, urls = { "https?://(?:www\\.)?linkhub\\.icu/(?:view|get)/([A-Za-z0-9]+)" })
@@ -37,28 +40,29 @@ public class LinkhubIcu extends PluginForDecrypt {
         super(wrapper);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
-        final String lid = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final String parameter = param.getCryptedUrl();
+        final String contentid = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
         br.setFollowRedirects(true);
         br.getPage(parameter);
-        if (br.getHttpConnection().getResponseCode() == 404 || !br.getURL().contains(lid)) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (!br.getURL().contains(contentid)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         /* 2020-02-04: Captcha = skippable */
         final String continue_url = br.getRegex("(/view/[A-Za-z0-9]+)").getMatch(0);
         if (continue_url != null) {
             br.getPage(continue_url);
         }
-        Form pwprotected = br.getFormByInputFieldKeyValue("unlock", "UNLOCK");
+        Form pwprotected = getPasswordProtectedForm(br);
         String passCode = null;
         if (pwprotected != null) {
             passCode = getUserInput("Password?", param);
             pwprotected.put("pass", Encoding.urlEncode(passCode));
             br.submitForm(pwprotected);
-            if (br.getFormByInputFieldKeyValue("unlock", "UNLOCK") != null) {
+            if (getPasswordProtectedForm(br) != null) {
                 throw new DecrypterException(DecrypterException.PASSWORD);
             }
         }
@@ -76,13 +80,18 @@ public class LinkhubIcu extends PluginForDecrypt {
             if (passCode != null) {
                 dl.setDownloadPassword(passCode);
             }
-            decryptedLinks.add(dl);
+            ret.add(dl);
         }
+        /* Put all results into one package. */
+        final FilePackage fp = FilePackage.getInstance();
         if (fpName != null) {
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName.trim()));
-            fp.addLinks(decryptedLinks);
+            fp.setName(Encoding.htmlDecode(fpName).trim());
         }
-        return decryptedLinks;
+        fp.addLinks(ret);
+        return ret;
+    }
+
+    private Form getPasswordProtectedForm(final Browser br) {
+        return br.getFormByInputFieldKeyValue("unlock", "UNLOCK");
     }
 }

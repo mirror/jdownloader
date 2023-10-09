@@ -77,6 +77,10 @@ public class Rule34videoCom extends KernelVideoSharingComV2 {
         if (uploaddate != null) {
             link.setProperty(PROPERTY_DATE, uploaddate);
         }
+        final String fuid = getFUIDFromURL(link.getPluginPatternMatcher());
+        if (fuid != null && !link.hasProperty(PROPERTY_FUID)) {
+            link.setProperty(PROPERTY_FUID, fuid);
+        }
         return status;
     }
 }

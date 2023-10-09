@@ -179,18 +179,18 @@ public class GrabItShareCom extends PluginForHost {
                     captchaform.put("recaptcha_response_field", getCaptchaCode("recaptcha", cf, link));
                 }
                 if (br.containsHTML("class=textinput name=downloadpw")) {
-                    if (link.getStringProperty("pass", null) == null) {
+                    if (link.getDownloadPassword() == null) {
                         passCode = getUserInput("Password?", link);
                     } else {
                         /* gespeicherten PassCode holen */
-                        passCode = link.getStringProperty("pass", null);
+                        passCode = link.getDownloadPassword();
                     }
                     captchaform.put("downloadpw", passCode);
                 }
                 br.submitForm(captchaform);
                 if (br.containsHTML("Password Error")) {
                     logger.warning("Wrong password!");
-                    link.setProperty("pass", null);
+                    link.setDownloadPassword(null);
                     continue;
                 }
                 if (br.containsHTML(IPBLOCKED)) {
@@ -198,7 +198,7 @@ public class GrabItShareCom extends PluginForHost {
                 }
                 if (br.containsHTML("Captcha number error") || br.containsHTML(RECAPTCHATEXT) || br.containsHTML(CHEAPCAPTCHATEXT)) {
                     logger.warning("Wrong captcha or wrong password!");
-                    link.setProperty("pass", null);
+                    link.setDownloadPassword(null);
                     continue;
                 }
                 break;
@@ -209,16 +209,16 @@ public class GrabItShareCom extends PluginForHost {
         }
         if (br.containsHTML("Password Error")) {
             logger.warning("Wrong password!");
-            link.setProperty("pass", null);
+            link.setDownloadPassword(null);
             throw new PluginException(LinkStatus.ERROR_RETRY);
         }
         if (br.containsHTML("Captcha number error") || br.containsHTML(RECAPTCHATEXT) || br.containsHTML(CHEAPCAPTCHATEXT)) {
             logger.warning("Wrong captcha or wrong password!");
-            link.setProperty("pass", null);
+            link.setDownloadPassword(null);
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         }
         if (passCode != null) {
-            link.setProperty("pass", passCode);
+            link.setDownloadPassword(passCode);
         }
         String finalLink = findLink();
         if (finalLink == null) {

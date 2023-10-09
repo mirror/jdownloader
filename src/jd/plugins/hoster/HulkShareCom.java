@@ -206,7 +206,7 @@ public class HulkShareCom extends PluginForHost {
         if (checkAll) {
             if (new Regex(BRBEFORE, PASSWORDTEXT).matches() || BRBEFORE.contains("Wrong password")) {
                 logger.warning("Wrong password, the entered password \"" + passCode + "\" is wrong, retrying...");
-                theLink.setProperty("pass", Property.NULL);
+                theLink.setDownloadPassword(null);
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
             }
             if (BRBEFORE.contains("Wrong captcha")) {
@@ -468,7 +468,7 @@ public class HulkShareCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (passCode != null) {
-            link.setProperty("pass", passCode);
+            link.setDownloadPassword(passCode);
         }
         link.setProperty("freelink", dl.getConnection().getRequest().getUrl().toString());
         dl.startDownload();
@@ -659,7 +659,7 @@ public class HulkShareCom extends PluginForHost {
     }
 
     public String handlePassword(String passCode, Form pwform, DownloadLink thelink) throws IOException, PluginException {
-        passCode = thelink.getStringProperty("pass", null);
+        passCode = thelink.getDownloadPassword();
         if (passCode == null) {
             passCode = getUserInput("Password?", thelink);
         }
@@ -719,7 +719,7 @@ public class HulkShareCom extends PluginForHost {
             logger.info("Final downloadlink = " + dllink + " starting the download...");
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
             if (passCode != null) {
-                link.setProperty("pass", passCode);
+                link.setDownloadPassword(passCode);
             }
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 logger.warning("The final dllink seems not to be a file!");

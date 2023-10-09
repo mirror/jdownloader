@@ -104,10 +104,13 @@ public class BandCampCom extends PluginForHost {
     public static final String PROPERTY_USERNAME              = "username";
     public static final String PROPERTY_USERNAME_PRETTY       = "username_pretty";
     public static final String PROPERTY_ARTIST                = "directartist";
+    // public static final String PROPERTY_ARTIST_ALBUM = "album_artist";
     public static final String PROPERTY_ALBUM_ID              = "album_id";
     public static final String PROPERTY_ALBUM_TITLE           = "directalbum";
     public static final String PROPERTY_ALBUM_TRACK_POSITION  = "album_track_number";
+    public static final String PROPERTY_SHOW_TRACK_POSITION   = "show_track_number";
     public static final String PROPERTY_ALBUM_NUMBEROF_TRACKS = "album_numberof_tracks";
+    public static final String PROPERTY_SHOW_NUMBEROF_TRACKS  = "show_numberof_tracks";
     public static final String PROPERTY_VIDEO_FORMAT          = "video_format";
     public static final String PROPERTY_VIDEO_WIDTH           = "video_width";
     public static final String PROPERTY_VIDEO_HEIGHT          = "video_height";
@@ -214,9 +217,23 @@ public class BandCampCom extends PluginForHost {
         // final String albumOrTrackTitle = new Regex(htmlEntityDecoded, "\"title\"\\s*:\\s*\"([^<>\"]*?)\"").getMatch(0);
         final String json_album = br.getRegex("<script type=\"application/(?:json\\+ld|ld\\+json)\">\\s*(.*?)\\s*</script>").getMatch(0);
         final Map<String, Object> albumInfo = JSonStorage.restoreFromString(json_album, TypeRef.MAP);
-        String artistFullName = (String) JavaScriptEngineFactory.walkJson(albumInfo, "inAlbum/byArtist/name");
+        String artist = null;
+        // String artist = (String) JavaScriptEngineFactory.walkJson(albumInfo, "inAlbum/byArtist/name");
+        // if (artist != null) {
+        // link.setProperty(PROPERTY_ARTIST, Encoding.htmlDecode(artist).trim());
+        // }
         /* Can be different in context of album or single track! */
-        String usernamePretty = (String) JavaScriptEngineFactory.walkJson(albumInfo, "byArtist/name");
+        // String usernamePretty = (String) JavaScriptEngineFactory.walkJson(albumInfo, "byArtist/name");
+        final String jsonAlbumEmbed = br.getRegex("data-embed=\"([^\"]+)").getMatch(0);
+        if (jsonAlbumEmbed != null) {
+            final Map<String, Object> albumEmbedInfo = JSonStorage.restoreFromString(Encoding.htmlOnlyDecode(jsonAlbumEmbed), TypeRef.MAP);
+            /* This is the data which you can also see in <h3> tag like "by <AlbumArtistName>". */
+            final String albumArtist = (String) albumEmbedInfo.get("artist");
+            if (!StringUtils.isEmpty(albumArtist)) {
+                // TODO: This is wrong. There is no "pretty username"(?)
+                link.setProperty(PROPERTY_USERNAME_PRETTY, Encoding.htmlOnlyDecode(albumArtist).trim());
+            }
+        }
         final String albumDatePublishedStr = (String) JavaScriptEngineFactory.walkJson(albumInfo, "datePublished");
         String albumTitle = (String) JavaScriptEngineFactory.walkJson(albumInfo, "inAlbum/name");
         if (albumTitle == null) {
@@ -227,13 +244,6 @@ public class BandCampCom extends PluginForHost {
         }
         if (albumDatePublishedStr != null) {
             link.setProperty(PROPERTY_DATE_TIMESTAMP, BandCampComDecrypter.dateToTimestamp(albumDatePublishedStr));
-        }
-        if (artistFullName != null) {
-            link.setProperty(PROPERTY_ARTIST, Encoding.htmlDecode(artistFullName).trim());
-        }
-        if (usernamePretty != null) {
-            // TODO: This is wrong. There is no "pretty username"(?)
-            link.setProperty(PROPERTY_USERNAME_PRETTY, Encoding.htmlDecode(usernamePretty).trim());
         }
         if (albumTitle != null) {
             link.setProperty(PROPERTY_ALBUM_TITLE, Encoding.htmlDecode(albumTitle).trim());
@@ -253,8 +263,7 @@ public class BandCampCom extends PluginForHost {
             }
             trackJson = Encoding.htmlOnlyDecode(trackJson);
             final Map<String, Object> trackInfo0 = JSonStorage.restoreFromString(trackJson, TypeRef.MAP);
-            artistFullName = trackInfo0.get("artist").toString();
-            link.setProperty(PROPERTY_ARTIST, artistFullName);
+            artist = trackInfo0.get("artist").toString();
             final List<Map<String, Object>> tracklist = (List<Map<String, Object>>) trackInfo0.get("trackinfo");
             Map<String, Object> trackinfo1 = null;
             if (targetTrackID != null) {
@@ -270,7 +279,6 @@ public class BandCampCom extends PluginForHost {
                 /* Get track by position (unsafer method) */
                 trackinfo1 = tracklist.get(trackIndex);
             }
-            String artist = null;
             String artistAndTrackTitle = null;
             if (trackinfo1 != null) {
                 artist = (String) trackinfo1.get("artist");
@@ -432,13 +440,25 @@ public class BandCampCom extends PluginForHost {
 
     public static String getFormattedTrackNumber(final DownloadLink link) {
         final String tracknumberFormattedLegacy = link.getStringProperty("directtracknumber");
-        final int trackNumber = link.getIntegerProperty(PROPERTY_ALBUM_TRACK_POSITION, 1);
-        final int albumNumberofTracks = link.getIntegerProperty(PROPERTY_ALBUM_NUMBEROF_TRACKS, -1);
+        int trackNumber = link.getIntegerProperty(PROPERTY_SHOW_TRACK_POSITION, -1);
+        if (trackNumber == -1) {
+            /* Maybe track is part of album. */
+            trackNumber = link.getIntegerProperty(PROPERTY_ALBUM_TRACK_POSITION, -1);
+        }
+        if (trackNumber == -1) {
+            /* Fallback */
+            trackNumber = 1;
+        }
+        int numberofTracks = link.getIntegerProperty(PROPERTY_SHOW_NUMBEROF_TRACKS, -1);
+        if (numberofTracks == -1) {
+            /* Maybe track is part of album. */
+            numberofTracks = link.getIntegerProperty(PROPERTY_ALBUM_NUMBEROF_TRACKS, -1);
+        }
         if (tracknumberFormattedLegacy != null) {
             /* Older items added up to and including revision 48302 */
             return tracknumberFormattedLegacy;
-        } else if (albumNumberofTracks != -1) {
-            return StringUtils.formatByPadLength(StringUtils.getPadLength(albumNumberofTracks), trackNumber);
+        } else if (numberofTracks != -1) {
+            return StringUtils.formatByPadLength(StringUtils.getPadLength(numberofTracks), trackNumber);
         } else {
             /* Fallback */
             return StringUtils.formatByPadLength(2, trackNumber);

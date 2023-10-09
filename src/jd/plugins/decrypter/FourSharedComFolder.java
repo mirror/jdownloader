@@ -368,7 +368,7 @@ public class FourSharedComFolder extends PluginForDecrypt {
                     }
                     final DownloadLink dlink = createDownloadlink(dllink);
                     if (pass != null && pass.length() != 0) {
-                        dlink.setProperty("pass", pass);
+                        dlink.setDownloadPassword(pass);
                     }
                     String fileName = new Regex(entry, "title=\"(.*?)\"").getMatch(0);
                     if (fileName != null) {

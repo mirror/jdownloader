@@ -24,6 +24,8 @@ import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rapidcrypt.net" }, urls = { "https?://(?:www\\.)?rapidcrypt\\.net/[^/]+/[a-z0-9]+" })
 public class RapidcryptNet extends antiDDoSForDecrypt {
@@ -31,29 +33,27 @@ public class RapidcryptNet extends antiDDoSForDecrypt {
         super(wrapper);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final String parameter = param.getCryptedUrl();
         br.setFollowRedirects(true);
         getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String finallink = this.br.getRegex("class=(?:\"|\\')push_button blue(?:\"|\\') href=(?:\"|\\')?([^\"\\'>]+)(?:\"|\\')?>").getMatch(0);
         if (finallink == null) {
-            if (br.containsHTML("class=\"push_button blue\" href=> Click To Continue</a>")) {
+            if (br.containsHTML("class=\"push_button blue\"\\s*href>\\s*Click To Continue")) {
                 /* Dead URL e.g. https://rapidcrypt.net/ddlto/12345678 */
-                decryptedLinks.add(this.createOfflinelink(parameter));
-                return decryptedLinks;
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else {
+                logger.warning("Decrypter broken for link: " + parameter);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
         } else if (finallink.equals("")) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        decryptedLinks.add(createDownloadlink(finallink));
-        return decryptedLinks;
+        ret.add(createDownloadlink(finallink));
+        return ret;
     }
 }

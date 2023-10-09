@@ -22,8 +22,11 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+import org.mozilla.javascript.ConsString;
+
 import jd.PluginWrapper;
-import jd.config.Property;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -37,10 +40,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.UserAgents;
 import jd.plugins.decrypter.ImgSrcRuCrawler;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-import org.mozilla.javascript.ConsString;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgsrc.ru" }, urls = { "https?://decryptedimgsrc\\.ru/[^/]+/\\d+\\.html(\\?pwd=[a-z0-9]{32})?" })
 public class ImgSrcRu extends PluginForHost {
@@ -263,7 +262,7 @@ public class ImgSrcRu extends PluginForHost {
         if (br.containsHTML("Continue to album(?: >>)?")) {
             Form continueForm = br.getFormByRegex("value\\s*=\\s*'Continue");
             if (continueForm != null) {
-                String password = link.getStringProperty("pass");
+                String password = link.getDownloadPassword();
                 if (isPasswordProtected(br)) {
                     if (password == null) {
                         password = getUserInput("Enter password for link:", link);
@@ -276,10 +275,10 @@ public class ImgSrcRu extends PluginForHost {
                 }
                 ImgSrcRuCrawler.submitForm(br, continueForm);
                 if (isPasswordProtected(br)) {
-                    link.setProperty("pass", Property.NULL);
+                    link.setDownloadPassword(null);
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
-                link.setProperty("pass", password);
+                link.setDownloadPassword(password);
             }
         }
         if (br.containsHTML(">Album foreword:.+Continue to album >></a>")) {
@@ -296,7 +295,7 @@ public class ImgSrcRu extends PluginForHost {
                 logger.warning("Password form finder failed!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            String password = link.getStringProperty("pass");
+            String password = link.getDownloadPassword();
             if (password == null) {
                 password = getUserInput("Enter password for link:", link);
                 if (password == null || password.equals("")) {
@@ -308,12 +307,11 @@ public class ImgSrcRu extends PluginForHost {
             ImgSrcRuCrawler.submitForm(br, pwForm);
             pwForm = br.getFormbyProperty("name", "passchk");
             if (pwForm != null) {
-                link.setProperty("pass", Property.NULL);
-                password = null;
+                link.setDownloadPassword(null);
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
-            link.setProperty("pass", password);
-        } else if (new Regex(br.getURL(), "https?://imgsrc\\.ru/$").matches()) {
+            link.setDownloadPassword(password);
+        } else if (new Regex(br.getURL(), "(?i)https?://imgsrc\\.ru/$").patternFind()) {
             // link has been removed!
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }

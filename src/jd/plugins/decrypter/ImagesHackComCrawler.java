@@ -153,7 +153,7 @@ public class ImagesHackComCrawler extends PluginForDecrypt {
                     fp.setName(id_main);
                 }
                 if (!inValidate(password)) {
-                    dl.setProperty("pass", password);
+                    dl.setDownloadPassword(password);
                     dl.setProperty("pwcookie", pwcookie);
                 }
                 dl._setFilePackage(fp);
