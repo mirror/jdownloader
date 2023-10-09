@@ -78,13 +78,14 @@ public class TerabytezOrg extends YetiShareCore {
     public int getMaxChunks(final Account account) {
         if (account != null && account.getType() == AccountType.FREE) {
             /* Free Account */
-            return 0;
+            return 1;
         } else if (account != null && account.getType() == AccountType.PREMIUM) {
+            /* 2023-10-09 */
             /* Premium account */
-            return 0;
+            return 1;
         } else {
             /* Free(anonymous) and unknown account type */
-            return 0;
+            return 1;
         }
     }
 
@@ -100,5 +101,16 @@ public class TerabytezOrg extends YetiShareCore {
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
+    }
+
+    @Override
+    public String[] scanInfo(final DownloadLink link, final String[] fileInfo) {
+        super.scanInfo(link, fileInfo);
+        /* 2023-10-09 */
+        final String betterFilesize = br.getRegex(">\\s*Filesize\\s*</p>\\s*<[^>]*>([^<]+)<").getMatch(0);
+        if (betterFilesize != null) {
+            fileInfo[1] = betterFilesize;
+        }
+        return fileInfo;
     }
 }

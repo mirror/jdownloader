@@ -33,21 +33,22 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
+import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.decrypter.LibGenCrawler;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
+@PluginDependencies(dependencies = { PornportalCom.class })
 public class LibGenInfo extends PluginForHost {
     public LibGenInfo(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
-    public String rewriteHost(String host) {
-        if (host == null || "libgen.pw".equals(host) || "libgen.me".equals(host) || "libgen.info".equals(host)) {
-            return "libgen.lc";
-        }
-        return super.rewriteHost(host);
+    public String rewriteHost(final String host) {
+        /* Main domain may change frequently. */
+        return this.rewriteHost(getPluginDomains(), host);
     }
 
     @Override
@@ -56,11 +57,7 @@ public class LibGenInfo extends PluginForHost {
     }
 
     public static List<String[]> getPluginDomains() {
-        final List<String[]> ret = new ArrayList<String[]>();
-        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        /* Keep in sync with hoster- and crawler plugin! */
-        ret.add(new String[] { "libgen.lc", "libgen.rocks", "libgen.gs", "libgen.li", "libgen.org", "gen.lib.rus.ec", "libgen.io", "booksdl.org" });
-        return ret;
+        return LibGenCrawler.getPluginDomains();
     }
 
     public static String[] getAnnotationNames() {
@@ -113,8 +110,18 @@ public class LibGenInfo extends PluginForHost {
     private static final boolean FREE_RESUME       = false;
     private static final int     FREE_MAXCHUNKS    = 1;
     private static final int     FREE_MAXDOWNLOADS = 2;
-    private static final String  TYPE_DIRECT       = "https?://[^/]+/(comics/.+|get\\.php\\?.+)";
-    private static final String  TYPE_ADS          = "https?://[^/]+/ads\\.php\\?md5=([A-Fa-f0-9]{32})";
+    private static final String  TYPE_DIRECT       = "(?i)https?://[^/]+/(comics/.+|get\\.php\\?.+)";
+    private static final String  TYPE_ADS          = "(?i)https?://[^/]+/ads\\.php\\?md5=([A-Fa-f0-9]{32})";
+
+    private String getContentURL(final DownloadLink link) {
+        String contenturl = link.getPluginPatternMatcher().replaceFirst("(?i)http://", "https://");
+        final String addedLinkDomain = Browser.getHost(contenturl, true);
+        final List<String> deadDomains = LibGenCrawler.getDeadDomains();
+        if (deadDomains.contains(addedLinkDomain)) {
+            contenturl = contenturl.replaceFirst(Pattern.quote(addedLinkDomain), this.getHost());
+        }
+        return contenturl;
+    }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
@@ -123,10 +130,11 @@ public class LibGenInfo extends PluginForHost {
         br.setCustomCharset("utf-8");
         final String md5 = getFID(link);
         link.setMD5Hash(md5);
-        if (link.getPluginPatternMatcher().matches(TYPE_DIRECT)) {
+        final String contenturl = getContentURL(link);
+        if (contenturl.matches(TYPE_DIRECT)) {
             URLConnectionAdapter con = null;
             try {
-                con = br.openGetConnection(link.getPluginPatternMatcher());
+                con = br.openGetConnection(contenturl);
                 if (!this.looksLikeDownloadableContent(con)) {
                     br.followConnection();
                     /* Either redirect to supported pattern such as "/ads.php..." or offline. */
@@ -147,8 +155,8 @@ public class LibGenInfo extends PluginForHost {
                 } catch (final Throwable e) {
                 }
             }
-        } else if (link.getPluginPatternMatcher().matches(TYPE_ADS)) {
-            br.getPage(link.getPluginPatternMatcher());
+        } else if (contenturl.matches(TYPE_ADS)) {
+            br.getPage(contenturl);
             if (br.containsHTML("(?i)>\\s*File not found in DB")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -169,6 +177,7 @@ public class LibGenInfo extends PluginForHost {
         final String author = br.getRegex("author\\s*=\\s*\\{([^\\}]+)\\}").getMatch(0);
         final String title = br.getRegex("title\\s*=\\s*\\{([^\\}]+)\\}").getMatch(0);
         final String series = br.getRegex("series\\s*=\\s*\\{([^\\}]+)\\}").getMatch(0);
+        // final String year = br.getRegex("year\\s*=\\s*\\{(\\d+)\\}").getMatch(0);
         // final String publisher = br.getRegex("publisher\\s*=\\s*\\{([^\\}]+)\\}").getMatch(0);
         String filename = null;
         final String defaultExt = ".pdf";
@@ -178,6 +187,11 @@ public class LibGenInfo extends PluginForHost {
             filename = Encoding.htmlDecode(author).trim() + " - " + Encoding.htmlDecode(title).trim() + defaultExt;
         } else if (title != null) {
             filename = Encoding.htmlDecode(title).trim() + defaultExt;
+        } else if (series != null) {
+            /*
+             * Rare case: Only series name available. This may also sometimes happen when the uploader sets title as series-name by mistake.
+             */
+            filename = Encoding.htmlDecode(series).trim();
         }
         if (filename == null) {
             filename = br.getRegex("ed2k://\\|file\\|([^\\|]+)\\|\\d+\\|").getMatch(0);

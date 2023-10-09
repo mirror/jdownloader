@@ -26,20 +26,20 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "lezlezlez.com" }, urls = { "http://(?:www\\.)?lezlezlez\\.com/mediaswf\\.php\\?type=vid\\&name=[^<>\"/]+\\.flv" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "lezlezlez.com" }, urls = { "https?://(?:www\\.)?lezlezlez\\.com/mediaswf\\.php\\?type=vid\\&name=[^<>\"/]+\\.flv" })
 public class LezlezlezCom extends PluginForDecrypt {
     public LezlezlezCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String name = UrlQuery.parse(param.getCryptedUrl()).get("name");
-        final String finallink = "http://www.lezlezlez.com/vidz/" + name.replace(".flv", ".mp4");
+        final String finallink = "https://www.lezlezlez.com/vidz/" + name.replace(".flv", ".mp4");
         final String finalfilename = this.correctOrApplyFileNameExtension(name, ".mp4");
         final DownloadLink dl = createDownloadlink(finallink);
         dl.setFinalFileName(finalfilename);
-        decryptedLinks.add(dl);
-        return decryptedLinks;
+        ret.add(dl);
+        return ret;
     }
 }

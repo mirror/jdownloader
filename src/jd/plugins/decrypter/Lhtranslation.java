@@ -32,7 +32,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "lhtranslation.net" }, urls = { "https?://(?:www\\.)?lhtranslation\\.(?:com|net)/manga/([a-z0-9\\-]+)/(chapter-(\\d+)/?)?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "lhtranslation.net" }, urls = { "https?://(?:www\\.)?lhtranslation\\.(?:com|net)/manga/([a-z0-9\\-]+)/(chapter-([0-9\\-]+)/?)?" })
 public class Lhtranslation extends PluginForDecrypt {
     public Lhtranslation(PluginWrapper wrapper) {
         super(wrapper);
@@ -45,7 +45,7 @@ public class Lhtranslation extends PluginForDecrypt {
 
     /* Tags: MangaPictureCrawler */
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String extension_fallback = ".jpg";
         br.setFollowRedirects(true);
         br.getPage(param.getCryptedUrl());
@@ -54,8 +54,8 @@ public class Lhtranslation extends PluginForDecrypt {
         }
         final Regex urlinfo = new Regex(param.getCryptedUrl(), this.getSupportedLinks());
         final String url_mangaTitle = urlinfo.getMatch(0);
-        final String url_chapterNumber = urlinfo.getMatch(2);
-        if (url_chapterNumber == null) {
+        final String url_chapterNumberStr = urlinfo.getMatch(2);
+        if (url_chapterNumberStr == null) {
             /* Crawl all chapters */
             final String realMangaURL = br.getURL();
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
@@ -68,7 +68,7 @@ public class Lhtranslation extends PluginForDecrypt {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             for (final String url : chapters) {
-                decryptedLinks.add(this.createDownloadlink(url));
+                ret.add(this.createDownloadlink(url));
             }
         } else {
             /* Crawl single chapter */
@@ -84,7 +84,7 @@ public class Lhtranslation extends PluginForDecrypt {
                 title_chapter = url_mangaTitle;
             }
             final FilePackage fp = FilePackage.getInstance();
-            fp.setName(title_chapter + "_" + url_chapterNumber);
+            fp.setName(title_chapter + "_" + url_chapterNumberStr);
             final int padLength = StringUtils.getPadLength(images.length);
             int page = 0;
             for (final String finallink : images) {
@@ -97,16 +97,16 @@ public class Lhtranslation extends PluginForDecrypt {
                 if (ext == null) {
                     ext = extension_fallback;
                 }
-                final String filename = title_chapter + "_" + url_chapterNumber + "_" + page_formatted + ext;
+                final String filename = title_chapter + "_" + url_chapterNumberStr + "_" + page_formatted + ext;
                 final DownloadLink dl = this.createDownloadlink(finallink);
                 dl._setFilePackage(fp);
                 dl.setFinalFileName(filename);
                 dl.setLinkID(filename);
                 dl.setAvailable(true);
-                decryptedLinks.add(dl);
+                ret.add(dl);
                 distribute(dl);
             }
         }
-        return decryptedLinks;
+        return ret;
     }
 }

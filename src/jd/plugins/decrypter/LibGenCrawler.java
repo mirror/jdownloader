@@ -20,12 +20,14 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.regex.Pattern;
 
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.parser.UrlQuery;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.http.Request;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -48,8 +50,18 @@ public class LibGenCrawler extends PluginForDecrypt {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
         /* Keep in sync with hoster- and crawler plugin! */
-        ret.add(new String[] { "libgen.lc", "libgen.gs", "libgen.li", "libgen.org", "gen.lib.rus.ec", "libgen.io", "booksdl.org" });
+        ret.add(new String[] { "libgen.gs", "libgen.lc", "libgen.rocks", "libgen.li", "libgen.org", "gen.lib.rus.ec", "libgen.io", "booksdl.org", "libgen.pm" });
         return ret;
+    }
+
+    public static final List<String> getDeadDomains() {
+        final ArrayList<String> deadDomains = new ArrayList<String>();
+        deadDomains.add("libgen.lc");
+        deadDomains.add("libgen.org");
+        deadDomains.add("gen.lib.rus.ec");
+        deadDomains.add("libgen.io");
+        deadDomains.add("booksdl.org");
+        return deadDomains;
     }
 
     public static String[] getAnnotationNames() {
@@ -68,7 +80,7 @@ public class LibGenCrawler extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:\\w+\\.)?" + buildHostsPatternPart(domains) + "/(item/index\\.php\\?md5=[A-Fa-f0-9]{32}|edition\\.php\\?id=\\d+)");
+            ret.add("https?://(?:\\w+\\.)?" + buildHostsPatternPart(domains) + "/(item/index\\.php\\?md5=[A-Fa-f0-9]{32}|edition\\.php\\?id=\\d+|series\\.php\\?id=\\d+)");
         }
         return ret.toArray(new String[0]);
     }
@@ -76,12 +88,20 @@ public class LibGenCrawler extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         /* Always use current host */
-        final String addedurl = param.toString().replaceAll("https?://[^/]+/", "http://" + this.getHost() + "/");
-        final Regex editionRegex = new Regex(param.getCryptedUrl(), "https?://[^/]+/edition\\.php\\?id=(\\d+)");
-        if (editionRegex.matches()) {
+        String addedurl = param.getCryptedUrl().replaceFirst("(?i)http://", "https://");
+        final String addedLinkDomain = Browser.getHost(addedurl, true);
+        final List<String> deadDomains = getDeadDomains();
+        String domainToUse = addedLinkDomain;
+        if (deadDomains.contains(addedLinkDomain)) {
+            domainToUse = this.getHost();
+            addedurl = addedurl.replaceFirst(Pattern.quote(addedLinkDomain), domainToUse);
+        }
+        final Regex editionRegex = new Regex(param.getCryptedUrl(), "(?i)https?://[^/]+/edition\\.php\\?id=(\\d+)");
+        final Regex seriesRegex = new Regex(param.getCryptedUrl(), "(?i)https?://[^/]+/series\\.php\\?id=(\\d+)");
+        if (editionRegex.patternFind()) {
             final String editionID = editionRegex.getMatch(0);
             /* They're nice and provide a public json view/API for programmers. */
-            br.getPage("https://" + this.getHost() + "/json.php?object=e&addkeys=*&ids=" + editionID);
+            br.getPage("https://" + domainToUse + "/json.php?object=e&addkeys=*&ids=" + editionID);
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -92,12 +112,34 @@ public class LibGenCrawler extends PluginForDecrypt {
             }
             final Map<String, Object> edition = (Map<String, Object>) entries.get(editionID);
             final Map<String, Object> files = (Map<String, Object>) edition.get("files");
+            if (files == null || files.size() == 0) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             final Iterator<Entry<String, Object>> iterator = files.entrySet().iterator();
             while (iterator.hasNext()) {
                 final Entry<String, Object> file = iterator.next();
                 final String md5 = ((Map<String, Object>) file.getValue()).get("md5").toString();
-                final DownloadLink book = this.createDownloadlink("https://libgen.rocks/get.php?md5=" + md5);
+                final DownloadLink book = this.createDownloadlink("https://" + domainToUse + "/get.php?md5=" + md5);
                 ret.add(book);
+            }
+        } else if (seriesRegex.patternFind()) {
+            /* Crawl all items of a series */
+            final String seriesID = seriesRegex.getMatch(0);
+            br.getPage("https://" + domainToUse + "/json.php?object=s&addkeys=*&ids=" + seriesID);
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+            if (entries.containsKey("error")) {
+                /* E.g. {"error":"No Request keys"} */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            final Map<String, Object> series = (Map<String, Object>) entries.get(seriesID);
+            final Map<String, Object> editions = (Map<String, Object>) series.get("editions");
+            final Iterator<Entry<String, Object>> iterator = editions.entrySet().iterator();
+            while (iterator.hasNext()) {
+                final Entry<String, Object> editionentry = iterator.next();
+                ret.add(this.createDownloadlink("https://" + domainToUse + "/edition.php?id=" + editionentry.getKey()));
             }
         } else {
             final String md5 = UrlQuery.parse(addedurl).get("md5");
@@ -113,12 +155,12 @@ public class LibGenCrawler extends PluginForDecrypt {
             if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(?i)entry not found in the database")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            String fpName = br.getRegex(md5 + "[^>]*>([^<>\"]+)<").getMatch(0);
-            if (fpName != null) {
-                fpName = Encoding.htmlDecode(fpName).trim();
+            String title = br.getRegex(md5 + "[^>]*>([^<>\"]+)<").getMatch(0);
+            if (title != null) {
+                title = Encoding.htmlDecode(title).trim();
             }
             final String[] mirrors;
-            String mirrorsHTML = br.getRegex(">Mirrors:</font></td>(.*?)</td></tr>").getMatch(0);
+            String mirrorsHTML = br.getRegex("(?i)>\s*Mirrors:\\s*</font></td>(.*?)</td></tr>").getMatch(0);
             if (mirrorsHTML != null) {
                 mirrors = HTMLParser.getHttpLinks(mirrorsHTML, br.getURL());
             } else {
@@ -126,13 +168,13 @@ public class LibGenCrawler extends PluginForDecrypt {
                 mirrors = HTMLParser.getHttpLinks(br.toString(), br.getURL());
             }
             /* Add selfhosted mirror to host plugin */
-            final DownloadLink selfhosted = this.createDownloadlink("http://" + this.getHost() + "/ads.php?md5=" + md5);
+            final DownloadLink selfhosted = this.createDownloadlink("https://" + domainToUse + "/ads.php?md5=" + md5);
             jd.plugins.hoster.LibGenInfo.parseFileInfo(selfhosted, this.br);
             selfhosted.setAvailable(true);
             ret.add(selfhosted);
             if (selfhosted.isNameSet()) {
                 /* This is the better packagename! */
-                fpName = selfhosted.getName();
+                title = selfhosted.getName();
             }
             if (mirrors.length > 0) {
                 for (final String mirror : mirrors) {
@@ -146,20 +188,20 @@ public class LibGenCrawler extends PluginForDecrypt {
             final String cover_url = br.getRegex("(/covers/\\d+/[^<>\"\\']+\\.(?:jpg|jpeg|png|gif))").getMatch(0);
             if (cover_url != null) {
                 final DownloadLink dl = createDownloadlink(Request.getLocation(cover_url, br.getRequest()));
-                if (fpName != null) {
+                if (title != null) {
                     final String ext = getFileNameExtensionFromString(cover_url, ".jpg");
                     if (ext != null) {
-                        String filename_cover = correctOrApplyFileNameExtension(fpName, ext);
+                        String filename_cover = correctOrApplyFileNameExtension(title, ext);
                         dl.setFinalFileName(filename_cover);
                     }
                 }
                 dl.setAvailable(true);
                 ret.add(dl);
             }
-            if (fpName != null) {
-                fpName = Encoding.htmlDecode(fpName).trim();
+            if (title != null) {
+                title = Encoding.htmlDecode(title).trim();
                 final FilePackage fp = FilePackage.getInstance();
-                fp.setName(fpName);
+                fp.setName(title);
                 fp.addLinks(ret);
             }
         }

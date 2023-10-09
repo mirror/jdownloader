@@ -22,6 +22,10 @@ import org.jdownloader.plugins.components.config.KVSConfig;
 import org.jdownloader.plugins.components.config.KVSConfigRule34videoCom;
 
 import jd.PluginWrapper;
+import jd.nutils.encoding.Encoding;
+import jd.plugins.Account;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
@@ -59,5 +63,20 @@ public class Rule34videoCom extends KernelVideoSharingComV2 {
     @Override
     public Class<? extends KVSConfig> getConfigInterface() {
         return KVSConfigRule34videoCom.class;
+    }
+
+    @Override
+    protected AvailableStatus requestFileInformationWebsite(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
+        final AvailableStatus status = super.requestFileInformationWebsite(link, account, isDownload);
+        /* Collect some information for custom filenames */
+        final String uploader = br.getRegex("class=\"avatar\"[^>]*title=\"([^\"]+)").getMatch(0);
+        if (uploader != null) {
+            link.setProperty(PROPERTY_USERNAME, Encoding.htmlDecode(uploader).trim());
+        }
+        final String uploaddate = br.getRegex("\"uploadDate\"\\s*:\\s*\"([^\"]+)").getMatch(0);
+        if (uploaddate != null) {
+            link.setProperty(PROPERTY_DATE, uploaddate);
+        }
+        return status;
     }
 }
