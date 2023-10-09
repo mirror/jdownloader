@@ -17,11 +17,14 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.security.PublicKey;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.WeakHashMap;
+
+import javax.crypto.Cipher;
 
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.storage.TypeRef;
@@ -31,7 +34,10 @@ import org.appwork.storage.flexijson.FlexiParserException;
 import org.appwork.storage.flexijson.mapper.FlexiJSonMapper;
 import org.appwork.storage.flexijson.mapper.FlexiMapperException;
 import org.appwork.utils.Files;
+import org.appwork.utils.Hash;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.crypto.AWSign;
+import org.appwork.utils.encoding.Base64;
 import org.appwork.utils.encoding.URLEncode;
 import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
 import org.appwork.utils.parser.UrlQuery;
@@ -132,18 +138,32 @@ public class GoProCloud extends PluginForHost/* implements MenuExtenderHandler *
         synchronized (account) {
             try {
                 String accessToken = account.getStringProperty(ACCESS_TOKEN, null);
-                if (StringUtils.isEmpty(accessToken)) {
+                if (StringUtils.isEmpty(accessToken) || true) {
                     br.clearAll();
                     br.getPage("https://gopro.com/login");
+                    final Map<String, Object> loginData = new HashMap<String, Object>();
                     final String token = br.getRegex("<meta name=\"csrf-token\" content=([^>]+)").getMatch(0);
+                    final String publicKey = br.getRegex("\"pwPubKey\"\\s*:\\s*\"([^\"]+)").getMatch(0);
+                    String json = br.getRegex("<script>window.__bootstrap=(.+)").getMatch(0);
+                    FlexiJSONParser parser = new FlexiJSONParser(json);
+                    parser.setBreakAtEndOfObject(true);
+                    try {
+                        PublicKey pub = AWSign.getPublicKey(publicKey);
+                        Cipher cipher = Cipher.getInstance("RSA");
+                        cipher.init(Cipher.ENCRYPT_MODE, pub);
+                        String encryptedPassword = Base64.encodeToString(cipher.doFinal(account.getPass().getBytes("UTF-8")));
+                        loginData.put("password", encryptedPassword);
+                    } catch (Exception e) {
+                        logger.log(e);
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
                     if (StringUtils.isEmpty(token)) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                    final Map<String, Object> loginData = new HashMap<String, Object>();
                     loginData.put("email", account.getUser());
-                    loginData.put("password", account.getPass());
                     loginData.put("referrer", "");
                     loginData.put("two_factor", "");
+                    loginData.put("fingerprint", Hash.getMD5(System.currentTimeMillis() + "").toLowerCase(Locale.ROOT));
                     loginData.put("brand", "");
                     loginData.put("scope", "username, email, me");
                     loginData.put("clientUserAgent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/104.0.0.0 Safari/537.36");
@@ -274,7 +294,7 @@ public class GoProCloud extends PluginForHost/* implements MenuExtenderHandler *
                         break;
                     }
                     if ("source".equals(activeVariant._getUniqueId()) && "source".equals(v.getLabel()) || "baked_source".equals(v.getLabel())) {
-                      //  baked_source  --> EditMultiClip type.
+                        // baked_source --> EditMultiClip type.
                         // source
                         source = v;
                         break;
