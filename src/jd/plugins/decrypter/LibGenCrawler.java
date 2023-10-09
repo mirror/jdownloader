@@ -160,7 +160,7 @@ public class LibGenCrawler extends PluginForDecrypt {
                 title = Encoding.htmlDecode(title).trim();
             }
             final String[] mirrors;
-            String mirrorsHTML = br.getRegex("(?i)>\s*Mirrors:\\s*</font></td>(.*?)</td></tr>").getMatch(0);
+            String mirrorsHTML = br.getRegex("(?i)>\\s*Mirrors:\\s*</font></td>(.*?)</td></tr>").getMatch(0);
             if (mirrorsHTML != null) {
                 mirrors = HTMLParser.getHttpLinks(mirrorsHTML, br.getURL());
             } else {
