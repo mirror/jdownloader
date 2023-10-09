@@ -138,7 +138,7 @@ public class GoProCloud extends PluginForHost/* implements MenuExtenderHandler *
         synchronized (account) {
             try {
                 String accessToken = account.getStringProperty(ACCESS_TOKEN, null);
-                if (StringUtils.isEmpty(accessToken) || true) {
+                if (StringUtils.isEmpty(accessToken)) {
                     br.clearAll();
                     br.getPage("https://gopro.com/login");
                     final Map<String, Object> loginData = new HashMap<String, Object>();
