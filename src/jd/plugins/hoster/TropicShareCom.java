@@ -16,9 +16,15 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.Locale;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.Time;
 import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.parser.UrlQuery;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -36,7 +42,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.UserAgents;
 import jd.plugins.components.UserAgents.BrowserName;
 
@@ -76,6 +81,35 @@ public class TropicShareCom extends PluginForHost {
     }
 
     @Override
+    public boolean isResumeable(final DownloadLink link, final Account account) {
+        final AccountType type = account != null ? account.getType() : null;
+        if (AccountType.FREE.equals(type)) {
+            /* Free Account */
+            return false;
+        } else if (AccountType.PREMIUM.equals(type) || AccountType.LIFETIME.equals(type)) {
+            /* Premium account */
+            return true;
+        } else {
+            /* Free(anonymous) and unknown account type */
+            return false;
+        }
+    }
+
+    private int getMaxChunks(final Account account) {
+        final AccountType type = account != null ? account.getType() : null;
+        if (AccountType.FREE.equals(type)) {
+            /* Free Account */
+            return 1;
+        } else if (AccountType.PREMIUM.equals(type) || AccountType.LIFETIME.equals(type)) {
+            /* Premium account */
+            return -4;
+        } else {
+            /* Free(anonymous) and unknown account type */
+            return 1;
+        }
+    }
+
+    @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         prepBR(br);
@@ -84,7 +118,7 @@ public class TropicShareCom extends PluginForHost {
         if (br.containsHTML("(?i)>\\s*File size: </span>")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final Regex fInfo = br.getRegex("(?i)<h2>([^<>\"]*?)<span style=\"float: right;font\\-size: 12px;\">File size: ([^<>\"]*?)</span>");
+        final Regex fInfo = br.getRegex("(?i)<h2>([^<>\"]*?)<span style=\"float: right;font\\-size: 12px;\">\\s*File size: ([^<>\"]*?)</span>");
         final String filename = fInfo.getMatch(0);
         final String filesize = fInfo.getMatch(1);
         if (filename != null) {
@@ -99,48 +133,91 @@ public class TropicShareCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link);
-        final String fid = br.getRegex("fileid=\"(\\d+)\"").getMatch(0);
-        if (fid == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        int wait = 60;
-        final String regexedwaitStr = br.getRegex("<count>(\\d+)</count").getMatch(0);
-        if (regexedwaitStr != null) {
-            wait = Integer.parseInt(regexedwaitStr);
+        final String directlinkproperty = "directurl_free";
+        final String storedDirecturl = link.getStringProperty(directlinkproperty);
+        final String dllink;
+        if (storedDirecturl != null) {
+            logger.info("Trying to re-use stored directurl: " + storedDirecturl);
+            dllink = storedDirecturl;
         } else {
-            logger.warning("Failed to find pre-download-wait-seconds in HTML code");
-        }
-        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br.postPage("/files/time/", "id=" + fid);
-        if (br.containsHTML("(?i)\"status\":\"Please wait, while downloading\"")) {
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
-        }
-        final String uid = PluginJSonUtils.getJsonValue(br, "uid");
-        if (uid == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        sleep(wait * 1001l, link);
-        final String dllink = "/files/download/?uid=" + uid;
-        dl = jd.plugins.BrowserAdapter.openDownload(this.br, link, dllink, false, 1);
-        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            br.followConnection(true);
-            if (br.containsHTML("(?i)Error, you not have premium acount")) {
-                throw new AccountRequiredException();
-            } else if (br.containsHTML("(?i)Waiting time: ")) {
-                final String minutes = br.getRegex("<span id=\"min\">(\\d+)</span>").getMatch(0);
-                final String seconds = br.getRegex("<span id=\"sec\">(\\d+)</span>").getMatch(0);
-                if (minutes != null && seconds != null) {
-                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(minutes) * 60 * 1001 + Integer.parseInt(seconds) * 1001l);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
-                }
-            } else if (br.containsHTML("(?i)For parallel downloads please select one of Premium packages")) {
-                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads", 5 * 60 * 1000l);
+            logger.info("Obtaining fresh directurl");
+            final String fid = br.getRegex("fileid=\"(\\d+)\"").getMatch(0);
+            if (fid == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            final boolean captchaRequired = br.getRegex("(/captcha\\.php\\?download_uid=[a-z0-9]+)").getMatch(0) != null;
+            long waitMillis = 60 * 1001;
+            final String regexedwaitStr = br.getRegex("<count>\\s*(\\d+)\\s*</count").getMatch(0);
+            if (regexedwaitStr != null) {
+                waitMillis = Long.parseLong(regexedwaitStr) * 1001l;
             } else {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error: Got html code instead of file");
+                logger.warning("Failed to find pre-download-wait-seconds in HTML code");
+            }
+            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            br.postPage("/files/time/", "id=" + fid);
+            final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+            final Map<String, Object> responsemap = (Map<String, Object>) entries.get("response");
+            final String status = responsemap.get("status").toString();
+            if (!status.equalsIgnoreCase("success")) {
+                if (status.equalsIgnoreCase("Please wait, while downloading")) {
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
+                } else {
+                    /* Other errors */
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, status);
+                }
+            }
+            final String uid = entries.get("uid").toString();
+            final UrlQuery query = new UrlQuery();
+            if (captchaRequired) {
+                /* Let user solve captcha while serverside wait time is running. */
+                final long timeBefore = Time.systemIndependentCurrentJVMTimeMillis();
+                String captchaCode = this.getCaptchaCode("/captcha.php?download_uid=" + uid, link);
+                captchaCode = captchaCode.trim().toUpperCase(Locale.ENGLISH);
+                if (!captchaCode.matches("[A-Z0-9]{6}")) {
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA, "Invalid captcha code format");
+                }
+                query.add("download-captcha", Encoding.urlEncode(captchaCode));
+                /* Substract time passed during captcha solving. */
+                waitMillis = waitMillis - (Time.systemIndependentCurrentJVMTimeMillis() - timeBefore);
+            }
+            query.add("uid", uid);
+            if (waitMillis > 0) {
+                sleep(waitMillis, link);
+            }
+            dllink = "/files/download/?" + query.toString();
+        }
+        try {
+            dl = jd.plugins.BrowserAdapter.openDownload(this.br, link, dllink, this.isResumeable(link, null), getMaxChunks(null));
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                br.followConnection(true);
+                if (StringUtils.containsIgnoreCase(br.getURL(), "capcha_incorrect")) {
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                } else if (br.containsHTML("(?i)Error, you not have premium acount")) {
+                    throw new AccountRequiredException();
+                } else if (br.containsHTML("(?i)Waiting time: ")) {
+                    final String minutes = br.getRegex("<span id=\"min\">(\\d+)</span>").getMatch(0);
+                    final String seconds = br.getRegex("<span id=\"sec\">(\\d+)</span>").getMatch(0);
+                    if (minutes != null && seconds != null) {
+                        throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(minutes) * 60 * 1001 + Integer.parseInt(seconds) * 1001l);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
+                    }
+                } else if (br.containsHTML("(?i)For parallel downloads please select one of Premium packages")) {
+                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads", 5 * 60 * 1000l);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error: Got html code instead of file");
+                }
+            }
+            link.setProperty(directlinkproperty, dl.getConnection().getURL().toExternalForm());
+            dl.startDownload();
+        } catch (final Exception e) {
+            if (storedDirecturl != null) {
+                link.removeProperty(directlinkproperty);
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Stored directurl expired");
+            } else {
+                throw e;
             }
         }
-        dl.startDownload();
     }
 
     private void login(final Account account, final boolean force) throws Exception {
@@ -190,9 +267,9 @@ public class TropicShareCom extends PluginForHost {
         if (!br.containsHTML("<span>\\s*Premium") || expireInfo.getMatches().length != 1) {
             final String lang = System.getProperty("user.language");
             if ("de".equalsIgnoreCase(lang)) {
-                throw new AccountInvalidException("\r\nNicht unterstützter Accounttyp!\r\nJDownloader unterstützt nur premium Accounts dieses Anbieters!\r\nFalls du denkst diese Meldung sei falsch die Unterstützung dieses Account-Typs sich\r\ndeiner Meinung nach aus irgendeinem Grund lohnt,\r\nkontaktiere uns über das support Forum.");
+                throw new AccountInvalidException("\r\nNicht unterstützter Accounttyp!\r\nJDownloader unterstützt nur premium Accounts dieses Anbieters!\r\nFalls du denkst diese Meldung sei falsch oder die Unterstützung von kostenlosen Accounts lohnt sich\r\ndeiner Meinung nach aus irgendeinem Grund lohnt,\r\nkontaktiere uns über das support Forum.");
             } else {
-                throw new AccountInvalidException("\r\nUnsupported account type!\r\nJDownloader is only supporting premium accounts of this provider!\r\nIf you think this message is incorrect or it makes sense to add support for this account type\r\ncontact us via our support forum.");
+                throw new AccountInvalidException("\r\nUnsupported account type!\r\nJDownloader is only supporting premium accounts of this provider!\r\nIf you think this message is incorrect or it makes sense to add support for free accounts,\r\ncontact us via our support forum.");
             }
         }
         ai.setUnlimitedTraffic();
@@ -212,7 +289,7 @@ public class TropicShareCom extends PluginForHost {
         /* 2023-01-25: Check login before every download as their cookies sometimes randomly expire(?) */
         login(account, true);
         br.setFollowRedirects(true);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher(), true, -4);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher(), this.isResumeable(link, account), getMaxChunks(account));
         if (this.looksLikeDownloadableContent(dl.getConnection())) {
             logger.info("User has direct downloads ENABLED");
         } else {

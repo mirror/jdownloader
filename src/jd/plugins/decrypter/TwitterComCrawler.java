@@ -38,7 +38,6 @@ import java.util.regex.PatternSyntaxException;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.Time;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -1050,9 +1049,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
             query.append("simple_quoted_tweets", "true", false);
             query.append("sorted_by_time", "true", false);
             fp.setName(username + " - likes");
-            if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-                fp.setPackageKey(TWITTER_PROFILE_LIKES_PACKAGE_KEY_PREFIX + userID);
-            }
+            fp.setPackageKey(TWITTER_PROFILE_LIKES_PACKAGE_KEY_PREFIX + userID);
         } else if (param.getCryptedUrl().matches(TYPE_USER_MEDIA) || force_grab_media) {
             logger.info("Crawling self posted media only from user: " + username);
             if (media_count == 0) {
@@ -1062,9 +1059,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
             content_type = "media";
             maxCount = media_count;
             fp.setName(username);
-            if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-                fp.setPackageKey(TWITTER_PROFILE_PACKAGE_KEY_PREFIX + userID);
-            }
+            fp.setPackageKey(TWITTER_PROFILE_PACKAGE_KEY_PREFIX + userID);
         } else {
             /*
              * 2022-03-18: Legacy - not used anymore! This endpoint has either been removed by twitter or we're using it wrong. It would
@@ -1225,10 +1220,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
         final Number statuses_count = (Number) user.get("statuses_count");
         final String userID = user.get("id_str").toString();
         final FilePackage fp = FilePackage.getInstance();
-        final boolean debugTestSetPackageKey = false;
-        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && debugTestSetPackageKey) {
-            fp.setPackageKey(TWITTER_PROFILE_PACKAGE_KEY_PREFIX + userID);
-        }
+        fp.setPackageKey(TWITTER_PROFILE_PACKAGE_KEY_PREFIX + userID);
         fp.setName(username);
         final HashSet<String> cursorDupes = new HashSet<String>();
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
