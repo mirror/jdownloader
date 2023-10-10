@@ -19,6 +19,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -35,11 +40,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "stahomat.cz", "superload.cz" }, urls = { "https?://(?:www\\.)?stahomat\\.(?:cz|sk)/(stahnout|download)/[a-zA-Z0-9%-]+", "https?://(?:www\\.)?(superload\\.cz|superload\\.eu|superload\\.sk|superloading\\.com|stahovatelka\\.cz)/(stahnout|download)/[a-zA-Z0-9%-]+" })
 public class StahomatCzSuperloadCz extends antiDDoSForHost {
@@ -191,7 +191,7 @@ public class StahomatCzSuperloadCz extends antiDDoSForHost {
     @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
         prepBrowser(br);
-        final String pass = link.getStringProperty("pass", null);
+        final String downloadPassword = link.getDownloadPassword();
         String downloadURL = checkDirectLink(link, "superloadczdirectlink");
         final boolean usingStoredDirecturl;
         if (downloadURL != null) {
@@ -199,7 +199,7 @@ public class StahomatCzSuperloadCz extends antiDDoSForHost {
         } else {
             usingStoredDirecturl = false;
             /* request Download */
-            postPageSafe(account, get_api_base() + "/download-url", "url=" + Encoding.urlEncode(link.getPluginPatternMatcher()) + (pass != null ? "&password=" + Encoding.urlEncode(pass) : "") + "&token=");
+            postPageSafe(account, get_api_base() + "/download-url", "url=" + Encoding.urlEncode(link.getPluginPatternMatcher()) + (downloadPassword != null ? "&password=" + Encoding.urlEncode(downloadPassword) : "") + "&token=");
             downloadURL = PluginJSonUtils.getJsonValue(br, "link");
             if (downloadURL == null) {
                 handleErrors(account, link);

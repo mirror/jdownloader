@@ -24,6 +24,7 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -60,7 +61,14 @@ public class BandCampComDecrypter extends PluginForDecrypt {
     @Override
     public Browser createNewBrowserInstance() {
         final Browser br = new Browser();
+        prepBR(br);
+        return br;
+    }
+
+    public static Browser prepBR(final Browser br) {
         br.setFollowRedirects(true);
+        /* Prefer English language */
+        br.getHeaders().put("Accept-Language", "en-US, en;q=0.9");
         return br;
     }
 
@@ -277,7 +285,7 @@ public class BandCampComDecrypter extends PluginForDecrypt {
             }
         }
         final Map<String, Object> albumInfo = restoreFromString(json_album, TypeRef.MAP);
-        final String albumArtist = (String) JavaScriptEngineFactory.walkJson(albumInfo, "byArtist/name");
+        String albumArtist = (String) JavaScriptEngineFactory.walkJson(albumInfo, "byArtist/name");
         String albumOrTrackTitle = (String) JavaScriptEngineFactory.walkJson(albumInfo, "inAlbum/name");
         if (albumOrTrackTitle == null) {
             albumOrTrackTitle = br.getRegex("<title>\\s*(.*?)\\s*\\|.*?</title>").getMatch(0);
@@ -303,6 +311,18 @@ public class BandCampComDecrypter extends PluginForDecrypt {
                 isSingleTrack = true;
             } else {
                 isSingleTrack = false;
+            }
+            if (!isSingleTrack) {
+                /* Can be different in context of album or single track! */
+                final String jsonAlbumEmbed = br.getRegex("data-embed=\"([^\"]+)").getMatch(0);
+                if (jsonAlbumEmbed != null) {
+                    final Map<String, Object> albumEmbedInfo = JSonStorage.restoreFromString(Encoding.htmlOnlyDecode(jsonAlbumEmbed), TypeRef.MAP);
+                    albumArtist = (String) albumEmbedInfo.get("artist");
+                    if (!StringUtils.isEmpty(albumArtist)) {
+                        albumArtist = Encoding.htmlDecode(albumArtist).trim();
+                        // link.setProperty(PROPERTY_USERNAME_PRETTY, Encoding.htmlDecode(albumArtist).trim());
+                    }
+                }
             }
             int index = 0;
             int numberOfUnPlayableTracks = 0;
@@ -384,6 +404,9 @@ public class BandCampComDecrypter extends PluginForDecrypt {
             }
             logger.info("Number of un-playable tracks in this album: " + numberOfUnPlayableTracks);
         }
+        if (ret.isEmpty()) {
+            logger.info("This album doesn't contain any playable tracks");
+        }
         // final String json_band = br.getRegex("data-band=\"(\\{[^\"]+)").getMatch(0);
         /* Single song or album thumbnail. Crawl it if user wants it or if no audio/video items were found. */
         final SubConfiguration cfg = SubConfiguration.getConfig(this.getHost());
@@ -406,12 +429,12 @@ public class BandCampComDecrypter extends PluginForDecrypt {
         }
         /* Set additional properties, filename and online-status. */
         for (final DownloadLink result : ret) {
-            // if (!StringUtils.isEmpty(albumArtist)) {
-            // result.setProperty(BandCampCom.PROPERTY_ARTIST_ALBUM, albumArtist);
-            // }
             result.setProperty(BandCampCom.PROPERTY_ALBUM_NUMBEROF_TRACKS, albumtracks.size());
             if (albumID != null) {
                 result.setProperty(BandCampCom.PROPERTY_ALBUM_ID, albumID);
+            }
+            if (albumArtist != null) {
+                result.setProperty(BandCampCom.PROPERTY_ARTIST_ALBUM, Encoding.htmlDecode(albumArtist).trim());
             }
             final String formattedFilename = BandCampCom.getFormattedFilename(result);
             result.setFinalFileName(formattedFilename);

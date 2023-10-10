@@ -36,15 +36,14 @@ import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "imageshack.com", "imageshack.us" }, urls = { "https?://(?:www\\.)?imageshack\\.(?:com|us)/(?:i/[A-Za-z0-9]+|f/\\d+/[^<>\"/]+)", "z690hi09erhj6r0nrheswhrzogjrtehoDELETE_MEfhjtzjzjzthj" })
 public class ImagesHackCom extends PluginForHost {
-    private static final String  TYPE_DOWNLOAD     = "https?://(?:www\\.)?imageshack\\.(?:us|com)/f/\\d+/[^<>\"/]+";
-    private static final String  TYPE_IMAGE        = "https?://(?:www\\.)?imageshack\\.(?:us|com)/i/[A-Za-z0-9]+";
-    private static final boolean enable_api_image  = true;
+    private static final String  TYPE_DOWNLOAD    = "https?://(?:www\\.)?imageshack\\.(?:us|com)/f/\\d+/[^<>\"/]+";
+    private static final String  TYPE_IMAGE       = "https?://(?:www\\.)?imageshack\\.(?:us|com)/i/[A-Za-z0-9]+";
+    private static final boolean enable_api_image = true;
     // private static final String TYPE_DIRECT =
     // "https?://imagizer\\.imageshack\\.(?:com|us)/(?:a/img\\d+/\\d+/|v2/\\d+x\\d+q\\d+/\\d+/)([A-Za-z0-9]+)\\.[A-Za-z]{3,5}";
-    private String               DLLINK            = null;
-    private String               fid               = null;
-    private String               passCode          = null;
-    private boolean              passwordprotected = false;
+    private String               DLLINK           = null;
+    private String               fid              = null;
+    private String               passCode         = null;
 
     public ImagesHackCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -102,9 +101,10 @@ public class ImagesHackCom extends PluginForHost {
                  * through decrypter but okay I guess users could also open such folders via browser, then add links to JDownloader - plus
                  * passwords could be changed too.
                  */
-                passwordprotected = true;
-                link.getLinkStatus().setStatusText("Link is password protected");
+                link.setPasswordProtected(true);
                 return AvailableStatus.TRUE;
+            } else {
+                link.setPasswordProtected(false);
             }
             if (this.br.getHttpConnection().getResponseCode() != 200) {
                 /* Typically response 500 for offline */
@@ -216,7 +216,7 @@ public class ImagesHackCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link);
-        if (passwordprotected) {
+        if (link.isPasswordProtected()) {
             // passCode = Plugin.getUserInput("Password?", downloadLink);
             // /* Simply do the availablecheck again - it will use the password. */
             // requestFileInformation(downloadLink);
@@ -225,7 +225,7 @@ public class ImagesHackCom extends PluginForHost {
             // throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
             // }
             /* Very very very rare case - but until now there is no way to set passwords for single images! */
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This picture is password protected", 3 * 60 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Password protected pictures are not yet supported.", 3 * 60 * 60 * 1000l);
         }
         // More is possible but 1 chunk is good to prevent errors
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, DLLINK, true, 1);

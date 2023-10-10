@@ -39,6 +39,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.hoster.DirectHTTP;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class SxypixCom extends PluginForDecrypt {
@@ -75,7 +76,7 @@ public class SxypixCom extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         final String galleryHash = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
         /* 2021-09-30: pics.vc/watch URLs will often redirect to sxypix.com/w URLs. */
@@ -104,149 +105,47 @@ public class SxypixCom extends PluginForDecrypt {
             fp.setName(galleryHash);
         }
         HashSet<String> dupes = new HashSet<String>();
-        final boolean useNewHandling = true;
-        if (useNewHandling) {
-            final String dataX = br.getRegex("data-x\\s*=\\s*'(.*?)'").getMatch(0);
-            final String dataAid = br.getRegex("data-aid\\s*=\\s*'(.*?)'").getMatch(0);
-            final String dataPhotoid = br.getRegex("data-photoid\\s*=\\s*'([a-f0-9]{32})'").getMatch(0);
-            if (dataX == null || dataPhotoid == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        final String dataX = br.getRegex("data-x\\s*=\\s*'(.*?)'").getMatch(0);
+        final String dataAid = br.getRegex("data-aid\\s*=\\s*'(.*?)'").getMatch(0);
+        final String dataPhotoid = br.getRegex("data-photoid\\s*=\\s*'([a-f0-9]{32})'").getMatch(0);
+        if (dataX == null || dataPhotoid == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        br.getHeaders().put("Accept", "*/*");
+        br.getHeaders().put("Origin", "https://" + br.getHost());
+        final UrlQuery query = new UrlQuery();
+        query.add("x", dataX);
+        if (dataAid != null) {
+            query.add("aid", dataAid);
+        }
+        query.add("pid", dataPhotoid);
+        query.add("ghash", galleryHash);
+        query.add("width", "1720");
+        br.postPage("/php/gall.php", query);
+        final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.getRequest().getHtmlCode());
+        final List<String> htmls = (List<String>) entries.get("r");
+        for (final String html : htmls) {
+            final String relativeurl = new Regex(html, "data-src=\\'([^\\']+)'").getMatch(0);
+            if (relativeurl == null) {
+                /* Skip invalid items */
+                continue;
             }
-            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            br.getHeaders().put("Accept", "*/*");
-            br.getHeaders().put("Origin", "https://" + br.getHost());
-            final UrlQuery query = new UrlQuery();
-            query.add("x", dataX);
-            if (dataAid != null) {
-                query.add("aid", dataAid);
-            }
-            query.add("pid", dataPhotoid);
-            query.add("ghash", galleryHash);
-            query.add("width", "1720");
-            br.postPage("/php/gall.php", query);
-            final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-            final List<String> htmls = (List<String>) entries.get("r");
-            for (final String html : htmls) {
-                String singleLink = new Regex(html, "data-src=\\'(/cdn/[^\\']+)'").getMatch(0);
-                if (singleLink == null) {
-                    /* Skip invalid items */
-                    continue;
-                }
-                if (dupes.add(singleLink)) {
-                    singleLink = "https://" + br.getHost() + singleLink;
-                    String filename = Plugin.getFileNameFromURL(new URL(singleLink));
-                    filename = df.format(++foundNumberofItems) + "_" + filename;
-                    final DownloadLink dl = createDownloadlink("directhttp://" + singleLink);
-                    dl.setFinalFileName(filename);
-                    dl._setFilePackage(fp);
-                    dl.setAvailable(true);
-                    decryptedLinks.add(dl);
-                    distribute(dl);
-                }
-            }
-            if (decryptedLinks.isEmpty()) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-        } else {
-            /* This handling may only find thumbnails! */
-            final int maxItemsPerPage = 36;
-            final int maxItems = Integer.parseInt(br.getRegex("total\\s*:\\s*(\\d+)").getMatch(0));
-            final String baseURL = br.getURL();
-            /* 2021-09-30: Ajax handling is new */
-            final boolean useAjaxHandlingForPageAndMore = false;
-            do {
-                page += 1;
-                int numberofNewItemsThisRun = 0;
-                if (page > 1 && useAjaxHandlingForPageAndMore) {
-                    /* json handling */
-                    final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-                    final List<String> htmls = (List<String>) entries.get("r");
-                    for (final String html : htmls) {
-                        String singleLink = new Regex(html, "data-src=\\'(/cdn/[^\\']+)'").getMatch(0);
-                        if (singleLink == null) {
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                        }
-                        if (dupes.add(singleLink)) {
-                            singleLink = "https://" + br.getHost() + singleLink;
-                            String filename = Plugin.getFileNameFromURL(new URL(singleLink));
-                            filename = df.format(++foundNumberofItems) + "_" + filename;
-                            final DownloadLink dl = createDownloadlink("directhttp://" + singleLink);
-                            dl.setFinalFileName(filename);
-                            dl._setFilePackage(fp);
-                            dl.setAvailable(true);
-                            decryptedLinks.add(dl);
-                            distribute(dl);
-                            numberofNewItemsThisRun++;
-                        }
-                    }
-                } else {
-                    /* 2021-03-24: Avoid grabbing "related" pictures listed below the actual pictures belonging to a category! */
-                    String[] links = br.getRegex("(https?://s\\d+\\.pics\\.vc/pics/s/[^\"\\']+\\.jpg)[^>]*pic_loader\\(this\\)").getColumn(0);
-                    if (links == null || links.length == 0) {
-                        links = br.getRegex("(/cdn/s\\d+/[^\"\\']+\\.jpg)[^>]*schema\\.org/image").getColumn(0);
-                    }
-                    if (links == null || links.length == 0) {
-                        if (foundNumberofItems == 0) {
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                        } else {
-                            logger.info("Stopping because: Failed to find any items on current page");
-                            break;
-                        }
-                    }
-                    for (String singleLink : links) {
-                        if (dupes.add(singleLink)) {
-                            // if (singleLink.startsWith("/cdn/")) {
-                            // final String server = new Regex(singleLink, "/cdn/(s\\d+)").getMatch(0);
-                            // final String rest = new Regex(singleLink, "\\d+/s/(.+)").getMatch(0);
-                            // if (server == null) {
-                            // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                            // } else if (rest == null) {
-                            // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                            // }
-                            // singleLink = "https://" + server + ".pics.vc/pics/n/" + rest;
-                            // } else {
-                            // singleLink = singleLink.replaceFirst("/pics/s/", "/pics/o/");
-                            // }
-                            singleLink = "https://" + br.getHost() + singleLink;
-                            String filename = Plugin.getFileNameFromURL(new URL(singleLink));
-                            filename = df.format(++foundNumberofItems) + "_" + filename;
-                            final DownloadLink dl = createDownloadlink("directhttp://" + singleLink);
-                            dl.setFinalFileName(filename);
-                            dl._setFilePackage(fp);
-                            dl.setAvailable(true);
-                            decryptedLinks.add(dl);
-                            distribute(dl);
-                            numberofNewItemsThisRun++;
-                        }
-                    }
-                }
-                logger.info("Crawled page: " + page + " | Found items: " + numberofNewItemsThisRun + " | Total: " + foundNumberofItems + " / " + maxItems);
-                if (this.isAbort()) {
-                    return decryptedLinks;
-                } else if (numberofNewItemsThisRun < maxItemsPerPage) {
-                    logger.info("Stopping because: Reached end (current page contains less items than max items)");
-                    break;
-                } else {
-                    page += 1;
-                    if (useAjaxHandlingForPageAndMore) {
-                        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                        br.getHeaders().put("Accept", "*/*");
-                        br.getHeaders().put("Origin", "https://" + br.getHost());
-                        br.getHeaders().put("Referer", baseURL);
-                        // br.getHeaders().put("", "");
-                        // br.getHeaders().put("", "");
-                        br.postPage("/php/apg.php", "mode=w&param=%7B%22page%2" + page + "%3A4%2C%22ghash%22%3A%22" + galleryHash + "%22%7D");
-                    } else {
-                        /* Old handling */
-                        br.getPage(baseURL + "/" + page);
-                    }
-                    continue;
-                }
-            } while (true);
-            if (foundNumberofItems < maxItems) {
-                logger.warning("Failed to find all items! Found only: " + foundNumberofItems + " / " + maxItems);
+            if (dupes.add(relativeurl)) {
+                final URL url = br.getURL(relativeurl);
+                String filename = Plugin.getFileNameFromURL(url);
+                filename = df.format(++foundNumberofItems) + "_" + filename;
+                final DownloadLink dl = createDownloadlink(DirectHTTP.createURLForThisPlugin(url.toExternalForm()));
+                dl.setFinalFileName(filename);
+                dl._setFilePackage(fp);
+                dl.setAvailable(true);
+                ret.add(dl);
+                distribute(dl);
             }
         }
-        return decryptedLinks;
+        if (ret.isEmpty()) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        return ret;
     }
 }

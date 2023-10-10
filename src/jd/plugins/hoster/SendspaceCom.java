@@ -325,11 +325,11 @@ public class SendspaceCom extends PluginForHost {
                         if (pwform == null) {
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
-                        if (link.getStringProperty("pass", null) == null) {
+                        if (link.getDownloadPassword() == null) {
                             passCode = getUserInput("Password?", link);
                         } else {
                             /* gespeicherten PassCode holen */
-                            passCode = link.getStringProperty("pass", null);
+                            passCode = link.getDownloadPassword();
                         }
                         pwform.put("filepassword", passCode);
                         br.submitForm(pwform);
@@ -380,7 +380,7 @@ public class SendspaceCom extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 if (passCode != null) {
-                    link.setProperty("pass", passCode);
+                    link.setDownloadPassword(passCode);
                 }
             }
             /* Datei herunterladen */

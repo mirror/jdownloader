@@ -17,6 +17,8 @@ package jd.plugins.hoster;
 
 import java.util.regex.Pattern;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -28,8 +30,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "2shared.com" }, urls = { "http://(www\\.)?2shared\\.com/(audio|file|video|photo|document)/.*?/[\\w\\-\\.]+" })
 public class TwoSharedCom extends PluginForHost {
@@ -98,7 +98,7 @@ public class TwoSharedCom extends PluginForHost {
         requestFileInformation(downloadLink);
         Form pwform = br.getForm(0);
         if (pwform != null && pwform.containsHTML("password") && !pwform.getAction().contains("paypal")) {
-            String passCode = downloadLink.getStringProperty("pass", null);
+            String passCode = downloadLink.getDownloadPassword();
             for (int i = 0; i <= 3; i++) {
                 passCode = passCode == null ? getUserInput(null, downloadLink) : passCode;
                 pwform.put("userPass2", passCode);
@@ -108,7 +108,8 @@ public class TwoSharedCom extends PluginForHost {
                     logger.warning("Wrong password, the entered password \"" + passCode + "\" is wrong, retrying...");
                     passCode = null;
                 } else {
-                    downloadLink.setProperty("pass", passCode);
+                    /* User entered correct password. */
+                    downloadLink.setDownloadPassword(passCode);
                     break;
                 }
             }

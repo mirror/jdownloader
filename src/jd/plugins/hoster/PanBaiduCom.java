@@ -18,6 +18,8 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -40,8 +42,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.StringUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pan.baidu.com" }, urls = { "https?://(?:www\\.)?pan\\.baidudecrypted\\.com/\\d+" })
 public class PanBaiduCom extends PluginForHost {
@@ -298,7 +298,7 @@ public class PanBaiduCom extends PluginForHost {
         }
         downloadLink.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
         if (passCode != null) {
-            downloadLink.setProperty("pass", passCode);
+            downloadLink.setDownloadPassword(passCode);
         }
         downloadLink.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
         try {

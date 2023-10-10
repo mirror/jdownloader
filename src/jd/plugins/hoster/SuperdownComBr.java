@@ -18,6 +18,11 @@ package jd.plugins.hoster;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -35,11 +40,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.MultiHosterManagement;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "superdown.com.br" }, urls = { "https?://[\\w]+\\.superdown\\.com\\.br/(?:superdown/)?\\w+/[a-zA-Z0-9]+/\\d+/\\S+" })
 public class SuperdownComBr extends antiDDoSForHost {
@@ -191,10 +191,10 @@ public class SuperdownComBr extends antiDDoSForHost {
         if (dllink == null) {
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             /* request Download */
-            final String passCode = link.getStringProperty("pass", null);
+            final String downloadPassword = link.getDownloadPassword();
             final String passwordParam;
-            if (StringUtils.isNotEmpty(passCode)) {
-                passwordParam = "&password=" + Encoding.urlEncode(passCode);
+            if (StringUtils.isNotEmpty(downloadPassword)) {
+                passwordParam = "&password=" + Encoding.urlEncode(downloadPassword);
             } else {
                 passwordParam = "";
             }

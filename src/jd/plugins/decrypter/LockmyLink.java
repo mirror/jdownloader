@@ -18,20 +18,21 @@ package jd.plugins.decrypter;
 import java.io.File;
 import java.util.ArrayList;
 
+import org.appwork.utils.IO;
+import org.appwork.utils.Regex;
+import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.IO;
-import org.appwork.utils.Regex;
-import org.jdownloader.captcha.v2.challenge.clickcaptcha.ClickedPoint;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "lockmy.link" }, urls = { "https?://(?:www\\.)?lockmy\\.link/l/([A-Za-z0-9]+)/?" })
 public class LockmyLink extends PluginForDecrypt {
@@ -110,12 +111,15 @@ public class LockmyLink extends PluginForDecrypt {
             }
             results = br.getRegex("target=\"_blank\" href=\"(https?[^\"]+)").getColumn(0);
         }
-        if (results.length == 0) {
-            logger.warning("Failed to find any results -> Offline, wrong captcha or plugin broken");
-        } else {
-            for (final String result : results) {
-                ret.add(createDownloadlink(result));
-            }
+        if (results == null || results.length == 0) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final FilePackage fp = FilePackage.getInstance();
+        for (final String result : results) {
+            final DownloadLink link = createDownloadlink(result);
+            /* Put all results into one package. */
+            link._setFilePackage(fp);
+            ret.add(link);
         }
         return ret;
     }

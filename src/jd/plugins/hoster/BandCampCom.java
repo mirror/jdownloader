@@ -56,6 +56,13 @@ public class BandCampCom extends PluginForHost {
     }
 
     @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = new Browser();
+        BandCampComDecrypter.prepBR(br);
+        return br;
+    }
+
+    @Override
     public LazyPlugin.FEATURE[] getFeatures() {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.AUDIO_STREAMING };
     }
@@ -102,9 +109,8 @@ public class BandCampCom extends PluginForHost {
     public static final String PROPERTY_CONTENT_ID            = "content_id";
     public static final String PROPERTY_TITLE                 = "directname";
     public static final String PROPERTY_USERNAME              = "username";
-    public static final String PROPERTY_USERNAME_PRETTY       = "username_pretty";
     public static final String PROPERTY_ARTIST                = "directartist";
-    // public static final String PROPERTY_ARTIST_ALBUM = "album_artist";
+    public static final String PROPERTY_ARTIST_ALBUM          = "album_artist";
     public static final String PROPERTY_ALBUM_ID              = "album_id";
     public static final String PROPERTY_ALBUM_TITLE           = "directalbum";
     public static final String PROPERTY_ALBUM_TRACK_POSITION  = "album_track_number";
@@ -218,21 +224,9 @@ public class BandCampCom extends PluginForHost {
         final String json_album = br.getRegex("<script type=\"application/(?:json\\+ld|ld\\+json)\">\\s*(.*?)\\s*</script>").getMatch(0);
         final Map<String, Object> albumInfo = JSonStorage.restoreFromString(json_album, TypeRef.MAP);
         String artist = null;
-        // String artist = (String) JavaScriptEngineFactory.walkJson(albumInfo, "inAlbum/byArtist/name");
-        // if (artist != null) {
-        // link.setProperty(PROPERTY_ARTIST, Encoding.htmlDecode(artist).trim());
-        // }
-        /* Can be different in context of album or single track! */
-        // String usernamePretty = (String) JavaScriptEngineFactory.walkJson(albumInfo, "byArtist/name");
-        final String jsonAlbumEmbed = br.getRegex("data-embed=\"([^\"]+)").getMatch(0);
-        if (jsonAlbumEmbed != null) {
-            final Map<String, Object> albumEmbedInfo = JSonStorage.restoreFromString(Encoding.htmlOnlyDecode(jsonAlbumEmbed), TypeRef.MAP);
-            /* This is the data which you can also see in <h3> tag like "by <AlbumArtistName>". */
-            final String albumArtist = (String) albumEmbedInfo.get("artist");
-            if (!StringUtils.isEmpty(albumArtist)) {
-                // TODO: This is wrong. There is no "pretty username"(?)
-                link.setProperty(PROPERTY_USERNAME_PRETTY, Encoding.htmlOnlyDecode(albumArtist).trim());
-            }
+        final String albumArtist = br.getRegex(">\\s*by\\s*<span>\\s*<[^>]*>([^<]+)</a>").getMatch(0);
+        if (albumArtist != null) {
+            link.setProperty(PROPERTY_ARTIST_ALBUM, Encoding.htmlDecode(albumArtist).trim());
         }
         final String albumDatePublishedStr = (String) JavaScriptEngineFactory.walkJson(albumInfo, "datePublished");
         String albumTitle = (String) JavaScriptEngineFactory.walkJson(albumInfo, "inAlbum/name");
@@ -370,7 +364,7 @@ public class BandCampCom extends PluginForHost {
         final String tracknumberFormatted = getFormattedTrackNumber(link);
         final String artistFullName = link.getStringProperty(PROPERTY_ARTIST);
         final String username = link.getStringProperty(PROPERTY_USERNAME);
-        final String usernamePretty = link.getStringProperty(PROPERTY_USERNAME_PRETTY);
+        final String albumArtist = link.getStringProperty(PROPERTY_ARTIST_ALBUM);
         final String album = link.getStringProperty(PROPERTY_ALBUM_TITLE);
         final String video_width = link.getStringProperty(PROPERTY_VIDEO_WIDTH);
         final String video_height = link.getStringProperty(PROPERTY_VIDEO_HEIGHT);
@@ -387,7 +381,8 @@ public class BandCampCom extends PluginForHost {
         formattedBaseString = formattedBaseString.replace("*tracknumber*", StringUtils.valueOrEmpty(tracknumberFormatted));
         formattedBaseString = formattedBaseString.replace("*artist*", StringUtils.valueOrEmpty(artistFullName));
         formattedBaseString = formattedBaseString.replace("*username*", StringUtils.valueOrEmpty(username));
-        formattedBaseString = formattedBaseString.replace("*username_pretty*", StringUtils.valueOrEmpty(usernamePretty));
+        /* username_pretty replacement = Legacy compatibility as this is now album_artist */
+        formattedBaseString = formattedBaseString.replace("*username_pretty*", StringUtils.valueOrEmpty(albumArtist)).replace("*album_artist*", StringUtils.valueOrEmpty(albumArtist));
         formattedBaseString = formattedBaseString.replace("*album*", StringUtils.valueOrEmpty(album));
         formattedBaseString = formattedBaseString.replace("*video_width*", StringUtils.valueOrEmpty(video_width));
         formattedBaseString = formattedBaseString.replace("*video_height*", StringUtils.valueOrEmpty(video_height));
@@ -496,7 +491,7 @@ public class BandCampCom extends PluginForHost {
         sb.append("Explanation of the available tags:\r\n");
         sb.append("*artist* = Full name of artist of content e.g. 'John Doe'\r\n");
         sb.append("*username* = Username of artist e.g. 'johndoe19'\r\n");
-        sb.append("*username_pretty* = Pretty username of artist e.g. 'Johndoe19'\r\n");
+        sb.append("*album_artist* = Pretty username of artist e.g. 'John Doe'\r\n");
         sb.append("*album* = Title of the album\r\n");
         sb.append("*tracknumber* = Number of the track\r\n");
         sb.append("*songtitle* = Title of the song\r\n");
@@ -510,9 +505,9 @@ public class BandCampCom extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_PACKAGENAME, "Define how the packagenames should look:").setDefaultValue(defaultCustomPackagename));
         final StringBuilder sbpack = new StringBuilder();
         sbpack.append("Explanation of the available tags:\r\n");
-        sb.append("*artist* = Full name of artist of content e.g. 'John Doe'\r\n");
+        sbpack.append("*artist* = Full name of artist of content e.g. 'John Doe'\r\n");
         sbpack.append("*username* = Username of artist e.g. 'johndoe19'\r\n");
-        sbpack.append("*username_pretty* = Pretty username of artist e.g. 'Johndoe19'\r\n");
+        sbpack.append("*album_artist* = Pretty username of artist e.g. 'John Doe'\r\n");
         sbpack.append("*album* = Title of the album\r\n");
         sbpack.append("*date* = Date when the album/song was released - appears in the user-defined format above");
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, sbpack.toString()));

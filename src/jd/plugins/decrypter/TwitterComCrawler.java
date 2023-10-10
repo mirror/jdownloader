@@ -394,9 +394,13 @@ public class TwitterComCrawler extends PluginForDecrypt {
                 tweetMap = (Map<String, Object>) JavaScriptEngineFactory.walkJson(tweetResult, "result/tweet/legacy");
             }
             if (tweetMap == null) {
+                /* Tweet offline/unavailable or only accessible for logged in users. */
+                /* For example: {"data":{"tweetResult":{"result":{"__typename":"TweetUnavailable","reason":"Suspended"}}}} */
                 if (br.containsHTML("NsfwLoggedOut")) {
                     /* E.g. {"data":{"tweetResult":{"result":{"__typename":"TweetUnavailable","reason":"NsfwLoggedOut"}}}} */
                     throw new AccountRequiredException();
+                } else if (br.containsHTML("Suspended")) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 } else {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
