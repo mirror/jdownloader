@@ -95,7 +95,7 @@ public class TeraboxCom extends PluginForHost {
 
     @Override
     public boolean isResumeable(final DownloadLink link, final Account account) {
-        return false;
+        return true;
     }
 
     public int getMaxChunks(final Account account) {
@@ -341,15 +341,22 @@ public class TeraboxCom extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         login(account, false);
-        if (!attemptStoredDownloadurlDownload(link, PROPERTY_DIRECTURL, this.isResumeable(link, account), this.getMaxChunks(account))) {
+        final String storedDirecturl = link.getStringProperty(PROPERTY_DIRECTURL);
+        final String dllink;
+        if (storedDirecturl != null) {
+            logger.info("Trying to re-use stored directurl: " + storedDirecturl);
+            dllink = storedDirecturl;
+        } else {
             /* Avoid checking seemingly invalid stored directurl again in availablecheck! */
             link.removeProperty(PROPERTY_DIRECTURL);
             this.requestFileInformation(link, account);
-            final String dllink = link.getStringProperty(PROPERTY_DIRECTURL);
+            dllink = link.getStringProperty(PROPERTY_DIRECTURL);
             if (dllink == null) {
                 /* This should never happen. */
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to refresh expired directurl", 5 * 60 * 1000l);
             }
+        }
+        try {
             dl = new jd.plugins.BrowserAdapter().openDownload(br, getDownloadLinkDownloadable(link), br.createGetRequest(dllink), this.isResumeable(link, account), this.getMaxChunks(account));
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 br.followConnection(true);
@@ -361,6 +368,13 @@ public class TeraboxCom extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
                 }
             }
+        } catch (final Exception e) {
+            if (storedDirecturl != null) {
+                link.removeProperty(PROPERTY_DIRECTURL);
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Stored directurl expired");
+            } else {
+                throw e;
+            }
         }
         /*
          * htmldecode final filename just in case we're using in from Content-Disposition and not the one that was set during the crawl
@@ -368,30 +382,6 @@ public class TeraboxCom extends PluginForHost {
          */
         dl.setFilenameFix(true);
         dl.startDownload();
-    }
-
-    private boolean attemptStoredDownloadurlDownload(final DownloadLink link, final String directlinkproperty, final boolean resumable, final int maxchunks) throws Exception {
-        final String url = link.getStringProperty(directlinkproperty);
-        if (StringUtils.isEmpty(url)) {
-            return false;
-        }
-        try {
-            final Browser brc = br.cloneBrowser();
-            dl = new jd.plugins.BrowserAdapter().openDownload(brc, getDownloadLinkDownloadable(link), brc.createGetRequest(url), resumable, maxchunks);
-            if (this.looksLikeDownloadableContent(dl.getConnection())) {
-                return true;
-            } else {
-                brc.followConnection(true);
-                throw new IOException();
-            }
-        } catch (final Throwable e) {
-            logger.log(e);
-            try {
-                dl.getConnection().disconnect();
-            } catch (Throwable ignore) {
-            }
-            return false;
-        }
     }
 
     private DownloadLinkDownloadable getDownloadLinkDownloadable(final DownloadLink link) {
