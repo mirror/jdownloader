@@ -148,8 +148,11 @@ public class BandCampCom extends PluginForHost {
         }
     }
 
-    @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException, ParseException {
+        return requestFileInformation(link, false);
+    }
+
+    private AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws IOException, PluginException, ParseException {
         final String username = BandCampComDecrypter.regexUsernameFromURL(link.getPluginPatternMatcher());
         if (username != null) {
             link.setProperty(PROPERTY_USERNAME, username);
@@ -198,7 +201,7 @@ public class BandCampCom extends PluginForHost {
         dllink = link.getStringProperty(PROPERTY_DATE_DIRECTURL);
         final String filename = getFormattedFilename(link);
         link.setFinalFileName(filename);
-        if (dllink != null && !link.isSizeSet()) {
+        if (dllink != null && !link.isSizeSet() && !isDownload) {
             try {
                 final Browser br2 = br.cloneBrowser();
                 br2.setFollowRedirects(true);
@@ -310,12 +313,13 @@ public class BandCampCom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
-        requestFileInformation(link);
+        requestFileInformation(link, true);
         if (StringUtils.isEmpty(dllink)) {
-            /* Paid content. */
+            /* Paid content e.g. audio track which can't be streamed unless user buys it. */
             throw new AccountRequiredException();
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+        /* 2023-10-11: Allow max 1 connection per download to go easy on the Bandcamp servers. */
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
         handleConnectionErrors(br, dl.getConnection());
         dl.startDownload();
     }
@@ -328,7 +332,7 @@ public class BandCampCom extends PluginForHost {
             } else if (con.getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             } else {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Video broken?");
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Stream broken?");
             }
         }
     }

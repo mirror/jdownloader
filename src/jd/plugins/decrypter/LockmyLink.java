@@ -46,13 +46,15 @@ public class LockmyLink extends PluginForDecrypt {
         br.getHeaders().put("Origin", "https://" + this.getHost());
         br.getHeaders().put("Accept", "*/*");
         br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
-        br.getHeaders().put("sec-ch-ua", "\"Chromium\";v=\"94\", \"Google Chrome\";v=\"94\", \";Not A Brand\";v=\"99\"");
+        br.getHeaders().put("sec-ch-ua", "\"Google Chrome\";v=\"117\", \"Not;A=Brand\";v=\"8\", \"Chromium\";v=\"117\"");
         br.getHeaders().put("sec-ch-ua-mobile", "?0");
         br.getHeaders().put("sec-ch-ua-platform", "\"Windows\"");
         /* Important! Without this header, this is all we'll get: "<p>ERROR! Please reload the page</p>" */
         br.getHeaders().put("sec-fetch-site", "same-origin");
         br.getHeaders().put("sec-fetch-mode", "cors");
         br.getHeaders().put("sec-fetch-dest", "empty");
+        // br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko)
+        // Chrome/117.0.0.0 Safari/537.36");
         br.getPage(param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -60,25 +62,39 @@ public class LockmyLink extends PluginForDecrypt {
             /* E.g. redirect to "/404" */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        final String contenturl = br.getURL();
+        /* Wait-time: Check every second (same as in browser) */
         final Browser brc = this.br.cloneBrowser();
+        int rounds = -1;
+        // final String paramurlEncoded = Encoding.urlEncode("[\"" + param.getCryptedUrl() + "\"]");
+        final String paramraw = "[\"" + param.getCryptedUrl() + "\"]";
         while (true) {
+            rounds++;
+            // final String response = brc.postPage("/api/ajax.php", "url=" + paramurlEncoded);
+            /* Important! */
+            brc.getHeaders().put("Referer", contenturl);
+            final String response = brc.postPageRaw("/api/ajax.php", "url=" + paramraw);
+            if (!response.matches("^\\d+$")) {
+                /* 2023-03-30: wait time required & checked */
+                break;
+            }
             if (isAbort()) {
+                logger.info("Stopping because: Aborted by user");
                 return ret;
+            } else if (rounds >= 600) {
+                logger.info("Stopping because: Waited too long");
+                break;
             } else {
-                final String response = brc.postPage("/api/ajax.php", "url=[\"" + param.getCryptedUrl() + "\"]");
-                if (response.matches("^\\d+$")) {
-                    /* 2023-03-30: wait time required & checked */
-                    sleep(1000, param);
-                    continue;
-                } else {
-                    break;
-                }
+                logger.info("Waiting 1000ms | Remaining seconds to wait: " + brc.getRequest().getHtmlCode());
+                sleep(1000, param);
+                continue;
             }
         }
         /* "Workaround" for json response */
         brc.getRequest().setHtmlCode(PluginJSonUtils.unescape(brc.getRequest().getHtmlCode()));
-        String[] results = brc.getRegex("target=\"_blank\" href=\"(https?[^\"]+)").getColumn(0);
+        String[] results = regexDownloadurls(brc);
         if (results == null || results.length == 0) {
+            logger.info("Captcha required");
             final String captchaImageBase64 = brc.getRegex("data:image/png;base64,([a-zA-Z0-9_/\\+\\=]+)").getMatch(0);
             if (captchaImageBase64 == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -96,7 +112,7 @@ public class LockmyLink extends PluginForDecrypt {
             }
             if (captchaDescr == null) {
                 /* Fallback */
-                captchaDescr = "Click on the lock";
+                captchaDescr = "Click on the lock symbol";
             }
             final ClickedPoint cp = getCaptchaClickedPoint(captchaImage, param, captchaDescr);
             br.postPage("/api/ajax.php", "shortId=" + shortID + "&coords=" + cp.getX() + ".5-" + cp.getY());
@@ -109,10 +125,14 @@ public class LockmyLink extends PluginForDecrypt {
                  */
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
-            results = br.getRegex("target=\"_blank\" href=\"(https?[^\"]+)").getColumn(0);
+            results = regexDownloadurls(br);
         }
         if (results == null || results.length == 0) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (br.containsHTML("not_found")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         final FilePackage fp = FilePackage.getInstance();
         for (final String result : results) {
@@ -122,5 +142,9 @@ public class LockmyLink extends PluginForDecrypt {
             ret.add(link);
         }
         return ret;
+    }
+
+    private String[] regexDownloadurls(final Browser br) {
+        return br.getRegex("target=\"_blank\" href=\"(https?[^\"]+)").getColumn(0);
     }
 }

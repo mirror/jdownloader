@@ -35,10 +35,34 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "imageshack.com" }, urls = { "https?://(?:www\\.)?imageshack\\.(?:com|us)/(?:user|a)/[A-Za-z0-9\\-_]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class ImagesHackComCrawler extends PluginForDecrypt {
     public ImagesHackComCrawler(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "imageshack.com" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : getPluginDomains()) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:user|a)/[A-Za-z0-9\\-_]+");
+        }
+        return ret.toArray(new String[0]);
     }
 
     @Override
@@ -46,17 +70,17 @@ public class ImagesHackComCrawler extends PluginForDecrypt {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.IMAGE_GALLERY };
     }
 
-    private static final String TYPE_USER                  = "https?://(?:www\\.)?imageshack\\.(?:com|us)/user/[A-Za-z0-9\\-_]+";
-    private static final String TYPE_ALBUM                 = "https?://(?:www\\.)?imageshack\\.(?:com|us)/a/[A-Za-z0-9\\-_]+";
+    private static final String TYPE_USER                  = "(?i)https?://[^/]+/user/([A-Za-z0-9\\-_]+)";
+    private static final String TYPE_ALBUM                 = "(?i)https?://[^/]+/a/([A-Za-z0-9\\-_]+)";
     private static final int    api_max_entries_per_offset = 200;
 
     /** Using API: https://api.imageshack.com/ */
     @SuppressWarnings({ "unused", "unchecked", "rawtypes" })
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
-        final String parameter = param.toString().replace("imageshack.us", "imageshack.com").replace("http://", "https://");
-        final String id_main = new Regex(parameter, "([A-Za-z0-9\\-_]+)$").getMatch(0);
+        final String contenturl = param.getCryptedUrl().replace("imageshack.us", "imageshack.com").replaceFirst("(?i)http://", "https://");
+        final String id_main = new Regex(contenturl, "([A-Za-z0-9\\-_]+)$").getMatch(0);
         int offset = 0;
         int page_counter = 1;
         long images_total = 0;
@@ -65,7 +89,7 @@ public class ImagesHackComCrawler extends PluginForDecrypt {
         String pwcookie = null;
         final String get_URL;
         Map<String, Object> json;
-        if (parameter.matches(TYPE_USER)) {
+        if (contenturl.matches(TYPE_USER)) {
             /*
              * Get user information - count private images as well. TODO: Check if it actually returns IDs of private images - if not, we do
              * not even have to count them!
@@ -117,13 +141,13 @@ public class ImagesHackComCrawler extends PluginForDecrypt {
         }
         if (images_total == 0) {
             /* User has no pictures or album is empty */
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            ret.add(this.createOfflinelink(contenturl));
+            return ret;
         }
         do {
             if (this.isAbort()) {
                 logger.info("User aborted decryption");
-                return decryptedLinks;
+                return ret;
             }
             /* Old: */
             // if (useAltHandling) {
@@ -157,19 +181,19 @@ public class ImagesHackComCrawler extends PluginForDecrypt {
                     dl.setProperty("pwcookie", pwcookie);
                 }
                 dl._setFilePackage(fp);
-                decryptedLinks.add(dl);
+                ret.add(dl);
                 distribute(dl);
                 offset++;
             }
             logger.info("Decrypted page " + page_counter);
-            logger.info("Found " + decryptedLinks.size() + " of " + images_total + " images");
+            logger.info("Found " + ret.size() + " of " + images_total + " images");
             if (ressourcelist.size() < api_max_entries_per_offset) {
                 /* Fail safe */
                 break;
             }
             page_counter++;
-        } while (decryptedLinks.size() < images_total);
-        return decryptedLinks;
+        } while (ret.size() < images_total);
+        return ret;
     }
 
     /**

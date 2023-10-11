@@ -43,6 +43,12 @@ import org.appwork.utils.Time;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.net.URLHelper;
 import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.notify.BasicNotify;
+import org.jdownloader.gui.notify.BubbleNotify;
+import org.jdownloader.gui.notify.BubbleNotify.AbstractNotifyWindowFactory;
+import org.jdownloader.gui.notify.gui.AbstractNotifyWindow;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.plugins.components.config.TwitterConfigInterface;
 import org.jdownloader.plugins.components.config.TwitterConfigInterface.FilenameScheme;
 import org.jdownloader.plugins.components.config.TwitterConfigInterface.SingleTweetCrawlerMode;
@@ -394,13 +400,36 @@ public class TwitterComCrawler extends PluginForDecrypt {
                 tweetMap = (Map<String, Object>) JavaScriptEngineFactory.walkJson(tweetResult, "result/tweet/legacy");
             }
             if (tweetMap == null) {
-                /* Tweet offline/unavailable or only accessible for logged in users. */
+                /*
+                 * Tweet does exist but is unavailable or does not exist anymore or is only accessible for logged in users (NSFW blocked).
+                 */
                 /* For example: {"data":{"tweetResult":{"result":{"__typename":"TweetUnavailable","reason":"Suspended"}}}} */
-                if (br.containsHTML("NsfwLoggedOut")) {
-                    /* E.g. {"data":{"tweetResult":{"result":{"__typename":"TweetUnavailable","reason":"NsfwLoggedOut"}}}} */
-                    throw new AccountRequiredException();
-                } else if (br.containsHTML("Suspended")) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                /* Example 2: {"data":{"tweetResult":{"result":{"__typename":"TweetUnavailable","reason":"NsfwLoggedOut"}}}} */
+                /* Example 3: */
+                final Map<String, Object> tweetUnavailableMap = recursiveFindTweetUnavailableMap(entries);
+                if (tweetUnavailableMap != null) {
+                    final String bubbleNotificationTitle = "Tweet unavailable: " + tweetID;
+                    final String tweetUnavailableReasonInternal = tweetUnavailableMap.get("reason").toString();
+                    String tweetUnavailableReasonHumanReadableText = null;
+                    try {
+                        if (tweetUnavailableReasonInternal.equalsIgnoreCase("NsfwLoggedOut")) {
+                            /* Account required or given account has no permission to view NSFW content */
+                            if (account != null) {
+                                tweetUnavailableReasonHumanReadableText = "Given account has no permission to view NSFW content.";
+                            } else {
+                                tweetUnavailableReasonHumanReadableText = "Account required to view NSFW content.";
+                            }
+                            throw new AccountRequiredException();
+                        } else {
+                            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                        }
+                    } finally {
+                        if (tweetUnavailableReasonHumanReadableText != null) {
+                            displayBubblenotifyMessage(bubbleNotificationTitle, "Tween unavailable because: " + tweetUnavailableReasonHumanReadableText);
+                        } else {
+                            displayBubblenotifyMessage(bubbleNotificationTitle, "Tween unavailable because: API error: " + tweetUnavailableReasonInternal);
+                        }
+                    }
                 } else {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
@@ -434,6 +463,39 @@ public class TwitterComCrawler extends PluginForDecrypt {
             final List<Map<String, Object>> timelineInstructions = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entries, "data/threaded_conversation_with_injections_v2/instructions");
             final ArrayList<DownloadLink> ret = this.crawlUserProfileGraphqlTimelineInstructions(timelineInstructions, null, tweetID, null);
             return ret;
+        }
+    }
+
+    private Map<String, Object> recursiveFindTweetUnavailableMap(final Object o) {
+        if (o instanceof Map) {
+            final Map<String, Object> entrymap = (Map<String, Object>) o;
+            for (final Map.Entry<String, Object> entry : entrymap.entrySet()) {
+                // final String key = entry.getKey();
+                final Object value = entry.getValue();
+                final String __typename = (String) entrymap.get("__typename");
+                if (StringUtils.equalsIgnoreCase(__typename, "TweetUnavailable")) {
+                    return entrymap;
+                } else if (value instanceof List || value instanceof Map) {
+                    final Map<String, Object> ret = recursiveFindTweetUnavailableMap(value);
+                    if (ret != null) {
+                        return ret;
+                    }
+                }
+            }
+            return null;
+        } else if (o instanceof List) {
+            final List<Object> array = (List) o;
+            for (final Object arrayo : array) {
+                if (arrayo instanceof List || arrayo instanceof Map) {
+                    final Map<String, Object> res = recursiveFindTweetUnavailableMap(arrayo);
+                    if (res != null) {
+                        return res;
+                    }
+                }
+            }
+            return null;
+        } else {
+            return null;
         }
     }
 
@@ -1291,18 +1353,36 @@ public class TwitterComCrawler extends PluginForDecrypt {
         } while (true);
         logger.info("Last nextCursor: " + profileCrawlerNextCursor);
         if (ret.isEmpty()) {
+            /* We found nothing -> Check why */
+            final String bubbleNotifyTitle = "Twitter profile " + username + " | ID: " + userID;
+            final String bubbleNotifyTextEnding = "\r\nTotal number of Tweets in this profile: " + statuses_count;
             if (totalFoundTweets == 0) {
                 if (statuses_count != null && statuses_count.intValue() > 0 && account == null) {
+                    displayBubblenotifyMessage(bubbleNotifyTitle, "Returning no results because:\r\nAccount required to view Tweets of this profile." + bubbleNotifyTextEnding);
                     throw new AccountRequiredException();
                 } else {
                     /* No results and we don't know why. */
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             } else {
-                logger.info("Returning nothing but we found " + totalFoundTweets + " tweets: Probably all elements got skipped as user has disabled tweet text crawling and crawled profile only contained text tweets");
+                /* No results because of users' settings. */
+                if (profileCrawlerSkippedResultsByMaxDate.size() > 0) {
+                    displayBubblenotifyMessage(bubbleNotifyTitle, "Returning no results because:\r\nAll existing elements have earlier timestamps than user defined max_date parameter " + maxTweetDateStr + ".\r\nMinimum number of skipped Tweets: " + profileCrawlerSkippedResultsByMaxDate.size() + bubbleNotifyTextEnding);
+                } else {
+                    displayBubblenotifyMessage(bubbleNotifyTitle, "Returning no results because:\r\nMost likely user has disabled tweet text crawler but this profile only contained text tweets.\r\nMinimum number of skipped possible Tweets: " + totalFoundTweets + bubbleNotifyTextEnding);
+                }
             }
         }
         return ret;
+    }
+
+    private void displayBubblenotifyMessage(final String title, final String msg) {
+        BubbleNotify.getInstance().show(new AbstractNotifyWindowFactory() {
+            @Override
+            public AbstractNotifyWindow<?> buildAbstractNotifyWindow() {
+                return new BasicNotify("Twitter: " + title, msg, new AbstractIcon(IconKey.ICON_INFO, 32));
+            }
+        });
     }
 
     /**
