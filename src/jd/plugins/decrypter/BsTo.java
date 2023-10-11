@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map.Entry;
+import java.util.regex.Pattern;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
@@ -54,8 +55,21 @@ public class BsTo extends PluginForDecrypt {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
         /* Full list of their current domains see: https://burningseries.domains/ */
-        ret.add(new String[] { "bs.to", "burningseries.co", "burningseries.ac", "burningseries.sx", "burningseries.vc", "burningseries.cx", "burningseries.nz", "burningseries.se", "burning-series.io" });
+        ret.add(new String[] { "bs.to", "burningseries.co", "burningseries.ac", "burningseries.sx", "burningseries.vc", "burningseries.cx", "burningseries.nz", "burningseries.se", "burning-series.io", "burningseries.tw" });
         return ret;
+    }
+
+    private static final List<String> getDeadDomains() {
+        final ArrayList<String> deadDomains = new ArrayList<String>();
+        /* 2023-10-10: Strange advertisement copy-website(?) */
+        deadDomains.add("burning-series.io");
+        /* 2023-10-10: Down */
+        deadDomains.add("burningseries.cx");
+        deadDomains.add("burningseries.nz");
+        deadDomains.add("burningseries.se");
+        deadDomains.add("burningseries.tw");
+        deadDomains.add("");
+        return deadDomains;
     }
 
     public static String[] getAnnotationNames() {
@@ -81,12 +95,19 @@ public class BsTo extends PluginForDecrypt {
 
     private static final String TYPE_SINGLE = "https?://[^/]+/serie/([^/]+)/(\\d+)/([^/]+)/[^/]+/[^/]+";
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        if (param.getCryptedUrl().matches("https?://[^/]+/out.*")) {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        String contenturl = param.getCryptedUrl();
+        final String addedLinkDomain = Browser.getHost(contenturl, true);
+        String domainToUse = addedLinkDomain;
+        if (getDeadDomains().contains(addedLinkDomain)) {
+            domainToUse = this.getHost();
+            contenturl = contenturl.replaceFirst(Pattern.quote(addedLinkDomain), domainToUse);
+        }
+        if (contenturl.matches("(?i)https?://[^/]+/out.*")) {
             /* 2022-02-01: Old single link(?) */
             br.setFollowRedirects(false);
-            br.getPage(param.getCryptedUrl());
+            br.getPage(contenturl);
             if (br.getRedirectLocation() == null || br.containsHTML("g-recaptcha")) {
                 Form form = br.getFormbyProperty("id", "gateway");
                 if (form == null) {
@@ -99,18 +120,18 @@ public class BsTo extends PluginForDecrypt {
                 br.submitForm(form);
             }
             final String finallink = br.getRedirectLocation();
-            decryptedLinks.add(createDownloadlink(finallink));
-            return decryptedLinks;
+            ret.add(createDownloadlink(finallink));
+            return ret;
         }
         br.setFollowRedirects(true);
-        br.getPage(param.getCryptedUrl());
+        br.getPage(contenturl);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML("(?i)>\\s*Seite nicht gefunden<")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         // final String urlpart = new Regex(parameter, "(serie/.+)").getMatch(0);
-        if (param.getCryptedUrl().matches(TYPE_SINGLE)) {
+        if (contenturl.matches(TYPE_SINGLE)) {
             String finallink = br.getRegex("\"(https?[^<>\"]*?)\" target=\"_blank\"><span class=\"icon link_go\"").getMatch(0);
             if (finallink == null) {
                 finallink = br.getRegex("<iframe\\s+[^>]+src\\s*=\\s*(\"|'|)(.*?)\\1").getMatch(1);
@@ -158,7 +179,7 @@ public class BsTo extends PluginForDecrypt {
                 }
                 finallink = br.getRedirectLocation();
             }
-            decryptedLinks.add(createDownloadlink(finallink));
+            ret.add(createDownloadlink(finallink));
         } else {
             /* Crawl all mirrors of a single download */
             String mirrorlist = br.getRegex("<ul class=\"hoster-tabs top\">(.*?)<ul class=\"hoster-tabs bottom\">").getMatch(0);
@@ -221,17 +242,17 @@ public class BsTo extends PluginForDecrypt {
                 logger.info("Number of user allowed mirrors via priorized hosts handling: " + userAllowedMirrorURLs.size());
                 for (final String singleLink : userAllowedMirrorURLs) {
                     final String url = Request.getLocation("/" + singleLink, br.getRequest());
-                    decryptedLinks.add(createDownloadlink(url));
+                    ret.add(createDownloadlink(url));
                 }
             } else {
                 logger.info("User didn't define priorized hosts -> Crawling all");
                 for (final String singleLink : mirrorURLs) {
                     final String url = Request.getLocation("/" + singleLink, br.getRequest());
-                    decryptedLinks.add(createDownloadlink(url));
+                    ret.add(createDownloadlink(url));
                 }
             }
         }
-        return decryptedLinks;
+        return ret;
     }
 
     @Override

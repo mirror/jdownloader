@@ -320,7 +320,6 @@ public class BandCampComDecrypter extends PluginForDecrypt {
                     albumArtist = (String) albumEmbedInfo.get("artist");
                     if (!StringUtils.isEmpty(albumArtist)) {
                         albumArtist = Encoding.htmlDecode(albumArtist).trim();
-                        // link.setProperty(PROPERTY_USERNAME_PRETTY, Encoding.htmlDecode(albumArtist).trim());
                     }
                 }
             }
