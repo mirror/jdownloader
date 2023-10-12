@@ -53,7 +53,7 @@ public class OdriveCom extends PluginForDecrypt {
         int maxPasswordTries = 2;
         int usedPasswordTries = 0;
         String passCode = "";
-        final UrlQuery query = new UrlQuery().parse(param.getCryptedUrl());
+        final UrlQuery query = UrlQuery.parse(param.getCryptedUrl());
         if (query.get("password") != null) {
             /* E.g. user adds folder --> Password protected --> Contains subfolders which will all require the same password. */
             passCode = query.get("password");

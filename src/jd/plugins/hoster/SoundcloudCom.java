@@ -550,7 +550,7 @@ public class SoundcloudCom extends PluginForHost {
                         } else {
                             plugin.getLogger().info("Chosen audio preset: " + chosenTranscoding.get("preset"));
                             final Browser br2 = browser.cloneBrowser();
-                            final UrlQuery query = new UrlQuery().parse(streamUrl);
+                            final UrlQuery query = UrlQuery.parse(streamUrl);
                             query.add("client_id", getClientId(null));
                             streamUrl = URLHelper.parseLocation(new URL(streamUrl), "?" + query.toString()).toString();
                             br2.getPage(streamUrl);

@@ -408,7 +408,6 @@ public class TwitterComCrawler extends PluginForDecrypt {
                 /* Example 3: */
                 final Map<String, Object> tweetUnavailableMap = recursiveFindTweetUnavailableMap(entries);
                 if (tweetUnavailableMap != null) {
-                    final String bubbleNotificationTitle = "Tweet unavailable: " + tweetID;
                     final String tweetUnavailableReasonInternal = tweetUnavailableMap.get("reason").toString();
                     String tweetUnavailableReasonHumanReadableText = null;
                     try {
@@ -424,6 +423,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
                             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                         }
                     } finally {
+                        final String bubbleNotificationTitle = "Tweet unavailable: " + tweetID;
                         if (tweetUnavailableReasonHumanReadableText != null) {
                             displayBubblenotifyMessage(bubbleNotificationTitle, "Tween unavailable because: " + tweetUnavailableReasonHumanReadableText);
                         } else {
@@ -466,6 +466,11 @@ public class TwitterComCrawler extends PluginForDecrypt {
         }
     }
 
+    /**
+     * Recursive function to find first map which contains information about unavailable Tweet. </br>
+     * Important: If the return value of this != null this doesn't mean that a Tweet is unavailable - only use the result of this if upper
+     * code was unable to find any online Tweet!
+     */
     private Map<String, Object> recursiveFindTweetUnavailableMap(final Object o) {
         if (o instanceof Map) {
             final Map<String, Object> entrymap = (Map<String, Object>) o;

@@ -65,24 +65,24 @@ public class MixCloudComCrawler extends antiDDoSForDecrypt {
         return true;
     }
 
-    private static final String TYPE_SINGLE_AUDIO         = "^https?://[^/]+/[^/]+/[^/]+/?$";
-    private static final String TYPE_SINGLE_AUDIO_IFRAME_ = "https?://[^/]+/widget/iframe/\\?.*feed=.+";
-    private static final String TYPE_CHANNEL              = "^https?://[^/]+/([^/]+)/?$";
+    private static final String TYPE_SINGLE_AUDIO         = "(?i)^https?://[^/]+/[^/]+/[^/]+/?$";
+    private static final String TYPE_SINGLE_AUDIO_IFRAME_ = "(?i)https?://[^/]+/widget/iframe/\\?.*feed=.+";
+    private static final String TYPE_CHANNEL              = "(?i)^https?://[^/]+/([^/]+)/?$";
 
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        if (param.getCryptedUrl().matches("https?://[^/]+/((developers|categories|media|competitions|tag|discover)/.+|[\\w\\-]+/(playlists|activity|followers|following|listens|favourites).+)")) {
+        if (param.getCryptedUrl().matches("(?i)https?://[^/]+/((developers|categories|media|competitions|tag|discover)/.+|[\\w\\-]+/(playlists|activity|followers|following|listens|favourites).+)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (param.getCryptedUrl().matches(TYPE_SINGLE_AUDIO_IFRAME_)) {
             /* Correct URL leading to embedded content --> Normal URL */
-            final UrlQuery query = new UrlQuery().parse(param.getCryptedUrl());
+            final UrlQuery query = UrlQuery.parse(param.getCryptedUrl());
             String urlpart = query.get("feed");
             if (urlpart == null) {
                 return null;
             }
             if (Encoding.isUrlCoded(urlpart)) {
-                urlpart = Encoding.htmlDecode(urlpart);
+                urlpart = Encoding.htmlOnlyDecode(urlpart);
             }
             final String newURL;
             if (urlpart.startsWith("/")) {
@@ -90,21 +90,23 @@ public class MixCloudComCrawler extends antiDDoSForDecrypt {
             } else {
                 newURL = urlpart;
             }
-            param.setCryptedUrl(newURL);
-        }
-        final Account account = AccountController.getInstance().getValidAccount(this.getHost());
-        if (account != null) {
-            final PluginForHost plg = this.getNewPluginForHostInstance(this.getHost());
-            ((jd.plugins.hoster.MixCloudCom) plg).login(account, false);
-        }
-        if (param.getCryptedUrl().matches(TYPE_SINGLE_AUDIO)) {
-            return this.crawlSingleAudio(param, param.getCryptedUrl());
-        } else if (param.getCryptedUrl().matches(TYPE_CHANNEL)) {
-            return this.crawlUsername(param);
-        } else {
-            logger.info("Unsupported URL: " + param.getCryptedUrl());
-            // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            ret.add(this.createDownloadlink(newURL));
             return ret;
+        } else {
+            final Account account = AccountController.getInstance().getValidAccount(this.getHost());
+            if (account != null) {
+                final PluginForHost plg = this.getNewPluginForHostInstance(this.getHost());
+                ((jd.plugins.hoster.MixCloudCom) plg).login(account, false);
+            }
+            if (param.getCryptedUrl().matches(TYPE_SINGLE_AUDIO)) {
+                return this.crawlSingleAudio(param, param.getCryptedUrl());
+            } else if (param.getCryptedUrl().matches(TYPE_CHANNEL)) {
+                return this.crawlUsername(param);
+            } else {
+                logger.info("Unsupported URL: " + param.getCryptedUrl());
+                // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                return ret;
+            }
         }
     }
 
@@ -114,7 +116,7 @@ public class MixCloudComCrawler extends antiDDoSForDecrypt {
             /* This should never happen */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
         getPage(param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 404) {
@@ -163,7 +165,7 @@ public class MixCloudComCrawler extends antiDDoSForDecrypt {
             entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "data/user/uploads");
             final Map<String, Object> pageInfo = (Map<String, Object>) entries.get("pageInfo");
             final List<Object> audioObjects = (List<Object>) entries.get("edges");
-            this.processAudioObjects(decryptedLinks, audioObjects, fp, dupes);
+            this.processAudioObjects(ret, audioObjects, fp, dupes);
             final String lastCursor = (String) ((Map<String, Object>) audioObjects.get(audioObjects.size() - 1)).get("cursor");
             if (audioObjects.size() < maxItemsPerPage) {
                 logger.info("Stopping because current page contains less than " + maxItemsPerPage + " items");
@@ -178,7 +180,7 @@ public class MixCloudComCrawler extends antiDDoSForDecrypt {
             br.postPageRaw("/graphql", "{\"query\":\"" + queryPagination + "\",\"variables\":{\"count\":20,\"cursor\":\"" + lastCursor + "\",\"orderBy\":\"LATEST\",\"userID\":\"" + userIDb64 + "\"}}");
             page++;
         } while (!this.isAbort());
-        return decryptedLinks;
+        return ret;
     }
 
     private ArrayList<DownloadLink> crawlSingleAudio(final CryptedLink param, final String parameter) throws Exception {
@@ -222,9 +224,8 @@ public class MixCloudComCrawler extends antiDDoSForDecrypt {
             List<Object> audioObjects = new ArrayList<Object>();
             /* Find correct json ArrayList */
             if (page == 0) {
-                String json = br.getRequest().getHtmlCode();
                 // json = Encoding.htmlOnlyDecode(json);
-                final Object jsonO = JavaScriptEngineFactory.jsonToJavaObject(json);
+                final Object jsonO = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.OBJECT);
                 if (jsonO instanceof Map) {
                     /* 2020-06-02 */
                     entries = (Map<String, Object>) jsonO;
@@ -312,13 +313,13 @@ public class MixCloudComCrawler extends antiDDoSForDecrypt {
                 downloadReq.getHeaders().put("x-requested-with", "XMLHttpRequest");
                 br.openRequestConnection(downloadReq);
                 br.loadConnection(null);
-                entries = restoreFromString(br.toString(), TypeRef.MAP);
+                entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
                 entries = (Map<String, Object>) entries.get("data");
                 Iterator<Entry<String, Object>> iterator = entries.entrySet().iterator();
                 while (iterator.hasNext()) {
                     final Entry<String, Object> entry = iterator.next();
                     final String keyName = entry.getKey();
-                    if (keyName.matches("_user.+")) {
+                    if (keyName.matches("(?i)_user.+")) {
                         entries = (Map<String, Object>) entry.getValue();
                         break;
                     }
@@ -327,7 +328,7 @@ public class MixCloudComCrawler extends antiDDoSForDecrypt {
                 while (iterator.hasNext()) {
                     final Entry<String, Object> entry = iterator.next();
                     final String keyName = entry.getKey();
-                    if (keyName.matches("_stream.+")) {
+                    if (keyName.matches("(?i)_stream.+")) {
                         entries = (Map<String, Object>) entry.getValue();
                         break;
                     }

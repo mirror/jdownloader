@@ -72,16 +72,26 @@ public class MangatownCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        return requestFileInformation(link, false);
+    }
+
+    private AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
         link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
         dllink = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getPluginPatternMatcher());
-        if (br.getHttpConnection().getResponseCode() == 404 || !br.getURL().contains("/manga/")) {
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (!this.canHandle(br.getURL())) {
+            /* E.g. redirect to mainpage */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        dllink = br.getRegex("([^/\"\\']+\\.[^/]+/store/manga/[^<>\"\\']+)").getMatch(0);
-        if (!StringUtils.isEmpty(dllink)) {
+        dllink = br.getRegex("src=\"([^\"]+)\"[^>]*id=\"image\"").getMatch(0);
+        if (dllink == null) {
+            dllink = br.getRegex("([^/\"\\']+\\.[^/]+/store/manga/[^<>\"\\']+)").getMatch(0);
+        }
+        if (!StringUtils.isEmpty(dllink) && !isDownload) {
             URLConnectionAdapter con = null;
             try {
                 con = br.openHeadConnection(this.dllink);
@@ -101,7 +111,7 @@ public class MangatownCom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
-        requestFileInformation(link);
+        requestFileInformation(link, true);
         if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

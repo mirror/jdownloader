@@ -86,7 +86,7 @@ public class LockmyLink extends PluginForDecrypt {
                 break;
             } else {
                 logger.info("Waiting 1000ms | Remaining seconds to wait: " + brc.getRequest().getHtmlCode());
-                sleep(1000, param);
+                sleep(1001, param);
                 continue;
             }
         }
@@ -129,6 +129,10 @@ public class LockmyLink extends PluginForDecrypt {
         }
         if (results == null || results.length == 0) {
             if (br.containsHTML("not_found")) {
+                /*
+                 * This may also happen if user fails to solve the captcha but we can't just retry it because in order to do that we would
+                 * need to wait another ~120 seconds.
+                 */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

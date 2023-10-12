@@ -65,7 +65,7 @@ public class LiveMixtapesComDecrypter extends antiDDoSForDecrypt {
             return decryptedLinks;
         }
         /* 2020-04-22: Convert embed URLs --> Normal URLs */
-        final UrlQuery query = new UrlQuery().parse(parameter);
+        final UrlQuery query = UrlQuery.parse(parameter);
         String album_id = query.get("album_id");
         if (album_id == null) {
             album_id = new Regex(parameter, "/mixtapes/(\\d+)").getMatch(0);

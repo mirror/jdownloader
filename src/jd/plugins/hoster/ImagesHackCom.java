@@ -30,6 +30,7 @@ import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -43,13 +44,10 @@ import jd.plugins.decrypter.ImagesHackComCrawler;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 @PluginDependencies(dependencies = { ImagesHackComCrawler.class })
 public class ImagesHackCom extends PluginForHost {
-    private static final String  TYPE_DOWNLOAD    = "(?i)https?://[^/]+/f/\\d+/[^<>\"/]+";
-    private static final String  TYPE_IMAGE       = "(?i)https?://[^/]+/i/[A-Za-z0-9]+";
     private static final boolean enable_api_image = true;
     // private static final String TYPE_DIRECT =
     // "https?://imagizer\\.imageshack\\.(?:com|us)/(?:a/img\\d+/\\d+/|v2/\\d+x\\d+q\\d+/\\d+/)([A-Za-z0-9]+)\\.[A-Za-z]{3,5}";
-    private String               DLLINK           = null;
-    private String               fid              = null;
+    private String               dllink           = null;
 
     private static List<String[]> getPluginDomains() {
         return ImagesHackComCrawler.getPluginDomains();
@@ -67,7 +65,7 @@ public class ImagesHackCom extends PluginForHost {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:i/[A-Za-z0-9]+|f/\\d+/[^<>\"/]+)");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(i|f)/([A-Za-z0-9]+)");
         }
         return ret.toArray(new String[0]);
     }
@@ -91,6 +89,16 @@ public class ImagesHackCom extends PluginForHost {
         return -1;
     }
 
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String contentid = getFIDFRomURL_image(link);
+        if (contentid != null) {
+            return "imageshackcom://image/" + contentid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
     private String getContentURL(final DownloadLink link) {
         return link.getPluginPatternMatcher().replace("imageshack.us/", "imageshack.com/").replaceFirst("(?i)http://", "https://");
     }
@@ -98,39 +106,33 @@ public class ImagesHackCom extends PluginForHost {
     /** Using API: https://api.imageshack.com/ */
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        return requestFileInformation(link, false);
+        return requestFileInformation(link, null, false);
     }
 
-    private AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
-        DLLINK = null;
+    private AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
+        dllink = null;
         this.setBrowserExclusive();
-        /* Set password-cookies if needed */
+        br.setFollowRedirects(true);
         final String passCode = link.getDownloadPassword();
+        /* Set password-cookies if needed so we won't have to send password to server again. */
         final String pwcookie = link.getStringProperty("pwcookie");
         if (pwcookie != null) {
             final String[] cookieinfo = pwcookie.split(":");
             this.br.setCookie(this.getHost(), cookieinfo[0], cookieinfo[1]);
         }
         final String contenturl = getContentURL(link);
-        if (contenturl.matches(TYPE_DOWNLOAD) || br.containsHTML("class=\"download-block\"")) {
-            /* Download */
-            br.setFollowRedirects(true);
-            br.getPage(contenturl);
-            if (br.containsHTML("Looks like the image is no longer here")) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            DLLINK = br.getRegex("\"(https?://imageshack\\.us/download/[^<>\"]*?)\"").getMatch(0);
-        } else if (enable_api_image) {
+        boolean findFilesizeViaHeader = true;
+        final String contentid = getFIDFRomURL_image(link);
+        if (enable_api_image) {
             /* Image + usage of API. */
             prepBR_API(this.br);
-            this.fid = getFIDFRomURL_image(link);
             final UrlQuery query = new UrlQuery();
             query.add("next_prev_limit", "0");
             query.add("related_images_limit", "0");
             if (passCode != null) {
                 query.add("password", Encoding.urlEncode(passCode));
             }
-            br.getPage("https://api.imageshack.com/v2/images/" + this.fid + "?" + query.toString());
+            br.getPage("https://api.imageshack.com/v2/images/" + contentid + "?" + query.toString());
             if (this.br.getHttpConnection().getResponseCode() == 401) {
                 /*
                  * TThis case is nearly impossible as only albums can be password protected --> Correct password should already be available
@@ -146,36 +148,41 @@ public class ImagesHackCom extends PluginForHost {
                 /* Typically response 500 for offline */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            Map<String, Object> map = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.getRequest().getHtmlCode());
-            map = (Map<String, Object>) map.get("result");
-            final AvailableStatus status = apiImageGetAvailablestatus(this, link, map);
-            DLLINK = (String) map.get("direct_link");
-            if (DLLINK == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            final Map<String, Object> map = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.getRequest().getHtmlCode());
+            final Map<String, Object> resultmap = (Map<String, Object>) map.get("result");
+            final AvailableStatus status = apiImageGetAvailablestatus(this, link, resultmap);
+            if (status != AvailableStatus.TRUE) {
+                return status;
             }
-            if (!DLLINK.startsWith("http")) {
-                DLLINK = "https://" + DLLINK;
+            dllink = (String) resultmap.get("direct_link");
+            if (dllink != null && !dllink.startsWith("http")) {
+                dllink = "https://" + dllink;
             }
-            return status;
+            if (Boolean.TRUE.equals(resultmap.get("block_downloading"))) {
+                /* Filesize given via API is wrong as it is the size of the original image which we can't download. */
+                findFilesizeViaHeader = true;
+            } else {
+                /* Filesize given via API is correct. */
+                findFilesizeViaHeader = false;
+            }
         } else {
             /* Image - handling via website. */
-            this.fid = getFIDFRomURL_image(link);
             br.setFollowRedirects(false);
             br.getPage(contenturl);
             if (br.getRedirectLocation() != null) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            DLLINK = br.getRegex("data\\-width=\"0\" data\\-height=\"0\" alt=\"\" src=\"(//imagizer\\.imageshack[^<>\"]*?)\"").getMatch(0);
-            if (DLLINK == null) {
+            dllink = br.getRegex("data\\-width=\"0\" data\\-height=\"0\" alt=\"\" src=\"(//imagizer\\.imageshack[^<>\"]*?)\"").getMatch(0);
+            if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            DLLINK = "http" + DLLINK;
+            dllink = "http" + dllink;
         }
         br.setFollowRedirects(true);
-        if (DLLINK != null && !isDownload) {
+        if (dllink != null && !isDownload && findFilesizeViaHeader) {
             URLConnectionAdapter con = null;
             try {
-                con = br.openHeadConnection(DLLINK);
+                con = br.openHeadConnection(dllink);
                 handleConnectionErrors(br, con);
                 final String filenameFromHeader = getFileNameFromHeader(con);
                 if (filenameFromHeader != null) {
@@ -184,10 +191,10 @@ public class ImagesHackCom extends PluginForHost {
                 if (con.getCompleteContentLength() > 0) {
                     link.setVerifiedFileSize(con.getCompleteContentLength());
                 }
-            } catch (final Throwable e) {
+            } finally {
                 try {
                     con.disconnect();
-                } catch (final Throwable e2) {
+                } catch (final Throwable ignore) {
                 }
             }
         }
@@ -201,8 +208,7 @@ public class ImagesHackCom extends PluginForHost {
             dl.setAvailable(false);
             return AvailableStatus.FALSE;
         }
-        final String id = api_json_get_id(json);
-        final long filesize = JavaScriptEngineFactory.toLong(json.get("filesize"), -1);
+        final Number filesize = (Number) json.get("filesize");
         final String username = api_json_get_username(json);
         final String album = api_json_get_album(json);
         final Object isDeleted_o = json.get("hidden");
@@ -217,7 +223,7 @@ public class ImagesHackCom extends PluginForHost {
          * extension!
          */
         String filename = (String) json.get("filename");
-        if (filename == null || filesize == -1 || isDeleted) {
+        if (filename == null || isDeleted) {
             dl.setAvailable(false);
             return AvailableStatus.FALSE;
         }
@@ -233,20 +239,15 @@ public class ImagesHackCom extends PluginForHost {
             }
         }
         dl.setFinalFileName(filename);
-        if (filesize > 0) {
+        if (filesize != null) {
             /* Happens e.g. when crawling all images of a user - API sometimes randomly returns 0 for filesize. */
-            dl.setDownloadSize(filesize * 1024);
+            dl.setDownloadSize(filesize.longValue() * 1024);
         }
-        dl.setLinkID(id);
         return AvailableStatus.TRUE;
     }
 
     public static String api_json_get_album(final Map<String, Object> json) {
         return (String) JavaScriptEngineFactory.walkJson(json, "album/title");
-    }
-
-    public static String api_json_get_id(final Map<String, Object> json) {
-        return (String) json.get("id");
     }
 
     public static String api_json_get_username(final Map<String, Object> json) {
@@ -255,7 +256,7 @@ public class ImagesHackCom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        requestFileInformation(link, true);
+        requestFileInformation(link, null, true);
         if (link.isPasswordProtected()) {
             // passCode = Plugin.getUserInput("Password?", downloadLink);
             // /* Simply do the availablecheck again - it will use the password. */
@@ -268,7 +269,7 @@ public class ImagesHackCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Password protected images are not yet supported.", 3 * 60 * 60 * 1000l);
         }
         // More is possible but 1 chunk is good to prevent errors
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, DLLINK, true, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
         handleConnectionErrors(br, dl.getConnection());
         // link.setDownloadPassword(this.passCode);
         dl.startDownload();
@@ -277,14 +278,14 @@ public class ImagesHackCom extends PluginForHost {
     private void handleConnectionErrors(final Browser br, final URLConnectionAdapter con) throws PluginException, IOException {
         if (!this.looksLikeDownloadableContent(con)) {
             br.followConnection(true);
-            if (dl.getConnection().getResponseCode() == 403) {
+            if (con.getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
+            } else if (con.getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404");
-            } else if (dl.getConnection().getResponseCode() == 401) {
+            } else if (con.getResponseCode() == 401) {
                 /* Should never happen */
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 401", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 500) {
+            } else if (con.getResponseCode() == 500) {
                 /* Should never happen */
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 500", 60 * 60 * 1000l);
             } else {
@@ -294,7 +295,7 @@ public class ImagesHackCom extends PluginForHost {
     }
 
     private String getFIDFRomURL_image(final DownloadLink link) {
-        return new Regex(link.getPluginPatternMatcher(), "([A-Za-z0-9]+)$").getMatch(0);
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(1);
     }
 
     public static Browser prepBR_API(final Browser br) {

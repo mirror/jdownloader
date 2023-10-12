@@ -32,8 +32,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mangatown.com" }, urls = { "https?://(?:www\\.)?mangatown\\.com/manga/[^/]+/c\\d+/(?:\\d+\\.html)?" })
-public class MangatownCom extends PluginForDecrypt {
-    public MangatownCom(PluginWrapper wrapper) {
+public class MangatownComCrawler extends PluginForDecrypt {
+    public MangatownComCrawler(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -42,9 +42,9 @@ public class MangatownCom extends PluginForDecrypt {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.IMAGE_HOST, LazyPlugin.FEATURE.IMAGE_GALLERY };
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+        final String parameter = param.getCryptedUrl();
         this.br.setFollowRedirects(true);
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("class=\"mangaread_next_info\"")) {
@@ -67,8 +67,7 @@ public class MangatownCom extends PluginForDecrypt {
         final String server_urlpart = downloadinfo.getMatch(0);
         final String ext = downloadinfo.getMatch(1);
         if (server_urlpart == null || ext == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         short page_max = 1;
         final String[] pages = this.br.getRegex("<option value=\"[^<>\"]+\"[^<>]*>(\\d+)</option>").getColumn(0);

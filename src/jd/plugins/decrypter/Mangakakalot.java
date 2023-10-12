@@ -17,11 +17,11 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -33,30 +33,56 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
+import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mangakakalot.com" }, urls = { "https?://(www\\.)?(manganelo|readmanganato|manganato|mangakakalot|chapmanganato)\\.com/(?:manga-|chapter)[^\\s$]+" })
-public class Mangakakalot extends antiDDoSForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
+public class Mangakakalot extends PluginForDecrypt {
     public Mangakakalot(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private final String TYPE_MANGA         = "^https?://[^/]+/manga-([a-z0-9\\-]+)$";
-    private final String TYPE_MANGA_CHAPTER = "^https?://[^/]+/(?:manga-|chapter/)([a-z0-9\\-]+)/chapter[\\-_](\\d+(\\.\\d+)?)$";
+    private final String TYPE_MANGA         = "(?i)^https?://[^/]+/manga-([a-z0-9\\-]+)/?$";
+    private final String TYPE_MANGA_CHAPTER = "(?i)^https?://[^/]+/(?:manga-|chapter/)([a-z0-9\\-]+)/chapter[\\-_](\\d+(\\.\\d+)?)$";
 
     @Override
     public int getMaxConcurrentProcessingInstances() {
         return 1;
     }
 
+    private static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "mangakakalot.com", "manganelo.com", "manganato.com", "manganelo.com", "chapmanganato.com", "readmanganato.com" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : getPluginDomains()) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:manga-|chapter)[^\\s$]+");
+        }
+        return ret.toArray(new String[0]);
+    }
+
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         br.setFollowRedirects(true);
-        getPage(br, param.getCryptedUrl());
+        br.getPage(param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final FilePackage fp = FilePackage.getInstance();
         if (param.getCryptedUrl().matches(TYPE_MANGA)) {
+            /* Find all chapters of a manga */
             String[] chapters = br.getRegex("<a[^>]+class\\s*=\\s*\"chapter-name[^\"]*\"[^>]+href\\s*=\\s*\"([^\"]+)\"").getColumn(0);
             if (chapters != null && chapters.length > 0) {
                 for (String chapter : chapters) {
@@ -71,8 +97,8 @@ public class Mangakakalot extends antiDDoSForDecrypt {
             }
             fp.addLinks(ret);
         } else if (param.getCryptedUrl().matches(TYPE_MANGA_CHAPTER)) {
+            /* Find all images of a chapter */
             final String chapterNumber = new Regex(param.getCryptedUrl(), TYPE_MANGA_CHAPTER).getMatch(1);
-            //
             String breadcrumb = br.getRegex("<div[^>]+class\\s*=\\s*\"(?:panel-)?breadcrumb[^\"]*\"[^>]*>\\s*([^§]+)<div[^>]+class\\s*=\\s*\"panel").getMatch(0);
             breadcrumb = breadcrumb != null ? breadcrumb.replaceAll("<div[^>]+class\\s*=\\s*\\\"panel[^§]+", "") : null;
             //

@@ -297,16 +297,6 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         br.addAllowedResponseCodes(new int[] { 502 });
         final AtomicBoolean loggedIN = new AtomicBoolean(false);
         final Account account = AccountController.getInstance().getValidAccount(getHost());
-        /* Correct URL added by user if necessary */
-        String newURL = param.getCryptedUrl().replaceFirst("(?i)^http://", "https://").replaceFirst("://in", "://www.in");
-        if (!newURL.endsWith("/")) {
-            /* Add slash to the end to prevent 302 redirect to speed up the crawl process a tiny bit. */
-            newURL = newURL + "/";
-        }
-        if (!StringUtils.equals(param.getCryptedUrl(), newURL)) {
-            logger.info("Added URL was changed: Old: " + param.getCryptedUrl() + " | New: " + newURL);
-            param.setCryptedUrl(newURL);
-        }
         if (this.requiresLogin(param.getCryptedUrl()) && !loggedIN.get() && account == null) {
             /* E.g. saved users own objects can only be crawled when he's logged in ;) */
             throw new AccountRequiredException();
@@ -553,6 +543,10 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
      */
     private ArrayList<DownloadLink> crawlGallery(final CryptedLink param, final Account account, final AtomicBoolean loggedIN) throws Exception {
         final String galleryID = new Regex(param.getCryptedUrl(), TYPE_GALLERY).getMatch(0);
+        if (galleryID == null) {
+            /* Developer mistake */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         /**
          * TODO: This is not a TODO, just an information: 2022-06-22: Example get json right away: Add "?__a=1&__d=dis" to URL e.g.: </br>
          * https://www.instagram.com/p/<postID>/?__a=1&__d=dis
@@ -2020,14 +2014,14 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         }
         /* Login is mandatory! */
         loginOrFail(account, loggedIN);
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         InstaGramCom.prepBRAltAPI(this.br);
         InstaGramCom.getPageAltAPI(account, this.br, InstaGramCom.ALT_API_BASE + "/tags/" + hashtag + "/info/");
         Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
         final long totalNumberofPosts = JavaScriptEngineFactory.toLong(entries.get("media_count"), 0);
         if (totalNumberofPosts == 0) {
-            decryptedLinks.add(this.createOfflinelink(param.getCryptedUrl(), "No items available for this tag: " + hashtag, "No items available for this tag: " + hashtag));
-            return decryptedLinks;
+            ret.add(this.createOfflinelink(param.getCryptedUrl(), "No items available for this tag: " + hashtag, "No items available for this tag: " + hashtag));
+            return ret;
         }
         final InstagramMetadata metadata = new InstagramMetadata();
         metadata.setHashtag(hashtag);
@@ -2051,7 +2045,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             if (numberofPostsOnThisPage == 0) {
                 /* Rare case */
                 logger.info("Stopping because: 0 items available ...");
-                return decryptedLinks;
+                return ret;
             }
             nextid = (String) entries.get("next_max_id");
             final List<Map<String, Object>> resource_data_list = (List<Map<String, Object>>) entries.get("items");
@@ -2061,7 +2055,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                 break;
             }
             for (final Map<String, Object> post : resource_data_list) {
-                decryptedLinks.addAll(this.crawlPostAltAPI(param, metadata, post));
+                ret.addAll(this.crawlPostAltAPI(param, metadata, post));
             }
             numberofCrawledPostsTotal += numberofPostsOnThisPage;
             logger.info("Crawled page: " + page + " | Crawled posts so far: " + numberofCrawledPostsTotal + "/" + totalNumberofPosts);
@@ -2081,7 +2075,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                 page++;
             }
         } while (!this.isAbort());
-        return decryptedLinks;
+        return ret;
     }
 
     private ArrayList<DownloadLink> crawlProfileTaggedAltAPI(final CryptedLink param, final Account account, final AtomicBoolean loggedIN) throws UnsupportedEncodingException, Exception {

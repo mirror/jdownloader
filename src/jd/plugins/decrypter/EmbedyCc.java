@@ -78,7 +78,7 @@ public class EmbedyCc extends PluginForDecrypt {
             for (final String url : urls) {
                 index += 1;
                 final DownloadLink dl = createDownloadlink("directhttp://" + url);
-                final UrlQuery query = new UrlQuery().parse(url);
+                final UrlQuery query = UrlQuery.parse(url);
                 final String fname_crypted = query.get("title");
                 if (fname_crypted != null) {
                     String fname_decrypted = Encoding.Base64Decode(fname_crypted);

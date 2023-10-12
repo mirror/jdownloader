@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
@@ -46,12 +45,11 @@ public class MangadexOrg extends antiDDoSForDecrypt {
         if (param.getCryptedUrl().matches(TYPE_LEGACY)) {
             /* Handling for older URLs */
             getPage(param.getCryptedUrl());
-            if (br.getURL().matches(TYPE_CHAPTER)) {
-                logger.info("Old URL: " + param.getCryptedUrl() + " | New URL: " + br.getURL());
-                param.setCryptedUrl(br.getURL());
-            } else {
+            final String newurl = br.getURL();
+            if (!br.getURL().matches(TYPE_CHAPTER)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
+            ret.add(this.createDownloadlink(newurl));
         } else if (param.getCryptedUrl().matches(TYPE_TITLE)) {
             final boolean artTab = StringUtils.containsIgnoreCase(param.getCryptedUrl(), "tab=art");
             final boolean chapterTab = StringUtils.containsIgnoreCase(param.getCryptedUrl(), "tab=chapters");

@@ -25,6 +25,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -45,11 +50,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.hoster.SoundcloudCom;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "soundcloud.com" }, urls = { "https?://((?:www\\.|m\\.)?(soundcloud\\.com/[^<>\"\\']+(?:\\?format=html\\&page=\\d+|\\?page=\\d+)?|snd\\.sc/[A-Za-z0-9]+)|api\\.soundcloud\\.com/tracks/\\d+(?:\\?secret_token=[A-Za-z0-9\\-_]+)?|api\\.soundcloud\\.com/playlists/\\d+(?:\\?|.*?\\&)secret_token=[A-Za-z0-9\\-_]+)" })
 public class SoundCloudComDecrypter extends PluginForDecrypt {
@@ -229,7 +229,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
             /* Private set --> URL contains so called 'secret_token' */
             playlistSecretToken = new Regex(param.getCryptedUrl(), setWithSecretToken).getMatch(0);
         } else if (TYPE_API_PLAYLIST.matcher(param.getCryptedUrl()).find()) {
-            playlistSecretToken = new UrlQuery().parse(param.getCryptedUrl()).get("secret_token");
+            playlistSecretToken = UrlQuery.parse(param.getCryptedUrl()).get("secret_token");
         }
         resolve(this.br, param.getCryptedUrl());
         Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
@@ -613,7 +613,8 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
             packagename = getFormattedPackagename(user.get("permalink").toString(), user.get("username").toString(), playlistname, user.get("created_at").toString());
         }
         /**
-         * seems to be a limit of the API (12.02.14), </br> still valid far as I can see raztoki20160208
+         * seems to be a limit of the API (12.02.14), </br>
+         * still valid far as I can see raztoki20160208
          */
         final int maxItemsPerCall = 200;
         FilePackage fp = null;

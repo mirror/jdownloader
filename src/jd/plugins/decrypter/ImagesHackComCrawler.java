@@ -44,7 +44,7 @@ public class ImagesHackComCrawler extends PluginForDecrypt {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "imageshack.com" });
+        ret.add(new String[] { "imageshack.com", "imageshack.us" });
         return ret;
     }
 
@@ -100,7 +100,7 @@ public class ImagesHackComCrawler extends PluginForDecrypt {
              * corresponding album names (if existant) and set the correct packagenames.
              */
             this.br.getPage("https://api.imageshack.com/v2/user/" + id_main + "/usage?hide_empty=false&show_private=true&show_hidden=false");
-            json = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+            json = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.getRequest().getHtmlCode());
             images_total = JavaScriptEngineFactory.toLong(JavaScriptEngineFactory.walkJson(json, "result/images_count"), 0);
             get_URL = "/v2/user/" + id_main + "/images?hide_folder_images=false&hide_empty=false&show_private=true&show_hidden=false&limit=%d&offset=%d&password=%s";
         } else {
@@ -134,7 +134,7 @@ public class ImagesHackComCrawler extends PluginForDecrypt {
                     break;
                 }
             }
-            json = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+            json = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.getRequest().getHtmlCode());
             images_total = JavaScriptEngineFactory.toLong(JavaScriptEngineFactory.walkJson(json, "result/total"), 0);
             get_URL = "/v2/albums/" + id_main + "?limit=%d&offset=%d&password=%s";
             final String album_owner = (String) JavaScriptEngineFactory.walkJson(json, "result/owner/username");
@@ -158,11 +158,11 @@ public class ImagesHackComCrawler extends PluginForDecrypt {
             // + System.currentTimeMillis());
             // }
             this.br.getPage(String.format(get_URL, api_max_entries_per_offset, offset, Encoding.urlEncode(password)));
-            json = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+            json = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.getRequest().getHtmlCode());
             final List<Object> ressourcelist = (List) JavaScriptEngineFactory.walkJson(json, "result/images");
             for (final Object resource : ressourcelist) {
                 json = (Map<String, Object>) resource;
-                final String id = jd.plugins.hoster.ImagesHackCom.api_json_get_id(json);
+                final String id = json.get("id").toString();
                 final String owner = jd.plugins.hoster.ImagesHackCom.api_json_get_username(json);
                 final String album = jd.plugins.hoster.ImagesHackCom.api_json_get_album(json);
                 final String url_content = "https://imageshack.com/i/" + id;
@@ -177,7 +177,7 @@ public class ImagesHackComCrawler extends PluginForDecrypt {
                     fp.setName(id_main);
                 }
                 if (!inValidate(password)) {
-                    dl.setDownloadPassword(password);
+                    dl.setDownloadPassword(password, true);
                     dl.setProperty("pwcookie", pwcookie);
                 }
                 dl._setFilePackage(fp);
