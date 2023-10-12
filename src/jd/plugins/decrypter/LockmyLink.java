@@ -131,7 +131,7 @@ public class LockmyLink extends PluginForDecrypt {
             if (br.containsHTML("not_found")) {
                 /*
                  * This may also happen if user fails to solve the captcha but we can't just retry it because in order to do that we would
-                 * need to wait another ~120 seconds.
+                 * need to repeat the wait time.
                  */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else {

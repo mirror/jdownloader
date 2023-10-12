@@ -18,11 +18,13 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Locale;
+import java.util.regex.Pattern;
 
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -33,75 +35,105 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "manga-tx.com" }, urls = { "https?://(?:www\\.)?manga-tx\\.com/manga/[\\w\\-]+/(?:chapter-\\d+/)?" })
-public class MangaTx extends antiDDoSForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
+public class MangaTx extends PluginForDecrypt {
     public MangaTx(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.IMAGE_GALLERY };
+    }
+
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "manga-tx.com" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    private static String PATTERN_RELATIVE_CHAPTER = "/manga/([\\w\\-]+)/chapter-([0-9\\.]+)/?$";
+    private static String PATTERN_RELATIVE_SERIES  = "/manga/([\\w\\-]+)/?$";
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "(" + PATTERN_RELATIVE_CHAPTER + "|" + PATTERN_RELATIVE_SERIES + ")");
+        }
+        return ret.toArray(new String[0]);
+    }
+
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final String contenturl = param.getCryptedUrl();
         br.setFollowRedirects(true);
-        getPage(parameter);
+        br.getPage(contenturl);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final FilePackage fp = FilePackage.getInstance();
-        String itemID = new Regex(parameter, "/manga/([^/]+)").getMatch(0);
-        String chapterID = new Regex(parameter, "/manga/[^/]+/([^/]+)").getMatch(0);
-        if (StringUtils.isEmpty(chapterID)) {
+        final Pattern patternSingleChapter = Pattern.compile("(?i)https?://[^/]+" + PATTERN_RELATIVE_CHAPTER);
+        final Regex singleChapterRegex = new Regex(param.getCryptedUrl(), patternSingleChapter);
+        if (singleChapterRegex.patternFind()) {
+            /* Find all pages of a chapter */
+            final String seriesTitleSlug = singleChapterRegex.getMatch(0);
+            final String chapterNumberStr = singleChapterRegex.getMatch(1);
+            final String[] pages = br.getRegex("<img[^>]+id\\s*=\\s*\"\\s*image-\\d+\\s*\"[^>]+data-src\\s*=\\s*\"\\s*([^\"]+)\\s*\"[^>]+class\\s*=\\s*\"\\s*\\s*wp-manga-chapter-img[^\"]*\"").getColumn(0);
+            int pageCount = pages == null ? 0 : pages.length;
+            if (pageCount <= 0) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            String fpName = Encoding.htmlOnlyDecode(br.getRegex("<h1[^>]+id\\s*=\\s*\"\\s*chapter-heading\\s*\"[^>]*>\\s*([^<]+)(?:\\s+-\\s+Chapter \\d+)\\s*").getMatch(0));
+            final String seriesTitle = seriesTitleSlug.replace("-", " ").trim();
+            String[] chapters = br.getRegex("option[^>]+class\\s*=\\s*\"\\s*short\\s*\"[^>]+value\\s*=\\s*\"\\s*chapter-\\d+\"[^>]+data-redirect\\s*=\\s*\"\\s*([^\"]+)\"[^>]+>\\s*Chapter[^<]+").getColumn(0);
+            if (chapters == null) {
+                getLogger().warning("Unable to determine chapter count!");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            /* Eliminate duplicates */
+            chapters = new HashSet<String>(Arrays.asList(chapters)).toArray(new String[0]);
+            final int chapterCount = chapters.length;
+            int pageNumber = 1;
+            final int chapterPadlength = StringUtils.getPadLength(chapterCount);
+            final int pagePadlength = StringUtils.getPadLength(pageCount);
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName(seriesTitle + " - Chapter " + chapterNumberStr);
+            for (String page : pages) {
+                final DownloadLink dl = createDownloadlink(Encoding.htmlOnlyDecode(page));
+                String page_formatted = String.format(Locale.US, "%0" + pagePadlength + "d", pageNumber++);
+                String ext = getFileNameExtensionFromURL(page, ".jpg").replace("jpeg", "jpg");
+                dl.setFinalFileName(seriesTitle + "_" + chapterNumberStr + "_" + page_formatted + ext);
+                fp.add(dl);
+                distribute(dl);
+                ret.add(dl);
+            }
+        } else {
+            /* Find all chapters of a series */
             String[] chapters = br.getRegex("<li[^>]+class\\s*=\\s*\"\\s*[^\"]*wp-manga-chapter[^\"]*\"[^>]*>\\s*<a href\\s*=\\s*\"\\s*([^\"]+)\\s*").getColumn(0);
             if (chapters == null || chapters.length == 0) {
-                getLogger().warning("Unable to find chapters!");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             for (String chapter : chapters) {
                 final DownloadLink dl = createDownloadlink(Encoding.htmlOnlyDecode(chapter));
-                fp.add(dl);
                 distribute(dl);
-                decryptedLinks.add(dl);
-            }
-        } else {
-            String[] pages = br.getRegex("<img[^>]+id\\s*=\\s*\"\\s*image-\\d+\\s*\"[^>]+data-src\\s*=\\s*\"\\s*([^\"]+)\\s*\"[^>]+class\\s*=\\s*\"\\s*\\s*wp-manga-chapter-img[^\"]*\"").getColumn(0);
-            int pageCount = pages == null ? 0 : pages.length;
-            if (pageCount <= 0) {
-                getLogger().warning("Unable to retrieve page images!");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            } else {
-                String fpName = Encoding.htmlOnlyDecode(br.getRegex("<h1[^>]+id\\s*=\\s*\"\\s*chapter-heading\\s*\"[^>]*>\\s*([^<]+)(?:\\s+-\\s+Chapter \\d+)\\s*").getMatch(0));
-                String title = StringUtils.isEmpty(fpName) ? itemID : fpName;
-                String[] chapters = br.getRegex("option[^>]+class\\s*=\\s*\"\\s*short\\s*\"[^>]+value\\s*=\\s*\"\\s*chapter-\\d+\"[^>]+data-redirect\\s*=\\s*\"\\s*([^\"]+)\"[^>]+>\\s*Chapter[^<]+").getColumn(0);
-                if (chapters == null) {
-                    getLogger().warning("Unable to determine chapter count!");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                chapters = new HashSet<String>(Arrays.asList(chapters)).toArray(new String[0]);
-                int chapterCount = chapters.length;
-                int chapterNumber = Integer.parseInt(new Regex(chapterID, "-(\\d+)\\s*$").getMatch(0).toString());
-                int pageNumber = 1;
-                final int chapterPadlength = getPadLength(chapterCount);
-                final int pagePadlength = getPadLength(pageCount);
-                String chapter_formatted = String.format(Locale.US, "%0" + chapterPadlength + "d", chapterNumber);
-                for (String page : pages) {
-                    final DownloadLink dl = createDownloadlink(Encoding.htmlOnlyDecode(page));
-                    String page_formatted = String.format(Locale.US, "%0" + pagePadlength + "d", pageNumber++);
-                    String ext = getFileNameExtensionFromURL(page, ".jpg").replace("jpeg", "jpg");
-                    dl.setFinalFileName(title + "_" + chapter_formatted + "_" + page_formatted + ext);
-                    if (StringUtils.isNotEmpty(title)) {
-                        fp.setName(title);
-                    }
-                    fp.add(dl);
-                    distribute(dl);
-                    decryptedLinks.add(dl);
-                }
+                ret.add(dl);
             }
         }
-        return decryptedLinks;
-    }
-
-    private int getPadLength(final int size) {
-        return StringUtils.getPadLength(size);
+        return ret;
     }
 }
