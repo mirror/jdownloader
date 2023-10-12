@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
@@ -34,6 +35,8 @@ import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
@@ -60,19 +63,16 @@ public class OneDriveLiveCom extends PluginForDecrypt {
     private static final long   ITEM_TYPE_PICTURE            = 3;
     private static final long   ITEM_TYPE_VIDEO              = 5;
     private static final int    ITEM_TYPE_FOLDER             = 32;
-    /* Plugin settings */
-    private static final String DOWNLOAD_ZIP                 = "DOWNLOAD_ZIP_2";
-    private String              parameter                    = null;
     private String              original_link                = null;
     private String              cid                          = null;
     private String              id                           = null;
     private String              authkey                      = null;
 
     @SuppressWarnings({ "unchecked", "rawtypes", "deprecation" })
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        parameter = Encoding.urlDecode(param.toString(), false);
-        original_link = parameter;
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        String contenturl = Encoding.urlDecode(param.getCryptedUrl(), true);
+        original_link = contenturl;
         /*
          * 2021-06-11: We can now find the absolute path to ther current folder in their json -> No need to store it in crawler folders that
          * go back into the crawler
@@ -82,25 +82,25 @@ public class OneDriveLiveCom extends PluginForDecrypt {
         br.setLoadLimit(Integer.MAX_VALUE);
         final DownloadLink main = createDownloadlink("http://onedrivedecrypted.live.com/" + System.currentTimeMillis() + new Random().nextInt(100000));
         FilePackage fp = null;
-        if (parameter.matches(TYPE_SKYDRIVE_REDIRECT2)) {
-            br.getPage(parameter);
+        if (contenturl.matches(TYPE_SKYDRIVE_REDIRECT2)) {
+            br.getPage(contenturl);
             br.followRedirect(true);
             cid = new Regex(br.getURL(), "cid=([A-Za-z0-9]*)").getMatch(0);
             id = getLastID(br.getURL());
-        } else if (parameter.matches(TYPE_SKYDRIVE_REDIRECT)) {
-            cid = new Regex(parameter, "cid=([A-Za-z0-9]*)").getMatch(0);
-            id = new Regex(parameter, "(?:&|\\?)resid=([A-Za-z0-9]+\\!\\d+)").getMatch(0);
-        } else if (parameter.matches(TYPE_ONEDRIVE_REDIRECT_RESID) || parameter.matches(TYPE_SKYDRIVE_REDIRECT_RESID) || parameter.matches(TYPE_ONEDRIVE_VIEW_RESID)) {
-            final Regex fInfo = new Regex(parameter, "\\?resid=([A-Za-z0-9]+)(\\!\\d+)");
+        } else if (contenturl.matches(TYPE_SKYDRIVE_REDIRECT)) {
+            cid = new Regex(contenturl, "cid=([A-Za-z0-9]*)").getMatch(0);
+            id = new Regex(contenturl, "(?:&|\\?)resid=([A-Za-z0-9]+\\!\\d+)").getMatch(0);
+        } else if (contenturl.matches(TYPE_ONEDRIVE_REDIRECT_RESID) || contenturl.matches(TYPE_SKYDRIVE_REDIRECT_RESID) || contenturl.matches(TYPE_ONEDRIVE_VIEW_RESID)) {
+            final Regex fInfo = new Regex(contenturl, "\\?resid=([A-Za-z0-9]+)(\\!\\d+)");
             cid = fInfo.getMatch(0);
             id = cid + fInfo.getMatch(1);
-        } else if (parameter.matches(TYPE_ONEDRIVE_ROOT)) {
-            cid = new Regex(parameter, "cid=([A-Za-z0-9]*)").getMatch(0);
-        } else if (parameter.matches(TYPE_DRIVE_ALL)) {
-            cid = new Regex(parameter, "cid=([A-Za-z0-9]*)").getMatch(0);
-            id = getLastID(parameter);
-        } else if (parameter.matches(TYPE_SKYDRIVE_SHORT)) {
-            br.getPage(parameter);
+        } else if (contenturl.matches(TYPE_ONEDRIVE_ROOT)) {
+            cid = new Regex(contenturl, "cid=([A-Za-z0-9]*)").getMatch(0);
+        } else if (contenturl.matches(TYPE_DRIVE_ALL)) {
+            cid = new Regex(contenturl, "cid=([A-Za-z0-9]*)").getMatch(0);
+            id = getLastID(contenturl);
+        } else if (contenturl.matches(TYPE_SKYDRIVE_SHORT)) {
+            br.getPage(contenturl);
             String redirect = br.getRedirectLocation();
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -124,25 +124,24 @@ public class OneDriveLiveCom extends PluginForDecrypt {
             }
             id = new Regex(redirect, "resid=([A-Za-z0-9]+\\!\\d+)").getMatch(0);
             if (id == null) {
-                id = getLastID(parameter);
+                id = getLastID(contenturl);
             }
             authkey = new Regex(redirect, "(?:&|\\?)authkey=(\\![A-Za-z0-9\\-_]+)").getMatch(0);
         } else {
-            cid = new Regex(parameter, "cid=([A-Za-z0-9]*)").getMatch(0);
-            id = getLastID(parameter);
+            cid = new Regex(contenturl, "cid=([A-Za-z0-9]*)").getMatch(0);
+            id = getLastID(contenturl);
         }
         if (authkey == null) {
-            authkey = new Regex(parameter, "(?:&|\\?)authkey=(\\![A-Za-z0-9\\-_]+)").getMatch(0);
+            authkey = new Regex(contenturl, "(?:&|\\?)authkey=(\\![A-Za-z0-9\\-_]+)").getMatch(0);
         }
-        if (!parameter.matches(TYPE_ONEDRIVE_ROOT) && (cid == null || id == null)) {
+        if (!contenturl.matches(TYPE_ONEDRIVE_ROOT) && (cid == null || id == null)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         cid = cid.toUpperCase();
-        parameter = "https://onedrive.live.com/?cid=" + cid;
+        contenturl = "https://onedrive.live.com/?cid=" + cid;
         if (id != null) {
-            parameter += "&id=" + id;
+            contenturl += "&id=" + id;
         }
-        param.setCryptedUrl(parameter);
         prepBrAPI(this.br);
         final String additional_data;
         if (authkey != null) {
@@ -158,7 +157,7 @@ public class OneDriveLiveCom extends PluginForDecrypt {
             startIndex = nextStartIndex;
             accessItems_API(this.br, original_link, cid, id, additional_data, startIndex, MAX_ENTRIES_PER_REQUEST);
             nextStartIndex = startIndex + MAX_ENTRIES_PER_REQUEST;
-            Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+            Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
             final Object error = entries.get("error");
             if (error != null) {
                 /*
@@ -195,7 +194,7 @@ public class OneDriveLiveCom extends PluginForDecrypt {
             final long totalItemType = JavaScriptEngineFactory.toLong(firstItem.get("itemType"), -1);
             if (totalItemType == ITEM_TYPE_FILE || totalItemType == ITEM_TYPE_PICTURE || totalItemType == ITEM_TYPE_VIDEO) {
                 /* Single file */
-                final DownloadLink link = parseFile(firstItem, startIndex, MAX_ENTRIES_PER_REQUEST);
+                final DownloadLink link = parseFile(contenturl, firstItem, startIndex, MAX_ENTRIES_PER_REQUEST);
                 if (dups.add(link.getLinkID())) {
                     if (fp != null) {
                         fp.add(link);
@@ -203,7 +202,7 @@ public class OneDriveLiveCom extends PluginForDecrypt {
                     if (!StringUtils.isEmpty(subFolderBase)) {
                         link.setRelativeDownloadFolderPath(subFolderBase);
                     }
-                    decryptedLinks.add(link);
+                    ret.add(link);
                     distribute(link);
                 }
                 logger.info("Stopping because: Folder contains/is single file only");
@@ -230,15 +229,14 @@ public class OneDriveLiveCom extends PluginForDecrypt {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 } else if (totalCount == 0 && childCount == 0) {
                     /* Empty folder */
-                    logger.info("Empty folder(?)");
-                    return decryptedLinks;
+                    throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER);
                 }
-                main.setProperty("mainlink", parameter);
+                main.setProperty("mainlink", contenturl);
                 main.setProperty("original_link", original_link);
                 main.setProperty("plain_cid", cid);
                 main.setProperty("plain_id", id);
                 main.setProperty("plain_authkey", authkey);
-                final int lastSize = decryptedLinks.size();
+                final int lastSize = ret.size();
                 for (final Map<String, Object> entry : items) {
                     final boolean isPlaceholder = entry.containsKey("isPlaceholder") ? ((Boolean) entry.get("isPlaceholder")).booleanValue() : false;
                     final long type = ((Number) entry.get("itemType")).longValue();
@@ -261,11 +259,11 @@ public class OneDriveLiveCom extends PluginForDecrypt {
                         }
                         if (dups.add(folderlink)) {
                             final DownloadLink dl = createDownloadlink(folderlink);
-                            decryptedLinks.add(dl);
+                            ret.add(dl);
                         }
                     } else {
                         /* File --> Grab information & return to crawler. */
-                        final DownloadLink link = parseFile(entry, startIndex, MAX_ENTRIES_PER_REQUEST);
+                        final DownloadLink link = parseFile(contenturl, entry, startIndex, MAX_ENTRIES_PER_REQUEST);
                         if (dups.add(link.getLinkID())) {
                             if (fp != null) {
                                 fp.add(link);
@@ -273,12 +271,12 @@ public class OneDriveLiveCom extends PluginForDecrypt {
                             if (!StringUtils.isEmpty(subFolderBase)) {
                                 link.setRelativeDownloadFolderPath(subFolderBase);
                             }
-                            decryptedLinks.add(link);
+                            ret.add(link);
                             distribute(link);
                         }
                     }
                 }
-                if (decryptedLinks.size() == lastSize) {
+                if (ret.size() == lastSize) {
                     logger.info("Stopping because: Failed to find more items on current page");
                     break;
                 }
@@ -287,13 +285,13 @@ public class OneDriveLiveCom extends PluginForDecrypt {
                 logger.info("Stopping because: Aborted by user");
                 break;
             }
-            logger.info("Crawled page " + page + " | Found items so far: " + decryptedLinks.size());
+            logger.info("Crawled page " + page + " | Found items so far: " + ret.size());
             page++;
         } while (true);
-        return decryptedLinks;
+        return ret;
     }
 
-    private DownloadLink parseFile(final Map<String, Object> entry, final int startIndex, final int maxItems) throws DecrypterException {
+    private DownloadLink parseFile(final String contenturl, final Map<String, Object> entry, final int startIndex, final int maxItems) throws DecrypterException {
         /* File --> Grab information & return to decrypter. All found links are usually ONLINE and downloadable! */
         final Map<String, Object> urls = (Map<String, Object>) entry.get("urls");
         final String name = (String) entry.get("name");
@@ -329,7 +327,7 @@ public class OneDriveLiveCom extends PluginForDecrypt {
             dl.setVerifiedFileSize(size);
         }
         dl.setFinalFileName(filename);
-        dl.setProperty("mainlink", parameter);
+        dl.setProperty("mainlink", contenturl);
         dl.setProperty("original_link", original_link);
         dl.setProperty("plain_name", filename);
         dl.setProperty("plain_filesize", size);

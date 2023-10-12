@@ -29,6 +29,8 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -77,11 +79,12 @@ public class WuShareCom extends PluginForHost {
         final Regex fInfo = br.getRegex("<span class=\"fn\">([^<>\"]*?)</span> \\(<span class=\"cb\">(\\d+)</span>\\)");
         final String filename = fInfo.getMatch(0);
         final String filesize = fInfo.getMatch(1);
-        if (filename == null || filesize == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (fInfo.patternFind()) {
+            link.setName(Encoding.htmlDecode(filename).trim());
+            link.setDownloadSize(Long.parseLong(filesize));
+        } else {
+            logger.warning("Failed to find file information");
         }
-        link.setName(Encoding.htmlDecode(filename.trim()));
-        link.setDownloadSize(Long.parseLong(filesize));
         return AvailableStatus.TRUE;
     }
 
@@ -94,28 +97,15 @@ public class WuShareCom extends PluginForHost {
             br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
             br.postPage(br.getURL(), "action=free_download");
             if ("oversize".equals(PluginJSonUtils.getJsonValue(br, "status"))) {
-                try {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
-                } catch (final Throwable e) {
-                    if (e instanceof PluginException) {
-                        throw (PluginException) e;
-                    }
-                }
-                throw new PluginException(LinkStatus.ERROR_FATAL, "This file can only be downloaded by premium users");
+                throw new AccountRequiredException();
             }
-            final String code = getCaptchaCode("https://wushare.com/captcha?id=" + System.currentTimeMillis(), link);
+            final String code = getCaptchaCode("/captcha?id=" + System.currentTimeMillis(), link);
             br.postPage(br.getURL(), "action=get_download_link&captcha_response_field=" + code);
             if (br.containsHTML("\"error_captcha\"")) {
-                try {
-                    invalidateLastChallengeResponse();
-                } catch (final Throwable e) {
-                }
+                invalidateLastChallengeResponse();
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
-            try {
-                validateLastChallengeResponse();
-            } catch (final Throwable e) {
-            }
+            validateLastChallengeResponse();
             final String waitSeconds = br.getRegex("\"status\"\\s*:\\s*\"waiting\"\\s*,\\s*\"time\"\\s*:\\s*(\\d+)").getMatch(0);
             if (waitSeconds != null) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Long.parseLong(waitSeconds) * 1001l);
@@ -155,6 +145,7 @@ public class WuShareCom extends PluginForHost {
                     throw new IOException();
                 }
             } catch (final Exception e) {
+                link.removeProperty(property);
                 logger.log(e);
                 return null;
             } finally {
@@ -169,56 +160,53 @@ public class WuShareCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        try {
-            login(account, true);
-        } catch (final PluginException e) {
-            throw e;
-        }
+        login(account, true);
         ai.setUnlimitedTraffic();
-        final String expire = br.getRegex("expire:</span><span class=\"info\">([^<>\"]*?)</span>").getMatch(0);
+        final String expire = br.getRegex("expire:\\s*</span><span class=\"info\">([^<>\"]*?)</span>").getMatch(0);
+        if (expire == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMM yyyy", Locale.ENGLISH), br);
-        ai.setStatus("Premium user");
+        final String usedSpaceBytesStr = br.getRegex(">\\s*Used space:\\s*</span><span class=\"info cb\">(\\d+)</span>").getMatch(0);
+        if (usedSpaceBytesStr != null) {
+            ai.setUsedSpace(Long.parseLong(usedSpaceBytesStr));
+        }
+        account.setType(AccountType.PREMIUM);
         return ai;
     }
 
+    /** 2023-10-12: https is not supported. */
     private void login(final Account account, final boolean force) throws Exception {
         synchronized (account) {
-            try {
-                br.setCookiesExclusive(true);
-                br.setFollowRedirects(true);
-                final Cookies cookies = account.loadCookies("");
-                boolean loggedIN = false;
-                if (cookies != null) {
-                    br.setCookies(this.getHost(), cookies);
-                    br.getPage("https://wushare.com/account");
-                    if (this.isLoggedIN()) {
-                        logger.info("Cookie login successful");
-                        loggedIN = true;
-                    } else {
-                        logger.info("Cookie login failed --> Full login required");
-                    }
+            br.setCookiesExclusive(true);
+            br.setFollowRedirects(true);
+            boolean isLoggedin = false;
+            final Cookies cookies = account.loadCookies("");
+            if (cookies != null) {
+                br.setCookies(this.getHost(), cookies);
+                br.getPage("http://" + this.getHost() + "/account");
+                if (this.isLoggedIN(br)) {
+                    logger.info("Cookie login successful");
+                    isLoggedin = true;
+                } else {
+                    logger.info("Cookie login failed --> Full login required");
                 }
-                if (!loggedIN) {
-                    logger.info("Performing full login");
-                    br.postPage("https://wushare.com/login", "stay_login=1&commit=Login&referrer=http%3A%2F%2Fwushare.com%2F&username_or_email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-                    if (!isLoggedIN()) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
-                }
-                if (!br.containsHTML(">Account type:</span><span class=\"info\">Premium</span>")) {
-                    throw new AccountUnavailableException("Unsupported account type (?)", 5 * 60 * 1000);
-                }
-                account.saveCookies(br.getCookies(br.getURL()), "");
-            } catch (final PluginException e) {
-                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
-                    account.clearCookies("");
-                }
-                throw e;
             }
+            if (!isLoggedin) {
+                logger.info("Performing full login");
+                br.postPage("http://" + this.getHost() + "/login", "stay_login=1&commit=Login&referrer=http%3A%2F%2Fwushare.com%2F&username_or_email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                if (!isLoggedIN(br)) {
+                    throw new AccountInvalidException();
+                }
+            }
+            if (!br.containsHTML(">\\s*Account type:\\s*</span><span class=\"info\">\\s*Premium\\s*</span>")) {
+                throw new AccountInvalidException("Unsupported account type (free account)");
+            }
+            account.saveCookies(br.getCookies(br.getURL()), "");
         }
     }
 
-    private boolean isLoggedIN() {
+    private boolean isLoggedIN(final Browser br) {
         return br.containsHTML("class=\"logout\"");
     }
 
@@ -227,7 +215,7 @@ public class WuShareCom extends PluginForHost {
         requestFileInformation(link);
         login(account, false);
         br.getPage(link.getPluginPatternMatcher());
-        if (!this.isLoggedIN()) {
+        if (!this.isLoggedIN(br)) {
             /* Login failure --> Re-check account soon then cookies should get refreshed if needed! */
             throw new AccountUnavailableException("Session expired?", 1 * 60 * 1000);
         }
@@ -265,10 +253,11 @@ public class WuShareCom extends PluginForHost {
     }
 
     public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
-        if (acc == null || acc.getType() == AccountType.FREE) {
-            /* no account, yes we can expect captcha */
+        if (acc != null && acc.getType() == AccountType.PREMIUM) {
+            /* Premium account -> No captchas */
+            return false;
+        } else {
             return true;
         }
-        return false;
     }
 }

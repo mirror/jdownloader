@@ -54,16 +54,16 @@ public class NaughtyamericaComCrawler extends PluginForDecrypt {
     public static String DOMAIN_PREFIX_PREMIUM = "members.";
 
     @Override
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         return crawlContent(param, false);
     }
 
-    public ArrayList<DownloadLink> crawlContent(final CryptedLink param, boolean ignoreQualitySelection) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+    public ArrayList<DownloadLink> crawlContent(final CryptedLink param, final boolean ignoreQualitySelection) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         /* 2016-12-12: Prefer current website instead of beta */
-        param.setCryptedUrl(param.getCryptedUrl().replace("beta.", ""));
-        final String urlSlug = new Regex(param.getCryptedUrl(), "/([a-z0-9\\-]+)$").getMatch(0);
-        final String contentID = new Regex(param.getCryptedUrl(), "(\\d+)$").getMatch(0);
+        final String contenturl = param.getCryptedUrl().replaceFirst("(?i)beta\\.", "");
+        final String urlSlug = new Regex(contenturl, "/([a-z0-9\\-]+)$").getMatch(0);
+        final String contentID = new Regex(contenturl, "(\\d+)$").getMatch(0);
         br.setFollowRedirects(true);
         final Account acc = AccountController.getInstance().getValidAccount(this.getHost());
         if (acc != null) {
@@ -135,7 +135,7 @@ public class NaughtyamericaComCrawler extends PluginForDecrypt {
                 dl.setProperty(NaughtyamericaCom.PROPERTY_CONTENT_ID, contentID);
                 dl.setProperty(NaughtyamericaCom.PROPERTY_VIDEO_QUALITY, Integer.toString(qualityHeight));
                 dl.setProperty(NaughtyamericaCom.PROPERTY_URL_SLUG, urlSlug);
-                dl.setProperty(NaughtyamericaCom.PROPERTY_MAINLINK, param.getCryptedUrl());
+                dl.setProperty(NaughtyamericaCom.PROPERTY_MAINLINK, contenturl);
                 foundQualities.put(qualityHeight, dl);
                 if (qualityHeight > qualityHeightMax) {
                     qualityHeightMax = qualityHeight;
@@ -148,9 +148,9 @@ public class NaughtyamericaComCrawler extends PluginForDecrypt {
             final NaughtyamericaConfig cfg = PluginJsonConfig.get(NaughtyamericaConfig.class);
             if (ignoreQualitySelection) {
                 if (cfg.isGrabBestVideoQualityOnly()) {
-                    decryptedLinks.add(best);
+                    ret.add(best);
                 } else {
-                    decryptedLinks.addAll(foundQualities.values());
+                    ret.addAll(foundQualities.values());
                 }
             } else {
                 final Iterator<Entry<Integer, DownloadLink>> iterator = foundQualities.entrySet().iterator();
@@ -158,10 +158,10 @@ public class NaughtyamericaComCrawler extends PluginForDecrypt {
                     final Entry<Integer, DownloadLink> entry = iterator.next();
                     final int quality = entry.getKey();
                     if (selectedQualities.contains(quality)) {
-                        decryptedLinks.add(entry.getValue());
+                        ret.add(entry.getValue());
                     }
                 }
-                if (decryptedLinks.isEmpty()) {
+                if (ret.isEmpty()) {
                     throw new DecrypterRetryException(RetryReason.PLUGIN_SETTINGS, "FAILED_TO_FIND_ANY_SELECTED_QUALITY_" + urlSlug, "None of your selected qualities have been found. Select all to get results.");
                 }
             }
@@ -182,8 +182,8 @@ public class NaughtyamericaComCrawler extends PluginForDecrypt {
                         dl.setProperty(NaughtyamericaCom.PROPERTY_CONTENT_ID, contentID);
                         dl.setProperty(NaughtyamericaCom.PROPERTY_PICTURE_NUMBER, imageNumber);
                         dl.setProperty(NaughtyamericaCom.PROPERTY_URL_SLUG, urlSlug);
-                        dl.setProperty(NaughtyamericaCom.PROPERTY_MAINLINK, param.getCryptedUrl());
-                        decryptedLinks.add(dl);
+                        dl.setProperty(NaughtyamericaCom.PROPERTY_MAINLINK, contenturl);
+                        ret.add(dl);
                     }
                 } else {
                     logger.warning("Picture gallery handling failed");
@@ -201,8 +201,8 @@ public class NaughtyamericaComCrawler extends PluginForDecrypt {
                 zip.setProperty(NaughtyamericaCom.PROPERTY_CONTENT_ID, contentID);
                 zip.setProperty(NaughtyamericaCom.PROPERTY_PICTURE_NUMBER, "ZIP");
                 zip.setProperty(NaughtyamericaCom.PROPERTY_URL_SLUG, urlSlug);
-                zip.setProperty(NaughtyamericaCom.PROPERTY_MAINLINK, param.getCryptedUrl());
-                decryptedLinks.add(zip);
+                zip.setProperty(NaughtyamericaCom.PROPERTY_MAINLINK, contenturl);
+                ret.add(zip);
             }
         } else {
             /* We're not logged in but maybe the user has an account to download later or an MOCH account --> Add one dummy url. */
@@ -220,12 +220,12 @@ public class NaughtyamericaComCrawler extends PluginForDecrypt {
             dl.setProperty(NaughtyamericaCom.PROPERTY_VIDEO_QUALITY, quality_dummy);
             dl.setProperty(NaughtyamericaCom.PROPERTY_URL_SLUG, urlSlug);
             dl.setAvailable(true);
-            decryptedLinks.add(dl);
+            ret.add(dl);
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(title);
-        fp.addLinks(decryptedLinks);
-        return decryptedLinks;
+        fp.addLinks(ret);
+        return ret;
     }
 
     private String generateUrlForHostplugin(final String url) {

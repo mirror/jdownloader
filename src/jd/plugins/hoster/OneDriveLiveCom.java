@@ -48,7 +48,7 @@ public class OneDriveLiveCom extends PluginForHost {
     }
 
     /* Use less than in the decrypter to not to waste traffic & time */
-    private static final String DOWNLOAD_ZIP = "DOWNLOAD_ZIP_2";
+    public static final String DOWNLOAD_ZIP = "DOWNLOAD_ZIP_2";
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
