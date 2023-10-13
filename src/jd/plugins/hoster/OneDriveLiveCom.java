@@ -33,6 +33,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.decrypter.OneDriveLiveComCrawler;
 import jd.utils.JDUtilities;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "onedrive.live.com" }, urls = { "http://onedrivedecrypted\\.live\\.com/\\d+" })
@@ -48,7 +49,7 @@ public class OneDriveLiveCom extends PluginForHost {
     }
 
     /* Use less than in the decrypter to not to waste traffic & time */
-    public static final String DOWNLOAD_ZIP = "DOWNLOAD_ZIP_2";
+    private static final String DOWNLOAD_ZIP = "DOWNLOAD_ZIP_2";
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
@@ -57,7 +58,7 @@ public class OneDriveLiveCom extends PluginForHost {
         }
         this.setBrowserExclusive();
         JDUtilities.getPluginForDecrypt(this.getHost());
-        jd.plugins.decrypter.OneDriveLiveCom.prepBrAPI(br);
+        OneDriveLiveComCrawler.prepBrAPI(br);
         final String cid = link.getStringProperty("plain_cid", null);
         final String id = link.getStringProperty("plain_id", null);
         final String authkey = link.getStringProperty("plain_authkey", null);
@@ -78,9 +79,9 @@ public class OneDriveLiveCom extends PluginForHost {
                 startIndex = 0;
                 maxItems = 1000;// backwards compatibility
             } else {
-                maxItems = jd.plugins.decrypter.OneDriveLiveCom.MAX_ENTRIES_PER_REQUEST;
+                maxItems = OneDriveLiveComCrawler.MAX_ENTRIES_PER_REQUEST;
             }
-            jd.plugins.decrypter.OneDriveLiveCom.accessItems_API(br, original_link, cid, id, additional_data, startIndex, maxItems);
+            OneDriveLiveComCrawler.accessItems_API(br, original_link, cid, id, additional_data, startIndex, maxItems);
             if (br.getRequest().getHttpConnection().getResponseCode() == 500) {
                 link.getLinkStatus().setStatusText("Server error 500");
                 return AvailableStatus.UNCHECKABLE;

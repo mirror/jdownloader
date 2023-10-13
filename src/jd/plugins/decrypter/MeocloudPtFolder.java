@@ -94,6 +94,13 @@ public class MeocloudPtFolder extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_FATAL, "Password protected links are not yet supported: Contact support and ask for implementation.", 8 * 60 * 1000l);
         }
         final PluginForHost hosterPlugin = this.getNewPluginForHostInstance(this.getHost());
+        final String singleDirecturl = br.getRegex("(https?://[^/]+/dl/download/[^/]+/" + Pattern.quote(folderPath) + "\\?download=true)").getMatch(0);
+        if (singleDirecturl != null) {
+            final DownloadLink singlefile = new DownloadLink(hosterPlugin, null, this.getHost(), singleDirecturl, true);
+            singlefile.setAvailable(true);
+            ret.add(singlefile);
+            return ret;
+        }
         final String[] fileDownloadurls = br.getRegex("data-url-download=\"(http[^\"]+)").getColumn(0);
         if (fileDownloadurls != null && fileDownloadurls.length > 0) {
             final FilePackage fp = FilePackage.getInstance();

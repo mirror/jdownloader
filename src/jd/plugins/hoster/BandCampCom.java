@@ -95,6 +95,7 @@ public class BandCampCom extends PluginForHost {
         return ret.toArray(new String[0]);
     }
 
+    /* Plugin setting properties */
     public static final String FASTLINKCHECK                  = "FASTLINKCHECK_2020_06_02";
     public static final String CUSTOM_DATE_PATTERN            = "CUSTOM_DATE";
     public static final String CUSTOM_FILENAME_PATTERN        = "CUSTOM_FILENAME";
@@ -106,6 +107,7 @@ public class BandCampCom extends PluginForHost {
     public static final String FILENAMESPACE                  = "FILENAMESPACE";
     public static final String PACKAGENAMESPACE               = "PACKAGENAMESPACE";
     public static final String CLEANPACKAGENAME               = "CLEANPACKAGENAME";
+    /* DownloadLink properties */
     public static final String PROPERTY_CONTENT_ID            = "content_id";
     public static final String PROPERTY_TITLE                 = "directname";
     public static final String PROPERTY_USERNAME              = "username";
@@ -114,6 +116,7 @@ public class BandCampCom extends PluginForHost {
     public static final String PROPERTY_ALBUM_ID              = "album_id";
     public static final String PROPERTY_ALBUM_TITLE           = "directalbum";
     public static final String PROPERTY_ALBUM_TRACK_POSITION  = "album_track_number";
+    public static final String PROPERTY_ALBUM_DATE_TIMESTAMP  = "album_datetimestamp";
     public static final String PROPERTY_SHOW_TRACK_POSITION   = "show_track_number";
     public static final String PROPERTY_ALBUM_NUMBEROF_TRACKS = "album_numberof_tracks";
     public static final String PROPERTY_SHOW_NUMBEROF_TRACKS  = "show_numberof_tracks";
@@ -121,7 +124,7 @@ public class BandCampCom extends PluginForHost {
     public static final String PROPERTY_VIDEO_WIDTH           = "video_width";
     public static final String PROPERTY_VIDEO_HEIGHT          = "video_height";
     public static final String PROPERTY_FILE_TYPE             = "type";
-    public static final String PROPERTY_DATE_TIMESTAMP        = "datetimestamp";
+    public static final String PROPERTY_TRACK_DATE_TIMESTAMP  = "datetimestamp";
     public static final String PROPERTY_DATE_DIRECTURL        = "directurl";
     private String             dllink                         = null;
 
@@ -231,7 +234,6 @@ public class BandCampCom extends PluginForHost {
         if (albumArtist != null) {
             link.setProperty(PROPERTY_ARTIST_ALBUM, Encoding.htmlDecode(albumArtist).trim());
         }
-        final String albumDatePublishedStr = (String) JavaScriptEngineFactory.walkJson(albumInfo, "datePublished");
         String albumTitle = (String) JavaScriptEngineFactory.walkJson(albumInfo, "inAlbum/name");
         if (albumTitle == null) {
             albumTitle = br.getRegex("<title>\\s*(.*?)\\s*\\|.*?</title>").getMatch(0);
@@ -239,16 +241,27 @@ public class BandCampCom extends PluginForHost {
                 albumTitle = br.getRegex("<title>\\s*(.*?)\\s*</title>").getMatch(0);
             }
         }
-        if (albumDatePublishedStr != null) {
-            link.setProperty(PROPERTY_DATE_TIMESTAMP, BandCampComDecrypter.dateToTimestamp(albumDatePublishedStr));
-        }
         if (albumTitle != null) {
             link.setProperty(PROPERTY_ALBUM_TITLE, Encoding.htmlDecode(albumTitle).trim());
         }
         link.setProperty(PROPERTY_FILE_TYPE, "mp3");
+        final boolean isHtmlContextOfSingleTrack;
         final String trackIDFromHTML = br.getRegex("<\\!-- track id (\\d+) -->").getMatch(0);
+        if (trackIDFromHTML != null || br.getURL().matches("(?i)https?://[^/]+/track/[a-z0-9\\-_]+")) {
+            isHtmlContextOfSingleTrack = true;
+        } else {
+            isHtmlContextOfSingleTrack = false;
+        }
         if (trackIDFromHTML != null && !link.hasProperty(PROPERTY_CONTENT_ID)) {
             link.setProperty(PROPERTY_CONTENT_ID, trackIDFromHTML);
+        }
+        final String albumDatePublishedStr = (String) JavaScriptEngineFactory.walkJson(albumInfo, "datePublished");
+        if (albumDatePublishedStr != null) {
+            if (isHtmlContextOfSingleTrack) {
+                link.setProperty(PROPERTY_TRACK_DATE_TIMESTAMP, BandCampComDecrypter.dateToTimestamp(albumDatePublishedStr));
+            } else {
+                link.setProperty(PROPERTY_ALBUM_DATE_TIMESTAMP, BandCampComDecrypter.dateToTimestamp(albumDatePublishedStr));
+            }
         }
         String trackJson = br.getRegex("data-tralbum=\"([^\"]+)").getMatch(0);
         if (trackJson != null) {
@@ -364,6 +377,7 @@ public class BandCampCom extends PluginForHost {
     }
 
     public static String getFormattedBaseString(final DownloadLink link, String formattedBaseString) {
+        final String content_id = link.getStringProperty(PROPERTY_CONTENT_ID);
         final String songTitle = link.getStringProperty(PROPERTY_TITLE);
         final String tracknumberFormatted = getFormattedTrackNumber(link);
         final String artistFullName = link.getStringProperty(PROPERTY_ARTIST);
@@ -380,8 +394,11 @@ public class BandCampCom extends PluginForHost {
             /* Fallback */
             ext = ".mp3";
         }
-        final String dateFormatted = getFormattedDate(link, cfg);
-        formattedBaseString = formattedBaseString.replace("*date*", StringUtils.valueOrEmpty(dateFormatted));
+        final String trackDateFormatted = getFormattedTrackDate(link, cfg);
+        final String albumDateFormatted = getFormattedAlbumDate(link, cfg);
+        formattedBaseString = formattedBaseString.replace("*content_id*", StringUtils.valueOrEmpty(content_id));
+        formattedBaseString = formattedBaseString.replace("*date*", StringUtils.valueOrEmpty(trackDateFormatted));
+        formattedBaseString = formattedBaseString.replace("*album_date*", StringUtils.valueOrEmpty(albumDateFormatted));
         formattedBaseString = formattedBaseString.replace("*tracknumber*", StringUtils.valueOrEmpty(tracknumberFormatted));
         formattedBaseString = formattedBaseString.replace("*artist*", StringUtils.valueOrEmpty(artistFullName));
         formattedBaseString = formattedBaseString.replace("*username*", StringUtils.valueOrEmpty(username));
@@ -403,9 +420,9 @@ public class BandCampCom extends PluginForHost {
         return formattedBaseString;
     }
 
-    public static String getFormattedDate(final DownloadLink link, final SubConfiguration cfg) {
+    public static String getFormattedTrackDate(final DownloadLink link, final SubConfiguration cfg) {
         final String legacyDateString = link.getStringProperty("directdate");
-        final long dateTimestamp = link.getLongProperty(PROPERTY_DATE_TIMESTAMP, -1);
+        final long dateTimestamp = link.getLongProperty(PROPERTY_TRACK_DATE_TIMESTAMP, -1);
         Date date = null;
         if (legacyDateString != null) {
             /* Older items added up to and including revision 48302 */
@@ -421,16 +438,29 @@ public class BandCampCom extends PluginForHost {
             date = new Date(dateTimestamp);
         }
         if (date != null) {
-            final String userDefinedDateFormat = cfg.getStringProperty(CUSTOM_DATE_PATTERN, defaultCUSTOM_DATE);
-            String formattedDate = null;
-            for (final String format : new String[] { userDefinedDateFormat, "yyyyMMdd" }) {
-                if (format != null) {
-                    try {
-                        final SimpleDateFormat formatter = new SimpleDateFormat(userDefinedDateFormat);
-                        formattedDate = formatter.format(date);
-                        return formattedDate;
-                    } catch (final Exception ignore) {
-                    }
+            return getFormattedDate(date, cfg);
+        }
+        return null;
+    }
+
+    public static String getFormattedAlbumDate(final DownloadLink link, final SubConfiguration cfg) {
+        final long dateTimestamp = link.getLongProperty(PROPERTY_ALBUM_DATE_TIMESTAMP, -1);
+        if (dateTimestamp != -1) {
+            return getFormattedDate(new Date(dateTimestamp), cfg);
+        }
+        return null;
+    }
+
+    private static String getFormattedDate(final Date date, final SubConfiguration cfg) {
+        final String userDefinedDateFormat = cfg.getStringProperty(CUSTOM_DATE_PATTERN, defaultCUSTOM_DATE);
+        String formattedDate = null;
+        for (final String format : new String[] { userDefinedDateFormat, "yyyyMMdd" }) {
+            if (format != null) {
+                try {
+                    final SimpleDateFormat formatter = new SimpleDateFormat(userDefinedDateFormat);
+                    formattedDate = formatter.format(date);
+                    return formattedDate;
+                } catch (final Exception ignore) {
                 }
             }
         }
@@ -493,6 +523,7 @@ public class BandCampCom extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_VIDEO_FILENAME_PATTERN, "Define how the video filenames should look:").setDefaultValue(defaultCustomVideoFilename));
         final StringBuilder sb = new StringBuilder();
         sb.append("Explanation of the available tags:\r\n");
+        sb.append("*content_id* = Unique ID of content, typically track_id '1234567890'\r\n");
         sb.append("*artist* = Full name of artist of content e.g. 'John Doe'\r\n");
         sb.append("*username* = Username of artist e.g. 'johndoe19'\r\n");
         sb.append("*album_artist* = Pretty username of artist e.g. 'John Doe'\r\n");
@@ -500,21 +531,15 @@ public class BandCampCom extends PluginForHost {
         sb.append("*tracknumber* = Number of the track\r\n");
         sb.append("*songtitle* = Title of the song\r\n");
         sb.append("*ext* = Extension of the file, in this case usually '.mp3'\r\n");
-        sb.append("*date* = Date when the album/song was released - appears in the user-defined format above");
+        sb.append("*date* = Date when the song was released - appears in the user-defined format above\r\n");
+        sb.append("*album_date* = Date when the album was released - appears in the user-defined format above");
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, sb.toString()));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FILENAMELOWERCASE, "Filename to lower case?").setDefaultValue(defaultFILENAMELOWERCASE));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), FILENAMESPACE, "Filename replace space with underscore?").setDefaultValue(defaultFILENAMESPACE));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Customize the packagename for playlists and '[a-z0-9\\-]+.bandcamp.com/album/' links! Example: '*artist* - *album*':"));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_PACKAGENAME, "Define how the packagenames should look:").setDefaultValue(defaultCustomPackagename));
-        final StringBuilder sbpack = new StringBuilder();
-        sbpack.append("Explanation of the available tags:\r\n");
-        sbpack.append("*artist* = Full name of artist of content e.g. 'John Doe'\r\n");
-        sbpack.append("*username* = Username of artist e.g. 'johndoe19'\r\n");
-        sbpack.append("*album_artist* = Pretty username of artist e.g. 'John Doe'\r\n");
-        sbpack.append("*album* = Title of the album\r\n");
-        sbpack.append("*date* = Date when the album/song was released - appears in the user-defined format above");
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, sbpack.toString()));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, sb.toString()));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PACKAGENAMELOWERCASE, "Packagename to lower case?").setDefaultValue(defaultPACKAGENAMELOWERCASE));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PACKAGENAMESPACE, "Packagename replace space with underscore?").setDefaultValue(defaultPACKAGENAMESPACE));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), CLEANPACKAGENAME, "Cleanup packagenames?").setDefaultValue(defaultCLEANPACKAGENAME));

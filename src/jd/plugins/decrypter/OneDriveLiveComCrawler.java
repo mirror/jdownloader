@@ -44,19 +44,19 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "onedrive.live.com" }, urls = { "https?://([a-zA-Z0-9\\-]+\\.)?(onedrive\\.live\\.com/.+|skydrive\\.live\\.com/.+|(sdrv|1drv)\\.ms/[A-Za-z0-9&!=#\\.,-_]+)" })
-public class OneDriveLiveCom extends PluginForDecrypt {
-    public OneDriveLiveCom(PluginWrapper wrapper) {
+public class OneDriveLiveComCrawler extends PluginForDecrypt {
+    public OneDriveLiveComCrawler(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String TYPE_DRIVE_ALL               = "https?://(www\\.)?(onedrive\\.live\\.com/(redir)?\\?[A-Za-z0-9\\&\\!=#\\.,]+|skydrive\\.live\\.com/(\\?cid=[a-z0-9]+[A-Za-z0-9&!=#\\.,-_]+|redir\\.aspx\\?cid=[a-z0-9]+[A-Za-z0-9&!=#\\.,-_]+|redir\\?resid=[A-Za-z0-9&!=#\\.,-_]+))";
-    private static final String TYPE_ONEDRIVE_REDIRECT_RESID = ".+/redir\\?resid=[A-Za-z0-9]+\\!\\d+.*?";
-    private static final String TYPE_SKYDRIVE_REDIRECT_RESID = ".+/redir\\?resid=[a-z0-9]+[A-Za-z0-9&!=#\\.,-_]+";
-    private static final String TYPE_ONEDRIVE_VIEW_RESID     = ".+/view\\.aspx\\?resid=.+";
-    private static final String TYPE_SKYDRIVE_REDIRECT       = "https?://(www\\.)?skydrive\\.live\\.com/redir\\.aspx\\?cid=[a-z0-9]+[A-Za-z0-9&!=#\\.,-_]+";
-    private static final String TYPE_SKYDRIVE_REDIRECT2      = "https?://cid-[0-9a-zA-Z]+\\.skydrive\\.live\\.com/(redir|self)\\.aspx.+";
-    private static final String TYPE_SKYDRIVE_SHORT          = "https?://(www\\.)?(1|s)drv\\.ms/[A-Za-z0-9&!=#\\.,-_]+";
-    private static final String TYPE_ONEDRIVE_ROOT           = "https?://onedrive\\.live\\.com/\\?cid=[a-z0-9]+";
+    private static final String TYPE_DRIVE_ALL               = "(?i)https?://(www\\.)?(onedrive\\.live\\.com/(redir)?\\?[A-Za-z0-9\\&\\!=#\\.,]+|skydrive\\.live\\.com/(\\?cid=[a-z0-9]+[A-Za-z0-9&!=#\\.,-_]+|redir\\.aspx\\?cid=[a-z0-9]+[A-Za-z0-9&!=#\\.,-_]+|redir\\?resid=[A-Za-z0-9&!=#\\.,-_]+))";
+    private static final String TYPE_ONEDRIVE_REDIRECT_RESID = "(?i).+/redir\\?resid=[A-Za-z0-9]+\\!\\d+.*?";
+    private static final String TYPE_SKYDRIVE_REDIRECT_RESID = "(?i).+/redir\\?resid=[a-z0-9]+[A-Za-z0-9&!=#\\.,-_]+";
+    private static final String TYPE_ONEDRIVE_VIEW_RESID     = "(?i).+/view\\.aspx\\?resid=.+";
+    private static final String TYPE_SKYDRIVE_REDIRECT       = "(?i)https?://(www\\.)?skydrive\\.live\\.com/redir\\.aspx\\?cid=[a-z0-9]+[A-Za-z0-9&!=#\\.,-_]+";
+    private static final String TYPE_SKYDRIVE_REDIRECT2      = "(?i)https?://cid-[0-9a-zA-Z]+\\.skydrive\\.live\\.com/(redir|self)\\.aspx.+";
+    private static final String TYPE_SKYDRIVE_SHORT          = "(?i)https?://(www\\.)?(1|s)drv\\.ms/[A-Za-z0-9&!=#\\.,-_]+";
+    private static final String TYPE_ONEDRIVE_ROOT           = "(?i)https?://onedrive\\.live\\.com/\\?cid=[a-z0-9]+";
     /* Constants */
     public static final int     MAX_ENTRIES_PER_REQUEST      = 200;
     private static final long   ITEM_TYPE_FILE               = 1;
@@ -71,7 +71,7 @@ public class OneDriveLiveCom extends PluginForDecrypt {
     @SuppressWarnings({ "unchecked", "rawtypes", "deprecation" })
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        String contenturl = Encoding.urlDecode(param.getCryptedUrl(), true);
+        String contenturl = Encoding.urlDecode(param.getCryptedUrl(), true).replaceFirst("(?i)http://", "https://");
         original_link = contenturl;
         /*
          * 2021-06-11: We can now find the absolute path to ther current folder in their json -> No need to store it in crawler folders that
@@ -115,7 +115,7 @@ public class OneDriveLiveCom extends PluginForDecrypt {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
-            redirect = Encoding.htmlDecode(redirect);
+            redirect = Encoding.htmlOnlyDecode(redirect);
             /* Don't set redirect url as original source - we need the correct current url as source! */
             original_link = redirect;
             cid = new Regex(redirect, "cid=([A-Za-z0-9]*)").getMatch(0);

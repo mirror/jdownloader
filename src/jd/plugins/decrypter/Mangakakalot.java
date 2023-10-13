@@ -83,17 +83,13 @@ public class Mangakakalot extends PluginForDecrypt {
         final FilePackage fp = FilePackage.getInstance();
         if (param.getCryptedUrl().matches(TYPE_MANGA)) {
             /* Find all chapters of a manga */
-            String[] chapters = br.getRegex("<a[^>]+class\\s*=\\s*\"chapter-name[^\"]*\"[^>]+href\\s*=\\s*\"([^\"]+)\"").getColumn(0);
-            if (chapters != null && chapters.length > 0) {
-                for (String chapter : chapters) {
-                    final DownloadLink dd = createDownloadlink(Encoding.htmlDecode(chapter).trim());
-                    ret.add(dd);
-                }
-                String fpName = br.getRegex("<title>\\s*([^<]+)\\s+Manga\\s+Online").getMatch(0);
-                if (StringUtils.isNotEmpty(fpName)) {
-                    fp.setAllowInheritance(true);
-                    fp.setName(Encoding.htmlDecode(fpName).trim());
-                }
+            final String[] chapters = br.getRegex("<a[^>]+class\\s*=\\s*\"chapter-name[^\"]*\"[^>]+href\\s*=\\s*\"([^\"]+)\"").getColumn(0);
+            if (chapters == null || chapters.length == 0) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            for (String chapter : chapters) {
+                final DownloadLink dd = createDownloadlink(Encoding.htmlDecode(chapter).trim());
+                ret.add(dd);
             }
             fp.addLinks(ret);
         } else if (param.getCryptedUrl().matches(TYPE_MANGA_CHAPTER)) {

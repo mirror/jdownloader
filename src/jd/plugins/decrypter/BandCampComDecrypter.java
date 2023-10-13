@@ -144,7 +144,7 @@ public class BandCampComDecrypter extends PluginForDecrypt {
         final DownloadLink showcomplete = this.createDownloadlink(DirectHTTP.createURLForThisPlugin(Encoding.htmlOnlyDecode(directurl)));
         showcomplete.setProperty(BandCampCom.PROPERTY_FILE_TYPE, "mp3");
         showcomplete.setProperty(BandCampCom.PROPERTY_TITLE, showTitle);
-        showcomplete.setProperty(BandCampCom.PROPERTY_DATE_TIMESTAMP, dateTimestamp);
+        showcomplete.setProperty(BandCampCom.PROPERTY_TRACK_DATE_TIMESTAMP, dateTimestamp);
         showcomplete.setProperty(BandCampCom.PROPERTY_ALBUM_TRACK_POSITION, 0);
         showcomplete.setDownloadSize(128 * 1024l / 8 * showDurationSeconds);
         ret.add(showcomplete);
@@ -183,7 +183,7 @@ public class BandCampComDecrypter extends PluginForDecrypt {
             final String thumbnailURL = "https://f4.bcbits.com/img/" + imageID + "_0";
             final DownloadLink thumb = createDownloadlink(DirectHTTP.createURLForThisPlugin(thumbnailURL));
             thumb.setProperty(BandCampCom.PROPERTY_TITLE, showTitle);
-            thumb.setProperty(BandCampCom.PROPERTY_DATE_TIMESTAMP, dateTimestamp);
+            thumb.setProperty(BandCampCom.PROPERTY_TRACK_DATE_TIMESTAMP, dateTimestamp);
             thumb.setProperty(BandCampCom.PROPERTY_SHOW_NUMBEROF_TRACKS, 0);
             thumb.setProperty(BandCampCom.PROPERTY_FILE_TYPE, "jpg");
             ret.add(thumb);
@@ -337,11 +337,6 @@ public class BandCampComDecrypter extends PluginForDecrypt {
                 if (!audiotrack.hasProperty(BandCampCom.PROPERTY_DATE_DIRECTURL)) {
                     numberOfUnPlayableTracks++;
                 }
-                /* Add some properties if they are missing. */
-                audiotrack.setProperty(BandCampCom.PROPERTY_DATE_TIMESTAMP, dateTimestamp);
-                if (!isSingleTrack) {
-                    audiotrack.setProperty(BandCampCom.PROPERTY_ALBUM_TITLE, albumTitle);
-                }
                 ret.add(audiotrack);
                 final String videoSourceID = (String) audio.get("video_source_id");
                 if (StringUtils.isNotEmpty(videoSourceID)) {
@@ -433,6 +428,12 @@ public class BandCampComDecrypter extends PluginForDecrypt {
             if (albumArtist != null) {
                 result.setProperty(BandCampCom.PROPERTY_ARTIST_ALBUM, Encoding.htmlDecode(albumArtist).trim());
             }
+            if (dateTimestamp != null) {
+                result.setProperty(BandCampCom.PROPERTY_ALBUM_DATE_TIMESTAMP, dateTimestamp);
+            }
+            if (albumTitle != null) {
+                result.setProperty(BandCampCom.PROPERTY_ALBUM_TITLE, albumTitle);
+            }
             final String formattedFilename = BandCampCom.getFormattedFilename(result);
             result.setFinalFileName(formattedFilename);
             result.setAvailable(true);
@@ -447,6 +448,11 @@ public class BandCampComDecrypter extends PluginForDecrypt {
         fp.setName(formattedpackagename);
         if (albumID != null) {
             fp.setPackageKey("bandcamp://album/" + albumID);
+        } else {
+            final String trackID = ret.get(0).getStringProperty(BandCampCom.PROPERTY_CONTENT_ID);
+            if (trackID != null) {
+                fp.setPackageKey("bandcamp://track/" + trackID);
+            }
         }
         if (albumDescription != null) {
             fp.setComment(albumDescription);

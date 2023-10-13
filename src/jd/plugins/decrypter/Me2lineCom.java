@@ -23,6 +23,7 @@ import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
@@ -61,31 +62,46 @@ public class Me2lineCom extends PluginForDecrypt {
         return ret.toArray(new String[0]);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final String contenturl = param.getCryptedUrl().replaceFirst("(?i)http://", "https://");
         br.setFollowRedirects(true);
-        br.getPage(parameter);
+        br.getPage(contenturl);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String continueURL = br.getRegex("<a href=\"(https?://[^\"]+)\" rel=\"noreferrer\" id=\"autoclick\"").getMatch(0);
-        if (continueURL == null) {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final String forward1 = br.getRegex("<a href=\"(https?://[^\"]+)\" rel=\"noreferrer\" id=\"autoclick\"").getMatch(0);
+        if (forward1 == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        br.getPage(continueURL);
-        final String captchaAnswer = br.getRegex("zSimpleThemeB/images/(\\d+)\\.png").getMatch(0);
+        br.getPage(forward1);
+        String captchaAnswer = br.getRegex("zSimpleThemeB/images/(\\d+)\\.png").getMatch(0);
+        if (captchaAnswer == null) {
+            captchaAnswer = br.getRegex("/themes/Zing70B/images/(\\d+)\\.png").getMatch(0);
+        }
         if (captchaAnswer == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br.postPage(br.getURL(), "zcap=" + captchaAnswer);
+        final String forward2 = br.getRegex("<a href=\"(https?://[^\"]+)\"[^>]*>\\s*Show your URL download").getMatch(0);
+        if (forward2 == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        br.getPage(forward2);
+        final String forward3 = br.getRegex("<iframe id=\"idIframe\"[^<]*src=\"(https?://[^\"]+)").getMatch(0);
+        if (forward3 == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        br.getPage(forward3);
         final String[] links = br.getRegex("<a href=\"(https?://[^\"]+)\" target=\"_?blank\"").getColumn(0);
         if (links == null || links.length == 0) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         for (final String singleLink : links) {
-            decryptedLinks.add(createDownloadlink(singleLink));
+            ret.add(createDownloadlink(singleLink));
         }
-        return decryptedLinks;
+        final FilePackage fp = FilePackage.getInstance();
+        fp.addLinks(ret);
+        return ret;
     }
 }
