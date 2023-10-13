@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import org.appwork.storage.JSonMapperException;
@@ -344,7 +345,7 @@ public class TiktokComCrawler extends PluginForDecrypt {
         for (final DownloadLink result : ret) {
             result.setAvailable(true);
             result.setProperty(TiktokCom.PROPERTY_ALLOW_HEAD_REQUEST, true);
-            result.setProperty(TiktokCom.PROPERTY_VIDEO_ID, contentID);
+            result.setProperty(TiktokCom.PROPERTY_AWEME_ITEM_ID, contentID);
             TiktokCom.setFilename(result);
             TiktokCom.setDescriptionAndHashtags(result, description);
             if (!StringUtils.isEmpty(username)) {
@@ -384,7 +385,7 @@ public class TiktokComCrawler extends PluginForDecrypt {
     }
 
     private void checkErrorsWebsite(final Browser br) throws PluginException, DecrypterRetryException {
-        if (this.br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML("pageDescKey\\s*=\\s*'user_verify_page_description';|class=\"verify-wrap\"")) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Captcha-blocked");
@@ -404,8 +405,6 @@ public class TiktokComCrawler extends PluginForDecrypt {
             /* Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final TiktokConfig cfg = PluginJsonConfig.get(TiktokConfig.class);
-        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         prepBRAPI(br);
         final UrlQuery query = TiktokCom.getAPIQuery();
         query.add("aweme_id", contentID);
@@ -440,172 +439,7 @@ public class TiktokComCrawler extends PluginForDecrypt {
         if (aweme_detail == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final Map<String, Object> status = (Map<String, Object>) aweme_detail.get("status");
-        if ((Boolean) status.get("is_delete")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        final String dateFormatted = new SimpleDateFormat("yyyy-MM-dd").format(new Date(((Number) aweme_detail.get("create_time")).longValue() * 1000));
-        final Map<String, Object> statistics = (Map<String, Object>) aweme_detail.get("statistics");
-        final Map<String, Object> video = (Map<String, Object>) aweme_detail.get("video");
-        final Map<String, Object> music = (Map<String, Object>) aweme_detail.get("music");
-        final Map<String, Object> author = (Map<String, Object>) aweme_detail.get("author");
-        final Map<String, Object> image_post_info = (Map<String, Object>) aweme_detail.get("image_post_info");
-        final boolean crawlAudio;
-        if (image_post_info != null) {
-            /* Image post */
-            final String preferredImageFileExtension;
-            if (cfg.getPreferredImageFormat() == ImageFormat.JPEG) {
-                preferredImageFileExtension = ".jpeg";
-            } else {
-                preferredImageFileExtension = ".webp";
-            }
-            final List<Map<String, Object>> images = (List<Map<String, Object>>) image_post_info.get("images");
-            int index = 0;
-            for (final Map<String, Object> image : images) {
-                final Map<String, Object> imageMap;
-                if (cfg.isImageCrawlerCrawlImagesWithoutWatermark()) {
-                    imageMap = (Map<String, Object>) image.get("display_image");
-                } else {
-                    imageMap = (Map<String, Object>) image.get("user_watermark_image");
-                }
-                final List<String> url_list = (List<String>) imageMap.get("url_list");
-                String preferredImageURL = null;
-                for (final String image_url : url_list) {
-                    final String thisExt = Plugin.getFileNameExtensionFromURL(image_url);
-                    if (StringUtils.equalsIgnoreCase(thisExt, preferredImageFileExtension)) {
-                        preferredImageURL = image_url;
-                        break;
-                    }
-                }
-                final String chosenImageURL;
-                if (preferredImageURL == null) {
-                    /* Fallback - this should never be required! */
-                    chosenImageURL = url_list.get(0);
-                    logger.info("Failed to find preferred image format -> Fallback: " + chosenImageURL);
-                } else {
-                    chosenImageURL = preferredImageURL;
-                }
-                final DownloadLink picture = new DownloadLink(hostPlg, this.getHost(), url);
-                picture.setProperty(TiktokCom.PROPERTY_DIRECTURL_API, chosenImageURL);
-                picture.setProperty(TiktokCom.PROPERTY_TYPE, TiktokCom.TYPE_PICTURE);
-                picture.setProperty(TiktokCom.PROPERTY_INDEX, index);
-                picture.setProperty(TiktokCom.PROPERTY_INDEX_MAX, images.size());
-                ret.add(picture);
-                index++;
-            }
-            /* Force crawl audio as audio is part of that "image slideshow" on tiktok website. */
-            crawlAudio = true;
-        } else {
-            /* Video post */
-            final DownloadLink video0 = new DownloadLink(hostPlg, this.getHost(), url);
-            final Boolean has_watermark = Boolean.TRUE.equals(video.get("has_watermark"));
-            Map<String, Object> downloadInfo = (Map<String, Object>) video.get("download_addr");
-            if (downloadInfo == null) {
-                /* Fallback/old way */
-                final String downloadJson = video.get("misc_download_addrs").toString();
-                final Map<String, Object> misc_download_addrs = restoreFromString(downloadJson, TypeRef.MAP);
-                downloadInfo = (Map<String, Object>) misc_download_addrs.get("suffix_scene");
-            }
-            final Map<String, Object> play_addr = (Map<String, Object>) video.get("play_addr");
-            final boolean tryHDDownload = false;
-            // if (cfg.getDownloadMode() == DownloadMode.API_HD) {
-            if (tryHDDownload && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-                /* User prefers to download HD version */
-                /*
-                 * 2022-08-17: Look like HD versions have been disabled serverside see e.g.:
-                 * https://github.com/yt-dlp/yt-dlp/issues/4138#issuecomment-1217380819
-                 */
-                /**
-                 * This is also possible using "https://api-h2.tiktokv.com/aweme/v1/play/" </br>
-                 * This is also possible using modified URLs in e.g.: play_addr_bytevc1/uri_list/{last_item} --> Or also any item inside any
-                 * "uri_list" which contains the "video_id" parameter which also typically matches play_addr/uri
-                 */
-                video0.setProperty(TiktokCom.PROPERTY_DIRECTURL_API, String.format("https://api.tiktokv.com/aweme/v1/play/?video_id=%s&line=0&watermark=0&source=AWEME_DETAIL&is_play_url=1&ratio=default&improve_bitrate=1", play_addr.get("uri").toString()));
-                /*
-                 * This way we can't know whether or not the video comes with watermark but usually this version will not contain a
-                 * watermark.
-                 */
-                video0.removeProperty(null);
-                /* We can't know the filesize of this video version in beforehand. */
-                video0.setVerifiedFileSize(-1);
-            } else {
-                /* Get non-HD directurl */
-                String directurl = null;
-                final Number data_size = downloadInfo != null ? (Number) downloadInfo.get("data_size") : null;
-                if (has_watermark || (Boolean.TRUE.equals(aweme_detail.get("prevent_download")) && downloadInfo == null)) {
-                    /* Get stream downloadurl because it comes WITHOUT watermark anyways */
-                    if (has_watermark) {
-                        video0.setProperty(TiktokCom.PROPERTY_HAS_WATERMARK, true);
-                    } else {
-                        video0.setProperty(TiktokCom.PROPERTY_HAS_WATERMARK, null);
-                    }
-                    directurl = (String) JavaScriptEngineFactory.walkJson(play_addr, "url_list/{0}");
-                    video0.setProperty(TiktokCom.PROPERTY_DIRECTURL_API, directurl);
-                    if (data_size != null) {
-                        /**
-                         * Set filesize of download-version because streaming- and download-version are nearly identical. </br>
-                         * If a video is watermarked and downloads are prohibited both versions should be identical.
-                         */
-                        video0.setDownloadSize(data_size.longValue());
-                    }
-                } else {
-                    /* Get official downloadurl. */
-                    final Object directURL = JavaScriptEngineFactory.walkJson(downloadInfo, "url_list/{0}");
-                    if (directURL != null) {
-                        video0.setProperty(TiktokCom.PROPERTY_DIRECTURL_API, StringUtils.valueOfOrNull(directURL));
-                        if (data_size != null) {
-                            video0.setVerifiedFileSize(data_size.longValue());
-                        }
-                        video0.removeProperty(TiktokCom.PROPERTY_HAS_WATERMARK);
-                    }
-                }
-            }
-            video0.setProperty(TiktokCom.PROPERTY_TYPE, TiktokCom.TYPE_VIDEO);
-            ret.add(video0);
-            /* User decides whether or not he wants to download the audio of this video separately. */
-            crawlAudio = cfg.isVideoCrawlerCrawlAudioSeparately();
-        }
-        if ((crawlAudio || forceGrabAll) && music != null) {
-            final String musicURL = JavaScriptEngineFactory.walkJson(music, "play_url/uri").toString();
-            if (StringUtils.isNotEmpty(musicURL)) {
-                String ext = Plugin.getFileNameExtensionFromURL(musicURL);
-                if (ext == null) {
-                    /* Fallback */
-                    ext = ".mp3";
-                }
-                final DownloadLink audio = new DownloadLink(hostPlg, this.getHost(), url);
-                audio.setProperty(TiktokCom.PROPERTY_DIRECTURL_API, musicURL);
-                audio.setProperty(TiktokCom.PROPERTY_TYPE, TiktokCom.TYPE_AUDIO);
-                ret.add(audio);
-            }
-        }
-        /* Set additional properties and find packagename */
-        String packagename = null;
-        for (final DownloadLink result : ret) {
-            result.setAvailable(true);
-            result.setProperty(TiktokCom.PROPERTY_VIDEO_ID, contentID);
-            result.setProperty(TiktokCom.PROPERTY_DATE, dateFormatted);
-            result.setProperty(TiktokCom.PROPERTY_USERNAME, author.get("unique_id"));
-            TiktokCom.setDescriptionAndHashtags(result, aweme_detail.get("desc").toString());
-            TiktokCom.setLikeCount(result, (Number) statistics.get("digg_count"));
-            TiktokCom.setPlayCount(result, (Number) statistics.get("play_count"));
-            TiktokCom.setShareCount(result, (Number) statistics.get("share_count"));
-            TiktokCom.setCommentCount(result, (Number) statistics.get("comment_count"));
-            result.setProperty(TiktokCom.PROPERTY_ALLOW_HEAD_REQUEST, true);
-            result.setProperty(TiktokCom.PROPERTY_FORCE_API, isForcedAPIUsage);
-            TiktokCom.setFilename(result);
-            if (packagename == null && (result.getStringProperty(TiktokCom.PROPERTY_TYPE).equals(TiktokCom.TYPE_AUDIO) || result.getStringProperty(TiktokCom.PROPERTY_TYPE).equals(TiktokCom.TYPE_VIDEO))) {
-                final String filename = result.getName();
-                packagename = filename.substring(0, filename.lastIndexOf("."));
-            }
-        }
-        if (packagename != null) {
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName(packagename);
-            fp.setCleanupPackageName(false);
-            fp.addLinks(ret);
-        }
-        return ret;
+        return this.processAwemeDetail(hostPlg, aweme_detail, forceGrabAll, isForcedAPIUsage);
     }
 
     public ArrayList<DownloadLink> crawlProfile(final CryptedLink param) throws Exception {
@@ -655,19 +489,18 @@ public class TiktokComCrawler extends PluginForDecrypt {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final TiktokConfig cfg = PluginJsonConfig.get(TiktokConfig.class);
         FilePackage fp = null;
-        String username = null;
         try {
             /* First try the "hard" way */
             String json = br.getRegex("window\\['SIGI_STATE'\\]\\s*=\\s*(\\{.*?\\});").getMatch(0);
             if (json == null) {
                 json = br.getRegex("<script\\s*id\\s*=\\s*\"SIGI_STATE\"[^>]*>\\s*(\\{.*?\\});?\\s*</script>").getMatch(0);
             }
-            final String preferredImageFileExtension;
-            if (cfg.getPreferredImageFormat() == ImageFormat.JPEG) {
-                preferredImageFileExtension = ".jpeg";
-            } else {
-                preferredImageFileExtension = ".webp";
-            }
+            // final String preferredImageFileExtension;
+            // if (cfg.getPreferredImageFormat() == ImageFormat.JPEG) {
+            // preferredImageFileExtension = ".jpeg";
+            // } else {
+            // preferredImageFileExtension = ".webp";
+            // }
             final Map<String, Object> entries = restoreFromString(json, TypeRef.MAP);
             final Map<String, Map<String, Object>> itemModule = (Map<String, Map<String, Object>>) entries.get("ItemModule");
             final Map<String, Object> userPost = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "ItemList/user-post");
@@ -678,12 +511,12 @@ public class TiktokComCrawler extends PluginForDecrypt {
             for (final Map<String, Object> media : medias) {
                 final Map<String, Object> preloadInfo = preloadList.get(mediaIndex);
                 final ArrayList<DownloadLink> tempResults = this.crawlProcessWebsiteMediaMapSingleTiktokItem(hostPlg, media, preloadInfo, false);
-                final String author = media.get("author").toString();
-                if (fp == null) {
-                    username = author;
-                    fp = this.getFilePackage(username);
-                }
                 for (final DownloadLink result : tempResults) {
+                    if (fp == null) {
+                        final String username = result.getStringProperty(TiktokCom.PROPERTY_USERNAME);
+                        final String userID = result.getStringProperty(TiktokCom.PROPERTY_USER_ID);
+                        fp = this.getProfileFilePackage(username, userID);
+                    }
                     result._setFilePackage(fp);
                     distribute(result);
                 }
@@ -886,20 +719,23 @@ public class TiktokComCrawler extends PluginForDecrypt {
         FilePackage fp = null;
         String author = null;
         final TiktokConfig cfg = PluginJsonConfig.get(TiktokConfig.class);
+        int numberofProcessedItems = 0;
+        final TiktokCom hosterplugin = (TiktokCom) this.getNewPluginForHostInstance(this.getHost());
         do {
             TiktokCom.accessAPI(br, "/aweme/post", query);
             Map<String, Object> entries = null;
             try {
                 entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
             } catch (final JSonMapperException e) {
+                logger.warning("Invalid API response");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            final List<Map<String, Object>> videos = (List<Map<String, Object>>) entries.get("aweme_list");
-            if (videos == null) {
+            final List<Map<String, Object>> mediaitems = (List<Map<String, Object>>) entries.get("aweme_list");
+            if (mediaitems == null) {
                 /* Profile does not exist. */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            if (videos.isEmpty()) {
+            if (mediaitems.isEmpty()) {
                 if (ret.isEmpty()) {
                     /* User has no video uploads at all. */
                     throw new DecrypterRetryException(RetryReason.EMPTY_PROFILE);
@@ -908,20 +744,23 @@ public class TiktokComCrawler extends PluginForDecrypt {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
-            for (final Map<String, Object> aweme_detail : videos) {
-                final DownloadLink link = processVideo(aweme_detail);
-                if (fp == null) {
-                    /*
-                     * Collect author name on first round because it is not always given before e.g. not given if user adds URL of type
-                     * TYPE_USER_USER_ID.
-                     */
-                    author = link.getStringProperty(TiktokCom.PROPERTY_USERNAME);
-                    fp = getFilePackage(author);
+            for (final Map<String, Object> aweme_detail : mediaitems) {
+                final ArrayList<DownloadLink> resultlist = this.processAwemeDetail(hosterplugin, aweme_detail, false, false);
+                for (final DownloadLink result : resultlist) {
+                    if (fp == null) {
+                        /*
+                         * Collect author name on first round because it is not always given before e.g. not given if user adds URL of type
+                         * TYPE_USER_USER_ID.
+                         */
+                        author = result.getStringProperty(TiktokCom.PROPERTY_USERNAME);
+                        fp = getProfileFilePackage(author, user_id);
+                    }
+                    result._setFilePackage(fp);
+                    ret.add(result);
+                    distribute(result);
                 }
-                link._setFilePackage(fp);
-                ret.add(link);
-                distribute(link);
-                if (ret.size() == cfg.getProfileCrawlerMaxItemsLimit()) {
+                numberofProcessedItems++;
+                if (numberofProcessedItems == cfg.getProfileCrawlerMaxItemsLimit()) {
                     logger.info("Stopping because: Reached user defined max items limit: " + cfg.getProfileCrawlerMaxItemsLimit());
                     return ret;
                 }
@@ -932,7 +771,7 @@ public class TiktokComCrawler extends PluginForDecrypt {
             } else if (((Number) entries.get("has_more")).intValue() != 1) {
                 logger.info("Stopping because: Reached last page");
                 break;
-            } else if (videos.size() < maxItemsPerPage) {
+            } else if (mediaitems.size() < maxItemsPerPage) {
                 /* Extra fail-safe */
                 logger.info("Stopping because: Current page contained less items than " + maxItemsPerPage);
                 break;
@@ -1014,6 +853,8 @@ public class TiktokComCrawler extends PluginForDecrypt {
         prepBRAPI(this.br);
         final TiktokConfig cfg = PluginJsonConfig.get(TiktokConfig.class);
         int page = 1;
+        int numberofProcessedItems = 0;
+        final TiktokCom hosterplugin = (TiktokCom) this.getNewPluginForHostInstance(this.getHost());
         do {
             TiktokCom.accessAPI(br, apiPath, query);
             final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
@@ -1028,13 +869,16 @@ public class TiktokComCrawler extends PluginForDecrypt {
                 }
             }
             for (final Map<String, Object> aweme_detail : videos) {
-                final DownloadLink link = this.processVideo(aweme_detail);
-                if (fp != null) {
-                    link._setFilePackage(fp);
+                final ArrayList<DownloadLink> resultlist = this.processAwemeDetail(hosterplugin, aweme_detail, false, false);
+                for (final DownloadLink result : resultlist) {
+                    if (fp != null) {
+                        result._setFilePackage(fp);
+                    }
+                    ret.add(result);
+                    distribute(result);
                 }
-                ret.add(link);
-                distribute(link);
-                if (ret.size() == cfg.getTagCrawlerMaxItemsLimit()) {
+                numberofProcessedItems++;
+                if (numberofProcessedItems == cfg.getTagCrawlerMaxItemsLimit()) {
                     logger.info("Stopping because: Reached user defined max items limit: " + cfg.getTagCrawlerMaxItemsLimit());
                     return ret;
                 }
@@ -1061,27 +905,230 @@ public class TiktokComCrawler extends PluginForDecrypt {
     }
 
     private ArrayList<DownloadLink> processVideoList(final List<Map<String, Object>> videos, final FilePackage fp) throws PluginException {
+        final TiktokCom hosterplugin = (TiktokCom) this.getNewPluginForHostInstance(this.getHost());
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         for (final Map<String, Object> aweme_detail : videos) {
-            final DownloadLink link = processVideo(aweme_detail);
-            link._setFilePackage(fp);
-            ret.add(link);
-            distribute(link);
+            final ArrayList<DownloadLink> resultlist = this.processAwemeDetail(hosterplugin, aweme_detail, false, false);
+            for (final DownloadLink result : resultlist) {
+                result._setFilePackage(fp);
+                ret.add(result);
+                distribute(result);
+            }
         }
         return ret;
     }
 
-    private DownloadLink processVideo(final Map<String, Object> aweme_detail) throws PluginException {
-        final Map<String, Object> author = (Map<String, Object>) aweme_detail.get("author");
-        final DownloadLink link = this.createDownloadlink(getContentURL(author.get("unique_id").toString(), aweme_detail.get("aweme_id").toString()));
-        TiktokCom.parseFileInfoAPI(this, link, aweme_detail);
-        return link;
+    private static List<String> getKnownImageExtensions() {
+        final List<String> exts = new ArrayList<String>();
+        exts.add(".jpeg");
+        exts.add(".webp");
+        // exts.add(".heic");
+        return exts;
     }
 
-    private FilePackage getFilePackage(final String name) {
+    private String getPreferredImageURL(final List<String> urlList) {
+        final List<String> preferredFallbackExtensions = new ArrayList<String>();
+        preferredFallbackExtensions.add(".jpeg");
+        preferredFallbackExtensions.add(".webp");
+        // exts.add(".heic");
+        final String preferredImageFileExtension;
+        if (PluginJsonConfig.get(TiktokConfig.class).getPreferredImageFormat() == ImageFormat.JPEG) {
+            preferredImageFileExtension = ".jpeg";
+        } else {
+            preferredImageFileExtension = ".webp";
+        }
+        String preferredImageURL = null;
+        String preferredImageURLFallback = null;
+        for (final String image_url : urlList) {
+            String thisExt = Plugin.getFileNameExtensionFromURL(image_url);
+            if (thisExt == null) {
+                continue;
+            }
+            thisExt = thisExt.toLowerCase(Locale.ENGLISH);
+            if (thisExt.equals(preferredImageFileExtension)) {
+                preferredImageURL = image_url;
+                break;
+            } else if (preferredFallbackExtensions.contains(thisExt)) {
+                preferredImageURLFallback = image_url;
+            }
+        }
+        final String chosenImageURL;
+        if (StringUtils.isNotEmpty(preferredImageURL)) {
+            chosenImageURL = preferredImageURL;
+        } else if (preferredImageURLFallback != null) {
+            chosenImageURL = preferredImageURLFallback;
+        } else {
+            /* Fallback */
+            chosenImageURL = urlList.get(0);
+            logger.info("Failed to find preferred image format -> Fallback: " + chosenImageURL);
+        }
+        return chosenImageURL;
+    }
+
+    /**
+     * Processes 'aweme_detail' map which is delivered as API response and can contain a single video, audio or multiple images with audio.
+     */
+    private ArrayList<DownloadLink> processAwemeDetail(final TiktokCom hostPlg, final Map<String, Object> aweme_detail, final boolean forceGrabAll, final boolean isForcedAPIUsage) throws PluginException {
+        final Map<String, Object> status = (Map<String, Object>) aweme_detail.get("status");
+        if ((Boolean) status.get("is_delete")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final String contentID = aweme_detail.get("aweme_id").toString();
+        final TiktokConfig cfg = PluginJsonConfig.get(TiktokConfig.class);
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final String dateFormatted = new SimpleDateFormat("yyyy-MM-dd").format(new Date(((Number) aweme_detail.get("create_time")).longValue() * 1000));
+        final Map<String, Object> statistics = (Map<String, Object>) aweme_detail.get("statistics");
+        final Map<String, Object> video = (Map<String, Object>) aweme_detail.get("video");
+        final Map<String, Object> music = (Map<String, Object>) aweme_detail.get("music");
+        final Map<String, Object> author = (Map<String, Object>) aweme_detail.get("author");
+        final Map<String, Object> image_post_info = (Map<String, Object>) aweme_detail.get("image_post_info");
+        final String username = author.get("unique_id").toString();
+        final String contenturl = this.getContentURL(username, contentID);
+        final boolean crawlAudio;
+        if (image_post_info != null) {
+            /* Image post */
+            final List<Map<String, Object>> images = (List<Map<String, Object>>) image_post_info.get("images");
+            int index = 0;
+            for (final Map<String, Object> image : images) {
+                final Map<String, Object> imageMap;
+                if (cfg.isImageCrawlerCrawlImagesWithoutWatermark()) {
+                    imageMap = (Map<String, Object>) image.get("display_image");
+                } else {
+                    imageMap = (Map<String, Object>) image.get("user_watermark_image");
+                }
+                final List<String> url_list = (List<String>) imageMap.get("url_list");
+                final String chosenImageURL = this.getPreferredImageURL(url_list);
+                final DownloadLink picture = new DownloadLink(hostPlg, this.getHost(), contenturl);
+                picture.setProperty(TiktokCom.PROPERTY_DIRECTURL_API, chosenImageURL);
+                picture.setProperty(TiktokCom.PROPERTY_TYPE, TiktokCom.TYPE_PICTURE);
+                picture.setProperty(TiktokCom.PROPERTY_INDEX, index);
+                picture.setProperty(TiktokCom.PROPERTY_INDEX_MAX, images.size());
+                ret.add(picture);
+                index++;
+            }
+            /* Force crawl audio as audio is part of that "image slideshow" on tiktok website. */
+            crawlAudio = true;
+        } else {
+            /* Video post */
+            final DownloadLink video0 = new DownloadLink(hostPlg, this.getHost(), contenturl);
+            final Boolean has_watermark = Boolean.TRUE.equals(video.get("has_watermark"));
+            Map<String, Object> downloadInfo = (Map<String, Object>) video.get("download_addr");
+            if (downloadInfo == null) {
+                /* Fallback/old way */
+                final String downloadJson = video.get("misc_download_addrs").toString();
+                final Map<String, Object> misc_download_addrs = restoreFromString(downloadJson, TypeRef.MAP);
+                downloadInfo = (Map<String, Object>) misc_download_addrs.get("suffix_scene");
+            }
+            final Map<String, Object> play_addr = (Map<String, Object>) video.get("play_addr");
+            final boolean tryHDDownload = false;
+            // if (cfg.getDownloadMode() == DownloadMode.API_HD) {
+            if (tryHDDownload && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                /* User prefers to download HD version */
+                /*
+                 * 2022-08-17: Look like HD versions have been disabled serverside see e.g.:
+                 * https://github.com/yt-dlp/yt-dlp/issues/4138#issuecomment-1217380819
+                 */
+                /**
+                 * This is also possible using "https://api-h2.tiktokv.com/aweme/v1/play/" </br>
+                 * This is also possible using modified URLs in e.g.: play_addr_bytevc1/uri_list/{last_item} --> Or also any item inside any
+                 * "uri_list" which contains the "video_id" parameter which also typically matches play_addr/uri
+                 */
+                video0.setProperty(TiktokCom.PROPERTY_DIRECTURL_API, String.format("https://api.tiktokv.com/aweme/v1/play/?video_id=%s&line=0&watermark=0&source=AWEME_DETAIL&is_play_url=1&ratio=default&improve_bitrate=1", play_addr.get("uri").toString()));
+                /*
+                 * This way we can't know whether or not the video comes with watermark but usually this version will not contain a
+                 * watermark.
+                 */
+                video0.removeProperty(null);
+                /* We can't know the filesize of this video version in beforehand. */
+                video0.setVerifiedFileSize(-1);
+            } else {
+                /* Get non-HD directurl */
+                String directurl = null;
+                final Number data_size = downloadInfo != null ? (Number) downloadInfo.get("data_size") : null;
+                if (has_watermark || (Boolean.TRUE.equals(aweme_detail.get("prevent_download")) && downloadInfo == null)) {
+                    /* Get stream downloadurl because it comes WITHOUT watermark anyways */
+                    if (has_watermark) {
+                        video0.setProperty(TiktokCom.PROPERTY_HAS_WATERMARK, true);
+                    } else {
+                        video0.setProperty(TiktokCom.PROPERTY_HAS_WATERMARK, null);
+                    }
+                    directurl = (String) JavaScriptEngineFactory.walkJson(play_addr, "url_list/{0}");
+                    video0.setProperty(TiktokCom.PROPERTY_DIRECTURL_API, directurl);
+                    if (data_size != null) {
+                        /**
+                         * Set filesize of download-version because streaming- and download-version are nearly identical. </br>
+                         * If a video is watermarked and downloads are prohibited both versions should be identical.
+                         */
+                        video0.setDownloadSize(data_size.longValue());
+                    }
+                } else {
+                    /* Get official downloadurl. */
+                    final Object directURL = JavaScriptEngineFactory.walkJson(downloadInfo, "url_list/{0}");
+                    if (directURL != null) {
+                        video0.setProperty(TiktokCom.PROPERTY_DIRECTURL_API, StringUtils.valueOfOrNull(directURL));
+                        if (data_size != null) {
+                            video0.setVerifiedFileSize(data_size.longValue());
+                        }
+                        video0.removeProperty(TiktokCom.PROPERTY_HAS_WATERMARK);
+                    }
+                }
+            }
+            video0.setProperty(TiktokCom.PROPERTY_TYPE, TiktokCom.TYPE_VIDEO);
+            ret.add(video0);
+            /* User decides whether or not he wants to download the audio of this video separately. */
+            crawlAudio = cfg.isVideoCrawlerCrawlAudioSeparately();
+        }
+        if ((crawlAudio || forceGrabAll) && music != null) {
+            final String musicURL = JavaScriptEngineFactory.walkJson(music, "play_url/uri").toString();
+            if (StringUtils.isNotEmpty(musicURL)) {
+                String ext = Plugin.getFileNameExtensionFromURL(musicURL);
+                if (ext == null) {
+                    /* Fallback */
+                    ext = ".mp3";
+                }
+                final DownloadLink audio = new DownloadLink(hostPlg, this.getHost(), contenturl);
+                audio.setProperty(TiktokCom.PROPERTY_DIRECTURL_API, musicURL);
+                audio.setProperty(TiktokCom.PROPERTY_TYPE, TiktokCom.TYPE_AUDIO);
+                ret.add(audio);
+            }
+        }
+        /* Set additional properties and find package name */
+        String packagename = null;
+        for (final DownloadLink result : ret) {
+            result.setAvailable(true);
+            result.setProperty(TiktokCom.PROPERTY_AWEME_ITEM_ID, contentID);
+            result.setProperty(TiktokCom.PROPERTY_DATE, dateFormatted);
+            result.setProperty(TiktokCom.PROPERTY_USERNAME, username);
+            result.setProperty(TiktokCom.PROPERTY_USER_ID, author.get("uid"));
+            TiktokCom.setDescriptionAndHashtags(result, aweme_detail.get("desc").toString());
+            TiktokCom.setLikeCount(result, (Number) statistics.get("digg_count"));
+            TiktokCom.setPlayCount(result, (Number) statistics.get("play_count"));
+            TiktokCom.setShareCount(result, (Number) statistics.get("share_count"));
+            TiktokCom.setCommentCount(result, (Number) statistics.get("comment_count"));
+            result.setProperty(TiktokCom.PROPERTY_ALLOW_HEAD_REQUEST, true);
+            result.setProperty(TiktokCom.PROPERTY_FORCE_API, isForcedAPIUsage);
+            TiktokCom.setFilename(result);
+            if (packagename == null && (result.getStringProperty(TiktokCom.PROPERTY_TYPE).equals(TiktokCom.TYPE_AUDIO) || result.getStringProperty(TiktokCom.PROPERTY_TYPE).equals(TiktokCom.TYPE_VIDEO))) {
+                final String filename = result.getName();
+                packagename = filename.substring(0, filename.lastIndexOf("."));
+            }
+        }
+        if (packagename != null) {
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName(packagename);
+            fp.setCleanupPackageName(false);
+            fp.addLinks(ret);
+        }
+        return ret;
+    }
+
+    private FilePackage getProfileFilePackage(final String name, final String userID) {
         final FilePackage fp = FilePackage.getInstance();
         fp.setCleanupPackageName(false);
         fp.setName(name);
+        if (userID != null) {
+            fp.setPackageKey("tiktok://profile/" + userID);
+        }
         return fp;
     }
 

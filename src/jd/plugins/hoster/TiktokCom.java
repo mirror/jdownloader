@@ -29,11 +29,9 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 
-import org.appwork.storage.JSonMapperException;
 import org.appwork.storage.TypeRef;
 import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
-import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
 import org.appwork.utils.parser.UrlQuery;
@@ -145,7 +143,7 @@ public class TiktokCom extends PluginForHost {
     }
 
     public static String getContentID(final String url) {
-        return new Regex(url, "https?://.*/(?:video|v|embed)/(\\d+)").getMatch(0);
+        return new Regex(url, "(?i)https?://.*/(?:video|v|embed)/(\\d+)").getMatch(0);
     }
 
     // private String dllink = null;
@@ -153,7 +151,7 @@ public class TiktokCom extends PluginForHost {
     public static final String PROPERTY_DIRECTURL_API                         = "directurl_api";
     public static final String PROPERTY_USERNAME                              = "username";
     public static final String PROPERTY_USER_ID                               = "user_id";
-    public static final String PROPERTY_VIDEO_ID                              = "videoid";
+    public static final String PROPERTY_AWEME_ITEM_ID                         = "videoid";
     public static final String PROPERTY_DATE                                  = "date";
     public static final String PROPERTY_ATTEMPTED_TO_OBTAIN_DATE_FROM_WEBSITE = "attempted_to_obtain_date_from_website";
     public static final String PROPERTY_DATE_FROM_WEBSITE                     = "date_from_website";
@@ -210,7 +208,7 @@ public class TiktokCom extends PluginForHost {
             /* Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        link.setProperty(PROPERTY_VIDEO_ID, fid);
+        link.setProperty(PROPERTY_AWEME_ITEM_ID, fid);
         if (!link.isNameSet()) {
             /* Set fallback-filename. Use .mp4 file-extension as most items are expected to be videos. */
             link.setName(fid + ".mp4");
@@ -709,127 +707,6 @@ public class TiktokCom extends PluginForHost {
             plg.getLogger().warning("Failed to find date via date workaround");
             return null;
         }
-    }
-
-    @Deprecated
-    public void checkAvailablestatusAPI(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
-        prepBRAPI(br);
-        final UrlQuery query = getAPIQuery();
-        final String contentID = getContentID(link);
-        query.add("aweme_id", contentID);
-        accessAPI(br, "/aweme/detail", query);
-        Map<String, Object> entries = null;
-        Map<String, Object> aweme_detail = null;
-        try {
-            entries = restoreFromString(br.toString(), TypeRef.MAP);
-            aweme_detail = (Map<String, Object>) entries.get("aweme_detail");
-        } catch (final JSonMapperException jse) {
-            /* Fallback */
-            logger.info("Trying API /feed fallback");
-            /* Alternative check for videos not available without feed-context: same request with path == '/feed' */
-            prepBRAPI(br);
-            /* Make sure that the next request will not contain a Referer header otherwise we'll get a blank page! */
-            br.setCurrentURL("");
-            accessAPI(br, "/feed", query);
-            entries = restoreFromString(br.toString(), TypeRef.MAP);
-            final List<Map<String, Object>> aweme_list = (List<Map<String, Object>>) entries.get("aweme_list");
-            for (final Map<String, Object> aweme_detailTmp : aweme_list) {
-                if (StringUtils.equals(aweme_detailTmp.get("aweme_id").toString(), contentID)) {
-                    aweme_detail = aweme_detailTmp;
-                    break;
-                }
-            }
-        }
-        if (aweme_detail == null) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        parseFileInfoAPI(this, link, aweme_detail);
-        if (!link.isAvailable()) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-    }
-
-    public static void parseFileInfoAPI(final Plugin plugin, final DownloadLink link, final Map<String, Object> aweme_detail) throws PluginException {
-        link.setProperty(PROPERTY_VIDEO_ID, aweme_detail.get("aweme_id").toString());
-        final Map<String, Object> status = (Map<String, Object>) aweme_detail.get("status");
-        if ((Boolean) status.get("is_delete")) {
-            link.setAvailable(false);
-            return;
-        }
-        link.setProperty(PROPERTY_DATE, new SimpleDateFormat("yyyy-MM-dd").format(new Date(((Number) aweme_detail.get("create_time")).longValue() * 1000)));
-        final Map<String, Object> statistics = (Map<String, Object>) aweme_detail.get("statistics");
-        final Map<String, Object> video = (Map<String, Object>) aweme_detail.get("video");
-        final Map<String, Object> author = (Map<String, Object>) aweme_detail.get("author");
-        link.setProperty(PROPERTY_USERNAME, author.get("unique_id").toString());
-        setDescriptionAndHashtags(link, aweme_detail.get("desc").toString());
-        final Boolean has_watermark = Boolean.TRUE.equals(video.get("has_watermark"));
-        Map<String, Object> downloadInfo = (Map<String, Object>) video.get("download_addr");
-        if (downloadInfo == null) {
-            /* Fallback/old way */
-            final String downloadJson = video.get("misc_download_addrs").toString();
-            final Map<String, Object> misc_download_addrs = plugin.restoreFromString(downloadJson, TypeRef.MAP);
-            downloadInfo = (Map<String, Object>) misc_download_addrs.get("suffix_scene");
-        }
-        final Map<String, Object> play_addr = (Map<String, Object>) video.get("play_addr");
-        final boolean tryHDDownload = false;
-        // if (PluginJsonConfig.get(TiktokConfig.class).getDownloadMode() == DownloadMode.API_HD) {
-        if (tryHDDownload && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-            /* User prefers to download HD version */
-            /*
-             * 2022-08-17: Look like HD versions have been disabled serverside see e.g.:
-             * https://github.com/yt-dlp/yt-dlp/issues/4138#issuecomment-1217380819
-             */
-            /**
-             * This is also possible using "https://api-h2.tiktokv.com/aweme/v1/play/" </br>
-             * This is also possible using modified URLs in e.g.: play_addr_bytevc1/uri_list/{last_item} --> Or also any item inside any
-             * "uri_list" which contains the "video_id" parameter which also typically matches play_addr/uri
-             */
-            link.setProperty(PROPERTY_DIRECTURL_API, String.format("https://api.tiktokv.com/aweme/v1/play/?video_id=%s&line=0&watermark=0&source=AWEME_DETAIL&is_play_url=1&ratio=default&improve_bitrate=1", play_addr.get("uri").toString()));
-            /*
-             * This way we can't know whether or not the video comes with watermark but usually this version will not contain a watermark.
-             */
-            link.removeProperty(PROPERTY_HAS_WATERMARK);
-            /* We can't know the filesize of this video version in beforehand. */
-            link.setVerifiedFileSize(-1);
-        } else {
-            /* Get non-HD directurl */
-            String directurl = null;
-            final Number data_size = downloadInfo != null ? (Number) downloadInfo.get("data_size") : null;
-            if (has_watermark || (Boolean.TRUE.equals(aweme_detail.get("prevent_download")) && downloadInfo == null)) {
-                /* Get stream downloadurl because it comes WITHOUT watermark anyways */
-                if (has_watermark) {
-                    link.setProperty(PROPERTY_HAS_WATERMARK, true);
-                } else {
-                    link.removeProperty(PROPERTY_HAS_WATERMARK);
-                }
-                directurl = (String) JavaScriptEngineFactory.walkJson(play_addr, "url_list/{0}");
-                link.setProperty(PROPERTY_DIRECTURL_API, directurl);
-                if (data_size != null) {
-                    /**
-                     * Set filesize of download-version because streaming- and download-version are nearly identical. </br>
-                     * If a video is watermarked and downloads are prohibited both versions should be identical.
-                     */
-                    link.setDownloadSize(data_size.longValue());
-                }
-            } else {
-                /* Get official downloadurl. */
-                final Object directURL = JavaScriptEngineFactory.walkJson(downloadInfo, "url_list/{0}");
-                if (directURL != null) {
-                    link.setProperty(PROPERTY_DIRECTURL_API, StringUtils.valueOfOrNull(directURL));
-                    if (data_size != null) {
-                        link.setVerifiedFileSize(data_size.longValue());
-                    }
-                    link.removeProperty(PROPERTY_HAS_WATERMARK);
-                }
-            }
-        }
-        setLikeCount(link, (Number) statistics.get("digg_count"));
-        setPlayCount(link, (Number) statistics.get("play_count"));
-        setShareCount(link, (Number) statistics.get("share_count"));
-        setCommentCount(link, (Number) statistics.get("comment_count"));
-        link.setProperty(PROPERTY_ALLOW_HEAD_REQUEST, true);
-        link.setAvailable(true);
-        setFilename(link);
     }
 
     public static void accessAPI(final Browser br, final String path, final UrlQuery query) throws IOException {
