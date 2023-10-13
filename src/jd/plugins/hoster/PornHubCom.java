@@ -1214,11 +1214,7 @@ public class PornHubCom extends PluginForHost {
                 }
                 /* 2021-03-08: I also got 7-digit codes... */
                 if (twoFACode == null || !twoFACode.matches("^\\d{4,}$")) {
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new AccountInvalidException("\r\nUngültiges Format der 2-faktor-Authentifizierung!");
-                    } else {
-                        throw new AccountInvalidException("\r\nInvalid 2-factor-authentication code format!");
-                    }
+                    throw new AccountInvalidException("Invalid 2-factor-authentication code format!");
                 }
                 final Form loginform2 = new Form();
                 loginform2.setAction(br.getURL());
@@ -1243,8 +1239,9 @@ public class PornHubCom extends PluginForHost {
              */
             // final Boolean rememberMe = (Boolean) entries.get("remember_me");
             // final String username = (String) entries.get("username");
+            final String defaultTextLoginFailed_EN = "Login failed.\r\nIf you believe this message is incorrect, try cookie login.\r\nInstructions:\r\nsupport.jdownloader.org/Knowledgebase/Article/View/account-cookie-login-instructions";
             if ((Integer) ReflectionUtils.cast(entries.get("success"), Integer.class) != 1) {
-                throw new AccountInvalidException();
+                throw new AccountInvalidException(defaultTextLoginFailed_EN);
             }
             if (redirect != null && (redirect.startsWith("http") || redirect.startsWith("/"))) {
                 /* Required to get the (premium) cookies (multiple redirects). */
@@ -1282,7 +1279,7 @@ public class PornHubCom extends PluginForHost {
                 } else {
                     /* This should not happen. */
                     logger.warning("Ajax login successful but we are not logged in according to html code");
-                    throw new AccountInvalidException();
+                    throw new AccountInvalidException(defaultTextLoginFailed_EN);
                 }
             }
             /* Check if we're really logged in and set account type. */
@@ -1292,7 +1289,7 @@ public class PornHubCom extends PluginForHost {
                 } else {
                     /* This should never happen */
                     logger.warning("Invalid logins although full login seemed to be successful");
-                    throw new AccountInvalidException();
+                    throw new AccountInvalidException(defaultTextLoginFailed_EN);
                 }
             }
             return true;

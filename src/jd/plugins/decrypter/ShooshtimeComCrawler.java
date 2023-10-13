@@ -34,7 +34,7 @@ public class ShooshtimeComCrawler extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final String parameter = param.toString().replaceFirst("http://", "https://");
+        final String parameter = param.getCryptedUrl().replaceFirst("(?i)http://", "https://");
         br.setFollowRedirects(false);
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {

@@ -76,8 +76,8 @@ public class AbbyWintersComGallery extends PluginForDecrypt {
         return ret.toArray(new String[0]);
     }
 
-    private final String TYPE_IMAGES = "https?://[^/]+/([\\w\\-]+)/([\\w\\-]+)/([\\w\\-]+)/images/stills";
-    private final String TYPE_MIXED  = "https?://[^/]+/([\\w\\-]+)/([\\w\\-]+)/([\\w\\-]+)$";
+    private final String TYPE_IMAGES = "(?i)https?://[^/]+/([\\w\\-]+)/([\\w\\-]+)/([\\w\\-]+)/images/stills";
+    private final String TYPE_MIXED  = "(?i)https?://[^/]+/([\\w\\-]+)/([\\w\\-]+)/([\\w\\-]+)$";
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         br.setFollowRedirects(true);
@@ -96,7 +96,7 @@ public class AbbyWintersComGallery extends PluginForDecrypt {
         }
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final Regex imageUrlRegex = new Regex(param.getCryptedUrl(), TYPE_IMAGES);
-        if (imageUrlRegex.matches()) {
+        if (imageUrlRegex.patternFind()) {
             final String fpName = (imageUrlRegex.getMatch(0) + " - " + imageUrlRegex.getMatch(1) + " - " + imageUrlRegex.getMatch(2)).replace("_", " ");
             final String[] imgurls = br.getRegex("class=\"card-thumb clearfix\" href=\"(https?://[^\"]+)").getColumn(0);
             if (imgurls == null || imgurls.length == 0) {
@@ -120,7 +120,7 @@ public class AbbyWintersComGallery extends PluginForDecrypt {
             final String[] urls = HTMLParser.getHttpLinks(br.getRequest().getHtmlCode(), br.getURL());
             for (final String url : urls) {
                 final Regex videoRegex = new Regex(url, AbbyWintersCom.PATTERN_VIDEO);
-                if (videoRegex.matches()) {
+                if (videoRegex.patternFind()) {
                     final DownloadLink video = this.createDownloadlink(url);
                     video.setName((videoRegex.getMatch(0) + " - " + videoRegex.getMatch(1) + " - " + videoRegex.getMatch(2)).replace("_", " ") + ".mp4");
                     video.setAvailable(true);
