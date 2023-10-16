@@ -50,7 +50,7 @@ public class LibGenCrawler extends PluginForDecrypt {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
         /* Keep in sync with hoster- and crawler plugin! */
-        ret.add(new String[] { "libgen.gs", "libgen.lc", "libgen.rocks", "libgen.li", "libgen.org", "gen.lib.rus.ec", "libgen.io", "booksdl.org", "libgen.pm" });
+        ret.add(new String[] { "libgen.gs", "libgen.lc", "libgen.rocks", "libgen.li", "libgen.org", "gen.lib.rus.ec", "libgen.io", "booksdl.org", "libgen.pm", "libgen.rs", "libgen.is", "libgen.st", "library.lol", "libgen.fun" });
         return ret;
     }
 
@@ -61,6 +61,8 @@ public class LibGenCrawler extends PluginForDecrypt {
         deadDomains.add("gen.lib.rus.ec");
         deadDomains.add("libgen.io");
         deadDomains.add("booksdl.org");
+        deadDomains.add("library.lol");
+        deadDomains.add("libgen.fun");
         return deadDomains;
     }
 

@@ -46,6 +46,7 @@ import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.Form.MethodType;
 import jd.plugins.Account;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
@@ -70,9 +71,9 @@ public class DropBoxComCrawler extends PluginForDecrypt {
         return DropBoxConfig.class;
     }
 
-    private static final String TYPES_NORMAL              = "https?://(?:www\\.)?dropbox\\.com/(sh|s|sc)/.+";
-    private static final String TYPE_REDIRECT             = "https?://(?:www\\.)?dropbox\\.com/l/[A-Za-z0-9]+";
-    private static final String TYPE_SHORT                = "https://(?:www\\.)?db\\.tt/[A-Za-z0-9]+";
+    private static final String TYPES_NORMAL              = "(?i)https?://(?:www\\.)?dropbox\\.com/(sh|s|sc|scl)/.+";
+    private static final String TYPE_REDIRECT             = "(?i)https?://(?:www\\.)?dropbox\\.com/l/[A-Za-z0-9]+";
+    private static final String TYPE_SHORT                = "(?i)https://(?:www\\.)?db\\.tt/[A-Za-z0-9]+";
     private static final String PROPERTY_CRAWL_SUBFOLDERS = "crawl_subfolders";
     private DropboxCom          hosterPlugin              = null;
 
@@ -85,7 +86,7 @@ public class DropBoxComCrawler extends PluginForDecrypt {
         }
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         hosterPlugin = (DropboxCom) this.getNewPluginForHostInstance(this.getHost());
         final Account account = AccountController.getInstance().getValidAccount(getHost());
         /*
@@ -396,7 +397,7 @@ public class DropBoxComCrawler extends PluginForDecrypt {
         } else {
             /* File/folder */
             /* Correct aded URL. */
-            contentURL = contentURL.replaceFirst("dl\\.dropboxusercontent\\.com/", this.getHost() + "/");
+            contentURL = contentURL.replaceFirst("(?i)dl\\.dropboxusercontent\\.com/", this.getHost() + "/");
             /*
              * 2019-09-24: isSingleFile may sometimes be wrong but if our URL contains 'crawl_subfolders=' we know it has been added via
              * crawler and it is definitely a folder and not a file!
@@ -484,12 +485,19 @@ public class DropBoxComCrawler extends PluginForDecrypt {
                 br.getPage(contentURL);
             }
             final String edison_page_name = br.getRegex("edison_page_name=([\\w\\-]+)").getMatch(0);
+            final String dws_page_name = br.getRegex("dws_page_name=([\\w\\-]+)").getMatch(0);
             if (StringUtils.equals(edison_page_name, "shared_link_deleted")) {
                 /* Item was deleted */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else if (StringUtils.equals(edison_page_name, "shared_link_generic_error")) {
                 /* Item was abused. */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (StringUtils.equals(dws_page_name, "files_shared_content_link_login_page")) {
+                /* Login required to access item. */
+                throw new AccountRequiredException();
+            } else if (br.containsHTML("invitation-claimed-access-request-container")) {
+                /* User is logged in but has no access to this folderitem */
+                throw new AccountRequiredException();
             }
             /**
              * Very important as sometimes the initially added URL does not contain a path/filename but it gets added later e.g. </br>
