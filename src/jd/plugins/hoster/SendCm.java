@@ -222,8 +222,50 @@ public class SendCm extends XFileSharingProBasic {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid 2-factor-authentication code!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
             }
-            account.saveCookies(br.getCookies(getMainPage()), "");
+            account.saveCookies(br.getCookies(br.getHost()), "");
             return true;
+        }
+    }
+    // @Override
+    // protected AccountInfo fetchAccountInfoWebsiteTraffic(final Browser br, final Account account, final AccountInfo ai) throws Exception
+    // {
+    // /*
+    // * trafficleft is usually not given via API so we'll have to check for it via website. Also we do not trsut 'unlimited traffic' via
+    // * API yet.
+    // */
+    // String trafficLeftStr = regExTrafficLeft(br);
+    // /* Example non english: brupload.net */
+    // final boolean userHasUnlimitedTraffic = trafficLeftStr != null && trafficLeftStr.matches(".*?(nlimited|Ilimitado).*?");
+    // if (trafficLeftStr != null && !userHasUnlimitedTraffic && !trafficLeftStr.equalsIgnoreCase("Mb")) {
+    // trafficLeftStr = Encoding.htmlDecode(trafficLeftStr).trim();
+    // /* Need to set 0 traffic left, as getSize returns positive result, even when negative value supplied. */
+    // long trafficLeft = 0;
+    // if (trafficLeftStr.startsWith("-")) {
+    // /* Negative traffic value = User downloaded more than he is allowed to (rare case) --> No traffic left */
+    // trafficLeft = 0;
+    // } else {
+    // trafficLeft = SizeFormatter.getSize(trafficLeftStr);
+    // }
+    // /* 2019-02-19: Users can buy additional traffic packages: Example(s): subyshare.com */
+    // final String usableBandwidth = br.getRegex("Usable
+    // Bandwidth\\s*<span[^>]*>\\s*([0-9\\.]+\\s*[TGMKB]+)\\s*/\\s*[0-9\\.]+\\s*[TGMKB]+\\s*<").getMatch(0);
+    // if (usableBandwidth != null) {
+    // trafficLeft = Math.max(trafficLeft, SizeFormatter.getSize(usableBandwidth));
+    // }
+    // ai.setTrafficLeft(trafficLeft);
+    // } else {
+    // ai.setUnlimitedTraffic();
+    // }
+    // return ai;
+    // }
+
+    @Override
+    protected String regExTrafficLeft(final Browser br) {
+        final String betterTrafficLeft = br.getRegex(">\\s*Premium Bandwidth.*?<h3[^>]*>(\\d+[^<]+)</h3>").getMatch(0);
+        if (betterTrafficLeft != null) {
+            return betterTrafficLeft;
+        } else {
+            return super.regExTrafficLeft(br);
         }
     }
 
@@ -297,5 +339,19 @@ public class SendCm extends XFileSharingProBasic {
     protected boolean allowToGenerateAPIKeyInWebsiteMode() {
         /* 2022-10-05: Their API handling is broken serverside and will never return and API key sending the request to generate one. */
         return false;
+    }
+
+    @Override
+    public void doFree(final DownloadLink link, final Account account) throws Exception, PluginException {
+        /* First bring up saved final links */
+        if (account != null && account.getType() == AccountType.FREE && account.getAccountInfo() != null && account.getAccountInfo().getTrafficLeft() > 0) {
+            /* 2023-10-16: Special: For "Free accounts" with paid "Premium bandwidth". */
+            requestFileInformationWebsite(link, account, true);
+            final String contentURL = this.getContentURL(link);
+            final String directurl = contentURL + "/jd";
+            handleDownload(link, account, null, directurl, null);
+        } else {
+            super.doFree(link, account);
+        }
     }
 }

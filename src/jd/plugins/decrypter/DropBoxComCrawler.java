@@ -71,18 +71,24 @@ public class DropBoxComCrawler extends PluginForDecrypt {
         return DropBoxConfig.class;
     }
 
-    private static final String TYPES_NORMAL              = "(?i)https?://(?:www\\.)?dropbox\\.com/(sh|s|sc|scl)/.+";
-    private static final String TYPE_REDIRECT             = "(?i)https?://(?:www\\.)?dropbox\\.com/l/[A-Za-z0-9]+";
+    private static final String TYPES_NORMAL              = "(?i)https?://[^/]+/(sh|s|sc|scl)/.+";
+    private static final String TYPE_REDIRECT             = "(?i)https?://[^/]+/l/[A-Za-z0-9]+";
     private static final String TYPE_SHORT                = "(?i)https://(?:www\\.)?db\\.tt/[A-Za-z0-9]+";
     private static final String PROPERTY_CRAWL_SUBFOLDERS = "crawl_subfolders";
     private DropboxCom          hosterPlugin              = null;
 
+    /* Warning! Unreliable method! Try to find this information inside html code! */
     private String getFilepathFromURL(final String url) {
-        final String path = new Regex(url, "https?://[^/]+/(?:sh|s|sc)/[^/]+/[^/]+/([^\\?#]+)").getMatch(0);
-        if (path != null) {
-            return Encoding.htmlDecode(path);
+        final Regex urlScl = new Regex(url, "(?i)https?://[^/]+/scl/[^/]+/[^/]+/[^/]+/([^\\?#]+)");
+        if (urlScl.patternFind()) {
+            return urlScl.getMatch(0);
         } else {
-            return null;
+            final String path = new Regex(url, "(?i)https?://[^/]+/(?:sh|s|sc)/[^/]+/[^/]+/([^\\?#]+)").getMatch(0);
+            if (path != null) {
+                return Encoding.htmlDecode(path);
+            } else {
+                return null;
+            }
         }
     }
 
@@ -438,9 +444,9 @@ public class DropBoxComCrawler extends PluginForDecrypt {
             brc.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
             brc.getHeaders().put("Origin", "https://www." + this.getHost());
             if (DropboxCom.isPasswordProtectedWebsite(br)) {
-                String content_id = new Regex(br.getURL(), "content_id=([^\\&;]+)").getMatch(0);
+                String content_id = new Regex(br.getURL(), "(?i)content_id=([^\\&;]+)").getMatch(0);
                 if (content_id == null) {
-                    content_id = new Regex(br.getRedirectLocation(), "content_id=([^\\&;]+)").getMatch(0);
+                    content_id = new Regex(br.getRedirectLocation(), "(?i)content_id=([^\\&;]+)").getMatch(0);
                 }
                 if (content_id == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -522,6 +528,7 @@ public class DropBoxComCrawler extends PluginForDecrypt {
             String secure_hash = null;
             String link_type = null;
             String rlkey = null;
+            String sub_path = null;
             final String current_folder_json_source = br.getRegex("InitReact\\.mountComponent\\(mod,[ ]*(\\{[^\\n\\r]*?folderSharedLinkInfo[^\\n\\r]*?\\})\\);\\s+").getMatch(0);
             if (current_folder_json_source != null) {
                 final Map<String, Object> folderInfo = JavaScriptEngineFactory.jsonToJavaMap(current_folder_json_source);
@@ -531,7 +538,14 @@ public class DropBoxComCrawler extends PluginForDecrypt {
                 secure_hash = (String) folderShareToken.get("secureHash");
                 link_type = (String) folderShareToken.get("linkType");
                 rlkey = (String) folderShareToken.get("rlkey");
+                sub_path = (String) folderShareToken.get("subPath");
+                if (sub_path == null) {
+                    logger.warning("Unable to find 'sub_path' value");
+                }
                 currentRootFolderName = (String) JavaScriptEngineFactory.walkJson(props, "folderSharedLinkInfo/displayName");
+            } else {
+                /* https://svn.jdownloader.org/issues/90376 */
+                logger.info("Failed to find current_folder_json_source");
             }
             FilePackage fp = null;
             String next_request_voucher = null;
@@ -539,8 +553,8 @@ public class DropBoxComCrawler extends PluginForDecrypt {
             if (StringUtils.isEmpty(rlkey)) {
                 rlkey = UrlQuery.parse(param.getCryptedUrl()).get("rlkey");
             }
-            final Regex urlinfoTypeC = new Regex(contentURL, "https://[^/]+/scl/([^/]+)/([^/]+)/([^/]+)");
-            if (urlinfoTypeC.matches()) {
+            final Regex urlinfoTypeC = new Regex(contentURL, "(?i)https://[^/]+/scl/([^/]+)/([^/]+)/([^/]+)");
+            if (urlinfoTypeC.patternFind()) {
                 if (StringUtils.isEmpty(link_type)) {
                     link_type = "c";
                 }
@@ -566,6 +580,13 @@ public class DropBoxComCrawler extends PluginForDecrypt {
             final String cookie_t = br.getCookie(getHost(), "t", Cookies.NOTDELETEDPATTERN);
             brc.setAllowedResponseCodes(400);
             int numberofItemsWalkedThroughSoFar = 0;
+            if (sub_path == null) {
+                sub_path = getFilepathFromURL(contentURL);
+            }
+            if (sub_path == null) {
+                /* We're crawling a root directory. */
+                sub_path = "";
+            }
             do {
                 String json_source = null;
                 final boolean isFirstPage = page == page_start;
@@ -585,14 +606,9 @@ public class DropBoxComCrawler extends PluginForDecrypt {
                     } else {
                         logger.info("Loading next page: " + page);
                     }
-                    if (link_type == null || cookie_t == null || link_key == null || secure_hash == null) {
+                    if (link_type == null || cookie_t == null || link_key == null || secure_hash == null || sub_path == null) {
                         logger.warning("Stopping because: Pagination is not possible");
                         break;
-                    }
-                    String sub_path = getFilepathFromURL(contentURL);
-                    if (sub_path == null) {
-                        /* We're crawling a root directory. */
-                        sub_path = "";
                     }
                     final Form pagination_form = new Form();
                     pagination_form.setMethod(MethodType.POST);
@@ -657,11 +673,7 @@ public class DropBoxComCrawler extends PluginForDecrypt {
                     fp = FilePackage.getInstance();
                     fp.setName(subFolderPath);
                     if (dummyFilenameForErrors == null) {
-                        if (!StringUtils.isEmpty(currentRootFolderName) && !StringUtils.isEmpty(subFolderPath)) {
-                            dummyFilenameForErrors = folderidString + "_" + currentRootFolderName;
-                        } else {
-                            dummyFilenameForErrors = folderidString;
-                        }
+                        dummyFilenameForErrors = folderidString + "_" + currentRootFolderName;
                     }
                 }
                 final List<Map<String, Object>> ressourcelist = (List<Map<String, Object>>) response.get("entries");
