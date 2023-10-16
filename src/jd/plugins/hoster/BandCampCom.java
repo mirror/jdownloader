@@ -39,6 +39,7 @@ import jd.config.SubConfiguration;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -95,38 +96,40 @@ public class BandCampCom extends PluginForHost {
         return ret.toArray(new String[0]);
     }
 
+    public static final Pattern PATTERN_SINGLE_TRACK                = Pattern.compile("(?i)https?://[^/]+/track/([a-z0-9\\-_]+)");
     /* Plugin setting properties */
-    public static final String FASTLINKCHECK                  = "FASTLINKCHECK_2020_06_02";
-    public static final String CUSTOM_DATE_PATTERN            = "CUSTOM_DATE";
-    public static final String CUSTOM_FILENAME_PATTERN        = "CUSTOM_FILENAME";
-    public static final String CUSTOM_VIDEO_FILENAME_PATTERN  = "CUSTOM_VIDEO_FILENAME";
-    public static final String GRABTHUMB                      = "GRABTHUMB";
-    public static final String CUSTOM_PACKAGENAME             = "CUSTOM_PACKAGENAME";
-    public static final String FILENAMELOWERCASE              = "FILENAMELOWERCASE";
-    public static final String PACKAGENAMELOWERCASE           = "PACKAGENAMELOWERCASE";
-    public static final String FILENAMESPACE                  = "FILENAMESPACE";
-    public static final String PACKAGENAMESPACE               = "PACKAGENAMESPACE";
-    public static final String CLEANPACKAGENAME               = "CLEANPACKAGENAME";
+    public static final String  FASTLINKCHECK                       = "FASTLINKCHECK_2020_06_02";
+    public static final String  CUSTOM_DATE_PATTERN                 = "CUSTOM_DATE";
+    public static final String  CUSTOM_FILENAME_PATTERN             = "CUSTOM_FILENAME";
+    public static final String  CUSTOM_VIDEO_FILENAME_PATTERN       = "CUSTOM_VIDEO_FILENAME";
+    public static final String  GRABTHUMB                           = "GRABTHUMB";
+    public static final String  CUSTOM_PACKAGENAME                  = "CUSTOM_PACKAGENAME";
+    public static final String  FILENAMELOWERCASE                   = "FILENAMELOWERCASE";
+    public static final String  PACKAGENAMELOWERCASE                = "PACKAGENAMELOWERCASE";
+    public static final String  FILENAMESPACE                       = "FILENAMESPACE";
+    public static final String  PACKAGENAMESPACE                    = "PACKAGENAMESPACE";
+    public static final String  CLEANPACKAGENAME                    = "CLEANPACKAGENAME";
+    public static final String  SETTING_ENABLE_FAST_LINKCHECK_ALBUM = "ENABLE_FAST_LINKCHECK_ALBUM";
     /* DownloadLink properties */
-    public static final String PROPERTY_CONTENT_ID            = "content_id";
-    public static final String PROPERTY_TITLE                 = "directname";
-    public static final String PROPERTY_USERNAME              = "username";
-    public static final String PROPERTY_ARTIST                = "directartist";
-    public static final String PROPERTY_ARTIST_ALBUM          = "album_artist";
-    public static final String PROPERTY_ALBUM_ID              = "album_id";
-    public static final String PROPERTY_ALBUM_TITLE           = "directalbum";
-    public static final String PROPERTY_ALBUM_TRACK_POSITION  = "album_track_number";
-    public static final String PROPERTY_ALBUM_DATE_TIMESTAMP  = "album_datetimestamp";
-    public static final String PROPERTY_SHOW_TRACK_POSITION   = "show_track_number";
-    public static final String PROPERTY_ALBUM_NUMBEROF_TRACKS = "album_numberof_tracks";
-    public static final String PROPERTY_SHOW_NUMBEROF_TRACKS  = "show_numberof_tracks";
-    public static final String PROPERTY_VIDEO_FORMAT          = "video_format";
-    public static final String PROPERTY_VIDEO_WIDTH           = "video_width";
-    public static final String PROPERTY_VIDEO_HEIGHT          = "video_height";
-    public static final String PROPERTY_FILE_TYPE             = "type";
-    public static final String PROPERTY_TRACK_DATE_TIMESTAMP  = "datetimestamp";
-    public static final String PROPERTY_DATE_DIRECTURL        = "directurl";
-    private String             dllink                         = null;
+    public static final String  PROPERTY_CONTENT_ID                 = "content_id";
+    public static final String  PROPERTY_TITLE                      = "directname";
+    public static final String  PROPERTY_USERNAME                   = "username";
+    public static final String  PROPERTY_ARTIST                     = "directartist";
+    public static final String  PROPERTY_ARTIST_ALBUM               = "album_artist";
+    public static final String  PROPERTY_ALBUM_ID                   = "album_id";
+    public static final String  PROPERTY_ALBUM_TITLE                = "directalbum";
+    public static final String  PROPERTY_ALBUM_TRACK_POSITION       = "album_track_number";
+    public static final String  PROPERTY_ALBUM_DATE_TIMESTAMP       = "album_datetimestamp";
+    public static final String  PROPERTY_SHOW_TRACK_POSITION        = "show_track_number";
+    public static final String  PROPERTY_ALBUM_NUMBEROF_TRACKS      = "album_numberof_tracks";
+    public static final String  PROPERTY_SHOW_NUMBEROF_TRACKS       = "show_numberof_tracks";
+    public static final String  PROPERTY_VIDEO_FORMAT               = "video_format";
+    public static final String  PROPERTY_VIDEO_WIDTH                = "video_width";
+    public static final String  PROPERTY_VIDEO_HEIGHT               = "video_height";
+    public static final String  PROPERTY_FILE_TYPE                  = "type";
+    public static final String  PROPERTY_TRACK_DATE_TIMESTAMP       = "datetimestamp";
+    public static final String  PROPERTY_DATE_DIRECTURL             = "directurl";
+    private String              dllink                              = null;
 
     @Override
     public String getAGBLink() {
@@ -242,12 +245,12 @@ public class BandCampCom extends PluginForHost {
             }
         }
         if (albumTitle != null) {
-            link.setProperty(PROPERTY_ALBUM_TITLE, Encoding.htmlDecode(albumTitle).trim());
+            link.setProperty(PROPERTY_ALBUM_TITLE, Encoding.htmlOnlyDecode(albumTitle).trim());
         }
         link.setProperty(PROPERTY_FILE_TYPE, "mp3");
         final boolean isHtmlContextOfSingleTrack;
         final String trackIDFromHTML = br.getRegex("<\\!-- track id (\\d+) -->").getMatch(0);
-        if (trackIDFromHTML != null || br.getURL().matches("(?i)https?://[^/]+/track/[a-z0-9\\-_]+")) {
+        if (trackIDFromHTML != null || new Regex(br.getURL(), PATTERN_SINGLE_TRACK).patternFind()) {
             isHtmlContextOfSingleTrack = true;
         } else {
             isHtmlContextOfSingleTrack = false;
@@ -309,11 +312,11 @@ public class BandCampCom extends PluginForHost {
                 artist = (String) trackInfo0.get("artist");
             }
             if (artist != null) {
-                artist = Encoding.htmlDecode(artist).trim();
+                artist = Encoding.htmlOnlyDecode(artist).trim();
                 link.setProperty(PROPERTY_ARTIST, artist);
             }
             if (artistAndTrackTitle != null) {
-                artistAndTrackTitle = Encoding.htmlDecode(artistAndTrackTitle).trim();
+                artistAndTrackTitle = Encoding.htmlOnlyDecode(artistAndTrackTitle).trim();
                 if (artist != null) {
                     /* Remove artist to get track-title only. */
                     link.setProperty(PROPERTY_TITLE, artistAndTrackTitle.replaceFirst(Pattern.quote(artist) + " - ", ""));
@@ -509,6 +512,7 @@ public class BandCampCom extends PluginForHost {
     public static final boolean defaultPACKAGENAMELOWERCASE = false;
     public static final boolean defaultPACKAGENAMESPACE     = false;
     public static final boolean defaultCLEANPACKAGENAME     = false;
+    public static final boolean defaultEnableFastLinkcheckAlbum   = true;
 
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), GRABTHUMB, "Grab thumbnail (.jpg)?").setDefaultValue(defaultGRABTHUMB));
@@ -543,6 +547,9 @@ public class BandCampCom extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PACKAGENAMELOWERCASE, "Packagename to lower case?").setDefaultValue(defaultPACKAGENAMELOWERCASE));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), PACKAGENAMESPACE, "Packagename replace space with underscore?").setDefaultValue(defaultPACKAGENAMESPACE));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), CLEANPACKAGENAME, "Cleanup packagenames?").setDefaultValue(defaultCLEANPACKAGENAME));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Advanced settings:"));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SETTING_ENABLE_FAST_LINKCHECK_ALBUM, "Enable fast linkcheck for crawled album items?").setDefaultValue(defaultEnableFastLinkcheckAlbum));
     }
 
     @Override

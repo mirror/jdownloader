@@ -28,6 +28,7 @@ import java.util.Map.Entry;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.downloader.hls.HLSDownloader;
@@ -894,8 +895,7 @@ public abstract class EvilangelCore extends PluginForHost {
             account.setUser(username);
         }
         /**
-         * TODO: Add support for "expirationDate" along with "scheduledCancelDate" whenever a test account with such a date is available.
-         * </br>
+         * TODO: Add support for "scheduledCancelDate" whenever a test account with such a date is available. </br>
          * "scheduledCancelDate" can also be a Boolean!
          */
         if (Boolean.TRUE.equals(user.get("isExpired"))) {
@@ -904,6 +904,11 @@ public abstract class EvilangelCore extends PluginForHost {
         } else {
             ai.setUnlimitedTraffic();
             account.setType(AccountType.PREMIUM);
+        }
+        /* This date is not always given. */
+        final String expirationDate = (String) user.get("expirationDate");
+        if (!StringUtils.isEmpty(expirationDate)) {
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expirationDate + " 23:59:59", "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH), br);
         }
         return ai;
     }

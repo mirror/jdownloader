@@ -298,10 +298,10 @@ public class BandCampComDecrypter extends PluginForDecrypt {
          * Not all albums have playable audio tracks so for some, all we can crawl is the album thumbnail. </br>
          * Example-album without any streamable tracks: https://midsummerex.bandcamp.com/album/intl
          */
+        boolean isSingleTrack = new Regex(br.getURL(), BandCampCom.PATTERN_SINGLE_TRACK).patternFind();
         final List<Map<String, Object>> albumtracks = (List<Map<String, Object>>) JavaScriptEngineFactory.jsonToJavaObject(json);
         if (albumtracks != null && albumtracks.size() > 0) {
             final String type = albuminfo.get("@type").toString();
-            final boolean isSingleTrack;
             if (type.equalsIgnoreCase("MusicRecording") && albumtracks.size() == 1) {
                 isSingleTrack = true;
             } else {
@@ -412,8 +412,7 @@ public class BandCampComDecrypter extends PluginForDecrypt {
                     /* Inherit properties from first crawler audio track. */
                     thumb.setProperties(ret.get(0).getProperties());
                 }
-                thumb.setProperty(BandCampCom.PROPERTY_TITLE, "coverart");
-                thumb.setProperty(BandCampCom.PROPERTY_ALBUM_TITLE, albumTitle);
+                // thumb.setProperty(BandCampCom.PROPERTY_TITLE, "coverart");
                 thumb.setProperty(BandCampCom.PROPERTY_FILE_TYPE, "jpg");
                 thumb.setProperty(BandCampCom.PROPERTY_ALBUM_TRACK_POSITION, 0);
                 ret.add(thumb);
@@ -436,7 +435,9 @@ public class BandCampComDecrypter extends PluginForDecrypt {
             }
             final String formattedFilename = BandCampCom.getFormattedFilename(result);
             result.setFinalFileName(formattedFilename);
-            result.setAvailable(true);
+            if (isSingleTrack || cfg.getBooleanProperty(BandCampCom.SETTING_ENABLE_FAST_LINKCHECK_ALBUM, BandCampCom.defaultEnableFastLinkcheckAlbum)) {
+                result.setAvailable(true);
+            }
         }
         final FilePackage fp = FilePackage.getInstance();
         final String formattedpackagename = getFormattedPackagename(ret.get(0), cfg);
@@ -444,6 +445,10 @@ public class BandCampComDecrypter extends PluginForDecrypt {
             fp.setCleanupPackageName(false);
         } else {
             fp.setCleanupPackageName(true);
+        }
+        if (!isSingleTrack) {
+            /* Allow all crawled results of an album to be auto merged into one package. */
+            fp.setAllowInheritance(true);
         }
         fp.setName(formattedpackagename);
         if (albumID != null) {

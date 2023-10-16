@@ -20,6 +20,10 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -30,32 +34,41 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
+import jd.plugins.PluginForDecrypt;
+import jd.plugins.hoster.DirectHTTP;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "swisstransfer.com" }, urls = { "https?://(?:www\\.)?swisstransfer\\.com/d/([a-z0-9\\-]+)" })
-public class SwisstransferComFolder extends antiDDoSForDecrypt {
+public class SwisstransferComFolder extends PluginForDecrypt {
     public SwisstransferComFolder(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final String addedlink = param.toString();
-        final String linkUUID = new Regex(addedlink, this.getSupportedLinks()).getMatch(0);
-        br.getHeaders().put("accept", "application/json, text/plain, */*");
-        postPage("https://www." + this.getHost() + "/api/isPasswordValid", "linkUUID=" + linkUUID);
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            /* E.g. response "e034b988-de97-4333-956b-28ba66ed88888 Not found" (with "") */
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (br.containsHTML("^\"late\"$")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        final String addedlink = param.getCryptedUrl();
+        final String folderUUID = new Regex(addedlink, this.getSupportedLinks()).getMatch(0);
+        final boolean useNewHandling = true;
+        final Map<String, Object> data;
+        if (useNewHandling) {
+            br.getPage("https://www." + this.getHost() + "/api/links/" + folderUUID);
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            final Map<String, Object> root = JavaScriptEngineFactory.jsonToJavaMap(br.getRequest().getHtmlCode());
+            data = (Map<String, Object>) root.get("data");
+        } else {
+            br.getHeaders().put("accept", "application/json, text/plain, */*");
+            br.postPage("https://www." + this.getHost() + "/api/isPasswordValid", "linkUUID=" + folderUUID);
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                /* E.g. response "e034b988-de97-4333-956b-28ba66ed88888 Not found" (with "") */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (br.containsHTML("^\"late\"$")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            data = JavaScriptEngineFactory.jsonToJavaMap(br.getRequest().getHtmlCode());
         }
-        final Map<String, Object> root = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-        final Map<String, Object> container = (Map<String, Object>) root.get("container");
+        final String downloadHost = data.get("downloadHost").toString();
+        final Map<String, Object> container = (Map<String, Object>) data.get("container");
         final Number downloadLimit = (Number) container.get("downloadLimit");
         final List<Map<String, Object>> ressourcelist = (List<Map<String, Object>>) container.get("files");
         String fpName = (String) container.get("message");
@@ -64,7 +77,7 @@ public class SwisstransferComFolder extends antiDDoSForDecrypt {
             fp.setName(Encoding.htmlDecode(fpName).trim());
         } else {
             /* Fallback */
-            fp.setName(linkUUID);
+            fp.setName(folderUUID);
         }
         int offset = 0;
         int page = 0;
@@ -89,7 +102,10 @@ public class SwisstransferComFolder extends antiDDoSForDecrypt {
                 final Number downloadCounter = (Number) file.get("downloadCounter");
                 final String expiredDate = (String) file.get("expiredDate");
                 final String deletedDate = (String) file.get("deletedDate");
-                final DownloadLink dl = createDownloadlink(String.format("directhttp://https://www.swisstransfer.com/api/download/%s/%s", linkUUID, fileid));
+                /* Old format: */
+                // final String directurl = String.format("https://www.swisstransfer.com/api/download/%s/%s", linkUUID, fileid);
+                final String directurl = "https://" + downloadHost + "/api/download/" + folderUUID + "/" + fileid;
+                final DownloadLink dl = createDownloadlink(DirectHTTP.createURLForThisPlugin(directurl));
                 if (filesize != null) {
                     dl.setVerifiedFileSize(filesize.longValue());
                 }

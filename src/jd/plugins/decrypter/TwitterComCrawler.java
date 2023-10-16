@@ -639,7 +639,11 @@ public class TwitterComCrawler extends PluginForDecrypt {
      */
     private ArrayList<DownloadLink> crawlTweetMap(String username, Map<String, Object> tweet, Map<String, Object> user, FilePackage fp) throws MalformedURLException, PluginException {
         final TwitterConfigInterface cfg = PluginJsonConfig.get(TwitterConfigInterface.class);
-        final Map<String, Object> retweeted_status = (Map<String, Object>) tweet.get("retweeted_status");
+        Map<String, Object> retweeted_status = (Map<String, Object>) tweet.get("retweeted_status");
+        if (retweeted_status == null) {
+            /* 2023-10-16 */
+            retweeted_status = (Map<String, Object>) JavaScriptEngineFactory.walkJson(tweet, "retweeted_status_result/result/legacy");
+        }
         boolean isRetweet = false;
         if (retweeted_status != null && !retweeted_status.isEmpty()) {
             /*
@@ -1421,71 +1425,70 @@ public class TwitterComCrawler extends PluginForDecrypt {
                         /* We've reached the end of current page */
                         break;
                     }
-                } else {
-                    final Map<String, Object> result = (Map<String, Object>) JavaScriptEngineFactory.walkJson(content, "itemContent/tweet_results/result");
-                    if (result == null) {
-                        continue;
-                    }
-                    final String typename = (String) result.get("__typename");
-                    if (typename.equalsIgnoreCase("Tweet") || typename.equalsIgnoreCase("TweetWithVisibilityResults")) {
-                        profileCrawlerFoundTweetsOnCurrentPage++;
-                        final Map<String, Object> tweetmap = (Map<String, Object>) result.get("tweet");
-                        final Map<String, Object> thisRoot;
-                        if (tweetmap != null) {
-                            thisRoot = tweetmap;
-                        } else {
-                            thisRoot = result;
-                        }
-                        final Map<String, Object> usr = (Map<String, Object>) JavaScriptEngineFactory.walkJson(thisRoot, "core/user_results/result/legacy");
-                        final Map<String, Object> tweet = (Map<String, Object>) thisRoot.get("legacy");
-                        if (tweet == null) {
-                            continue;
-                        }
-                        final String tweet_id_str = (String) tweet.get("id_str");
-                        if (singleTweetID != null && !StringUtils.equals(tweet_id_str, singleTweetID)) {
-                            logger.info("Skipping tweetID because it does not match the one we're looking for: " + tweet_id_str);
-                            continue;
-                        }
-                        final ArrayList<DownloadLink> thisTweetResults = crawlTweetMap(null, tweet, usr, fp);
-                        Long crawledTweetTimestamp = null;
-                        for (final DownloadLink thisTweetResult : thisTweetResults) {
-                            /* Find timestamp of last added result. Ignore pinned tweets. */
-                            final String tweetID = thisTweetResult.getStringProperty(PROPERTY_TWEET_ID);
-                            if (pinned_tweet_ids_str == null || (tweetID != null && !pinned_tweet_ids_str.contains(tweetID))) {
-                                crawledTweetTimestamp = thisTweetResult.getLongProperty(PROPERTY_DATE_TIMESTAMP, -1);
-                                break;
-                            }
-                        }
-                        if (this.crawlUntilTimestamp != null && crawledTweetTimestamp != null && crawledTweetTimestamp < crawlUntilTimestamp) {
-                            profileCrawlerSkippedResultsByMaxDate.addAll(thisTweetResults);
-                        } else if (this.maxTweetsToCrawl != null && profileCrawlerTotalCrawledTweetsCount == this.maxTweetsToCrawl.intValue()) {
-                            profileCrawlerStopBecauseReachedUserDefinedMaxItemsLimit = true;
-                            break timelineInstructionsLoop;
-                        } else {
-                            allowedResults.addAll(thisTweetResults);
-                            profileCrawlerTotalCrawledTweetsCount++;
-                        }
-                    } else if (typename.equalsIgnoreCase("TweetTombstone")) {
-                        profileCrawlerFoundTweetsOnCurrentPage++;
-                        /* TODO: Check if this handling is working */
-                        /* 18+ content. We can find the ID of that tweet but we can't know the name of the user who posted it. */
-                        final String entryId = timelineEntry.get("entryId").toString();
-                        final String thisTweetID = new Regex(entryId, "tweet-(\\d+)").getMatch(0);
-                        if (thisTweetID == null) {
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                        }
-                        final DownloadLink link = this.createDownloadlink("https://" + this.getHost() + "/unknowntwitteruser/status/" + thisTweetID);
-                        link._setFilePackage(fp);
-                        allowedResults.add(link);
-                        profileCrawlerTotalCrawledTweetsCount++;
-                        if (this.maxTweetsToCrawl != null && profileCrawlerTotalCrawledTweetsCount == this.maxTweetsToCrawl.intValue()) {
-                            profileCrawlerStopBecauseReachedUserDefinedMaxItemsLimit = true;
-                            break timelineInstructionsLoop;
-                        }
+                }
+                final Map<String, Object> result = (Map<String, Object>) JavaScriptEngineFactory.walkJson(content, "itemContent/tweet_results/result");
+                if (result == null) {
+                    continue;
+                }
+                final String typename = (String) result.get("__typename");
+                if (typename.equalsIgnoreCase("Tweet") || typename.equalsIgnoreCase("TweetWithVisibilityResults")) {
+                    profileCrawlerFoundTweetsOnCurrentPage++;
+                    final Map<String, Object> tweetmap = (Map<String, Object>) result.get("tweet");
+                    final Map<String, Object> thisRoot;
+                    if (tweetmap != null) {
+                        thisRoot = tweetmap;
                     } else {
-                        logger.info("Skipping unsupported __typename: " + typename);
+                        thisRoot = result;
+                    }
+                    final Map<String, Object> usr = (Map<String, Object>) JavaScriptEngineFactory.walkJson(thisRoot, "core/user_results/result/legacy");
+                    final Map<String, Object> tweet = (Map<String, Object>) thisRoot.get("legacy");
+                    if (tweet == null) {
                         continue;
                     }
+                    final String tweet_id_str = (String) tweet.get("id_str");
+                    if (singleTweetID != null && !StringUtils.equals(tweet_id_str, singleTweetID)) {
+                        logger.info("Skipping tweetID because it does not match the one we're looking for: " + tweet_id_str);
+                        continue;
+                    }
+                    final ArrayList<DownloadLink> thisTweetResults = crawlTweetMap(null, tweet, usr, fp);
+                    Long crawledTweetTimestamp = null;
+                    for (final DownloadLink thisTweetResult : thisTweetResults) {
+                        /* Find timestamp of last added result. Ignore pinned tweets. */
+                        final String tweetID = thisTweetResult.getStringProperty(PROPERTY_TWEET_ID);
+                        if (pinned_tweet_ids_str == null || (tweetID != null && !pinned_tweet_ids_str.contains(tweetID))) {
+                            crawledTweetTimestamp = thisTweetResult.getLongProperty(PROPERTY_DATE_TIMESTAMP, -1);
+                            break;
+                        }
+                    }
+                    if (this.crawlUntilTimestamp != null && crawledTweetTimestamp != null && crawledTweetTimestamp < crawlUntilTimestamp) {
+                        profileCrawlerSkippedResultsByMaxDate.addAll(thisTweetResults);
+                    } else if (this.maxTweetsToCrawl != null && profileCrawlerTotalCrawledTweetsCount == this.maxTweetsToCrawl.intValue()) {
+                        profileCrawlerStopBecauseReachedUserDefinedMaxItemsLimit = true;
+                        break timelineInstructionsLoop;
+                    } else {
+                        allowedResults.addAll(thisTweetResults);
+                        profileCrawlerTotalCrawledTweetsCount++;
+                    }
+                } else if (typename.equalsIgnoreCase("TweetTombstone")) {
+                    profileCrawlerFoundTweetsOnCurrentPage++;
+                    /* TODO: Check if this handling is working */
+                    /* 18+ content. We can find the ID of that tweet but we can't know the name of the user who posted it. */
+                    final String entryId = timelineEntry.get("entryId").toString();
+                    final String thisTweetID = new Regex(entryId, "tweet-(\\d+)").getMatch(0);
+                    if (thisTweetID == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    final DownloadLink link = this.createDownloadlink("https://" + this.getHost() + "/unknowntwitteruser/status/" + thisTweetID);
+                    link._setFilePackage(fp);
+                    allowedResults.add(link);
+                    profileCrawlerTotalCrawledTweetsCount++;
+                    if (this.maxTweetsToCrawl != null && profileCrawlerTotalCrawledTweetsCount == this.maxTweetsToCrawl.intValue()) {
+                        profileCrawlerStopBecauseReachedUserDefinedMaxItemsLimit = true;
+                        break timelineInstructionsLoop;
+                    }
+                } else {
+                    logger.info("Skipping unsupported __typename: " + typename);
+                    continue;
                 }
             }
         }
