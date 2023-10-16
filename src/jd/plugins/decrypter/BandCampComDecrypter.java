@@ -300,7 +300,7 @@ public class BandCampComDecrypter extends PluginForDecrypt {
          */
         boolean isSingleTrack = new Regex(br.getURL(), BandCampCom.PATTERN_SINGLE_TRACK).patternFind();
         final List<Map<String, Object>> albumtracks = (List<Map<String, Object>>) JavaScriptEngineFactory.jsonToJavaObject(json);
-        if (!isSingleTrack && (albumtracks != null && albumtracks.size() > 0)) {
+        if (albumtracks != null && albumtracks.size() > 0) {
             final String type = albuminfo.get("@type").toString();
             if (type.equalsIgnoreCase("MusicRecording") && albumtracks.size() == 1) {
                 isSingleTrack = true;

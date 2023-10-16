@@ -226,38 +226,6 @@ public class SendCm extends XFileSharingProBasic {
             return true;
         }
     }
-    // @Override
-    // protected AccountInfo fetchAccountInfoWebsiteTraffic(final Browser br, final Account account, final AccountInfo ai) throws Exception
-    // {
-    // /*
-    // * trafficleft is usually not given via API so we'll have to check for it via website. Also we do not trsut 'unlimited traffic' via
-    // * API yet.
-    // */
-    // String trafficLeftStr = regExTrafficLeft(br);
-    // /* Example non english: brupload.net */
-    // final boolean userHasUnlimitedTraffic = trafficLeftStr != null && trafficLeftStr.matches(".*?(nlimited|Ilimitado).*?");
-    // if (trafficLeftStr != null && !userHasUnlimitedTraffic && !trafficLeftStr.equalsIgnoreCase("Mb")) {
-    // trafficLeftStr = Encoding.htmlDecode(trafficLeftStr).trim();
-    // /* Need to set 0 traffic left, as getSize returns positive result, even when negative value supplied. */
-    // long trafficLeft = 0;
-    // if (trafficLeftStr.startsWith("-")) {
-    // /* Negative traffic value = User downloaded more than he is allowed to (rare case) --> No traffic left */
-    // trafficLeft = 0;
-    // } else {
-    // trafficLeft = SizeFormatter.getSize(trafficLeftStr);
-    // }
-    // /* 2019-02-19: Users can buy additional traffic packages: Example(s): subyshare.com */
-    // final String usableBandwidth = br.getRegex("Usable
-    // Bandwidth\\s*<span[^>]*>\\s*([0-9\\.]+\\s*[TGMKB]+)\\s*/\\s*[0-9\\.]+\\s*[TGMKB]+\\s*<").getMatch(0);
-    // if (usableBandwidth != null) {
-    // trafficLeft = Math.max(trafficLeft, SizeFormatter.getSize(usableBandwidth));
-    // }
-    // ai.setTrafficLeft(trafficLeft);
-    // } else {
-    // ai.setUnlimitedTraffic();
-    // }
-    // return ai;
-    // }
 
     @Override
     protected String regExTrafficLeft(final Browser br) {

@@ -41,6 +41,8 @@ public class HexuploadNet extends XFileSharingProBasic {
     public HexuploadNet(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(super.getPurchasePremiumURL());
+        /* 2023-10-16: For free account downloads, see: https://board.jdownloader.org/showthread.php?t=94468 */
+        this.setStartIntervall(1500);
     }
 
     /**
