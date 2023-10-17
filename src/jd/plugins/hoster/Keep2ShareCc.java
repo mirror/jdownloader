@@ -15,7 +15,9 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.appwork.utils.StringUtils;
@@ -24,19 +26,64 @@ import org.jdownloader.plugins.components.config.Keep2shareConfig;
 import jd.PluginWrapper;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+import jd.plugins.PluginDependencies;
 import jd.plugins.PluginForHost;
+import jd.plugins.decrypter.Keep2ShareCcDecrypter;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "k2s.cc" }, urls = { "https?://(?:[a-z0-9\\-]+\\.)?(?:keep2share|k2s|k2share|keep2s|keep2)\\.cc/(?:file|preview)/(?:info/)?([a-z0-9_\\-]+)(/([^/\\?]+))?(\\?site=([^\\&]+))?" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
+@PluginDependencies(dependencies = { Keep2ShareCcDecrypter.class })
 public class Keep2ShareCc extends K2SApi {
     public Keep2ShareCc(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    // private final String DOMAINS_HTTP = "(https?://((www|new)\\.)?" + DOMAINS_PLAIN + ")";
+    private static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
+        ret.add(Keep2ShareCcDecrypter.domainsK2s);
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
     @Override
     public String[] siteSupportedNames() {
-        // keep2.cc no dns
-        return new String[] { "k2s.cc", "keep2share.cc", "keep2s.cc", "k2share.cc", "keep2share.com", "keep2share" };
+        final String[] supportedDomains = buildSupportedNames(getPluginDomains());
+        final String[] supportedNamesExtra = new String[] { "keep2share", "k2s" };
+        final String[] supportedNames = new String[supportedDomains.length + supportedNamesExtra.length];
+        int index = 0;
+        for (final String domain : supportedDomains) {
+            supportedNames[index] = domain;
+            index++;
+        }
+        for (final String supportedNameExtra : supportedNamesExtra) {
+            supportedNames[index] = supportedNameExtra;
+            index++;
+        }
+        return supportedNames;
+    }
+
+    public static String[] getAnnotationUrls() {
+        return K2SApi.buildAnnotationUrls(getPluginDomains());
+    }
+
+    @Override
+    protected List<String> getDeadDomains() {
+        final ArrayList<String> deadDomains = new ArrayList<String>();
+        deadDomains.add("keep2.cc");
+        return deadDomains;
+    }
+
+    @Override
+    public String rewriteHost(final String host) {
+        return this.rewriteHost(getPluginDomains(), host);
+    }
+
+    @Override
+    protected String getInternalAPIDomain() {
+        return "k2s.cc";
     }
 
     private static Map<String, Object> HOST_MAP = new HashMap<String, Object>();
@@ -47,35 +94,12 @@ public class Keep2ShareCc extends K2SApi {
     }
 
     @Override
-    public String rewriteHost(String host) {
-        if (host == null) {
-            return "k2s.cc";
-        }
-        for (final String supportedName : siteSupportedNames()) {
-            if (supportedName.equals(host)) {
-                return "k2s.cc";
-            }
-        }
-        return super.rewriteHost(host);
-    }
-
-    @Override
     public String buildExternalDownloadURL(final DownloadLink link, final PluginForHost buildForThisPlugin) {
         if (StringUtils.equals("real-debrid.com", buildForThisPlugin.getHost())) {
             return "http://k2s.cc/file/" + getFUID(link);// do not change
         } else {
             return link.getPluginPatternMatcher();
         }
-    }
-
-    @Override
-    protected boolean isSpecialFUID(String fuid) {
-        return fuid.contains("-") || fuid.contains("_");
-    }
-
-    @Override
-    protected String getInternalAPIDomain() {
-        return "k2s.cc";
     }
 
     @Override

@@ -20,6 +20,7 @@ import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.RFC2047;
 import org.appwork.utils.logging2.LogInterface;
+import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.components.config.Keep2shareConfig;
 import org.jdownloader.plugins.config.PluginJsonConfig;
@@ -49,6 +50,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+import jd.plugins.decrypter.Keep2ShareCcDecrypter;
 import jd.plugins.download.DownloadInterface;
 
 /**
@@ -60,18 +62,31 @@ import jd.plugins.download.DownloadInterface;
  */
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public abstract class K2SApi extends PluginForHost {
-    private final String lng                        = getLanguage();
-    private final String PROPERTY_ACCOUNT_AUTHTOKEN = "auth_token";
+    private final String        lng                        = getLanguage();
+    private final String        PROPERTY_ACCOUNT_AUTHTOKEN = "auth_token";
     /* Reconnect workaround settings */
-    private final String PROPERTY_FILE_ID           = "fileID";
-    private final String PROPERTY_LASTDOWNLOAD      = "_lastdownload_timestamp";
-    private final String PROPERTY_ACCESS            = "access";
+    private static final String PROPERTY_FILE_ID           = "fileID";
+    private final String        PROPERTY_LASTDOWNLOAD      = "_lastdownload_timestamp";
+    public static final String  PROPERTY_ACCESS            = "access";
+    // public static final String PROPERTY_isAvailableForFree = "isAvailableForFree";
     /* Hardcoded time to wait between downloads once limit is reached. */
-    private final long   FREE_RECONNECTWAIT_MILLIS  = 1 * 60 * 60 * 1000L;
+    private final long          FREE_RECONNECTWAIT_MILLIS  = 1 * 60 * 60 * 1000L;
 
     public K2SApi(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://" + this.getHost() + "/premium.html");
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:[a-z0-9\\-]+\\.)?" + buildHostsPatternPart(domains) + Keep2ShareCcDecrypter.SUPPORTED_LINKS_PATTERN_FILE);
+        }
+        return ret.toArray(new String[0]);
+    }
+
+    protected List<String> getDeadDomains() {
+        return null;
     }
 
     @Override
@@ -93,10 +108,8 @@ public abstract class K2SApi extends PluginForHost {
         return "https://" + this.getHost() + "/page/terms.html";
     }
 
-    @Override
-    public void correctDownloadLink(final DownloadLink link) {
-        /* Respect users protocol choosing. */
-        link.setPluginPatternMatcher(link.getPluginPatternMatcher().replaceFirst("(?i)^https?://", getProtocol()));
+    protected String getContentURL(final DownloadLink link) {
+        return link.getPluginPatternMatcher().replaceFirst("(?i)^https?://", getProtocol());
     }
 
     protected int getMaxChunks(final Account account) {
@@ -122,6 +135,7 @@ public abstract class K2SApi extends PluginForHost {
         final String directlinkproperty = getDirectLinkProperty(account);
         final String dllink = link.getStringProperty(directlinkproperty);
         if (StringUtils.isNotEmpty(dllink)) {
+            /* Previously generated direct-URL is available -> Even if the account is out f traffic, that link should be downloadable. */
             return true;
         } else {
             return super.enoughTrafficFor(link, account);
@@ -141,9 +155,8 @@ public abstract class K2SApi extends PluginForHost {
     private String getRefererFromURL(final DownloadLink link) {
         String url_referer = null;
         try {
-            /* Try-catch to allow other plugins to use other patterns */
-            url_referer = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(4);
-        } catch (final Throwable e) {
+            url_referer = UrlQuery.parse(link.getPluginPatternMatcher()).get("site");
+        } catch (final Exception ignore) {
         }
         return url_referer;
     }
@@ -153,7 +166,7 @@ public abstract class K2SApi extends PluginForHost {
         try {
             /* Try-catch to allow other plugins to use other patterns */
             name_url = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(2);
-        } catch (final Throwable e) {
+        } catch (final Throwable ignore) {
         }
         if (name_url == null) {
             name_url = this.getFUID(link);
@@ -286,8 +299,16 @@ public abstract class K2SApi extends PluginForHost {
         }
     }
 
-    protected boolean isSpecialFUID(final String fuid) {
-        return false;
+    /**
+     * There are special long fileIDs most likely used for tracking. </br>
+     * There can be multiple of those IDs available for the same file so those special IDs can't be reliably used for duplicate-checking.
+     */
+    public static boolean isSpecialFileID(final String fuid) {
+        if (fuid != null && (fuid.contains("-") || fuid.contains("_"))) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     protected String getFUID(final DownloadLink link) {
@@ -299,8 +320,8 @@ public abstract class K2SApi extends PluginForHost {
         }
     }
 
-    public String getFUID(final String link) {
-        return new Regex(link, this.getSupportedLinks()).getMatch(0);
+    public String getFUID(final String url) {
+        return new Regex(url, this.getSupportedLinks()).getMatch(0);
     }
 
     @Override
@@ -359,8 +380,8 @@ public abstract class K2SApi extends PluginForHost {
                         postdata.put("ids", fileIDs);
                         final Map<String, Object> entries = postPageRaw(br, "/getfilesinfo", postdata, null);
                         final List<Map<String, Object>> files = (List<Map<String, Object>>) entries.get("files");
-                        for (final DownloadLink dl : links) {
-                            final String fuid = getFUID(dl);
+                        for (final DownloadLink link : links) {
+                            final String fuid = getFUID(link);
                             Map<String, Object> fileInfo = null;
                             for (final Map<String, Object> fileInfoTmp : files) {
                                 /*
@@ -380,64 +401,21 @@ public abstract class K2SApi extends PluginForHost {
                             }
                             if (fileInfo == null) {
                                 /* ID was not in result --> Probably ID has invalid format --> It's also definitely offline! */
-                                dl.setAvailable(false);
+                                link.setAvailable(false);
                             } else {
-                                final String id = (String) fileInfo.get("id");
-                                if (!StringUtils.equals(fuid, id)) {
-                                    /* Save internal ID as we use this for dupe-checking. */
-                                    dl.setProperty(PROPERTY_FILE_ID, id);
-                                }
-                                if (((Boolean) fileInfo.get("is_available")) == Boolean.TRUE) {
-                                    dl.setAvailable(true);
-                                } else {
-                                    dl.setAvailable(false);
-                                }
-                                String name = (String) fileInfo.get("name");
-                                if (name != null && name.matches(".*=(\\?|_)utf-8(\\?|_).+")) {
-                                    // workaround for rfc2047 support
-                                    try {
-                                        final CharSequence fixed = new RFC2047().decode(name, true);
-                                        if (fixed != null && fixed != name) {
-                                            name = fixed.toString();
-                                        }
-                                    } catch (IOException e) {
-                                        logger.log(e);
-                                    }
-                                }
-                                final Object sizeO = fileInfo.get("size");
-                                final String md5 = (String) fileInfo.get("md5");// only available for file owner
-                                final String access = (String) fileInfo.get("access");
-                                if (!StringUtils.isEmpty(name)) {
-                                    dl.setFinalFileName(name);
-                                } else if (!dl.isNameSet()) {
-                                    dl.setName(getFallbackFilename(dl));
-                                }
-                                if (sizeO instanceof Number) {
-                                    dl.setVerifiedFileSize(((Number) sizeO).longValue());
-                                }
-                                if (!StringUtils.isEmpty(md5)) {
-                                    dl.setMD5Hash(md5);
-                                }
-                                if (!StringUtils.isEmpty(access)) {
-                                    // access: ['public', 'private', 'premium']
-                                    // public = everyone users
-                                    // premium = restricted to premium
-                                    // private = owner only..
-                                    dl.setProperty(PROPERTY_ACCESS, access);
-                                    if (dl.getComment() == null) {
-                                        if ("premium".equalsIgnoreCase(access)) {
-                                            dl.setComment(getErrorMessageForUser(7));
-                                        } else if ("private".equalsIgnoreCase(access)) {
-                                            dl.setComment(getErrorMessageForUser(8));
-                                        }
-                                    }
-                                }
+                                parseFileInfo(link, fileInfo, fuid);
                                 if ((Boolean) fileInfo.get("is_folder") == Boolean.TRUE) {
-                                    /* This should never happen */
-                                    dl.setAvailable(false);
-                                    if (dl.getComment() == null) {
-                                        dl.setComment(getErrorMessageForUser(23));
+                                    /**
+                                     * Check if somehow a fileID has managed to go into the hoster plugin handling. </br>
+                                     * This should never happen.
+                                     */
+                                    link.setAvailable(false);
+                                    if (link.getComment() == null) {
+                                        link.setComment(getErrorMessageForUser(23));
                                     }
+                                }
+                                if (!link.isNameSet()) {
+                                    link.setName(getFallbackFilename(link));
                                 }
                             }
                         }
@@ -473,6 +451,49 @@ public abstract class K2SApi extends PluginForHost {
         return true;
     }
 
+    public static void parseFileInfo(final DownloadLink link, final Map<String, Object> fileInfo, final String sourceFileID) {
+        final String id = (String) fileInfo.get("id");
+        if (id != null && isSpecialFileID(sourceFileID) && !StringUtils.equals(id, sourceFileID)) {
+            /* Save internal ID as we use this for dupe-checking. */
+            link.setProperty(PROPERTY_FILE_ID, id);
+        }
+        if (Boolean.TRUE.equals(fileInfo.get("is_available"))) {
+            link.setAvailable(true);
+        } else {
+            link.setAvailable(false);
+        }
+        String name = (String) fileInfo.get("name");
+        if (name != null && name.matches(".*=(\\?|_)utf-8(\\?|_).+")) {
+            // workaround for rfc2047 support
+            try {
+                final CharSequence fixed = new RFC2047().decode(name, true);
+                if (fixed != null && fixed != name) {
+                    name = fixed.toString();
+                }
+            } catch (final IOException ignore) {
+            }
+        }
+        final Object sizeO = fileInfo.get("size");
+        final String md5 = (String) fileInfo.get("md5");// only available for file owner
+        final String access = (String) fileInfo.get("access");
+        if (!StringUtils.isEmpty(name)) {
+            link.setFinalFileName(name);
+        }
+        if (sizeO instanceof Number) {
+            link.setVerifiedFileSize(((Number) sizeO).longValue());
+        }
+        if (!StringUtils.isEmpty(md5)) {
+            link.setMD5Hash(md5);
+        }
+        if (!StringUtils.isEmpty(access)) {
+            // access: ['public', 'private', 'premium']
+            // public = everyone users
+            // premium = restricted to premium
+            // private = owner only..
+            link.setProperty(PROPERTY_ACCESS, access);
+        }
+    }
+
     protected boolean fetchAdditionalAccountInfo(final Account account, final AccountInfo ai, final Browser br, final String auth_token) {
         try {
             if (AccountType.PREMIUM.equals(account.getType()) && ai.getValidUntil() > System.currentTimeMillis() + (5l * 365 * 24 * 60 * 60 * 1000l)) {
@@ -494,6 +515,19 @@ public abstract class K2SApi extends PluginForHost {
             logger.log(e);
         }
         return false;
+    }
+
+    private boolean isPremium(final Account account) {
+        if (account == null) {
+            return false;
+        } else {
+            final AccountType type = account.getType();
+            if (AccountType.PREMIUM.equals(type) || AccountType.LIFETIME.equals(type)) {
+                return true;
+            } else {
+                return false;
+            }
+        }
     }
 
     /*
@@ -810,6 +844,7 @@ public abstract class K2SApi extends PluginForHost {
         }
     }
 
+    @Deprecated
     public AvailableStatus requestFileInformationWebsite(final DownloadLink link) throws Exception {
         final String fuid = getFUID(link);
         getPage("https://api." + this.getHost() + "/v1/files/" + fuid);
@@ -820,7 +855,6 @@ public abstract class K2SApi extends PluginForHost {
         final String filename = (String) entries.get("name");
         // final String access = (String)entries.get("access");
         final boolean isDeleted = ((Boolean) entries.get("isDeleted")).booleanValue();
-        // final boolean isAvailableForFree = ((Boolean) entries.get("isAvailableForFree")).booleanValue();
         // final boolean hasAbuse = ((Boolean) entries.get("hasAbuse")).booleanValue();
         final Object filesizeO = entries.get("size");
         // final List<Object> ressourcelist = (List<Object>) entries.get("");
@@ -830,6 +864,7 @@ public abstract class K2SApi extends PluginForHost {
         if (filesizeO != null) {
             link.setDownloadSize(Long.parseLong(filesizeO.toString()));
         }
+        // link.setProperty(PROPERTY_isAvailableForFree, entries.get("isAvailableForFree"));
         if (isDeleted) {
             /* Files can get deleted and filename & filesize information may still be available! */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -859,7 +894,7 @@ public abstract class K2SApi extends PluginForHost {
                 logger.info("After: " + chosenReferer);
             }
             return chosenReferer;
-        } else if (!StringUtils.isEmpty(sourceURL) && !new Regex(sourceURL, this.getSupportedLinks()).matches()) {
+        } else if (!StringUtils.isEmpty(sourceURL) && !new Regex(sourceURL, this.getSupportedLinks()).patternFind()) {
             /*
              * Try to use source URL as Referer if it does not match any supported URL of this plugin.
              */
@@ -1099,21 +1134,21 @@ public abstract class K2SApi extends PluginForHost {
             final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
             /* E.g. {"message":"Invalid login or password","status":"error","code":406,"errorCode":70} */
             final String status = (String) entries.get("status");
-            Number errCode = (Number) entries.get("errorCode");
+            Object errCodeO = entries.get("errorCode");
+            if (errCodeO == null || !(errCodeO instanceof Number)) {
+                // subErrors
+                errCodeO = entries.get("code");
+            }
+            if (errCodeO == null) {
+                /* No errors */
+                return entries;
+            }
             // if (errCode == null && isSubErrors) {
             // // subErrors
             // errCode = (Number) entries.get("code");
             // }
-            if (errCode == null) {
-                // subErrors
-                errCode = (Number) entries.get("code");
-            }
-            if (errCode == null) {
-                /* No errors */
-                return entries;
-            }
-            int err = errCode.intValue();
-            if (err == 200 && StringUtils.equalsIgnoreCase(status, "success")) {
+            int errorcode = ((Number) errCodeO).intValue();
+            if (errorcode == 200 && StringUtils.equalsIgnoreCase(status, "success")) {
                 /*
                  * No error e.g.
                  * {"status":"success","code":200,"challenge":"blabla","captcha_url":"http://k2s.cc/api/v2/reCaptcha.html?id=blabla"}
@@ -1124,22 +1159,26 @@ public abstract class K2SApi extends PluginForHost {
             String timeRemaining = null;
             final List<Map<String, Object>> subErrorsList = (List<Map<String, Object>>) entries.get("errors");
             /* For some errors, we prefer to handle the subError(s) TODO: Remove/simplify this. */
-            if (err == 21 || err == 22 || err == 42) {
+            if (errorcode == 21 || errorcode == 22 || errorcode == 42) {
                 if (subErrorsList != null && !subErrorsList.isEmpty()) {
                     final Map<String, Object> subError0 = subErrorsList.get(0);
-                    err = ((Number) subError0.get("code")).intValue();
+                    errorcode = ((Number) subError0.get("code")).intValue();
                     /* Can be missing -> null */
                     serversideErrormessage = (String) subError0.get("message");
                     timeRemaining = (String) subError0.get("timeRemaining");
                 }
             }
-            String msgForUser = getErrorMessageForUser(err);
+            String msgForUser = getErrorMessageForUser(errorcode);
             if (StringUtils.isEmpty(msgForUser)) {
                 /* No language String available for errormessage? Fallback to provided errormessage */
                 msgForUser = serversideErrormessage;
             }
             try {
-                switch (err) {
+                /* Check text errors first */
+                if (StringUtils.equalsIgnoreCase(serversideErrormessage, "File not available")) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                switch (errorcode) {
                 case 1:
                     // DOWNLOAD_COUNT_EXCEEDED = 1; "Download count files exceed"
                     // assume non account/free account
@@ -1286,7 +1325,7 @@ public abstract class K2SApi extends PluginForHost {
                     // ERROR_ACCOUNT_STOLEN = 76;
                     throw new AccountInvalidException(msgForUser);
                 default:
-                    logger.warning("Unknown errorcode: " + err);
+                    logger.warning("Unknown errorcode: " + errorcode);
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             } catch (final PluginException p) {
@@ -1310,7 +1349,7 @@ public abstract class K2SApi extends PluginForHost {
      * @param code
      * @return
      */
-    private String getErrorMessageForUser(final int code) {
+    public String getErrorMessageForUser(final int code) {
         String msg = null;
         if ("de".equalsIgnoreCase(lng)) {
             if (code == 1) {
@@ -1939,6 +1978,18 @@ public abstract class K2SApi extends PluginForHost {
             return false;
         }
     }
+    // @Override
+    // public boolean canHandle(final DownloadLink link, final Account account) throws Exception {
+    // final boolean isAvailableForFree = link.getBooleanProperty(PROPERTY_isAvailableForFree, true);
+    // if (isAvailableForFree) {
+    // return true;
+    // } else if (isPremium(account)) {
+    // return true;
+    // } else {
+    // /* File is not available for free users and no premium account is given. */
+    // return false;
+    // }
+    // }
 
     private static final String cfRequiredCookies = "__cfduid|cf_clearance";
 

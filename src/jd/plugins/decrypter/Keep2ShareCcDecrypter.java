@@ -20,13 +20,16 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -38,7 +41,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-import jd.plugins.download.HashInfo;
+import jd.plugins.hoster.K2SApi;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class Keep2ShareCcDecrypter extends PluginForDecrypt {
@@ -46,12 +49,17 @@ public class Keep2ShareCcDecrypter extends PluginForDecrypt {
         super(wrapper);
     }
 
+    public static final String[] domainsK2s                     = new String[] { "k2s.cc", "keep2share.cc", "k2share.cc", "keep2s.cc", "keep2.cc" };
+    public static final String[] domainsFileboom                = new String[] { "fileboom.me", "fboom.me" };
+    public static final String[] domainsTezfilesAndPublish2     = new String[] { "tezfiles.com", "publish2.me" };
+    public static final String   SUPPORTED_LINKS_PATTERN_FILE   = "(?i)/(?:f|file|preview)/(?:info/)?([a-z0-9_\\-]{13,})(/([^/\\?]+))?(\\?site=([^\\&]+))?";
+    private static final String  SUPPORTED_LINKS_PATTERN_FOLDER = "(?i)/folder(?:/info)?/([a-z0-9]{13,}).*";
+
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
-        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "k2s.cc", "keep2share.cc", "k2share.cc", "keep2s.cc", "keep2.cc" });
-        ret.add(new String[] { "fileboom.me", "fboom.me" });
-        ret.add(new String[] { "tezfiles.com", "publish2.me" });
+        ret.add(domainsK2s);
+        ret.add(domainsFileboom);
+        ret.add(domainsTezfilesAndPublish2);
         return ret;
     }
 
@@ -71,148 +79,219 @@ public class Keep2ShareCcDecrypter extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:[a-z0-9\\-]+\\.)?" + buildHostsPatternPart(domains) + "/(?:folder/(?:info/)?|thumbnail/)([a-z0-9]{13,})");
+            ret.add("https?://(?:[a-z0-9\\-]+\\.)?" + buildHostsPatternPart(domains) + "(" + SUPPORTED_LINKS_PATTERN_FILE + "|" + SUPPORTED_LINKS_PATTERN_FOLDER + ")");
         }
         return ret.toArray(new String[0]);
+    }
+
+    public static String fixContentID(final String content_id) {
+        if (content_id.length() == 13 && !K2SApi.isSpecialFileID(content_id)) {
+            /* Default IDs: Regex allows uppercase but we know that they are lowercase. */
+            return content_id.toLowerCase(Locale.ENGLISH);
+        } else {
+            /* Do not touch ID */
+            return content_id;
+        }
     }
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         /* 2020-05-13: Use the keep2share plugin for all */
-        final PluginForHost plugin = getNewPluginForHostInstance("k2s.cc");
-        final String fuid = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
-        if (fuid == null) {
+        final PluginForHost plugin = getNewPluginForHostInstance(this.getHost());
+        boolean looksLikeSingleFileItem = false;
+        String contentid = new Regex(param.getCryptedUrl(), SUPPORTED_LINKS_PATTERN_FOLDER).getMatch(0);
+        if (contentid == null) {
+            contentid = new Regex(param.getCryptedUrl(), SUPPORTED_LINKS_PATTERN_FILE).getMatch(0);
+            looksLikeSingleFileItem = true;
+        }
+        if (contentid == null) {
             /* Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (param.getCryptedUrl().matches("(?i)https?://[^/]+/thumbnail/.*")) {
-            /* 2020-07-21: Thumbnail to video / single file --> Goes into host plugin */
-            final String url = "https://" + this.getHost() + "/file/" + fuid;
-            final DownloadLink dl = this.createDownloadlink(url);
-            ret.add(dl);
-            return ret;
-        }
+        contentid = fixContentID(contentid);
         br = plugin.createNewBrowserInstance();
         // set cross browser support
         ((jd.plugins.hoster.K2SApi) plugin).setBrowser(br);
-        final HashMap<String, Object> postdataGetfilesinfo = new HashMap<String, Object>();
-        postdataGetfilesinfo.put("ids", Arrays.asList(new String[] { fuid }));
-        Map<String, Object> response = ((jd.plugins.hoster.Keep2ShareCc) plugin).postPageRaw(br, "https://" + this.getHost() + "/api/v2/getfilesinfo", postdataGetfilesinfo, null);
-        if (!"success".equals(response.get("status"))) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        boolean folderHandling = false;
-        final List<Map<String, Object>> files = (List<Map<String, Object>>) response.get("files");
-        if (files.isEmpty()) {
-            logger.info("Empty object");
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
+        boolean folderPaginationHandling = false;
+        final List<DownloadLink> unavailableFolders = new ArrayList<DownloadLink>();
+        // final List<DownloadLink> emptyFolders = new ArrayList<DownloadLink>();
+        final String referer = UrlQuery.parse(param.getCryptedUrl()).get("site");
+        final boolean useOldHandling = false;
+        Map<String, Object> response = null;
+        List<Map<String, Object>> items = null;
         FilePackage fp = null;
-        if (files != null) {
-            for (Map<String, Object> file : files) {
-                final String id = (String) file.get("id");
-                final Boolean isAvailable = (Boolean) file.get("is_available");
-                if (Boolean.FALSE.equals(isAvailable)) {
-                    final DownloadLink offline = this.createDownloadlink("https://" + this.getHost() + "/file/" + id);
-                    offline.setAvailable(false);
-                    ret.add(offline);
-                } else {
-                    final String name = (String) file.get("name");
-                    final String size = StringUtils.valueOfOrNull(file.get("size"));
-                    final String md5 = (String) file.get("md5");
-                    final String access = (String) file.get("access");
-                    final Boolean isFolder = (Boolean) file.get("is_folder");
-                    if (Boolean.FALSE.equals(isFolder)) {
-                        final DownloadLink link = createDownloadlink("https://" + this.getHost() + "/file/" + id);
-                        if (StringUtils.isNotEmpty(name)) {
-                            link.setName(name);
+        String thisFolderTitle = null;
+        try {
+            if (useOldHandling) {
+                final HashMap<String, Object> postdataGetfilesinfo = new HashMap<String, Object>();
+                postdataGetfilesinfo.put("ids", Arrays.asList(new String[] { contentid }));
+                response = ((K2SApi) plugin).postPageRaw(br, "https://" + this.getHost() + "/api/v2/getfilesinfo", postdataGetfilesinfo, null);
+                if (!"success".equals(response.get("status"))) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                items = (List<Map<String, Object>>) response.get("files");
+                if (items.isEmpty()) {
+                    logger.info("Empty object -> Empty or invalid folder");
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                if (items != null) {
+                    for (Map<String, Object> item : items) {
+                        final String id = (String) item.get("id");
+                        final Boolean isAvailable = (Boolean) item.get("is_available");
+                        final String fileOrFolderName = (String) item.get("name");
+                        final Boolean isFolder = (Boolean) item.get("is_folder");
+                        if (Boolean.FALSE.equals(isFolder)) {
+                            final DownloadLink file = createDownloadlink(generateFileUrl(id, fileOrFolderName, referer));
+                            K2SApi.parseFileInfo(file, item, null);
+                            if (!file.isNameSet()) {
+                                /* Fallback */
+                                file.setName(id);
+                            }
+                            ret.add(file);
+                        } else if (StringUtils.equals(id, contentid)) {
+                            if (Boolean.FALSE.equals(isAvailable)) {
+                                /* Main folder is unavailable */
+                                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                            }
+                            fp = FilePackage.getInstance();
+                            if (StringUtils.isNotEmpty(fileOrFolderName)) {
+                                thisFolderTitle = fileOrFolderName;
+                                fp.setName(thisFolderTitle);
+                            }
+                            folderPaginationHandling = true;
+                            break;
                         }
-                        if (StringUtils.isNotEmpty(size)) {
-                            link.setVerifiedFileSize(Long.parseLong(size));
-                        }
-                        link.setHashInfo(HashInfo.parse(md5));
-                        link.setAvailable(Boolean.TRUE.equals(isAvailable));
-                        link.setProperty("access", access);
-                        ret.add(link);
-                    } else if (StringUtils.equals(id, fuid)) {
-                        fp = FilePackage.getInstance();
-                        if (StringUtils.isNotEmpty(name)) {
-                            fp.setName(name);
-                        }
-                        folderHandling = true;
-                        break;
                     }
                 }
+            } else {
+                folderPaginationHandling = true;
+            }
+            if (folderPaginationHandling) {
+                final Set<String> dups = new HashSet<String>();
+                final int maxItemsPerPage = 50;
+                int offset = 0;
+                int page = 1;
+                boolean isSingleFile = false;
+                String sourceFileID = null;
+                do {
+                    final HashMap<String, Object> postdataGetfilestatus = new HashMap<String, Object>();
+                    postdataGetfilestatus.put("id", contentid);
+                    postdataGetfilestatus.put("limit", maxItemsPerPage);
+                    postdataGetfilestatus.put("offset", offset);
+                    response = ((K2SApi) plugin).postPageRaw(br, "/getfilestatus", postdataGetfilestatus, null);
+                    items = (List<Map<String, Object>>) response.get("files");
+                    if (items == null && response.containsKey("is_available") && !response.containsKey("id")) {
+                        /* Root map contains single loose file. */
+                        isSingleFile = true;
+                        sourceFileID = contentid;
+                        items = new ArrayList<Map<String, Object>>();
+                        items.add(response);
+                    } else {
+                        /* Root map is folder containing files */
+                        if (fp == null) {
+                            fp = FilePackage.getInstance();
+                            thisFolderTitle = response.get("name").toString();
+                            fp.setName(thisFolderTitle);
+                        }
+                    }
+                    if (items.isEmpty()) {
+                        if (ret.isEmpty()) {
+                            if (thisFolderTitle != null) {
+                                throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER, contentid + "_" + thisFolderTitle);
+                            } else {
+                                throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER, contentid);
+                            }
+                        } else {
+                            logger.info("Stopping because: Failed to find any items on current page");
+                            break;
+                        }
+                    }
+                    int numberofNewItems = 0;
+                    for (final Map<String, Object> item : items) {
+                        final String id;
+                        if (isSingleFile) {
+                            id = contentid;
+                        } else {
+                            id = item.get("id").toString();
+                        }
+                        if (!dups.add(id)) {
+                            continue;
+                        }
+                        numberofNewItems++;
+                        final String filenameOrFoldername = (String) item.get("name");
+                        if (Boolean.TRUE.equals(item.get("is_folder"))) {
+                            final DownloadLink folder = createDownloadlink(generateFolderUrl(id, filenameOrFoldername, referer));
+                            ret.add(folder);
+                            if (Boolean.FALSE.equals(item.get("is_available"))) {
+                                unavailableFolders.add(folder);
+                            }
+                        } else {
+                            /* File */
+                            final DownloadLink file = createDownloadlink(generateFileUrl(id, filenameOrFoldername, referer));
+                            K2SApi.parseFileInfo(file, item, sourceFileID);
+                            if (!file.isNameSet()) {
+                                /* Fallback */
+                                file.setName(id);
+                            }
+                            ret.add(file);
+                            if (fp != null) {
+                                file._setFilePackage(fp);
+                            }
+                            distribute(file);
+                        }
+                    }
+                    logger.info("Crawled page " + page + " | Offset: " + offset + " Found items so far: " + ret.size());
+                    if (this.isAbort()) {
+                        logger.info("Stopping because: Aborted by user");
+                        break;
+                    } else if (isSingleFile) {
+                        logger.info("Stopping because: This item is a single file");
+                        break;
+                    } else if (numberofNewItems == 0) {
+                        logger.info("Stopping because: Failed to find any new items on current page: " + page);
+                        break;
+                    } else if (numberofNewItems <= maxItemsPerPage) {
+                        logger.info("Stopping because: Current page contains less items than " + maxItemsPerPage);
+                        break;
+                    } else {
+                        offset += maxItemsPerPage;
+                        page++;
+                    }
+                } while (!this.isAbort());
+            }
+        } catch (final PluginException e) {
+            if (e.getLinkStatus() == LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE) {
+                /*
+                 * Most likely http response 400 bad request -> Due to invalid contentID format -> Effectively this means that the content
+                 * we want to access is offline.
+                 */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else {
+                throw e;
             }
         }
-        if (folderHandling) {
-            final Set<String> dups = new HashSet<String>();
-            final int limit = 50;
-            int offset = 0;
-            do {
-                logger.info("Crawling folder offset: " + offset);
-                final HashMap<String, Object> postdataGetfilestatus = new HashMap<String, Object>();
-                postdataGetfilestatus.put("id", fuid);
-                postdataGetfilestatus.put("limit", limit);
-                postdataGetfilestatus.put("offset", offset);
-                response = ((jd.plugins.hoster.Keep2ShareCc) plugin).postPageRaw(br, "/getfilestatus", postdataGetfilestatus, null);
-                final List<Map<String, Object>> items = (List<Map<String, Object>>) response.get("files");
-                if (items.isEmpty()) {
-                    if (ret.isEmpty()) {
-                        if (fp != null) {
-                            throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER, fuid + "_" + fp.getName());
-                        } else {
-                            throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER, fuid);
-                        }
-                    } else {
-                        logger.info("Stopping because: Failed to find any items on current page");
-                        break;
-                    }
-                }
-                boolean next = false;
-                if (items != null && items.size() > 0) {
-                    for (Map<String, Object> file : items) {
-                        final Boolean isFolder = (Boolean) file.get("is_folder");
-                        final Boolean isAvailable = (Boolean) file.get("is_available");
-                        final String id = (String) file.get("id");
-                        if (dups.add(id)) {
-                            next = true;
-                        }
-                        final String name = (String) file.get("name");
-                        final String md5 = (String) file.get("md5");
-                        final String size = file.get("size").toString();
-                        if (Boolean.FALSE.equals(isFolder)) {
-                            final DownloadLink link = createDownloadlink("https://" + this.getHost() + "/file/" + id);
-                            if (StringUtils.isNotEmpty(name)) {
-                                link.setName(name);
-                            }
-                            if (StringUtils.isNotEmpty(size)) {
-                                link.setVerifiedFileSize(Long.parseLong(size));
-                            }
-                            link.setHashInfo(HashInfo.parse(md5));
-                            link.setAvailable(Boolean.TRUE.equals(isAvailable));
-                            ret.add(link);
-                            if (fp != null) {
-                                link._setFilePackage(fp);
-                            }
-                            distribute(link);
-                        } else {
-                            final DownloadLink link = createDownloadlink("https://" + this.getHost() + "/folder/" + id);
-                            ret.add(link);
-                        }
-                    }
-                } else {
-                    break;
-                }
-                offset += limit;
-                if (next == false) {
-                    break;
-                }
-            } while (!this.isAbort());
-        }
-        if (fp != null) {
-            fp.addLinks(ret);
-        }
         return ret;
+    }
+
+    private String generateFolderUrl(final String folderid, final String foldername, final String referer) {
+        String url = "https://" + this.getHost() + "/folder/" + folderid;
+        if (foldername != null) {
+            url += "/" + Encoding.urlEncode(foldername);
+        }
+        if (referer != null) {
+            url += "?site=" + referer;
+        }
+        return url;
+    }
+
+    private String generateFileUrl(final String fileid, final String filename, final String referer) {
+        String url = "https://" + this.getHost() + "/file/" + fileid;
+        if (filename != null) {
+            url += "/" + Encoding.urlEncode(filename);
+        }
+        if (referer != null) {
+            url += "?site=" + referer;
+        }
+        return url;
     }
 }

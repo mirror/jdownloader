@@ -15,8 +15,13 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+
+import org.jdownloader.plugins.components.config.Keep2shareConfig;
+import org.jdownloader.plugins.components.config.Keep2shareConfigTezfiles;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -24,23 +29,51 @@ import jd.plugins.Account;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+import jd.plugins.PluginDependencies;
+import jd.plugins.decrypter.Keep2ShareCcDecrypter;
 
-import org.jdownloader.plugins.components.config.Keep2shareConfig;
-import org.jdownloader.plugins.components.config.Keep2shareConfigTezfiles;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "tezfiles.com" }, urls = { "https?://(?:[a-z0-9\\-]+\\.)?(?:tezfiles\\.com|publish2\\.me)/(?:f(?:ile)?|preview)/([a-z0-9]{13,})(/([^/\\?]+))?(\\?site=([^\\&]+))?" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
+@PluginDependencies(dependencies = { Keep2ShareCcDecrypter.class })
 public class TezFilesCom extends K2SApi {
     public TezFilesCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    private static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
+        ret.add(Keep2ShareCcDecrypter.domainsTezfilesAndPublish2);
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
     @Override
-    public String rewriteHost(String host) {
-        if (host == null || "publish2.me".equals(host)) {
-            return getHost();
-        } else {
-            return super.rewriteHost(host);
+    public String[] siteSupportedNames() {
+        final String[] supportedDomains = buildSupportedNames(getPluginDomains());
+        final String[] supportedNamesExtra = new String[] { "tezfiles", "publish2" };
+        final String[] supportedNames = new String[supportedDomains.length + supportedNamesExtra.length];
+        int index = 0;
+        for (final String domain : supportedDomains) {
+            supportedNames[index] = domain;
+            index++;
         }
+        for (final String supportedNameExtra : supportedNamesExtra) {
+            supportedNames[index] = supportedNameExtra;
+            index++;
+        }
+        return supportedNames;
+    }
+
+    public static String[] getAnnotationUrls() {
+        return K2SApi.buildAnnotationUrls(getPluginDomains());
+    }
+
+    @Override
+    public String rewriteHost(final String host) {
+        return this.rewriteHost(getPluginDomains(), host);
     }
 
     @Override
@@ -59,11 +92,6 @@ public class TezFilesCom extends K2SApi {
     protected boolean fetchAdditionalAccountInfo(final Account account, final AccountInfo ai, final Browser br, final String auth_token) {
         // untested, had no test account with lifetime status
         return false;
-    }
-
-    @Override
-    public String[] siteSupportedNames() {
-        return new String[] { "tezfiles.com", "publish2.me" };
     }
 
     @Override
