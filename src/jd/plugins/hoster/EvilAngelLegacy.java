@@ -16,8 +16,21 @@
 package jd.plugins.hoster;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.components.config.EvilangelComConfig;
+import org.jdownloader.plugins.components.config.EvilangelComConfig.Quality;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -38,16 +51,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.components.config.EvilangelComConfig;
-import org.jdownloader.plugins.components.config.EvilangelComConfig.Quality;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "evilangel.legacy" }, urls = { "" })
 @Deprecated
 // 2021-09-01: TODO: Rewrite all plugins which still make use of this to to use EvilangelCore!
@@ -55,6 +58,18 @@ public class EvilAngelLegacy extends antiDDoSForHost {
     public EvilAngelLegacy(PluginWrapper wrapper) {
         super(wrapper);
         // this.enablePremium("http://www.evilangel.com/en/join");
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        final List<LazyPlugin.FEATURE> ret = new ArrayList<LazyPlugin.FEATURE>();
+        ret.add(LazyPlugin.FEATURE.XXX);
+        if (cookieLoginOnly) {
+            ret.add(LazyPlugin.FEATURE.COOKIE_LOGIN_ONLY);
+        } else {
+            ret.add(LazyPlugin.FEATURE.COOKIE_LOGIN_OPTIONAL);
+        }
+        return ret.toArray(new LazyPlugin.FEATURE[0]);
     }
 
     @Override
@@ -88,14 +103,15 @@ public class EvilAngelLegacy extends antiDDoSForHost {
         return "http://www.evilangel.com/en/terms";
     }
 
-    private String              dllink                     = null;
-    private boolean             server_issues              = false;
-    public static final long    trust_cookie_age           = 300000l;
-    private static final String HTML_LOGGEDIN              = "id=\"headerLinkLogout\"";
-    public static final String  LOGIN_PAGE                 = "https://www.evilangel.com/en/login/";
-    private static final String URL_EVILANGEL_FILM         = "https?://members\\.evilangel.com/[a-z]{2}/([A-Za-z0-9\\-_]+)/film/(\\d+)";
-    private static final String URL_EVILANGEL_FREE_TRAILER = "https?://(?:www\\.)?evilangel\\.com/[a-z]{2}/video/([A-Za-z0-9\\-]+)/(\\d+)";
-    private static final String URL_EVILANGELNETWORK_VIDEO = "https?://members\\.[^/]+/[a-z]{2}/video/([A-Za-z0-9\\-_]+)(?:/[A-Za-z0-9\\-_]+)?/(\\d+)";
+    private String               dllink                     = null;
+    private boolean              server_issues              = false;
+    public static final long     trust_cookie_age           = 300000l;
+    private static final String  HTML_LOGGEDIN              = "id=\"headerLinkLogout\"";
+    public static final String   LOGIN_PAGE                 = "https://www.evilangel.com/en/login/";
+    private static final String  URL_EVILANGEL_FILM         = "https?://members\\.evilangel.com/[a-z]{2}/([A-Za-z0-9\\-_]+)/film/(\\d+)";
+    private static final String  URL_EVILANGEL_FREE_TRAILER = "https?://(?:www\\.)?evilangel\\.com/[a-z]{2}/video/([A-Za-z0-9\\-]+)/(\\d+)";
+    private static final String  URL_EVILANGELNETWORK_VIDEO = "https?://members\\.[^/]+/[a-z]{2}/video/([A-Za-z0-9\\-_]+)(?:/[A-Za-z0-9\\-_]+)?/(\\d+)";
+    private static final boolean cookieLoginOnly            = true;
 
     public boolean isProxyRotationEnabledForLinkChecker() {
         return false;
@@ -383,7 +399,6 @@ public class EvilAngelLegacy extends antiDDoSForHost {
             try {
                 final String host_account = account.getHoster();
                 final String url_main = "http://" + host_account + "/";
-                final boolean cookieLoginOnly = true;
                 final Cookies cookies = account.loadCookies("");
                 final Cookies userCookies = account.loadUserCookies();
                 if (cookieLoginOnly && userCookies == null) {

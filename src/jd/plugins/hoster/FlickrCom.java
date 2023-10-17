@@ -28,6 +28,16 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.storage.config.annotations.LabelInterface;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -55,16 +65,6 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.decrypter.FlickrComCrawler;
 import jd.utils.JDUtilities;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.storage.config.annotations.LabelInterface;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "flickr.com" }, urls = { "https?://(?:www\\.)?flickr\\.com/photos/([^<>\"/]+)/(\\d+)(?:/in/album-\\d+|/in/gallery-\\d+@N\\d+-\\d+)?" })
 public class FlickrCom extends PluginForHost {
     public FlickrCom(PluginWrapper wrapper) {
@@ -75,6 +75,11 @@ public class FlickrCom extends PluginForHost {
          */
         this.enablePremium("https://edit.yahoo.com/registration?.src=flickrsignup");
         setConfigElements();
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.IMAGE_GALLERY, LazyPlugin.FEATURE.IMAGE_HOST, LazyPlugin.FEATURE.COOKIE_LOGIN_ONLY };
     }
 
     @Override
@@ -580,9 +585,11 @@ public class FlickrCom extends PluginForHost {
     /** Returns API parameters "extras" containing the needed extra properties for images/videos. */
     public static final String getApiParamExtras() {
         /**
-         * needs_interstitial = show 18+ content </br> media = include media-type (video/photo) </br> datecreate = get create-date of groups
-         * </br> date_taken = date_taken of photos </br> date_activity = timestamp of the last activity of a group (given via
-         * "dateactivity/_content") </br>
+         * needs_interstitial = show 18+ content </br>
+         * media = include media-type (video/photo) </br>
+         * datecreate = get create-date of groups </br>
+         * date_taken = date_taken of photos </br>
+         * date_activity = timestamp of the last activity of a group (given via "dateactivity/_content") </br>
          */
         String extras = "date_activity%2Cdatecreate%2Cdate_taken%2Cdate_upload%2Cdescription%2Cowner_name%2Cpath_alias%2Crealname%2Cneeds_interstitial%2Cmedia";
         final String[] allPhotoQualities = getPhotoQualityStringsDescending();

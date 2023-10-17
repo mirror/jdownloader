@@ -113,7 +113,7 @@ public class Keep2ShareCcDecrypter extends PluginForDecrypt {
         // set cross browser support
         ((jd.plugins.hoster.K2SApi) plugin).setBrowser(br);
         boolean folderPaginationHandling = false;
-        final List<DownloadLink> unavailableFolders = new ArrayList<DownloadLink>();
+        // final List<DownloadLink> unavailableFolders = new ArrayList<DownloadLink>();
         // final List<DownloadLink> emptyFolders = new ArrayList<DownloadLink>();
         final String referer = UrlQuery.parse(param.getCryptedUrl()).get("site");
         final boolean useOldHandling = false;
@@ -222,9 +222,9 @@ public class Keep2ShareCcDecrypter extends PluginForDecrypt {
                         if (Boolean.TRUE.equals(item.get("is_folder"))) {
                             final DownloadLink folder = createDownloadlink(generateFolderUrl(id, filenameOrFoldername, referer));
                             ret.add(folder);
-                            if (Boolean.FALSE.equals(item.get("is_available"))) {
-                                unavailableFolders.add(folder);
-                            }
+                            // if (Boolean.FALSE.equals(item.get("is_available"))) {
+                            // unavailableFolders.add(folder);
+                            // }
                         } else {
                             /* File */
                             final DownloadLink file = createDownloadlink(generateFileUrl(id, filenameOrFoldername, referer));

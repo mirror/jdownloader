@@ -20,6 +20,8 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -40,8 +42,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.PornHubCom;
 
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornhub.com" }, urls = { "https?://(?:www\\.|[a-z]{2}\\.)?pornhub(?:premium)?\\.com/album/\\d+" })
 public class PornHubComGallery extends PluginForDecrypt {
     public PornHubComGallery(PluginWrapper wrapper) {
@@ -54,36 +54,35 @@ public class PornHubComGallery extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String preferredSubdomain = PornHubCom.getPreferredSubdomain(param.getCryptedUrl());
-        param.setCryptedUrl(param.getCryptedUrl().replaceAll("https://", "http://"));
-        param.setCryptedUrl(param.getCryptedUrl().replaceAll("^http://(www\\.)?([a-z]{2}\\.)?", "https://" + preferredSubdomain));
+        String contenturl = param.getCryptedUrl();
+        /* Replace existing subdomain with preferred subdomain. */
+        contenturl = contenturl.replaceAll("^http://(www\\.)?([a-z]{2}\\.)?", "https://" + preferredSubdomain);
         br.setFollowRedirects(true);
         final Account account = AccountController.getInstance().getValidAccount(getHost());
         final PornHubCom hosterPlugin = (PornHubCom) this.getNewPluginForHostInstance(this.getHost());
         if (account != null) {
             hosterPlugin.login(account, false);
         }
-        final String url;
-        final String domainFromURL = Browser.getHost(param.getCryptedUrl());
+        final String domainFromURL = Browser.getHost(contenturl, false);
         if (account != null && AccountType.PREMIUM.equals(account.getType())) {
             /* Premium account available --> Use premium domain */
             if (PornHubCom.isPremiumDomain(domainFromURL)) {
-                url = param.getCryptedUrl().replaceFirst(Pattern.quote(domainFromURL), PornHubCom.getConfiguredDomainURL(this.getHost(), domainFromURL));
+                contenturl = contenturl.replaceFirst(Pattern.quote(domainFromURL), PornHubCom.getConfiguredDomainURL(this.getHost(), domainFromURL));
             } else {
-                url = param.getCryptedUrl().replaceFirst(Pattern.quote(domainFromURL), PornHubCom.getConfiguredDomainURL(this.getHost(), PornHubCom.getPrimaryPremiumDomain()));
+                contenturl = contenturl.replaceFirst(Pattern.quote(domainFromURL), PornHubCom.getConfiguredDomainURL(this.getHost(), PornHubCom.getPrimaryPremiumDomain()));
             }
         } else {
             /* No account or free account --> User free domain */
             if (PornHubCom.isPremiumDomain(domainFromURL)) {
-                url = param.getCryptedUrl().replaceFirst(Pattern.quote(domainFromURL), PornHubCom.getConfiguredDomainURL(this.getHost(), PornHubCom.getPrimaryFreeDomain()));
+                contenturl = contenturl.replaceFirst(Pattern.quote(domainFromURL), PornHubCom.getConfiguredDomainURL(this.getHost(), PornHubCom.getPrimaryFreeDomain()));
             } else {
-                url = param.getCryptedUrl().replaceFirst(Pattern.quote(domainFromURL), PornHubCom.getConfiguredDomainURL(this.getHost(), domainFromURL));
+                contenturl = contenturl.replaceFirst(Pattern.quote(domainFromURL), PornHubCom.getConfiguredDomainURL(this.getHost(), domainFromURL));
             }
         }
-        final String domainFromURLNew = Browser.getHost(url);
+        final String domainFromURLNew = Browser.getHost(contenturl);
         PornHubCom.prepBr(br);
-        jd.plugins.hoster.PornHubCom.getFirstPageWithAccount(hosterPlugin, account, url);
+        jd.plugins.hoster.PornHubCom.getFirstPageWithAccount(hosterPlugin, account, contenturl);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (PornHubCom.isGeoRestricted(br)) {
@@ -97,6 +96,7 @@ public class PornHubComGallery extends PluginForDecrypt {
         if (fpName == null) {
             fpName = domainFromURLNew + " album " + new Regex(param.getCryptedUrl(), "(\\d+)$").getMatch(0);
         }
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final Set<String> pages = new HashSet<String>();
         while (true) {
             final String[] links = br.getRegex("\"/photo/(\\d+)\"").getColumn(0);

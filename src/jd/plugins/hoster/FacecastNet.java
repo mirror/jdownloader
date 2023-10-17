@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Random;
 
 import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.plugins.controller.LazyPlugin;
@@ -37,7 +38,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "facecast.net" }, urls = { "https?://(?:www\\.)?facecast\\.net/v/([A-Za-z0-9]+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "facecast.net" }, urls = { "https?://(?:www\\.)?facecast\\.net/(?:v|w)/([A-Za-z0-9]+)" })
 public class FacecastNet extends PluginForHost {
     public FacecastNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -69,6 +70,8 @@ public class FacecastNet extends PluginForHost {
         return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
+    private Map<String, Object> entries = null;
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         final String extDefault = ".mp4";
@@ -83,8 +86,8 @@ public class FacecastNet extends PluginForHost {
         final List<HashMap<String, Object>> ressourcelist = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.LIST_HASHMAP);
         final Map<String, Object> randomServerMap = ressourcelist.get(new Random().nextInt(ressourcelist.size() - 1));
         final String webapidomain = randomServerMap.get("src").toString();
-        this.br.getPage("https://" + webapidomain + "/eventdata?code=" + fid + "&ref=&_=" + System.currentTimeMillis());
-        final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.getRequest().getHtmlCode());
+        br.getPage("https://" + webapidomain + "/eventdata?code=" + fid + "&ref=&_=" + System.currentTimeMillis());
+        entries = JavaScriptEngineFactory.jsonToJavaMap(br.getRequest().getHtmlCode());
         if (br.getHttpConnection().getResponseCode() == 404 || entries.containsKey("error")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -96,24 +99,30 @@ public class FacecastNet extends PluginForHost {
             filename = filename + "_" + title;
             link.setFinalFileName(filename + extDefault);
         }
+        final String description = (String) entries.get("description");
+        if (!StringUtils.isEmpty(description) && link.getComment() == null) {
+            link.setComment(description);
+        }
         return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link);
+        final Object is_live = entries.get("is_live");
         if (this.date_start > System.currentTimeMillis()) {
             /* Seems like what the user wants to download hasn't aired yet --> Wait and retry later! */
             final long waitUntilStart = this.date_start - System.currentTimeMillis();
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This video has not been broadcasted yet!", waitUntilStart);
+        } else if (is_live instanceof Number && ((Number) is_live).intValue() == 1) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Livestreams are not supported");
         }
         if (true) {
             /* https://svn.jdownloader.org/issues/84276 */
             throw new PluginException(LinkStatus.ERROR_FATAL, "HLS streams with split video/audio are not yet supported");
         }
-        final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.getRequest().getHtmlCode());
         final String eid = entries.get("id").toString();
-        if (eid == null) {
+        if (StringUtils.isEmpty(eid)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         // br.getPage("https://cdn-3.facecast.net/viewer_auth?eid=" + eid + "&sid=");
