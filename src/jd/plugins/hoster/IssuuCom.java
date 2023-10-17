@@ -18,6 +18,14 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.Map;
 
+import org.appwork.storage.JSonMapperException;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.components.config.IssuuComConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -35,19 +43,16 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.appwork.storage.JSonMapperException;
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.components.config.IssuuComConfig;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "issuu.com" }, urls = { "https?://issuu\\.com/([a-z0-9\\-_\\.]+)/docs/([a-z0-9\\-_]+)" })
 public class IssuuCom extends PluginForHost {
     public IssuuCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://issuu.com/signup");
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.COOKIE_LOGIN_ONLY };
     }
 
     @Override
@@ -171,7 +176,7 @@ public class IssuuCom extends PluginForHost {
         br.getPage("/call/document-page/document-download/" + getUsername(link) + "/" + this.getDocumentSlug(link));
         Map<String, Object> entries = null;
         try {
-            entries = restoreFromString(br.toString(), TypeRef.MAP);
+            entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         } catch (final JSonMapperException e) {
             if (br.getHttpConnection().getResponseCode() == 403) {
                 /* No json response --> Document not downloadable --> Check for errormessage in plaintext */

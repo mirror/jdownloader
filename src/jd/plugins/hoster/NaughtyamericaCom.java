@@ -18,6 +18,14 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.ArrayList;
 
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.components.config.NaughtyamericaConfig;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -41,14 +49,6 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.NaughtyamericaComCrawler;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.components.config.NaughtyamericaConfig;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "naughtyamerica.com" }, urls = { "http://naughtyamericadecrypted.+" })
 public class NaughtyamericaCom extends PluginForHost {
     public NaughtyamericaCom(PluginWrapper wrapper) {
@@ -58,7 +58,11 @@ public class NaughtyamericaCom extends PluginForHost {
 
     @Override
     public LazyPlugin.FEATURE[] getFeatures() {
-        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
+        if (allowCookieLoginOnly) {
+            return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX, LazyPlugin.FEATURE.COOKIE_LOGIN_ONLY };
+        } else {
+            return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX, LazyPlugin.FEATURE.COOKIE_LOGIN_OPTIONAL };
+        }
     }
 
     @Override
@@ -67,6 +71,7 @@ public class NaughtyamericaCom extends PluginForHost {
     }
 
     /* Connection stuff */
+    private static final boolean allowCookieLoginOnly         = false;
     private static final boolean FREE_RESUME                  = false;
     private static final int     FREE_MAXCHUNKS               = 1;
     private static final int     FREE_MAXDOWNLOADS            = 1;
@@ -229,7 +234,6 @@ public class NaughtyamericaCom extends PluginForHost {
                 br.setCookiesExclusive(true);
                 prepBR(br);
                 /* For developers: Disable this Boolean if normal login process breaks down and you're unable or too lazy to fix it! */
-                final boolean allowLoginWithUserPW = true;
                 final Cookies userCookies = account.loadUserCookies();
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null || userCookies != null) {
@@ -264,7 +268,7 @@ public class NaughtyamericaCom extends PluginForHost {
                         }
                     }
                 }
-                if (!allowLoginWithUserPW) {
+                if (allowCookieLoginOnly) {
                     showCookieLoginInfo();
                     throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_required());
                 }
@@ -340,7 +344,8 @@ public class NaughtyamericaCom extends PluginForHost {
 
     /***
      * 2022-03-17: Not much account information for us to crawl. User purchases can be found on website but expire-date or next bill date is
-     * nowhere to be found: </br> https://members.naughtyamerica.com/account/purchases
+     * nowhere to be found: </br>
+     * https://members.naughtyamerica.com/account/purchases
      */
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {

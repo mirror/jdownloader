@@ -43,7 +43,7 @@ public class MetArtCom extends PluginForHost {
 
     @Override
     public LazyPlugin.FEATURE[] getFeatures() {
-        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX, LazyPlugin.FEATURE.COOKIE_LOGIN_OPTIONAL };
     }
 
     public static List<String[]> getPluginDomains() {
@@ -236,7 +236,6 @@ public class MetArtCom extends PluginForHost {
                 } catch (final Throwable e) {
                     /* Not logged in = Different json -> Exception */
                     logger.info("Cookie login failed");
-                    br.clearAll();
                     if (userCookies != null) {
                         if (account.hasEverBeenValid()) {
                             throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
@@ -244,6 +243,7 @@ public class MetArtCom extends PluginForHost {
                             throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
                         }
                     }
+                    br.clearAll();
                 }
             }
         }
