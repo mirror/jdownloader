@@ -640,9 +640,15 @@ public class TwitterComCrawler extends PluginForDecrypt {
     private ArrayList<DownloadLink> crawlTweetMap(String username, Map<String, Object> tweet, Map<String, Object> user, FilePackage fp) throws MalformedURLException, PluginException {
         final TwitterConfigInterface cfg = PluginJsonConfig.get(TwitterConfigInterface.class);
         Map<String, Object> retweeted_status = (Map<String, Object>) tweet.get("retweeted_status");
+        Map<String, Object> userInContextOfReTweet = null;
         if (retweeted_status == null) {
             /* 2023-10-16 */
             retweeted_status = (Map<String, Object>) JavaScriptEngineFactory.walkJson(tweet, "retweeted_status_result/result/legacy");
+            /* Get map of user who tweeted that re-tweet originally. This can differ from the user who re-tweeted the main tweet. */
+            userInContextOfReTweet = (Map<String, Object>) JavaScriptEngineFactory.walkJson(tweet, "retweeted_status_result/result/core/user_results/result/legacy");
+            if (userInContextOfReTweet == null) {
+                logger.warning("Failed to find map of re-tweet user: Possible plugin failure");
+            }
         }
         boolean isRetweet = false;
         if (retweeted_status != null && !retweeted_status.isEmpty()) {
@@ -655,7 +661,9 @@ public class TwitterComCrawler extends PluginForDecrypt {
         }
         final String tweetID = tweet.get("id_str").toString();
         final Object userInContextOfTweet = tweet.get("user");
-        if (userInContextOfTweet != null) {
+        if (userInContextOfReTweet != null) {
+            user = userInContextOfReTweet;
+        } else if (userInContextOfTweet != null) {
             /**
              * Prefer this as our user object. </br>
              * It's only included when adding single tweets.
@@ -1049,10 +1057,22 @@ public class TwitterComCrawler extends PluginForDecrypt {
     }
 
     private ArrayList<DownloadLink> crawlUser(final CryptedLink param, final Account account) throws Exception {
-        if (PluginJsonConfig.get(TwitterConfigInterface.class).isCrawlRetweetsV2()) {
-            return this.crawlUserViaGraphqlAPI(param, account);
+        final String username = new Regex(param.getCryptedUrl(), TYPE_USER_ALL).getMatch(0);
+        if (requiresAccount(param.getCryptedUrl()) && account == null) {
+            logger.info("Account required to crawl all liked items of a user");
+            throw new DecrypterRetryException(RetryReason.NO_ACCOUNT, "ACCOUNT_REQUIRED_TO_CRAWL_LIKED_ITEMS_OF_PROFILE_" + username, "Account is required to crawl liked items of profiles.");
+        }
+        if (account == null) {
+            displayBubblenotifyMessage("Profile crawler " + username + " | Warning", "Results may be incomplete!\r\nTwitter is hiding some posts (e.g. NSFW content) or profiles when a user is not logged in\r\nYou did not add a Twitter account to JDownloader or you've disabled it.");
+        }
+        final boolean crawlRetweets = PluginJsonConfig.get(TwitterConfigInterface.class).isCrawlRetweetsV2();
+        if (account == null && crawlRetweets) {
+            displayBubblenotifyMessage("Profile crawler " + username + " | Warning", "Results may be incomplete!\r\nYou've enabled re-tweet crawling in twitter plugin settings.\r\nTwitter is sometimes hiding Re-Tweets when users are not logged in.\r\nYou did not add a Twitter account to JDownloader or you've disabled it.");
+        }
+        if (crawlRetweets) {
+            return this.crawlUserViaGraphqlAPI(username, param, account);
         } else {
-            return crawlUserViaAPI(param, account);
+            return crawlUserViaAPI(username, param, account);
         }
     }
 
@@ -1060,18 +1080,13 @@ public class TwitterComCrawler extends PluginForDecrypt {
     private final String TWITTER_PROFILE_LIKES_PACKAGE_KEY_PREFIX = "twitterprofile_likes://";
 
     /** Crawls only tweets that were posted by the profile in given URL, no re-tweets!!! */
-    private ArrayList<DownloadLink> crawlUserViaAPI(final CryptedLink param, final Account account) throws Exception {
-        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+    private ArrayList<DownloadLink> crawlUserViaAPI(final String username, final CryptedLink param, final Account account) throws Exception {
         logger.info("Crawling user profile via API");
-        final String username = new Regex(param.getCryptedUrl(), TYPE_USER_ALL).getMatch(0);
         if (username == null) {
             /* Developer mistake */
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            throw new IllegalArgumentException();
         }
-        if (requiresAccount(param.getCryptedUrl()) && account == null) {
-            logger.info("Account required to crawl all liked items of a user");
-            throw new DecrypterRetryException(RetryReason.NO_ACCOUNT, "ACCOUNT_REQUIRED_TO_CRAWL_LIKED_ITEMS_OF_PROFILE_" + username, "Account is required to crawl liked items of profiles.");
-        }
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         this.prepareAPI(br, account);
         final Map<String, Object> user = this.getUserInfo(br, account, username);
         final List<String> pinned_tweet_ids_str = (List<String>) user.get("pinned_tweet_ids_str");
@@ -1284,11 +1299,10 @@ public class TwitterComCrawler extends PluginForDecrypt {
     }
 
     /** Crawls tweets AND re-tweets of profile in given URL. */
-    private ArrayList<DownloadLink> crawlUserViaGraphqlAPI(final CryptedLink param, final Account account) throws Exception {
-        final String username = new Regex(param.getCryptedUrl(), TYPE_USER_ALL).getMatch(0);
+    private ArrayList<DownloadLink> crawlUserViaGraphqlAPI(final String username, final CryptedLink param, final Account account) throws Exception {
         if (username == null) {
             /* Developer mistake */
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            throw new IllegalArgumentException();
         }
         final String queryID = this.getGraphqlQueryID("UserTweets");
         final Map<String, Object> user = getUserInfo(br, account, username);

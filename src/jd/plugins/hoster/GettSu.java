@@ -27,8 +27,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class FilesIm extends XFileSharingProBasic {
-    public FilesIm(final PluginWrapper wrapper) {
+public class GettSu extends XFileSharingProBasic {
+    public GettSu(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(super.getPurchasePremiumURL());
     }
@@ -37,27 +37,14 @@ public class FilesIm extends XFileSharingProBasic {
      * DEV NOTES XfileSharingProBasic Version SEE SUPER-CLASS<br />
      * mods: See overridden functions<br />
      * limit-info:<br />
-     * captchatype-info: 2020-02-10: null<br />
+     * captchatype-info: 2023-10-17: null <br />
      * other:<br />
      */
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "fi-les.com", "files.im" });
+        ret.add(new String[] { "gett.su" });
         return ret;
-    }
-
-    @Override
-    protected List<String> getDeadDomains() {
-        final ArrayList<String> deadDomains = new ArrayList<String>();
-        deadDomains.add("files.im");
-        return deadDomains;
-    }
-
-    @Override
-    public String rewriteHost(final String host) {
-        /* 2023-10-17: Main domain has changed from files.im to fi-les.com */
-        return this.rewriteHost(getPluginDomains(), host);
     }
 
     public static String[] getAnnotationNames() {
@@ -75,10 +62,11 @@ public class FilesIm extends XFileSharingProBasic {
 
     @Override
     public boolean isResumeable(final DownloadLink link, final Account account) {
-        if (account != null && account.getType() == AccountType.FREE) {
+        final AccountType type = account != null ? account.getType() : null;
+        if (AccountType.FREE.equals(type)) {
             /* Free Account */
             return true;
-        } else if (account != null && account.getType() == AccountType.PREMIUM) {
+        } else if (AccountType.PREMIUM.equals(type) || AccountType.LIFETIME.equals(type)) {
             /* Premium account */
             return true;
         } else {
@@ -89,30 +77,31 @@ public class FilesIm extends XFileSharingProBasic {
 
     @Override
     public int getMaxChunks(final Account account) {
-        if (account != null && account.getType() == AccountType.FREE) {
+        final AccountType type = account != null ? account.getType() : null;
+        if (AccountType.FREE.equals(type)) {
             /* Free Account */
-            return -2;
-        } else if (account != null && account.getType() == AccountType.PREMIUM) {
+            return 0;
+        } else if (AccountType.PREMIUM.equals(type) || AccountType.LIFETIME.equals(type)) {
             /* Premium account */
-            return -2;
+            return 0;
         } else {
             /* Free(anonymous) and unknown account type */
-            return -2;
+            return 0;
         }
     }
 
     @Override
     public int getMaxSimultaneousFreeAnonymousDownloads() {
-        return 4;
+        return -1;
     }
 
     @Override
     public int getMaxSimultaneousFreeAccountDownloads() {
-        return 4;
+        return -1;
     }
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return 4;
+        return -1;
     }
 }

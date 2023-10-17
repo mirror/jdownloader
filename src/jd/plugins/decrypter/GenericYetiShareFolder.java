@@ -84,6 +84,7 @@ public class GenericYetiShareFolder extends antiDDoSForDecrypt {
         ret.add(new String[] { "cyphershare.net" });
         ret.add(new String[] { "udrop.com" });
         ret.add(new String[] { "oydisk.com" });
+        ret.add(new String[] { "uply.me" });
         return ret;
     }
 
