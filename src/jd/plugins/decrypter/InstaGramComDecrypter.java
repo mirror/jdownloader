@@ -29,6 +29,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.regex.Pattern;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
@@ -139,7 +140,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
     private static final String                  TYPE_PROFILE_TAGGED   = "(?i)https?://[^/]+/([^/]+)/tagged/?$";
     private static final String                  TYPE_PROFILE_REELS    = "(?i)https?://[^/]+/([^/]+)/reels/?$";
     private static final String                  TYPE_GALLERY          = "(?i).+/(?:p|tv|reel)/([A-Za-z0-9_-]+)/?";
-    private static final String                  TYPE_STORY            = "(?i)https?://[^/]+/stories/([^/]+)/((\\d+)/?)?";
+    private static final Pattern                 PATTERN_STORY         = Pattern.compile("(?i)https?://[^/]+/stories/([^/]+)(/(\\d+)/?)?");
     private static final String                  TYPE_STORY_HIGHLIGHTS = "(?i)https?://[^/]+/stories/highlights/(\\d+)/?";
     private static final String                  TYPE_SAVED_OBJECTS    = "(?i)https?://[^/]+/([^/]+)/saved/?$";
     private static final String                  TYPE_HASHTAG          = "(?i)https?://[^/]+/explore/tags/([^/]+)/?$";
@@ -264,7 +265,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
 
     /** Do we have to be logged in to crawl this URL? */
     private boolean requiresLogin(final String url) {
-        if (url.matches(TYPE_SAVED_OBJECTS) || url.matches(TYPE_STORY_HIGHLIGHTS) || url.matches(TYPE_STORY) || url.matches(TYPE_PROFILE_TAGGED)) {
+        if (url.matches(TYPE_SAVED_OBJECTS) || url.matches(TYPE_STORY_HIGHLIGHTS) || new Regex(url, PATTERN_STORY).patternFind() || url.matches(TYPE_PROFILE_TAGGED)) {
             return true;
         } else {
             return false;
@@ -313,7 +314,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                 return crawlHashtag(param, account, loggedIN);
             } else if (param.getCryptedUrl().matches(TYPE_STORY_HIGHLIGHTS)) {
                 return this.crawlStoryHighlight(param, account, loggedIN);
-            } else if (param.getCryptedUrl().matches(TYPE_STORY)) {
+            } else if (new Regex(param.getCryptedUrl(), PATTERN_STORY).patternFind()) {
                 return this.crawlStory(param, account, loggedIN, true);
             } else if (param.getCryptedUrl().matches(TYPE_PROFILE_REELS)) {
                 return this.crawlUserReels(param, account, loggedIN);
@@ -780,12 +781,11 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         if (username == null) {
             /* Developer mistake! */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        if (!crawlProfilePicture && !crawlPosts) {
+        } else if (!crawlProfilePicture && !crawlPosts) {
             /* Developer mistake */
             throw new IllegalArgumentException("crawlProfilePicture and crawlPosts cannot both be false");
         }
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String userID = this.findUserID(param, account, loggedIN, username);
         if (br.getRequest() == null || !br.getURL().contains("/" + username)) {
             /* We obtained userID from cache --> Access website */
@@ -1238,21 +1238,21 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         if (functionNotYetDone) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.getHeaders().put("Accept", "*/*");
-        final String username_url = new Regex(param.getCryptedUrl(), TYPE_STORY).getMatch(0);
+        final String username_url = new Regex(param.getCryptedUrl(), PATTERN_STORY).getMatch(0);
         final String story_user_id = (String) JavaScriptEngineFactory.walkJson(entries, "entry_data/StoriesPage/{0}/user/id");
         final Qdb qdb = getQueryHash(br, Qdb.QUERY.STORY);
         if (username_url == null || StringUtils.isEmpty(story_user_id)) {
             /* This should never happen! */
-            return decryptedLinks;
+            return ret;
         }
         final Browser br = this.br.cloneBrowser();
         prepBrAjax(br, qdb);
         if (qdb == null || qdb.getQueryHash() == null) {
             logger.warning("Pagination failed because qHash is not given");
-            return decryptedLinks;
+            return ret;
         }
         final String url = "/graphql/query/?query_hash=" + qdb.getQueryHash() + "&variables=%7B%22reel_ids%22%3A%5B%22" + story_user_id + "%22%5D%2C%22tag_names%22%3A%5B%5D%2C%22location_ids%22%3A%5B%5D%2C%22highlight_reel_ids%22%3A%5B%5D%2C%22precomposed_overlay%22%3Afalse%2C%22show_story_viewer_list%22%3Atrue%2C%22story_viewer_fetch_count%22%3A50%2C%22story_viewer_cursor%22%3A%22%22%2C%22stories_video_dash_manifest%22%3Afalse%7D";
         getPage(param, br, url, null, null);
@@ -1302,10 +1302,10 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             dl.setAvailable(true);
             dl.setRelativeDownloadFolderPath(subfolderpath);
             dl._setFilePackage(fp);
-            decryptedLinks.add(dl);
+            ret.add(dl);
             distribute(dl);
         }
-        return decryptedLinks;
+        return ret;
     }
 
     private String getTypeName(final int media_type) {
@@ -2167,7 +2167,7 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
     }
 
     private ArrayList<DownloadLink> crawlStory(final CryptedLink param, final Account account, final AtomicBoolean loggedIN, final boolean addDummyItemOnNoItemsFound) throws UnsupportedEncodingException, Exception {
-        final String username = new Regex(param.getCryptedUrl(), TYPE_STORY).getMatch(0);
+        final String username = new Regex(param.getCryptedUrl(), PATTERN_STORY).getMatch(0);
         if (username == null) {
             /* Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
