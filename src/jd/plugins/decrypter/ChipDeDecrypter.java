@@ -20,6 +20,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.URLConnectionAdapter;
@@ -29,9 +31,10 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-
-import org.jdownloader.scripting.JavaScriptEngineFactory;
+import jd.plugins.hoster.DirectHTTP;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "chip.de" }, urls = { "https?://(?:[A-Za-z0-9\\-]+\\.)?chip\\.de/(?!downloads|video)[^/]+/[^/]+_\\d+\\.html" })
 public class ChipDeDecrypter extends PluginForDecrypt {
@@ -42,20 +45,19 @@ public class ChipDeDecrypter extends PluginForDecrypt {
     private static final boolean use_api_for_pictures = true;
 
     @SuppressWarnings({ "unused", "unchecked", "rawtypes" })
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
-        final String linkid = new Regex(parameter, "(\\d+)\\.html$").getMatch(0);
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final String contenturl = param.getCryptedUrl();
+        final String linkid = new Regex(contenturl, "(\\d+)\\.html$").getMatch(0);
         String fpName = null;
-        if (parameter.matches(jd.plugins.hoster.ChipDe.type_chip_de_pictures) && !use_api_for_pictures) {
+        if (contenturl.matches(jd.plugins.hoster.ChipDe.type_chip_de_pictures) && !use_api_for_pictures) {
             /* Old website picture handling */
             br.setFollowRedirects(true);
             URLConnectionAdapter con = null;
             try {
-                con = br.openGetConnection(parameter);
+                con = br.openGetConnection(contenturl);
                 if (con.getResponseCode() == 410) {
-                    decryptedLinks.add(this.createOfflinelink(parameter));
-                    return decryptedLinks;
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
                 br.followConnection();
             } finally {
@@ -69,8 +71,8 @@ public class ChipDeDecrypter extends PluginForDecrypt {
                 fpName = br.getRegex("<title>(.*?) \\- Bilder \\-").getMatch(0);
             }
             if (fpName == null) {
-                logger.warning("Decrypter broken for link:" + parameter);
-                return null;
+                logger.warning("Decrypter broken for link:" + contenturl);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             fpName = fpName.trim();
             String[] pictureNames = br.getRegex("bGrossversion\\[\\d+\\] = \"(.*?)\";").getColumn(0);
@@ -78,8 +80,8 @@ public class ChipDeDecrypter extends PluginForDecrypt {
                 pictureNames = br.getRegex("url \\+= \"/ii/grossbild_v2\\.html\\?grossbild=(.*?)\";").getColumn(0);
             }
             if (pictureNames == null || pictureNames.length == 0) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
+                logger.warning("Decrypter broken for link: " + contenturl);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             final DecimalFormat df = new DecimalFormat("000");
             int counter = 1;
@@ -90,10 +92,10 @@ public class ChipDeDecrypter extends PluginForDecrypt {
                 if (picName.equals("")) {
                     continue;
                 }
-                final DownloadLink dl = createDownloadlink("directhttp://http://www.chip.de/ii/" + picName);
+                final DownloadLink dl = createDownloadlink(DirectHTTP.createURLForThisPlugin("http://www.chip.de/ii/" + picName));
                 dl.setFinalFileName(fpName + "_" + df.format(counter) + picName.substring(picName.lastIndexOf(".")));
                 dl.setAvailable(true);
-                decryptedLinks.add(dl);
+                ret.add(dl);
                 counter++;
             }
         } else {
@@ -104,7 +106,7 @@ public class ChipDeDecrypter extends PluginForDecrypt {
                 Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(this.br.toString());
                 fpName = (String) entries.get("title");
                 final List<Object> resource_data_list;
-                if (parameter.matches(jd.plugins.hoster.ChipDe.type_chip_de_pictures)) {
+                if (contenturl.matches(jd.plugins.hoster.ChipDe.type_chip_de_pictures)) {
                     final DecimalFormat df = new DecimalFormat("000");
                     int counter = 1;
                     resource_data_list = (List) entries.get("pictures");
@@ -117,7 +119,7 @@ public class ChipDeDecrypter extends PluginForDecrypt {
                                 continue;
                             }
                             String url_name = new Regex(url, "([^/]+)$").getMatch(0);
-                            final DownloadLink dl = this.createDownloadlink("directhttp://" + url);
+                            final DownloadLink dl = this.createDownloadlink(DirectHTTP.createURLForThisPlugin(url));
                             dl.setAvailable(true);
                             if (!inValidate(description)) {
                                 dl.setComment(description);
@@ -126,7 +128,7 @@ public class ChipDeDecrypter extends PluginForDecrypt {
                                 url_name = df.format(counter) + "_" + url_name;
                                 dl.setFinalFileName(url_name);
                             }
-                            decryptedLinks.add(dl);
+                            ret.add(dl);
                         } finally {
                             counter++;
                         }
@@ -141,7 +143,7 @@ public class ChipDeDecrypter extends PluginForDecrypt {
                             continue;
                         }
                         final DownloadLink dl = this.createDownloadlink(url);
-                        decryptedLinks.add(dl);
+                        ret.add(dl);
                     }
                 }
             } catch (final Throwable e) {
@@ -150,9 +152,9 @@ public class ChipDeDecrypter extends PluginForDecrypt {
         if (fpName != null) {
             FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName));
-            fp.addLinks(decryptedLinks);
+            fp.addLinks(ret);
         }
-        return decryptedLinks;
+        return ret;
     }
 
     /**

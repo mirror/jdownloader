@@ -59,11 +59,11 @@ public class ChipDe extends PluginForHost {
         return -1;
     }
 
-    private static final String type_chip_de_file         = "https?://(?:www\\.)?chip\\.de/downloads/[^/]+_\\d+\\.html";
-    private static final String type_chip_eu_file         = "https?://(?:www\\.)?download\\.chip\\.(?:eu|asia)/.+";
-    public static final String  type_chip_de_video        = "https?://(?:www\\.)?chip\\.de/video/[^/]+_(\\d+)\\.html";
-    public static final String  type_chip_de_pictures     = "https?://(?:www\\.)?chip\\.de/bildergalerie/[^/]+_\\d+\\.html";
-    private static final String type_chip_de_video_others = "https?://(?:[a-z0-9]+\\.)?chip\\.de/[^/]+/[^/]+_\\d+\\.html";
+    private static final String type_chip_de_file         = "(?i)https?://(?:www\\.)?chip\\.de/downloads/[^/]+_\\d+\\.html";
+    private static final String type_chip_eu_file         = "(?i)https?://(?:www\\.)?download\\.chip\\.(?:eu|asia)/.+";
+    public static final String  type_chip_de_video        = "(?i)https?://(?:www\\.)?chip\\.de/video/[^/]+_(\\d+)\\.html";
+    public static final String  type_chip_de_pictures     = "(?i)https?://(?:www\\.)?chip\\.de/bildergalerie/[^/]+_\\d+\\.html";
+    private static final String type_chip_de_video_others = "(?i)https?://(?:[a-z0-9]+\\.)?chip\\.de/[^/]+/[^/]+_\\d+\\.html";
     private static final String host_chip_de              = "chip.de";
     private String              dllink                    = null;
     private static final String PROPERTY_DOWNLOAD_TARGET  = "download_target";
@@ -91,7 +91,6 @@ public class ChipDe extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.setCustomCharset("ISO-8859-1");
         br.setAllowedResponseCodes(410);
         boolean set_final_filename = false;
         String date = null;
@@ -101,7 +100,7 @@ public class ChipDe extends PluginForHost {
         String title_URL = null;
         String description = null;
         final String contentID_URL;
-        final Regex linkinfo = new Regex(link.getPluginPatternMatcher(), "/([^/]+)_(\\d+)\\.html$");
+        final Regex linkinfo = new Regex(link.getPluginPatternMatcher(), "(?i)/([^/]+)_(\\d+)\\.html$");
         title_URL = linkinfo.getMatch(0);
         contentID_URL = linkinfo.getMatch(1);
         /* Set name here in case the content is offline --> Users still have a nice filename. */
@@ -110,16 +109,18 @@ public class ChipDe extends PluginForHost {
         }
         if (link.getPluginPatternMatcher().matches(type_chip_de_file) || link.getPluginPatternMatcher().matches(type_chip_eu_file)) {
             set_final_filename = false;
-            accessURL(this.br, link.getDownloadURL());
-            if (link.getDownloadURL().matches(type_chip_eu_file) && !this.br.containsHTML("class=\"downloadnow_button")) {
+            accessURL(this.br, link.getPluginPatternMatcher());
+            if (link.getPluginPatternMatcher().matches(type_chip_eu_file) && !this.br.containsHTML("class=\"downloadnow_button")) {
                 /* chip.eu url without download button --> No downloadable content --> URL is offline for us */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             String filesizeStr = null;
-            final String json = br.getRegex("var digitalData = (\\{.*?\\});").getMatch(0);
-            if (json != null) {
+            final String json1 = br.getRegex("var digitalData = (\\{.*?\\});").getMatch(0);
+            final String json2 = br.getRegex("var utag_data = (\\{.*?\\});").getMatch(0);
+            String title = null;
+            if (json1 != null) {
                 /* 2021-07-22 */
-                final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(json);
+                final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(json1);
                 final Object downloadO = entries.get("download");
                 if (downloadO == null) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -129,18 +130,31 @@ public class ChipDe extends PluginForHost {
                 if (productID != null) {
                     link.setLinkID(this.getHost() + "://application/" + productID);
                 }
-                filename = (String) download.get("name");
+                title = (String) download.get("name");
                 /* Sometimes filesize is not given --> "n/a" */
                 final String filesizeTmp = (String) download.get("fileSize");
                 if (filesizeTmp.matches("\\d+(\\.\\d+)")) {
                     filesizeStr = filesizeTmp + "MB";
                 }
                 link.setProperty(PROPERTY_DOWNLOAD_TARGET, download.get("Target").toString());
+            } else if (json2 != null) {
+                /* 2023-10-18 */
+                final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(json2);
+                final String productID = (String) entries.get("downloadProductId");
+                if (productID != null) {
+                    link.setLinkID(this.getHost() + "://application/" + productID);
+                }
+                title = (String) entries.get("downloadName");
+                /* Sometimes filesize is not given --> "n/a" */
+                final String filesizeTmp = (String) entries.get("downloadFileSize");
+                if (filesizeTmp.matches("\\d+(\\.\\d+)")) {
+                    filesizeStr = filesizeTmp + "MB";
+                }
             }
             /* Sometimes contains a comma and trash after that (wtf?) */
             final String filesizeBytesStr = br.getRegex("itemprop=\"fileSize\" content=\"(\\d+)(\\.\\d+)?\"").getMatch(0);
-            if (StringUtils.isEmpty(filename)) {
-                filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
+            if (StringUtils.isEmpty(title)) {
+                title = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
             }
             if (StringUtils.isEmpty(filesizeStr)) {
                 filesizeStr = br.getRegex(">Dateigr\\&ouml;\\&szlig;e:</p>[\t\n\r ]+<p class=\"col2\">([^<>\"]*?)<meta itemprop=\"fileSize\"").getMatch(0);
@@ -166,11 +180,11 @@ public class ChipDe extends PluginForHost {
              *
              * http://download.chip.eu/en/Firefox_106534.html
              */
-            if (filename == null) {
+            if (title == null) {
                 /* Last chance! */
                 filename = title_URL + "_" + contentID_URL;
             } else {
-                filename += "_" + contentID_URL;
+                filename = title + "_" + contentID_URL;
             }
         } else {
             /* 2021-07-23: This seems to be broken */
@@ -307,7 +321,7 @@ public class ChipDe extends PluginForHost {
                 if (isExternalDownload(link)) {
                     errorExternalDownloadImpossible();
                 }
-                final String step1 = br.getRegex("class=\"download_button[^\"]+\"[^>]*><a rel=\"nofollow\" href=\"(https?://[^\"]+)").getMatch(0);
+                final String step1 = br.getRegex("class=\"[^\"]*download_button[^\"]+\"[^>]*><a rel=\"nofollow\"[^>]*href=\"(https?://[^\"]+)").getMatch(0);
                 if (step1 == null) {
                     /*
                      * 2021-07-22: Treat such files as non-downloadable although this could also mean there is a plugin failure. Some items
@@ -325,9 +339,8 @@ public class ChipDe extends PluginForHost {
                 } else {
                     br.getPage(step1decoded);
                 }
-                String step2 = br.getRegex("\"(https?://(www\\.)?chip\\.de/downloads/c1_downloads_hs_getfile[^<>\"]*?)\"").getMatch(0);
+                String step2 = br.getRegex("(/downloads/c1_downloads_hs_getfile[^<>\"]+)\"").getMatch(0);
                 if (step2 != null) {
-                    step2 = Encoding.htmlDecode(step2);
                     br.getPage(step2);
                 }
                 dllink = applicationDownloadsGetDllink();
@@ -470,34 +483,6 @@ public class ChipDe extends PluginForHost {
         br.getHeaders().put("Content-Type", "application/json; charset=utf-8");
         br.getHeaders().put("User-Agent", "Dalvik/2.1.0 (Linux; U; Android 5.0; Nexus 5 Build/LRX21O)");
         return br;
-    }
-
-    private String checkDirectLink(final DownloadLink link, final String property) {
-        String dllink = link.getStringProperty(property);
-        if (dllink != null) {
-            URLConnectionAdapter con = null;
-            try {
-                final Browser br2 = br.cloneBrowser();
-                br2.setFollowRedirects(true);
-                con = br2.openHeadConnection(dllink);
-                if (this.looksLikeDownloadableContent(con)) {
-                    if (con.getCompleteContentLength() > 0) {
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
-                    }
-                    return dllink;
-                } else {
-                    throw new IOException();
-                }
-            } catch (final Exception e) {
-                logger.log(e);
-                return null;
-            } finally {
-                if (con != null) {
-                    con.disconnect();
-                }
-            }
-        }
-        return null;
     }
 
     public static String formatDate(String input) {

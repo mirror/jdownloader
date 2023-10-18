@@ -312,8 +312,11 @@ public class SendCm extends XFileSharingProBasic {
     @Override
     public void doFree(final DownloadLink link, final Account account) throws Exception, PluginException {
         /* First bring up saved final links */
-        if (account != null && account.getType() == AccountType.FREE && account.getAccountInfo() != null && account.getAccountInfo().getTrafficLeft() > 0) {
-            /* 2023-10-16: Special: For "Free accounts" with paid "Premium bandwidth". */
+        if (isFreeAccountWithPremiumTraffic(account)) {
+            /**
+             * 2023-10-16: Special: For "Free accounts" with paid "Premium bandwidth". </br>
+             * Looks like this is supposed to help with Cloudflare problems.
+             */
             requestFileInformationWebsite(link, account, true);
             final String contentURL = this.getContentURL(link);
             final String directurl = contentURL + "/jd";
@@ -321,5 +324,18 @@ public class SendCm extends XFileSharingProBasic {
         } else {
             super.doFree(link, account);
         }
+    }
+
+    private boolean isFreeAccountWithPremiumTraffic(final Account account) {
+        if (account != null && account.getType() == AccountType.FREE && account.getAccountInfo() != null && account.getAccountInfo().getTrafficLeft() > 0) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    @Override
+    protected boolean supportsShortURLs() {
+        return true;
     }
 }

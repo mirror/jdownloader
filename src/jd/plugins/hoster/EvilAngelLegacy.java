@@ -16,9 +16,7 @@
 package jd.plugins.hoster;
 
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 import java.util.Map;
 
 import org.appwork.utils.StringUtils;
@@ -62,14 +60,11 @@ public class EvilAngelLegacy extends antiDDoSForHost {
 
     @Override
     public LazyPlugin.FEATURE[] getFeatures() {
-        final List<LazyPlugin.FEATURE> ret = new ArrayList<LazyPlugin.FEATURE>();
-        ret.add(LazyPlugin.FEATURE.XXX);
         if (cookieLoginOnly) {
-            ret.add(LazyPlugin.FEATURE.COOKIE_LOGIN_ONLY);
+            return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX, LazyPlugin.FEATURE.COOKIE_LOGIN_ONLY };
         } else {
-            ret.add(LazyPlugin.FEATURE.COOKIE_LOGIN_OPTIONAL);
+            return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX, LazyPlugin.FEATURE.COOKIE_LOGIN_OPTIONAL };
         }
-        return ret.toArray(new LazyPlugin.FEATURE[0]);
     }
 
     @Override

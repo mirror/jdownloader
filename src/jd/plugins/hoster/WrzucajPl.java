@@ -18,11 +18,14 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.plugins.components.YetiShareCore;
 
 import jd.PluginWrapper;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
@@ -101,5 +104,28 @@ public class WrzucajPl extends YetiShareCore {
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
+    }
+
+    @Override
+    protected AccountInfo fetchAccountInfoWebsite(final Account account) throws Exception {
+        final AccountInfo ai = super.fetchAccountInfoWebsite(account);
+        /* 2023-10-18 */
+        this.getPage("/account/edit");
+        final String availableTrafficHTML = br.getRegex("<div([^>]+)>-</div>\\s*<h3>\\s*Available transfer\\s*</h3>").getMatch(0);
+        if (availableTrafficHTML != null) {
+            final Regex trafficmaxRegex = new Regex(availableTrafficHTML, "data-postfix=\"\\&nbsp;/ (\\d+) ([A-Za-z]+)\"");
+            final String trafficAvailableStr = new Regex(availableTrafficHTML, "data-end=\"(\\d+)\"").getMatch(0);
+            if (trafficmaxRegex.patternFind() && trafficAvailableStr != null) {
+                final String trafficMaxStr = trafficmaxRegex.getMatch(0);
+                final String trafficUnit = trafficmaxRegex.getMatch(1);
+                ai.setTrafficLeft(SizeFormatter.getSize(trafficAvailableStr + trafficUnit));
+                ai.setTrafficMax(SizeFormatter.getSize(trafficMaxStr + trafficUnit));
+            } else {
+                logger.warning("Failed to find traffic information inside availableTrafficHTML");
+            }
+        } else {
+            logger.warning("Failed to find availableTrafficHTML");
+        }
+        return ai;
     }
 }

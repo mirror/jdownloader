@@ -33,13 +33,13 @@ import javax.script.Invocable;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.DebugMode;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.URLEncode;
 import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.plugins.components.config.KVSConfig;
 import org.jdownloader.plugins.components.config.KVSConfig.PreferredStreamQuality;
@@ -82,7 +82,11 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
 
     @Override
     public LazyPlugin.FEATURE[] getFeatures() {
-        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
+        if (this.requiresCookieLogin()) {
+            return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX, LazyPlugin.FEATURE.COOKIE_LOGIN_ONLY };
+        } else {
+            return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX, LazyPlugin.FEATURE.COOKIE_LOGIN_OPTIONAL };
+        }
     }
 
     /* DEV NOTES */
@@ -1157,20 +1161,37 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
                 br.setCookiesExclusive(true);
                 prepBR(this.br);
                 final Cookies cookies = account.loadCookies("");
+                final Cookies userCookies = account.loadUserCookies();
                 if (cookies != null) {
-                    this.br.setCookies(this.getHost(), cookies);
+                    this.br.setCookies(cookies);
                     if (!validateCookies) {
-                        logger.info("Trust cookies without check");
                         return;
                     }
                     getPage(getProtocol() + this.appendWWWIfRequired(this.getHost()) + "/");
-                    if (isLoggedIN(br)) {
+                    if (checkLogin(br, cookies)) {
                         logger.info("Cookie login successful");
-                        account.saveCookies(this.br.getCookies(this.getHost()), "");
+                        account.saveCookies(this.br.getCookies(br.getHost()), "");
                         return;
                     } else {
                         logger.info("Cookie login failed");
-                        br.clearCookies(br.getHost());
+                        br.clearCookies(null);
+                    }
+                } else if (userCookies != null) {
+                    this.br.setCookies(userCookies);
+                    if (!validateCookies) {
+                        return;
+                    }
+                    getPage(getProtocol() + this.appendWWWIfRequired(this.getHost()) + "/");
+                    if (checkLogin(br, userCookies)) {
+                        logger.info("User cookie login successful");
+                        return;
+                    } else {
+                        logger.info("User Cookie login failed");
+                        if (account.hasEverBeenValid()) {
+                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
+                        } else {
+                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
+                        }
                     }
                 }
                 /* 2020-11-04: Login-URL that fits most of all websites (example): https://www.porngem.com/login-required/ */
@@ -1198,6 +1219,19 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
                 }
                 throw e;
             }
+        }
+    }
+
+    protected boolean requiresCookieLogin() {
+        return false;
+    }
+
+    private boolean checkLogin(final Browser br, final Cookies cookies) throws Exception {
+        getPage(br, getProtocol() + this.appendWWWIfRequired(this.getHost()) + "/");
+        if (isLoggedIN(br)) {
+            return true;
+        } else {
+            return false;
         }
     }
 
