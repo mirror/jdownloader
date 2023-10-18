@@ -10,6 +10,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
 import org.jdownloader.plugins.components.usenet.UsenetServer;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.http.Cookie;
@@ -28,6 +29,15 @@ public class SnelNLUsenet extends UseNet {
     public SnelNLUsenet(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.snelnl.com/en/products");
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        if (allowOnlyUserCookieLogin) {
+            return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.USENET, LazyPlugin.FEATURE.COOKIE_LOGIN_ONLY };
+        } else {
+            return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.USENET, LazyPlugin.FEATURE.COOKIE_LOGIN_OPTIONAL };
+        }
     }
 
     @Override
@@ -52,7 +62,9 @@ public class SnelNLUsenet extends UseNet {
         return false;
     }
 
-    private final String PROPERTY_ACCOUNT_USENET_USERNAME = "USENET_USERNAME";
+    private final String         PROPERTY_ACCOUNT_USENET_USERNAME = "USENET_USERNAME";
+    /* 2023-02-13: Required due to Cloudflare blocking login page. */
+    private static final boolean allowOnlyUserCookieLogin         = true;
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
@@ -60,8 +72,6 @@ public class SnelNLUsenet extends UseNet {
         final AccountInfo ai = new AccountInfo();
         final Cookies cookies = account.loadCookies("");
         final Cookies userCookies = account.loadUserCookies();
-        /* 2023-02-13: Required due to Cloudflare blocking login page. */
-        final boolean allowOnlyUserCookieLogin = true;
         br.setFollowRedirects(true);
         try {
             Form loginform = null;

@@ -55,9 +55,16 @@ public class PinterestCom extends PluginForHost {
         setConfigElements();
     }
 
+    /* 2021-01-28: Full login + invisible reCaptcha Enterprise --> Broken -> Use cookie login only */
+    private static final boolean enforceCookieLoginOnly = true;
+
     @Override
     public LazyPlugin.FEATURE[] getFeatures() {
-        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.IMAGE_GALLERY, LazyPlugin.FEATURE.IMAGE_HOST };
+        if (enforceCookieLoginOnly) {
+            return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.IMAGE_GALLERY, LazyPlugin.FEATURE.IMAGE_HOST, LazyPlugin.FEATURE.COOKIE_LOGIN_ONLY };
+        } else {
+            return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.IMAGE_GALLERY, LazyPlugin.FEATURE.IMAGE_HOST, LazyPlugin.FEATURE.COOKIE_LOGIN_OPTIONAL };
+        }
     }
 
     public static List<String[]> getPluginDomains() {
@@ -301,8 +308,6 @@ public class PinterestCom extends PluginForHost {
                 }
                 final Cookies cookies = account.loadCookies("");
                 final Cookies userCookies = account.loadUserCookies();
-                /* 2021-01-28: Full login + invisible reCaptcha Enterprise --> Broken -> Use cookie login only */
-                final boolean enforceCookieLoginOnly = true;
                 if (enforceCookieLoginOnly && userCookies == null) {
                     showCookieLoginInfo();
                     throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_required());

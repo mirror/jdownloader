@@ -72,17 +72,17 @@ public class TiktokCom extends PluginForHost {
     }
 
     @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.VIDEO_STREAMING, LazyPlugin.FEATURE.COOKIE_LOGIN_ONLY };
+    }
+
+    @Override
     public void init() {
         setRequestLimits();
     }
 
     public static void setRequestLimits() {
         Browser.setRequestIntervalLimitGlobal("tiktok.com", true, 1000);
-    }
-
-    @Override
-    public LazyPlugin.FEATURE[] getFeatures() {
-        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.VIDEO_STREAMING };
     }
 
     public static List<String[]> getPluginDomains() {

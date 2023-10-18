@@ -29,6 +29,7 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPlugin
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -59,6 +60,11 @@ public abstract class VideoFCTwoCore extends PluginForHost {
     public VideoFCTwoCore(PluginWrapper wrapper) {
         super(wrapper);
         setConfigElements();
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX, LazyPlugin.FEATURE.COOKIE_LOGIN_OPTIONAL };
     }
 
     private String              httpDownloadurl               = null;
@@ -252,7 +258,7 @@ public abstract class VideoFCTwoCore extends PluginForHost {
                     this.br.setCookies(storedCookies);
                 }
                 if (!verifyCookies) {
-                    logger.info("Trust cookies without login");
+                    /* Do not verify cookies */
                     return;
                 } else {
                     logger.info("Attempting cookie login");

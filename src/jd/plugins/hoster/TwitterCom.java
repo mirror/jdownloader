@@ -33,6 +33,7 @@ import org.jdownloader.plugins.components.config.TwitterConfigInterface;
 import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -63,6 +64,15 @@ public class TwitterCom extends PluginForHost {
         super(wrapper);
         /* 2020-01-20: Disabled login functionality as it is broken */
         this.enablePremium("https://twitter.com/signup");
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        if (allowCookieLoginOnly) {
+            return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.COOKIE_LOGIN_ONLY };
+        } else {
+            return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.COOKIE_LOGIN_OPTIONAL };
+        }
     }
 
     public static List<String[]> getPluginDomains() {
@@ -125,6 +135,8 @@ public class TwitterCom extends PluginForHost {
     private static final String           PROPERTY_DOWNLOADLINK_TIMESTAMP_MP4_HTTP_FAILED = "timestamp_mp4_http_failed";
     private static final String           PROPERTY_DOWNLOADLINK_TIMESTAMP_MP4_HLS_FAILED  = "timestamp_mp4_hls_failed";
     private final AtomicReference<String> lastUsedVideoDirecturlproperty                  = new AtomicReference<String>();
+    /* 2020-07-02: Only cookie login is supported! */
+    private static final boolean          allowCookieLoginOnly                            = true;
 
     public static Browser prepBR(final Browser br) {
         br.setAllowedResponseCodes(new int[] { 429 });
@@ -675,8 +687,6 @@ public class TwitterCom extends PluginForHost {
             try {
                 br.setCookiesExclusive(true);
                 br.setFollowRedirects(true);
-                /* 2020-07-02: Only cookie login is supported! */
-                final boolean allowCookieLoginOnly = true;
                 final Cookies userCookies = account.loadUserCookies();
                 if ((userCookies == null || userCookies.isEmpty()) && allowCookieLoginOnly) {
                     showCookieLoginInfo();

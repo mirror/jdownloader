@@ -27,6 +27,7 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.components.config.UdemyComConfig;
 import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -55,6 +56,11 @@ public class UdemyCom extends PluginForHost {
     public UdemyCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.udemy.com/courses/");
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.VIDEO_STREAMING, LazyPlugin.FEATURE.COOKIE_LOGIN_OPTIONAL };
     }
 
     /* DEV NOTES */

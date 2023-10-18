@@ -18,6 +18,13 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.Map;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperHostPluginHCaptcha;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -37,13 +44,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperHostPluginHCaptcha;
-import org.jdownloader.gui.translate._GUI;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "seedr.cc" }, urls = { "https://(?:www\\.)?seedr\\.cc/download/(file/\\d+|archive/[a-fA-F0-9]+\\?token=[a-fA-F0-9]+&exp=\\d+)" })
 public class SeedrCc extends PluginForHost {
     public SeedrCc(PluginWrapper wrapper) {
@@ -52,17 +52,27 @@ public class SeedrCc extends PluginForHost {
     }
 
     @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        if (cookieLoginOnly) {
+            return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.COOKIE_LOGIN_ONLY };
+        } else {
+            return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.COOKIE_LOGIN_OPTIONAL };
+        }
+    }
+
+    @Override
     public String getAGBLink() {
         return "https://www.seedr.cc/dynamic/terms";
     }
 
     /* Connection stuff */
-    private final int           FREE_MAXDOWNLOADS    = -1;
-    private final int           ACCOUNT_MAXDOWNLOADS = -1;
-    private final boolean       ACCOUNT_RESUME       = true;
-    private final int           ACCOUNT_MAXCHUNKS    = -2;
-    private String              dllink               = null;
-    private static final String PROPERTY_DIRECTURL   = "directurl";
+    private final int            FREE_MAXDOWNLOADS    = -1;
+    private final int            ACCOUNT_MAXDOWNLOADS = -1;
+    private final boolean        ACCOUNT_RESUME       = true;
+    private final int            ACCOUNT_MAXCHUNKS    = -2;
+    private String               dllink               = null;
+    private static final String  PROPERTY_DIRECTURL   = "directurl";
+    private static final boolean cookieLoginOnly      = false;
 
     private boolean isDirectDownloadURL(final DownloadLink link) {
         return link != null && new Regex(link.getPluginPatternMatcher(), ".*/download/archive/.*").matches();
@@ -223,7 +233,6 @@ public class SeedrCc extends PluginForHost {
             try {
                 br.setFollowRedirects(true);
                 br.setCookiesExclusive(true);
-                final boolean cookieLoginOnly = false;
                 final Cookies userCookies = account.loadUserCookies();
                 final Cookies cookies = account.loadCookies("");
                 if (userCookies != null) {

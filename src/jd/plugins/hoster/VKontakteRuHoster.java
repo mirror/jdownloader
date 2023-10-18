@@ -1722,7 +1722,7 @@ public class VKontakteRuHoster extends PluginForHost {
 
     @Override
     public FEATURE[] getFeatures() {
-        return new FEATURE[] { FEATURE.FAVICON };
+        return new FEATURE[] { FEATURE.FAVICON, FEATURE.COOKIE_LOGIN_OPTIONAL };
     }
 
     @Override

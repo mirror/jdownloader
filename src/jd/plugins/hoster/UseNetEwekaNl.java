@@ -9,6 +9,7 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
 import org.jdownloader.plugins.components.usenet.UsenetServer;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -29,6 +30,11 @@ public class UseNetEwekaNl extends UseNet {
     public UseNetEwekaNl(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.eweka.nl/en/usenet_toegang/specificaties/");
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.USENET, LazyPlugin.FEATURE.COOKIE_LOGIN_OPTIONAL };
     }
 
     @Override
@@ -78,7 +84,7 @@ public class UseNetEwekaNl extends UseNet {
             account.setUser(userNameHTML);
         }
         account.setProperty(USENET_USERNAME, username);
-        String validUntil = br.getRegex("(?i)<td><b>Valid until</b></td>.*?<td.*?>\\s*?(\\d{2}-\\d{2}-\\d{4} \\d{2}:\\d{2})").getMatch(0);
+        String validUntil = br.getRegex("(?i)<td><b>\\s*Valid until\\s*</b></td>.*?<td.*?>\\s*?(\\d{2}-\\d{2}-\\d{4} \\d{2}:\\d{2})").getMatch(0);
         if (validUntil == null) {
             /* 2020-01-21 */
             validUntil = br.getRegex("(?i)>\\s*Next billing at</b></td>\\s*<td>(\\d{2}-\\d{2}-\\d{4} \\d{2}:\\d{2})").getMatch(0);

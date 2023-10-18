@@ -74,7 +74,11 @@ public class SoundcloudCom extends PluginForHost {
 
     @Override
     public LazyPlugin.FEATURE[] getFeatures() {
-        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.AUDIO_STREAMING };
+        if (cookieLoginOnly) {
+            return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.AUDIO_STREAMING, LazyPlugin.FEATURE.COOKIE_LOGIN_ONLY };
+        } else {
+            return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.AUDIO_STREAMING, LazyPlugin.FEATURE.COOKIE_LOGIN_OPTIONAL };
+        }
     }
 
     /*
@@ -121,6 +125,8 @@ public class SoundcloudCom extends PluginForHost {
     public static final String   PROPERTY_ACCOUNT_permalink                                            = "permalink";
     /* API base URLs */
     public static final String   API_BASEv2                                                            = "https://api-v2.soundcloud.com";
+    /* 2020-12-15: Website/API login is broken thus only cookie login is possible */
+    private static final boolean cookieLoginOnly                                                      = true;
 
     public void correctDownloadLink(final DownloadLink link) {
         link.setPluginPatternMatcher(link.getPluginPatternMatcher().replace("soundclouddecrypted", "soundcloud"));
@@ -619,9 +625,7 @@ public class SoundcloudCom extends PluginForHost {
             try {
                 final Cookies cookies = account.loadCookies("");
                 final Cookies userCookies = account.loadUserCookies();
-                /* 2020-12-15: Website/API login is broken thus only cookie login is possible */
-                final boolean allowFullLogin = false;
-                if (userCookies == null && !allowFullLogin) {
+                if (cookieLoginOnly && userCookies == null) {
                     showCookieLoginInfo();
                     throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_required());
                 }
