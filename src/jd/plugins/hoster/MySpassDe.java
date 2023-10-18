@@ -21,6 +21,7 @@ import java.text.DecimalFormat;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -38,8 +39,7 @@ public class MySpassDe extends PluginForHost {
         setConfigElements();
     }
 
-    private String  dllink        = null;
-    private boolean server_issues = false;
+    private String dllink = null;
 
     @Override
     public String getAGBLink() {
@@ -72,16 +72,21 @@ public class MySpassDe extends PluginForHost {
 
     private AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws IOException, PluginException {
         dllink = null;
-        server_issues = false;
+        final String ext = ".mp4";
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        final String fid = new Regex(link.getPluginPatternMatcher(), "(\\d+)/?$").getMatch(0);
+        final String fid = this.getFID(link);
+        if (!link.isNameSet()) {
+            link.setName(fid + ext);
+        }
         // br.getPage("http://www.myspass.de/myspass/includes/apps/video/getvideometadataxml.php?id=" + fid + "&0." +
         // System.currentTimeMillis());
         /* 2018-12-29: New */
         br.getPage("https://www.myspass.de/includes/apps/video/getvideometadataxml.php?id=" + fid);
         /* Alternative: http://www.myspass.de/myspass/includes/apps/video/getvideometadataxml.php?id=<fid> */
-        if (br.containsHTML("<url_flv><\\!\\[CDATA\\[\\]\\]></url_flv>")) {
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("<url_flv><\\!\\[CDATA\\[\\]\\]></url_flv>")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         /* Build our filename */
@@ -95,7 +100,6 @@ public class MySpassDe extends PluginForHost {
         filename += getXML("title");
         dllink = getXML("url_flv");
         filename = filename.trim();
-        final String ext = ".mp4";
         filename = Encoding.htmlDecode(filename);
         /*
          * 2019-10-30: They've changed their final downloadurls. They modify the one which is present in their XML. However, older Clips
@@ -117,18 +121,22 @@ public class MySpassDe extends PluginForHost {
             try {
                 /* 2020-09-29 */
                 logger.info("Trying to 'fix' final downloadurl");
-                final Regex dllinkInfo = new Regex(this.dllink, "/myspass2009/\\d+/(\\d+)/(\\d+)/(\\d+)/");
-                final int fidInt = Integer.parseInt(this.getFID(link));
-                for (int i = 0; i <= 2; i++) {
-                    final String tmpStr = dllinkInfo.getMatch(i);
-                    final int tmpInt = Integer.parseInt(tmpStr);
-                    if (tmpInt > fidInt) {
-                        final int newInt = tmpInt / fidInt;
-                        this.dllink = dllink.replace(tmpStr, Integer.toString(newInt));
+                final Regex dllinkInfo = new Regex(this.dllink, "(?i)/myspass2009/\\d+/(\\d+)/(\\d+)/(\\d+)/");
+                if (dllinkInfo.patternFind()) {
+                    final long fidLong = Long.parseLong(fid);
+                    for (int i = 0; i <= 2; i++) {
+                        final String tmpStr = dllinkInfo.getMatch(i);
+                        final long tmpInt = Long.parseLong(tmpStr);
+                        if (tmpInt > fidLong) {
+                            final long newLong = tmpInt / fidLong;
+                            this.dllink = dllink.replace(tmpStr, Long.toString(newLong));
+                        }
                     }
+                } else {
+                    logger.info("Directurl does not need to be changed - it should be fine: " + dllink);
                 }
-            } catch (final Throwable e) {
-                e.printStackTrace();
+            } catch (final Exception ignore) {
+                ignore.printStackTrace();
                 logger.warning("Failed to fix final downloadurl --> Download might not be possible!");
             }
             if (!isDownload) {
@@ -136,10 +144,9 @@ public class MySpassDe extends PluginForHost {
                 URLConnectionAdapter con = null;
                 try {
                     con = br.openHeadConnection(dllink);
-                    if (this.looksLikeDownloadableContent(con)) {
-                        link.setDownloadSize(con.getCompleteContentLength());
-                    } else {
-                        server_issues = true;
+                    handleConnectionErrors(br, con);
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
                     }
                 } finally {
                     try {
@@ -157,9 +164,7 @@ public class MySpassDe extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link, true);
-        if (server_issues) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
-        } else if (dllink == null) {
+        if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         /* 2017-02-04: Without the Range Header we'll be limited to ~100 KB/s */
@@ -168,11 +173,21 @@ public class MySpassDe extends PluginForHost {
         /* Workaround for old downloadcore bug that can lead to incomplete files */
         br.getHeaders().put("Accept-Encoding", "identity");
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
+        handleConnectionErrors(br, dl.getConnection());
         dl.startDownload();
+    }
+
+    private void handleConnectionErrors(final Browser br, final URLConnectionAdapter con) throws PluginException, IOException {
+        if (!this.looksLikeDownloadableContent(con)) {
+            br.followConnection(true);
+            if (con.getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+            } else if (con.getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Video broken?");
+            }
+        }
     }
 
     private String getXML(final String parameter) {

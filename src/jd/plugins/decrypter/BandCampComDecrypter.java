@@ -175,13 +175,13 @@ public class BandCampComDecrypter extends PluginForDecrypt {
             track.setDownloadSize(128 * 1024l / 8 * trackDurationSeconds);
             ret.add(track);
         }
-        /* Add thumbnail if user wants it. */
+        /* Add cover art if user wants it. */
         final String imageID = show.get("show_v2_image_id").toString();
         final SubConfiguration cfg = SubConfiguration.getConfig(this.getHost());
-        final boolean grabThumbnail = cfg.getBooleanProperty(BandCampCom.GRABTHUMB, BandCampCom.defaultGRABTHUMB);
-        if (grabThumbnail) {
-            final String thumbnailURL = "https://f4.bcbits.com/img/" + imageID + "_0";
-            final DownloadLink thumb = createDownloadlink(DirectHTTP.createURLForThisPlugin(thumbnailURL));
+        final boolean grabCoverArt = cfg.getBooleanProperty(BandCampCom.SETTING_GRAB_COVER_ART, BandCampCom.defaultGRAB_COVER_ART);
+        if (grabCoverArt) {
+            final String coverArtURL = "https://f4.bcbits.com/img/" + imageID + "_0";
+            final DownloadLink thumb = createDownloadlink(DirectHTTP.createURLForThisPlugin(coverArtURL));
             thumb.setProperty(BandCampCom.PROPERTY_TITLE, showTitle);
             thumb.setProperty(BandCampCom.PROPERTY_TRACK_DATE_TIMESTAMP, dateTimestamp);
             thumb.setProperty(BandCampCom.PROPERTY_SHOW_NUMBEROF_TRACKS, 0);
@@ -295,7 +295,7 @@ public class BandCampComDecrypter extends PluginForDecrypt {
             dateTimestamp = dateToTimestamp(dateStr);
         }
         /**
-         * Not all albums have playable audio tracks so for some, all we can crawl is the album thumbnail. </br>
+         * Not all albums have playable audio tracks so for some, all we can crawl is the album cover art. </br>
          * Example-album without any streamable tracks: https://midsummerex.bandcamp.com/album/intl
          */
         boolean isSingleTrack = new Regex(br.getURL(), BandCampCom.PATTERN_SINGLE_TRACK).patternFind();
@@ -400,14 +400,14 @@ public class BandCampComDecrypter extends PluginForDecrypt {
             logger.info("This album doesn't contain any playable tracks");
         }
         // final String json_band = br.getRegex("data-band=\"(\\{[^\"]+)").getMatch(0);
-        /* Single song or album thumbnail. Crawl it if user wants it or if no audio/video items were found. */
+        /* Single song or album cover art. Crawl it if user wants it or if no audio/video items were found. */
         final SubConfiguration cfg = SubConfiguration.getConfig(this.getHost());
-        if (cfg.getBooleanProperty(BandCampCom.GRABTHUMB, BandCampCom.defaultGRABTHUMB) || ret.isEmpty()) {
+        if (cfg.getBooleanProperty(BandCampCom.SETTING_GRAB_COVER_ART, BandCampCom.defaultGRAB_COVER_ART) || ret.isEmpty()) {
             /* TODO: Check filenames */
-            String thumbnailURL = br.getRegex("(?i)<a class=\"popupImage\" href=\"(https?://[^<>\"]*?\\.jpg)\"").getMatch(0);
-            if (thumbnailURL != null) {
-                thumbnailURL = thumbnailURL.replaceFirst("(_\\d+)(\\.\\w+)$", "_0$2");
-                final DownloadLink thumb = createDownloadlink(thumbnailURL);
+            String coverArtURL = br.getRegex("(?i)<a class=\"popupImage\" href=\"(https?://[^<>\"]*?\\.jpg)\"").getMatch(0);
+            if (coverArtURL != null) {
+                coverArtURL = coverArtURL.replaceFirst("(_\\d+)(\\.\\w+)$", "_0$2");
+                final DownloadLink thumb = createDownloadlink(coverArtURL);
                 if (ret.size() > 0) {
                     /* Inherit properties from first crawler audio track. */
                     thumb.setProperties(ret.get(0).getProperties());

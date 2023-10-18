@@ -102,7 +102,7 @@ public class BandCampCom extends PluginForHost {
     public static final String  CUSTOM_DATE_PATTERN                 = "CUSTOM_DATE";
     public static final String  CUSTOM_FILENAME_PATTERN             = "CUSTOM_FILENAME";
     public static final String  CUSTOM_VIDEO_FILENAME_PATTERN       = "CUSTOM_VIDEO_FILENAME";
-    public static final String  GRABTHUMB                           = "GRABTHUMB";
+    public static final String  SETTING_GRAB_COVER_ART              = "GRABTHUMB";
     public static final String  CUSTOM_PACKAGENAME                  = "CUSTOM_PACKAGENAME";
     public static final String  FILENAMELOWERCASE                   = "FILENAMELOWERCASE";
     public static final String  PACKAGENAMELOWERCASE                = "PACKAGENAMELOWERCASE";
@@ -502,20 +502,20 @@ public class BandCampCom extends PluginForHost {
         return "JDownloader's bandcamp.com plugin helps downloading videoclips. JDownloader provides settings for the filenames.";
     }
 
-    public static final boolean defaultGRABTHUMB            = false;
-    public static final String  defaultCUSTOM_DATE          = "dd.MM.yyyy_HH-mm-ss";
-    private static final String defaultCustomFilename       = "*tracknumber*.*artist* - *songtitle**ext*";
-    private static final String defaultCustomVideoFilename  = "*tracknumber*.*artist* - *songtitle*-*video_height*p*ext*";
-    public static final boolean defaultFILENAMELOWERCASE    = false;
-    public static final boolean defaultFILENAMESPACE        = false;
-    public static final String  defaultCustomPackagename    = "*artist* - *album*";
-    public static final boolean defaultPACKAGENAMELOWERCASE = false;
-    public static final boolean defaultPACKAGENAMESPACE     = false;
-    public static final boolean defaultCLEANPACKAGENAME     = false;
-    public static final boolean defaultEnableFastLinkcheckAlbum   = true;
+    public static final boolean defaultGRAB_COVER_ART           = false;
+    public static final String  defaultCUSTOM_DATE              = "dd.MM.yyyy_HH-mm-ss";
+    private static final String defaultCustomFilename           = "*tracknumber*.*artist* - *songtitle**ext*";
+    private static final String defaultCustomVideoFilename      = "*tracknumber*.*artist* - *songtitle*-*video_height*p*ext*";
+    public static final boolean defaultFILENAMELOWERCASE        = false;
+    public static final boolean defaultFILENAMESPACE            = false;
+    public static final String  defaultCustomPackagename        = "*artist* - *album*";
+    public static final boolean defaultPACKAGENAMELOWERCASE     = false;
+    public static final boolean defaultPACKAGENAMESPACE         = false;
+    public static final boolean defaultCLEANPACKAGENAME         = false;
+    public static final boolean defaultEnableFastLinkcheckAlbum = true;
 
     private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), GRABTHUMB, "Grab thumbnail (.jpg)?").setDefaultValue(defaultGRABTHUMB));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SETTING_GRAB_COVER_ART, "Grab cover art (.jpg)?").setDefaultValue(defaultGRAB_COVER_ART));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Customize filename properties:"));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), CUSTOM_DATE_PATTERN, "Define how the date should look:").setDefaultValue(defaultCUSTOM_DATE));

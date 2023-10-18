@@ -16,63 +16,96 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.List;
 
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.Time;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
+import jd.parser.html.InputField;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mylink.vc" }, urls = { "https?://(?:www\\.)?(?:mylink\\.(?:li|how|cx|vc)|myl\\.li)/[A-Za-z0-9]+" })
-public class MylinkLi extends antiDDoSForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
+public class MylinkLi extends PluginForDecrypt {
     public MylinkLi(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+    private static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        ret.add(new String[] { "mylink.vc", "mylink.li", "mylink.how", "mylink.cx", "myl.li" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : getPluginDomains()) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/[A-Za-z0-9]+");
+        }
+        return ret.toArray(new String[0]);
+    }
+
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         // final String linkID = new Regex(param.getCryptedUrl(), "/([A-Za-z0-9]+)$").getMatch(0);
         br.setFollowRedirects(true);
         br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36");
-        getPage(param.getCryptedUrl());
+        br.getPage(param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(param.getCryptedUrl()));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String httpRedirect = br.getRegex("<meta http-equiv=\"refresh\"[^>]*url=(https://[^\"]+)\"[^>]*>").getMatch(0);
         if (httpRedirect != null) {
-            this.getPage(httpRedirect);
+            br.getPage(httpRedirect);
         }
-        final Form captchaForm = br.getFormbyProperty("id", "captcha");
-        if (captchaForm == null) {
-            logger.warning("Failed to find captchaForm");
-            return null;
+        final Form captchaForm1 = br.getFormbyProperty("id", "captcha");
+        if (captchaForm1 != null) {
+            // final String phpsessid = br.getCookie(br.getHost(), "PHPSESSID", Cookies.NOTDELETEDPATTERN);
+            logger.info("Found captchaForm1");
+            getAndSetSpecialCookie(this.br);
+            final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
+            captchaForm1.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+            captchaForm1.remove("submit");
+            br.getHeaders().put("Origin", "https://mylink.vc");
+            br.submitForm(captchaForm1);
+        } else {
+            logger.info("Did not find captchaForm1");
         }
-        // final String phpsessid = br.getCookie(br.getHost(), "PHPSESSID", Cookies.NOTDELETEDPATTERN);
-        final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
-        captchaForm.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-        captchaForm.remove("submit");
-        br.getHeaders().put("Origin", "https://mylink.vc");
-        getAndSetSpecialCookie(this.br);
-        submitForm(captchaForm);
         /*
          * Contains pretty much the same stuff as the first form and again our captcha result. This time, parameter "hash" is not empty.
          * "hash" usually equals our Cookie "PHPSESSID".
          */
+        final String specialHash = br.getRegex("return\\!0\\}\\('([a-f0-9]{32})").getMatch(0);
         Form captchaForm2 = br.getFormbyProperty("id", "reCaptchaForm");
         if (captchaForm2 == null) {
-            logger.warning("Failed to find captchaFollowupForm");
-            return null;
+            logger.warning("Failed to find captchaForm2");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        final InputField ifield = captchaForm2.getInputField("uri");
+        if (ifield == null || StringUtils.isEmpty(ifield.getValue())) {
+            /* Invalid/offline link. */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        br.setCookie(br.getHost(), "prefix_views_counter", "1");
+        getAndSetSpecialCookie(this.br);
         /* 2nd captcha - this time, invisible reCaptchaV2 */
         final long timeBefore = Time.systemIndependentCurrentJVMTimeMillis();
         final String recaptchaV2Response_2 = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br) {
@@ -89,10 +122,14 @@ public class MylinkLi extends antiDDoSForDecrypt {
         if (waitLeft > 0) {
             this.sleep(waitLeft, param);
         }
-        submitForm(captchaForm2);
+        br.submitForm(captchaForm2);
         final Form shareForm = br.getFormbyKey("share");
-        getAndSetSpecialCookie(br);
-        this.submitForm(shareForm);
+        if (shareForm != null) {
+            getAndSetSpecialCookie(br);
+            br.submitForm(shareForm);
+        } else {
+            logger.info("Did not find shareForm");
+        }
         /* A lot of Forms may appear here - all to force the user to share the link, bookmark their page, click on ads and so on ... */
         br.setFollowRedirects(false);
         Form goForm = null;
@@ -102,17 +139,18 @@ public class MylinkLi extends antiDDoSForDecrypt {
             logger.info("Loop: " + i + "/" + maxLoops);
             goForm = br.getFormbyKey("hash");
             if (goForm == null) {
+                logger.info("Stepping out of loop");
                 break;
             } else {
                 getAndSetSpecialCookie(br);
                 // goForm.remove("Continue");
-                submitForm(goForm);
+                br.submitForm(goForm);
                 /* 2021-07-08: Attempt to avoid strange error/adblock detection stuff hmm unsure about that... but it works! */
                 if (br.containsHTML("<title>404</title>")) {
                     /* This should only happen once */
                     numberof404Responses++;
                     logger.info("Trying 404 avoidance | Attempt: " + numberof404Responses);
-                    submitForm(goForm);
+                    br.submitForm(goForm);
                 }
             }
         }
@@ -124,8 +162,9 @@ public class MylinkLi extends antiDDoSForDecrypt {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        decryptedLinks.add(createDownloadlink(finallink));
-        return decryptedLinks;
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        ret.add(createDownloadlink(finallink));
+        return ret;
     }
 
     private void getAndSetSpecialCookie(final Browser br) {

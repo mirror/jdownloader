@@ -15,6 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -26,6 +27,15 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.regex.Pattern;
+
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
@@ -50,15 +60,6 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.DirectHTTP;
 import jd.plugins.hoster.PornHubCom;
-
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class PornHubComVideoCrawler extends PluginForDecrypt {
@@ -133,10 +134,14 @@ public class PornHubComVideoCrawler extends PluginForDecrypt {
     private static final String TYPE_CHANNEL_VIDEOS                = "(?i)https?://[^/]+/channels/([^/]+)(/?|/videos/?)$";
     public static final String  PATTERN_MODELHUB_USER_PHOTO_ALBUMS = "https?://[^/]+/([^/]+)/photos";
 
+    private String getCorrectedContentURL(final String url) throws MalformedURLException {
+        final String preferredSubdomain = PornHubCom.getPreferredSubdomain(url);
+        return url.replaceFirst("(?i)^https?://[^/]+/", "https://" + preferredSubdomain + PornHubCom.getConfiguredDomainURL(this.getHost(), Browser.getHost(url)) + "/");
+    }
+
     @SuppressWarnings({ "deprecation" })
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        final String preferredSubdomain = PornHubCom.getPreferredSubdomain(param.getCryptedUrl());
-        param.setCryptedUrl(param.getCryptedUrl().replaceFirst("^https?://[^/]+/", "https://" + preferredSubdomain + PornHubCom.getConfiguredDomainURL(this.getHost(), Browser.getHost(param.getCryptedUrl())) + "/"));
+        final String contenturl = getCorrectedContentURL(param.getCryptedUrl());
         br.setFollowRedirects(true);
         PornHubCom.prepBr(br);
         final Account account = AccountController.getInstance().getValidAccount(getHost());
@@ -144,29 +149,29 @@ public class PornHubComVideoCrawler extends PluginForDecrypt {
         if (account != null) {
             hosterPlugin.login(account, false);
         }
-        if (PornHubCom.requiresPremiumAccount(param.getCryptedUrl()) && (account == null || account.getType() != AccountType.PREMIUM)) {
+        if (PornHubCom.requiresPremiumAccount(contenturl) && (account == null || account.getType() != AccountType.PREMIUM)) {
             throw new AccountRequiredException();
         }
-        if (param.getCryptedUrl().matches("(?i).*/playlist/.*")) {
-            PornHubCom.getFirstPageWithAccount(hosterPlugin, account, param.getCryptedUrl());
+        if (contenturl.matches("(?i).*/playlist/.*")) {
+            PornHubCom.getFirstPageWithAccount(hosterPlugin, account, contenturl);
             handleErrorsAndCaptcha(this.br, account);
             return crawlAllVideosOfAPlaylist(account);
-        } else if (param.getCryptedUrl().matches("(?i).*/gifs.*")) {
-            PornHubCom.getFirstPageWithAccount(hosterPlugin, account, param.getCryptedUrl());
+        } else if (contenturl.matches("(?i).*/gifs.*")) {
+            PornHubCom.getFirstPageWithAccount(hosterPlugin, account, contenturl);
             handleErrorsAndCaptcha(this.br, account);
             return crawlAllGifsOfAUser(param, account);
-        } else if (param.getCryptedUrl().matches(PATTERN_MODELHUB_USER_PHOTO_ALBUMS)) {
-            return this.crawlAllPhotoAlbumsOfAUserModelhub(param.getCryptedUrl(), account);
-        } else if (param.getCryptedUrl().matches("(?i).*/photos$")) {
+        } else if (contenturl.matches(PATTERN_MODELHUB_USER_PHOTO_ALBUMS)) {
+            return this.crawlAllPhotoAlbumsOfAUserModelhub(contenturl, account);
+        } else if (contenturl.matches("(?i).*/photos$")) {
             return this.crawlAllPhotoAlbumsOfAUser(param, account);
-        } else if (param.getCryptedUrl().matches("(?i).*/model/.*")) {
+        } else if (contenturl.matches("(?i).*/model/.*")) {
             return crawlModel(br, param, account);
-        } else if (param.getCryptedUrl().matches("(?i).*/pornstar/.*")) {
+        } else if (contenturl.matches("(?i).*/pornstar/.*")) {
             return this.crawlPornstar(br, param, account);
-        } else if (param.getCryptedUrl().matches("(?i).*/(?:users|channels).*")) {
+        } else if (contenturl.matches("(?i).*/(?:users|channels).*")) {
             if (new Regex(br.getURL(), "/(model|pornstar)/").matches()) { // Handle /users/ that has been switched to model|pornstar
                 logger.info("Users->Model|pornstar");
-                PornHubCom.getFirstPageWithAccount(hosterPlugin, account, param.getCryptedUrl());
+                PornHubCom.getFirstPageWithAccount(hosterPlugin, account, contenturl);
                 handleErrorsAndCaptcha(this.br, account);
                 return crawlAllVideosOf(br, account, new HashSet<String>());
             } else {
@@ -217,10 +222,11 @@ public class PornHubComVideoCrawler extends PluginForDecrypt {
 
     private ArrayList<DownloadLink> crawlModel(final Browser br, final CryptedLink param, final Account account) throws Exception {
         final PornHubCom hosterPlugin = (PornHubCom) this.getNewPluginForHostInstance(this.getHost());
-        PornHubCom.getFirstPageWithAccount(hosterPlugin, account, param.getCryptedUrl());
+        final String contenturl = getCorrectedContentURL(param.getCryptedUrl());
+        PornHubCom.getFirstPageWithAccount(hosterPlugin, account, contenturl);
         handleErrorsAndCaptcha(this.br, account);
-        final String model = new Regex(param.getCryptedUrl(), "/model/([^/]+)").getMatch(0);
-        final String mode = new Regex(param.getCryptedUrl(), "/model/[^/]+/(.+)").getMatch(0);
+        final String model = new Regex(contenturl, "(?i)/model/([^/]+)").getMatch(0);
+        final String mode = new Regex(contenturl, "(?i)/model/[^/]+/(.+)").getMatch(0);
         /* Main profile URL --> Assume user wants to have all videos of that profile */
         logger.info("Model:" + model + " | Mode:" + mode);
         if (StringUtils.isEmpty(mode)) {
@@ -243,10 +249,11 @@ public class PornHubComVideoCrawler extends PluginForDecrypt {
 
     private ArrayList<DownloadLink> crawlPornstar(final Browser br, final CryptedLink param, final Account account) throws Exception {
         final PornHubCom hosterPlugin = (PornHubCom) this.getNewPluginForHostInstance(this.getHost());
-        PornHubCom.getFirstPageWithAccount(hosterPlugin, account, param.getCryptedUrl());
+        final String contenturl = getCorrectedContentURL(param.getCryptedUrl());
+        PornHubCom.getFirstPageWithAccount(hosterPlugin, account, contenturl);
         handleErrorsAndCaptcha(this.br, account);
-        final String pornstar = new Regex(param.getCryptedUrl(), "/pornstar/([^/]+)").getMatch(0);
-        final String mode = new Regex(param.getCryptedUrl(), "/pornstar/[^/]+/(.+)").getMatch(0);
+        final String pornstar = new Regex(contenturl, "(?i)/pornstar/([^/]+)").getMatch(0);
+        final String mode = new Regex(contenturl, "(?i)/pornstar/[^/]+/(.+)").getMatch(0);
         /* Main profile URL --> Assume user wants to have all videos of that profile */
         /* Main profile URL --> Assume user wants to have all videos of that profile */
         logger.info("Pornstar:" + pornstar + "|Mode:" + mode);
@@ -394,29 +401,30 @@ public class PornHubComVideoCrawler extends PluginForDecrypt {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         /* 2021-08-24: At this moment we never try to find the real/"nice" username - we always use the one that's in our URL. */
         // String username = null;
+        String contenturl = getCorrectedContentURL(param.getCryptedUrl());
         final String galleryname;
-        if (param.getCryptedUrl().matches(TYPE_PORNSTAR_VIDEOS_UPLOAD)) {
+        if (contenturl.matches(TYPE_PORNSTAR_VIDEOS_UPLOAD)) {
             galleryname = "Uploads";
-        } else if (param.getCryptedUrl().matches(TYPE_PORNSTAR_VIDEOS)) {
+        } else if (contenturl.matches(TYPE_PORNSTAR_VIDEOS)) {
             galleryname = "Upload Videos";
-        } else if (param.getCryptedUrl().matches(TYPE_MODEL_VIDEOS)) {
+        } else if (contenturl.matches(TYPE_MODEL_VIDEOS)) {
             galleryname = "Upload Videos";
-        } else if (param.getCryptedUrl().matches(TYPE_USER_FAVORITES)) {
+        } else if (contenturl.matches(TYPE_USER_FAVORITES)) {
             galleryname = "Favorites";
-        } else if (param.getCryptedUrl().matches(TYPE_USER_VIDEOS_PUBLIC)) {
+        } else if (contenturl.matches(TYPE_USER_VIDEOS_PUBLIC)) {
             galleryname = "Public Videos";
-        } else if (param.getCryptedUrl().matches(TYPE_CHANNEL_VIDEOS)) {
-            if (!param.getCryptedUrl().endsWith("/videos") && !param.getCryptedUrl().endsWith("/")) {
-                param.setCryptedUrl(param.getCryptedUrl() + "/videos");
+        } else if (contenturl.matches(TYPE_CHANNEL_VIDEOS)) {
+            if (!contenturl.endsWith("/videos") && !contenturl.endsWith("/")) {
+                contenturl = contenturl + "/videos";
             }
             galleryname = "Channel Uploads";
         } else {
             galleryname = null;
         }
         /* Only access page if it hasn't been accessed before */
-        PornHubCom.getFirstPageWithAccount(hosterPlugin, account, param.getCryptedUrl());
+        PornHubCom.getFirstPageWithAccount(hosterPlugin, account, contenturl);
         handleErrorsAndCaptcha(this.br, account);
-        PornHubCom.getPage(br, param.getCryptedUrl());
+        PornHubCom.getPage(br, contenturl);
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(?i)>\\s*There are no videos\\.\\.\\.<")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -431,8 +439,8 @@ public class PornHubComVideoCrawler extends PluginForDecrypt {
         final String seeAllURL = br.getRegex("(" + Regex.escape(br._getURL().getPath()) + "/[^\"]+)\" class=\"seeAllButton greyButton float-right\">").getMatch(0);
         if (seeAllURL != null) {
             /**
-             * E.g. users/bla/videos --> /users/bla/videos/favorites </br> Without this we might only see some of all items and no
-             * pagination which is needed to be able to find all items.
+             * E.g. users/bla/videos --> /users/bla/videos/favorites </br>
+             * Without this we might only see some of all items and no pagination which is needed to be able to find all items.
              */
             logger.info("Found seeAllURL: " + seeAllURL);
             PornHubCom.getPage(br, seeAllURL);
@@ -500,9 +508,9 @@ public class PornHubComVideoCrawler extends PluginForDecrypt {
             }
             if (htmlSourceNeedsFiltering) {
                 /* only parse videos of the user/pornstar/channel, avoid catching unrelated content e.g. 'related' videos */
-                if (param.getCryptedUrl().contains("/pornstar/") || param.getCryptedUrl().contains("/model/")) {
+                if (contenturl.contains("/pornstar/") || contenturl.contains("/model/")) {
                     publicVideosHTMLSnippet = br.getRegex("(class=\"videoUList[^\"]*?\".*?</section>)").getMatch(0);
-                } else if (param.getCryptedUrl().contains("/channels/")) {
+                } else if (contenturl.contains("/channels/")) {
                     publicVideosHTMLSnippet = br.getRegex("<ul[^>]*?id=\"showAllChanelVideos\">.*?</ul>").getMatch(-1);
                     max_entries_per_page = 36;
                 } else {
@@ -570,9 +578,10 @@ public class PornHubComVideoCrawler extends PluginForDecrypt {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        final String contenturl = getCorrectedContentURL(param.getCryptedUrl());
         FilePackage fp = null;
-        if (StringUtils.endsWithCaseInsensitive(param.getCryptedUrl(), "/gifs/public")) {
-            PornHubCom.getPage(br, param.getCryptedUrl());
+        if (StringUtils.endsWithCaseInsensitive(contenturl, "/gifs/public")) {
+            PornHubCom.getPage(br, contenturl);
             // user->pornstar redirect
             if (!br.getURL().matches("(?i).+/gifs/public")) {
                 PornHubCom.getPage(br, br.getURL() + "/gifs/public");
@@ -582,8 +591,8 @@ public class PornHubComVideoCrawler extends PluginForDecrypt {
                 fp = FilePackage.getInstance();
                 fp.setName(user + "'s GIFs");
             }
-        } else if (StringUtils.endsWithCaseInsensitive(param.getCryptedUrl(), "/gifs/video")) {
-            PornHubCom.getPage(br, param.getCryptedUrl());
+        } else if (StringUtils.endsWithCaseInsensitive(contenturl, "/gifs/video")) {
+            PornHubCom.getPage(br, contenturl);
             // user->pornstar redirect
             if (!br.getURL().matches("(?i).+/gifs/video")) {
                 PornHubCom.getPage(br, br.getURL() + "/gifs/video");
@@ -593,8 +602,8 @@ public class PornHubComVideoCrawler extends PluginForDecrypt {
                 fp = FilePackage.getInstance();
                 fp.setName("GIFs From " + user + "'s Videos");
             }
-        } else if (StringUtils.endsWithCaseInsensitive(param.getCryptedUrl(), "/gifs/from_videos")) {
-            PornHubCom.getPage(br, param.getCryptedUrl());
+        } else if (StringUtils.endsWithCaseInsensitive(contenturl, "/gifs/from_videos")) {
+            PornHubCom.getPage(br, contenturl);
             // user->pornstar redirect
             if (!br.getURL().matches("(?i).+/gifs/from_videos") || !br.getURL().matches("(?i).+/gifs/video")) {
                 PornHubCom.getPage(br, br.getURL() + "/gifs/video");
@@ -605,7 +614,7 @@ public class PornHubComVideoCrawler extends PluginForDecrypt {
                 fp.setName("GIFs From " + user + "'s Videos");
             }
         } else {
-            PornHubCom.getPage(br, param.getCryptedUrl());
+            PornHubCom.getPage(br, contenturl);
             /* Those URLs will go back into this crawler */
             ret.add(createDownloadlink(br.getURL() + "/public"));
             ret.add(createDownloadlink(br.getURL() + "/video"));
@@ -672,7 +681,8 @@ public class PornHubComVideoCrawler extends PluginForDecrypt {
     }
 
     private ArrayList<DownloadLink> crawlAllPhotoAlbumsOfAUser(final CryptedLink param, final Account account) throws Exception {
-        PornHubCom.getPage(br, param.getCryptedUrl());
+        final String contenturl = getCorrectedContentURL(param.getCryptedUrl());
+        PornHubCom.getPage(br, contenturl);
         handleErrorsAndCaptcha(this.br, account);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -820,7 +830,8 @@ public class PornHubComVideoCrawler extends PluginForDecrypt {
 
     private ArrayList<DownloadLink> crawlSingleVideo(final Browser br, final CryptedLink param, final Account account) throws Exception {
         final PornHubCom hosterPlugin = (PornHubCom) this.getNewPluginForHostInstance(this.getHost());
-        PornHubCom.getFirstPageWithAccount(hosterPlugin, account, param.getCryptedUrl());
+        String contenturl = getCorrectedContentURL(param.getCryptedUrl());
+        PornHubCom.getFirstPageWithAccount(hosterPlugin, account, contenturl);
         handleErrorsAndCaptcha(this.br, account);
         if (PornHubCom.hasOfflineRemovedVideoText(br) || PornHubCom.hasOfflineVideoNotice(br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -840,16 +851,16 @@ public class PornHubComVideoCrawler extends PluginForDecrypt {
         }
         final boolean prefer_server_filename = cfg.getBooleanProperty("USE_ORIGINAL_SERVER_FILENAME", false);
         /* Convert embed links to normal links */
-        if (param.getCryptedUrl().matches("(?i).+/embed/[a-z0-9]+")) {
-            final String viewkey = PornHubCom.getViewkeyFromURL(param.getCryptedUrl());
+        if (contenturl.matches("(?i).+/embed/[a-z0-9]+")) {
+            final String viewkey = PornHubCom.getViewkeyFromURL(contenturl);
             final String newLink = br.getRegex("(https?://(?:www\\.|[a-z]{2}\\.)?pornhub(?:premium)?\\.(?:com|org)/view_video\\.php\\?viewkey=" + Pattern.quote(viewkey) + ")").getMatch(0);
             if (newLink == null) {
                 checkVideoErrors(br);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            param.setCryptedUrl(newLink);
-            PornHubCom.getPage(br, param.getCryptedUrl());
-        } else if (param.getCryptedUrl().matches("(?i).+/embed_player\\.php\\?id=\\d+")) {
+            contenturl = newLink;
+            PornHubCom.getPage(br, contenturl);
+        } else if (contenturl.matches("(?i).+/embed_player\\.php\\?id=\\d+")) {
             if (br.containsHTML("No htmlCode read") || br.containsHTML("flash/novideo\\.flv")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -857,11 +868,11 @@ public class PornHubComVideoCrawler extends PluginForDecrypt {
             if (newLink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            param.setCryptedUrl(newLink);
-            PornHubCom.getPage(br, param.getCryptedUrl());
+            contenturl = newLink;
+            PornHubCom.getPage(br, contenturl);
         }
         final String username = PornHubCom.getUserName(this, br);
-        final String viewkey = PornHubCom.getViewkeyFromURL(param.getCryptedUrl());
+        final String viewkey = PornHubCom.getViewkeyFromURL(contenturl);
         // PornHubCom.getPage(br, PornHubCom.createPornhubVideolink(viewkey, aa));
         final String siteTitle = PornHubCom.getSiteTitle(this, br);
         final Map<String, Map<String, String>> qualities = PornHubCom.getVideoLinks(this, br);
@@ -870,7 +881,7 @@ public class PornHubComVideoCrawler extends PluginForDecrypt {
         }
         logger.info("Debug info: foundLinks_all: " + qualities);
         if (!br.getURL().contains(viewkey)) {
-            logger.info("Debug info: unknown: " + param.getCryptedUrl());
+            /* Assume that the video is offline. */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (qualities == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
