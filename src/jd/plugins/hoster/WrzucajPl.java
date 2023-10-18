@@ -113,8 +113,8 @@ public class WrzucajPl extends YetiShareCore {
         this.getPage("/account/edit");
         final String availableTrafficHTML = br.getRegex("<div([^>]+)>-</div>\\s*<h3>\\s*Available transfer\\s*</h3>").getMatch(0);
         if (availableTrafficHTML != null) {
-            final Regex trafficmaxRegex = new Regex(availableTrafficHTML, "data-postfix=\"\\&nbsp;/ (\\d+) ([A-Za-z]+)\"");
-            final String trafficAvailableStr = new Regex(availableTrafficHTML, "data-end=\"(\\d+)\"").getMatch(0);
+            final Regex trafficmaxRegex = new Regex(availableTrafficHTML, "data-postfix=\"\\&nbsp;/ (\\d+(\\.\\d+)?) ([A-Za-z]+)\"");
+            final String trafficAvailableStr = new Regex(availableTrafficHTML, "data-end=\"(\\d+(\\.\\d+)?)\"").getMatch(0);
             if (trafficmaxRegex.patternFind() && trafficAvailableStr != null) {
                 final String trafficMaxStr = trafficmaxRegex.getMatch(0);
                 final String trafficUnit = trafficmaxRegex.getMatch(1);

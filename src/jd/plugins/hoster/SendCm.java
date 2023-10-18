@@ -150,7 +150,13 @@ public class SendCm extends XFileSharingProBasic {
             try {
                 final Browser brc = br.cloneBrowser();
                 brc.setFollowRedirects(true);
-                con = brc.openHeadConnection(directurl);
+                // con = brc.openHeadConnection(directurl);
+                con = brc.openGetConnection(directurl);
+                if (!this.looksLikeDownloadableContent(con)) {
+                    brc.followConnection(true);
+                    this.checkErrors(brc, brc.getRequest().getHtmlCode(), link, accountToUseInSpecialHandling, false);
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Special '/jd' handling failed");
+                }
                 if (con.getCompleteContentLength() > 0) {
                     link.setVerifiedFileSize(con.getCompleteContentLength());
                 }
