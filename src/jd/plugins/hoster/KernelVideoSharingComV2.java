@@ -81,6 +81,13 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
     }
 
     @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = new Browser();
+        br.setFollowRedirects(true);
+        return br;
+    }
+
+    @Override
     public LazyPlugin.FEATURE[] getFeatures() {
         if (this.requiresCookieLogin()) {
             return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX, LazyPlugin.FEATURE.COOKIE_LOGIN_ONLY };
@@ -100,14 +107,14 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
      * example.com/videos/1234-title.html </br>
      * example.com/videos/
      */
-    private static final String   type_normal               = "^https?://[^/]+/(?:[a-z]{2}/)?(?:videos?/)?(\\d+)(?:/|-)([^/\\?#]+)(?:/?|\\.html)$";
+    private static final String   type_normal               = "(?i)^https?://[^/]+/(?:[a-z]{2}/)?(?:videos?/)?(\\d+)(?:/|-)([^/\\?#]+)(?:/?|\\.html)$";
     /**
      * Matches for Strings that match patterns returned by {@link #buildAnnotationUrlsDefaultVideosPatternWithFUIDAtEnd(List)} (excluding
      * "embed" URLs). </br>
      * You need to override {@link #hasFUIDInsideURLAtTheEnd(String)} to return true when using such a pattern! </br>
      * TODO: Consider removing support for this from this main class.
      */
-    private static final String   type_normal_fuid_at_end   = "^https?://[^/]+/videos?/([^/\\?#]+)-(\\d+)(?:/?|\\.html)$";
+    private static final String   type_normal_fuid_at_end   = "^(?i)https?://[^/]+/videos?/([^/\\?#]+)-(\\d+)(?:/?|\\.html)$";
     /***
      * Matches for Strings that match patterns returned by {@link #buildAnnotationUrlsDefaultVideosPatternWithoutFileID(List)} and
      * {@link #buildAnnotationUrlsDefaultVideosPatternWithoutFileIDWithHTMLEnding(List)} (excluding "embed" URLs). </br>
@@ -119,8 +126,8 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
      * Matches for Strings that match patterns returned by {@link #buildAnnotationUrlsDefaultVideosPatternOnlyNumbers(List)} (excluding
      * "embed" URLs).
      */
-    protected static final String pattern_only_numbers      = "^https?://[^/]+/(\\d+)/?$";
-    protected static final String pattern_embedded          = "^https?://[^/]+/embed/(\\d+)/?$";
+    protected static final String pattern_only_numbers      = "(?i)^https?://[^/]+/(\\d+)/?$";
+    protected static final String pattern_embedded          = "(?i)^https?://[^/]+/embed/(\\d+)/?$";
     protected String              dllink                    = null;
     protected static final String PROPERTY_FUID             = "fuid";
     protected static final String PROPERTY_USERNAME         = "user";
@@ -132,6 +139,7 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
     protected static final String PROPERTY_IS_PRIVATE_VIDEO = "privatevideo";
     protected static final String PROPERTY_CHOSEN_QUALITY   = "chosen_quality";
     protected static final String PROPERTY_DIRECTURL        = "directurl";
+    private static final String   extDefault                = ".mp4";
 
     /**
      * Use this e.g. for: </br>
@@ -383,7 +391,7 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
     /**
      * Enable this for websites which have embed URLs but they're broken e.g. motherporno.com. </br>
      * EWmbed URLs will be changed to "fake" normal content URLs which should then redirect to the correct contentURL. </br>
-     * Warning: Enabling this without testing can break embed support of host plugins!!
+     * <b>Warning:</b> Enabling this without testing can break embed support of host plugins!!
      */
     protected boolean useEmbedWorkaround() {
         return false;
@@ -393,6 +401,7 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
         return getWorkingDomain(link.getPluginPatternMatcher());
     }
 
+    /** Returns working domain if domain in given URL is known to be a dead domain. */
     protected String getWorkingDomain(final String url) {
         final String addedLinkDomain = Browser.getHost(url, true);
         final ArrayList<String> deadDomains = this.getDeadDomains();
@@ -422,7 +431,7 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
              * Fallback and for websites where it is not always possible to generate contentURLs e.g. videocelebs.net, pornhat.com,
              * theyarehuge.com.
              */
-            return this.correctDomainInURL(link.getPluginPatternMatcher());
+            return replaceDomainInURL(link.getPluginPatternMatcher(), domain);
         }
     }
 
@@ -430,17 +439,12 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
     abstract String generateContentURL(final String host, final String fuid, final String urlSlug);
 
     /** Replaces domain inside given URL if it is a known dead domain. */
-    protected String correctDomainInURL(final String url) {
+    protected String replaceDomainInURL(final String url) {
         return replaceDomainInURL(url, this.getWorkingDomain(url));
     }
 
     private static String replaceDomainInURL(final String url, final String newDomain) {
         return url.replaceFirst(Pattern.quote(Browser.getHost(url, true)), newDomain);
-    }
-
-    protected Browser prepBR(final Browser br) {
-        br.setFollowRedirects(true);
-        return br;
     }
 
     @Override
@@ -450,18 +454,13 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
         return requestFileInformation(link, account, false);
     }
 
-    protected String getWeakFilename(final DownloadLink link) {
+    protected String getWeakFiletitle(final DownloadLink link) {
         final String titleURL = this.getURLTitleCorrected(link.getPluginPatternMatcher());
         if (!StringUtils.isEmpty(titleURL)) {
             /* Set this so that offline items have "nice" titles too. */
-            return titleURL + ".mp4";
+            return titleURL;
         } else {
-            final String fuid = this.getFUID(link);
-            if (fuid != null) {
-                return fuid + ".mp4";
-            } else {
-                return null;
-            }
+            return this.getFUID(link);
         }
     }
 
@@ -479,7 +478,9 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
         if (!StringUtils.equalsIgnoreCase(workingDomain, getHost())) {
             // forward cookies to different domain
             final Cookies cookies = br.getCookies(getHost());
-            br.setCookies(workingDomain, cookies);
+            if (cookies != null && !cookies.isEmpty()) {
+                br.setCookies(workingDomain, cookies);
+            }
         }
     }
 
@@ -489,15 +490,14 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
      */
     protected AvailableStatus requestFileInformationWebsite(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
         dllink = null;
-        prepBR(this.br);
+        final String weakFilename = getWeakFiletitle(link);
+        if (!link.isNameSet() && weakFilename != null) {
+            /* Set this so that offline items have "nice" titles too. */
+            link.setName(weakFilename + extDefault);
+        }
         if (link.getReferrerUrl() != null) {
             /* Rarely needed e.g. for embedded videos from camwhores.tv by camseek.com. */
             br.getHeaders().put("Referer", link.getReferrerUrl());
-        }
-        final String weakFilename = getWeakFilename(link);
-        if (!link.isNameSet() && weakFilename != null) {
-            /* Set this so that offline items have "nice" titles too. */
-            link.setName(weakFilename);
         }
         /* Login if we got an account. */
         if (account != null) {
@@ -514,7 +514,7 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
             logger.info("Embed workaround result: Presumed real ContentURL: " + br.getURL());
         } else if (isEmbedURL(link.getPluginPatternMatcher())) {
             /* Embed URL */
-            getPage(correctDomainInURL(link.getPluginPatternMatcher()));
+            getPage(replaceDomainInURL(link.getPluginPatternMatcher()));
             /* in case there is http<->https or url format redirect */
             br.followRedirect();
             if (isOfflineWebsite(this.br)) {
@@ -574,7 +574,7 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
                 logger.info("Found real URL corresponding to embed URL: " + realURL);
                 try {
                     realURL = br.getURL(realURL).toString();
-                    final Browser brc = this.prepBR(new Browser());
+                    final Browser brc = this.createNewBrowserInstance();
                     brc.getPage(realURL);
                     /* Fail-safe: Only set this URL as PluginPatternMatcher if it contains our expected videoID! */
                     if ((!this.hasFUIDInsideURL(null) || (this.hasFUIDInsideURL(null) && brc.getURL().contains(fuid))) && new Regex(brc.getURL(), this.getSupportedLinks()).matches() && !this.isOfflineWebsite(brc)) {
@@ -610,7 +610,7 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
             }
         } else {
             /* Normal URL */
-            getPage(correctDomainInURL(link.getPluginPatternMatcher()));
+            getPage(replaceDomainInURL(link.getPluginPatternMatcher()));
             /* in case there is http<->https or url format redirect */
             br.followRedirect();
             if (isOfflineWebsite(this.br)) {
@@ -647,7 +647,7 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
         }
         String title = getFileTitle(link);
         if (!StringUtils.isEmpty(title)) {
-            link.setFinalFileName(title + ".mp4");
+            link.setFinalFileName(title + extDefault);
         }
         if (this.isPrivateVideoWebsite(this.br)) {
             logger.info("Detected private video -> Ending linkcheck without looking for downloadurl");
@@ -761,14 +761,13 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
     }
 
     protected AvailableStatus requestFileInformationAPI(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
-        this.prepBR(br);
         if (account != null) {
             this.login(account, false, link);
         }
         final String videoID = this.getFUID(link);
         if (!link.isNameSet()) {
             /* Set this so that offline items have "nice" titles too. */
-            final String weakFilename = getWeakFilename(link);
+            final String weakFilename = getWeakFiletitle(link);
             if (weakFilename != null) {
                 link.setName(weakFilename);
             }
@@ -808,7 +807,7 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
         final String title = (String) video.get("title");
         final String description = (String) video.get("description");
         if (!StringUtils.isEmpty(title)) {
-            link.setFinalFileName(title + ".mp4");
+            link.setFinalFileName(title + extDefault);
         }
         if (StringUtils.isEmpty(link.getComment()) && !StringUtils.isEmpty(description)) {
             link.setComment(description);
@@ -1148,7 +1147,10 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         login(account, true);
-        /* Registered users can watch private videos when they follow/subscribe to the uploaders. */
+        /**
+         * Registered users can watch private videos when they follow/subscribe to the uploaders. </br>
+         * Apart from this there aren't much advantages. Sometimes registered users can watch higher quality streams.
+         */
         ai.setUnlimitedTraffic();
         account.setType(AccountType.FREE);
         account.setConcurrentUsePossible(false);
@@ -1157,76 +1159,68 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
 
     protected void login(final Account account, final boolean validateCookies) throws Exception {
         synchronized (account) {
-            try {
-                br.setCookiesExclusive(true);
-                prepBR(this.br);
-                final Cookies cookies = account.loadCookies("");
-                final Cookies userCookies = account.loadUserCookies();
-                if (cookies != null) {
-                    this.br.setCookies(cookies);
-                    if (!validateCookies) {
-                        return;
-                    }
-                    getPage(getProtocol() + this.appendWWWIfRequired(this.getHost()) + "/");
-                    if (checkLogin(br, cookies)) {
-                        logger.info("Cookie login successful");
-                        account.saveCookies(this.br.getCookies(br.getHost()), "");
-                        return;
+            br.setCookiesExclusive(true);
+            final Cookies cookies;
+            final Cookies userCookies;
+            if ((userCookies = account.loadUserCookies()) != null) {
+                this.br.setCookies(userCookies);
+                if (!validateCookies) {
+                    return;
+                }
+                if (checkLogin(br)) {
+                    logger.info("User cookie login successful");
+                    return;
+                } else {
+                    logger.info("User Cookie login failed");
+                    if (account.hasEverBeenValid()) {
+                        throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
                     } else {
-                        logger.info("Cookie login failed");
-                        br.clearCookies(null);
-                    }
-                } else if (userCookies != null) {
-                    this.br.setCookies(userCookies);
-                    if (!validateCookies) {
-                        return;
-                    }
-                    getPage(getProtocol() + this.appendWWWIfRequired(this.getHost()) + "/");
-                    if (checkLogin(br, userCookies)) {
-                        logger.info("User cookie login successful");
-                        return;
-                    } else {
-                        logger.info("User Cookie login failed");
-                        if (account.hasEverBeenValid()) {
-                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
-                        } else {
-                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
-                        }
+                        throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
                     }
                 }
-                /* 2020-11-04: Login-URL that fits most of all websites (example): https://www.porngem.com/login-required/ */
-                logger.info("Performing full login");
-                getPage(getProtocol() + this.appendWWWIfRequired(this.getHost()) + "/login/");
-                /*
-                 * 2017-01-21: This request will usually return a json with some information about the account.
-                 */
-                Form loginform = br.getFormbyActionRegex(".*login.*");
-                if (loginform == null) {
-                    logger.warning("Failed to find loginform -> Using hardcoded loginform");
-                    loginform = new Form();
-                    loginform.setMethod(MethodType.POST);
-                    // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            } else if ((cookies = account.loadCookies("")) != null) {
+                br.setCookies(cookies);
+                if (!validateCookies) {
+                    return;
                 }
-                fillWebsiteLoginForm(br, loginform, account);
-                this.submitForm(loginform);
-                if (!isLoggedIN(br)) {
-                    throw new AccountInvalidException();
+                if (checkLogin(br)) {
+                    logger.info("Cookie login successful");
+                    account.saveCookies(this.br.getCookies(br.getHost()), "");
+                    return;
+                } else {
+                    logger.info("Cookie login failed");
+                    br.clearCookies(null);
                 }
-                account.saveCookies(this.br.getCookies(this.getHost()), "");
-            } catch (final PluginException e) {
-                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
-                    account.clearCookies("");
-                }
-                throw e;
             }
+            /* 2020-11-04: Login-URL that fits most of all websites (example): https://www.porngem.com/login-required/ */
+            logger.info("Performing full login");
+            getPage(getProtocol() + this.appendWWWIfRequired(this.getHost()) + "/login/");
+            /*
+             * 2017-01-21: This request will usually return a json with some information about the account.
+             */
+            Form loginform = br.getFormbyActionRegex(".*login.*");
+            if (loginform == null) {
+                /* Try using a static Form. */
+                logger.warning("Failed to find loginform -> Using hardcoded loginform");
+                loginform = new Form();
+                loginform.setMethod(MethodType.POST);
+            }
+            fillWebsiteLoginForm(br, loginform, account);
+            this.submitForm(loginform);
+            if (!isLoggedIN(br)) {
+                throw new AccountInvalidException();
+            }
+            account.saveCookies(br.getCookies(br.getHost()), "");
         }
     }
 
+    /** Override this and return true if conventional login via username/email and password is not possible. */
     protected boolean requiresCookieLogin() {
         return false;
     }
 
-    private boolean checkLogin(final Browser br, final Cookies cookies) throws Exception {
+    /** Validates login state of given browser instance. */
+    private boolean checkLogin(final Browser br) throws Exception {
         getPage(br, getProtocol() + this.appendWWWIfRequired(this.getHost()) + "/");
         if (isLoggedIN(br)) {
             return true;
@@ -1278,6 +1272,7 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
         }
     }
 
+    /** Finds direct download link to [video stream] file. */
     protected String getDllink(final DownloadLink link, final Browser br) throws PluginException, IOException {
         /*
          * Newer KVS versions also support html5 --> RegEx for that as this is a reliable source for our final downloadurl.They can contain
@@ -1803,7 +1798,7 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
     protected boolean isCryptedDirectURL(final String url) {
         if (url == null) {
             return false;
-        } else if (url.startsWith("function/0/http") && this.isValidDirectURL(url.replace("function/0/", ""))) {
+        } else if (StringUtils.startsWithCaseInsensitive(url, "function/0/http") && this.isValidDirectURL(url.replaceFirst("(?i)function/0/", ""))) {
             return true;
         } else {
             return false;
@@ -1928,7 +1923,7 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
         if (!StringUtils.isEmpty(urltitle)) {
             /* Make the url-filenames look better by using spaces instead of '-'. */
             urltitle = urltitle.replace("-", " ");
-            /* Remove eventually existing spaces at the end */
+            /* Remove eventually existing spaces at the end. */
             urltitle = urltitle.trim();
         }
         return urltitle;

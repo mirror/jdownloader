@@ -122,7 +122,6 @@ public class MulherespeladasvipCom extends KernelVideoSharingComV2 {
         synchronized (account) {
             try {
                 br.setCookiesExclusive(true);
-                prepBR(this.br);
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
                     this.br.setCookies(this.getHost(), cookies);

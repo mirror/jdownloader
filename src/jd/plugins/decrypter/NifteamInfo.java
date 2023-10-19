@@ -18,15 +18,16 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.StringUtils;
 import org.appwork.utils.parser.UrlQuery;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
+import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
@@ -58,10 +59,13 @@ public class NifteamInfo extends PluginForDecrypt {
         return buildAnnotationUrls(getPluginDomains());
     }
 
+    private static final String PATTERN_RELATIVE_SINGLE_FILE    = "/link\\.php\\?file=.+";
+    private static final String PATTERN_RELATIVE_MULTIPLE_FILES = "/Multimedia/\\?Anime=(?!Homepage).+";
+
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/link\\.php\\?file=.+");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "(" + PATTERN_RELATIVE_SINGLE_FILE + "|" + PATTERN_RELATIVE_MULTIPLE_FILES + ")");
         }
         return ret.toArray(new String[0]);
     }
@@ -70,12 +74,36 @@ public class NifteamInfo extends PluginForDecrypt {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final UrlQuery query = UrlQuery.parse(param.getCryptedUrl());
         final String fileParam = query.get("file");
-        if (StringUtils.isEmpty(fileParam)) {
-            /* Developer mistake */
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (fileParam != null) {
+            /* Single file */
+            final String finallink = "https://download.nifteam.info/Download/Anime/" + new Regex(param.getCryptedUrl(), "\\?file=(.+)").getMatch(0);
+            ret.add(createDownloadlink(DirectHTTP.createURLForThisPlugin(finallink)));
+        } else {
+            /* Multiple files */
+            final String animeParam = query.get("Anime");
+            if (animeParam == null) {
+                /* Developer mistake */
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            br.setFollowRedirects(true);
+            br.getPage(param.getCryptedUrl());
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            final String[] urls = HTMLParser.getHttpLinks(br.getRequest().getHtmlCode(), br.getURL());
+            for (final String url : urls) {
+                if (url.matches("https?://[^/]+" + PATTERN_RELATIVE_SINGLE_FILE)) {
+                    ret.add(this.createDownloadlink(url));
+                }
+            }
+            if (ret.isEmpty()) {
+                logger.info("Failed to find any supported links");
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName(animeParam);
+            fp.addLinks(ret);
         }
-        final String finallink = "https://download.nifteam.info/Download/Anime/" + new Regex(param.getCryptedUrl(), "\\?file=(.+)").getMatch(0);
-        ret.add(createDownloadlink(DirectHTTP.createURLForThisPlugin(finallink)));
         return ret;
     }
 }

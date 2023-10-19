@@ -29,9 +29,8 @@ public class SexvidXxx extends KernelVideoSharingComV2 {
     }
 
     @Override
-    protected Browser prepBR(final Browser br) {
-        super.prepBR(br);
-        /* Try to avoid unnecessary redirects to e.g. "de.sexvid.xxx". */
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
         br.setCookie(this.getHost(), "redirect_to_lang", "www." + this.getHost());
         return br;
     }

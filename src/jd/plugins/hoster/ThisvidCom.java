@@ -37,6 +37,14 @@ public class ThisvidCom extends KernelVideoSharingComV2 {
         this.enablePremium("https://www.thisvid.com/");
     }
 
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.setCookie(this.getHost(), "kt_tcookie", "1");
+        br.setCookie(this.getHost(), "kt_is_visited", "1");
+        return br;
+    }
+
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
@@ -63,19 +71,11 @@ public class ThisvidCom extends KernelVideoSharingComV2 {
     }
 
     @Override
-    protected Browser prepBR(final Browser br) {
-        br.setCookie(this.getHost(), "kt_tcookie", "1");
-        br.setCookie(this.getHost(), "kt_is_visited", "1");
-        return br;
-    }
-
-    @Override
     protected void login(final Account account, final boolean validateCookies) throws Exception {
         synchronized (account) {
             try {
                 br.setFollowRedirects(true);
                 br.setCookiesExclusive(true);
-                prepBR(this.br);
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
                     this.br.setCookies(this.getHost(), cookies);
