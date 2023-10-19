@@ -34,6 +34,7 @@ import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.AccountInvalidException;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -88,6 +89,13 @@ public class FastShareCz extends PluginForHost {
     }
 
     @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = new Browser();
+        br.setCookie(this.getHost(), "lang", "cs");
+        return br;
+    }
+
+    @Override
     public String getLinkID(final DownloadLink link) {
         final String fid = getFID(link);
         if (fid != null) {
@@ -119,6 +127,14 @@ public class FastShareCz extends PluginForHost {
         this.setBrowserExclusive();
         br.setCookie(this.getHost(), "lang", "cs");
         br.setCustomCharset("utf-8");
+        /*
+         * 2023-08-17: When a user is not logged in, all files appear to be offline so effectively a linkcheck is only possible when an
+         * account is given.
+         */
+        final boolean linkcheckOnlyPossibleWhenLoggedIn = true;
+        if (linkcheckOnlyPossibleWhenLoggedIn && account == null) {
+            throw new AccountRequiredException();
+        }
         if (account != null) {
             this.login(account, false);
         }
@@ -138,7 +154,7 @@ public class FastShareCz extends PluginForHost {
                 br.getPage(redirect);
                 numberofRedirects++;
             }
-        } while (true);
+        } while (!this.isAbort());
         if (br.containsHTML("(?i)(<title>\\s*FastShare\\.[a-z]+\\s*</title>|>Tento soubor byl smazán na základě požadavku vlastníka autorských)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -163,8 +179,7 @@ public class FastShareCz extends PluginForHost {
             link.setName(Encoding.htmlDecode(filename).trim());
         }
         if (filesize != null) {
-            filesize = Encoding.htmlDecode(filesize);
-            link.setDownloadSize(SizeFormatter.getSize(filesize));
+            link.setDownloadSize(SizeFormatter.getSize(Encoding.htmlDecode(filesize)));
         }
         return AvailableStatus.TRUE;
     }
@@ -234,8 +249,6 @@ public class FastShareCz extends PluginForHost {
         synchronized (account) {
             try {
                 br.setCookiesExclusive(true);
-                br.setCookie(this.getHost(), "lang", "cs");
-                br.setCustomCharset("utf-8");
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
                     setCookies(br, cookies);

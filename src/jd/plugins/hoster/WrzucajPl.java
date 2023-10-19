@@ -117,7 +117,7 @@ public class WrzucajPl extends YetiShareCore {
             final String trafficAvailableStr = new Regex(availableTrafficHTML, "data-end=\"(\\d+(\\.\\d+)?)\"").getMatch(0);
             if (trafficmaxRegex.patternFind() && trafficAvailableStr != null) {
                 final String trafficMaxStr = trafficmaxRegex.getMatch(0);
-                final String trafficUnit = trafficmaxRegex.getMatch(1);
+                final String trafficUnit = trafficmaxRegex.getMatch(2);
                 ai.setTrafficLeft(SizeFormatter.getSize(trafficAvailableStr + trafficUnit));
                 ai.setTrafficMax(SizeFormatter.getSize(trafficMaxStr + trafficUnit));
             } else {
@@ -127,5 +127,10 @@ public class WrzucajPl extends YetiShareCore {
             logger.warning("Failed to find availableTrafficHTML");
         }
         return ai;
+    }
+
+    @Override
+    protected boolean requiresWWW() {
+        return false;
     }
 }

@@ -18,9 +18,13 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.Time;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -65,13 +69,15 @@ public class MylinkLi extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        // final String linkID = new Regex(param.getCryptedUrl(), "/([A-Za-z0-9]+)$").getMatch(0);
+        /** 2023-10-19: The usage of getAndSetSpecialCookie is not needed anymore but it doesn't hurt either so I've left it in. */
+        // final String contentID = new Regex(param.getCryptedUrl(), "/([A-Za-z0-9]+)$").getMatch(0);
         br.setFollowRedirects(true);
         br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36");
         br.getPage(param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        br.setCookie(br.getHost(), "prefix_views_counter", "1");
         final String httpRedirect = br.getRegex("<meta http-equiv=\"refresh\"[^>]*url=(https://[^\"]+)\"[^>]*>").getMatch(0);
         if (httpRedirect != null) {
             br.getPage(httpRedirect);
@@ -84,7 +90,7 @@ public class MylinkLi extends PluginForDecrypt {
             final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
             captchaForm1.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
             captchaForm1.remove("submit");
-            br.getHeaders().put("Origin", "https://mylink.vc");
+            br.getHeaders().put("Origin", "https://" + br.getHost());
             br.submitForm(captchaForm1);
         } else {
             logger.info("Did not find captchaForm1");
@@ -93,18 +99,42 @@ public class MylinkLi extends PluginForDecrypt {
          * Contains pretty much the same stuff as the first form and again our captcha result. This time, parameter "hash" is not empty.
          * "hash" usually equals our Cookie "PHPSESSID".
          */
-        final String specialHash = br.getRegex("return\\!0\\}\\('([a-f0-9]{32})").getMatch(0);
         Form captchaForm2 = br.getFormbyProperty("id", "reCaptchaForm");
         if (captchaForm2 == null) {
             logger.warning("Failed to find captchaForm2");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        final String domainBeforeCaptcha = br.getHost();
+        /* No needed */
+        // final String specialHash = br.getRegex("return\\!0\\}\\('([a-f0-9]{32})").getMatch(0);
+        // if (specialHash != null) {
+        // final Browser brc = br.cloneBrowser();
+        // brc.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        // brc.getHeaders().put("Origin", "https://" + br.getHost());
+        // // brc.postPage("/user.php", "action=" + specialHash);
+        // } else {
+        // logger.warning("Failed to find specialHash");
+        // }
         final InputField ifield = captchaForm2.getInputField("uri");
         if (ifield == null || StringUtils.isEmpty(ifield.getValue())) {
             /* Invalid/offline link. */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         br.setCookie(br.getHost(), "prefix_views_counter", "1");
+        final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(null);
+        final ScriptEngine engine = manager.getEngineByName("javascript");
+        final StringBuilder sb = new StringBuilder();
+        /* 2023-10-18: See js in html code */
+        sb.append("var max= 99999999;");
+        sb.append("var min= 60000;");
+        sb.append("var result = Math.floor(Math.random()*(max-min+1)+min);");
+        try {
+            engine.eval(sb.toString());
+            final Number tab_id = (Number) engine.get("result");
+            br.setCookie(br.getHost(), "tab_id", Long.toString(tab_id.longValue()));
+        } catch (final Throwable ignore) {
+            this.getLogger().log(ignore);
+        }
         getAndSetSpecialCookie(this.br);
         /* 2nd captcha - this time, invisible reCaptchaV2 */
         final long timeBefore = Time.systemIndependentCurrentJVMTimeMillis();
@@ -115,11 +145,12 @@ public class MylinkLi extends PluginForDecrypt {
             }
         }.getToken();
         captchaForm2.put("g-recaptcha-response", recaptchaV2Response_2);
-        // getAndSetSpecialCookie(this.br);
+        getAndSetSpecialCookie(this.br);
         /* If the user needs more than 5 seconds to solve that captcha we don't have to wait :) */
         final long timeWait = 6100;
         final long waitLeft = timeWait - (Time.systemIndependentCurrentJVMTimeMillis() - timeBefore);
-        if (waitLeft > 0) {
+        final boolean skipWait = true; // 2023-10-18
+        if (waitLeft > 0 && !skipWait) {
             this.sleep(waitLeft, param);
         }
         br.submitForm(captchaForm2);
@@ -155,12 +186,20 @@ public class MylinkLi extends PluginForDecrypt {
             }
         }
         final String finallink = br.getRedirectLocation();
+        logger.info("Final result: " + finallink);
         if (finallink == null) {
+            final boolean isMainpage = br.getURL().matches("(?i)https?://[^/]+/?$");
             if (numberof404Responses > 1) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (isMainpage) {
+                /* Redirect to mainpage after captcha -> Wrong ID/link -> Contento offline */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+        } else if (finallink.matches("(?i)https?://[^/]+/?$") && finallink.contains(domainBeforeCaptcha)) {
+            /* Redirect to mainpage */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         ret.add(createDownloadlink(finallink));
