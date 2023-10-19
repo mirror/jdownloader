@@ -23,6 +23,18 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicLong;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.Storable;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.Time;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.scripting.envjs.EnvJSBrowser;
+import org.jdownloader.scripting.envjs.EnvJSBrowser.DebugLevel;
+import org.jdownloader.scripting.envjs.PermissionFilter;
+import org.jdownloader.scripting.envjs.XHRResponse;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -34,17 +46,11 @@ import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.Storable;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-import org.jdownloader.scripting.envjs.EnvJSBrowser;
-import org.jdownloader.scripting.envjs.EnvJSBrowser.DebugLevel;
-import org.jdownloader.scripting.envjs.PermissionFilter;
-import org.jdownloader.scripting.envjs.XHRResponse;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
 /**
  * HAHAHAHA
@@ -59,60 +65,87 @@ public class DownlInk extends antiDDoSForDecrypt {
         super(wrapper);
     }
 
-    private String parameter = null;
-
     @Override
     protected Browser prepBrowser(Browser prepBr, String host) {
         super.prepBrowser(prepBr, host);
-        prepBr.addAllowedResponseCodes(401);
+        prepBr.addAllowedResponseCodes(new int[] { 401, 429 });
         return prepBr;
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        parameter = param.toString();
+    private String                  contenturl                         = null;
+    private static final AtomicLong timestampLastCrawlProcessCompleted = new AtomicLong(0);
+
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        contenturl = param.getCryptedUrl().replaceFirst("(?i)http://", "https://");
         br = new Browser();
         // http can redirect to https
         br.setFollowRedirects(true);
-        getPage(parameter);
-        if ("Page not found".equalsIgnoreCase(brOut)) {
-            return decryptedLinks;
-        }
-        // recaptchav2 can be here, they monitor based ip ? or maybe cloudflare cookie
-        final Form captcha = br.getForm(0);
-        if (captcha != null && captcha.containsHTML("class=(\"|')g-recaptcha\\1")) {
-            final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
-            captcha.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-            // no need for runPostRequestTask. usually cloudflare event is on FIRST request, so lets bypass.
-            br.submitForm(captcha);
-            // they will respond with 401 here which can throw exception without response code adding.
-            // then another get here, here comes the JS we need
-            getPage(br.getURL());
-        }
-        // the single download link, returned in iframe
-        final String[] iframes = envJs.getRegex("<\\s*iframe\\s+[^>]+>").getColumn(-1);
-        if (iframes != null && iframes.length > 0) {
-            for (final String iframe : iframes) {
-                String link = new Regex(iframe, "src\\s*=\\s*(\"|')(.*?)\\1").getMatch(1);
-                if (inValidate(link)) {
-                    link = new Regex(iframe, "src\\s*=\\s*([^\\s]+)").getMatch(0);
+        try {
+            synchronized (timestampLastCrawlProcessCompleted) {
+                /* Wait between crawl processes to try to avoid hitting their rate-limits. */
+                final long timePassedSinceLastCrawlProcessMillis = Time.systemIndependentCurrentJVMTimeMillis() - timestampLastCrawlProcessCompleted.get();
+                final long waitBetweenCrawlTasksMillis = 6000;
+                if (timePassedSinceLastCrawlProcessMillis < waitBetweenCrawlTasksMillis) {
+                    final long timeToWaitMillis = waitBetweenCrawlTasksMillis - timePassedSinceLastCrawlProcessMillis;
+                    logger.info("Waiting until next crawl task is allowed [millis]: " + timeToWaitMillis);
+                    this.sleep(timeToWaitMillis, param);
                 }
-                if (!inValidate(link)) {
-                    decryptedLinks.add(createDownloadlink(link));
+                getPage(contenturl);
+                if (br.getHttpConnection().getResponseCode() == 404 || "Page not found".equalsIgnoreCase(brOut)) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                } else if (br.getHttpConnection().getResponseCode() == 429) {
+                    throw new DecrypterRetryException(RetryReason.HOST_RATE_LIMIT);
+                }
+                // recaptchav2 can be here, they monitor based ip ? or maybe cloudflare cookie
+                final Form captcha = br.getForm(0);
+                if (captcha != null && captcha.containsHTML("class=(\"|')g-recaptcha\\1")) {
+                    final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
+                    captcha.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                    // no need for runPostRequestTask. usually cloudflare event is on FIRST request, so lets bypass.
+                    br.submitForm(captcha);
+                    // they will respond with 401 here which can throw exception without response code adding.
+                    // then another get here, here comes the JS we need
+                    getPage(br.getURL());
+                }
+                // the single download link, returned in iframe
+                final String[] iframes = envJs.getRegex("<\\s*iframe\\s+[^>]+>").getColumn(-1);
+                if (iframes != null && iframes.length > 0) {
+                    for (final String iframe : iframes) {
+                        String link = new Regex(iframe, "src\\s*=\\s*(\"|')(.*?)\\1").getMatch(1);
+                        if (inValidate(link)) {
+                            link = new Regex(iframe, "src\\s*=\\s*([^\\s]+)").getMatch(0);
+                        }
+                        if (!inValidate(link)) {
+                            ret.add(createDownloadlink(link));
+                        }
+                    }
+                } else {
+                    final String dummy = envJs.getRegex("Dummy:(https?://.*?)<").getMatch(0);
+                    if (!inValidate(dummy)) {
+                        ret.add(createDownloadlink(dummy));
+                    }
+                }
+                if (ret.isEmpty()) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
-        } else {
-            final String dummy = envJs.getRegex("Dummy:(https?://.*?)<").getMatch(0);
-            if (!inValidate(dummy)) {
-                decryptedLinks.add(createDownloadlink(dummy));
-            }
+        } finally {
+            timestampLastCrawlProcessCompleted.set(Time.systemIndependentCurrentJVMTimeMillis());
         }
-        return decryptedLinks;
+        return ret;
     }
 
-    /* NO OVERRIDE!! */
-    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
-        return false;
+    @Override
+    public int getMaxConcurrentProcessingInstances() {
+        /* 2023-10-19: Set this to 1 to avoid running into "Flood detection" when user is processing a lot of items */
+        return 1;
+    }
+
+    @Override
+    public boolean hasCaptcha(final CryptedLink link, final jd.plugins.Account acc) {
+        /* Captcha is sometimes needed. */
+        return true;
     }
 
     public static class enjStorable implements Storable {
@@ -204,7 +237,7 @@ public class DownlInk extends antiDDoSForDecrypt {
             public Request onBeforeXHRRequest(Request request) {
                 // only load websites with the same domain.
                 try {
-                    if (StringUtils.equalsIgnoreCase(new URL(request.getUrl()).getHost(), new URL(parameter).getHost())) {
+                    if (StringUtils.equalsIgnoreCase(new URL(request.getUrl()).getHost(), new URL(contenturl).getHost())) {
                         return request;
                     }
                 } catch (MalformedURLException e) {
