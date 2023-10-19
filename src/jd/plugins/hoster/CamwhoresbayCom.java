@@ -26,7 +26,7 @@ public class CamwhoresbayCom extends KernelVideoSharingComV2 {
     public CamwhoresbayCom(final PluginWrapper wrapper) {
         super(wrapper);
         /* Special: Supports accounts */
-        this.enablePremium("https://" + this.getHost() + "/");
+        this.enablePremium("https://www." + this.getHost() + "/");
     }
 
     /** Add all KVS hosts to this list that fit the main template without the need of ANY changes to this class. */

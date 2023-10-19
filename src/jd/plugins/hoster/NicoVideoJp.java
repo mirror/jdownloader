@@ -104,6 +104,7 @@ public class NicoVideoJp extends PluginForHost {
     }
 
     public AvailableStatus requestFileInformation(final DownloadLink link, final Account account) throws Exception {
+        link.removeProperty(PROPERTY_ACCOUNT_REQUIRED);
         final String fid = getFID(link);
         if (!link.isNameSet()) {
             link.setName(fid + ".mp4");
@@ -130,20 +131,24 @@ public class NicoVideoJp extends PluginForHost {
                 throw new AccountRequiredException();
             }
         }
-        if (br.containsHTML("(?i)this video inappropriate\\.<")) {
-            final String watch = br.getRegex("(?i)harmful_link\" href=\"([^<>\"]*?)\">Watch this video</a>").getMatch(0);
-            if (watch == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (br.containsHTML("(?i)this video inappropriate\\.\\s*<")) {
+            /* Age restricted video */
+            final String continueURL = br.getRegex("(?i)harmful_link\" href=\"([^<>\"]*?)\">Watch this video</a>").getMatch(0);
+            if (continueURL != null) {
+                br.getPage(continueURL);
+            } else {
+                /* Let's continue but most likely we will run into an exception later. */
+                logger.warning("Failed to handle age restriction check -> Possible plugin failure");
             }
-            br.getPage(watch);
         }
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         /* This title is e.g. useful when a video is GEO-blocked. Example: https://www.nicovideo.jp/watch/so39439590 */
-        String fallbackTitle = br.getRegex("<title>([^<]+)Niconico Video</title>").getMatch(0);
+        String fallbackTitle = br.getRegex("<title>([^<]+)</title>").getMatch(0);
         if (fallbackTitle != null) {
             fallbackTitle = Encoding.htmlDecode(fallbackTitle).trim();
+            fallbackTitle = fallbackTitle.replaceFirst("(?i)\\s*Niconico Video$", "");
             link.setName(fallbackTitle + ".mp4");
         }
         String jsonapi = br.getRegex("data-api-data=\"([^\"]+)").getMatch(0);
@@ -166,6 +171,9 @@ public class NicoVideoJp extends PluginForHost {
             if ((Boolean) video.get("isDeleted")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
+        }
+        if (br.containsHTML("class=\"login-box-title\"")) {
+            link.setProperty(PROPERTY_ACCOUNT_REQUIRED, true);
         }
         return AvailableStatus.TRUE;
     }
@@ -192,11 +200,11 @@ public class NicoVideoJp extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        requestFileInformation(link, null);
         handleDownload(link, null);
     }
 
     private void handleDownload(final DownloadLink link, final Account account) throws Exception, PluginException {
+        requestFileInformation(link, account);
         if (link.getBooleanProperty(PROPERTY_ACCOUNT_REQUIRED, false) && account == null) {
             throw new AccountRequiredException();
         } else if (br.containsHTML("(?)>\\s*Sorry, this video can only be viewed in the same region where it was uploaded")) {
@@ -354,7 +362,6 @@ public class NicoVideoJp extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        requestFileInformation(link, account);
         handleDownload(link, account);
     }
 

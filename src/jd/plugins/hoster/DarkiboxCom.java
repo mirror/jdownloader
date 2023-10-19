@@ -234,6 +234,14 @@ public class DarkiboxCom extends XFileSharingProBasic {
         final Form download1 = br.getFormByInputFieldKeyValue("op", "download_orig");
         if (download1 != null) {
             this.handleCaptcha(link, br, download1);
+            final String sleepMsStr = br.getRegex("css\\(\\{'display': 'flex'\\}\\)\\}, (\\d+)\\);").getMatch(0);
+            long sleepMs = 1000;
+            if (sleepMsStr != null) {
+                sleepMs = Long.parseLong(sleepMsStr);
+            } else {
+                logger.warning("sleepMsStr is null");
+            }
+            this.sleep(Math.min(sleepMs, 1000), link);
             this.submitForm(br, download1);
             this.checkErrors(br, br.getRequest().getHtmlCode(), link, account, false);
         }
@@ -243,6 +251,10 @@ public class DarkiboxCom extends XFileSharingProBasic {
              * 2019-05-30: Test - worked for: xvideosharing.com - not exactly required as getDllink will usually already return a result.
              */
             dllink = br.getRegex("<a href\\s*=\\s*\"(https?[^\"]+)\"[^>]*>\\s*Direct Download Link\\s*</a>").getMatch(0);
+            if (dllink == null) {
+                /* 2023-10-19 */
+                dllink = br.getRegex("href=\"(https?://[^\"]+)\"[^>]*><span[^>]*\"lng_download_direct_download_link").getMatch(0);
+            }
         }
         if (StringUtils.isEmpty(dllink)) {
             logger.warning("Failed to find dllink via official video download");
@@ -256,5 +268,10 @@ public class DarkiboxCom extends XFileSharingProBasic {
     protected boolean containsInvalidLoginsMessage(final Browser br) {
         // TODO: Remove this once it is implemented in upper codebase
         return br != null && br.containsHTML("(?i)>\\s*Incorrect (Login|Username) or Password\\s*<");
+    }
+
+    @Override
+    protected boolean isVideohoster_enforce_video_filename() {
+        return true;
     }
 }

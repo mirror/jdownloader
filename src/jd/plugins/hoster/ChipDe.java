@@ -230,9 +230,7 @@ public class ChipDe extends PluginForHost {
         }
         date_formatted = formatDate(date);
         if (date_formatted != null) {
-            filename = date_formatted + "_chip_" + filename;
-        } else {
-            filename = "chip_" + filename;
+            filename = date_formatted + "_" + filename;
         }
         if (!link.getDownloadURL().contains(host_chip_de + "/")) {
             /* Basically a warning for chip.eu downloads as there is no way around their adware installers! */
