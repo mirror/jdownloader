@@ -127,11 +127,12 @@ public class FastShareCz extends PluginForHost {
         this.setBrowserExclusive();
         br.setCookie(this.getHost(), "lang", "cs");
         br.setCustomCharset("utf-8");
-        /*
-         * 2023-08-17: When a user is not logged in, all files appear to be offline so effectively a linkcheck is only possible when an
-         * account is given.
+        /**
+         * 2023-08-20: The following information only applies for users of specific countries such as Germany: </br>
+         * When a user is not logged in, all files appear to be offline so effectively a linkcheck is only possible when an account is
+         * given.
          */
-        final boolean linkcheckOnlyPossibleWhenLoggedIn = true;
+        final boolean linkcheckOnlyPossibleWhenLoggedIn = false;
         if (linkcheckOnlyPossibleWhenLoggedIn && account == null) {
             throw new AccountRequiredException();
         }

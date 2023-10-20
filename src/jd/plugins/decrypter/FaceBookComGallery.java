@@ -37,6 +37,7 @@ import jd.controlling.linkcrawler.LinkCrawlerThread;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.HTMLParser;
 import jd.parser.html.HTMLSearch;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
@@ -90,26 +91,26 @@ public class FaceBookComGallery extends PluginForDecrypt {
         return new String[] { "https?://(?:(m|www)\\.)?facebook\\.com/.+" };
     }
 
-    private final String COMPONENT_USERNAME              = "(?:[\\%a-zA-Z0-9\\-]+)";
-    private final String TYPE_FBSHORTLINK                = "https?://(?:www\\.)?on\\.fb\\.me/[A-Za-z0-9]+\\+?";
-    private final String TYPE_FB_REDIRECT_TO_EXTERN_SITE = "https?://l\\.facebook\\.com/(?:l/[^/]+/.+|l\\.php\\?u=.+)";
+    private final Pattern PATTERN_FBSHORTLINK             = Pattern.compile("(?i)https?://(?:www\\.)?on\\.fb\\.me/[A-Za-z0-9]+\\+?");
+    private final String  TYPE_FB_REDIRECT_TO_EXTERN_SITE = "https?://l\\.facebook\\.com/(?:l/[^/]+/.+|l\\.php\\?u=.+)";
     // private final String TYPE_SINGLE_PHOTO = "https?://(?:www\\.)?facebook\\.com/photo\\.php\\?fbid=\\d+.*?";
-    private final String TYPE_SET_LINK_PHOTO             = "https?://(?:www\\.)?facebook\\.com/(media/set/\\?set=|media_set\\?set=)o?a[0-9\\.]+(&type=\\d+)?";
-    private final String TYPE_SET_LINK_VIDEO             = "https?://(?:www\\.)?facebook\\.com/(media/set/\\?set=|media_set\\?set=)vb\\.\\d+.*?";
-    private final String TYPE_PHOTOS_ALBUMS_LINK         = "https?://(?:www\\.)?facebook\\.com/.+photos_albums";
-    private final String TYPE_PHOTOS_OF_LINK             = "https?://(?:www\\.)?facebook\\.com/[A-Za-z0-9\\.]+/photos_of.*";
-    private final String TYPE_PHOTOS_ALL_LINK            = "https?://(?:www\\.)?facebook\\.com/[A-Za-z0-9\\.]+/photos_all.*";
-    private final String TYPE_PHOTOS_STREAM_LINK         = "https?://(?:www\\.)?facebook\\.com/[^/]+/photos_stream.*";
-    private final String TYPE_PHOTOS_STREAM_LINK_2       = "https?://(?:www\\.)?facebook\\.com/pages/[^/]+/\\d+\\?sk=photos_stream&tab=.*";
-    // private final String TYPE_PHOTOS_LINK = "https?://(?:www\\.)?facebook\\.com/" + COMPONENT_USERNAME + "/photos.*";
-    private final String TYPE_PHOTOS_LINK_2              = "https?://(?:www\\.)?facebook\\.com/pg/" + COMPONENT_USERNAME + "/photos.*";
-    private final String TYPE_GROUPS_PHOTOS              = "https?://(?:www\\.)?facebook\\.com/groups/\\d+/photos/";
-    private final String TYPE_GROUPS_FILES               = "https?://(?:www\\.)?facebook\\.com/groups/\\d+/files/";
-    private final String TYPE_PROFILE_PHOTOS             = "^https?://(?:www\\.)?facebook\\.com/profile\\.php\\?id=\\d+&sk=photos&collection_token=\\d+(?:%3A|:)\\d+(?:%3A|:)5$";
-    private final String TYPE_PROFILE_ALBUMS             = "^https?://(?:www\\.)?facebook\\.com/profile\\.php\\?id=\\d+&sk=photos&collection_token=\\d+(?:%3A|:)\\d+(?:%3A|:)6$";
-    private final String TYPE_NOTES                      = "https?://(?:www\\.)?facebook\\.com/(notes/|note\\.php\\?note_id=).+";
-    private final String TYPE_MESSAGE                    = "https?://(?:www\\.)?facebook\\.com/messages/.+";
-    private boolean      debug                           = false;
+    // private final String TYPE_SET_LINK_PHOTO = "(?i)https?://[^/]+/(media/set/\\?set=|media_set\\?set=)o?a[0-9\\.]+(&type=\\d+)?";
+    // private final String TYPE_SET_LINK_VIDEO = "(?i)https?://[^/]+/(media/set/\\?set=|media_set\\?set=)vb\\.\\d+.*?";
+    // private final String TYPE_PHOTOS_ALBUMS_LINK = "(?i)https?://[^/]+/.+photos_albums";
+    // private final String TYPE_PHOTOS_OF_LINK = "(?i)https?://[^/]+/[A-Za-z0-9\\.]+/photos_of.*";
+    // private final String TYPE_PHOTOS_ALL_LINK = "(?i)https?://[^/]+/[A-Za-z0-9\\.]+/photos_all.*";
+    // private final String TYPE_PHOTOS_STREAM_LINK = "(?i)https?://[^/]+/[^/]+/photos_stream.*";
+    // private final String TYPE_PHOTOS_STREAM_LINK_2 = "https?://(?:www\\.)?facebook\\.com/pages/[^/]+/\\d+\\?sk=photos_stream&tab=.*";
+    // private final String TYPE_PHOTOS_LINK_2 = "https?://(?:www\\.)?facebook\\.com/pg/" + COMPONENT_USERNAME + "/photos.*";
+    // private final String TYPE_GROUPS_PHOTOS = "https?://(?:www\\.)?facebook\\.com/groups/\\d+/photos/";
+    // private final String TYPE_GROUPS_FILES = "https?://(?:www\\.)?facebook\\.com/groups/\\d+/files/";
+    // private final String TYPE_PROFILE_PHOTOS =
+    // "^https?://(?:www\\.)?facebook\\.com/profile\\.php\\?id=\\d+&sk=photos&collection_token=\\d+(?:%3A|:)\\d+(?:%3A|:)5$";
+    // private final String TYPE_PROFILE_ALBUMS =
+    // "^https?://(?:www\\.)?facebook\\.com/profile\\.php\\?id=\\d+&sk=photos&collection_token=\\d+(?:%3A|:)\\d+(?:%3A|:)6$";
+    // private final String TYPE_NOTES = "(?i)https?://[^/]+/(notes/|note\\.php\\?note_id=).+";
+    // private final String TYPE_MESSAGE = "(?i)https?://[^/]+/messages/.+";
+    private boolean       debug                           = false;
 
     @Deprecated
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
@@ -118,7 +119,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
             /* For debugging as facebook websites and resulting log outputs are huge */
             disableLogger();
         }
-        if (param.getCryptedUrl().matches(TYPE_FBSHORTLINK)) {
+        if (new Regex(param.getCryptedUrl(), PATTERN_FBSHORTLINK).patternFind()) {
             return handleRedirectToExternalSite(param.getCryptedUrl());
         } else {
             final Account account = AccountController.getInstance().getValidAccount(this.getHost());
@@ -357,21 +358,26 @@ public class FaceBookComGallery extends PluginForDecrypt {
         }
         if (ret.isEmpty()) {
             /*
-             * IUt is really hard to find out why specific Facebook content is offline (permission issue or offline content) so this is a
+             * It is really hard to find out why specific Facebook content is offline (permission issue or offline content) so this is a
              * last ditch effort.
              */
-            Map<String, Object> videoErrormap = null;
             for (final Object parsedJson : parsedJsons) {
-                videoErrormap = (Map<String, Object>) websiteFindVideoErrorMap(parsedJson, null);
+                final Map<String, Object> videoErrormap = (Map<String, Object>) websiteFindVideoErrorMap(parsedJson, null);
                 if (videoErrormap != null) {
-                    break;
+                    logger.info("Offline reason: " + videoErrormap.get("title") + " | Offline Map: " + videoErrormap);
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
             }
-            if (videoErrormap != null) {
-                logger.info("Offline reason: " + videoErrormap.get("title") + " | Offline Map: " + videoErrormap);
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else {
-                logger.warning("Returning empty array");
+            /* Last resort: Look for any URLs which look like single images or videos. */
+            final String[] allurls = HTMLParser.getHttpLinks(br.getRequest().getHtmlCode(), br.getURL());
+            for (final String thisurl : allurls) {
+                if ((thisurl.contains("photo") || thisurl.contains("video")) && this.canHandle(thisurl)) {
+                    logger.info("Adding last resort URL: " + thisurl);
+                    ret.add(this.createDownloadlink(thisurl));
+                }
+            }
+            if (ret.isEmpty()) {
+                logger.warning("Unsupported link or broken plugin -> Returning empty array");
             }
         }
         return ret;
