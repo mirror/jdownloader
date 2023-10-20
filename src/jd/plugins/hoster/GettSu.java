@@ -17,10 +17,15 @@ package jd.plugins.hoster;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
+import org.appwork.storage.TypeRef;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
+import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
@@ -57,7 +62,11 @@ public class GettSu extends XFileSharingProBasic {
     }
 
     public static String[] getAnnotationUrls() {
-        return XFileSharingProBasic.buildAnnotationUrls(getPluginDomains());
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : getPluginDomains()) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "(?::\\d+)?(" + XFileSharingProBasic.getDefaultAnnotationPatternPart() + "|/file/[a-z0-9]{12}/.+)");
+        }
+        return ret.toArray(new String[0]);
     }
 
     @Override
@@ -103,5 +112,63 @@ public class GettSu extends XFileSharingProBasic {
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
+    }
+
+    @Override
+    public String getFUIDFromURL(final DownloadLink link) {
+        final Regex patternSpecial = new Regex(link.getPluginPatternMatcher(), "https://[^/]+/file/([a-z0-9]{12})/.+");
+        if (patternSpecial.patternFind()) {
+            return patternSpecial.getMatch(0);
+        } else {
+            final URL_TYPE type = getURLType(link);
+            return getFUID(link, type);
+        }
+    }
+
+    @Override
+    protected String buildURLPath(final DownloadLink link, final String fuid, final URL_TYPE type) {
+        if (type == URL_TYPE.FILE) {
+            return "/file/" + fuid + "/view.html";
+        } else {
+            return super.buildURLPath(link, fuid, type);
+        }
+    }
+    // @Override
+    // public Form findFormDownload1Free(final Browser br) throws Exception {
+    // /* 2022-04-07: Special */
+    // final Form download1 = super.findFormDownload1Free(br);
+    // if (download1 != null && br.containsHTML("type: 'POST',\\s*url: 'https?://[^/]+/download'")) {
+    // /* 2023-08-14 */
+    // download1.put("ajax", "1");
+    // download1.put("method_free", "1");
+    // download1.put("dataType", "json");
+    // }
+    // return download1;
+    // }
+
+    @Override
+    public void handleCaptcha(final DownloadLink link, Browser br, final Form captchaForm) throws Exception {
+        if (br.containsHTML("downloadbtn g-recaptcha") && br.containsHTML("data-sitekey")) {
+            /* 2023-10-20: Special */
+            handleRecaptchaV2(link, br, captchaForm);
+        } else {
+            super.handleCaptcha(link, br, captchaForm);
+        }
+    }
+
+    @Override
+    protected String getDllink(DownloadLink link, Account account, Browser br, String src) {
+        if (br.getRequest().getHtmlCode().startsWith("{")) {
+            /* 2023-10-20 */
+            try {
+                final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+                final Map<String, Object> resultmap = (Map<String, Object>) entries.get("result");
+                return resultmap.get("url").toString();
+            } catch (final Throwable e) {
+                logger.log(e);
+                logger.warning("Ajax handling failed");
+            }
+        }
+        return super.getDllink(link, account, br, src);
     }
 }
