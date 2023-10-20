@@ -133,18 +133,6 @@ public class GettSu extends XFileSharingProBasic {
             return super.buildURLPath(link, fuid, type);
         }
     }
-    // @Override
-    // public Form findFormDownload1Free(final Browser br) throws Exception {
-    // /* 2022-04-07: Special */
-    // final Form download1 = super.findFormDownload1Free(br);
-    // if (download1 != null && br.containsHTML("type: 'POST',\\s*url: 'https?://[^/]+/download'")) {
-    // /* 2023-08-14 */
-    // download1.put("ajax", "1");
-    // download1.put("method_free", "1");
-    // download1.put("dataType", "json");
-    // }
-    // return download1;
-    // }
 
     @Override
     public void handleCaptcha(final DownloadLink link, Browser br, final Form captchaForm) throws Exception {
