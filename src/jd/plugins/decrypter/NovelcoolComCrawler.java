@@ -22,6 +22,7 @@ import java.util.List;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
+import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -57,10 +58,13 @@ public class NovelcoolComCrawler extends PluginForDecrypt {
         return buildAnnotationUrls(getPluginDomains());
     }
 
+    private static final String PATTERN_RELATIVE_CHAPTER = "(?i)/chapter/[a-z\\-]+(\\d+(-\\d+)?)/(\\d+)/";
+    private static final String PATTERN_RELATIVE_NOVEL   = "(?i)/novel/([\\w\\-]+)\\.html";
+
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:\\w+\\.)?" + buildHostsPatternPart(domains) + "/(chapter/Cap-tulo-[0-9\\-]+/\\d+/|novel/[\\w\\-]+\\.html)");
+            ret.add("https?://(?:\\w+\\.)?" + buildHostsPatternPart(domains) + "(" + PATTERN_RELATIVE_CHAPTER + "|" + PATTERN_RELATIVE_NOVEL + ")");
         }
         return ret.toArray(new String[0]);
     }
@@ -72,7 +76,7 @@ public class NovelcoolComCrawler extends PluginForDecrypt {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String chapterNumber = new Regex(param.getCryptedUrl(), "Cap-tulo-(\\d+)").getMatch(0);
+        final String chapterNumber = new Regex(param.getCryptedUrl(), PATTERN_RELATIVE_CHAPTER).getMatch(0);
         if (chapterNumber != null) {
             /* Find all pictures of a chapter of a novel */
             final String[] links = br.getRegex("<option value=\"(https?://[^\"]+)\"[^>]*>\\d+/\\d+</option>").getColumn(0);
@@ -123,11 +127,15 @@ public class NovelcoolComCrawler extends PluginForDecrypt {
             } else {
                 logger.warning("Failed to find coverurl");
             }
-            final String[] links = br.getRegex("(/chapter/Cap-tulo-[0-9\\-]+/\\d+/)").getColumn(0);
+            final String[] links = HTMLParser.getHttpLinks(br.getRequest().getHtmlCode(), br.getURL());
             if (links != null && links.length > 0) {
                 for (final String link : links) {
-                    ret.add(this.createDownloadlink(br.getURL(link).toExternalForm()));
+                    if (link.matches(".+" + PATTERN_RELATIVE_CHAPTER)) {
+                        ret.add(this.createDownloadlink(br.getURL(link).toExternalForm()));
+                    }
                 }
+            } else {
+                logger.warning("Failed to find any chapters");
             }
             if (ret.isEmpty()) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

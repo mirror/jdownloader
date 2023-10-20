@@ -77,7 +77,7 @@ public class NovelcoolCom extends PluginForHost {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:\\w+\\.)?" + buildHostsPatternPart(domains) + "/chapter/Cap-tulo-([0-9\\-]+)/(\\d+)-(\\d+)\\.html");
+            ret.add("https?://(?:\\w+\\.)?" + buildHostsPatternPart(domains) + "/chapter/[a-z\\-]+(\\d+(-\\d+)?)/(\\d+)-(\\d+)\\.html");
         }
         return ret.toArray(new String[0]);
     }
