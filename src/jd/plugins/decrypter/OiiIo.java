@@ -64,13 +64,24 @@ public class OiiIo extends MightyScriptAdLinkFly {
         /* A 2nd captcha can be required. */
         final Form captcha2 = br.getFormbyProperty("id", "link-view");
         final CaptchaType captchaType = getCaptchaType(captcha2);
+        final Form form20231023 = br.getFormbyProperty("id", "submit_data");
         if (captcha2 != null && captchaType != null) {
             if (captchaType == CaptchaType.reCaptchaV2 || captchaType == CaptchaType.reCaptchaV2_invisible) {
                 handleRecaptcha(captchaType, br, captcha2);
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unsupported:" + captchaType);
             }
-            submitForm(captcha2);
+            submitForm(br, captcha2);
+        } else if (form20231023 != null) {
+            submitForm(br, form20231023);
+        }
+        final Form form20231023Captcha = br.getFormByRegex("ad_form_data");
+        final CaptchaType captchaType2 = getCaptchaType(form20231023Captcha);
+        if (form20231023Captcha != null) {
+            if (captchaType2 != null && (captchaType2 == CaptchaType.reCaptchaV2 || captchaType2 == CaptchaType.reCaptchaV2_invisible)) {
+                handleRecaptcha(captchaType2, br, form20231023Captcha);
+            }
+            submitForm(br, form20231023Captcha);
         }
     }
 }

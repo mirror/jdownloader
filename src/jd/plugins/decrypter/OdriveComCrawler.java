@@ -34,21 +34,23 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DecrypterRetryException;
 import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "odrive.com" }, urls = { "https?://(?:www\\.)?odrive\\.com/(s/[a-f0-9\\-]+|folder/(.+))" })
-public class OdriveCom extends PluginForDecrypt {
-    public OdriveCom(PluginWrapper wrapper) {
+public class OdriveComCrawler extends PluginForDecrypt {
+    public OdriveComCrawler(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        String folderID = new Regex(param.getCryptedUrl(), "/(?:s|folder)/(.+)").getMatch(0);
+        String folderID = new Regex(param.getCryptedUrl(), "(?i)/(?:s|folder)/(.+)").getMatch(0);
         jd.plugins.hoster.OdriveCom.prepBR(this.br);
+        br.setAllowedResponseCodes(400);
         // br.getPage("https://www.odrive.com/rest/weblink/get_metadata?weblinkUri=%2F" + this.getLinkID(link));
         int maxPasswordTries = 2;
         int usedPasswordTries = 0;
@@ -82,7 +84,7 @@ public class OdriveCom extends PluginForDecrypt {
         if (passwordFailure) {
             throw new DecrypterException(DecrypterException.PASSWORD);
         }
-        final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.getRequest().getHtmlCode());
         final Map<String, Object> data = (Map<String, Object>) entries.get("data");
         // final String nextPageToken = (String) entries.get("nextPageToken");
         final List<Map<String, Object>> ressourcelist = (List<Map<String, Object>>) data.get("items");
@@ -97,6 +99,7 @@ public class OdriveCom extends PluginForDecrypt {
                 throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER, folderID);
             }
         }
+        final FilePackage fp = FilePackage.getInstance();
         final UrlQuery querypw = new UrlQuery();
         querypw.add("password", passCode);
         for (final Map<String, Object> file : ressourcelist) {
@@ -135,6 +138,7 @@ public class OdriveCom extends PluginForDecrypt {
                 if (!StringUtils.isEmpty(passCode)) {
                     dl.setDownloadPassword(passCode);
                 }
+                dl._setFilePackage(fp);
                 ret.add(dl);
             }
         }
@@ -156,12 +160,16 @@ public class OdriveCom extends PluginForDecrypt {
     }
 
     public static boolean isOffline(final Browser br) {
-        final String errorCode = PluginJSonUtils.getJson(br, "errorCode");
-        if (errorCode != null) {
-            if (errorCode.equals("202")) {
-                return true;
+        if (br.getHttpConnection().getResponseCode() == 400) {
+            return true;
+        } else {
+            final String errorCode = PluginJSonUtils.getJson(br, "errorCode");
+            if (errorCode != null) {
+                if (errorCode.equals("202")) {
+                    return true;
+                }
             }
+            return false;
         }
-        return false;
     }
 }

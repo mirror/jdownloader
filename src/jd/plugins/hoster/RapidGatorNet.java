@@ -269,7 +269,7 @@ public class RapidGatorNet extends PluginForHost {
                  */
                 br.setCurrentURL(custom_referer);
             } catch (final MalformedURLException ignore) {
-                logger.exception("User given custom referer is not a valid URL", ignore);
+                logger.exception("User given custom referer is not a valid URL: " + custom_referer, ignore);
             }
         }
     }

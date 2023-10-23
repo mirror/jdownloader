@@ -30,6 +30,7 @@ import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
+import jd.parser.html.HTMLParser;
 import jd.plugins.Account;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.CryptedLink;
@@ -72,8 +73,8 @@ public class BdsmlrComCrawler extends PluginForDecrypt {
         return ret.toArray(new String[0]);
     }
 
-    private static final String TYPE_USER_PROFILE = "https?://([\\w\\-]+)\\.[^/]+/?$";
-    private static final String TYPE_POST         = "https?://([\\w\\-]+)\\.[^/]+/post/(\\d+)$";
+    private static final String TYPE_USER_PROFILE = "(?i)https?://([\\w\\-]+)\\.[^/]+/?$";
+    private static final String TYPE_POST         = "(?i)https?://([\\w\\-]+)\\.[^/]+/post/(\\d+)$";
     private static final String PROPERTY_POST_ID  = "post_id";
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
@@ -210,19 +211,20 @@ public class BdsmlrComCrawler extends PluginForDecrypt {
         lastPostID = null;
         lastNumberofPosts = 0;
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final String[] posts = br.getRegex("(<div class=\"wrap-post del\\d+\\s*(?:pubvideo|typeimage|pubimage|typetext)\\s*\">.*?class=\"countinf\")").getColumn(0);
-        for (final String post : posts) {
-            final Regex postInfo = new Regex(post, "(https?://([\\w\\-]+)\\.[^/]+/post/(\\d+))");
+        final String[][] posts = br.getRegex("(<div class=\"wrap-post del(\\d+)\\s*(pubvideo|typeimage|pubimage|typetext|typelink)\\s*\">(.*?)class=\"countinf\")").getMatches();
+        for (final String[] postmatches : posts) {
+            final String html = postmatches[0];
+            final Regex postInfo = new Regex(html, "(https?://([\\w\\-]+)\\.[^/]+/post/(\\d+))");
             String postID = postInfo.getMatch(2);
             if (postID == null) {
-                postID = new Regex(post, "<div class=\\\"wrap-post del(\\d+)").getMatch(0);
+                postID = postmatches[1];
             }
             lastPostID = postID;
-            final String type = new Regex(post, "<div class=\"wrap-post del\\d+\\s*([a-z]+)").getMatch(0);
-            if (!type.matches("pubvideo|typeimage|pubimage")) {
-                logger.info("Skipping unsupported post type " + type + " | ID: " + postID);
-                continue;
-            }
+            final String type = postmatches[2];
+            // if (!type.matches("pubvideo|typeimage|pubimage")) {
+            // logger.info("Skipping unsupported post type " + type + " | ID: " + postID);
+            // continue;
+            // }
             String username = postInfo.getMatch(1);
             if (username == null) {
                 username = new Regex(br.getURL(), "https?://(.*?)\\.bdsmlr\\.com").getMatch(0);
@@ -234,42 +236,65 @@ public class BdsmlrComCrawler extends PluginForDecrypt {
             if (postURL == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            final Regex matches;
-            /* Video posts will also contain URLs to video-thumbnails so let's make sure we only grab exactly what we want. */
-            if ("pubvideo".equalsIgnoreCase(type)) {
-                matches = new Regex(post, "(?:\"|\\')(https?://[^/]+/uploads/videos/(\\d{4})/(\\d{2})[^\"\\']+\\.mp4)(?:\"|\\')");
-            } else {
-                matches = new Regex(post, "(?:\"|\\')(https?://[^/]+/uploads/photos/(\\d{4})/(\\d{2})[^\"\\']+\\.[a-zA-Z0-9]{2,5})(?:\"|\\')");
-            }
-            if (!matches.matches()) {
-                logger.warning("Failed to find any media for post: " + postURL + " type:" + type);
-                continue;
-            }
-            final String[][] directs = matches.getMatches();
-            final HashSet<String> dups = new HashSet<String>();
-            for (final String direct[] : directs) {
-                final String directurl = direct[0];
-                if (dups.add(directurl)) {
-                    final String year = direct[1];
-                    final String month = direct[2];
-                    final DownloadLink dl = this.createDownloadlink(directurl);
-                    if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-                        dl.setContentUrl(directurl);
-                    } else {
-                        dl.setContentUrl(postURL);
+            if (type.equalsIgnoreCase("typelink")) {
+                /* Post containing links to external websites such as youtube.com. */
+                int numberofAddedItems = 0;
+                final String[] urls = HTMLParser.getHttpLinks(html, br.getURL());
+                for (final String url : urls) {
+                    if (this.canHandle(url)) {
+                        /* Sjip items which would go back into this crawler. */
+                        continue;
                     }
-                    if (dups.size() > 1) {
-                        dl.setFinalFileName(username + "_" + year + "_" + month + "_" + postID + "_" + dups.size() + Plugin.getFileNameExtensionFromURL(directurl));
-                    } else {
-                        dl.setFinalFileName(username + "_" + year + "_" + month + "_" + postID + Plugin.getFileNameExtensionFromURL(directurl));
-                    }
+                    numberofAddedItems++;
+                    final DownloadLink externalItem = this.createDownloadlink(url);
                     if (fp != null) {
-                        dl._setFilePackage(fp);
+                        externalItem._setFilePackage(fp);
                     }
-                    dl.setAvailable(true);
-                    dl.setProperty(PROPERTY_POST_ID, postID);
-                    ret.add(dl);
-                    distribute(dl);
+                    ret.add(externalItem);
+                    distribute(externalItem);
+                }
+                logger.info("Added external URLs: " + numberofAddedItems);
+                if (numberofAddedItems == 0) {
+                    logger.warning("Failed to find any resulting external URLs for post: " + postURL + " type:" + type);
+                }
+            } else {
+                final Regex matches;
+                /* Video posts will also contain URLs to video-thumbnails so let's make sure we only grab exactly what we want. */
+                if ("pubvideo".equalsIgnoreCase(type)) {
+                    matches = new Regex(html, "(?:\"|\\')(https?://[^/]+/uploads/videos/(\\d{4})/(\\d{2})[^\"\\']+\\.mp4)(?:\"|\\')");
+                } else {
+                    matches = new Regex(html, "(?:\"|\\')(https?://[^/]+/uploads/photos/(\\d{4})/(\\d{2})[^\"\\']+\\.[a-zA-Z0-9]{2,5})(?:\"|\\')");
+                }
+                if (!matches.patternFind()) {
+                    logger.warning("Failed to find any media for post: " + postURL + " type:" + type);
+                    continue;
+                }
+                final String[][] directs = matches.getMatches();
+                final HashSet<String> dups = new HashSet<String>();
+                for (final String direct[] : directs) {
+                    final String directurl = direct[0];
+                    if (dups.add(directurl)) {
+                        final String year = direct[1];
+                        final String month = direct[2];
+                        final DownloadLink dl = this.createDownloadlink(directurl);
+                        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                            dl.setContentUrl(directurl);
+                        } else {
+                            dl.setContentUrl(postURL);
+                        }
+                        if (dups.size() > 1) {
+                            dl.setFinalFileName(username + "_" + year + "_" + month + "_" + postID + "_" + dups.size() + Plugin.getFileNameExtensionFromURL(directurl));
+                        } else {
+                            dl.setFinalFileName(username + "_" + year + "_" + month + "_" + postID + Plugin.getFileNameExtensionFromURL(directurl));
+                        }
+                        if (fp != null) {
+                            dl._setFilePackage(fp);
+                        }
+                        dl.setAvailable(true);
+                        dl.setProperty(PROPERTY_POST_ID, postID);
+                        ret.add(dl);
+                        distribute(dl);
+                    }
                 }
             }
         }

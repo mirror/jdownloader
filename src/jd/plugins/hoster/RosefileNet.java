@@ -19,7 +19,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -162,23 +164,27 @@ public class RosefileNet extends PluginForHost {
                 throw new AccountRequiredException();
             }
             final String fileURL = br.getURL();
-            final String internalFileID = br.getRegex("add_ref\\((\\d+)\\);").getMatch(0);
+            String internalFileID = br.getRegex("add_ref\\((\\d+)\\);").getMatch(0);
+            if (internalFileID == null) {
+                /* 2023-10-23 */
+                internalFileID = br.getRegex("add_coun\\((\\d+)\\);").getMatch(0);
+            }
             if (internalFileID == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             final Browser ajax = this.br.cloneBrowser();
             ajax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             /** 2021-04-12: Waittime and captcha (required for anonymous downloads in browser) is skippable! */
-            // br.getPage("/ajax.php?action=load_time&ctime=" + System.currentTimeMillis());
-            // final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
-            // final int waitSeconds = ((Number) entries.get("")).intValue();
-            // this.sleep(waitSeconds * 1001l, link);
-            // br.getPage("https://" + this.br.getHost() + "/d/" + this.getFID(link) + "/" + Encoding.urlEncode(link.getName()) + ".html");
-            // final String code = getCaptchaCode("/imagecode.php?t=" + System.currentTimeMillis(), link);
-            // br.postPage("/ajax.php", "action=check_code&code=" + Encoding.urlEncode(code));
-            // if (br.toString().equals("false")) {
-            // throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-            // }
+            br.getPage("/ajax.php?action=load_time&ctime=" + System.currentTimeMillis());
+            final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+            final int waitSeconds = ((Number) entries.get("waittime")).intValue();
+            this.sleep(waitSeconds * 1001l, link);
+            br.getPage("https://" + this.br.getHost() + "/d/" + this.getFID(link) + "/" + Encoding.urlEncode(link.getName()) + ".html");
+            final String code = getCaptchaCode("/imagecode.php?t=" + System.currentTimeMillis(), link);
+            br.postPage("/ajax.php", "action=check_code&code=" + Encoding.urlEncode(code));
+            if (br.getRequest().getHtmlCode().equalsIgnoreCase("false")) {
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            }
             ajax.postPage("/ajax.php", "action=load_down_addr1&file_id=" + internalFileID);
             String dllink = ajax.getRegex("true\\|<a href=\"([^<>\"]+)").getMatch(0);
             if (dllink == null) {

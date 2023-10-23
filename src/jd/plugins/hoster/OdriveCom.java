@@ -19,6 +19,9 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -32,9 +35,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "odrive.com" }, urls = { "http://odrivedecrypted/.+" })
 public class OdriveCom extends PluginForHost {
@@ -74,7 +74,7 @@ public class OdriveCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         br.getPage("https://www.odrive.com/rest/weblink/list_folder?weblinkUri=%2F" + Encoding.urlEncode(folderid) + "&password=");
-        if (jd.plugins.decrypter.OdriveCom.isOffline(br)) {
+        if (jd.plugins.decrypter.OdriveComCrawler.isOffline(br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         return AvailableStatus.TRUE;
