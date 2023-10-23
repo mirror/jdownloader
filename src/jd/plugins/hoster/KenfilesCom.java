@@ -162,8 +162,16 @@ public class KenfilesCom extends XFileSharingProBasic {
     protected Form findFormDownload2Free(final Browser br) {
         /* 2020-09-02: Special */
         Form dlForm = super.findFormDownload2Free(br);
-        if (dlForm != null) {
-            dlForm.remove("method_premium");
+        // if (dlForm != null) {
+        // dlForm.remove("method_premium");
+        // }
+        /* Correct Form */
+        final String keyMethodPremium = "method_premium";
+        if (dlForm.hasInputFieldByName(keyMethodPremium)) {
+            for (int i = 0; i <= 3; i++) {
+                dlForm.remove(keyMethodPremium);
+            }
+            dlForm.put(keyMethodPremium, "");
         }
         return dlForm;
     }

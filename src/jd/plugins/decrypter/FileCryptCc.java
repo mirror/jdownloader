@@ -158,12 +158,22 @@ public class FileCryptCc extends PluginForDecrypt {
                  * that are typically associated with folders published by those sources.
                  */
                 final String customLogoID = br.getRegex("custom/([a-z0-9]+)\\.png").getMatch(0);
-                if ("53d1b".equals(customLogoID) || "80d13".equals(customLogoID) || "fde1d".equals(customLogoID)) {
-                    logger.info("Found presumed password by custom logoID: " + customLogoID);
-                    passwords.add(0, "serienfans.org");
-                } else if ("51967".equals(customLogoID)) {
-                    logger.info("Found presumed password by custom logoID: " + customLogoID);
-                    passwords.add(0, "kellerratte");
+                if (customLogoID != null) {
+                    if ("53d1b".equals(customLogoID) || "80d13".equals(customLogoID) || "fde1d".equals(customLogoID)) {
+                        logger.info("Found presumed password by custom logoID: " + customLogoID);
+                        passwords.add(0, "serienfans.org");
+                    } else if ("51967".equals(customLogoID)) {
+                        logger.info("Found presumed password by custom logoID: " + customLogoID);
+                        passwords.add(0, "kellerratte");
+                    } else if ("aaf75".equals(customLogoID)) {
+                        /* 2023-10-23 */
+                        logger.info("Found presumed password by custom logoID: " + customLogoID);
+                        passwords.add(0, "cs.rin.ru");
+                    } else {
+                        logger.info("Found unknown logoID: " + customLogoID);
+                    }
+                } else {
+                    logger.info("Failed to find logoID");
                 }
                 if (successfullyUsedPassword != null) {
                     /**
@@ -185,7 +195,7 @@ public class FileCryptCc extends PluginForDecrypt {
                     }
                     logger.info("Password attempt: " + passwordCounter + " / " + maxPasswordRetries);
                     Form passwordForm = null;
-                    final String passwordFieldKey = "password_";
+                    final String passwordFieldKey = "password__";
                     final Form[] allForms = br.getForms();
                     if (allForms != null && allForms.length != 0) {
                         findPwFormLoop: for (final Form aForm : allForms) {

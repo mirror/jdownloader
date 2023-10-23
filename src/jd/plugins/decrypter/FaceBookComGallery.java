@@ -15,6 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
+import java.net.MalformedURLException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -27,6 +28,7 @@ import java.util.regex.Pattern;
 import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogInterface;
+import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
@@ -71,6 +73,59 @@ public class FaceBookComGallery extends PluginForDecrypt {
         br.getHeaders().put("Accept-Charset", "ISO-8859-1,utf-8;q=0.7,*;q=0.7");
         br.setCookie(getAnnotationNames()[0], "locale", "en_GB");
         br.setFollowRedirects(true);
+    }
+
+    public static enum URL_TYPE {
+        VIDEO_GENERIC,
+        PHOTO,
+        PHOTO_OR_PHOTO_ALBUM;
+    }
+
+    private String getVideoidFromURL(final String url) throws MalformedURLException {
+        final UrlQuery query = UrlQuery.parse(url);
+        String videoid = query.get("v");
+        if (videoid == null) {
+            videoid = query.get("video_id");
+            if (videoid == null) {
+                videoid = new Regex(url, "(?i)/videos/(\\d+)").getMatch(0);
+                if (videoid == null) {
+                    videoid = new Regex(url, "(?i)/reel/(\\d+)").getMatch(0);
+                }
+            }
+        }
+        return videoid;
+    }
+
+    private String getPhotoidFromURL(final String url) throws MalformedURLException {
+        String photoid = new Regex(url, "(?i)/photos/[^/]+/(\\d+)").getMatch(0);
+        if (photoid == null) {
+            /* Single photo as part of photo album */
+            photoid = new Regex(url, "(?i)/photo/.+fbid=(\\d+)").getMatch(0);
+        }
+        return photoid;
+    }
+
+    /**
+     * Returns type of URL. </br>
+     * Important: This is just a hint. URLs which look like a photo can also lead to video content!
+     */
+    private URL_TYPE getUrlType(final String url) throws MalformedURLException {
+        if (url == null) {
+            return null;
+        }
+        if (getVideoidFromURL(url) != null) {
+            return URL_TYPE.VIDEO_GENERIC;
+        } else if (getPhotoidFromURL(url) != null) {
+            return URL_TYPE.PHOTO;
+        }
+        // if (url.matches("(?i)https?://[^/]+/watch/\\?v=\\d+")) {
+        // return URL_TYPE.VIDEO_1_current;
+        // } else if (url.matches("(?i)https?://[^/]+/video/video\\.php\\?v=\\d+")) {
+        // return URL_TYPE.VIDEO_2;
+        // } else if (url.matches("(?i)https?://[^/]+/video/embed\\?video_id=\\d+")) {
+        // return URL_TYPE.VIDEO_2;
+        // }
+        return null;
     }
 
     @Override
@@ -371,7 +426,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
             /* Last resort: Look for any URLs which look like single images or videos. */
             final String[] allurls = HTMLParser.getHttpLinks(br.getRequest().getHtmlCode(), br.getURL());
             for (final String thisurl : allurls) {
-                if ((thisurl.contains("photo") || thisurl.contains("video")) && this.canHandle(thisurl)) {
+                if (!thisurl.equals(br.getURL()) && getUrlType(thisurl) != null) {
                     logger.info("Adding last resort URL: " + thisurl);
                     ret.add(this.createDownloadlink(thisurl));
                 }
