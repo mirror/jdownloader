@@ -24,8 +24,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.parser.UrlQuery;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -118,7 +116,7 @@ public class Keep2ShareCcDecrypter extends PluginForDecrypt {
         plugin.setBrowser(br);
         // final List<DownloadLink> unavailableFolders = new ArrayList<DownloadLink>();
         // final List<DownloadLink> emptyFolders = new ArrayList<DownloadLink>();
-        final String referer = UrlQuery.parse(param.getCryptedUrl()).get("site");
+        final String referer = K2SApi.getRefererFromURL(param.getCryptedUrl());
         final DownloadLink dummy = this.createDownloadlink(generateFileUrl(contentidFromURL, null, referer));
         final String refererForHttpRequest = plugin.getCustomReferer(dummy);
         Map<String, Object> response = null;

@@ -34,9 +34,9 @@ import org.jdownloader.plugins.config.Order;
 
 import jd.PluginWrapper;
 import jd.plugins.Account;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
 import jd.plugins.PluginConfigPanelNG;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
@@ -44,7 +44,8 @@ import jd.plugins.components.MultiHosterManagement;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 4, names = { "high-way.me" }, urls = { "https?://high-way\\.me/onlinetv\\.php\\?id=\\d+[^/]+|https?://((?:torrent|usenet)(archiv)?)\\.(?:high-way\\.me|dwld\\.link)/dl(?:u|t)/[a-z0-9]+(?:/$|/.+)" })
 public class HighWayMe2 extends HighWayCore {
-    protected static MultiHosterManagement mhm = new MultiHosterManagement("high-way.me");
+    protected static MultiHosterManagement mhm                      = new MultiHosterManagement("high-way.me");
+    private static final String            urlWebsiteAPICredentials = "high-way.me/pages/cred/";
 
     public HighWayMe2(PluginWrapper wrapper) {
         super(wrapper);
@@ -75,9 +76,9 @@ public class HighWayMe2 extends HighWayCore {
     protected void exceptionAccountInvalid(final Account account) throws PluginException {
         showAPILoginInformation();
         if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort!\r\n Du findest deine Zugangsdaten für JD hier: high-way.me/download.php#credentials", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            throw new AccountInvalidException("\r\nUngültiger Benutzername/Passwort!\r\n Du findest deine Zugangsdaten für JDownloader hier: " + urlWebsiteAPICredentials);
         } else {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nYou can find your JD login credentials here: high-way.me/download.php#credentials", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            throw new AccountInvalidException("\r\nInvalid username/password!\r\nYou can find your JDownloader login credentials here: " + urlWebsiteAPICredentials);
         }
     }
 
@@ -92,7 +93,6 @@ public class HighWayMe2 extends HighWayCore {
     private Thread showAPILoginInformation() {
         final Thread thread = new Thread() {
             public void run() {
-                final String apiCredsURLWithoutProtocol = "high-way.me/download.php#credentials";
                 try {
                     String message = "";
                     final String title;
@@ -100,19 +100,19 @@ public class HighWayMe2 extends HighWayCore {
                         title = "high-way.me - Login";
                         message += "Hallo liebe(r) high-way NutzerIn\r\n";
                         message += "Um deinen high-way Account in JDownloader verwenden zu können, musst du folgende Schritte beachten:\r\n";
-                        message += "1. Öffne diesen Link im Browser falls das nicht automatisch passiert:\r\n\t'" + apiCredsURLWithoutProtocol + "'\t\r\n";
+                        message += "1. Öffne diesen Link im Browser falls das nicht automatisch passiert:\r\n\t'" + urlWebsiteAPICredentials + "'\t\r\n";
                         message += "2. Verwende die dort aufgeführten extra JDownloader Zugangsdaten und versuche den Login damit erneut!";
                     } else {
                         title = "high-way.me - Login";
                         message += "Hello dear high-way user\r\n";
                         message += "In order to use this service in JDownloader, you need to follow these steps:\r\n";
-                        message += "1. Open this URL in your browser if it is not opened automatically:\r\n\t'" + apiCredsURLWithoutProtocol + "'\t\r\n";
+                        message += "1. Open this URL in your browser if it is not opened automatically:\r\n\t'" + urlWebsiteAPICredentials + "'\t\r\n";
                         message += "2. Look for the extra JDownloader login credentials on that page and retry the login process in JDownloader with those.";
                     }
                     final ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, title, message);
                     dialog.setTimeout(2 * 60 * 1000);
                     if (CrossSystem.isOpenBrowserSupported() && !Application.isHeadless()) {
-                        CrossSystem.openURL("https://" + apiCredsURLWithoutProtocol);
+                        CrossSystem.openURL("https://" + urlWebsiteAPICredentials);
                     }
                     final ConfirmDialogInterface ret = UIOManager.I().show(ConfirmDialogInterface.class, dialog);
                     ret.throwCloseExceptions();

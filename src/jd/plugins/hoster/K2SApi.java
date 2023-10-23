@@ -152,10 +152,14 @@ public abstract class K2SApi extends PluginForHost {
         }
     }
 
-    private static String getRefererFromURL(final DownloadLink link) {
+    public static String getRefererFromURL(final DownloadLink link) {
+        return getRefererFromURL(link.getPluginPatternMatcher());
+    }
+
+    public static String getRefererFromURL(final String url) {
         String url_referer = null;
         try {
-            url_referer = UrlQuery.parse(link.getPluginPatternMatcher()).get("site");
+            url_referer = UrlQuery.parse(url).get("site");
         } catch (final Exception ignore) {
         }
         return url_referer;

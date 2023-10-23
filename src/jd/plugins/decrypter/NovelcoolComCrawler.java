@@ -79,13 +79,23 @@ public class NovelcoolComCrawler extends PluginForDecrypt {
         final String chapterNumber = new Regex(param.getCryptedUrl(), PATTERN_RELATIVE_CHAPTER).getMatch(0);
         if (chapterNumber != null) {
             /* Find all pictures of a chapter of a novel */
-            final String[] links = br.getRegex("<option value=\"(https?://[^\"]+)\"[^>]*>\\d+/\\d+</option>").getColumn(0);
-            if (links == null || links.length == 0) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
             final String bookID = br.getRegex("cur_book_id = \"(\\d+)").getMatch(0);
             final String chapterID = br.getRegex("cur_chapter_id = \"(\\d+)").getMatch(0);
             final String seriesTitle = NovelcoolCom.findSeriesTitle(br);
+            final String[] links = br.getRegex("<option value=\"(https?://[^\"]+)\"[^>]*>\\d+/\\d+</option>").getColumn(0);
+            if (links == null || links.length == 0) {
+                if (br.containsHTML("chapter-start-mark")) {
+                    /* Download chapter as html page */
+                    final DownloadLink chapterAsHTML = this.createDownloadlink(br.getURL() + ".jdeatme");
+                    chapterAsHTML.setFinalFileName(br._getURL().getPath() + ".html");
+                    chapterAsHTML.setDownloadSize(br.getRequest().getHtmlCode().getBytes("UTF-8").length);
+                    ret.add(chapterAsHTML);
+                    chapterAsHTML.setAvailable(true);
+                    return ret;
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+            }
             final HashSet<String> dupes = new HashSet<String>();
             int index = 0;
             for (final String singleLink : links) {
