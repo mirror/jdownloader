@@ -39,7 +39,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
 import jd.plugins.hoster.K2SApi;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
@@ -113,13 +112,15 @@ public class Keep2ShareCcDecrypter extends PluginForDecrypt {
             ret.add(this.createDownloadlink(param.getCryptedUrl().replaceFirst(Pattern.quote(contentidFromURL), contentid)));
             return ret;
         }
-        final PluginForHost plugin = getNewPluginForHostInstance(this.getHost());
+        final K2SApi plugin = (jd.plugins.hoster.K2SApi) getNewPluginForHostInstance(this.getHost());
         br = plugin.createNewBrowserInstance();
         // set cross browser support
-        ((jd.plugins.hoster.K2SApi) plugin).setBrowser(br);
+        plugin.setBrowser(br);
         // final List<DownloadLink> unavailableFolders = new ArrayList<DownloadLink>();
         // final List<DownloadLink> emptyFolders = new ArrayList<DownloadLink>();
         final String referer = UrlQuery.parse(param.getCryptedUrl()).get("site");
+        final DownloadLink dummy = this.createDownloadlink(generateFileUrl(contentidFromURL, null, referer));
+        final String refererForHttpRequest = plugin.getCustomReferer(dummy);
         Map<String, Object> response = null;
         List<Map<String, Object>> items = null;
         FilePackage fp = null;
@@ -136,7 +137,10 @@ public class Keep2ShareCcDecrypter extends PluginForDecrypt {
                 postdataGetfilestatus.put("id", contentid);
                 postdataGetfilestatus.put("limit", maxItemsPerPage);
                 postdataGetfilestatus.put("offset", offset);
-                response = ((K2SApi) plugin).postPageRaw(br, "/getfilestatus", postdataGetfilestatus, null);
+                if (refererForHttpRequest != null) {
+                    postdataGetfilestatus.put("url_referrer", refererForHttpRequest);
+                }
+                response = plugin.postPageRaw(br, "/getfilestatus", postdataGetfilestatus, null);
                 items = (List<Map<String, Object>>) response.get("files");
                 if (items == null && response.containsKey("is_available") && !response.containsKey("id")) {
                     /* Root map contains single loose file. */

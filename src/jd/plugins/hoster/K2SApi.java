@@ -152,7 +152,7 @@ public abstract class K2SApi extends PluginForHost {
         }
     }
 
-    private String getRefererFromURL(final DownloadLink link) {
+    private static String getRefererFromURL(final DownloadLink link) {
         String url_referer = null;
         try {
             url_referer = UrlQuery.parse(link.getPluginPatternMatcher()).get("site");
@@ -725,6 +725,9 @@ public abstract class K2SApi extends PluginForHost {
                 final String custom_referer = getCustomReferer(link);
                 if (StringUtils.isNotEmpty(custom_referer)) {
                     logger.info("Using Referer value: " + custom_referer);
+                    /* "referer" and "site" are the Browser params */
+                    // postdata.put("referer", custom_referer);
+                    // postdata.put("site", "domain.tld");
                     postdata.put("url_referrer", custom_referer);
                 } else {
                     logger.info("Using Referer value: NONE given");
@@ -872,10 +875,10 @@ public abstract class K2SApi extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    private String getCustomReferer(final DownloadLink link) {
+    public String getCustomReferer(final DownloadLink link) {
         final Keep2shareConfig cfg = PluginJsonConfig.get(this.getConfigInterface());
         final String custom_referer = cfg.getReferer();
-        final String url_referer = this.getRefererFromURL(link);
+        final String url_referer = getRefererFromURL(link);
         final String sourceURL = link.getContainerUrl();
         if (!StringUtils.isEmpty(url_referer) || !StringUtils.isEmpty(custom_referer)) {
             /* Use Referer from inside added URL if given. */
