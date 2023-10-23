@@ -42,7 +42,7 @@ public class Mangakakalot extends PluginForDecrypt {
     }
 
     private final String TYPE_MANGA         = "(?i)^https?://[^/]+/manga-([a-z0-9\\-]+)/?$";
-    private final String TYPE_MANGA_CHAPTER = "(?i)^https?://[^/]+/(?:manga-|chapter/)([a-z0-9\\-]+)/chapter[\\-_](\\d+(\\.\\d+)?)$";
+    private final String TYPE_MANGA_CHAPTER = "(?i)^https?://[^/]+/(?:manga-|chapter/)([a-z0-9\\-_]+)/chapter[\\-_](\\d+(\\.\\d+)?)$";
 
     @Override
     public int getMaxConcurrentProcessingInstances() {
@@ -170,7 +170,7 @@ public class Mangakakalot extends PluginForDecrypt {
             }
         } else {
             /* Unsupported URL -> Developer mistake */
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "unsupported:" + param.getCryptedUrl());
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "unsupported: " + param.getCryptedUrl());
         }
         return ret;
     }

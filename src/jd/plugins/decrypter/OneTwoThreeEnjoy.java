@@ -15,10 +15,9 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
-import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedHashSet;
+import java.util.HashSet;
+import java.util.List;
 import java.util.regex.Pattern;
 
 import org.appwork.utils.Regex;
@@ -27,60 +26,90 @@ import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
-import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "123enjoy.net" }, urls = { "https?://(www\\.)?123enjoy\\.net/watch/.+\\.html?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class OneTwoThreeEnjoy extends antiDDoSForDecrypt {
     public OneTwoThreeEnjoy(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "upmovies.to", "123enjoy.net" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/watch/.+\\.html?");
+        }
+        return ret.toArray(new String[0]);
+    }
+
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        String contenturl = param.getCryptedUrl();
         br.setFollowRedirects(true);
-        getPage(parameter);
-        String fpName = br.getRegex("<title>(?:Watch\\s+)([^<]+)\\s+Online\\s+\\|\\s+Watch").getMatch(0);
-        String itemID = new Regex(parameter, "/watch/\\w+-([^/.]+)").getMatch(0);
-        ArrayList<String> links = new ArrayList<String>();
-        String[] sources = br.getRegex("<div[^>]+id\\s*=\\s*\"media-player\"[^>]*>\\s*<div>\\s*<span>\\s*</span>\\s*</div>\\s*<script[^>]+type\\s*=\\s*\"text/javascript\"[^>]*>\\s*document\\.write\\s*\\(\\s*Base64\\.decode\\s*\\(\\s*\"([^\"]+)").getColumn(0);
+        getPage(contenturl);
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final String itemID = new Regex(contenturl, "/watch/\\w+-([^/.]+)").getMatch(0);
+        final String[] sources = br.getRegex("\\(\\s*Base64\\.decode\\s*\\(\\s*\"([^\"]+)").getColumn(0);
         if (sources != null && sources.length > 0) {
             for (String source : sources) {
                 source = Encoding.Base64Decode(source);
-                Collections.addAll(links, HTMLParser.getHttpLinks(source, null));
+                ret.add(this.createDownloadlink(source));
             }
         }
         if (StringUtils.isNotEmpty(itemID)) {
-            Collections.addAll(links, br.getRegex("<a[^>]+href\\s*=\\s*\"([^\"]+/watch/[^\"]+" + Pattern.quote(itemID) + "[^\"]*)\"").getColumn(0));
-        }
-        if (links != null && links.size() > 0) {
-            links = new ArrayList<String>(new LinkedHashSet<String>(links));
-            for (String link : links) {
-                link = Encoding.htmlDecode(link);
-                decryptedLinks.add(createDownloadlink(processPrefixSlashes(br, link)));
+            final String[] mirrorurls = br.getRegex("<a[^>]+href\\s*=\\s*\"([^\"]+/watch/[^\"]+" + Pattern.quote(itemID) + "[^\"]*)\"").getColumn(0);
+            final HashSet<String> dupes = new HashSet<String>();
+            for (String mirrorurl : mirrorurls) {
+                mirrorurl = br.getURL(mirrorurl).toExternalForm();
+                if (mirrorurl.equals(br.getURL())) {
+                    /* Skip mirror which we are currently processing. */
+                    continue;
+                } else if (!dupes.add(mirrorurl)) {
+                    continue;
+                }
+                ret.add(this.createDownloadlink(mirrorurl));
             }
+            logger.info("Number of detected other items/mirrors: " + dupes.size());
         }
-        if (fpName != null) {
+        String title = br.getRegex("<title>([^<]+)</title>").getMatch(0);
+        if (title != null) {
+            title = Encoding.htmlDecode(title).trim();
+            title = title.replaceFirst("(?i)^Watch\\s*", "");
+            title = title.replaceFirst("(?i)\\s*Online For Free$", "");
             final FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName.trim()));
+            fp.setName(title);
             fp.setAllowMerge(true);
             fp.setAllowInheritance(true);
-            fp.addLinks(decryptedLinks);
+            fp.addLinks(ret);
         }
-        return decryptedLinks;
-    }
-
-    private String processPrefixSlashes(Browser br, String link) throws IOException {
-        link = link.trim().replaceAll("^//", "https://");
-        if (link.startsWith("/") || !link.startsWith("http")) {
-            link = br.getURL(link).toString();
-        }
-        return link;
+        return ret;
     }
 }

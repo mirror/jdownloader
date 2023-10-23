@@ -70,12 +70,34 @@ public class OnlySpankingOrg extends antiDDoSForDecrypt {
         } else if (!br.containsHTML("<meta property\\s*=\\s*\"og:title\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        /*
+         * Special case: Users who own a premium account of a specified OCH can auth themselves as premium here to get the downloadlinks!
+         */
+        String ubiqfile_premium_mail = null;
+        final ArrayList<Account> accs = AccountController.getInstance().getValidAccounts("ubiqfile.com");
+        if (accs != null && accs.size() > 0) {
+            for (final Account acc : accs) {
+                final String accMailTmp = acc.getStringProperty("PROPERTY_UBIQFILE_MAIL");
+                if (acc.getType() == AccountType.PREMIUM && accMailTmp != null) {
+                    ubiqfile_premium_mail = accMailTmp;
+                    break;
+                }
+            }
+        }
+        if (isPremiumAccountRequired(br) && ubiqfile_premium_mail == null) {
+            logger.info("Content is premiumonly and user does not own premium access");
+            throw new AccountRequiredException();
+        }
         String ajax_action = null;
         boolean captchaSuccess = false;
         for (int i = 0; i <= 2; i++) {
             /* Important! */
             br.getHeaders().put("Referer", startURL);
             getPage(br, "/engine/ajax/getlink2.php");
+            if (isPremiumAccountRequired(br) && ubiqfile_premium_mail == null) {
+                logger.info("Content is premiumonly and user does not own premium access");
+                throw new AccountRequiredException();
+            }
             ajax_action = br.getURL();
             final Form captchaform = getCaptchaForm(br);
             if (captchaform == null) {
@@ -117,20 +139,7 @@ public class OnlySpankingOrg extends antiDDoSForDecrypt {
         String finallink = null;
         final String redirect = br.getRegex("(https?://[^/]+/(video|file|vfile)/[a-zA-Z0-9]+)").getMatch(0);
         if (redirect == null) {
-            if (br.containsHTML("(?i)To access the exclusive category you need to purchase")) {
-                /*
-                 * Special case: Users who own a premium account of a specified OCH can auth themselves as premium here to get the
-                 * downloadlinks!
-                 */
-                String ubiqfile_premium_mail = null;
-                final ArrayList<Account> accs = AccountController.getInstance().getValidAccounts("ubiqfile.com");
-                for (final Account acc : accs) {
-                    final String accMailTmp = acc.getStringProperty("PROPERTY_UBIQFILE_MAIL", null);
-                    if (acc.getType() == AccountType.PREMIUM && accMailTmp != null) {
-                        ubiqfile_premium_mail = accMailTmp;
-                        break;
-                    }
-                }
+            if (isPremiumAccountRequired(br)) {
                 if (ubiqfile_premium_mail == null) {
                     logger.info("Content is premiumonly and user does not own premium access");
                     throw new AccountRequiredException();
@@ -162,6 +171,14 @@ public class OnlySpankingOrg extends antiDDoSForDecrypt {
         }
         ret.add(createDownloadlink(finallink));
         return ret;
+    }
+
+    private boolean isPremiumAccountRequired(final Browser br) {
+        if (br.containsHTML("(?i)To access the exclusive category you need to purchase")) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     private Form getCaptchaForm(final Browser br) {

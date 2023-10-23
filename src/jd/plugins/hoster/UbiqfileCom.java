@@ -121,6 +121,7 @@ public class UbiqfileCom extends XFileSharingProBasic {
             final String mail = new Regex(correctedBR, "name=\"usr_email\"[^<>]*?value=\"([^\"]+)\"").getMatch(0);
             if (mail != null) {
                 logger.info("Found users' mail: " + mail);
+                /* Special: See crawler plugin onlyspanking.video */
                 account.setProperty("PROPERTY_UBIQFILE_MAIL", mail);
             } else {
                 logger.info("Failed to find users' mail");

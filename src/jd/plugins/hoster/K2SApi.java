@@ -159,7 +159,7 @@ public abstract class K2SApi extends PluginForHost {
     public static String getRefererFromURL(final String url) {
         String url_referer = null;
         try {
-            url_referer = UrlQuery.parse(url).get("site");
+            url_referer = UrlQuery.parse(url).getDecoded("site");
         } catch (final Exception ignore) {
         }
         return url_referer;
@@ -703,7 +703,15 @@ public abstract class K2SApi extends PluginForHost {
                 /* Premium + free Account */
                 postdata.put("auth_token", getAuthToken(br, account, link, false));
             }
+            final String custom_referer = getCustomReferer(link);
+            if (StringUtils.isNotEmpty(custom_referer)) {
+                logger.info("Using Referer value: " + custom_referer);
+                postdata.put("url_referrer", custom_referer);
+            } else {
+                logger.info("Using Referer value: NONE given");
+            }
             if (isFree) {
+                // final Map<String, Object> requestcaptcha = postPageRaw(this.br, "/requestcaptcha", postdata, account, link);
                 final Map<String, Object> requestcaptcha = postPageRaw(this.br, "/requestcaptcha", new HashMap<String, Object>(), account, link);
                 final String challenge = (String) requestcaptcha.get("challenge");
                 String captcha_url = (String) requestcaptcha.get("captcha_url");
@@ -719,22 +727,12 @@ public abstract class K2SApi extends PluginForHost {
                      * 2020-04-23: board.jdownloader.org/showthread.php?t=83927 and board.jdownloader.org/showthread.php?t=83781
                      */
                     logger.info("download-captcha_url is not https --> Changing it to https");
-                    captcha_url = captcha_url.replace("http://", "https://");
+                    captcha_url = captcha_url.replaceFirst("(?i)http://", "https://");
                 }
                 final String code = getCaptchaCode(captcha_url, link);
                 if (StringUtils.isEmpty(code)) {
                     // captcha can't be blank! Why we don't return null I don't know (raztoki?)!
                     throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                }
-                final String custom_referer = getCustomReferer(link);
-                if (StringUtils.isNotEmpty(custom_referer)) {
-                    logger.info("Using Referer value: " + custom_referer);
-                    /* "referer" and "site" are the Browser params */
-                    // postdata.put("referer", custom_referer);
-                    // postdata.put("site", "domain.tld");
-                    postdata.put("url_referrer", custom_referer);
-                } else {
-                    logger.info("Using Referer value: NONE given");
                 }
                 postdata.put("captcha_challenge", challenge);
                 postdata.put("captcha_response", code);
