@@ -400,7 +400,7 @@ public class Bunkr extends PluginForHost {
                 if (directurl == null) {
                     directurl = br.getRegex("class=\"text-white hover:[^\"]*justify-center rounded[^\"]*\" href=\"(https?://[^\"]+)\">").getMatch(0);
                     if (directurl == null && filenameFromURL != null) {
-                        /* 2023-10-06 e.g. burger.bunkr.ru/... or puzza.bunkr.ru/... */
+                        /* 2023-10-06 e.g. burger.bunkr.ru/... or pizza.bunkr.ru/... */
                         directurl = br.getRegex("(https?://[a-z0-9\\-]+\\.[^/]+/" + Pattern.quote(filenameFromURL) + ")").getMatch(0);
                     }
                 }

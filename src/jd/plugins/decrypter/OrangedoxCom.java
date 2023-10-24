@@ -16,6 +16,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -25,13 +26,15 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+import jd.plugins.hoster.DirectHTTP;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "orangedox.com" }, urls = { "https?://(?:www\\.)?dl\\.orangedox\\.com/([A-Za-z0-9]+)(/(\\d+))?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "orangedox.com" }, urls = { "https?://(?:www\\.)?dl\\.orangedox\\.com/([A-Za-z0-9]+)(/([^\\?#]+))?" })
 public class OrangedoxCom extends PluginForDecrypt {
     public OrangedoxCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -46,36 +49,42 @@ public class OrangedoxCom extends PluginForDecrypt {
          */
         final PluginForHost googleDrivePlugin = this.getNewPluginForHostInstance(jd.plugins.hoster.GoogleDrive.getPluginDomains().get(0)[0]);
         final Regex urlregex = new Regex(param.getCryptedUrl(), this.getSupportedLinks());
-        final String contentID = urlregex.getMatch(0);
-        final String singleFileInsideFolderID = urlregex.getMatch(2);
-        final boolean isFolder = singleFileInsideFolderID == null;
-        String nexturl = param.getCryptedUrl() + "?dl=1";
+        // final String contentID = urlregex.getMatch(0);
         URLConnectionAdapter con = null;
         int redirects = 0;
-        do {
-            con = br.openGetConnection(nexturl);
-            if (br.getRedirectLocation() == null) {
-                break;
-            } else if (googleDrivePlugin.canHandle(br.getRedirectLocation())) {
-                try {
-                    con.disconnect();
-                } catch (final Throwable ignore) {
+        String redirect = param.getCryptedUrl() + "?dl=1";
+        try {
+            do {
+                con = br.openGetConnection(redirect);
+                redirect = br.getRedirectLocation();
+                if (redirect == null) {
+                    break;
+                } else if (googleDrivePlugin.canHandle(redirect)) {
+                    /* Single item hosted on Google Drive. */
+                    ret.add(this.createDownloadlink(redirect));
+                    return ret;
+                } else {
+                    logger.info("Redirect to the unknown: " + br.getRedirectLocation());
+                    redirects++;
                 }
-                ret.add(this.createDownloadlink(br.getRedirectLocation()));
-                return ret;
-            } else {
-                logger.info("Redirect to the unknown: " + br.getRedirectLocation());
-                nexturl = br.getRedirectLocation();
-                redirects++;
+            } while (redirects < 10);
+        } finally {
+            try {
+                con.disconnect();
+            } catch (final Throwable ignore) {
             }
-        } while (redirects < 10);
+        }
+        if (redirect != null) {
+            /* Too many redirects -> Item must be offline */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         if (this.looksLikeDownloadableContent(con)) {
             try {
                 con.disconnect();
             } catch (final Throwable ignore) {
             }
             /* Typically Google Drive URLs. */
-            final DownloadLink direct = this.createDownloadlink("directhttp://" + con.getURL().toString());
+            final DownloadLink direct = this.createDownloadlink(DirectHTTP.createURLForThisPlugin(con.getURL().toExternalForm()));
             if (con.getCompleteContentLength() > 0) {
                 direct.setVerifiedFileSize(con.getCompleteContentLength());
             }
@@ -94,19 +103,24 @@ public class OrangedoxCom extends PluginForDecrypt {
             if (br.containsHTML("type=\"password\" name=\"pwd\"")) {
                 logger.info("Password protected URLs are not yet supported");
                 throw new DecrypterException(DecrypterException.PASSWORD);
-            } else if (!isFolder) {
-                /* Assume that content is offline */
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else {
                 /* Folder -> Look for file items */
-                final String[] fileurls = br.getRegex("(/" + contentID + "/\\d+)").getColumn(0);
-                if (fileurls == null || fileurls.length == 0) {
+                final String thisPath = br._getURL().getPath();
+                final String[] fileurls = br.getRegex("(" + Pattern.quote(thisPath) + "/[^/\\?#\"]+)\"").getColumn(0);
+                if (fileurls != null && fileurls.length > 0) {
+                    /* These results will go back into this crawler plugin. */
+                    for (final String fileurl : fileurls) {
+                        final DownloadLink link = this.createDownloadlink(br.getURL(fileurl).toExternalForm());
+                        link.setRelativeDownloadFolderPath(thisPath);
+                        ret.add(link);
+                    }
+                }
+                if (ret.isEmpty()) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                /* These results will go back into this crawler plugin. */
-                for (final String fileurl : fileurls) {
-                    ret.add(this.createDownloadlink(br.getURL(fileurl).toExternalForm()));
-                }
+                final FilePackage fp = FilePackage.getInstance();
+                fp.setName(thisPath);
+                fp.addLinks(ret);
             }
         }
         return ret;

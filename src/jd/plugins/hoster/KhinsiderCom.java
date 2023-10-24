@@ -36,10 +36,13 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
+import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.decrypter.KhinsiderComCrawler;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
+@PluginDependencies(dependencies = { KhinsiderComCrawler.class })
 public class KhinsiderCom extends PluginForHost {
     public KhinsiderCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -52,10 +55,7 @@ public class KhinsiderCom extends PluginForHost {
     }
 
     private static List<String[]> getPluginDomains() {
-        final List<String[]> ret = new ArrayList<String[]>();
-        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "khinsider.com" });
-        return ret;
+        return KhinsiderComCrawler.getPluginDomains();
     }
 
     public static String[] getAnnotationNames() {
@@ -157,7 +157,7 @@ public class KhinsiderCom extends PluginForHost {
         return -1;
     }
 
-    private boolean login(final Account account, final boolean force) throws Exception {
+    public boolean login(final Account account, final boolean force) throws Exception {
         synchronized (account) {
             br.setFollowRedirects(true);
             br.setCookiesExclusive(true);

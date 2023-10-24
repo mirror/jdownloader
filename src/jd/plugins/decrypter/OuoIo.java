@@ -19,6 +19,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Random;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.Base64;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -31,11 +36,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.Base64;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 /**
  *
@@ -80,8 +80,7 @@ public class OuoIo extends antiDDoSForDecrypt {
             }
         } else if (fuid == null && slink == null) {
             // fuid is just a URL owner identifier! slink value is needed, without it you can't get the end URL!
-            ret.add(createOfflinelink(parameter));
-            return ret;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String browserReferrer = getBrowserReferrer();
         if (browserReferrer != null) {
@@ -104,12 +103,11 @@ public class OuoIo extends antiDDoSForDecrypt {
             if (fallBack != null) {
                 ret.add(fallBack);
             } else {
-                ret.add(this.createOfflinelink(parameter));
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             return ret;
         } else if (br.containsHTML("class=\"no-found\"")) {
-            ret.add(this.createOfflinelink(parameter));
-            return ret;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         Form captchaForm = br.getFormbyProperty("id", "skip");
         if (captchaForm == null) {
@@ -119,8 +117,7 @@ public class OuoIo extends antiDDoSForDecrypt {
             /* Last chance errorhandling */
             if (!br.containsHTML("/go/" + this.fuid)) {
                 /* E.g. https://ouo.io/rates */
-                ret.add(createOfflinelink(parameter));
-                return ret;
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             logger.warning("Decrypter broken for link: " + parameter);
             return null;

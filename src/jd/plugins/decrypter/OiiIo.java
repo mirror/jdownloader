@@ -21,6 +21,7 @@ import java.util.List;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.html.Form;
+import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
@@ -75,13 +76,26 @@ public class OiiIo extends MightyScriptAdLinkFly {
         } else if (form20231023 != null) {
             submitForm(br, form20231023);
         }
-        final Form form20231023Captcha = br.getFormByRegex("ad_form_data");
-        final CaptchaType captchaType2 = getCaptchaType(form20231023Captcha);
-        if (form20231023Captcha != null) {
-            if (captchaType2 != null && (captchaType2 == CaptchaType.reCaptchaV2 || captchaType2 == CaptchaType.reCaptchaV2_invisible)) {
-                handleRecaptcha(captchaType2, br, form20231023Captcha);
-            }
-            submitForm(br, form20231023Captcha);
+        /* Page with button "Click here to continue" */
+        final Form continueForm = br.getFormByRegex("ad_form_data");
+        if (continueForm != null) {
+            submitForm(br, continueForm);
         }
+    }
+
+    @Override
+    protected String findFinallink(final Browser br) {
+        final String finallink = br.getRegex("doc\\.write\\('<a href=\"(http[^\"]+)").getMatch(0);
+        if (finallink != null) {
+            return finallink;
+        } else {
+            return super.findFinallink(br);
+        }
+    }
+
+    @Override
+    protected Form getContinueForm(CryptedLink param, Form form, final Browser br) {
+        /* 2023-10-24: Ugly hack */
+        return null;
     }
 }

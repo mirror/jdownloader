@@ -102,6 +102,7 @@ public class OnlySpankingOrg extends antiDDoSForDecrypt {
                 captchaform = getCaptchaForm(br);
             } else {
                 if (captchaform == null && refreshCaptchaURL == null) {
+                    /* E.g. onlyspanking.org */
                     getPage("/engine/ajax/getlink2.php");
                     if (isPremiumAccountRequired(br) && ubiqfile_premium_mail == null) {
                         logger.info("Content is premiumonly and user does not own premium access");
@@ -114,6 +115,7 @@ public class OnlySpankingOrg extends antiDDoSForDecrypt {
                     }
                     refreshCaptchaURL = br.getURL();
                 } else {
+                    /* E.g. spanking.photos */
                     refreshCaptchaURL = startURL;
                 }
             }

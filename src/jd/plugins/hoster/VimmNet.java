@@ -18,25 +18,21 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
-import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.decrypter.VimmNetCrawler;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
+@PluginDependencies(dependencies = { VimmNetCrawler.class })
 public class VimmNet extends PluginForHost {
     public VimmNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -49,10 +45,7 @@ public class VimmNet extends PluginForHost {
     }
 
     private static List<String[]> getPluginDomains() {
-        final List<String[]> ret = new ArrayList<String[]>();
-        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "vimm.net" });
-        return ret;
+        return VimmNetCrawler.getPluginDomains();
     }
 
     public static String[] getAnnotationNames() {
@@ -67,7 +60,7 @@ public class VimmNet extends PluginForHost {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/vault/(\\d+)");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/vault/(\\d+)#\\?media_id=(\\d+)");
         }
         return ret.toArray(new String[0]);
     }
@@ -79,8 +72,10 @@ public class VimmNet extends PluginForHost {
     @Override
     public String getLinkID(final DownloadLink link) {
         final String fid = getFID(link);
+        final String mediaID = link.getStringProperty(PROPERTY_MEDIA_ID);
+        final String prefix_vimm = "vimm_net";
         if (fid != null) {
-            return this.getHost() + "://" + fid;
+            return prefix_vimm + "://" + fid + "/media_id/" + mediaID;
         } else {
             return super.getLinkID(link);
         }
@@ -90,49 +85,19 @@ public class VimmNet extends PluginForHost {
         return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
+    public static final String PROPERTY_MEDIA_ID = "media_id";
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         if (!link.isNameSet()) {
             /* Fallback */
-            link.setName(this.getFID(link) + ".7z");
+            link.setName(this.getLinkID(link) + ".7z");
         }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        Long filesizePrecise = null;
-        String filename = null;
-        final String json = br.getRegex("var media = (\\{.*?\\});").getMatch(0);
-        if (json != null) {
-            final Map<String, Object> entries = restoreFromString(json, TypeRef.MAP);
-            filename = entries.get("GoodTitle").toString();
-            final String filesizeZippedStr = entries.get("Zipped").toString();
-            if (filesizeZippedStr != null && filesizeZippedStr.matches("\\d+")) {
-                filesizePrecise = Long.parseLong(filesizeZippedStr);
-            }
-            /* TODO: Maybe also set fileHash? See these fields: GoodHash, GoodMd5, GoodSha1 */
-        }
-        if (StringUtils.isEmpty(filename)) {
-            /* Fallback */
-            filename = br.getRegex("id=\"data-good-title\"[^>]*>([^<]+)<").getMatch(0);
-            if (StringUtils.isEmpty(filename)) {
-                filename = br.getRegex("<title>([^<]+)").getMatch(0);
-            }
-        }
-        String filesizeStr = br.getRegex("media\\.ZippedText = '([^<>\"\\']+)';").getMatch(0);
-        if (filename != null) {
-            filename = Encoding.htmlDecode(filename).trim();
-            if (!filename.toLowerCase(Locale.ENGLISH).endsWith(".7z")) {
-                filename += ".7z";
-            }
-            link.setName(filename);
-        }
-        if (filesizePrecise != null) {
-            link.setDownloadSize(filesizePrecise.longValue() * 1024);
-        } else if (filesizeStr != null) {
-            link.setDownloadSize(SizeFormatter.getSize(filesizeStr));
         }
         return AvailableStatus.TRUE;
     }
@@ -146,6 +111,7 @@ public class VimmNet extends PluginForHost {
         requestFileInformation(link);
         final boolean useFormHandling = false;
         if (useFormHandling) {
+            /* Deprecated! */
             Form dlform = null;
             for (final Form form : br.getForms()) {
                 if (form.containsHTML("download_format")) {
@@ -159,7 +125,13 @@ public class VimmNet extends PluginForHost {
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlform, resumable, maxchunks);
         } else {
             String url = br.getRegex("(download\\d+\\.vimm\\.net/download/)").getMatch(0);
-            final String mediaID = br.getRegex("name=\"mediaId\" value=\"(\\d+)").getMatch(0);
+            String mediaID = link.getStringProperty(PROPERTY_MEDIA_ID);
+            if (mediaID == null) {
+                /*
+                 * Older items until including revision 48248 where target-mediaID was not pre-given in crawler as crawler didn't exist yet.
+                 */
+                mediaID = br.getRegex("name=\"mediaId\" value=\"(\\d+)").getMatch(0);
+            }
             if (url == null || mediaID == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -182,7 +154,7 @@ public class VimmNet extends PluginForHost {
     }
 
     @Override
-    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
+    public boolean hasCaptcha(final DownloadLink link, final jd.plugins.Account acc) {
         return false;
     }
 

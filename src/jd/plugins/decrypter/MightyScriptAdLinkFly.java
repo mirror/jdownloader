@@ -187,7 +187,7 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
         }
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         ret.addAll(handlePreCrawlProcess(param));
         if (!ret.isEmpty()) {
@@ -363,6 +363,22 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
             }
             submitForm(f2);
         }
+        final String finallink = findFinallink(br);
+        if (finallink == null) {
+            if (br.containsHTML("(?i)<h1>Whoops, looks like something went wrong\\.</h1>")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+        }
+        ret.add(createDownloadlink(finallink));
+        return ret;
+    }
+
+    /** Returns final link that shall be returned by the crawler. */
+    protected String findFinallink(final Browser br) {
         String finallink = null;
         if (StringUtils.containsIgnoreCase(br.getRequest().getResponseHeader("Content-Type"), "application/json")) {
             final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
@@ -378,25 +394,7 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
             }
             logger.info("finallink from html: " + finallink);
         }
-        /* 2020-02-03: clk.in: p.clk.in/?n=bla */
-        if (!StringUtils.isEmpty(finallink) && finallink.matches("https?://p\\.[^/]+/\\?n=.+")) {
-            /* TODO: 2022-06-23: This should not be needed anymore */
-            logger.info("Special case: Finallink seems to lead to another step: " + finallink);
-            this.getPage(finallink);
-            /* 2020-110-6: E.g. clicksfly.com */
-            finallink = br.getRegex("<div class=\"button\">\\s*<center>\\s*<a name=\"a\"[^>]*href=\"(http[^\"]+)\">").getMatch(0);
-        }
-        if (finallink == null) {
-            if (br.containsHTML("(?i)<h1>Whoops, looks like something went wrong\\.</h1>")) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else if (br.getHttpConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-        }
-        ret.add(createDownloadlink(finallink));
-        return ret;
+        return finallink;
     }
 
     protected void handleLandingRedirect(final CryptedLink param, Browser br) throws Exception {
