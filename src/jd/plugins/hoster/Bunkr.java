@@ -221,12 +221,9 @@ public class Bunkr extends PluginForHost {
         this.setBrowserExclusive();
         final String contenturl = this.getContentURL(link);
         final String filenameFromURL = getFilenameFromURL(link);
-        if (filenameFromURL != null) {
-            if (isDownload) {
-                setFilename(link, filenameFromURL, true, true);
-            } else if (!link.isNameSet()) {
-                setFilename(link, filenameFromURL, true, false);
-            }
+        if (filenameFromURL != null && !link.isNameSet()) {
+            /* Set unsafe filename */
+            setFilename(link, filenameFromURL, true, false);
         }
         final String lastCachedDirecturl = link.getStringProperty(PROPERTY_LAST_GRABBED_DIRECTURL);
         final String lastUsedSingleFileURL = link.getStringProperty(PROPERTY_LAST_USED_SINGLE_FILE_URL);
@@ -243,6 +240,13 @@ public class Bunkr extends PluginForHost {
                     con = br.openGetConnection(lastCachedDirecturl);
                 }
                 handleConnectionErrors(link, br, con);
+                final String filenameFromHeader = Plugin.getFileNameFromHeader(con);
+                final String filenameFromDirecturl = Plugin.getFileNameFromURL(lastCachedDirecturl);
+                if (filenameFromHeader != null) {
+                    setFilename(link, filenameFromHeader, true, true);
+                } else if (filenameFromDirecturl != null) {
+                    setFilename(link, filenameFromDirecturl, true, true);
+                }
                 logger.info("Successfully re-used last cached directurl");
                 if (con.getCompleteContentLength() > 0) {
                     link.setVerifiedFileSize(con.getCompleteContentLength());
@@ -396,8 +400,8 @@ public class Bunkr extends PluginForHost {
                 if (directurl == null) {
                     directurl = br.getRegex("class=\"text-white hover:[^\"]*justify-center rounded[^\"]*\" href=\"(https?://[^\"]+)\">").getMatch(0);
                     if (directurl == null && filenameFromURL != null) {
-                        /* 2023-10-06 */
-                        directurl = br.getRegex("(https?://(burger|pizza)\\.[^/]+/" + Pattern.quote(filenameFromURL) + ")").getMatch(0);
+                        /* 2023-10-06 e.g. burger.bunkr.ru/... or puzza.bunkr.ru/... */
+                        directurl = br.getRegex("(https?://[a-z0-9\\-]+\\.[^/]+/" + Pattern.quote(filenameFromURL) + ")").getMatch(0);
                     }
                 }
             }
@@ -418,6 +422,9 @@ public class Bunkr extends PluginForHost {
         final String filename = getFilenameFromURL(directurl);
         if (filename != null) {
             setFilename(link, filename, true, true);
+        } else if (!link.isNameSet()) {
+            /* Unsafe name */
+            setFilename(link, filename, true, false);
         }
         link.setProperty(PROPERTY_LAST_GRABBED_DIRECTURL, directurl);
         link.setProperty(PROPERTY_LAST_USED_SINGLE_FILE_URL, singleFileURL);

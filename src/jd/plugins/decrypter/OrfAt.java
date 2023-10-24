@@ -11,7 +11,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
-import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
@@ -359,13 +358,13 @@ public class OrfAt extends PluginForDecrypt {
     private ArrayList<DownloadLink> crawlCollection(final CryptedLink param) throws IOException, PluginException {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final Regex collectionPatternRegex = new Regex(param.getCryptedUrl(), PATTERN_COLLECTION);
-        if (!collectionPatternRegex.matches()) {
+        if (!collectionPatternRegex.patternFind()) {
             /* Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final String baseURL = collectionPatternRegex.getMatch(0);
         final String collectionID = collectionPatternRegex.getMatch(1);
-        final String collectionTargetItemID = collectionPatternRegex.getMatch(3);
+        // final String collectionTargetItemID = collectionPatternRegex.getMatch(3);
         final String collectionURL = baseURL + "/" + collectionID;
         br.getPage("https://collector.orf.at/api/frontend/collections/" + collectionID + "?_o=sound.orf.at");
         if (br.getHttpConnection().getResponseCode() == 404) {
@@ -382,27 +381,9 @@ public class OrfAt extends PluginForDecrypt {
             fp.setComment(collectionDescription);
         }
         final List<Map<String, Object>> items = (List<Map<String, Object>>) collectionContent.get("items");
-        final ArrayList<Map<String, Object>> itemsToCrawl = new ArrayList<Map<String, Object>>();
-        /*
-         * 2022-09-23: Disabled because collection URLs will always contain the id to a single item. By default browser will redirect to the
-         * id of the first item so let's always crawl all items for now.
-         */
-        final boolean crawlOnlySpecificItemIfGivenInURL = false;
-        for (final Map<String, Object> item : items) {
-            final String collectionItemID = item.get("id").toString();
-            if (collectionTargetItemID == null || crawlOnlySpecificItemIfGivenInURL == false) {
-                /* Crawl all items */
-                itemsToCrawl.add(item);
-            } else if (collectionTargetItemID.equals(collectionItemID)) {
-                /* Only crawl this one specific item */
-                itemsToCrawl.clear();
-                itemsToCrawl.add(item);
-                break;
-            }
-        }
         int progress = 0;
         int numberofOfflineItems = 0;
-        for (final Map<String, Object> item : itemsToCrawl) {
+        for (final Map<String, Object> item : items) {
             progress++;
             final String collectionItemID = item.get("id").toString();
             logger.info("Crawling collection item " + progress + "/" + items.size() + " ID: " + collectionItemID);

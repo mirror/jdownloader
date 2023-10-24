@@ -3,6 +3,7 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
@@ -21,6 +22,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
@@ -32,7 +34,7 @@ public class OnlySpankingOrg extends antiDDoSForDecrypt {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "onlyspanking.video", "onlyspanking.org" });
+        ret.add(new String[] { "onlyspanking.video", "onlyspanking.org", "spanking.photos" });
         return ret;
     }
 
@@ -90,16 +92,31 @@ public class OnlySpankingOrg extends antiDDoSForDecrypt {
         }
         String ajax_action = null;
         boolean captchaSuccess = false;
+        String refreshCaptchaURL = null;
         for (int i = 0; i <= 2; i++) {
             /* Important! */
             br.getHeaders().put("Referer", startURL);
-            getPage(br, "/engine/ajax/getlink2.php");
-            if (isPremiumAccountRequired(br) && ubiqfile_premium_mail == null) {
-                logger.info("Content is premiumonly and user does not own premium access");
-                throw new AccountRequiredException();
+            Form captchaform = getCaptchaForm(br);
+            if (captchaform == null && refreshCaptchaURL != null) {
+                getPage(refreshCaptchaURL);
+                captchaform = getCaptchaForm(br);
+            } else {
+                if (captchaform == null && refreshCaptchaURL == null) {
+                    getPage("/engine/ajax/getlink2.php");
+                    if (isPremiumAccountRequired(br) && ubiqfile_premium_mail == null) {
+                        logger.info("Content is premiumonly and user does not own premium access");
+                        throw new AccountRequiredException();
+                    }
+                    ajax_action = br.getURL();
+                    captchaform = getCaptchaForm(br);
+                    if (captchaform == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    refreshCaptchaURL = br.getURL();
+                } else {
+                    refreshCaptchaURL = startURL;
+                }
             }
-            ajax_action = br.getURL();
-            final Form captchaform = getCaptchaForm(br);
             if (captchaform == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -110,6 +127,10 @@ public class OnlySpankingOrg extends antiDDoSForDecrypt {
                 captchaform.put("sec_code", Encoding.urlEncode(recaptchaV2Response));
                 /* Important! */
                 br.getHeaders().put("Referer", startURL);
+                if (StringUtils.isEmpty(captchaform.getAction())) {
+                    /* E.g. spanking.photos */
+                    captchaform.setAction("/engine/ajax/getlink.php");
+                }
                 submitForm(br, captchaform);
                 /* Do not allow retries for reCaptcha and assume it is solved correctly with one attempt. */
                 captchaSuccess = true;
@@ -122,6 +143,10 @@ public class OnlySpankingOrg extends antiDDoSForDecrypt {
                 captchaform.put("skin", Encoding.urlEncode(dle_skin));
                 /* Important! */
                 br.getHeaders().put("Referer", startURL);
+                if (StringUtils.isEmpty(captchaform.getAction())) {
+                    /* E.g. spanking.photos */
+                    captchaform.setAction("/engine/ajax/getlink.php");
+                }
                 submitForm(br, captchaform);
             }
             if (br.getRequest().getHtmlCode().length() == 0) {
@@ -153,24 +178,35 @@ public class OnlySpankingOrg extends antiDDoSForDecrypt {
                 /* Important! */
                 br.getHeaders().put("Referer", startURL);
                 this.submitForm(br, premiumForm);
-                finallink = br.getRegex("href=\"(https?[^\"]+)\"[^<>\"]*?target=\"_blank\" rel=\"external noopener\"").getMatch(0);
+                finallink = findDownloadlinks(br)[0];
                 if (finallink == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             } else {
-                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                /* Maybe no account is needed -> Look for downloadurls */
+                final String[] urls = findDownloadlinks(br);
+                if (urls == null || urls.length == 0) {
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                }
+                for (final String url : urls) {
+                    ret.add(this.createDownloadlink(url));
+                }
             }
         }
-        if (finallink == null) {
+        if (finallink == null && redirect != null) {
             br.setFollowRedirects(false);
             this.getPage(redirect);
             finallink = br.getRedirectLocation();
         }
-        if (finallink == null) {
+        if (ret.isEmpty()) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         ret.add(createDownloadlink(finallink));
         return ret;
+    }
+
+    private String[] findDownloadlinks(final Browser br) {
+        return br.getRegex("href=\"(https?[^\"]+)\"[^<>\"]*?target=\"_blank\" rel=\"external noopener\"").getColumn(0);
     }
 
     private boolean isPremiumAccountRequired(final Browser br) {
@@ -182,7 +218,20 @@ public class OnlySpankingOrg extends antiDDoSForDecrypt {
     }
 
     private Form getCaptchaForm(final Browser br) {
-        return br.getFormbyProperty("name", "getlink");
+        Form form = br.getFormbyProperty("name", "getlink");
+        if (form == null) {
+            form = br.getFormbyProperty("id", "getlink");
+        }
+        if (form == null) {
+            /* Look into escaped parts of html */
+            final String hiddenformhtml = br.getRegex("document\\.write\\(\"(<form.*?)\"\\);").getMatch(0);
+            if (hiddenformhtml != null) {
+                final Browser brc = br.cloneBrowser();
+                brc.getRequest().setHtmlCode(PluginJSonUtils.unescape(hiddenformhtml));
+                form = brc.getFormbyProperty("id", "getlink");
+            }
+        }
+        return form;
     }
 
     @Override

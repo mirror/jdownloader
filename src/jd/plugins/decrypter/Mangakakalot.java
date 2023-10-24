@@ -78,6 +78,9 @@ public class Mangakakalot extends PluginForDecrypt {
         br.getPage(param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("class=\"panel-not-found\"")) {
+            /* 404 error page without response code 404 for example: https://manganato.com/manga-pw1337 */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final FilePackage fp = FilePackage.getInstance();

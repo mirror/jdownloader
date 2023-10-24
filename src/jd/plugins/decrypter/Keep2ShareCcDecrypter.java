@@ -16,6 +16,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -23,6 +24,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
+
+import org.appwork.utils.DebugMode;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -91,9 +94,11 @@ public class Keep2ShareCcDecrypter extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        boolean looksLikeSingleFileItem = false;
+        final boolean looksLikeSingleFileItem;
         String contentidFromURL = new Regex(param.getCryptedUrl(), SUPPORTED_LINKS_PATTERN_FOLDER).getMatch(0);
-        if (contentidFromURL == null) {
+        if (contentidFromURL != null) {
+            looksLikeSingleFileItem = false;
+        } else {
             contentidFromURL = new Regex(param.getCryptedUrl(), SUPPORTED_LINKS_PATTERN_FILE).getMatch(0);
             looksLikeSingleFileItem = true;
         }
@@ -104,7 +109,7 @@ public class Keep2ShareCcDecrypter extends PluginForDecrypt {
         final String contentid = fixContentID(contentidFromURL);
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         // TODO: Add plugin setting for this
-        final boolean handleFileLinksInCrawler = false;
+        final boolean handleFileLinksInCrawler = DebugMode.TRUE_IN_IDE_ELSE_FALSE;
         if (looksLikeSingleFileItem && !handleFileLinksInCrawler) {
             /* URL looks like single file URL -> Pass to hosterplugin so we can make use of mass-linkchecking feature. */
             ret.add(this.createDownloadlink(param.getCryptedUrl().replaceFirst(Pattern.quote(contentidFromURL), contentid)));
@@ -125,12 +130,68 @@ public class Keep2ShareCcDecrypter extends PluginForDecrypt {
         FilePackage fp = null;
         String thisFolderTitle = null;
         try {
+            if (looksLikeSingleFileItem) {
+                /**
+                 * This handling is supposed to be for single files but can also be used for small folders. </br>
+                 * Using the folder handling down below for single files will prohibit our special referer handling from working since it
+                 * eems to flag the current IP so th referer will be ignored later and users who have configured a special referer will not
+                 * get better download speeds anymore. </br>
+                 * More detailed explanation: https://board.jdownloader.org/showthread.php?t=94515
+                 */
+                logger.info("Link looks like single file link -> Jumping into single file handling");
+                final HashMap<String, Object> postdataGetfilesinfo = new HashMap<String, Object>();
+                postdataGetfilesinfo.put("ids", Arrays.asList(new String[] { contentid }));
+                /**
+                 * What this returns: </br>
+                 * ID leads to a single file: Single file information </br>
+                 * ID leads to a single SMALL(!) folder: All folder file items </br>
+                 * ID leads to a big folder: Only folder meta-information -> Folder items need to be crawled using a separate request down
+                 * below.
+                 */
+                response = plugin.postPageRaw(br, "https://" + this.getHost() + "/api/v2/getfilesinfo", postdataGetfilesinfo, null);
+                if (!"success".equals(response.get("status"))) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                items = (List<Map<String, Object>>) response.get("files");
+                if (items.isEmpty()) {
+                    logger.info("Empty object -> Empty or invalid folder");
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                if (items != null) {
+                    for (Map<String, Object> item : items) {
+                        final String id = (String) item.get("id");
+                        final String fileOrFolderName = (String) item.get("name");
+                        final Boolean isFolder = (Boolean) item.get("is_folder");
+                        if (isFolder == null) {
+                            /* Most likely we only got one result and that is an offline item. */
+                            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                        }
+                        if (Boolean.FALSE.equals(isFolder)) {
+                            final DownloadLink file = createDownloadlink(generateFileUrl(id, fileOrFolderName, referer));
+                            K2SApi.parseFileInfo(file, item, contentidFromURL);
+                            if (!file.isNameSet()) {
+                                /* Fallback */
+                                file.setName(id);
+                            }
+                            ret.add(file);
+                        } else {
+                            if (id.equals(contentidFromURL)) {
+                                logger.info("Looks like this might be a bigger folder -> Jumping into folder crawler");
+                                break;
+                            } else {
+                                // TODO
+                            }
+                        }
+                    }
+                }
+            }
             final Set<String> dups = new HashSet<String>();
             final int maxItemsPerPage = 50;
             int offset = 0;
             int page = 1;
             boolean isSingleFile = false;
             String sourceFileID = null;
+            String path = this.getAdoptedCloudFolderStructure();
             do {
                 final HashMap<String, Object> postdataGetfilestatus = new HashMap<String, Object>();
                 postdataGetfilestatus.put("id", contentid);
@@ -155,7 +216,12 @@ public class Keep2ShareCcDecrypter extends PluginForDecrypt {
                     if (fp == null) {
                         fp = FilePackage.getInstance();
                         thisFolderTitle = response.get("name").toString();
-                        fp.setName(thisFolderTitle);
+                        if (path == null) {
+                            path = thisFolderTitle;
+                        } else {
+                            path += "/" + thisFolderTitle;
+                        }
+                        fp.setName(path);
                     }
                 }
                 if (items.isEmpty()) {
@@ -185,7 +251,11 @@ public class Keep2ShareCcDecrypter extends PluginForDecrypt {
                     final String filenameOrFoldername = (String) item.get("name");
                     if (Boolean.TRUE.equals(item.get("is_folder"))) {
                         final DownloadLink folder = createDownloadlink(generateFolderUrl(id, filenameOrFoldername, referer));
+                        if (path != null) {
+                            folder.setRelativeDownloadFolderPath(path);
+                        }
                         ret.add(folder);
+                        distribute(folder);
                         // if (Boolean.FALSE.equals(item.get("is_available"))) {
                         // unavailableFolders.add(folder);
                         // }
@@ -197,10 +267,13 @@ public class Keep2ShareCcDecrypter extends PluginForDecrypt {
                             /* Fallback */
                             file.setName(id);
                         }
-                        ret.add(file);
                         if (fp != null) {
                             file._setFilePackage(fp);
                         }
+                        if (path != null) {
+                            file.setRelativeDownloadFolderPath(path);
+                        }
+                        ret.add(file);
                         distribute(file);
                     }
                 }
@@ -214,7 +287,7 @@ public class Keep2ShareCcDecrypter extends PluginForDecrypt {
                 } else if (numberofNewItems == 0) {
                     logger.info("Stopping because: Failed to find any new items on current page: " + page);
                     break;
-                } else if (numberofNewItems <= maxItemsPerPage) {
+                } else if (numberofNewItems < maxItemsPerPage) {
                     logger.info("Stopping because: Current page contains less items than " + maxItemsPerPage);
                     break;
                 } else {
@@ -242,7 +315,7 @@ public class Keep2ShareCcDecrypter extends PluginForDecrypt {
             url += "/" + Encoding.urlEncode(foldername);
         }
         if (referer != null) {
-            url += "?site=" + referer;
+            url += "?site=" + Encoding.urlEncode(referer);
         }
         return url;
     }
@@ -253,7 +326,7 @@ public class Keep2ShareCcDecrypter extends PluginForDecrypt {
             url += "/" + Encoding.urlEncode(filename);
         }
         if (referer != null) {
-            url += "?site=" + referer;
+            url += "?site=" + Encoding.urlEncode(referer);
         }
         return url;
     }

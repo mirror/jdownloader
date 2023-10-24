@@ -44,7 +44,7 @@ public class OpenDriveComDecrypter extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        final String folderurl = param.getCryptedUrl().replace("http://", "https://");
+        final String folderurl = param.getCryptedUrl().replaceFirst("(?i)http://", "https://");
         final String folderid = new Regex(folderurl, "([A-Za-z0-9\\-_]+)(\\?folderpath=.+)?$").getMatch(0);
         this.br.setFollowRedirects(true);
         br.getPage("https://od.lk/fl/" + folderid);
@@ -90,12 +90,16 @@ public class OpenDriveComDecrypter extends PluginForDecrypt {
             final String url = file.get("Link").toString();
             final String directurl = file.get("DownloadLink").toString();
             final String filename = file.get("Name").toString();
-            final Number filesize = (Number) file.get("Size");
+            final Object filesize = file.get("Size");
             final DownloadLink dl = this.createDownloadlink(url);
             dl.setRelativeDownloadFolderPath(path);
             dl.setName(filename);
             if (filesize != null) {
-                dl.setVerifiedFileSize(filesize.longValue());
+                if (filesize instanceof Number) {
+                    dl.setVerifiedFileSize(((Number) filesize).longValue());
+                } else {
+                    dl.setVerifiedFileSize(Long.parseLong(filesize.toString()));
+                }
             }
             if (!StringUtils.isEmpty(directurl)) {
                 dl.setProperty("directurl", directurl);
