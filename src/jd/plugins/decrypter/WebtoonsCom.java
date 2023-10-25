@@ -20,6 +20,8 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashSet;
 
+import org.appwork.utils.parser.UrlQuery;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -31,8 +33,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-
-import org.appwork.utils.parser.UrlQuery;
+import jd.plugins.hoster.DirectHTTP;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "webtoons.com" }, urls = { "https?://(?:www\\.)?webtoons\\.com/[a-z\\-]+/[^/]+/[^/]+/(?:[^/]+/viewer\\?title_no=\\d+\\&episode_no=\\d+|list\\?title_no=\\d+)" })
 public class WebtoonsCom extends PluginForDecrypt {
@@ -40,8 +41,8 @@ public class WebtoonsCom extends PluginForDecrypt {
         super(wrapper);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         this.br.setAllowedResponseCodes(400);
         /* This cookie will allow us to access 18+ content */
         setImportantCookies(br, this.getHost());
@@ -60,7 +61,7 @@ public class WebtoonsCom extends PluginForDecrypt {
         final FilePackage fp;
         if (fpName != null) {
             fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName.trim()));
+            fp.setName(Encoding.htmlDecode(fpName).trim());
         } else {
             fp = null;
         }
@@ -75,7 +76,7 @@ public class WebtoonsCom extends PluginForDecrypt {
             int counter = 0;
             for (final String singleLink : links) {
                 counter++;
-                final DownloadLink dl = createDownloadlink("directhttp://" + singleLink);
+                final DownloadLink dl = createDownloadlink(DirectHTTP.createURLForThisPlugin(singleLink));
                 String name = getFileNameFromURL(new URL(singleLink));
                 if (name == null) {
                     name = ".jpg";
@@ -86,7 +87,7 @@ public class WebtoonsCom extends PluginForDecrypt {
                 if (fp != null) {
                     fp.add(dl);
                 }
-                decryptedLinks.add(dl);
+                ret.add(dl);
             }
         } else {
             int pageNumber = 1;
@@ -118,7 +119,7 @@ public class WebtoonsCom extends PluginForDecrypt {
                             fp.add(link);
                         }
                         distribute(link);
-                        decryptedLinks.add(link);
+                        ret.add(link);
                     }
                 }
                 if (!foundNewItem) {
@@ -131,14 +132,14 @@ public class WebtoonsCom extends PluginForDecrypt {
                     break;
                 }
                 if (this.isAbort()) {
-                    return decryptedLinks;
+                    return ret;
                 }
             }
-            if (decryptedLinks.size() == 0) {
+            if (ret.size() == 0) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        return decryptedLinks;
+        return ret;
     }
 
     private void setImportantCookies(final Browser br, final String host) {

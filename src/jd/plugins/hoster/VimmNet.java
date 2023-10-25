@@ -19,13 +19,17 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
@@ -60,14 +64,10 @@ public class VimmNet extends PluginForHost {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/vault/(\\d+)#\\?media_id=(\\d+)");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/vault/(\\d+).*");
         }
         return ret.toArray(new String[0]);
     }
-
-    /* Connection stuff */
-    private final boolean FREE_RESUME    = true;
-    private final int     FREE_MAXCHUNKS = 1;
 
     @Override
     public String getLinkID(final DownloadLink link) {
@@ -75,7 +75,7 @@ public class VimmNet extends PluginForHost {
         final String mediaID = link.getStringProperty(PROPERTY_MEDIA_ID);
         final String prefix_vimm = "vimm_net";
         if (fid != null) {
-            return prefix_vimm + "://" + fid + "/media_id/" + mediaID;
+            return prefix_vimm + "://" + fid + "/media_id/" + mediaID + "/format_id/" + link.getStringProperty(PROPERTY_FORMAT_ID);
         } else {
             return super.getLinkID(link);
         }
@@ -85,13 +85,27 @@ public class VimmNet extends PluginForHost {
         return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
-    public static final String PROPERTY_MEDIA_ID = "media_id";
+    @Override
+    public String getMirrorID(final DownloadLink link) {
+        return getLinkID(link);
+    }
+
+    @Override
+    public boolean isResumeable(final DownloadLink link, final Account account) {
+        return false;
+    }
+
+    public static final String  PROPERTY_MEDIA_ID           = "media_id";
+    public static final String  PROPERTY_FORMAT_ID          = "format_id";
+    public static final String  PROPERTY_FORMAT             = "format";
+    public static final String  PROPERTY_PRE_GIVEN_FILENAME = "pre_given_filename";
+    private static final String EXT_DEFAULT                 = ".7z";
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         if (!link.isNameSet()) {
             /* Fallback */
-            link.setName(this.getLinkID(link) + ".7z");
+            link.setName(this.getLinkID(link) + EXT_DEFAULT);
         }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -102,14 +116,41 @@ public class VimmNet extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    @Override
-    public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        handleDownload(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+    public static void setFilename(final DownloadLink link) {
+        String preGivenFilename = link.getStringProperty(PROPERTY_PRE_GIVEN_FILENAME);
+        if (StringUtils.isEmpty(preGivenFilename)) {
+            /* This should never happen but can happen for older items which do not have this property. */
+            return;
+        }
+        /**
+         * We know that this website is always providing .7z files. </br>
+         * Filename is the same serverside regardless of the user selected file format. </br>
+         * In JDownloader however, we want to have different filenames for each format.
+         */
+        preGivenFilename = Plugin.getCorrectOrApplyFileNameExtension(preGivenFilename, EXT_DEFAULT);
+        final String formatFileExtension = link.getStringProperty(PROPERTY_FORMAT);
+        final String filename;
+        if (formatFileExtension != null) {
+            /**
+             * Item is available in multiple different formats. </br>
+             */
+            final String originalFileExtension = preGivenFilename.substring(preGivenFilename.lastIndexOf("."));
+            filename = Plugin.getCorrectOrApplyFileNameExtension(preGivenFilename, formatFileExtension + originalFileExtension);
+        } else {
+            filename = preGivenFilename;
+        }
+        link.setFinalFileName(filename);
     }
 
-    private void handleDownload(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+    @Override
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        handleDownload(link);
+    }
+
+    private void handleDownload(final DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link);
         final boolean useFormHandling = false;
+        final int maxChunks = 1;
         if (useFormHandling) {
             /* Deprecated! */
             Form dlform = null;
@@ -122,7 +163,7 @@ public class VimmNet extends PluginForHost {
             if (dlform == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlform, resumable, maxchunks);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlform, isResumeable(link, null), maxChunks);
         } else {
             String url = br.getRegex("(download\\d+\\.vimm\\.net/download/)").getMatch(0);
             String mediaID = link.getStringProperty(PROPERTY_MEDIA_ID);
@@ -135,8 +176,13 @@ public class VimmNet extends PluginForHost {
             if (url == null || mediaID == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            final String directurl = "https://" + url + "?mediaId=" + mediaID;
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, directurl, resumable, maxchunks);
+            String directurl = "https://" + url + "?mediaId=" + mediaID;
+            final int format_id = link.getIntegerProperty(PROPERTY_FORMAT_ID, 0);
+            if (format_id != 0) {
+                /* Download 2nd/alternative version */
+                directurl += "&alt=1";
+            }
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, directurl, isResumeable(link, null), maxChunks);
         }
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             br.followConnection(true);

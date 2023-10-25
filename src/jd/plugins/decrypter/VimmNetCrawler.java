@@ -63,7 +63,7 @@ public class VimmNetCrawler extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/vault/(\\d+)");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/vault/(?:\\?p=play\\&id=)?(\\d+)");
         }
         return ret.toArray(new String[0]);
     }
@@ -71,8 +71,9 @@ public class VimmNetCrawler extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
-        final String contentID = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
-        br.getPage(param.getCryptedUrl());
+        final String contentid = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
+        final String contenturl = "https://" + this.getHost() + "/vault/" + contentid;
+        br.getPage(contenturl);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -80,29 +81,58 @@ public class VimmNetCrawler extends PluginForDecrypt {
         if (jsons == null || jsons.length == 0) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        final String downloadformatsText = br.getRegex("<select[^<]*id=\"download_format\"[^<]*>(.*?)</select>").getMatch(0);
+        final String[][] downloadformatsOptions = downloadformatsText != null ? new Regex(downloadformatsText, "<option[^<]*value=\"(\\d+)\"[^>]*>([^<]+)</option>").getMatches() : null;
         for (final String json : jsons) {
             final Map<String, Object> entries = restoreFromString(json, TypeRef.MAP);
             final String mediaID = entries.get("ID").toString();
-            final DownloadLink link = this.createDownloadlink(param.getCryptedUrl() + "#?media_id=" + mediaID);
+            final String preSetFilename = entries.get("GoodTitle").toString();
+            final DownloadLink link = this.createDownloadlink(contenturl + "#?media_id=" + mediaID);
             link.setProperty(VimmNet.PROPERTY_MEDIA_ID, mediaID);
-            link.setFinalFileName(entries.get("GoodTitle").toString());
+            link.setProperty(VimmNet.PROPERTY_PRE_GIVEN_FILENAME, preSetFilename);
             final String filesizeZippedStr = entries.get("Zipped").toString();
+            final Object filesizeAltZippedStr = entries.get("AltZipped");
             if (filesizeZippedStr != null && filesizeZippedStr.matches("\\d+")) {
                 link.setDownloadSize(Long.parseLong(filesizeZippedStr) * 1024);
             }
-            /* TODO: Maybe also set fileHash? See these fields: GoodHash, GoodMd5, GoodSha1 */
-            link.setAvailable(true);
+            /**
+             * There are file-hashes available but it looks like those are for the files inside the .zip archives so we can't make use of
+             * them. </br>
+             * See fields GoodHash, GoodMd5, GoodSha1
+             */
+            if (filesizeAltZippedStr != null && jsons.length == 1 && downloadformatsOptions != null && downloadformatsOptions.length >= 2) {
+                /* Alternative version is available */
+                /* Add format properties to first format */
+                link.setProperty(VimmNet.PROPERTY_FORMAT_ID, downloadformatsOptions[0][0]);
+                link.setProperty(VimmNet.PROPERTY_FORMAT, Encoding.htmlDecode(downloadformatsOptions[0][1]).trim());
+                /* Add downloadlink for 2nd format */
+                final DownloadLink link2 = this.createDownloadlink(contenturl + "#?media_id=" + mediaID);
+                link2.setProperty(VimmNet.PROPERTY_MEDIA_ID, mediaID);
+                link2.setProperty(VimmNet.PROPERTY_PRE_GIVEN_FILENAME, preSetFilename);
+                link2.setProperty(VimmNet.PROPERTY_FORMAT_ID, downloadformatsOptions[1][0]);
+                link2.setProperty(VimmNet.PROPERTY_FORMAT, Encoding.htmlDecode(downloadformatsOptions[1][1]).trim());
+                link2.setDownloadSize(Long.parseLong(filesizeAltZippedStr.toString()) * 1024);
+                ret.add(link2);
+            }
             ret.add(link);
         }
+        for (final DownloadLink result : ret) {
+            result.setAvailable(true);
+            VimmNet.setFilename(result);
+        }
+        final String lastFilename = ret.get(ret.size() - 1).getStringProperty(VimmNet.PROPERTY_PRE_GIVEN_FILENAME);
         String title = br.getRegex("<title>([^<]+)</title>").getMatch(0);
         final FilePackage fp = FilePackage.getInstance();
         if (title != null) {
             title = Encoding.htmlDecode(title).trim();
             title = title.replaceFirst("(?i)^Download\\s*", "");
             fp.setName(title);
+        } else if (lastFilename != null) {
+            /* Fallback 1 */
+            fp.setName(lastFilename);
         } else {
-            /* Fallback */
-            fp.setName(contentID);
+            /* Fallback 2 */
+            fp.setName(contentid);
         }
         fp.addLinks(ret);
         return ret;

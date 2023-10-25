@@ -70,8 +70,8 @@ public class KhinsiderComCrawler extends PluginForDecrypt {
     }
 
     private static final String PATTERN_ALBUM_DOWNLOAD            = "https?://downloads\\.%s/cp/add_album_TODO_FIXME_/(\\d+)$";
-    private static final String PATTERN_ALBUM_STREAM              = "https://downloads\\.%s/([^/]+)/album/([\\w\\-]+)$";
-    private static final String PATTERN_ALBUM_SINGLE_TRACK_STREAM = "https://downloads\\.%s/([^/]+)/album/([\\w\\-]+)/([^/#\\?]+)";
+    private static final String PATTERN_ALBUM_STREAM              = "https?://downloads\\.%s/([^/]+)/album/([\\w\\-]+)$";
+    private static final String PATTERN_ALBUM_SINGLE_TRACK_STREAM = "https?://downloads\\.%s/([^/]+)/album/([\\w\\-]+)/([^/#\\?]+)";
 
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();

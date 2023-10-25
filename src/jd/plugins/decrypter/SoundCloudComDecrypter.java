@@ -51,10 +51,18 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.hoster.SoundcloudCom;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "soundcloud.com" }, urls = { "https?://((?:www\\.|m\\.)?(soundcloud\\.com/[^<>\"\\']+(?:\\?format=html\\&page=\\d+|\\?page=\\d+)?|snd\\.sc/[A-Za-z0-9]+)|api\\.soundcloud\\.com/tracks/\\d+(?:\\?secret_token=[A-Za-z0-9\\-_]+)?|api\\.soundcloud\\.com/playlists/\\d+(?:\\?|.*?\\&)secret_token=[A-Za-z0-9\\-_]+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "soundcloud.com" }, urls = { "https?://((?:www\\.|m\\.)?soundcloud\\.com/[^<>\"\\']+(?:\\?format=html\\&page=\\d+|\\?page=\\d+)?|api\\.soundcloud\\.com/tracks/\\d+(?:\\?secret_token=[A-Za-z0-9\\-_]+)?|api\\.soundcloud\\.com/playlists/\\d+(?:\\?|.*?\\&)secret_token=[A-Za-z0-9\\-_]+)" })
 public class SoundCloudComDecrypter extends PluginForDecrypt {
     public SoundCloudComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.setConnectTimeout(3 * 60 * 1000);
+        br.setReadTimeout(3 * 60 * 1000);
+        br.setFollowRedirects(true);
+        return br;
     }
 
     @Override
@@ -77,7 +85,6 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
     private final Pattern           TYPE_GROUPS                   = Pattern.compile("(?i)https?://[^/]+/groups/([A-Za-z0-9\\-_]+)");
     /* Single soundcloud tracks, posted via smartphone/app. */
     private final String            subtype_mobile_facebook_share = "(?i)https?://[^/]+/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+\\?fb_action_ids=.+";
-    private final Pattern           TYPE_SHORT                    = Pattern.compile("(?i)https?://snd\\.sc/[A-Za-z0-9]+");
     /* Settings */
     private final String            GRAB_PURCHASE_URL             = "GRAB_PURCHASE_URL";
     private final String            GRAB500THUMB                  = "GRAB500THUMB";
@@ -100,12 +107,21 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
         }
     }
 
-    private Browser prepBR(final Browser br) {
-        /* Sometimes slow servers */
-        br.setConnectTimeout(3 * 60 * 1000);
-        br.setReadTimeout(3 * 60 * 1000);
-        br.setFollowRedirects(false);
-        return br;
+    private String getContentURL(final CryptedLink param) throws PluginException {
+        // TODO: Make use of this
+        String url = param.getCryptedUrl();
+        url = url.replaceFirst("#.+", "");// remove anchor
+        url = url.replaceFirst("/$", "");// remove trailing slash
+        url = url.replaceFirst("(?i)http://", "https://");
+        url = url.replaceAll("(/download|\\\\)", "").replaceFirst("://(www|m)\\.", "://");
+        if (url.matches(TYPE_INVALID)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if (url.matches(subtype_mobile_facebook_share)) {
+            final String urlDecoded = Encoding.htmlDecode(url);
+            url = "https://soundcloud.com/" + new Regex(urlDecoded, "(?i)soundcloud\\.com/([A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+)").getMatch(0);
+        }
+        return url;
     }
 
     @SuppressWarnings("deprecation")
@@ -127,7 +143,6 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
         decryptPurchaseURL = cfg.getBooleanProperty(GRAB_PURCHASE_URL, SoundcloudCom.defaultGRAB_PURCHASE_URL);
         decrypt500Thumb = cfg.getBooleanProperty(GRAB500THUMB, SoundcloudCom.defaultGRAB500THUMB);
         decryptOriginalThumb = cfg.getBooleanProperty(GRABORIGINALTHUMB, SoundcloudCom.defaultGRABORIGINALTHUMB);
-        prepBR(this.br);
         /* They can have huge pages, allow eight times the normal load limit */
         /* Login whenever possible, helps to get links which need the user to be logged in e.g. users' own favorites. */
         final Account acc = AccountController.getInstance().getValidAccount(this.getHost());
@@ -137,7 +152,6 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
         }
         /* Correct added links */
         correctInputLinks(param);
-        br.setFollowRedirects(true);
         if (isList(param.getCryptedUrl())) {
             if (TYPE_SINGLE_SET.matcher(param.getCryptedUrl()).find() || TYPE_API_PLAYLIST.matcher(param.getCryptedUrl()).find()) {
                 crawlSet(param);
@@ -160,7 +174,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
     private void correctInputLinks(final CryptedLink param) throws Exception {
         String url = param.getCryptedUrl();
         url = url.replaceFirst("#.+", "");// remove anchor
-        url = url.replaceFirst("/$", "");// remove trailing /
+        url = url.replaceFirst("/$", "");// remove trailing slash
         url = url.replaceFirst("(?i)http://", "https://");
         if (!StringUtils.equals(url, param.getCryptedUrl())) {
             param.setCryptedUrl(url);
@@ -169,19 +183,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
         if (url.matches(TYPE_INVALID)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (TYPE_SHORT.matcher(url).find()) {
-            br.setFollowRedirects(false);
-            /* Use ORIGINAL_LINK because https is not available for short links */
-            br.getPage(url);
-            final String newurl = br.getRedirectLocation();
-            if (newurl == null) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else if (!this.canHandle(newurl)) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else {
-                param.setCryptedUrl(newurl);
-            }
-        } else if (url.matches(subtype_mobile_facebook_share)) {
+        if (url.matches(subtype_mobile_facebook_share)) {
             final String urlDecoded = Encoding.htmlDecode(url);
             param.setCryptedUrl("https://soundcloud.com/" + new Regex(urlDecoded, "soundcloud\\.com/([A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+)").getMatch(0));
         }
