@@ -129,6 +129,7 @@ public class PastebinComCrawler extends AbstractPastebinCrawler {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final PastebinMetadata metadata = new PastebinMetadata(param, this.getFID(param.getCryptedUrl()));
+        metadata.setPastebinText(plaintxt);
         final String title = br.getRegex("<h1>([^<]+)</h1>").getMatch(0);
         if (title != null && !title.trim().equalsIgnoreCase("untitled")) {
             metadata.setTitle(Encoding.htmlDecode(title).trim());

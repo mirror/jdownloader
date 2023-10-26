@@ -23,6 +23,8 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.hoster.DirectHTTP;
@@ -60,8 +62,7 @@ public abstract class AbstractPastebinCrawler extends PluginForDecrypt {
         final PastebinMetadata metadata = this.crawlMetadata(param, br);
         if (metadata.getPastebinText() == null) {
             /* This should never happen. Either crawler plugin is broken or paste is offline. */
-            logger.warning("Could not find pastebin textfield");
-            return ret;
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Could not find pastebin textfield");
         }
         /**
          * TODO: Maybe differentiate between URLs that we support (= have plugin for) and those we don't support. </br>

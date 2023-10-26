@@ -15,15 +15,15 @@ import org.jdownloader.plugins.config.Type;
 public interface Keep2shareConfig extends PluginConfigInterface {
     public static class TRANSLATION {
         public String getEnableReconnectWorkaround_label() {
-            return "Enable reconnect workaround for free mode (only for API[=default] mode)?";
+            return "Enable reconnect workaround for free mode?";
         }
 
         public String getReferer_label() {
-            return "Custom referer e.g. 'examplewebsite.com'";
+            return "Custom referer e.g. 'refererexamplewebsite.tld'";
         }
 
         public String getForceCustomReferer_label() {
-            return "Force custom referer even if referer is given in URL via '?site=examplewebsite.com'?";
+            return "Force custom referer even if referer is given in URL via '?site=refererexamplewebsite.tld'?";
         }
 
         public String getEnableSSL_label() {
@@ -33,6 +33,10 @@ public interface Keep2shareConfig extends PluginConfigInterface {
         public String getMaxSimultaneousFreeDownloads_label() {
             return "Max. number of simultaneous downloads in free mode";
         }
+
+        public String getEnableFolderWorkaround_label() {
+            return "Enable folder workaround?";
+        }
     }
 
     public static final TRANSLATION TRANSLATION = new TRANSLATION();
@@ -41,6 +45,7 @@ public interface Keep2shareConfig extends PluginConfigInterface {
     @DefaultBooleanValue(false)
     @Order(10)
     @TakeValueFromSubconfig("EXPERIMENTALHANDLING")
+    @DescriptionForConfigEntry("This may avoid unnecessary captchas when an IP limit is reached in free download mode.")
     boolean isEnableReconnectWorkaround();
 
     void setEnableReconnectWorkaround(boolean b);
@@ -48,7 +53,7 @@ public interface Keep2shareConfig extends PluginConfigInterface {
     @AboutConfig
     @Order(20)
     @TakeValueFromSubconfig("CUSTOM_REFERER")
-    @DescriptionForConfigEntry("By default, source URL will be used as Referer which means most of the time no Referer will be used.")
+    @DescriptionForConfigEntry("Define custom referer value to be used.")
     String getReferer();
 
     void setReferer(String referer);
@@ -56,6 +61,7 @@ public interface Keep2shareConfig extends PluginConfigInterface {
     @AboutConfig
     @DefaultBooleanValue(false)
     @Order(25)
+    @DescriptionForConfigEntry("Always use custom referer even if added URL contains another referer.")
     boolean isForceCustomReferer();
 
     void setForceCustomReferer(boolean b);
@@ -67,4 +73,12 @@ public interface Keep2shareConfig extends PluginConfigInterface {
     int getMaxSimultaneousFreeDownloads();
 
     void setMaxSimultaneousFreeDownloads(int maxFree);
+
+    @AboutConfig
+    @DefaultBooleanValue(false)
+    @Order(50)
+    @DescriptionForConfigEntry("Enable this if you want JDownloader to be able to handle folders which are added as single file URLs in with the pattern /http.../file/...'.")
+    boolean isEnableFolderWorkaround();
+
+    void setEnableFolderWorkaround(boolean b);
 }

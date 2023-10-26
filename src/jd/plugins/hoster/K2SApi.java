@@ -91,7 +91,7 @@ public abstract class K2SApi extends PluginForHost {
 
     @Override
     public Browser createNewBrowserInstance() {
-        final Browser br = new Browser();
+        final Browser br = super.createNewBrowserInstance();
         br.addAllowedResponseCodes(new int[] { 429, 503, 520, 522 });
         br.getHeaders().put("User-Agent", "JDownloader." + getVersion());
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");

@@ -82,7 +82,7 @@ public class PastedCo extends PluginForDecrypt {
         br.getPage(param.getCryptedUrl());
         if (this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (br.containsHTML("(?i)>\\s*404\\s*:\\s*Not found")) {
+        } else if (br.containsHTML("(?i)>\\s*404\\s*:\\s*Not found|>\\s*404 - Not found\\s*<")) {
             /* 404 in html with response code 200 */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML("(?i)>\\s*This page was either removed or never existed at all|>\\s*This paste either never existed or was removed")) {

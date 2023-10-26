@@ -18,6 +18,8 @@ package jd.plugins.hoster;
 import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -30,6 +32,7 @@ import org.appwork.utils.StringUtils;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -41,7 +44,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.KemonoPartyCrawler;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-/** Helper plugin to download pre crawled text. */
 public class KemonoParty extends PluginForHost {
     public KemonoParty(PluginWrapper wrapper) {
         super(wrapper);
@@ -56,6 +58,7 @@ public class KemonoParty extends PluginForHost {
     public static String                      PROPERTY_DATE               = "date";
     public static String                      PROPERTY_POST_CONTENT_INDEX = "postContentIndex";
     private static Map<String, AtomicInteger> freeRunning                 = new HashMap<String, AtomicInteger>();
+    public static final String                UNIQUE_ID_PREFIX            = "kemonocoomer://";
 
     protected AtomicInteger getFreeRunning() {
         synchronized (freeRunning) {
@@ -96,18 +99,29 @@ public class KemonoParty extends PluginForHost {
 
     @Override
     public String getLinkID(final DownloadLink link) {
-        final String fid = getFID(link);
-        if (fid != null) {
-            final boolean useLegacyLinkidsForNonTextFiles = true;
-            if (!this.isTextFile(link) && useLegacyLinkidsForNonTextFiles) {
-                /* Keep backward compatibility to non-text items added as DirectHTTP URLs until including revision 48248 . */
-                return super.getLinkID(link);
+        try {
+            final String portal = link.getStringProperty(PROPERTY_PORTAL);
+            final String userid = link.getStringProperty(PROPERTY_USERID);
+            final String postid = link.getStringProperty(PROPERTY_POSTID);
+            if (this.isTextFile(link)) {
+                return UNIQUE_ID_PREFIX + "textfile/portal/" + portal + "/user/" + userid + "/post/" + postid;
             } else {
-                return this.getHost() + "://" + fid;
+                final String path = new URL(link.getPluginPatternMatcher()).getPath();
+                final String sha256Hash = getSha256HashFromPath(path);
+                if (sha256Hash != null) {
+                    return UNIQUE_ID_PREFIX + "filehash_sha256/" + sha256Hash;
+                } else {
+                    return UNIQUE_ID_PREFIX + "path/" + path;
+                }
             }
-        } else {
+        } catch (final Exception ignore) {
             return super.getLinkID(link);
         }
+    }
+
+    @Override
+    public String getMirrorID(final DownloadLink link) {
+        return this.getLinkID(link);
     }
 
     private String getFID(final DownloadLink link) {
@@ -134,6 +148,20 @@ public class KemonoParty extends PluginForHost {
         }
     }
 
+    /** Returns sha256 hash if it is present in the given url. */
+    public static String getSha256HashFromURL(final String url) {
+        try {
+            return getSha256HashFromPath(new URL(url).getPath());
+        } catch (final MalformedURLException ignore) {
+            ignore.printStackTrace();
+            return null;
+        }
+    }
+
+    public static String getSha256HashFromPath(final String path) {
+        return new Regex(path, "/([a-fA-F0-9]{64})").getMatch(0);
+    }
+
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         return requestFileInformation(link, false);
     }
@@ -155,6 +183,10 @@ public class KemonoParty extends PluginForHost {
                 ignore.printStackTrace();
             }
         } else {
+            final String sha256 = getSha256HashFromURL(link.getPluginPatternMatcher());
+            if (sha256 != null) {
+                link.setSha256Hash(sha256);
+            }
             String betterFilename = link.getStringProperty(PROPERTY_BETTER_FILENAME);
             if (betterFilename == null) {
                 betterFilename = KemonoPartyCrawler.getBetterFilenameFromURL(link.getPluginPatternMatcher());

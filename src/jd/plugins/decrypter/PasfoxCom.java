@@ -76,12 +76,12 @@ public class PasfoxCom extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        String parameter = param.getCryptedUrl().replaceFirst("(?i)http://", "https://");
+        String contenturl = param.getCryptedUrl().replaceFirst("(?i)http://", "https://");
         /* 2023-10-05: pasfox.com domain is down but content behind it still works with new domain pasfox.co. */
-        final String domainFromURL = Browser.getHost(parameter, false);
-        parameter = parameter.replaceFirst(Pattern.quote(domainFromURL), this.getHost());
+        final String domainFromURL = Browser.getHost(contenturl, false);
+        contenturl = contenturl.replaceFirst(Pattern.quote(domainFromURL), this.getHost());
         br.setFollowRedirects(true);
-        br.getPage(parameter);
+        br.getPage(contenturl);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
