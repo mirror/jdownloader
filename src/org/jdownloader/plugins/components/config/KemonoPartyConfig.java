@@ -13,7 +13,7 @@ import org.jdownloader.plugins.config.Type;
 @PluginHost(host = "kemono.party", type = Type.CRAWLER)
 public interface KemonoPartyConfig extends PluginConfigInterface {
     final String                    text_CrawlHttpLinksFromPostContent = "Crawl http links in post text?";
-    final String                    text_TextCrawlMode                 = "Select text crawl mode";
+    final String                    text_TextCrawlMode                 = "When to add post text content as .txt file:";
     public static final TRANSLATION TRANSLATION                        = new TRANSLATION();
 
     public static class TRANSLATION {
@@ -38,7 +38,7 @@ public interface KemonoPartyConfig extends PluginConfigInterface {
         ALWAYS {
             @Override
             public String getLabel() {
-                return "Always if available";
+                return "Always if text is available";
             }
         },
         ONLY_IF_NO_MEDIA_ITEMS_ARE_FOUND {
