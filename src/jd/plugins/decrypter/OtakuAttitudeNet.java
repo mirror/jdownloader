@@ -73,8 +73,9 @@ public class OtakuAttitudeNet extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
-        final GetRequest getRequest = br.createGetRequest(param.getCryptedUrl());
-        final URLConnectionAdapter con = this.br.openRequestConnection(br.createGetRequest(param.getCryptedUrl()));
+        final String contenturl = param.getCryptedUrl();
+        final GetRequest getRequest = br.createGetRequest(contenturl);
+        final URLConnectionAdapter con = this.br.openRequestConnection(br.createGetRequest(contenturl));
         try {
             if (this.looksLikeDownloadableContent(con)) {
                 final DownloadLink direct = getCrawler().createDirectHTTPDownloadLink(getRequest, con);
@@ -118,7 +119,7 @@ public class OtakuAttitudeNet extends PluginForDecrypt {
             String filename = new Regex(bonusDownloadsHTML, "class=\"cell cell_bonus\"[^>]*>([^<]+)</td>").getMatch(0);
             final String filesize = new Regex(bonusDownloadsHTML, "class=\"cell cell_bonus\">(\\d+ Mo)</td>").getMatch(0);
             final String url = br.getURL(getDirectDownloadurl(contentID, downloadID)).toString();
-            final DownloadLink subtitle = this.createDownloadlink("directhttp://" + url);
+            final DownloadLink subtitle = this.createDownloadlink(DirectHTTP.createURLForThisPlugin(url));
             if (filename != null) {
                 filename = Encoding.htmlDecode(filename).trim();
                 if (filenameBase == null && filename.contains("_")) {
@@ -149,9 +150,9 @@ public class OtakuAttitudeNet extends PluginForDecrypt {
             } else if (fpName != null) {
                 video.setName(fpName + "_" + downloadIDFormatted + ".mp4");
             }
-            final String filesize = br.getRegex("<strong>" + downloadIDFormatted + "</strong></td><td class=\"cell\">[^<]*</td><td class=\"cell\">[^<]*</td><td class=\"cell\">[^<]*</td><td class=\"cell\">(\\d+ Mo)</td>").getMatch(0);
-            if (filesize != null) {
-                video.setDownloadSize(SizeFormatter.getSize(filesize.replace("o", "b")));
+            final String filesizeStr = br.getRegex("<strong>" + downloadIDFormatted + "</strong></td><td class=\"cell\">[^<]*</td><td class=\"cell\">[^<]*</td><td class=\"cell\">[^<]*</td><td class=\"cell\">(\\d+ Mo)</td>").getMatch(0);
+            if (filesizeStr != null) {
+                video.setDownloadSize(SizeFormatter.getSize(filesizeStr.replace("o", "b")));
             }
             video.setAvailable(true);
             video.setProperty(DirectHTTP.FORCE_NOCHUNKS, true);

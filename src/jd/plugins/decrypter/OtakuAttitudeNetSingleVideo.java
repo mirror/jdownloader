@@ -18,26 +18,30 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.Regex;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.nutils.encoding.Encoding;
+import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.hoster.DirectHTTP;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class OtrkeyfinderCom extends PluginForDecrypt {
-    public OtrkeyfinderCom(PluginWrapper wrapper) {
+public class OtakuAttitudeNetSingleVideo extends PluginForDecrypt {
+    public OtakuAttitudeNetSingleVideo(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "otrkeyfinder.com" });
+        ret.add(new String[] { "otaku-attitude.net" });
         return ret;
     }
 
@@ -57,33 +61,31 @@ public class OtrkeyfinderCom extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/[a-z]{2}/go-to-mirror\\?otrkey=.+");
+            ret.add("https?://forum\\." + buildHostsPatternPart(domains) + "/video/view/([a-z0-9\\-]+)/.*");
         }
         return ret.toArray(new String[0]);
     }
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        br.setFollowRedirects(false);
+        br.setFollowRedirects(true);
         final String contenturl = param.getCryptedUrl().replaceFirst("(?i)http://", "https://");
         br.getPage(contenturl);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String redirect = this.br.getRedirectLocation();
-        String finallink;
-        if (redirect != null && !redirect.contains(br.getHost())) {
-            /* 2016-12-16 */
-            finallink = redirect;
-        } else {
-            finallink = br.getRegex("id=\"mirror\\-link\" href=\"(http[^<>\"]*?)\"").getMatch(0);
-            if (finallink == null) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else {
-                finallink = Encoding.htmlDecode(finallink);
+        final String urlSlug = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
+        final String[] urls = HTMLParser.getHttpLinks(br.getRequest().getHtmlCode(), br.getURL());
+        for (final String url : urls) {
+            if (url.contains(".mp4")) {
+                final DownloadLink link = this.createDownloadlink(DirectHTTP.createURLForThisPlugin(url));
+                link.setAvailable(true);
+                ret.add(link);
             }
         }
-        ret.add(this.createDownloadlink(finallink));
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(urlSlug.replace("-", " ").trim());
+        fp.addLinks(ret);
         return ret;
     }
 }

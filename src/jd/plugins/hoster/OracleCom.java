@@ -10,6 +10,7 @@ import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -47,7 +48,7 @@ public class OracleCom extends PluginForHost {
                         return;
                     } else {
                         logger.info("Cookie login failed");
-                        br.clearCookies(getHost());
+                        br.clearCookies(null);
                     }
                 }
                 logger.info("Performing full login");
@@ -67,9 +68,9 @@ public class OracleCom extends PluginForHost {
                 form.put("password", Encoding.urlEncode(account.getPass()));
                 br.submitForm(form);
                 if (br.containsHTML("readerpwderrormsg")) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    throw new AccountInvalidException();
                 } else if (!br.getURL().matches("https?://www.oracle.com/index.html")) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    throw new AccountInvalidException();
                 }
                 account.saveCookies(br.getCookies(getHost()), "");
             } catch (final PluginException e) {

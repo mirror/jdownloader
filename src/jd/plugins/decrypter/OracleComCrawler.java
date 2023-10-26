@@ -20,6 +20,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.parser.UrlQuery;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -34,20 +37,17 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.BrightcoveDecrypter.BrightcoveEdgeContainer;
 import jd.plugins.decrypter.BrightcoveDecrypter.BrightcoveEdgeContainer.Protocol;
+import jd.plugins.hoster.DirectHTTP;
 import jd.utils.JDUtilities;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.parser.UrlQuery;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "oracle.com" }, urls = { "https?://learn\\.oracle\\.com/ols/course/[a-z0-9\\-]+/\\d+/\\d+/\\d+|https?://learn\\.oracle\\.com/ords/training/DL4_EKITDOCUMENT\\.getPDF\\?p_url=[^\\&]+" })
-public class OracleCom extends PluginForDecrypt {
-    public OracleCom(PluginWrapper wrapper) {
+public class OracleComCrawler extends PluginForDecrypt {
+    public OracleComCrawler(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         final Account acc = AccountController.getInstance().getValidAccount(this.getHost());
         // if (acc == null) {
@@ -61,8 +61,7 @@ public class OracleCom extends PluginForDecrypt {
         }
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (parameter.contains(".getPDF")) {
             /* Crawl "flippdf" PDFs --> As single images */
@@ -96,11 +95,11 @@ public class OracleCom extends PluginForDecrypt {
             largePath = br.getURL(largePath).toString();
             for (final String page : pages) {
                 final String url = largePath + page + ".jpg";
-                final DownloadLink dl = this.createDownloadlink("directhttp://" + url);
+                final DownloadLink dl = this.createDownloadlink(DirectHTTP.createURLForThisPlugin(url));
                 dl.setFinalFileName(page + ".jpg");
                 dl.setAvailable(true);
                 dl._setFilePackage(fp);
-                decryptedLinks.add(dl);
+                ret.add(dl);
             }
         } else {
             final String json = br.getRegex("var globalConsData =\\s*(\\{.+\\});").getMatch(0);
@@ -118,20 +117,20 @@ public class OracleCom extends PluginForDecrypt {
                 final String videoId = (String) entries.get("videoId");
                 final HashMap<String, BrightcoveEdgeContainer> qualities = jd.plugins.decrypter.BrightcoveDecrypter.findAllQualitiesNew(this.br, br.getHost(), null, playerAccountId, videoId);
                 final BrightcoveEdgeContainer best = jd.plugins.decrypter.BrightcoveDecrypter.findBESTBrightcoveEdgeContainer(qualities);
-                final DownloadLink dl = this.createDownloadlink("directhttp://" + best.getDownloadURL());
+                final DownloadLink dl = this.createDownloadlink(DirectHTTP.createURLForThisPlugin(best.getDownloadURL()));
                 dl.setFinalFileName(best.getStandardFilename());
                 if (best.getFilesize() > 0) {
                     dl.setDownloadSize(best.getFilesize());
                 }
                 dl.setAvailable(true);
                 dl._setFilePackage(fp);
-                decryptedLinks.add(dl);
+                ret.add(dl);
                 distribute(dl);
                 if (this.isAbort()) {
                     break;
                 }
             }
         }
-        return decryptedLinks;
+        return ret;
     }
 }

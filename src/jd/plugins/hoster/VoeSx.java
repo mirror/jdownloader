@@ -174,6 +174,10 @@ public class VoeSx extends XFileSharingProBasic {
         // if (br.containsHTML(">\\s*This video can be watched as embed only")) {
         // throw new PluginException(LinkStatus.ERROR_FATAL, "This video can be watched as embed only");
         // }
+        if (br.containsHTML(">\\s*Server overloaded, download temporary disabled|The server of this file is currently over")) {
+            /* 2023-10-26 */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server overloaded");
+        }
     }
 
     @Override
