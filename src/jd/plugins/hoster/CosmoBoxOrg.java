@@ -136,4 +136,9 @@ public class CosmoBoxOrg extends XFileSharingProBasic {
         }
         super.checkErrors(br, html, link, account, checkAll);
     }
+
+    @Override
+    protected boolean supportsShortURLs() {
+        return true;
+    }
 }

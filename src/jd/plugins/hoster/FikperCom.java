@@ -695,7 +695,7 @@ public class FikperCom extends PluginForHost {
                 return false;
             } else {
                 idLabel.setForeground(Color.BLACK);
-                return getPassword() != null;
+                return true;
             }
         }
 

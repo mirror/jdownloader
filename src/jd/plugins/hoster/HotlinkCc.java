@@ -629,4 +629,9 @@ public class HotlinkCc extends XFileSharingProBasic {
     public Class<? extends XFSConfigVideoHotlinkCc> getConfigInterface() {
         return XFSConfigVideoHotlinkCc.class;
     }
+
+    @Override
+    protected boolean supportsShortURLs() {
+        return true;
+    }
 }

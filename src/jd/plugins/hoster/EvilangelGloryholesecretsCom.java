@@ -63,6 +63,7 @@ public class EvilangelGloryholesecretsCom extends EvilangelCore {
     @Override
     public Class<? extends EvilangelCoreConfig> getConfigInterface() {
         return EvilangelCoreConfigTabooheatCom.class;
+        // return EvilangelCoreConfigGloryholesecretsCom.class;
     }
 
     @Override
