@@ -74,6 +74,14 @@ public class FileCryptCc extends PluginForDecrypt {
         return 1;
     }
 
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.setLoadLimit(br.getLoadLimit() * 2);
+        br.getHeaders().put("Accept-Encoding", "gzip, deflate");
+        br.setFollowRedirects(true);
+        return br;
+    }
+
     public FileCryptCc(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -81,7 +89,7 @@ public class FileCryptCc extends PluginForDecrypt {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "filecrypt.cc", "filecrypt.co" });
+        ret.add(new String[] { "filecrypt.cc", "filecrypt.co", "filecrypt.to" });
         return ret;
     }
 
@@ -108,7 +116,7 @@ public class FileCryptCc extends PluginForDecrypt {
 
     @Override
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
-        /* Most of all links are captcha-protected. */
+        /* Most of all filecrypt links are captcha-protected. */
         return true;
     }
 
@@ -117,7 +125,7 @@ public class FileCryptCc extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         /*
-         * Not all captcha types change when re-loading page without cookies (recaptchav2 isn't). I tried with new response value - raztoki
+         * Not all captcha types change when re-loading page without cookies (recaptchav2 doesn't).
          */
         final String folderID = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
         final String mirrorIdFromURL = UrlQuery.parse(param.getCryptedUrl()).get("mirror");
@@ -130,11 +138,8 @@ public class FileCryptCc extends PluginForDecrypt {
         final int cutCaptchaAvoidanceMaxRetries = PluginJsonConfig.get(this.getConfigInterface()).getMaxCutCaptchaAvoidanceRetries();
         cutcaptchaAvoidanceLoop: while (cutCaptchaRetryIndex++ <= cutCaptchaAvoidanceMaxRetries && !this.isAbort()) {
             logger.info("cutcaptchaAvoidanceLoop " + (cutCaptchaRetryIndex + 1) + " / " + (cutCaptchaAvoidanceMaxRetries + 1));
-            br.setLoadLimit(br.getLoadLimit() * 2);
-            br.getHeaders().put("Accept-Encoding", "gzip, deflate");
             /* Website has no language selection as it auto-chooses based on IP and/or URL but we can force English language. */
             br.setCookie(Browser.getHost(contenturl), "lang", "en");
-            br.setFollowRedirects(true);
             br.addAllowedResponseCodes(500);// submit captcha responds with 500 code
             /* Use new User-Agent for each attempt */
             br.getHeaders().put("User-Agent", UserAgents.stringUserAgent(BrowserName.Chrome));
@@ -159,16 +164,18 @@ public class FileCryptCc extends PluginForDecrypt {
                  */
                 final String customLogoID = br.getRegex("custom/([a-z0-9]+)\\.png").getMatch(0);
                 if (customLogoID != null) {
-                    if ("53d1b".equals(customLogoID) || "80d13".equals(customLogoID) || "fde1d".equals(customLogoID)) {
-                        logger.info("Found presumed password by custom logoID: " + customLogoID);
-                        passwords.add(0, "serienfans.org");
+                    String logoPW = null;
+                    if ("53d1b".equals(customLogoID) || "80d13".equals(customLogoID) || "fde1d".equals(customLogoID) || "8abe0".equals(customLogoID)) {
+                        logoPW = "serienfans.org";
                     } else if ("51967".equals(customLogoID)) {
-                        logger.info("Found presumed password by custom logoID: " + customLogoID);
-                        passwords.add(0, "kellerratte");
+                        logoPW = "kellerratte";
                     } else if ("aaf75".equals(customLogoID)) {
                         /* 2023-10-23 */
-                        logger.info("Found presumed password by custom logoID: " + customLogoID);
-                        passwords.add(0, "cs.rin.ru");
+                        logoPW = "cs.rin.ru";
+                    }
+                    if (logoPW != null) {
+                        logger.info("Try PW by logo: " + logoPW);
+                        passwords.add(0, logoPW);
                     } else {
                         logger.info("Found unknown logoID: " + customLogoID);
                     }
@@ -262,10 +269,11 @@ public class FileCryptCc extends PluginForDecrypt {
                     }
                 }
                 if (captchaForm == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Failed to find captchaForm");
                 }
                 final String captchaURL = captchaForm.getRegex("((https?://[^<>\"']*?)?/captcha/[^<>\"']*?)\"").getMatch(0);
                 if (captchaURL != null && captchaURL.contains("circle.php")) {
+                    /* Click-captcha */
                     final File file = this.getLocalCaptchaFile();
                     getCaptchaBrowser(br).getDownload(file, captchaURL);
                     final ClickedPoint cp = getCaptchaClickedPoint(getHost(), file, param, "Click on the open circle");
@@ -376,13 +384,19 @@ public class FileCryptCc extends PluginForDecrypt {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
         }
+        /* Crawl links */
         FilePackage fp = null;
-        final String fpName = br.getRegex("<h2>([^<>\"]*?)<").getMatch(0);
+        final String fpName = br.getRegex("<h2>([^<]+)<").getMatch(0);
+        if (fpName != null) {
+            fp = FilePackage.getInstance();
+            fp.setName(Encoding.htmlDecode(fpName).trim());
+        }
         // mirrors - note: containers no longer have uid within path! -raztoki20160117
         // mirrors - note: containers can contain uid within path... -raztoki20161204
         String[] availableMirrors = br.getRegex("\"([^\"]*/Container/[A-Z0-9]+\\.html\\?mirror=\\d+)").getColumn(0);
-        if (availableMirrors == null || availableMirrors.length < 1) {
+        if (availableMirrors == null || availableMirrors.length == 0) {
             /* Fallback -> Only 1 mirror available */
+            logger.info("Failed to find any mirrors in html -> Fallback to given URL");
             availableMirrors = new String[1];
             if (mirrorIdFromURL != null) {
                 availableMirrors[0] = contenturl;
@@ -400,36 +414,45 @@ public class FileCryptCc extends PluginForDecrypt {
                 }
             }
             if (mirrors.size() == 0) {
-                logger.info("User preferred mirrorID inside URL does not exist in list of really existant mirrors: " + mirrorIdFromURL);
+                logger.info("User preferred mirrorID inside URL does not exist in list of really existing mirrors: " + mirrorIdFromURL);
             }
         }
         if (mirrors.size() > 0) {
-            logger.info("Crawl mirror according to mirrorID from URL:" + mirrors);
+            logger.info("Crawl mirror according to mirrorID from user added URL:" + mirrors);
         } else {
-            /* User preferred mirrorID not found or no preferred mirror given --> Crawl all */
+            /* User preferred mirrorID not found or no preferred mirror given --> Crawl all mirrors */
             mirrors.addAll(Arrays.asList(availableMirrors));
             logger.info("Crawling all existing mirrors: " + mirrors);
         }
+        /* Sort from mirrorID 0 to highest ID value. */
         Collections.sort(mirrors);
+        int progressNumber = 0;
+        int numberofOfflineMirrors = 0;
+        int numberofSkippedFakeAdvertisementMirrors = 0;
         try {
-            int progressNumber = 0;
-            for (final String mirrorURL : mirrors) {
+            mirrorLoop: for (final String mirrorURL : mirrors) {
                 progressNumber++;
                 logger.info("Crawling mirror " + progressNumber + "/" + mirrors.size() + " | " + mirrorURL);
                 br.getPage(mirrorURL);
+                final boolean mirrorLooksToBeOffline;
+                if (br.containsHTML("class=\"offline\"")) {
+                    logger.info("Mirror looks to be offline: " + mirrorURL);
+                    numberofOfflineMirrors++;
+                    mirrorLooksToBeOffline = true;
+                } else {
+                    mirrorLooksToBeOffline = false;
+                }
                 /* Use clicknload first as it doesn't rely on JD service.jdownloader.org, which can go down! */
                 final ArrayList<DownloadLink> cnlResults = handleCnl2(contenturl, successfullyUsedPassword);
                 if (!cnlResults.isEmpty()) {
                     logger.info("CNL success");
                     ret.addAll(cnlResults);
-                    if (fpName != null) {
-                        if (fp == null) {
-                            fp = FilePackage.getInstance();
-                            fp.setName(Encoding.htmlDecode(fpName).trim());
-                        }
+                    if (fp != null) {
                         fp.addLinks(cnlResults);
                     }
                     distribute(cnlResults.toArray(new DownloadLink[0]));
+                    /* Continue to next mirror */
+                    continue mirrorLoop;
                 } else {
                     /* Second try DLC, then single links */
                     logger.info("CNL failure -> Trying DLC");
@@ -447,81 +470,83 @@ public class FileCryptCc extends PluginForDecrypt {
                         final ArrayList<DownloadLink> dlcResults = loadcontainer(br.getURL("/DLC/" + dlc_id + ".dlc").toExternalForm());
                         if (dlcResults == null || dlcResults.isEmpty()) {
                             logger.warning("DLC for current mirror is empty or something is broken!");
-                            continue;
                         } else {
                             logger.info("DLC success");
                             ret.addAll(dlcResults);
+                            distribute(dlcResults);
                         }
+                        /* Continue to next mirror */
+                        continue mirrorLoop;
                     }
                 }
-                if (this.isAbort()) {
-                    logger.info("Stopping because: Aborted by user");
-                    return ret;
-                }
-            }
-            if (!ret.isEmpty()) {
-                logger.info("CNL/DLC successfully added");
-                return ret;
-            }
-            // this isn't always shown, see 104061178D - raztoki 20141118
-            logger.info("Trying single link handling");
-            String[] links = br.getRegex("openLink\\('([^<>\"]*?)'").getColumn(0);
-            if (links == null || links.length == 0) {
-                /* 2023-04-06 */
-                links = br.getRegex("onclick\\s*=\\s*\"[^\\(]*\\('([^<>\"\\']+)").getColumn(0);
+                /* Last resort: Try most time intensive way to crawl links: Crawl each link individually. */
+                logger.info("Trying single link redirect handling");
+                String[] links = br.getRegex("openLink\\('([^<>\"]*?)'").getColumn(0);
                 if (links == null || links.length == 0) {
-                    /* 2023-02-03 */
-                    links = br.getRegex("onclick=\"openLink[^\\(\"\\']*\\('([^<>\"\\']+)'").getColumn(0);
+                    /* 2023-04-06 */
+                    links = br.getRegex("onclick\\s*=\\s*\"[^\\(]*\\('([^<>\"\\']+)").getColumn(0);
                     if (links == null || links.length == 0) {
-                        /* 2023-02-13 */
-                        links = br.getRegex("'([^\"']+)', this\\);\" class=\"download\"[^>]*target=\"_blank\"").getColumn(0);
-                    }
-                }
-            }
-            if (links == null || links.length == 0) {
-                if (br.containsHTML("Der Inhaber dieses Ordners hat leider alle Hoster in diesem Container in seinen Einstellungen deaktiviert\\.")) {
-                    return ret;
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-            }
-            br.setFollowRedirects(false);
-            br.setCookie(this.getHost(), "BetterJsPopCount", "1");
-            int index = -1;
-            redirectLinksLoop: for (final String singleLink : links) {
-                index++;
-                logger.info("Processing redirectLinksLoop position: " + index + " / " + links.length);
-                String finallink = null;
-                int retryLink = 2;
-                singleRedirectLinkLoop: while (!isAbort()) {
-                    finallink = handleLink(br, param, singleLink);
-                    if (StringUtils.equals("IGNORE", finallink)) {
-                        continue singleRedirectLinkLoop;
-                    } else if (finallink != null || --retryLink == 0) {
-                        logger.info(singleLink + "->" + finallink + "|" + retryLink);
-                        break singleRedirectLinkLoop;
-                    }
-                }
-                if (finallink != null) {
-                    final DownloadLink link = createDownloadlink(finallink);
-                    ret.add(link);
-                    if (fpName != null) {
-                        if (fp == null) {
-                            fp = FilePackage.getInstance();
-                            fp.setName(Encoding.htmlDecode(fpName).trim());
+                        /* 2023-02-03 */
+                        links = br.getRegex("onclick=\"openLink[^\\(\"\\']*\\('([^<>\"\\']+)'").getColumn(0);
+                        if (links == null || links.length == 0) {
+                            /* 2023-02-13 */
+                            links = br.getRegex("'([^\"']+)', this\\);\" class=\"download\"[^>]*target=\"_blank\"").getColumn(0);
                         }
-                        fp.add(link);
                     }
-                    distribute(link);
                 }
-                if (isAbort()) {
-                    logger.info("Stopping because: Aborted by user");
-                    break redirectLinksLoop;
+                if (links == null || links.length == 0) {
+                    if (mirrorLooksToBeOffline) {
+                        logger.info("Skipping mirror which looks to be offline: " + mirrorURL);
+                        continue;
+                    } else if (br.getURL().contains("mirror=666") && br.containsHTML("usenet")) {
+                        logger.info("Skipping mirror which looks to be a fake advertisement mirror: " + mirrorURL);
+                        numberofSkippedFakeAdvertisementMirrors++;
+                        continue;
+                    } else if (br.containsHTML("Der Inhaber dieses Ordners hat leider alle Hoster in diesem Container in seinen Einstellungen deaktiviert\\.")) {
+                        // TODO: Add English language or change this to English language
+                        /* No mirrors available (disabled by uploader) -> Basically an empty folder */
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                }
+                final Browser brc = br.cloneBrowser();
+                brc.setFollowRedirects(false);
+                brc.setCookie(br.getHost(), "BetterJsPopCount", "1");
+                int index = -1;
+                redirectLinksLoop: for (final String singleLink : links) {
+                    index++;
+                    logger.info("Processing redirectLinksLoop position: " + index + "/" + links.length + " | " + singleLink);
+                    String finallink = null;
+                    int retryLink = 2;
+                    singleRedirectLinkLoop: while (!isAbort()) {
+                        finallink = handleLink(brc, param, singleLink, 0);
+                        if (StringUtils.equals("IGNORE", finallink)) {
+                            continue singleRedirectLinkLoop;
+                        } else if (finallink != null || --retryLink == 0) {
+                            logger.info(singleLink + " -> " + finallink + " | " + retryLink);
+                            break singleRedirectLinkLoop;
+                        }
+                    }
+                    if (finallink != null) {
+                        final DownloadLink link = createDownloadlink(finallink);
+                        if (fp != null) {
+                            link._setFilePackage(fp);
+                        }
+                        ret.add(link);
+                        distribute(link);
+                    } else {
+                        logger.warning("Failed to find any result for: " + singleLink);
+                    }
+                    if (isAbort()) {
+                        logger.info("Stopping because: Aborted by user");
+                        break redirectLinksLoop;
+                    }
                 }
             }
         } finally {
             if (successfullyUsedPassword != null) {
-                /* Assume that required password is also extract password. */
+                /* Assume that the required password is also the extract password. */
                 final ArrayList<String> pwlist = new ArrayList<String>();
                 pwlist.add(successfullyUsedPassword);
                 for (final DownloadLink result : ret) {
@@ -529,24 +554,34 @@ public class FileCryptCc extends PluginForDecrypt {
                 }
             }
         }
+        if (ret.isEmpty() && numberofOfflineMirrors == mirrors.size() - numberofSkippedFakeAdvertisementMirrors) {
+            /* In this case filecrypt is only using the link to show ads. */
+            logger.info("All mirrors are offline -> Whole folder is offline");
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         return ret;
     }
 
-    private String handleLink(final Browser br, final CryptedLink param, final String singleLink) throws Exception {
-        final Browser br2 = br.cloneBrowser();
-        if (StringUtils.startsWithCaseInsensitive(singleLink, "http://") || StringUtils.startsWithCaseInsensitive(singleLink, "https://")) {
-            br2.getPage(singleLink);
-        } else {
-            br2.getPage("/Link/" + singleLink + ".html");
+    private String handleLink(final Browser br, final CryptedLink param, final String singleLink, final int round) throws Exception {
+        if (round >= 5) {
+            /* Prevent endless recursive loop */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (br2.containsHTML("friendlyduck.com/") || br2.containsHTML("filecrypt\\.(cc|co)/usenet\\.html") || br2.containsHTML("powerusenet.xyz")) {
+        final String domainPattern = buildHostsPatternPart(getPluginDomains().get(0));
+        if (StringUtils.startsWithCaseInsensitive(singleLink, "http://") || StringUtils.startsWithCaseInsensitive(singleLink, "https://")) {
+            br.getPage(singleLink);
+        } else {
+            br.getPage("/Link/" + singleLink + ".html");
+        }
+        if (br.containsHTML("friendlyduck\\.com/") || br.containsHTML(domainPattern + "/usenet\\.html") || br.containsHTML("powerusenet.xyz")) {
             /* Advertising */
             return "IGNORE";
         }
         int retryCaptcha = 5;
         while (!isAbort() && retryCaptcha-- > 0) {
-            if (br2.containsHTML("Security prompt")) {
-                final String captcha = br2.getRegex("(/captcha/[^<>\"]*?)\"").getMatch(0);
+            if (br.containsHTML("Security prompt")) {
+                /* Rare case: Captcha required to access single link. */
+                final String captcha = br.getRegex("(/captcha/[^<>\"]*?)\"").getMatch(0);
                 if (captcha != null && captcha.contains("circle.php")) {
                     final File file = this.getLocalCaptchaFile();
                     getCaptchaBrowser(br).getDownload(file, captcha);
@@ -556,11 +591,11 @@ public class FileCryptCc extends PluginForDecrypt {
                     }
                     final Form form = new Form();
                     form.setMethod(MethodType.POST);
-                    form.setAction(br2.getURL());
+                    form.setAction(br.getURL());
                     form.put("button.x", String.valueOf(cp.getX()));
                     form.put("button.y", String.valueOf(cp.getY()));
                     form.put("button", "send");
-                    br2.submitForm(form);
+                    br.submitForm(form);
                 } else {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
@@ -569,15 +604,15 @@ public class FileCryptCc extends PluginForDecrypt {
             }
         }
         String finallink = null;
-        final String first_rd = br2.getRedirectLocation();
-        if (first_rd != null && first_rd.matches(".*filecrypt\\.(cc|co)/.*")) {
-            return handleLink(br2, param, first_rd);
-        } else if (first_rd != null && !first_rd.matches(".*filecrypt\\.(cc|co)/.*")) {
+        final String first_rd = br.getRedirectLocation();
+        if (first_rd != null && first_rd.matches(".*" + domainPattern + "/.*")) {
+            return handleLink(br, param, first_rd, round + 1);
+        } else if (first_rd != null && !first_rd.matches(".*" + domainPattern + "/.*")) {
             finallink = first_rd;
         } else {
-            final String nextlink = br2.getRegex("(\"|')(https?://[^/]+/index\\.php\\?Action=(G|g)o[^<>\"']+)").getMatch(1);
+            final String nextlink = br.getRegex("(\"|')(https?://[^/]+/index\\.php\\?Action=(G|g)o[^<>\"']+)").getMatch(1);
             if (nextlink != null) {
-                return handleLink(br2, param, nextlink);
+                return handleLink(br, param, nextlink, round + 1);
             }
         }
         if (finallink == null) {
