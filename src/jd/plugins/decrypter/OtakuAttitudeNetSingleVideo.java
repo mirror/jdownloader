@@ -132,6 +132,7 @@ public class OtakuAttitudeNetSingleVideo extends PluginForDecrypt {
         return ret;
     }
 
+    /** Returns all direct downloadable video items which can be found in html code of given browser instance. */
     private ArrayList<DownloadLink> findVideoLinks(final Browser br) throws PluginException {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String[] urls = HTMLParser.getHttpLinks(br.getRequest().getHtmlCode(), br.getURL());

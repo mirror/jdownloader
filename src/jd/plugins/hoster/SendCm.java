@@ -19,8 +19,15 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.net.URLHelper;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
@@ -34,6 +41,7 @@ import jd.parser.html.Form;
 import jd.parser.html.InputField;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -224,8 +232,13 @@ public class SendCm extends XFileSharingProBasic {
              * 2023-10-16: Special: For "Free accounts" with paid "Premium bandwidth". </br>
              * Looks like this is supposed to help with Cloudflare problems.
              */
-            requestFileInformationWebsite(link, account, true);
-            final String directurl = buildSpecialJDownloaderURL(link);
+            final String directurl;
+            if (allowAPIDownloadIfApikeyIsAvailable(link, account)) {
+                directurl = this.getDllinkAPI(link, account);
+            } else {
+                requestFileInformationWebsite(link, account, true);
+                directurl = buildSpecialJDownloaderURL(link);
+            }
             handleDownload(link, account, null, directurl, null);
         } else {
             super.doFree(link, account);
@@ -388,5 +401,138 @@ public class SendCm extends XFileSharingProBasic {
     @Override
     protected boolean supportsShortURLs() {
         return true;
+    }
+
+    @Override
+    protected String regexAPIKey(final Browser br) {
+        final String apikey = br.getRegex("(?i)<span class=\"input-group-text\"[^>]*>\\s*([a-z0-9]{20,})\\s*</span>").getMatch(0);
+        if (apikey != null) {
+            return apikey;
+        } else {
+            return super.regexAPIKey(br);
+        }
+    }
+
+    private String getApikey(final Account account) {
+        String apikey = this.getAPIKeyFromAccount(account);
+        final boolean tryApiHack = false;
+        if (apikey == null && tryApiHack && this.isAPIKey(account.getPass())) {
+            apikey = account.getPass();
+            /* Dirty hack */
+            if (tryApiHack && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                account.setProperty(PROPERTY_ACCOUNT_apikey, apikey);
+            }
+        }
+        return apikey;
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        /* 2023-10-27: Special: Try API login first */
+        final String apikey = getApikey(account);
+        if (apikey != null) {
+            /* Prefer API */
+            try {
+                final AccountInfo ai = this.fetchAccountInfoAPI(this.br, account);
+                logger.info("Returning AccountInfo solely obtained via API");
+                return ai;
+            } catch (final Exception e) {
+                logger.log(e);
+                logger.info("API login failed");
+            }
+        }
+        /* Fallback to upper handling */
+        return super.fetchAccountInfo(account);
+    }
+
+    @Override
+    protected AccountInfo fetchAccountInfoAPI(final Browser br, final Account account) throws Exception {
+        final AccountInfo ai = new AccountInfo();
+        loginAPI(br, account);
+        final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
+        /** 2019-07-31: Better compare expire-date against their serverside time if possible! */
+        final String server_timeStr = (String) entries.get("server_time");
+        final Map<String, Object> result = (Map<String, Object>) entries.get("result");
+        long expire_milliseconds_precise_to_the_second = 0;
+        final String email = (String) result.get("email");
+        final long currentTime;
+        if (server_timeStr != null && server_timeStr.matches("\\d{4}\\-\\d{2}\\-\\d{2} \\d{2}:\\d{2}:\\d{2}")) {
+            currentTime = TimeFormatter.getMilliSeconds(server_timeStr, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH);
+        } else {
+            /* Fallback */
+            currentTime = System.currentTimeMillis();
+        }
+        String premium_expireStr = (String) result.get("premium_expire");
+        if (StringUtils.isEmpty(premium_expireStr)) {
+            /*
+             * 2019-05-30: Seems to be a typo by the guy who develops the XFS script in the early versions of thei "API mod" :D 2019-07-28:
+             * Typo is fixed in newer XFSv3 versions - still we'll keep both versions in just to make sure it will always work ...
+             */
+            premium_expireStr = (String) entries.get("premim_expire");
+        }
+        final String premium_bandwidthStr = (String) result.get("premium_bandwidth");
+        /*
+         * 2019-08-22: For newly created free accounts, an expire-date will always be given, even if the account has never been a premium
+         * account. This expire-date will usually be the creation date of the account then --> Handling will correctly recognize it as a
+         * free account!
+         */
+        if (premium_expireStr != null && premium_expireStr.matches("\\d{4}\\-\\d{2}\\-\\d{2} \\d{2}:\\d{2}:\\d{2}")) {
+            expire_milliseconds_precise_to_the_second = TimeFormatter.getMilliSeconds(premium_expireStr, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH);
+        }
+        if (premium_bandwidthStr != null) {
+            ai.setTrafficLeft(SizeFormatter.getSize(premium_bandwidthStr));
+        } else {
+            ai.setUnlimitedTraffic();
+        }
+        final long premiumDurationMilliseconds = expire_milliseconds_precise_to_the_second - currentTime;
+        if (premiumDurationMilliseconds <= 0) {
+            /* Expired premium or no expire date given --> It is usually a Free Account */
+            setAccountLimitsByType(account, AccountType.FREE);
+        } else {
+            /* Expire date is in the future --> It is a premium account */
+            ai.setValidUntil(System.currentTimeMillis() + premiumDurationMilliseconds);
+            setAccountLimitsByType(account, AccountType.PREMIUM);
+        }
+        {
+            /* Now set less relevant account information */
+            final Object balanceO = result.get("balance");
+            if (balanceO != null) {
+                ai.setAccountBalance(SizeFormatter.getSize(balanceO.toString()));
+            }
+            /* 2019-07-26: values can also be "inf" for "Unlimited": "storage_left":"inf" */
+            // final long storage_left = JavaScriptEngineFactory.toLong(entries.get("storage_left"), 0);
+            final Object storage_used_bytesO = result.get("storage_used");
+            if (storage_used_bytesO != null) {
+                ai.setUsedSpace(SizeFormatter.getSize(storage_used_bytesO.toString()));
+            }
+        }
+        if (this.enableAccountApiOnlyMode() && !StringUtils.isEmpty(email)) {
+            /*
+             * Each account is unique. Do not care what the user entered - trust what API returns! </br> This is not really important - more
+             * visually so that something that makes sense is displayed to the user in his account managers' "Username" column!
+             */
+            account.setUser(email);
+        }
+        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            /* Devs only */
+            String accStatus;
+            if (ai.getStatus() != null) {
+                accStatus = ai.getStatus();
+            } else {
+                accStatus = account.getType().toString();
+            }
+            ai.setStatus("[API] " + accStatus);
+        }
+        return ai;
+    }
+
+    @Override
+    protected boolean allowAPIDownloadIfApikeyIsAvailable(final DownloadLink link, final Account account) {
+        final String apikey = getApikey(account);
+        if (apikey != null && (isFreeAccountWithPremiumTraffic(account) || account.getType() == AccountType.PREMIUM) && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            return true;
+        } else {
+            return false;
+        }
     }
 }

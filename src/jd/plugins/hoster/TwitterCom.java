@@ -117,26 +117,28 @@ public class TwitterCom extends PluginForHost {
         return link.getHost().equalsIgnoreCase(plugin.getHost());
     }
 
-    private final String                  TYPE_DIRECT                                     = "https?://[a-z0-9]+\\.twimg\\.com/.+";
-    public static final String            TYPE_VIDEO_DIRECT                               = "https?://amp\\.twimg\\.com/v/.+";
-    public static final String            TYPE_VIDEO_VMAP                                 = "^https?://.*\\.vmap$";
-    public static final String            TYPE_VIDEO_EMBED                                = "https?://[^/]+/i/videos/tweet/(\\d+)";
-    public static final String            TYPE_VIDEO_SPECIFIC                             = "https://[^/]+/([^/]+)/status/(\\d+)/video/(\\d+)";
-    private static final String           TYPE_TWEET_TEXT                                 = "https?://[^/]+/([^/]+)/status/(\\d+)";
+    private final String                  TYPE_DIRECT                                       = "https?://[a-z0-9]+\\.twimg\\.com/.+";
+    public static final String            TYPE_VIDEO_DIRECT                                 = "https?://amp\\.twimg\\.com/v/.+";
+    public static final String            TYPE_VIDEO_VMAP                                   = "^https?://.*\\.vmap$";
+    public static final String            TYPE_VIDEO_EMBED                                  = "https?://[^/]+/i/videos/tweet/(\\d+)";
+    public static final String            TYPE_VIDEO_SPECIFIC                               = "https://[^/]+/([^/]+)/status/(\\d+)/video/(\\d+)";
+    private static final String           TYPE_TWEET_TEXT                                   = "https?://[^/]+/([^/]+)/status/(\\d+)";
     /* Connection stuff - don't allow chunks as we only download small pictures/videos */
-    private final int                     MAXCHUNKS                                       = 1;
-    private final int                     MAXDOWNLOADS                                    = -1;
-    private String                        dllink                                          = null;
-    private boolean                       account_required                                = false;
-    private boolean                       geo_blocked                                     = false;
-    public static final String            COOKIE_KEY_LOGINED_CSRFTOKEN                    = "ct0";
-    public static final String            PROPERTY_DIRECTURL                              = "directlink";
-    public static final String            PROPERTY_DIRECTURL_hls_master                   = "directlink_hls_master";
-    private static final String           PROPERTY_DOWNLOADLINK_TIMESTAMP_MP4_HTTP_FAILED = "timestamp_mp4_http_failed";
-    private static final String           PROPERTY_DOWNLOADLINK_TIMESTAMP_MP4_HLS_FAILED  = "timestamp_mp4_hls_failed";
-    private final AtomicReference<String> lastUsedVideoDirecturlproperty                  = new AtomicReference<String>();
+    private final int                     MAXCHUNKS                                         = 1;
+    private final int                     MAXDOWNLOADS                                      = -1;
+    private String                        dllink                                            = null;
+    private boolean                       account_required                                  = false;
+    private boolean                       geo_blocked                                       = false;
+    public static final String            COOKIE_KEY_LOGINED_CSRFTOKEN                      = "ct0";
+    public static final String            PROPERTY_DIRECTURL                                = "directlink";
+    public static final String            PROPERTY_DIRECTURL_hls_master                     = "directlink_hls_master";
+    private static final String           PROPERTY_DOWNLOADLINK_TIMESTAMP_MP4_HTTP_FAILED   = "timestamp_mp4_http_failed";
+    private static final String           PROPERTY_DOWNLOADLINK_TIMESTAMP_MP4_HLS_FAILED    = "timestamp_mp4_hls_failed";
+    private static final String           PROPERTY_DOWNLOADLINK_TIMESTAMP_IMAGE_ORIG_FAILED = "timestamp_image_orig_failed";
+    private final AtomicReference<String> lastUsedVideoDirecturlproperty                    = new AtomicReference<String>();
     /* 2020-07-02: Only cookie login is supported! */
-    private static final boolean          allowCookieLoginOnly                            = true;
+    private static final boolean          allowCookieLoginOnly                              = true;
+    private final String                  IMAGE_ORIG_SUFFIX                                 = ":orig";
 
     public static Browser prepBR(final Browser br) {
         br.setAllowedResponseCodes(new int[] { 429 });
@@ -393,7 +395,7 @@ public class TwitterCom extends PluginForHost {
                                 }
                             }
                         }
-                        final Map<String, Object> root = JavaScriptEngineFactory.jsonToJavaMap(brc.toString());
+                        final Map<String, Object> root = JavaScriptEngineFactory.jsonToJavaMap(brc.getRequest().getHtmlCode());
                         final Map<String, Object> track = (Map<String, Object>) root.get("track");
                         if ((Boolean) track.get("isEventGeoblocked") == Boolean.TRUE) {
                             possibly_geo_blocked = true;
@@ -410,13 +412,18 @@ public class TwitterCom extends PluginForHost {
                     }
                 }
                 TwitterComCrawler.setFormattedFilename(link);
-            } else { // TYPE_DIRECT - jpg/png/mp4
+            } else {
+                /* Image */
+                // TYPE_DIRECT - jpg/png/mp4
                 if (StringUtils.containsIgnoreCase(link.getPluginPatternMatcher(), "jpg") || StringUtils.containsIgnoreCase(link.getPluginPatternMatcher(), "png")) {
-                    if (link.getPluginPatternMatcher().contains(":large")) {
-                        dllink = link.getPluginPatternMatcher().replaceFirst(":large", ":orig");
+                    if (looksLikeOriginalImageIsUnavailable(link)) {
+                        /* Make sure not to have the IMAGE_ORIG_SUFFIX in link to avoid http response 404 */
+                        dllink = link.getPluginPatternMatcher().replace(IMAGE_ORIG_SUFFIX, "");
+                    } else if (link.getPluginPatternMatcher().contains(":large")) {
+                        dllink = link.getPluginPatternMatcher().replaceFirst(":large", IMAGE_ORIG_SUFFIX);
                     } else if (link.getPluginPatternMatcher().matches("(?i).+\\.(jpg|jpeg|png)$")) {
                         /* Append this to get the highest quality possible */
-                        dllink = link.getPluginPatternMatcher() + ":orig";
+                        dllink = link.getPluginPatternMatcher() + IMAGE_ORIG_SUFFIX;
                     } else {
                         dllink = link.getPluginPatternMatcher();
                     }
@@ -508,25 +515,11 @@ public class TwitterCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    private void handleBrokenOrOfflineVideo(final DownloadLink link) throws PluginException {
-        final String errorText = "Broken video?";
-        if (looksLikeAllVideoStreamTypesAreBrokenOrOffline(link) || lastUsedVideoDirecturlproperty.get() == null) {
-            throw new PluginException(LinkStatus.ERROR_FATAL, errorText);
+    private boolean looksLikeOriginalImageIsUnavailable(final DownloadLink link) {
+        if (System.currentTimeMillis() - link.getLongProperty(PROPERTY_DOWNLOADLINK_TIMESTAMP_IMAGE_ORIG_FAILED, 0) < 5 * 60 * 1000) {
+            return true;
         } else {
-            /* Retry with */
-            final String retryStreamTypeText;
-            if (lastUsedVideoDirecturlproperty.get().equals(PROPERTY_DIRECTURL_hls_master)) {
-                link.setProperty(PROPERTY_DOWNLOADLINK_TIMESTAMP_MP4_HLS_FAILED, System.currentTimeMillis());
-                retryStreamTypeText = "HTTP";
-            } else {
-                link.setProperty(PROPERTY_DOWNLOADLINK_TIMESTAMP_MP4_HTTP_FAILED, System.currentTimeMillis());
-                retryStreamTypeText = "HLS";
-                if (!link.hasProperty(PROPERTY_DIRECTURL_hls_master)) {
-                    /* No HLS fallback possible */
-                    throw new PluginException(LinkStatus.ERROR_FATAL, errorText);
-                }
-            }
-            throw new PluginException(LinkStatus.ERROR_RETRY, errorText + " | Try again with: " + retryStreamTypeText);
+            return false;
         }
     }
 
@@ -634,7 +627,7 @@ public class TwitterCom extends PluginForHost {
                 dl.startDownload();
             } else {
                 dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, this.isResumeable(link, account), MAXCHUNKS);
-                final boolean isVideo = StringUtils.containsIgnoreCase(dl.getConnection().getURL().toString(), ".mp4");
+                final boolean isVideo = StringUtils.containsIgnoreCase(dl.getConnection().getURL().toExternalForm(), ".mp4");
                 if (isVideo && dl.getConnection().getCompleteContentLength() == 0) {
                     /*
                      * 2021-09-13: E.g. broken videos: HEAD request looks good but download-attempt will result in empty file --> Catch that
@@ -662,8 +655,10 @@ public class TwitterCom extends PluginForHost {
         if (con.getResponseCode() == 403) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403: Profile which posted this media has been deleted?", 10 * 60 * 1000l);
         } else if (con.getResponseCode() == 404) {
-            if (StringUtils.containsIgnoreCase(dl.getConnection().getURL().toString(), ".mp4")) {
+            if (StringUtils.containsIgnoreCase(con.getURL().toExternalForm(), ".mp4")) {
                 this.handleBrokenOrOfflineVideo(link);
+            } else if (con.getURL().toExternalForm().endsWith(IMAGE_ORIG_SUFFIX)) {
+                handleBrokenOrOfflineOriginalImage(link);
             } else {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 10 * 60 * 1000l);
             }
@@ -677,6 +672,39 @@ public class TwitterCom extends PluginForHost {
         }
     }
 
+    private void handleBrokenOrOfflineVideo(final DownloadLink link) throws PluginException {
+        final String errorText = "Broken video?";
+        if (looksLikeAllVideoStreamTypesAreBrokenOrOffline(link) || lastUsedVideoDirecturlproperty.get() == null) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, errorText);
+        } else {
+            /* Retry with */
+            final String retryStreamTypeText;
+            if (lastUsedVideoDirecturlproperty.get().equals(PROPERTY_DIRECTURL_hls_master)) {
+                link.setProperty(PROPERTY_DOWNLOADLINK_TIMESTAMP_MP4_HLS_FAILED, System.currentTimeMillis());
+                retryStreamTypeText = "HTTP";
+            } else {
+                link.setProperty(PROPERTY_DOWNLOADLINK_TIMESTAMP_MP4_HTTP_FAILED, System.currentTimeMillis());
+                retryStreamTypeText = "HLS";
+                if (!link.hasProperty(PROPERTY_DIRECTURL_hls_master)) {
+                    /* No HLS fallback possible */
+                    throw new PluginException(LinkStatus.ERROR_FATAL, errorText);
+                }
+            }
+            throw new PluginException(LinkStatus.ERROR_RETRY, errorText + " | Try again with: " + retryStreamTypeText);
+        }
+    }
+
+    /** Call this when image URL ending with IMAGE_ORIG_SUFFIX leads to http response 404. */
+    private void handleBrokenOrOfflineOriginalImage(final DownloadLink link) throws PluginException {
+        final String errorText = "Broken image?";
+        if (looksLikeOriginalImageIsUnavailable(link)) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, errorText);
+        } else {
+            link.setProperty(PROPERTY_DOWNLOADLINK_TIMESTAMP_IMAGE_ORIG_FAILED, System.currentTimeMillis());
+            throw new PluginException(LinkStatus.ERROR_RETRY, "Looks like original image is unavailable");
+        }
+    }
+
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return MAXDOWNLOADS;
@@ -684,63 +712,56 @@ public class TwitterCom extends PluginForHost {
 
     public void login(final Account account, final boolean force) throws Exception {
         synchronized (account) {
-            try {
-                br.setCookiesExclusive(true);
-                br.setFollowRedirects(true);
-                final Cookies userCookies = account.loadUserCookies();
-                if ((userCookies == null || userCookies.isEmpty()) && allowCookieLoginOnly) {
-                    showCookieLoginInfo();
-                    throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_required());
-                }
-                if (userCookies != null && !userCookies.isEmpty()) {
-                    /* 2020-02-13: Experimental - accepts cookies exported via browser addon "EditThisCookie" */
-                    br.setCookies(userCookies);
-                    if (checkLogin(br)) {
-                        logger.info("User Cookie login successful");
-                        return;
-                    } else if (account.hasEverBeenValid()) {
-                        throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
-                    } else {
-                        throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
-                    }
-                }
-                final Cookies cookies = account.loadCookies("");
-                if (cookies != null) {
-                    /*
-                     * Re-use cookies whenever possible as frequent logins will cause accounts to get blocked and owners will get warnings
-                     * via E-Mail
-                     */
-                    br.setCookies(account.getHoster(), cookies);
-                    if (this.checkLogin(br)) {
-                        /* Set new cookie timestamp */
-                        logger.info("Cookie login successful");
-                        br.setCookies(account.getHoster(), cookies);
-                        return;
-                    } else {
-                        logger.info("Cookie login failed");
-                        br.clearCookies(br.getHost());
-                    }
-                }
-                br.getPage("https://" + account.getHoster() + "/login");
-                String authenticytoken = br.getRegex("type=\"hidden\" value=\"([^<>\"]*?)\" name=\"authenticity_token\"").getMatch(0);
-                if (authenticytoken == null) {
-                    authenticytoken = br.getCookie(br.getHost(), "_mb_tk", Cookies.NOTDELETEDPATTERN);
-                }
-                if (authenticytoken == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                final String postData = "session%5Busername_or_email%5D=" + Encoding.urlEncode(account.getUser()) + "&session%5Bpassword%5D=" + Encoding.urlEncode(account.getPass()) + "&return_to_ssl=true&authenticity_token=" + Encoding.urlEncode(authenticytoken) + "&scribe_log=&redirect_after_login=&authenticity_token=" + Encoding.urlEncode(authenticytoken) + "&remember_me=1&ui_metrics=" + Encoding.urlEncode("{\"rf\":{\"\":208,\"\":-17,\"\":-29,\"\":-18},\"s\":\"\"}");
-                br.postPage("/sessions", postData);
-                if (br.getCookie(br.getHost(), "auth_token", Cookies.NOTDELETEDPATTERN) == null) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-                account.saveCookies(br.getCookies(br.getHost()), "");
-            } catch (final PluginException e) {
-                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
-                    account.clearCookies("");
-                }
-                throw e;
+            br.setCookiesExclusive(true);
+            br.setFollowRedirects(true);
+            final Cookies userCookies = account.loadUserCookies();
+            if ((userCookies == null || userCookies.isEmpty()) && allowCookieLoginOnly) {
+                showCookieLoginInfo();
+                throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_required());
             }
+            if (userCookies != null && !userCookies.isEmpty()) {
+                /* 2020-02-13: Experimental - accepts cookies exported via browser addon "EditThisCookie" */
+                br.setCookies(userCookies);
+                if (checkLogin(br)) {
+                    logger.info("User Cookie login successful");
+                    return;
+                } else if (account.hasEverBeenValid()) {
+                    throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
+                } else {
+                    throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
+                }
+            }
+            final Cookies cookies = account.loadCookies("");
+            if (cookies != null) {
+                /*
+                 * Re-use cookies whenever possible as frequent logins will cause accounts to get blocked and owners will get warnings via
+                 * E-Mail
+                 */
+                br.setCookies(account.getHoster(), cookies);
+                if (this.checkLogin(br)) {
+                    /* Set new cookie timestamp */
+                    logger.info("Cookie login successful");
+                    br.setCookies(account.getHoster(), cookies);
+                    return;
+                } else {
+                    logger.info("Cookie login failed");
+                    br.clearCookies(null);
+                }
+            }
+            br.getPage("https://" + account.getHoster() + "/login");
+            String authenticytoken = br.getRegex("type=\"hidden\" value=\"([^<>\"]*?)\" name=\"authenticity_token\"").getMatch(0);
+            if (authenticytoken == null) {
+                authenticytoken = br.getCookie(br.getHost(), "_mb_tk", Cookies.NOTDELETEDPATTERN);
+            }
+            if (authenticytoken == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            final String postData = "session%5Busername_or_email%5D=" + Encoding.urlEncode(account.getUser()) + "&session%5Bpassword%5D=" + Encoding.urlEncode(account.getPass()) + "&return_to_ssl=true&authenticity_token=" + Encoding.urlEncode(authenticytoken) + "&scribe_log=&redirect_after_login=&authenticity_token=" + Encoding.urlEncode(authenticytoken) + "&remember_me=1&ui_metrics=" + Encoding.urlEncode("{\"rf\":{\"\":208,\"\":-17,\"\":-29,\"\":-18},\"s\":\"\"}");
+            br.postPage("/sessions", postData);
+            if (br.getCookie(br.getHost(), "auth_token", Cookies.NOTDELETEDPATTERN) == null) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+            account.saveCookies(br.getCookies(br.getHost()), "");
         }
     }
 
@@ -761,7 +782,7 @@ public class TwitterCom extends PluginForHost {
         final AccountInfo ai = new AccountInfo();
         login(account, true);
         br.getPage("https://" + this.getHost() + "/i/api/1.1/account/settings.json?include_mention_filter=true&include_nsfw_user_flag=true&include_nsfw_admin_flag=true&include_ranked_timeline=true&include_alt_text_compose=true&ext=ssoConnections&include_country_code=true&include_ext_dm_nsfw_media_filter=true&include_ext_sharing_audiospaces_listening_data_with_followers=true");
-        final Map<String, Object> user = restoreFromString(br.toString(), TypeRef.MAP);
+        final Map<String, Object> user = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         final String username = (String) user.get("screen_name");
         final Cookies userCookies = account.loadUserCookies();
         /*
@@ -797,5 +818,6 @@ public class TwitterCom extends PluginForHost {
     public void resetDownloadlink(final DownloadLink link) {
         link.removeProperty(PROPERTY_DOWNLOADLINK_TIMESTAMP_MP4_HLS_FAILED);
         link.removeProperty(PROPERTY_DOWNLOADLINK_TIMESTAMP_MP4_HTTP_FAILED);
+        link.removeProperty(PROPERTY_DOWNLOADLINK_TIMESTAMP_IMAGE_ORIG_FAILED);
     }
 }
