@@ -119,8 +119,6 @@ public class Keep2ShareCcDecrypter extends PluginForDecrypt {
         br = plugin.createNewBrowserInstance();
         // set cross browser support
         plugin.setBrowser(br);
-        // final List<DownloadLink> unavailableFolders = new ArrayList<DownloadLink>();
-        // final List<DownloadLink> emptyFolders = new ArrayList<DownloadLink>();
         final String referer = K2SApi.getRefererFromURL(param.getCryptedUrl());
         final boolean addRefererToRequest = false;
         final DownloadLink dummy = this.createDownloadlink(generateFileUrl(contentidFromURL, null, referer));
@@ -157,10 +155,6 @@ public class Keep2ShareCcDecrypter extends PluginForDecrypt {
                     final String id = (String) item.get("id");
                     final String fileOrFolderName = (String) item.get("name");
                     final Boolean isFolder = (Boolean) item.get("is_folder");
-                    // if (isFolder == null) {
-                    // /* Most likely we only got one result and that is an offline item. */
-                    // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    // }
                     if (Boolean.FALSE.equals(isFolder)) {
                         /* File */
                         final DownloadLink file = createDownloadlink(generateFileUrl(id, fileOrFolderName, referer));
@@ -250,9 +244,6 @@ public class Keep2ShareCcDecrypter extends PluginForDecrypt {
                         }
                         ret.add(folder);
                         distribute(folder);
-                        // if (Boolean.FALSE.equals(item.get("is_available"))) {
-                        // unavailableFolders.add(folder);
-                        // }
                     } else {
                         /* File */
                         final DownloadLink file = createDownloadlink(generateFileUrl(id, filenameOrFoldername, referer));
