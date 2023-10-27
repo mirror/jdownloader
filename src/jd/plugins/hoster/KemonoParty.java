@@ -80,6 +80,12 @@ public class KemonoParty extends PluginForHost {
         return KemonoPartyCrawler.getPluginDomains();
     }
 
+    @Override
+    public String rewriteHost(final String host) {
+        /* 2023-10-27: Domains have changed in the past. */
+        return this.rewriteHost(getPluginDomains(), host);
+    }
+
     public static String[] getAnnotationNames() {
         return buildAnnotationNames(getPluginDomains());
     }

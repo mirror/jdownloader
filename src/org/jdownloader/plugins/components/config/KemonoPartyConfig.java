@@ -24,6 +24,10 @@ public interface KemonoPartyConfig extends PluginConfigInterface {
         public String getTextCrawlMode_label() {
             return text_TextCrawlMode;
         }
+
+        public String getEnableProfileCrawlerExtendedDupeFiltering_label() {
+            return "Profile crawler: Enable extended filtering of duplicates?";
+        }
     }
 
     @AboutConfig
@@ -62,4 +66,12 @@ public interface KemonoPartyConfig extends PluginConfigInterface {
     TextCrawlMode getTextCrawlMode();
 
     void setTextCrawlMode(TextCrawlMode mode);
+
+    @AboutConfig
+    @DefaultBooleanValue(false)
+    @DescriptionForConfigEntry("Filters duplicates during crawl process via sha256 file-hashes.")
+    @Order(30)
+    boolean isEnableProfileCrawlerExtendedDupeFiltering();
+
+    void setEnableProfileCrawlerExtendedDupeFiltering(boolean b);
 }

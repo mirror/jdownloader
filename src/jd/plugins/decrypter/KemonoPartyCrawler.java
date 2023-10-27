@@ -66,8 +66,8 @@ public class KemonoPartyCrawler extends PluginForDecrypt {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "coomer.party", "coomer.su" }); // onlyfans.com content
-        ret.add(new String[] { "kemono.party", "kemono.su" }); // content of other websites such as patreon.com
+        ret.add(new String[] { "coomer.su", "coomer.party" }); // onlyfans.com content
+        ret.add(new String[] { "kemono.su", "kemono.party" }); // content of other websites such as patreon.com
         return ret;
     }
 
@@ -119,6 +119,7 @@ public class KemonoPartyCrawler extends PluginForDecrypt {
         if (useAPI) {
             HashSet<String> dupes = null;
             final boolean useExtendedDupecheck = false;
+            // if(PluginJsonConfig.get(getConfigInterface()).isEnableProfileCrawlerExtendedDupeFiltering())
             if (useExtendedDupecheck) {
                 dupes = new HashSet<String>();
             }

@@ -16,12 +16,16 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 
 import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
@@ -71,12 +75,69 @@ public class OtakuAttitudeNetSingleVideo extends PluginForDecrypt {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
         final String contenturl = param.getCryptedUrl().replaceFirst("(?i)http://", "https://");
+        final String mainVideoPartID = UrlQuery.parse(param.getCryptedUrl()).get("vid");
         br.getPage(contenturl);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String urlSlug = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(urlSlug.replace("-", " ").trim());
+        fp.setPackageKey("otakuattitude://singlevideo/" + urlSlug);
+        final HashSet<String> videoPartsURLs = new HashSet<String>();
         final String[] urls = HTMLParser.getHttpLinks(br.getRequest().getHtmlCode(), br.getURL());
+        String skipPartID = null;
+        for (final String url : urls) {
+            final UrlQuery query = UrlQuery.parse(url);
+            final String partID = query.get("vid");
+            if (partID == null) {
+                continue;
+            }
+            if (mainVideoPartID == null && skipPartID == null) {
+                logger.info("Skipping ID of current video part: " + partID);
+                skipPartID = partID;
+                continue;
+            } else if (partID.equals(skipPartID)) {
+                continue;
+            }
+            if (!StringUtils.equals(partID, mainVideoPartID)) {
+                videoPartsURLs.add(url);
+            }
+        }
+        final ArrayList<DownloadLink> mainVideoPartResults = findVideoLinks(br);
+        for (final DownloadLink mainVideoPartResult : mainVideoPartResults) {
+            mainVideoPartResult._setFilePackage(fp);
+            distribute(mainVideoPartResult);
+            ret.add(mainVideoPartResult);
+        }
+        if (videoPartsURLs.size() > 0) {
+            /* Crawl other video parts */
+            int index = 0;
+            for (final String videoPartURL : videoPartsURLs) {
+                logger.info("Crawling  video part " + index + "/" + videoPartsURLs.size() + " | " + videoPartURL);
+                br.getPage(videoPartURL);
+                final ArrayList<DownloadLink> thisVideoPartResults = findVideoLinks(br);
+                for (final DownloadLink thisVideoPartResult : thisVideoPartResults) {
+                    thisVideoPartResult._setFilePackage(fp);
+                    distribute(thisVideoPartResult);
+                    ret.add(thisVideoPartResult);
+                }
+                if (this.isAbort()) {
+                    logger.info("Aborted by user");
+                    break;
+                }
+                index++;
+            }
+        }
+        return ret;
+    }
+
+    private ArrayList<DownloadLink> findVideoLinks(final Browser br) throws PluginException {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final String[] urls = HTMLParser.getHttpLinks(br.getRequest().getHtmlCode(), br.getURL());
+        if (urls == null || urls.length == 0) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         for (final String url : urls) {
             /**
              * Some filenames contain mp4 two times -> This regex serves dual purpose: </br>
@@ -91,9 +152,6 @@ public class OtakuAttitudeNetSingleVideo extends PluginForDecrypt {
                 ret.add(link);
             }
         }
-        final FilePackage fp = FilePackage.getInstance();
-        fp.setName(urlSlug.replace("-", " ").trim());
-        fp.addLinks(ret);
         return ret;
     }
 }
