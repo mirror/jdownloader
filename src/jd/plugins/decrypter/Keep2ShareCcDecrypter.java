@@ -130,7 +130,7 @@ public class Keep2ShareCcDecrypter extends PluginForDecrypt {
         FilePackage fp = null;
         String thisFolderTitle = null;
         try {
-            if (looksLikeSingleFileItem) {
+            singleFileHandling: if (looksLikeSingleFileItem) {
                 /**
                  * This handling is supposed to be for single files but can also be used for small folders. </br>
                  * Using the folder handling down below for single files will prohibit our special referer handling from working since it
@@ -153,37 +153,31 @@ public class Keep2ShareCcDecrypter extends PluginForDecrypt {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
                 items = (List<Map<String, Object>>) response.get("files");
-                if (items.isEmpty()) {
-                    logger.info("Empty object -> Empty or invalid folder");
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
-                if (items != null) {
-                    for (Map<String, Object> item : items) {
-                        final String id = (String) item.get("id");
-                        final String fileOrFolderName = (String) item.get("name");
-                        final Boolean isFolder = (Boolean) item.get("is_folder");
-                        if (isFolder == null) {
-                            /* Most likely we only got one result and that is an offline item. */
-                            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                for (final Map<String, Object> item : items) {
+                    final String id = (String) item.get("id");
+                    final String fileOrFolderName = (String) item.get("name");
+                    final Boolean isFolder = (Boolean) item.get("is_folder");
+                    // if (isFolder == null) {
+                    // /* Most likely we only got one result and that is an offline item. */
+                    // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    // }
+                    if (Boolean.FALSE.equals(isFolder)) {
+                        /* File */
+                        final DownloadLink file = createDownloadlink(generateFileUrl(id, fileOrFolderName, referer));
+                        K2SApi.parseFileInfo(file, item, contentidFromURL);
+                        if (!file.isNameSet()) {
+                            /* Fallback */
+                            file.setName(id);
                         }
-                        if (Boolean.FALSE.equals(isFolder)) {
-                            final DownloadLink file = createDownloadlink(generateFileUrl(id, fileOrFolderName, referer));
-                            K2SApi.parseFileInfo(file, item, contentidFromURL);
-                            if (!file.isNameSet()) {
-                                /* Fallback */
-                                file.setName(id);
-                            }
-                            ret.add(file);
-                        } else {
-                            if (id.equals(contentidFromURL)) {
-                                logger.info("Looks like this might be a bigger folder -> Jumping into folder crawler");
-                                break;
-                            } else {
-                                // TODO
-                            }
-                        }
+                        ret.add(file);
+                    } else {
+                        /* Item is a folder or offline (= invalid id) */
+                        logger.info("Looks like this might be an invalid fileID/folderID or a bigger folder -> Jumping into folder crawler");
+                        break singleFileHandling;
                     }
                 }
+                /* If we reach this line this means we found at least one file that is online. */
+                return ret;
             }
             final Set<String> dups = new HashSet<String>();
             final int maxItemsPerPage = 50;
