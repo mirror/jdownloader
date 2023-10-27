@@ -21,10 +21,13 @@ import java.util.List;
 import org.jdownloader.plugins.components.YetiShareCore;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class RapiduVip extends YetiShareCore {
@@ -43,9 +46,15 @@ public class RapiduVip extends YetiShareCore {
      */
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
-        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "rapidu.vip", "pobieraj.net" });
+        /* 2023-10-27: Main domain has changed from rapidu.vip to pobieraj.net. */
+        ret.add(new String[] { "pobieraj.net", "rapidu.vip" });
         return ret;
+    }
+
+    @Override
+    public String rewriteHost(String host) {
+        /* 2023-10-27: Main domain has changed from rapidu.vip to pobieraj.net */
+        return this.rewriteHost(getPluginDomains(), host);
     }
 
     public static String[] getAnnotationNames() {
@@ -100,5 +109,25 @@ public class RapiduVip extends YetiShareCore {
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
+    }
+
+    @Override
+    protected void runPostRequestTask(final Browser ibr) throws Exception {
+        super.runPostRequestTask(ibr);
+        dirtyHack(br);
+    }
+
+    @Override
+    protected Form getContinueForm(final Browser br, final int loop_counter, final String continue_link) throws PluginException {
+        dirtyHack(br);
+        return super.getContinueForm(br, loop_counter, continue_link);
+    }
+
+    private final void dirtyHack(final Browser br) {
+        /* 2023-10-27: Dirty hack - there are two reCaptchaV2 site-keys in their html code -> Remove the one we don't need. */
+        String newhtml = br.getRequest().getHtmlCode();
+        newhtml = newhtml.replace("6Leb_JEkAAAAAJJco-pJGYa-Vwax_i95EcHsOLIS", "");
+        newhtml = newhtml.replace("grecaptcha\\.enterprise", "");
+        br.getRequest().setHtmlCode(newhtml);
     }
 }

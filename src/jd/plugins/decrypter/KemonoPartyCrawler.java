@@ -117,13 +117,18 @@ public class KemonoPartyCrawler extends PluginForDecrypt {
         final String userID = urlinfo.getMatch(1);
         final boolean useAPI = true;
         if (useAPI) {
-            return crawlProfileAPI(portal, userID);
+            HashSet<String> dupes = null;
+            final boolean useExtendedDupecheck = false;
+            if (useExtendedDupecheck) {
+                dupes = new HashSet<String>();
+            }
+            return crawlProfileAPI(dupes, portal, userID);
         } else {
             return crawlProfileWebsite(param, portal, userID);
         }
     }
 
-    private ArrayList<DownloadLink> crawlProfileAPI(final String portal, final String userID) throws Exception {
+    private ArrayList<DownloadLink> crawlProfileAPI(final HashSet<String> dupes, final String portal, final String userID) throws Exception {
         if (portal == null || userID == null) {
             /* Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -146,7 +151,7 @@ public class KemonoPartyCrawler extends PluginForDecrypt {
                 }
             }
             for (final HashMap<String, Object> post : posts) {
-                final ArrayList<DownloadLink> thisresults = this.crawlProcessPostAPI(post);
+                final ArrayList<DownloadLink> thisresults = this.crawlProcessPostAPI(dupes, post);
                 for (final DownloadLink thisresult : thisresults) {
                     thisresult._setFilePackage(fp);
                     distribute(thisresult);
@@ -295,11 +300,11 @@ public class KemonoPartyCrawler extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
-        return crawlProcessPostAPI(entries);
+        return crawlProcessPostAPI(null, entries);
     }
 
     /** Processes a map of an API response containing information about a users' post. */
-    private ArrayList<DownloadLink> crawlProcessPostAPI(final Map<String, Object> postmap) throws PluginException {
+    private ArrayList<DownloadLink> crawlProcessPostAPI(HashSet<String> dupes, final Map<String, Object> postmap) throws PluginException {
         final String portal = postmap.get("service").toString();
         final String userID = postmap.get("user").toString();
         final String postID = postmap.get("id").toString();
@@ -310,7 +315,9 @@ public class KemonoPartyCrawler extends PluginForDecrypt {
         int numberofResultsSimpleCount = 0;
         int index = 0;
         final Map<String, Object> filemap = (Map<String, Object>) postmap.get("file");
-        final HashSet<String> dupes = new HashSet<String>();
+        if (dupes == null) {
+            dupes = new HashSet<String>();
+        }
         if (!filemap.isEmpty()) {
             final DownloadLink media = buildFileDownloadLinkAPI(dupes, filemap, index);
             kemonoResults.add(media);

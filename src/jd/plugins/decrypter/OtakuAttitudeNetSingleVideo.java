@@ -22,6 +22,7 @@ import org.appwork.utils.Regex;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -77,8 +78,15 @@ public class OtakuAttitudeNetSingleVideo extends PluginForDecrypt {
         final String urlSlug = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
         final String[] urls = HTMLParser.getHttpLinks(br.getRequest().getHtmlCode(), br.getURL());
         for (final String url : urls) {
-            if (url.contains(".mp4")) {
+            /**
+             * Some filenames contain mp4 two times -> This regex serves dual purpose: </br>
+             * 1. Find mp4 links. </br>
+             * 2. Set better filenames that we would get in browser.
+             */
+            final String mp4Filename = new Regex(url, "(?i)/([^/]*?\\.mp4)").getMatch(0);
+            if (mp4Filename != null) {
                 final DownloadLink link = this.createDownloadlink(DirectHTTP.createURLForThisPlugin(url));
+                link.setFinalFileName(Encoding.htmlDecode(mp4Filename).trim());
                 link.setAvailable(true);
                 ret.add(link);
             }

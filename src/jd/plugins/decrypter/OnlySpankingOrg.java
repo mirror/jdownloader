@@ -34,7 +34,7 @@ public class OnlySpankingOrg extends antiDDoSForDecrypt {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "onlyspanking.video", "onlyspanking.org", "spanking.photos" });
+        ret.add(new String[] { "onlyspanking.video", "onlyspanking.org" });
         return ret;
     }
 
@@ -54,7 +54,7 @@ public class OnlySpankingOrg extends antiDDoSForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/\\d+-[a-zA-Z0-9\\-_]+\\.html");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(\\d+-[a-zA-Z0-9\\-_]+\\.html|vfile/[a-z0-9]{12})");
         }
         return ret.toArray(new String[0]);
     }
@@ -62,153 +62,139 @@ public class OnlySpankingOrg extends antiDDoSForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        br.setFollowRedirects(true);
         final String contenturl = param.getCryptedUrl().replaceFirst("(?i)http://", "https://");
-        getPage(contenturl);
-        final String startURL = br.getURL();
-        final String dle_skin = br.getRegex("var\\s*dle_skin\\s*=\\s*'(.*?)'").getMatch(0);
-        if (dle_skin == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        } else if (!br.containsHTML("<meta property\\s*=\\s*\"og:title\"")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        /*
-         * Special case: Users who own a premium account of a specified OCH can auth themselves as premium here to get the downloadlinks!
-         */
-        String ubiqfile_premium_mail = null;
-        final ArrayList<Account> accs = AccountController.getInstance().getValidAccounts("ubiqfile.com");
-        if (accs != null && accs.size() > 0) {
-            for (final Account acc : accs) {
-                final String accMailTmp = acc.getStringProperty("PROPERTY_UBIQFILE_MAIL");
-                if (acc.getType() == AccountType.PREMIUM && accMailTmp != null) {
-                    ubiqfile_premium_mail = accMailTmp;
-                    break;
-                }
+        if (contenturl.matches("(?i)https?://[^/]+/vfile/[a-z0-9]{12}")) {
+            br.setFollowRedirects(false);
+            getPage(contenturl);
+            final String redirect = br.getRedirectLocation();
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (redirect == null) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-        }
-        if (isPremiumAccountRequired(br) && ubiqfile_premium_mail == null) {
-            logger.info("Content is premiumonly and user does not own premium access");
-            throw new AccountRequiredException();
-        }
-        String ajax_action = null;
-        boolean captchaSuccess = false;
-        String refreshCaptchaURL = null;
-        for (int i = 0; i <= 2; i++) {
-            /* Important! */
-            br.getHeaders().put("Referer", startURL);
-            Form captchaform = getCaptchaForm(br);
-            if (captchaform == null && refreshCaptchaURL != null) {
-                getPage(refreshCaptchaURL);
-                captchaform = getCaptchaForm(br);
-            } else {
-                if (captchaform == null && refreshCaptchaURL == null) {
-                    /* E.g. onlyspanking.org */
-                    getPage("/engine/ajax/getlink2.php");
-                    if (isPremiumAccountRequired(br) && ubiqfile_premium_mail == null) {
-                        logger.info("Content is premiumonly and user does not own premium access");
-                        throw new AccountRequiredException();
-                    }
-                    ajax_action = br.getURL();
-                    captchaform = getCaptchaForm(br);
-                    if (captchaform == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    refreshCaptchaURL = br.getURL();
-                } else {
-                    /* E.g. spanking.photos */
-                    refreshCaptchaURL = startURL;
-                }
+            ret.add(this.createDownloadlink(redirect));
+        } else {
+            br.setFollowRedirects(true);
+            getPage(contenturl);
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            if (captchaform == null) {
+            final String startURL = br.getURL();
+            final String dle_skin = br.getRegex("var\\s*dle_skin\\s*=\\s*'(.*?)'").getMatch(0);
+            if (dle_skin == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            } else if (!br.containsHTML("<meta property\\s*=\\s*\"og:title\"")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            if (captchaform.containsHTML("id\\s*=\\s*\"getlink\"") && captchaform.containsHTML("data-sitekey")) {
-                final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br, "6Le7b3AUAAAAADGhizVG-ZB_jxfOha9WgXP-ahZd").getToken();
-                captchaform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-                captchaform.put("skin", Encoding.urlEncode(dle_skin));
-                captchaform.put("sec_code", Encoding.urlEncode(recaptchaV2Response));
+            /*
+             * Special case: Users who own a premium account of a specified OCH can auth themselves as premium here to get the
+             * downloadlinks!
+             */
+            String ubiqfile_premium_mail = null;
+            final ArrayList<Account> accs = AccountController.getInstance().getValidAccounts("ubiqfile.com");
+            if (accs != null && accs.size() > 0) {
+                for (final Account acc : accs) {
+                    final String accMailTmp = acc.getStringProperty("PROPERTY_UBIQFILE_MAIL");
+                    if (acc.getType() == AccountType.PREMIUM && accMailTmp != null) {
+                        ubiqfile_premium_mail = accMailTmp;
+                        break;
+                    }
+                }
+            }
+            if (isPremiumAccountRequired(br) && ubiqfile_premium_mail == null) {
+                logger.info("Content is premiumonly and user does not own premium access");
+                throw new AccountRequiredException();
+            }
+            String ajax_action = null;
+            boolean captchaSuccess = false;
+            for (int i = 0; i <= 2; i++) {
                 /* Important! */
                 br.getHeaders().put("Referer", startURL);
-                if (StringUtils.isEmpty(captchaform.getAction())) {
-                    /* E.g. spanking.photos */
-                    captchaform.setAction("/engine/ajax/getlink.php");
-                }
-                submitForm(br, captchaform);
-                /* Do not allow retries for reCaptcha and assume it is solved correctly with one attempt. */
-                captchaSuccess = true;
-                break;
-            } else {
-                /* Simple image captcha */
-                // captchaform.setAction(ajax_action);
-                final String code = getCaptchaCode(br, getHost(), "/engine/modules/antibot/antibot.php?rndval=" + System.currentTimeMillis(), param);
-                captchaform.put("sec_code", code);
-                captchaform.put("skin", Encoding.urlEncode(dle_skin));
-                /* Important! */
-                br.getHeaders().put("Referer", startURL);
-                if (StringUtils.isEmpty(captchaform.getAction())) {
-                    /* E.g. spanking.photos */
-                    captchaform.setAction("/engine/ajax/getlink.php");
-                }
-                submitForm(br, captchaform);
-            }
-            if (br.getRequest().getHtmlCode().length() == 0) {
-                /* Empty page = Wrong captcha */
-                logger.info("Wrong captcha | Run: " + i);
-                continue;
-            } else {
-                captchaSuccess = true;
-                break;
-            }
-        }
-        if (!captchaSuccess) {
-            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-        }
-        String finallink = null;
-        final String redirect = br.getRegex("(https?://[^/]+/(video|file|vfile)/[a-zA-Z0-9]+)").getMatch(0);
-        if (redirect == null) {
-            if (isPremiumAccountRequired(br)) {
-                if (ubiqfile_premium_mail == null) {
+                getPage("/engine/ajax/getlink2.php");
+                if (isPremiumAccountRequired(br) && ubiqfile_premium_mail == null) {
                     logger.info("Content is premiumonly and user does not own premium access");
                     throw new AccountRequiredException();
                 }
-                logger.info("Content is premiumonly and user should have premium access via mail: " + ubiqfile_premium_mail);
-                final Form premiumForm = new Form();
-                premiumForm.setMethod(MethodType.POST);
-                premiumForm.setAction(ajax_action);
-                premiumForm.put("skin", Encoding.urlEncode(dle_skin));
-                premiumForm.put("email", Encoding.urlEncode(ubiqfile_premium_mail));
-                /* Important! */
-                br.getHeaders().put("Referer", startURL);
-                this.submitForm(br, premiumForm);
-                finallink = findDownloadlinks(br)[0];
-                if (finallink == null) {
+                ajax_action = br.getURL();
+                final Form captchaform = getCaptchaForm(br);
+                if (captchaform == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-            } else {
-                /* Maybe no account is needed -> Look for downloadurls */
-                final String[] urls = findDownloadlinks(br);
-                if (urls == null || urls.length == 0) {
-                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                if (captchaform.containsHTML("id\\s*=\\s*\"getlink\"") && captchaform.containsHTML("data-sitekey")) {
+                    final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br, "6Le7b3AUAAAAADGhizVG-ZB_jxfOha9WgXP-ahZd").getToken();
+                    captchaform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                    captchaform.put("skin", Encoding.urlEncode(dle_skin));
+                    captchaform.put("sec_code", Encoding.urlEncode(recaptchaV2Response));
+                    /* Important! */
+                    br.getHeaders().put("Referer", startURL);
+                    if (StringUtils.isEmpty(captchaform.getAction())) {
+                        /* E.g. spanking.photos */
+                        captchaform.setAction("/engine/ajax/getlink.php");
+                    }
+                    submitForm(br, captchaform);
+                    /* Do not allow retries for reCaptcha and assume it is solved correctly with one attempt. */
+                    captchaSuccess = true;
+                    break;
+                } else {
+                    /* Simple image captcha */
+                    // captchaform.setAction(ajax_action);
+                    final String code = getCaptchaCode(br, getHost(), "/engine/modules/antibot/antibot.php?rndval=" + System.currentTimeMillis(), param);
+                    captchaform.put("sec_code", code);
+                    captchaform.put("skin", Encoding.urlEncode(dle_skin));
+                    /* Important! */
+                    br.getHeaders().put("Referer", startURL);
+                    if (StringUtils.isEmpty(captchaform.getAction()) && !br.getURL().contains("/engine/ajax")) {
+                        /* E.g. spanking.photos */
+                        captchaform.setAction("/engine/ajax/getlink.php");
+                    }
+                    submitForm(br, captchaform);
                 }
-                for (final String url : urls) {
-                    ret.add(this.createDownloadlink(url));
+                if (br.getRequest().getHtmlCode().length() == 0) {
+                    /* Empty page = Wrong captcha */
+                    logger.info("Wrong captcha | Run: " + i);
+                    continue;
+                } else {
+                    captchaSuccess = true;
+                    break;
                 }
             }
+            if (!captchaSuccess) {
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            }
+            String finallink = null;
+            final String redirect = br.getRegex("(https?://[^/]+/(video|file|vfile)/[a-zA-Z0-9]+)").getMatch(0);
+            if (redirect == null) {
+                if (isPremiumAccountRequired(br)) {
+                    if (ubiqfile_premium_mail == null) {
+                        logger.info("Content is premiumonly and user does not own premium access");
+                        throw new AccountRequiredException();
+                    }
+                    logger.info("Content is premiumonly and user should have premium access via mail: " + ubiqfile_premium_mail);
+                    final Form premiumForm = new Form();
+                    premiumForm.setMethod(MethodType.POST);
+                    premiumForm.setAction(ajax_action);
+                    premiumForm.put("skin", Encoding.urlEncode(dle_skin));
+                    premiumForm.put("email", Encoding.urlEncode(ubiqfile_premium_mail));
+                    /* Important! */
+                    br.getHeaders().put("Referer", startURL);
+                    this.submitForm(br, premiumForm);
+                    finallink = br.getRegex("href=\"(https?[^\"]+)\"[^<>\"]*?target=\"_blank\" rel=\"external noopener\"").getMatch(0);
+                    if (finallink == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                }
+            }
+            if (finallink == null && redirect != null) {
+                br.setFollowRedirects(false);
+                this.getPage(redirect);
+                finallink = br.getRedirectLocation();
+            }
+            if (finallink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            ret.add(createDownloadlink(finallink));
         }
-        if (finallink == null && redirect != null) {
-            br.setFollowRedirects(false);
-            this.getPage(redirect);
-            finallink = br.getRedirectLocation();
-        }
-        if (ret.isEmpty()) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        ret.add(createDownloadlink(finallink));
         return ret;
-    }
-
-    private String[] findDownloadlinks(final Browser br) {
-        return br.getRegex("href=\"(https?[^\"]+)\"[^<>\"]*?target=\"_blank\" rel=\"external noopener\"").getColumn(0);
     }
 
     private boolean isPremiumAccountRequired(final Browser br) {
