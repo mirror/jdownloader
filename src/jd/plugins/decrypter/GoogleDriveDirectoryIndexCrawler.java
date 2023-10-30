@@ -39,6 +39,7 @@ import org.mozilla.javascript.FunctionObject;
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -94,6 +95,13 @@ public class GoogleDriveDirectoryIndexCrawler extends PluginForDecrypt {
         super(wrapper);
     }
 
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = new Browser();
+        br.setFollowRedirects(true);
+        return br;
+    }
+
     public int getMaxConcurrentProcessingInstances() {
         /* Without this we'll run into Cloudflare rate limits (error 500) */
         return 1;
@@ -137,20 +145,17 @@ public class GoogleDriveDirectoryIndexCrawler extends PluginForDecrypt {
         }
     }
 
-    private boolean useOldPostRequest(final CryptedLink param) {
-        return false;
-    }
-
-    private DownloadLink getDirectDownload(URLConnectionAdapter con) throws IOException {
+    private DownloadLink getDirectDownload(final URLConnectionAdapter con) throws IOException {
         if (con != null && looksLikeDownloadableContent(con)) {
             con.disconnect();
             final DownloadLink direct = this.createDownloadlink(con.getURL().toExternalForm());
             final DispositionHeader dispositionHeader = Plugin.parseDispositionHeader(con);
-            if (dispositionHeader != null && StringUtils.isNotEmpty(dispositionHeader.getFilename())) {
-                direct.setFinalFileName(dispositionHeader.getFilename());
+            String dispositionHeaderFilename = null;
+            if (dispositionHeader != null && StringUtils.isNotEmpty(dispositionHeaderFilename = dispositionHeader.getFilename())) {
+                direct.setFinalFileName(dispositionHeaderFilename);
                 if (dispositionHeader.getEncoding() == null) {
                     try {
-                        direct.setFinalFileName(URLEncode.decodeURIComponent(dispositionHeader.getFilename(), "UTF-8", true));
+                        direct.setFinalFileName(URLEncode.decodeURIComponent(dispositionHeaderFilename, "UTF-8", true));
                     } catch (final IllegalArgumentException ignore) {
                     } catch (final UnsupportedEncodingException ignore) {
                     }
@@ -168,30 +173,31 @@ public class GoogleDriveDirectoryIndexCrawler extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final String contenturl;
-        if (param.toString().contains("?")) {
+        if (param.getCryptedUrl().contains("?")) {
             /* Remove all URL parameters */
             contenturl = param.getCryptedUrl().substring(0, param.getCryptedUrl().lastIndexOf("?"));
         } else {
             contenturl = param.getCryptedUrl();
         }
         br.setAllowedResponseCodes(new int[] { 500 });
-        final Account acc = AccountController.getInstance().getValidAccount(this.getHost());
-        if (acc != null) {
+        final Account account = AccountController.getInstance().getValidAccount(this.getHost());
+        if (account != null) {
             final GoogleDriveDirectoryIndex plg = (GoogleDriveDirectoryIndex) this.getNewPluginForHostInstance(this.getHost());
-            plg.login(acc);
+            plg.login(account);
         }
         boolean useOldPostRequest;
         /* Check if we maybe already know which request type is the right one so we need less http requests. */
         if (param.getDownloadLink() != null && param.getDownloadLink().hasProperty(PROPERTY_FOLDER_USE_OLD_POST_REQUEST)) {
             useOldPostRequest = true;
         } else {
-            useOldPostRequest = useOldPostRequest(param);
+            useOldPostRequest = false;
         }
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         /* Older versions required urlquery, newer expect json POST body */
         URLConnectionAdapter con = null;
         try {
             con = br.openGetConnection(contenturl);
+            /* Check if we got a single direct downloadable file */
             DownloadLink direct = getDirectDownload(con);
             if (direct != null) {
                 final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
@@ -218,6 +224,7 @@ public class GoogleDriveDirectoryIndexCrawler extends PluginForDecrypt {
                 br.followConnection(true);
                 con = br.openGetConnection(contenturl);
             }
+            /* Check if we got a single direct downloadable file */
             direct = getDirectDownload(con);
             if (direct != null) {
                 final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
@@ -232,16 +239,11 @@ public class GoogleDriveDirectoryIndexCrawler extends PluginForDecrypt {
             }
         }
         if (br.getHttpConnection().getResponseCode() == 401) {
-            if (acc != null) {
-                /* We cannot check accounts so the only way we can find issues is by just trying with the login credentials here ... */
-                logger.info("Existing account is invalid (?)");
-                acc.setError(AccountError.INVALID, 5 * 60, null);
-            } else {
-                throw new AccountRequiredException();
-            }
+            exceptionAccountRequiredOrInvalid(account);
         } else if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 500) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML("\"rateLimitExceeded\"")) {
+            // TODO: 2023-10-30: Check if this can still happen and implement it into parsed json handling
             throw new DecrypterRetryException(RetryReason.HOST_RATE_LIMIT);
         }
         /* Looks like folder should be available -> Crawl it */
@@ -255,7 +257,7 @@ public class GoogleDriveDirectoryIndexCrawler extends PluginForDecrypt {
          */
         if (subFolderPath == null) {
             final Regex typicalUrlStructure = new Regex(contenturl, "(?i)https?://[^/]+/0:(/.*)");
-            if (typicalUrlStructure.matches()) {
+            if (typicalUrlStructure.patternFind()) {
                 /*
                  * Set correct (root) folder structure e.g. https://subdomain.example.site/0:/subfolder1/subfolder2 --> Path:
                  * /subfolder1/subfolder2 /subfolder1/subfolder2
@@ -272,7 +274,7 @@ public class GoogleDriveDirectoryIndexCrawler extends PluginForDecrypt {
         }
         final String baseUrl;
         /* urls can already be encoded which breaks stuff, only encode non-encoded content */
-        if (!new Regex(contenturl, "%[a-z0-9]{2}").matches()) {
+        if (!new Regex(contenturl, "%[a-z0-9]{2}").patternFind()) {
             baseUrl = URLEncode.encodeURIComponent(contenturl);
         } else {
             baseUrl = contenturl;
@@ -280,7 +282,13 @@ public class GoogleDriveDirectoryIndexCrawler extends PluginForDecrypt {
         int page = 0;
         do {
             logger.info("Crawling page: " + (page + 1));
-            final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(decodeJSON(br.toString()));
+            Map<String, Object> entries = null;
+            try {
+                entries = JavaScriptEngineFactory.jsonToJavaMap(decodeJSON(br.getRequest().getHtmlCode()));
+            } catch (final Throwable e) {
+                /* Json parsing failed -> Assume that account is required or given account is invalid */
+                exceptionAccountRequiredOrInvalid(account);
+            }
             final String nextPageToken = (String) entries.get("nextPageToken");
             final List<Object> ressourcelist;
             Object filesArray = JavaScriptEngineFactory.walkJson(entries, "data/files");
@@ -307,13 +315,12 @@ public class GoogleDriveDirectoryIndexCrawler extends PluginForDecrypt {
                 final Map<String, Object> entry = (Map<String, Object>) fileO;
                 final String name = (String) entry.get("name");
                 final String type = (String) entry.get("mimeType");
-                final long filesize = JavaScriptEngineFactory.toLong(entry.get("size"), -1);
                 if (StringUtils.isEmpty(name) || StringUtils.isEmpty(type)) {
                     /* Skip invalid objects */
                     continue;
                 }
                 String url = baseUrl;
-                if (type.endsWith(".folder")) {
+                if (StringUtils.endsWithCaseInsensitive(type, ".folder")) {
                     // folder urls have to END in "/" this is how it works in browser no need for workarounds
                     url += URLEncode.encodeURIComponent(name) + "/";
                 } else if (!isParameterFile) {
@@ -322,6 +329,7 @@ public class GoogleDriveDirectoryIndexCrawler extends PluginForDecrypt {
                 }
                 final DownloadLink dl;
                 if (type.endsWith(".folder")) {
+                    /* Folder */
                     dl = this.createDownloadlink(url);
                     final String thisfolder = subFolderPath + "/" + name;
                     dl.setRelativeDownloadFolderPath(thisfolder);
@@ -330,6 +338,8 @@ public class GoogleDriveDirectoryIndexCrawler extends PluginForDecrypt {
                         dl.setProperty(PROPERTY_FOLDER_USE_OLD_POST_REQUEST, true);
                     }
                 } else {
+                    /* File */
+                    final long filesize = JavaScriptEngineFactory.toLong(entry.get("size"), -1);
                     dl = new DownloadLink(null, name, this.getHost(), url, true);
                     dl.setAvailable(true);
                     dl.setFinalFileName(name);
@@ -340,10 +350,10 @@ public class GoogleDriveDirectoryIndexCrawler extends PluginForDecrypt {
                         dl.setRelativeDownloadFolderPath(subFolderPath);
                     }
                     dl.setLinkID(getLinkidFromURL(dl.getPluginPatternMatcher()));
+                    dl._setFilePackage(fp);
                 }
-                dl._setFilePackage(fp);
-                ret.add(dl);
                 distribute(dl);
+                ret.add(dl);
             }
             if (this.isAbort()) {
                 break;
@@ -361,6 +371,16 @@ public class GoogleDriveDirectoryIndexCrawler extends PluginForDecrypt {
             }
         } while (true);
         return ret;
+    }
+
+    private void exceptionAccountRequiredOrInvalid(final Account account) throws AccountRequiredException {
+        if (account != null) {
+            /* We cannot check accounts so the only way we can find issues is by just trying with the login credentials here ... */
+            logger.info("Existing account is invalid (?)");
+            account.setError(AccountError.INVALID, 5 * 60, null);
+        } else {
+            throw new AccountRequiredException();
+        }
     }
 
     /** Returns String that can be used an unique ID based on given URL. */

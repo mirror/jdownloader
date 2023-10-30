@@ -46,6 +46,13 @@ public class GoogleDriveDirectoryIndex extends PluginForHost {
     }
 
     @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = new Browser();
+        br.setFollowRedirects(true);
+        return br;
+    }
+
+    @Override
     public String getAGBLink() {
         return "https://workers.dev/";
     }

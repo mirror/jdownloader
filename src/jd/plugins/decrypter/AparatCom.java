@@ -17,6 +17,7 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import org.appwork.storage.TypeRef;
@@ -26,6 +27,7 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -40,6 +42,13 @@ import jd.plugins.hoster.DirectHTTP;
 public class AparatCom extends PluginForDecrypt {
     public AparatCom(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = new Browser();
+        br.setFollowRedirects(true);
+        return br;
     }
 
     public static List<String[]> getPluginDomains() {
@@ -87,46 +96,66 @@ public class AparatCom extends PluginForDecrypt {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
-            final Number status = (Number) JavaScriptEngineFactory.walkJson(entries, "meta/status");
+            final Map<String, Object> data = (Map<String, Object>) entries.get("data");
+            final Number status = (Number) data.get("status");
             if (status != null && (status.intValue() == 404 || status.intValue() == 410)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            final String type = (String) JavaScriptEngineFactory.walkJson(entries, "data/type");
+            final String type = data.get("type").toString();
             if (!StringUtils.equalsIgnoreCase(type, "VideoShow")) {
                 /* This should never happen */
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unsupported type:" + type);
             }
-            final Map<String, Object> videoShow = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "data/attributes");
-            final String title = (String) videoShow.get("title");
-            final List<Map<String, Object>> file_link_all = (List<Map<String, Object>>) videoShow.get("file_link_all");
-            if (file_link_all != null) {
-                // last one is best quality
-                final Map<String, Object> lastEntry = file_link_all.get(file_link_all.size() - 1);
-                final List<String> urls = (List<String>) lastEntry.get("urls");
-                final DownloadLink dl = this.createDownloadlink(DirectHTTP.createURLForThisPlugin(urls.get(0)));
-                final String profile = (String) lastEntry.get("profile");
-                String fileName;
-                if (!StringUtils.isEmpty(title)) {
-                    fileName = title;
-                } else {
-                    fileName = videoid;
-                }
-                if (profile != null) {
-                    fileName += "_" + profile;
-                }
-                dl.setFinalFileName(fileName + ".mp4");
-                dl.setAvailable(true);
-                dl.setContentUrl(contenturl);
-                ret.add(dl);
+            final Map<String, Object> videomap = (Map<String, Object>) data.get("attributes");
+            // TODO: Make use of official downloadurl if available
+            // final String officialDownloadlink = (String) videomap.get("file_link");
+            String videotitle = (String) videomap.get("title");
+            if (!StringUtils.isEmpty(videotitle)) {
+                videotitle = Encoding.htmlDecode(videotitle).trim();
             }
+            final String videodescription = (String) videomap.get("description");
+            // TODO: Add selection of user preferred video quality
+            final List<Map<String, Object>> qualitymaps = (List<Map<String, Object>>) videomap.get("file_link_all");
+            Map<String, Object> bestQuality = null;
+            int videoHeightMax = -1;
+            for (final Map<String, Object> qualitymap : qualitymaps) {
+                final String thisprofile = qualitymap.get("profile").toString();
+                if (!thisprofile.matches("(?i)\\d+p")) {
+                    continue;
+                }
+                final int thisVideoHeight = Integer.parseInt(thisprofile.toLowerCase(Locale.ENGLISH).replace("p", ""));
+                if (thisVideoHeight > videoHeightMax || bestQuality == null) {
+                    videoHeightMax = thisVideoHeight;
+                    bestQuality = qualitymap;
+                }
+            }
+            final List<String> urls = (List<String>) bestQuality.get("urls");
+            final DownloadLink dl = this.createDownloadlink(DirectHTTP.createURLForThisPlugin(urls.get(0)));
+            final String profile = bestQuality.get("profile").toString();
+            String fileName;
+            if (!StringUtils.isEmpty(videotitle)) {
+                fileName = videotitle;
+            } else {
+                fileName = videoid;
+            }
+            if (profile != null) {
+                fileName += "_" + profile;
+            }
+            dl.setFinalFileName(fileName + ".mp4");
+            dl.setAvailable(true);
+            dl.setContentUrl(contenturl);
+            ret.add(dl);
             /* Put all results into one package */
-            final FilePackage filePackage = FilePackage.getInstance();
-            if (!title.isEmpty()) {
-                filePackage.setName(Encoding.htmlDecode(title));
+            final FilePackage fp = FilePackage.getInstance();
+            if (!videotitle.isEmpty()) {
+                fp.setName(videotitle);
             }
-            filePackage.setComment(title);
-            filePackage.setPackageKey("aparat_com://video/" + videoid);
-            filePackage.addLinks(ret);
+            if (!StringUtils.isEmpty(videodescription)) {
+                fp.setComment(videodescription);
+            }
+            // filePackage.setComment(videotitle);
+            fp.setPackageKey("aparat_com://video/" + videoid + "/quality/" + profile);
+            fp.addLinks(ret);
             return ret;
         } else if (playlist.patternFind()) {
             final String playlistid = playlist.getMatch(0);
@@ -137,7 +166,9 @@ public class AparatCom extends PluginForDecrypt {
             final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
             final Map<String, Object> playlistmap = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "data/attributes");
             final int numberofVideos = ((Number) playlistmap.get("cnt")).intValue();
-            logger.info("Crawling playlist " + playlistid + " | Number of videos: " + numberofVideos);
+            final String playlisttitle = playlistmap.get("title").toString();
+            final String playlistdescription = (String) playlistmap.get("description");
+            logger.info("Crawling playlist " + playlistid + " | Number of videos: " + numberofVideos + " | Title: " + playlisttitle);
             if (numberofVideos == 0) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Empty playlist");
             }
@@ -153,14 +184,22 @@ public class AparatCom extends PluginForDecrypt {
                 final DownloadLink videoresult = this.createDownloadlink("https://www." + this.getHost() + "/v/" + videoid + "?playlist=" + playlistid);
                 ret.add(videoresult);
             }
-            // /* Put all results into one package */
-            // final FilePackage filePackage = FilePackage.getInstance();
-            // if (!title.isEmpty()) {
-            // filePackage.setName(Encoding.htmlDecode(title));
-            // }
+            /* Put all results into one package */
+            final FilePackage fp = FilePackage.getInstance();
+            /* Allow single video packages to get merged into one package if they are part of a playlist. */
+            fp.setAllowInheritance(true);
+            fp.setAllowMerge(true);
+            if (!playlisttitle.isEmpty()) {
+                fp.setName(Encoding.htmlDecode(playlisttitle));
+            } else {
+                fp.setName(playlistid);
+            }
+            if (!StringUtils.isEmpty(playlistdescription)) {
+                fp.setComment(playlistdescription);
+            }
             // filePackage.setComment(title);
-            // filePackage.setPackageKey("aparat_com://playlist/" + playlistid);
-            // filePackage.addLinks(ret);
+            fp.setPackageKey("aparat_com://playlist/" + playlistid);
+            fp.addLinks(ret);
         } else {
             /* Developer mistake -> This should never happen! */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
