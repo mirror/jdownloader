@@ -45,7 +45,6 @@ import org.jdownloader.plugins.components.usenet.UsenetFileSegment;
 import org.jdownloader.plugins.components.usenet.UsenetServer;
 import org.jdownloader.plugins.config.AccountConfigInterface;
 import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "usenet" }, urls = { "usenet://.+" })
 public class UseNet extends antiDDoSForHost {
@@ -310,14 +309,20 @@ public class UseNet extends antiDDoSForHost {
     @Override
     public void handleMultiHost(DownloadLink downloadLink, Account account) throws Exception {
         final UsenetFile usenetFile = UsenetFile._read(downloadLink);
+        final String username = getUseNetUsername(account);
+        final String password = getUseNetPassword(account);
+        final UsenetServer server = getUseNetServer(account);
+        handleMultiHost(downloadLink, account, usenetFile, username, password, server);
+    }
+
+    protected void handleMultiHost(DownloadLink downloadLink, Account account, UsenetFile usenetFile, String username, String password, UsenetServer server) throws Exception {
         if (usenetFile == null) {
             logger.severe("UsenetFile is missing!");
             setIncomplete(downloadLink, true);
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (server == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final String username = getUseNetUsername(account);
-        final String password = getUseNetPassword(account);
-        final UsenetServer server = getUseNetServer(account);
         final URL url = new URL(null, "socket://" + server.getHost() + ":" + server.getPort(), ProxyController.SOCKETURLSTREAMHANDLER);
         final List<HTTPProxy> proxies = selectProxies(url);
         final HTTPProxy proxy = proxies.get(0);

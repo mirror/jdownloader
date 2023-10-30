@@ -22,27 +22,6 @@ import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
-import org.appwork.exceptions.WTFException;
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.SimpleMapper;
-import org.appwork.storage.TypeRef;
-import org.appwork.storage.config.MaxTimeSoftReference;
-import org.appwork.storage.config.MaxTimeSoftReferenceCleanupCallback;
-import org.appwork.storage.simplejson.JSonFactory;
-import org.appwork.storage.simplejson.JSonObject;
-import org.appwork.storage.simplejson.JSonObjectHashMap;
-import org.appwork.storage.simplejson.JSonParser;
-import org.appwork.storage.simplejson.JSonValue;
-import org.appwork.storage.simplejson.MinimalMemoryMap;
-import org.appwork.storage.simplejson.mapper.JSonMapper;
-import org.appwork.utils.ByteArrayWrapper;
-import org.appwork.utils.IO;
-import org.appwork.utils.JVMVersion;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.config.MegaConzConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.controlling.linkcrawler.LinkCrawler;
@@ -59,6 +38,27 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.exceptions.WTFException;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.SimpleMapper;
+import org.appwork.storage.TypeRef;
+import org.appwork.storage.config.MaxTimeSoftReference;
+import org.appwork.storage.config.MaxTimeSoftReferenceCleanupCallback;
+import org.appwork.storage.simplejson.JSonFactory;
+import org.appwork.storage.simplejson.JSonObject;
+import org.appwork.storage.simplejson.JSonParser;
+import org.appwork.storage.simplejson.JSonValue;
+import org.appwork.storage.simplejson.JsonObjectLinkedHashMap;
+import org.appwork.storage.simplejson.MinimalMemoryMap;
+import org.appwork.storage.simplejson.mapper.JSonMapper;
+import org.appwork.utils.ByteArrayWrapper;
+import org.appwork.utils.IO;
+import org.appwork.utils.JVMVersion;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.config.MegaConzConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mega.co.nz" }, urls = { "(?:https?://(www\\.)?mega\\.(co\\.)?nz/[^/:]*#F|chrome://mega/content/secure\\.html#F|mega:/*#F)(!|%21)[a-zA-Z0-9]+(!|%21)[a-zA-Z0-9_,\\-%]{16,}((!|%21)[a-zA-Z0-9]+)?(\\?[a-zA-Z0-9]+)?" })
 public class MegaConz extends PluginForDecrypt {
@@ -284,7 +284,7 @@ public class MegaConz extends PluginForDecrypt {
                                         return new JSonFactory(jsonString) {
                                             @Override
                                             protected JSonObject createJSonObject() {
-                                                return new JSonObjectHashMap();
+                                                return new JsonObjectLinkedHashMap();
                                             }
                                         };
                                     }

@@ -23,26 +23,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.appwork.storage.JSonMapperException;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.notify.BasicNotify;
-import org.jdownloader.gui.notify.BubbleNotify;
-import org.jdownloader.gui.notify.BubbleNotify.AbstractNotifyWindowFactory;
-import org.jdownloader.gui.notify.gui.AbstractNotifyWindow;
-import org.jdownloader.gui.views.downloads.columns.ETAColumn;
-import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.plugins.ConditionalSkipReasonException;
-import org.jdownloader.plugins.PluginTaskID;
-import org.jdownloader.plugins.WaitingSkipReason;
-import org.jdownloader.plugins.WaitingSkipReason.CAUSE;
-import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.settings.GraphicalUserInterfaceSettings.SIZEUNIT;
-import org.jdownloader.settings.staticreferences.CFG_GUI;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -63,6 +43,28 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginProgress;
 import jd.plugins.components.MultiHosterManagement;
+
+import org.appwork.storage.JSonMapperException;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.notify.BasicNotify;
+import org.jdownloader.gui.notify.BubbleNotify;
+import org.jdownloader.gui.notify.BubbleNotify.AbstractNotifyWindowFactory;
+import org.jdownloader.gui.notify.gui.AbstractNotifyWindow;
+import org.jdownloader.gui.views.downloads.columns.ETAColumn;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.plugins.ConditionalSkipReasonException;
+import org.jdownloader.plugins.PluginTaskID;
+import org.jdownloader.plugins.WaitingSkipReason;
+import org.jdownloader.plugins.WaitingSkipReason.CAUSE;
+import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
+import org.jdownloader.plugins.components.usenet.UsenetFile;
+import org.jdownloader.plugins.components.usenet.UsenetServer;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings.SIZEUNIT;
+import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 1, names = {}, urls = {})
 public abstract class HighWayCore extends UseNet {
@@ -124,8 +126,7 @@ public abstract class HighWayCore extends UseNet {
     }
 
     /**
-     * API docs: https://high-way.me/threads/highway-api.201/ </br>
-     * According to admin we can 'hammer' the API every 60 seconds
+     * API docs: https://high-way.me/threads/highway-api.201/ </br> According to admin we can 'hammer' the API every 60 seconds
      */
     protected abstract String getAPIBase();
 
@@ -350,6 +351,17 @@ public abstract class HighWayCore extends UseNet {
     }
 
     @Override
+    protected void handleMultiHost(DownloadLink downloadLink, Account account, UsenetFile usenetFile, String username, String password, UsenetServer server) throws Exception {
+        if (StringUtils.isEmpty(username)) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else if (StringUtils.isEmpty(password)) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else {
+            super.handleMultiHost(downloadLink, account, usenetFile, username, password, server);
+        }
+    }
+
+    @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
         /*
          * When JD is started the first time and the user starts downloads right away, a full login might not yet have happened but it is
@@ -571,13 +583,9 @@ public abstract class HighWayCore extends UseNet {
         try {
             do {
                 /**
-                 * cacheStatus possible values and what they mean: </br>
-                 * d = download </br>
-                 * w = wait (retry) </br>
-                 * q = in queue </br>
-                 * qn = Download has been added to queue </br>
-                 * i = direct download without cache </br>
-                 * s = Cached download is ready for downloading
+                 * cacheStatus possible values and what they mean: </br> d = download </br> w = wait (retry) </br> q = in queue </br> qn =
+                 * Download has been added to queue </br> i = direct download without cache </br> s = Cached download is ready for
+                 * downloading
                  */
                 br.getPage(cachePollingURL);
                 entries = this.checkErrors(br, link, account);
@@ -590,8 +598,8 @@ public abstract class HighWayCore extends UseNet {
                 textForJD = (String) entries.get("for_jd");
                 if (!blockDownloadSlotsForCloudDownloads(account)) {
                     /**
-                     * Throw exception right away so other download candidates will be tried. </br>
-                     * This may speed up downloads significantly for some users.
+                     * Throw exception right away so other download candidates will be tried. </br> This may speed up downloads
+                     * significantly for some users.
                      */
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, textForJD, retryInSecondsThisRound * 1000l);
                 }
@@ -712,7 +720,7 @@ public abstract class HighWayCore extends UseNet {
                 }
             }
             /* Get- and store usenet logindata. These can differ from the logindata the user has added but may as well be equal to those. */
-            if (usenetLogins != null) {
+            if (usenetLogins != null && StringUtils.isAllNotEmpty((String) usenetLogins.get("username"), (String) usenetLogins.get("pass"))) {
                 account.setProperty(PROPERTY_ACCOUNT_USENET_USERNAME, usenetLogins.get("username"));
                 account.setProperty(PROPERTY_ACCOUNT_USENET_PASSWORD, usenetLogins.get("pass"));
                 account.setProperty(PROPERTY_ACCOUNT_MAX_DOWNLOADS_USENET, accountInfo.get("usenet_connection"));
@@ -730,19 +738,22 @@ public abstract class HighWayCore extends UseNet {
 
     @Override
     protected String getUseNetUsername(final Account account) {
-        return account.getStringProperty(PROPERTY_ACCOUNT_USENET_USERNAME);
+        synchronized (account) {
+            return account.getStringProperty(PROPERTY_ACCOUNT_USENET_USERNAME);
+        }
     }
 
     @Override
     protected String getUseNetPassword(final Account account) {
-        return account.getStringProperty(PROPERTY_ACCOUNT_USENET_PASSWORD);
+        synchronized (account) {
+            return account.getStringProperty(PROPERTY_ACCOUNT_USENET_PASSWORD);
+        }
     }
 
     /**
      * Login without errorhandling
      *
-     * @return true = cookies validated </br>
-     *         false = cookies set but not validated
+     * @return true = cookies validated </br> false = cookies set but not validated
      *
      * @throws PluginException
      * @throws InterruptedException
@@ -909,9 +920,9 @@ public abstract class HighWayCore extends UseNet {
                 getMultiHosterManagement().putError(account, this.getDownloadLink(), retrySeconds * 1000l, msg);
             case 11:
                 /**
-                 * Host (not multihost) is currently under maintenance or offline --> Disable it for some time </br>
-                 * 2021-11-08: Admin asked us not to disable host right away when this error happens as it seems like this error is more
-                 * rleated to single files/fileservers -> Done accordingly.
+                 * Host (not multihost) is currently under maintenance or offline --> Disable it for some time </br> 2021-11-08: Admin asked
+                 * us not to disable host right away when this error happens as it seems like this error is more rleated to single
+                 * files/fileservers -> Done accordingly.
                  */
                 // mhm.putError(account, this.getDownloadLink(), retrySeconds * 1000l, msg);
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, msg, retrySeconds * 1000l);
