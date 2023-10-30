@@ -152,14 +152,15 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
         }
         /* Correct added links */
         correctInputLinks(param);
-        if (isList(param.getCryptedUrl())) {
-            if (TYPE_SINGLE_SET.matcher(param.getCryptedUrl()).find() || TYPE_API_PLAYLIST.matcher(param.getCryptedUrl()).find()) {
-                crawlSet(param);
-            } else if (TYPE_USER_SETS.matcher(param.getCryptedUrl()).find()) {
-                crawlUserSets(param);
-            } else if (TYPE_USER_IN_PLAYLIST.matcher(param.getCryptedUrl()).find()) {
+        final String contenturl = getContentURL(param);
+        if (isList(contenturl)) {
+            if (TYPE_SINGLE_SET.matcher(contenturl).find() || TYPE_API_PLAYLIST.matcher(contenturl).find()) {
+                crawlSet(contenturl);
+            } else if (TYPE_USER_SETS.matcher(contenturl).find()) {
+                crawlUserSets(contenturl);
+            } else if (TYPE_USER_IN_PLAYLIST.matcher(contenturl).find()) {
                 crawlUserInPlaylists(param);
-            } else if (TYPE_GROUPS.matcher(param.getCryptedUrl()).find()) {
+            } else if (TYPE_GROUPS.matcher(contenturl).find()) {
                 crawlGroups(param);
             } else {
                 crawlUser(param, acc);
@@ -191,7 +192,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
 
     private void crawlSingleTrack(final CryptedLink param) throws Exception {
         resolve(this.br, param.getCryptedUrl());
-        final Map<String, Object> track = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        final Map<String, Object> track = JavaScriptEngineFactory.jsonToJavaMap(br.getRequest().getHtmlCode());
         final String permalink_url = track.get("permalink_url").toString();
         final DownloadLink dl = createDownloadlink(permalink_url.replace("soundcloud", "soundclouddecrypted"));
         final Map<String, Object> user = (Map<String, Object>) track.get("user");
@@ -224,17 +225,17 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
      *
      * @throws Exception
      */
-    private void crawlSet(final CryptedLink param) throws Exception {
+    private void crawlSet(final String contenturl) throws Exception {
         String playlistSecretToken = null;
         final String setWithSecretToken = "(?i)https?://[^/]+/[^/]+/sets/[^/]+/s-([A-Za-z0-9]+)$";
-        if (param.getCryptedUrl().matches(setWithSecretToken)) {
+        if (contenturl.matches(setWithSecretToken)) {
             /* Private set --> URL contains so called 'secret_token' */
-            playlistSecretToken = new Regex(param.getCryptedUrl(), setWithSecretToken).getMatch(0);
-        } else if (TYPE_API_PLAYLIST.matcher(param.getCryptedUrl()).find()) {
-            playlistSecretToken = UrlQuery.parse(param.getCryptedUrl()).get("secret_token");
+            playlistSecretToken = new Regex(contenturl, setWithSecretToken).getMatch(0);
+        } else if (TYPE_API_PLAYLIST.matcher(contenturl).find()) {
+            playlistSecretToken = UrlQuery.parse(contenturl).get("secret_token");
         }
-        resolve(this.br, param.getCryptedUrl());
-        Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        resolve(this.br, contenturl);
+        Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.getRequest().getHtmlCode());
         final Map<String, Object> user = (Map<String, Object>) entries.get("user");
         final String playlistname = (String) entries.get("title");
         final String playlist_uri = (String) entries.get("uri");
@@ -386,10 +387,10 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
      *
      * @throws Exception
      */
-    private void crawlUserSets(final CryptedLink param) throws Exception {
+    private void crawlUserSets(final String contenturl) throws Exception {
         final int max_entries_per_request = 5;
-        resolve(this.br, param.getCryptedUrl());
-        Map<String, Object> user = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        resolve(this.br, contenturl);
+        Map<String, Object> user = JavaScriptEngineFactory.jsonToJavaMap(br.getRequest().getHtmlCode());
         final String userID = user.get("id").toString();
         if (StringUtils.isEmpty(userID)) {
             logger.info("Failed to find userID");
@@ -427,7 +428,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
     private void crawlUserInPlaylists(final CryptedLink param) throws Exception {
         final int max_entries_per_request = 5;
         resolve(this.br, param.getCryptedUrl());
-        Map<String, Object> user = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        Map<String, Object> user = JavaScriptEngineFactory.jsonToJavaMap(br.getRequest().getHtmlCode());
         final String userID = user.get("id").toString();
         if (StringUtils.isEmpty(userID)) {
             return;
@@ -463,7 +464,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         resolve(this.br, param.getCryptedUrl());
-        final Map<String, Object> data = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        final Map<String, Object> data = JavaScriptEngineFactory.jsonToJavaMap(br.getRequest().getHtmlCode());
         final String groupID = data.get("id").toString();
         if (StringUtils.isEmpty(groupID)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -590,7 +591,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
              */
         } else {
             resolve(this.br, param.getCryptedUrl());
-            user = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            user = JavaScriptEngineFactory.jsonToJavaMap(br.getRequest().getHtmlCode());
             userID = user.get("id").toString();
             if (StringUtils.isEmpty(userID)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

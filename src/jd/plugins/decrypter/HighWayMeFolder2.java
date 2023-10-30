@@ -70,7 +70,7 @@ public class HighWayMeFolder2 extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/pages/(?:center|torrent|usenet)/?");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(pages/(?:center|torrent|usenet)/?|download\\.php#(torrent|usenet))");
         }
         return ret.toArray(new String[0]);
     }
@@ -86,9 +86,10 @@ public class HighWayMeFolder2 extends PluginForDecrypt {
         hosterplugin.login(account, false);
         boolean crawlTorrent = false;
         boolean crawlUsenet = false;
-        if (StringUtils.containsIgnoreCase(param.getCryptedUrl(), "torrent")) {
+        final String contenturl = param.getCryptedUrl();
+        if (StringUtils.containsIgnoreCase(contenturl, "torrent")) {
             crawlTorrent = true;
-        } else if (StringUtils.containsIgnoreCase(param.getCryptedUrl(), "usenet")) {
+        } else if (StringUtils.containsIgnoreCase(contenturl, "usenet")) {
             crawlUsenet = true;
         } else {
             /* No specific category given in URL -> Crawl both */

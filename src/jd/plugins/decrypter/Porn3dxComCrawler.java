@@ -16,8 +16,9 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-import java.util.Locale;
+import java.util.List;
 
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.controller.LazyPlugin;
@@ -104,19 +105,35 @@ public class Porn3dxComCrawler extends PluginForDecrypt {
             } else {
                 filenameBase = postID;
             }
+            final String imagesJson = br.getRegex("\"image\":\\s*(\\[[^\\]]+\\])").getMatch(0);
             final String[] imageURLs = br.getRegex("data-full-url=\"(https?://[^/]+/post/\\d+/[a-f0-9]+\\.jpg)\"").getColumn(0);
             final int padLength = StringUtils.getPadLength(imageURLs.length);
-            int counter = 1;
-            for (final String imageURL : imageURLs) {
-                final DownloadLink image = this.createDownloadlink(imageURL);
-                image.setFinalFileName(filenameBase + "_" + String.format(Locale.US, "%0" + padLength + "d", counter) + ".jpg");
-                image.setAvailable(true);
-                image._setFilePackage(fp);
-                ret.add(image);
-                counter++;
+            int imagecounter = 1;
+            if (imageURLs != null && imageURLs.length > 0) {
+                /* Old */
+                for (final String imageURL : imageURLs) {
+                    final DownloadLink image = this.createDownloadlink(imageURL);
+                    image.setFinalFileName(filenameBase + "_" + StringUtils.formatByPadLength(padLength, imagecounter) + ".jpg");
+                    image.setAvailable(true);
+                    image._setFilePackage(fp);
+                    ret.add(image);
+                    imagecounter++;
+                }
+            } else if (imagesJson != null) {
+                /* New 2023-10-30 */
+                final List<String> imageurls = restoreFromString(imagesJson, TypeRef.STRING_LIST);
+                for (final String imageurl : imageurls) {
+                    final DownloadLink image = this.createDownloadlink(imageurl);
+                    image.setFinalFileName(filenameBase + "_" + StringUtils.formatByPadLength(padLength, imagecounter) + ".jpg");
+                    image.setAvailable(true);
+                    image._setFilePackage(fp);
+                    ret.add(image);
+                    imagecounter++;
+                }
             }
             final String imageURLLarge = br.getRegex("(https?://media\\.[^/]+/post/\\d+/large\\.[a-z]+)").getMatch(0);
-            if (imageURLs.length == 0 && imageURLLarge != null) {
+            if (imagecounter == 0 && imageURLLarge != null) {
+                /* No images from image gallery found -> Add single image if possible */
                 final DownloadLink image = this.createDownloadlink(imageURLLarge);
                 image.setFinalFileName(filenameBase + Plugin.getFileNameExtensionFromString(imageURLLarge));
                 image.setAvailable(true);
