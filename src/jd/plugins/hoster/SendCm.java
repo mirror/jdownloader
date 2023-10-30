@@ -412,33 +412,49 @@ public class SendCm extends XFileSharingProBasic {
             return super.regexAPIKey(br);
         }
     }
-
-    private String getApikey(final Account account) {
-        String apikey = this.getAPIKeyFromAccount(account);
-        final boolean tryApiHack = false;
-        if (apikey == null && tryApiHack && this.isAPIKey(account.getPass())) {
-            apikey = account.getPass();
-            /* Dirty hack */
-            if (tryApiHack && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-                account.setProperty(PROPERTY_ACCOUNT_apikey, apikey);
-            }
-        }
-        return apikey;
-    }
+    // private String getApikey(final Account account) {
+    // String apikey = this.getAPIKeyFromAccount(account);
+    // final boolean tryApiHack = false;
+    // if (apikey == null && tryApiHack && this.isAPIKey(account.getPass())) {
+    // apikey = account.getPass();
+    // /* Dirty hack */
+    // if (tryApiHack && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+    // account.setProperty(PROPERTY_ACCOUNT_apikey, apikey);
+    // }
+    // }
+    // return apikey;
+    // }
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         /* 2023-10-27: Special: Try API login first */
-        final String apikey = getApikey(account);
+        String apikey = this.getAPIKeyFromAccount(account);
+        final boolean tryApikeyViaPasswordField = true;
+        boolean apiFromAccountPasswordField = false;
+        if (apikey == null && tryApikeyViaPasswordField && DebugMode.TRUE_IN_IDE_ELSE_FALSE && isAPIKey(account.getPass())) {
+            apikey = account.getPass();
+            apiFromAccountPasswordField = true;
+        } else if (StringUtils.equals(apikey, account.getPass())) {
+            apiFromAccountPasswordField = true;
+        }
         if (apikey != null) {
             /* Prefer API */
             try {
+                if (apiFromAccountPasswordField) {
+                    /* Dirty hack */
+                    logger.info("Trying API key as password");
+                    account.setProperty(PROPERTY_ACCOUNT_apikey, apikey);
+                }
                 final AccountInfo ai = this.fetchAccountInfoAPI(this.br, account);
+                if (apiFromAccountPasswordField) {
+                    logger.info("User has entered valid API key as password");
+                }
                 logger.info("Returning AccountInfo solely obtained via API");
                 return ai;
             } catch (final Exception e) {
                 logger.log(e);
                 logger.info("API login failed");
+                account.removeProperty(PROPERTY_ACCOUNT_apikey);
             }
         }
         /* Fallback to upper handling */
@@ -528,7 +544,7 @@ public class SendCm extends XFileSharingProBasic {
 
     @Override
     protected boolean allowAPIDownloadIfApikeyIsAvailable(final DownloadLink link, final Account account) {
-        final String apikey = getApikey(account);
+        final String apikey = getAPIKeyFromAccount(account);
         if (apikey != null && (isFreeAccountWithPremiumTraffic(account) || account.getType() == AccountType.PREMIUM) && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
             return true;
         } else {

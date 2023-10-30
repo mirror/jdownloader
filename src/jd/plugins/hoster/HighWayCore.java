@@ -75,7 +75,7 @@ public abstract class HighWayCore extends UseNet {
     private static Map<String, Map<String, Integer>>       hostMaxchunksMap                       = new HashMap<String, Map<String, Integer>>();
     /* Contains <host><number of max possible simultan downloads> */
     private static Map<String, Map<String, Integer>>       hostMaxdlsMap                          = new HashMap<String, Map<String, Integer>>();
-    /* Contains <host><number of currently running simultan downloads> */
+    /* Contains <host><number of currently running simultaneous downloads> */
     private static Map<String, Map<String, AtomicInteger>> hostRunningDlsNumMap                   = new HashMap<String, Map<String, AtomicInteger>>();
     private static Map<String, Map<String, Integer>>       hostTrafficCalculationMap              = new HashMap<String, Map<String, Integer>>();
     private static Map<String, Object>                     mapLockMap                             = new HashMap<String, Object>();
@@ -98,11 +98,8 @@ public abstract class HighWayCore extends UseNet {
     }
 
     @Override
-    public LazyPlugin.FEATURE[] getFeatures() {
-        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.MULTIHOST, LazyPlugin.FEATURE.USENET };
-    }
-
-    private Browser prepBR(final Browser br) {
+    public Browser createNewBrowserInstance() {
+        final Browser br = new Browser();
         br.setCookiesExclusive(true);
         br.getHeaders().put("User-Agent", "JDownloader");
         br.setCustomCharset("utf-8");
@@ -110,6 +107,11 @@ public abstract class HighWayCore extends UseNet {
         br.getHeaders().put("Accept-Language", System.getProperty("user.language"));
         br.setFollowRedirects(true);
         return br;
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.MULTIHOST, LazyPlugin.FEATURE.USENET };
     }
 
     /** Returns true if an account is required to download the given item. */
@@ -353,17 +355,19 @@ public abstract class HighWayCore extends UseNet {
          * When JD is started the first time and the user starts downloads right away, a full login might not yet have happened but it is
          * needed to get the individual host limits.
          */
-        final boolean fetchAccountInfo;
-        synchronized (getMapLock()) {
-            if (getMap(HighWayCore.hostMaxchunksMap).isEmpty() || getMap(HighWayCore.hostMaxdlsMap).isEmpty()) {
-                fetchAccountInfo = true;
-            } else {
-                fetchAccountInfo = false;
+        synchronized (account) {
+            final boolean fetchAccountInfo;
+            synchronized (getMapLock()) {
+                if (getMap(HighWayCore.hostMaxchunksMap).isEmpty() || getMap(HighWayCore.hostMaxdlsMap).isEmpty()) {
+                    fetchAccountInfo = true;
+                } else {
+                    fetchAccountInfo = false;
+                }
             }
-        }
-        if (fetchAccountInfo) {
-            logger.info("Performing full login to set individual host limits");
-            this.fetchAccountInfo(account);
+            if (fetchAccountInfo) {
+                logger.info("Performing full login to set individual host limits");
+                this.fetchAccountInfo(account);
+            }
         }
         if (isUsenetLink(link)) {
             super.handleMultiHost(link, account);
@@ -617,129 +621,121 @@ public abstract class HighWayCore extends UseNet {
     @SuppressWarnings({ "unchecked", "rawtypes" })
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        final AccountInfo ai = new AccountInfo();
-        this.login(account, true);
-        this.getPage(this.getAPIBase() + "?hoster&user");
-        final Map<String, Object> entries = this.checkErrors(this.br, this.getDownloadLink(), account);
-        final Map<String, Object> accountInfo = (Map<String, Object>) entries.get("user");
-        final int accountResume = ((Number) accountInfo.get("resume")).intValue();
-        final long premiumUntil = ((Number) accountInfo.get("premium_bis")).longValue();
-        // final long premiumTraffic = ((Number) accountInfo.get("premium_traffic")).longValue();
-        final long trafficLeftToday = ((Number) accountInfo.get("traffic_remain_today")).longValue();
-        ai.setTrafficLeft(trafficLeftToday);
-        /* Set account type and account information */
-        if (Boolean.TRUE.equals(entries.get("premium"))) {
-            ai.setTrafficMax(((Number) accountInfo.get("premium_max")).longValue());
-            ai.setValidUntil(premiumUntil * 1000, this.br);
-            account.setType(AccountType.PREMIUM);
-        } else {
-            final long free_traffic_max_daily = ((Number) accountInfo.get("free_traffic")).longValue();
-            final long free_traffic_left = ((Number) accountInfo.get("remain_free_traffic")).longValue();
-            if (free_traffic_left > free_traffic_max_daily) {
-                /* User has more traffic than downloadable daily for free users --> Show max daily traffic. */
-                ai.setTrafficLeft(free_traffic_max_daily);
+        synchronized (account) {
+            final AccountInfo ai = new AccountInfo();
+            this.login(account, true);
+            this.getPage(this.getAPIBase() + "?hoster&user");
+            final Map<String, Object> entries = this.checkErrors(this.br, this.getDownloadLink(), account);
+            final Map<String, Object> accountInfo = (Map<String, Object>) entries.get("user");
+            final int accountResume = ((Number) accountInfo.get("resume")).intValue();
+            final long premiumUntil = ((Number) accountInfo.get("premium_bis")).longValue();
+            // final long premiumTraffic = ((Number) accountInfo.get("premium_traffic")).longValue();
+            final long trafficLeftToday = ((Number) accountInfo.get("traffic_remain_today")).longValue();
+            ai.setTrafficLeft(trafficLeftToday);
+            /* Set account type and account information */
+            if (Boolean.TRUE.equals(entries.get("premium"))) {
+                ai.setTrafficMax(((Number) accountInfo.get("premium_max")).longValue());
+                ai.setValidUntil(premiumUntil * 1000, this.br);
+                account.setType(AccountType.PREMIUM);
             } else {
-                /* User has less traffic (or equal) than downloadable daily for free users --> Show real traffic left. */
-                ai.setTrafficLeft(free_traffic_left);
-                ai.setTrafficMax(free_traffic_max_daily);
-            }
-            account.setType(AccountType.FREE);
-        }
-        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-            ai.setStatus(StringUtils.valueOfOrNull(accountInfo.get("type")) + " | Heute übrig: " + SIZEUNIT.formatValue((SIZEUNIT) CFG_GUI.MAX_SIZE_UNIT.getValue(), trafficLeftToday));
-        } else {
-            ai.setStatus(StringUtils.valueOfOrNull(accountInfo.get("type")) + " | Remaining today: " + SIZEUNIT.formatValue((SIZEUNIT) CFG_GUI.MAX_SIZE_UNIT.getValue(), trafficLeftToday));
-        }
-        final Map<String, Object> usenetLogins = (Map<String, Object>) accountInfo.get("usenet");
-        if (this.useApikeyLogin()) {
-            /* Try to set unique username as user could enter anything in the username field in this case */
-            final String uniqueUsername = (String) usenetLogins.get("username");
-            if (!StringUtils.isEmpty(uniqueUsername)) {
-                account.setUser(uniqueUsername);
-            }
-        }
-        account.setConcurrentUsePossible(true);
-        /* Set supported hosts, host specific limits and account limits. */
-        account.setProperty(PROPERTY_ACCOUNT_MAXCHUNKS, accountInfo.get("max_chunks"));
-        account.setProperty(PROPERTY_ACCOUNT_MAX_DOWNLOADS_ACCOUNT, accountInfo.get("max_connection"));
-        if (accountResume == 1) {
-            account.setProperty(PROPERTY_ACCOUNT_RESUME, true);
-        } else {
-            account.setProperty(PROPERTY_ACCOUNT_RESUME, false);
-        }
-        final ArrayList<String> supportedHosts = new ArrayList<String>();
-        synchronized (getMapLock()) {
-            final Map<String, Integer> hostMaxchunksMap = getMap(HighWayCore.hostMaxchunksMap);
-            final Map<String, Integer> hostTrafficCalculationMap = getMap(HighWayCore.hostTrafficCalculationMap);
-            final Map<String, Integer> hostMaxdlsMap = getMap(HighWayCore.hostMaxdlsMap);
-            final Map<String, Boolean> hostResumeMap = getMap(HighWayCore.hostResumeMap);
-            hostMaxchunksMap.clear();
-            hostTrafficCalculationMap.clear();
-            hostMaxdlsMap.clear();
-            /* Available hosts are returned by API depending on users' account type e.g. free users have much less supported hosts. */
-            final List<Object> array_hoster = (List) entries.get("hoster");
-            for (final Object hoster : array_hoster) {
-                final Map<String, Object> hoster_map = (Map<String, Object>) hoster;
-                final String domain = hoster_map.get("name").toString();
-                /* Workaround to find the real domain which we need to assign the properties to later on! */
-                final ArrayList<String> supportedHostsTmp = new ArrayList<String>();
-                supportedHostsTmp.add(domain);
-                ai.setMultiHostSupport(this, supportedHostsTmp);
-                final List<String> realDomainList = ai.getMultiHostSupport();
-                if (realDomainList == null || realDomainList.isEmpty()) {
-                    /* Skip unsupported hosts or host plugins which don't allow multihost usage. */
-                    logger.info("Skipping host not supported by JD or not multihoster-supported by JD: " + domain);
-                    continue;
+                final long free_traffic_max_daily = ((Number) accountInfo.get("free_traffic")).longValue();
+                final long free_traffic_left = ((Number) accountInfo.get("remain_free_traffic")).longValue();
+                if (free_traffic_left > free_traffic_max_daily) {
+                    /* User has more traffic than downloadable daily for free users --> Show max daily traffic. */
+                    ai.setTrafficLeft(free_traffic_max_daily);
+                } else {
+                    /* User has less traffic (or equal) than downloadable daily for free users --> Show real traffic left. */
+                    ai.setTrafficLeft(free_traffic_left);
+                    ai.setTrafficMax(free_traffic_max_daily);
                 }
-                final String realDomain = realDomainList.get(0);
-                // final String unlimited = (String) hoster_map.get("unlimited");
-                if (((Number) hoster_map.get("active")).intValue() == 1) {
-                    supportedHosts.add(realDomain);
-                    hostTrafficCalculationMap.put(realDomain, ((Number) hoster_map.get("berechnung")).intValue());
-                    hostMaxchunksMap.put(realDomain, correctChunks(((Number) hoster_map.get("chunks")).intValue()));
-                    hostMaxdlsMap.put(realDomain, ((Number) hoster_map.get("downloads")).intValue());
-                    if (((Number) hoster_map.get("resume")).intValue() == 1) {
-                        hostResumeMap.put(realDomain, true);
-                    } else {
-                        hostResumeMap.put(realDomain, false);
+                account.setType(AccountType.FREE);
+            }
+            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                ai.setStatus(StringUtils.valueOfOrNull(accountInfo.get("type")) + " | Heute übrig: " + SIZEUNIT.formatValue((SIZEUNIT) CFG_GUI.MAX_SIZE_UNIT.getValue(), trafficLeftToday));
+            } else {
+                ai.setStatus(StringUtils.valueOfOrNull(accountInfo.get("type")) + " | Remaining today: " + SIZEUNIT.formatValue((SIZEUNIT) CFG_GUI.MAX_SIZE_UNIT.getValue(), trafficLeftToday));
+            }
+            final Map<String, Object> usenetLogins = (Map<String, Object>) accountInfo.get("usenet");
+            if (this.useApikeyLogin()) {
+                /* Try to set unique username as user could enter anything in the username field in this case */
+                final String uniqueUsername = (String) usenetLogins.get("username");
+                if (!StringUtils.isEmpty(uniqueUsername)) {
+                    account.setUser(uniqueUsername);
+                }
+            }
+            account.setConcurrentUsePossible(true);
+            /* Set supported hosts, host specific limits and account limits. */
+            account.setProperty(PROPERTY_ACCOUNT_MAXCHUNKS, accountInfo.get("max_chunks"));
+            account.setProperty(PROPERTY_ACCOUNT_MAX_DOWNLOADS_ACCOUNT, accountInfo.get("max_connection"));
+            if (accountResume == 1) {
+                account.setProperty(PROPERTY_ACCOUNT_RESUME, true);
+            } else {
+                account.setProperty(PROPERTY_ACCOUNT_RESUME, false);
+            }
+            final ArrayList<String> supportedHosts = new ArrayList<String>();
+            synchronized (getMapLock()) {
+                final Map<String, Integer> hostMaxchunksMap = getMap(HighWayCore.hostMaxchunksMap);
+                final Map<String, Integer> hostTrafficCalculationMap = getMap(HighWayCore.hostTrafficCalculationMap);
+                final Map<String, Integer> hostMaxdlsMap = getMap(HighWayCore.hostMaxdlsMap);
+                final Map<String, Boolean> hostResumeMap = getMap(HighWayCore.hostResumeMap);
+                hostMaxchunksMap.clear();
+                hostTrafficCalculationMap.clear();
+                hostMaxdlsMap.clear();
+                /* Available hosts are returned by API depending on users' account type e.g. free users have much less supported hosts. */
+                final List<Object> array_hoster = (List) entries.get("hoster");
+                for (final Object hoster : array_hoster) {
+                    final Map<String, Object> hoster_map = (Map<String, Object>) hoster;
+                    final String domain = hoster_map.get("name").toString();
+                    /* Workaround to find the real domain which we need to assign the properties to later on! */
+                    final ArrayList<String> supportedHostsTmp = new ArrayList<String>();
+                    supportedHostsTmp.add(domain);
+                    ai.setMultiHostSupport(this, supportedHostsTmp);
+                    final List<String> realDomainList = ai.getMultiHostSupport();
+                    if (realDomainList == null || realDomainList.isEmpty()) {
+                        /* Skip unsupported hosts or host plugins which don't allow multihost usage. */
+                        logger.info("Skipping host not supported by JD or not multihoster-supported by JD: " + domain);
+                        continue;
+                    }
+                    final String realDomain = realDomainList.get(0);
+                    // final String unlimited = (String) hoster_map.get("unlimited");
+                    if (((Number) hoster_map.get("active")).intValue() == 1) {
+                        supportedHosts.add(realDomain);
+                        hostTrafficCalculationMap.put(realDomain, ((Number) hoster_map.get("berechnung")).intValue());
+                        hostMaxchunksMap.put(realDomain, correctChunks(((Number) hoster_map.get("chunks")).intValue()));
+                        hostMaxdlsMap.put(realDomain, ((Number) hoster_map.get("downloads")).intValue());
+                        if (((Number) hoster_map.get("resume")).intValue() == 1) {
+                            hostResumeMap.put(realDomain, true);
+                        } else {
+                            hostResumeMap.put(realDomain, false);
+                        }
                     }
                 }
             }
+            /* Get- and store usenet logindata. These can differ from the logindata the user has added but may as well be equal to those. */
+            if (usenetLogins != null) {
+                account.setProperty(PROPERTY_ACCOUNT_USENET_USERNAME, usenetLogins.get("username"));
+                account.setProperty(PROPERTY_ACCOUNT_USENET_PASSWORD, usenetLogins.get("pass"));
+                account.setProperty(PROPERTY_ACCOUNT_MAX_DOWNLOADS_USENET, accountInfo.get("usenet_connection"));
+            } else {
+                supportedHosts.remove("usenet");
+                supportedHosts.remove("Usenet");
+                account.removeProperty(PROPERTY_ACCOUNT_USENET_USERNAME);
+                account.removeProperty(PROPERTY_ACCOUNT_USENET_PASSWORD);
+                account.removeProperty(PROPERTY_ACCOUNT_MAX_DOWNLOADS_USENET);
+            }
+            ai.setMultiHostSupport(this, supportedHosts);
+            return ai;
         }
-        /* Get- and store usenet logindata. These can differ from the logindata the user has added but may as well be equal to those. */
-        if (usenetLogins != null) {
-            ai.setProperty(PROPERTY_ACCOUNT_USENET_USERNAME, usenetLogins.get("username"));
-            ai.setProperty(PROPERTY_ACCOUNT_USENET_PASSWORD, usenetLogins.get("pass"));
-            account.setProperty(PROPERTY_ACCOUNT_MAX_DOWNLOADS_USENET, accountInfo.get("usenet_connection"));
-        } else {
-            supportedHosts.remove("usenet");
-            supportedHosts.remove("Usenet");
-            ai.removeProperty(PROPERTY_ACCOUNT_USENET_USERNAME);
-            ai.removeProperty(PROPERTY_ACCOUNT_USENET_PASSWORD);
-            account.removeProperty(PROPERTY_ACCOUNT_MAX_DOWNLOADS_USENET);
-        }
-        ai.setMultiHostSupport(this, supportedHosts);
-        return ai;
     }
 
     @Override
     protected String getUseNetUsername(final Account account) {
-        final AccountInfo ai = account.getAccountInfo();
-        if (ai != null) {
-            return ai.getStringProperty(PROPERTY_ACCOUNT_USENET_USERNAME);
-        } else {
-            return null;
-        }
+        return account.getStringProperty(PROPERTY_ACCOUNT_USENET_USERNAME);
     }
 
     @Override
     protected String getUseNetPassword(final Account account) {
-        final AccountInfo ai = account.getAccountInfo();
-        if (ai != null) {
-            return ai.getStringProperty(PROPERTY_ACCOUNT_USENET_PASSWORD);
-        } else {
-            return null;
-        }
+        return account.getStringProperty(PROPERTY_ACCOUNT_USENET_PASSWORD);
     }
 
     /**
@@ -752,45 +748,46 @@ public abstract class HighWayCore extends UseNet {
      * @throws InterruptedException
      */
     public void login(final Account account, final boolean validateCookies) throws IOException, PluginException, InterruptedException {
-        prepBR(this.br);
-        if (this.useApikeyLogin()) {
-            account.setPass(correctPassword(account.getPass()));
-            if (!isAPIKey(account.getPass())) {
-                throw new AccountInvalidException("Invalid API key format");
-            }
-        }
-        final Cookies cookies = account.loadCookies("");
-        if (cookies != null) {
-            this.br.setCookies(this.getHost(), cookies);
-            if (!validateCookies) {
-                /* Do not validate cookies */
-                return;
-            } else {
-                logger.info("Checking cookies");
-                this.br.getPage(this.getAPIBase() + "?logincheck");
-                /* Don't check for errors here as a failed login can trigger error dialogs which we don't want here! */
-                // this.checkErrors(this.br, account);
-                try {
-                    this.checkErrors(br, null, account);
-                    /* No exception --> Success */
-                    logger.info("Cookie login successful");
-                    account.saveCookies(this.br.getCookies(this.br.getHost()), "");
-                    return;
-                } catch (final PluginException ignore) {
-                    logger.log(ignore);
-                    logger.info("Cookie login failed");
+        synchronized (account) {
+            if (useApikeyLogin()) {
+                account.setPass(correctPassword(account.getPass()));
+                if (!isAPIKey(account.getPass())) {
+                    throw new AccountInvalidException("Invalid API key format");
                 }
             }
+            final Cookies cookies = account.loadCookies("");
+            if (cookies != null) {
+                this.br.setCookies(this.getHost(), cookies);
+                if (!validateCookies) {
+                    /* Do not validate cookies */
+                    return;
+                } else {
+                    logger.info("Checking cookies");
+                    this.br.getPage(this.getAPIBase() + "?logincheck");
+                    /* Don't check for errors here as a failed login can trigger error dialogs which we don't want here! */
+                    // this.checkErrors(this.br, account);
+                    try {
+                        this.checkErrors(br, null, account);
+                        /* No exception --> Success */
+                        logger.info("Cookie login successful");
+                        account.saveCookies(this.br.getCookies(this.br.getHost()), "");
+                        return;
+                    } catch (final PluginException ignore) {
+                        logger.log(ignore);
+                        logger.info("Cookie login failed");
+                    }
+                }
+            }
+            logger.info("Performing full login");
+            if (this.useApikeyLogin()) {
+                br.postPage(getAPIBase() + "?login", "apikey=" + Encoding.urlEncode(account.getPass()));
+            } else {
+                br.postPage(getAPIBase() + "?login", "pass=" + Encoding.urlEncode(account.getPass()) + "&user=" + Encoding.urlEncode(account.getUser()));
+            }
+            this.checkErrors(this.br, this.getDownloadLink(), account);
+            /* No Exception --> Assume that login was successful */
+            account.saveCookies(br.getCookies(br.getHost()), "");
         }
-        logger.info("Performing full login");
-        if (this.useApikeyLogin()) {
-            br.postPage(getAPIBase() + "?login", "apikey=" + Encoding.urlEncode(account.getPass()));
-        } else {
-            br.postPage(getAPIBase() + "?login", "pass=" + Encoding.urlEncode(account.getPass()) + "&user=" + Encoding.urlEncode(account.getUser()));
-        }
-        this.checkErrors(this.br, this.getDownloadLink(), account);
-        /* No Exception --> Assume that login was successful */
-        account.saveCookies(this.br.getCookies(this.br.getHost()), "");
     }
 
     protected static boolean isAPIKey(final String str) {
