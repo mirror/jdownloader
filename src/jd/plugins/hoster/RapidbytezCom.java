@@ -116,4 +116,13 @@ public class RapidbytezCom extends XFileSharingProBasic {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Downloads are temporarily disabled due to site maintenance");
         }
     }
+
+    @Override
+    public boolean isPremiumOnly(final Browser br) {
+        if (br.getURL().matches("(?i).*/login\\?redirect=.*")) {
+            return true;
+        } else {
+            return super.isPremiumOnly(br);
+        }
+    }
 }
