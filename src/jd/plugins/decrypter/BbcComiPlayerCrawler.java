@@ -19,7 +19,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
@@ -76,7 +75,6 @@ public class BbcComiPlayerCrawler extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String vpid = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
         if (vpid == null) {
             /* Developer mistake */
@@ -212,7 +210,7 @@ public class BbcComiPlayerCrawler extends PluginForDecrypt {
         String sourceURL = null;
         try {
             sourceURL = ((CrawledLink) param.getSource()).getSourceUrls()[0];
-        } catch (final Throwable e) {
+        } catch (final Throwable ignore) {
         }
         final DownloadLink link = new DownloadLink(hosterPlugin, hosterPlugin.getHost(), hlscontainer_chosen.getDownloadurl(), true);
         if (param.getDownloadLink() != null) {
@@ -221,6 +219,7 @@ public class BbcComiPlayerCrawler extends PluginForDecrypt {
         }
         link.setProperty(BbcCom.PROPERTY_QUALITY_IDENTIFICATOR, qualityString);
         link.setFinalFileName(BbcCom.getFilename(link));
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         ret.add(link);
         if (subtitleURL != null && hosterPlugin.getPluginConfig().getBooleanProperty(BbcCom.SETTING_CRAWL_SUBTITLE, BbcCom.default_SETTING_CRAWL_SUBTITLE)) {
             final DownloadLink subtitle = new DownloadLink(hosterPlugin, hosterPlugin.getHost(), subtitleURL, true);

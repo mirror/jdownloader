@@ -389,7 +389,7 @@ public class EHentaiOrg extends PluginForHost {
             }
         }
         final boolean userPrefersOriginalDownloadurl = cfg.isAccountDownloadsPreferOriginalQuality();
-        final Regex originalDownloadRegex = br.getRegex("href=\"(https?://(?:(?:g\\.)?e\\-hentai|exhentai)\\.org/fullimg\\.php[^<>\"]*?)\">\\s*Download original \\d+ x \\d+ ([^<>\"]*?) source\\s*</a>");
+        final Regex originalDownloadRegex = br.getRegex("href=\"(https?://(?:(?:g\\.)?e\\-hentai|exhentai)\\.org/fullimg\\.php[^<>\"]*?)\">\\s*Download original \\d+ x \\d+ ([^<]*?)<");
         final String filesizeStrOriginalImage = originalDownloadRegex.getMatch(1);
         String originalImageDownloadurl = originalDownloadRegex.getMatch(0);
         if (originalImageDownloadurl != null) {
