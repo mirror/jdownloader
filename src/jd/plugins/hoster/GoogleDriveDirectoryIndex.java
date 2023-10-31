@@ -82,7 +82,8 @@ public class GoogleDriveDirectoryIndex extends PluginForHost {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://[\\w\\d:#@%/;$()~_?\\+-=\\\\\\.&]+" + buildHostsPatternPart(domains) + "/.+");
+            /* Define no regex as crawler plugin decides which links are to be handled by this plugin. */
+            ret.add("");
         }
         return ret.toArray(new String[0]);
     }
@@ -97,20 +98,6 @@ public class GoogleDriveDirectoryIndex extends PluginForHost {
     private final int     FREE_MAXCHUNKS         = 0;
     private final boolean ACCOUNT_FREE_RESUME    = true;
     private final int     ACCOUNT_FREE_MAXCHUNKS = 0;
-
-    @Override
-    public String getLinkID(final DownloadLink link) {
-        final String linkid = getFID(link);
-        if (linkid != null) {
-            return this.getHost() + "://" + linkid;
-        } else {
-            return super.getLinkID(link);
-        }
-    }
-
-    private String getFID(final DownloadLink link) {
-        return link.getPluginPatternMatcher();
-    }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
@@ -180,11 +167,9 @@ public class GoogleDriveDirectoryIndex extends PluginForHost {
         return Integer.MAX_VALUE;
     }
 
-    public boolean login(final Account account) throws Exception {
+    public void login(final Account account) throws Exception {
         synchronized (account) {
-            /* It is impossible to check this account - just set the required header. */
             br.getHeaders().put("Authorization", "Basic " + Encoding.Base64Encode(account.getUser() + ":" + account.getPass()));
-            return false;
         }
     }
 
