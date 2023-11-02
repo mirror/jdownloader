@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
 import javax.script.ScriptEngine;
@@ -64,7 +63,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-import jd.plugins.components.UserAgents;
 import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
@@ -94,6 +92,19 @@ public class FileFactory extends PluginForHost {
     public FileFactory(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www." + this.getHost() + "/info/premium.php");
+    }
+
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
+        br.getHeaders().put("Accept-Charset", "ISO-8859-1,utf-8;q=0.7,*;q=0.7");
+        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
+        br.getHeaders().put("Cache-Control", null);
+        br.getHeaders().put("Pragma", null);
+        br.setReadTimeout(3 * 60 * 1000);
+        br.setConnectTimeout(3 * 60 * 1000);
+        return br;
     }
 
     public static List<String[]> getPluginDomains() {
@@ -131,26 +142,6 @@ public class FileFactory extends PluginForHost {
             ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "(/|//)((?:file|stream)/[\\w]+(/.*)?|(trafficshare|digitalsales)/[a-f0-9]{32}/.+/?)");
         }
         return ret.toArray(new String[0]);
-    }
-
-    private static AtomicReference<String> agent = new AtomicReference<String>();
-
-    /**
-     * defines custom browser requirements.
-     */
-    private Browser prepBrowser(final Browser prepBr) {
-        if (agent.get() == null) {
-            agent.set(UserAgents.stringUserAgent());
-        }
-        prepBr.getHeaders().put("User-Agent", agent.get());
-        prepBr.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
-        prepBr.getHeaders().put("Accept-Charset", "ISO-8859-1,utf-8;q=0.7,*;q=0.7");
-        prepBr.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
-        prepBr.getHeaders().put("Cache-Control", null);
-        prepBr.getHeaders().put("Pragma", null);
-        prepBr.setReadTimeout(3 * 60 * 1000);
-        prepBr.setConnectTimeout(3 * 60 * 1000);
-        return prepBr;
     }
 
     public void checkErrorsWebsite(final boolean freeDownload, final boolean postDownload) throws PluginException {
@@ -391,7 +382,7 @@ public class FileFactory extends PluginForHost {
             }
         }
         if (!useAPI) {
-            final Browser br = new Browser();
+            final Browser br = this.createNewBrowserInstance();
             br.setCookiesExclusive(true);
             br.getHeaders().put("Accept-Encoding", "identity");
             // logic to grab account cookie to do fast linkchecking vs one at a time.
@@ -463,7 +454,7 @@ public class FileFactory extends PluginForHost {
                         if (dl.isNameSet()) {
                             name = dl.getName();
                         } else {
-                            name = new Regex(dl.getDownloadURL(), "filefactory\\.com/(.+)").getMatch(0);
+                            name = new Regex(dl.getPluginPatternMatcher(), "(?i)https?://[^/]+/(.+)").getMatch(0);
                         }
                         try {
                             if (br.getRedirectLocation() != null && (br.getRedirectLocation().endsWith("/member/setpwd.php") || br.getRedirectLocation().endsWith("/member/setdob.php"))) {
@@ -496,7 +487,7 @@ public class FileFactory extends PluginForHost {
                                     elementName = elementName.replace("_mp4", ".mp4");
                                     name = elementName;
                                 }
-                                if (fileElement.matches("(?s).*>\\s*Valid\\s*</abbr>.*")) {
+                                if (fileElement.matches("(?s).*>\\s*(Gültig|Valid)\\s*</abbr>.*")) {
                                     dl.setAvailable(true);
                                 } else {
                                     dl.setAvailable(false);
@@ -539,6 +530,25 @@ public class FileFactory extends PluginForHost {
         if (fid != null) {
             link.setLinkID(getHost() + "://" + fid);
         }
+    }
+
+    /* TODO: Make use of this */
+    private String getContentURL(final DownloadLink link) throws PluginException {
+        String url = link.getPluginPatternMatcher();
+        url = url.replaceFirst("\\.com//", ".com/");
+        url = url.replaceFirst("://filefactory", "://www.filefactory");
+        url = url.replaceFirst("/stream/", "/file/");
+        // set trafficshare links like 'normal' links, this allows downloads to continue living if the uploader discontinues trafficshare
+        // for that uid. Also re-format premium only links!
+        if (url.contains(TRAFFICSHARELINK) || url.contains("/digitalsales/")) {
+            String[] uid = new Regex(url, "(https?://.*?filefactory\\.com/)(trafficshare|digitalsales)/[a-f0-9]{32}/([^/]+)/?").getRow(0);
+            if (uid != null && (uid[0] != null || uid[2] != null)) {
+                return uid[0] + "file/" + uid[2];
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+        }
+        return url;
     }
 
     @Override
@@ -1001,7 +1011,6 @@ public class FileFactory extends PluginForHost {
         synchronized (account) {
             try {
                 setBrowserExclusive();
-                prepBrowser(lbr);
                 lbr.getHeaders().put("Accept-Encoding", "gzip");
                 lbr.setFollowRedirects(true);
                 final Cookies cookies = account.loadCookies("");
@@ -1071,7 +1080,6 @@ public class FileFactory extends PluginForHost {
 
     public AvailableStatus requestFileInformationWebsite(final Account account, final DownloadLink link) throws Exception {
         setBrowserExclusive();
-        prepBrowser(br);
         fuid = getFUID(link);
         br.setFollowRedirects(true);
         for (int i = 0; i < 4; i++) {
@@ -1204,7 +1212,7 @@ public class FileFactory extends PluginForHost {
 
     private boolean checkLinks_API(final DownloadLink[] urls, Account account, String apiKey) {
         try {
-            final Browser br = new Browser();
+            final Browser br = this.createNewBrowserInstance();
             final StringBuilder sb = new StringBuilder();
             final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
             int index = 0;
