@@ -61,7 +61,7 @@ public class PorncomixinfoNet extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:chapter|porncomic)/([a-z0-9\\-]+)/?(([a-z0-9\\-]+)/?)?");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:chapter|porncomic)/([a-z0-9\\-_]+)/?(([a-z0-9\\-_/]+)/?)?");
         }
         return ret.toArray(new String[0]);
     }
@@ -112,9 +112,19 @@ public class PorncomixinfoNet extends PluginForDecrypt {
             }
             /* Add cover URLs */
             final String[] urls = HTMLParser.getHttpLinks(br.getRequest().getHtmlCode(), br.getURL());
+            final HashSet<String> webpurls = new HashSet<String>();
             for (final String url : urls) {
                 if (StringUtils.endsWithCaseInsensitive(url, "cover.jpg") || StringUtils.endsWithCaseInsensitive(url, "cover.webp")) {
                     final DownloadLink link = createDownloadlink(DirectHTTP.createURLForThisPlugin(url));
+                    ret.add(link);
+                } else if (url.endsWith(".webp")) {
+                    webpurls.add(url);
+                }
+            }
+            if (ret.isEmpty() && webpurls.size() > 0) {
+                /* Final fallback for cover URLs */
+                for (final String webpurl : webpurls) {
+                    final DownloadLink link = createDownloadlink(DirectHTTP.createURLForThisPlugin(webpurl));
                     ret.add(link);
                 }
             }
@@ -123,6 +133,8 @@ public class PorncomixinfoNet extends PluginForDecrypt {
             }
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(title);
+            /* Some chapters have the same names but they should go into separate packages. */
+            fp.setPackageKey("porncomix://chapter_by_url_path/" + br._getURL().getPath());
             for (final DownloadLink result : ret) {
                 result.setAvailable(true);
                 result._setFilePackage(fp);

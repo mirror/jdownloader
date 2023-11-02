@@ -327,6 +327,7 @@ public class DailyMotionCom extends PluginForHost {
     }
 
     private String findFreshDirectlink(final DownloadLink link) throws Exception {
+        logger.info("Trying to find fresh directurl");
         if (isSubtitle(link)) {
             /* Subtitle directurls should be static so this should never be called for subtitle files. */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -344,6 +345,7 @@ public class DailyMotionCom extends PluginForHost {
         }
         if (fresh == null) {
             /* This should never happen */
+            logger.warning("Failed to refresh directurl");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         onNewDirectLink(link, dllink);
