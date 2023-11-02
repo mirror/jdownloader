@@ -24,7 +24,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -382,7 +381,7 @@ public class BbcComDecrypter extends PluginForDecrypt {
         // final String jsonMorphMultiple = br.getRegex("Morph\\.setPayload\\('[^\\']+', (\\{.*?\\})\\);").getMatch(0);
         if (this.br.getURL().matches(TYPE_PROGRAMMES)) {
             if (ret.isEmpty()) {
-                ret.addAll(crawlProgrammes(param));
+                ret.addAll(crawlProgrammes(br.getURL()));
             }
         } else {
             if (ret.isEmpty()) {
@@ -512,8 +511,8 @@ public class BbcComDecrypter extends PluginForDecrypt {
      *
      * @throws IOException
      */
-    private ArrayList<DownloadLink> crawlProgrammes(final CryptedLink param) throws PluginException, IOException {
-        final Regex urlInfo = new Regex(param.getCryptedUrl(), TYPE_PROGRAMMES);
+    private ArrayList<DownloadLink> crawlProgrammes(final String url) throws PluginException, IOException {
+        final Regex urlInfo = new Regex(url, TYPE_PROGRAMMES);
         if (!urlInfo.matches()) {
             /* Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

@@ -48,6 +48,7 @@ import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.AccountInvalidException;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -145,6 +146,8 @@ public class DropboxCom extends PluginForHost {
     }
 
     private AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
+        prepBrWebsite(this.br);
+        br.setFollowRedirects(true);
         /*
          * Setting this cookie may save some http requests as the website will not ask us to enter the password again if it has been entered
          * successfully before!
@@ -153,8 +156,6 @@ public class DropboxCom extends PluginForHost {
         if (password_cookie_value != null) {
             DropBoxComCrawler.setPasswordCookie(br, password_cookie_value);
         }
-        prepBrWebsite(this.br);
-        br.setFollowRedirects(true);
         /**
          * 2019-09-24: Consider updating to the new/current website method: https://www.dropbox.com/sharing/fetch_user_content_link. See
          * also handling for 'TYPE_SC' linktype! </br>
@@ -170,46 +171,45 @@ public class DropboxCom extends PluginForHost {
         } else {
             final String dllink = generateDirecturl(link);
             URLConnectionAdapter con = null;
-            final Browser brc = br.cloneBrowser();
             try {
-                brc.setFollowRedirects(true);
-                /*
+                /**
                  * 2023-05-20: Disabled head request because when using it, that will quite often returns a content-length header with value
                  * 0 plus it sometimes fails with http response != 200 for unknown reasons. For those reasons using a GET request is the way
-                 * to go.
+                 * to go. </br>
                  */
                 final boolean useHeadRequestFirst = false;
                 if (useHeadRequestFirst) {
-                    con = brc.openHeadConnection(dllink);
+                    con = br.openHeadConnection(dllink);
                 } else {
-                    con = brc.openGetConnection(dllink);
+                    con = br.openGetConnection(dllink);
                 }
                 if (useHeadRequestFirst && (con.getResponseCode() == 403 || con.getResponseCode() == 404)) {
                     /* Workaround/fallback */
                     logger.info("Looks like HEAD-request is not possible -> Trying GET-request");
                     try {
-                        brc.followConnection(true);
+                        br.followConnection(true);
                     } catch (IOException e) {
                         logger.log(e);
                     }
-                    con = brc.openGetConnection(dllink);
+                    con = br.openGetConnection(dllink);
                 }
                 if (this.looksLikeDownloadableContent(con)) {
+                    /* Success! Element is direct-downloadable. This is what we want. */
                     link.setProperty(PROPERTY_DIRECTLINK, dllink);
                     link.setProperty(PROPERTY_IS_OFFICIALLY_DOWNLOADABLE, true);
                     if (con.getCompleteContentLength() > 0) {
                         link.setVerifiedFileSize(con.getCompleteContentLength());
                     }
-                    String name = getFileNameFromHeader(con);
-                    if (!StringUtils.isEmpty(name)) {
-                        if (Encoding.isHtmlEntityCoded(name)) {
-                            name = Encoding.htmlDecode(name).trim();
+                    String filenameFromHeader = getFileNameFromHeader(con);
+                    if (!StringUtils.isEmpty(filenameFromHeader)) {
+                        if (Encoding.isHtmlEntityCoded(filenameFromHeader)) {
+                            filenameFromHeader = Encoding.htmlDecode(filenameFromHeader).trim();
                         }
-                        link.setFinalFileName(name);
+                        link.setFinalFileName(filenameFromHeader);
                     }
                     return AvailableStatus.TRUE;
                 }
-                brc.followConnection(true);
+                br.followConnection(true);
                 if (con.getResponseCode() == 400) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 } else if (con.getResponseCode() == 404) {
@@ -226,8 +226,8 @@ public class DropboxCom extends PluginForHost {
                      * downloaded by himself or other users with appropriate rights.)
                      */
                     logger.info("Error 403 -> Looking to get file infor via root folder URL");
-                    brc.getPage(this.getRootFolderURL(link, link.getPluginPatternMatcher()));
-                    if (brc.getHttpConnection().getResponseCode() == 403) {
+                    br.getPage(this.getRootFolderURL(link, link.getPluginPatternMatcher()));
+                    if (br.getHttpConnection().getResponseCode() == 403) {
                         /* Still error 403 -> File is offline. */
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     } else {
@@ -238,7 +238,7 @@ public class DropboxCom extends PluginForHost {
                          */
                         logger.info("Looks like this file is officially not downloadable");
                         /* Try to gather more information about this file */
-                        final Map<String, Object> fileinfo = getSingleFileJsonMap(brc);
+                        final Map<String, Object> fileinfo = getSingleFileJsonMap(br);
                         if (fileinfo != null) {
                             DropBoxComCrawler.parseMiscFileInfo(link, fileinfo);
                         } else {
@@ -262,12 +262,19 @@ public class DropboxCom extends PluginForHost {
                 }
                 /* Rare case */
                 logger.info("File is not direct-downloadable");
-                if (brc.getURL().contains("/speedbump/")) {
+                if (br.getURL().contains("/speedbump/")) {
                     /* 2019-09-26: TODO: Check this - this should only happen for executable files in some cases */
                     // brc.getURL().replace("/speedbump/", "/speedbump/dl/");
                 }
-                if (isPasswordProtectedWebsite(brc)) {
-                    /* Password handling is located in download handling. */
+                if (isPasswordProtectedWebsite(br)) {
+                    /**
+                     * We know that the file is online but it is password protected. </br>
+                     * Password handling is located in download handling as we do not want to ask the user for a download password during
+                     * linkcheck. </br>
+                     * Also, even if we already know the correct password, we do not want to send it during linkcheck as this would slow
+                     * down linkcheck tremendously.
+                     */
+                    logger.info("Link is password protected");
                     link.setPasswordProtected(true);
                     return AvailableStatus.TRUE;
                 } else if (password_cookie_value == null) {
@@ -277,8 +284,10 @@ public class DropboxCom extends PluginForHost {
                      */
                     link.setPasswordProtected(false);
                 }
-                if (RequestMethod.HEAD.equals(con.getRequestMethod())) {
-                    brc.getPage(dllink);
+                // TODO: Check if this fallback is still needed
+                if (useHeadRequestFirst && RequestMethod.HEAD.equals(con.getRequestMethod())) {
+                    logger.info("Accessing URL after HEAD-request");
+                    br.getPage(dllink);
                 }
             } finally {
                 try {
@@ -286,13 +295,13 @@ public class DropboxCom extends PluginForHost {
                 } catch (Throwable e) {
                 }
             }
-            if (brc.getHttpConnection().getResponseCode() == 429) {
+            if (br.getHttpConnection().getResponseCode() == 429) {
                 /* 2017-01-30 */
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Error 429: 'This account's links are generating too much traffic and have been temporarily disabled!'", 60 * 60 * 1000l);
-            } else if (brc.containsHTML("images/sharing/error_")) {
+            } else if (br.containsHTML("images/sharing/error_")) {
                 /* Offline */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else if (brc.containsHTML("/images/precaution")) {
+            } else if (br.containsHTML("/images/precaution")) {
                 /* A previously public shared url is now private (== offline) */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -311,11 +320,16 @@ public class DropboxCom extends PluginForHost {
         }
     }
 
-    /** Returns URL with "dl=1" parameter. This should work for all officially downloadable items. */
+    /**
+     * Returns URL with "dl=1" parameter. This should work for all officially downloadable items. </br>
+     * If an item is password protected, the password needs to be entered correctly otherwise this URL obviously can't be used for
+     * downloading.
+     */
     private String generateDirecturl(final DownloadLink link) throws MalformedURLException {
         final UrlQuery query = UrlQuery.parse(link.getPluginPatternMatcher());
         query.addAndReplace("dl", "1");
         String dllink = URLHelper.getUrlWithoutParams(link.getPluginPatternMatcher());
+        /* Add potentially missing 'www.' to avoid additional redirect. */
         dllink = dllink.replaceFirst("(?i)/dropbox\\.com/", "/www.dropbox.com/");
         dllink += "?" + query.toString();
         return dllink;
@@ -382,6 +396,8 @@ public class DropboxCom extends PluginForHost {
             account.setType(AccountType.FREE);
         } catch (final Throwable e) {
             /* 2019-09-19: On failure: Treat all accounts as FREE accounts */
+            logger.log(e);
+            logger.warning("Exception in json handling");
             account.setType(AccountType.FREE);
             ai.setStatus("Registered (free) user");
         }
@@ -484,31 +500,40 @@ public class DropboxCom extends PluginForHost {
                 pwform.put("password", passCode);
                 pwform.put("is_xhr", "true");
                 pwform.put("content_id", content_id);
-                br.getHeaders().put("x-requested-with", "XMLHttpRequest");
-                this.br.submitForm(pwform);
+                final Browser brc = br.cloneBrowser();
+                brc.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                brc.submitForm(pwform);
                 /* 2019-09-24: E.g. positive response: {"status": "authed"} */
-                final String status = PluginJSonUtils.getJson(br, "status");
+                final String status = PluginJSonUtils.getJson(brc, "status");
                 if ("error".equalsIgnoreCase(status)) {
                     link.setDownloadPassword(null);
                     throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
                 }
-                final String password_cookie = br.getCookie(br.getHost(), "sm_auth");
+                final String password_cookie = getPasswordCookie(br);
                 if (!StringUtils.isEmpty(password_cookie)) {
-                    /* This may save us some http requests next time! */
+                    /* Same password-cookie. This may save us some http requests next time! */
                     link.setProperty(PROPERTY_PASSWORD_COOKIE, password_cookie);
+                } else {
+                    /* This should never happen */
+                    logger.warning("User has entered correct password but password cookie is not available");
                 }
                 link.setDownloadPassword(passCode);
                 dllink = this.generateDirecturl(link);
             } else {
+                /* Link is not password protected or password-cookie was available so there was no password prompt for us to handle now. */
                 resume_supported = true;
                 dllink = this.generateDirecturl(link);
             }
         }
-        handleDownload(link, dllink, resume_supported);
+        handleDownload(link, null, dllink, resume_supported);
+    }
+
+    public static String getPasswordCookie(final Browser br) {
+        return br.getCookie(br.getHost(), "sm_auth");
     }
 
     /** Downloads given directurl. */
-    private void handleDownload(final DownloadLink link, String dllink, final boolean resume) throws Exception {
+    private void handleDownload(final DownloadLink link, final Account account, String dllink, final boolean resume) throws Exception {
         if (StringUtils.isEmpty(dllink)) {
             logger.warning("Failed to find final downloadurl");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -523,6 +548,7 @@ public class DropboxCom extends PluginForHost {
         /* Important: URL needs to contain "www."! */
         dllink = dllink.replaceFirst("(?i)/dropbox.com/", "/www.dropbox.com/");
         dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resume, 1);
+        dl.setFilenameFix(true);
         final String filename = link.getName();
         if (LinkCrawlerDeepInspector.looksLikeMpegURL(dl.getConnection())) {
             /* HLS download (usually only needed as fallback if official download is disabled) */
@@ -548,7 +574,11 @@ public class DropboxCom extends PluginForHost {
                 checkErrorsHTML(br);
                 final URLConnectionAdapter con = dl.getConnection();
                 if (con.getResponseCode() == 401) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    if (account != null) {
+                        throw new AccountInvalidException();
+                    } else {
+                        throw new AccountRequiredException();
+                    }
                 } else if (con.getResponseCode() == 403) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403");
                 } else {
@@ -597,7 +627,7 @@ public class DropboxCom extends PluginForHost {
                 /* remove existing tokens from url */
                 dlURL = dlURL.replaceFirst("://[\\w:]+@", "://");
                 /* remove passphrase from url */
-                dlURL = dlURL.replaceFirst("[\\?&]passphrase=[^&]+", "");
+                dlURL = dlURL.replaceFirst("(?i)[\\?&]passphrase=[^&]+", "");
                 String t1 = new Regex(link.getPluginPatternMatcher(), "://(.*?):.*?@").getMatch(0);
                 String t2 = new Regex(link.getPluginPatternMatcher(), "://.*?:(.*?)@").getMatch(0);
                 if (t1 == null) {
@@ -622,7 +652,7 @@ public class DropboxCom extends PluginForHost {
             handleDownloadAccountAPI(account, link);
             return;
         }
-        handleDownload(link, dlURL, resume);
+        handleDownload(link, account, dlURL, resume);
     }
 
     /** API download (account required) */
@@ -655,6 +685,7 @@ public class DropboxCom extends PluginForHost {
         br.getHeaders().put("Dropbox-API-Arg", jsonHeader);
         br.getHeaders().put("Content-Type", "text/plain;charset=UTF-8");
         dl = new jd.plugins.BrowserAdapter().openDownload(br, link, API_BASE_CONTENT + "/sharing/get_shared_link_file", "", true, 1);
+        dl.setFilenameFix(true);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             br.followConnection();
             final String error_summary = getErrorSummaryField(this.br);
@@ -787,7 +818,6 @@ public class DropboxCom extends PluginForHost {
     }
 
     /** 2019-09-20: Avoid using this. It is outdated - does not support 2FA login and is broken for a long time already! */
-    @Deprecated
     private void loginWebsite(final Account account, boolean validateCookies) throws Exception {
         synchronized (account) {
             setBrowserExclusive();

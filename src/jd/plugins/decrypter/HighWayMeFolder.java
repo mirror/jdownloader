@@ -169,7 +169,7 @@ public class HighWayMeFolder extends GenericHTTPDirectoryIndexCrawler {
 
     @Override
     protected String getCurrentDirectoryPath(final String url) throws UnsupportedEncodingException {
-        final Regex pathregex = new Regex(url, "(?i)^https?://[^/]+/dl(?:u|t)/([a-z0-9]+)/(.+)");
+        final Regex pathregex = new Regex(url, "(?i)^https?://[^/]+/dl(?:u|t|[0-9]+)/([a-z0-9]+)/(.+)");
         if (pathregex.patternFind()) {
             final String internalRootFolder = pathregex.getMatch(0);
             final String path = pathregex.getMatch(1);

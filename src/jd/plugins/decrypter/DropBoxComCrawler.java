@@ -410,6 +410,8 @@ public class DropBoxComCrawler extends PluginForDecrypt {
              */
             final DownloadLink previousDownloadlink = param.getDownloadLink();
             final boolean enforceCrawlSubfoldersByProperty = previousDownloadlink != null && previousDownloadlink.hasProperty(PROPERTY_CRAWL_SUBFOLDERS);
+            String passCode = param.getDecrypterPassword();
+            String passwordCookieValue = null;
             final String storedPasswordCookieValue = previousDownloadlink != null ? previousDownloadlink.getStringProperty(DropboxCom.PROPERTY_PASSWORD_COOKIE) : null;
             if (storedPasswordCookieValue != null) {
                 /**
@@ -419,6 +421,7 @@ public class DropBoxComCrawler extends PluginForDecrypt {
                  * to crawl.
                  */
                 DropBoxComCrawler.setPasswordCookie(br, storedPasswordCookieValue);
+                passwordCookieValue = storedPasswordCookieValue;
             }
             br.setFollowRedirects(true);
             br.getPage(contentURL);
@@ -436,8 +439,6 @@ public class DropBoxComCrawler extends PluginForDecrypt {
                  */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            String passCode = param.getDecrypterPassword();
-            String passwordCookieValue = null;
             final Browser brc = br.cloneBrowser();
             brc.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             brc.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
