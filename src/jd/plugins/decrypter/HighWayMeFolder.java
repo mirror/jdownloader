@@ -29,11 +29,40 @@ import jd.http.Browser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.hoster.HighWayMe2;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "high-way.me" }, urls = { "https?://((?:torrent|usenet)(archiv)?)\\.(?:high-way\\.me|dwld\\.link)/dl(?:u|t)/[a-z0-9]+(?:/$|/.+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class HighWayMeFolder extends GenericHTTPDirectoryIndexCrawler {
     public HighWayMeFolder(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "high-way.me", "dwld.link" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://\\w+\\." + buildHostsPatternPart(domains) + "/dl(?:u|t|[0-9]+)/[a-z0-9]+(?:/$|/.+)");
+        }
+        return ret.toArray(new String[0]);
     }
 
     public static final String PROPERTY_ALTERNATIVE_ROOT_FOLDER_TITLE = "alternative_root_folder_title";
@@ -62,7 +91,7 @@ public class HighWayMeFolder extends GenericHTTPDirectoryIndexCrawler {
         }
         final List<DownloadLink> remove2 = new ArrayList<DownloadLink>();
         for (final DownloadLink link : crawledItems) {
-            if (link.getPluginPatternMatcher().endsWith("/__ADMIN__/") && !link.isAvailabilityStatusChecked()) {
+            if (StringUtils.endsWithCaseInsensitive(link.getPluginPatternMatcher(), "/__ADMIN__/") && !link.isAvailabilityStatusChecked()) {
                 remove2.add(link);
             }
         }
@@ -77,17 +106,30 @@ public class HighWayMeFolder extends GenericHTTPDirectoryIndexCrawler {
          * Workaround! We want directURLs to be handled by our high-way.me host plugin, not directhttp a it's usually expected to happen
          * with results of the parent plugin "GenericHTTPDirectoryIndexCrawler".
          */
+        final ArrayList<DownloadLink> correctedResults = new ArrayList<DownloadLink>();
+        final HighWayMe2 plg = (HighWayMe2) this.getNewPluginForHostInstance("high-way.me");
         for (final DownloadLink link : crawledItems) {
             if (StringUtils.startsWithCaseInsensitive(link.getPluginPatternMatcher(), "directhttp://")) {
-                link.setPluginPatternMatcher(link.getPluginPatternMatcher().replaceFirst("(?i)directhttp://", ""));
-                link.setHost(this.getHost());
+                /* Ugly workaround */
+                final String directurl = link.getPluginPatternMatcher().replaceFirst("(?i)directhttp://", "");
+                final DownloadLink newlink = new DownloadLink(plg, null, plg.getHost(), directurl, true);
+                // link.setPluginPatternMatcher(link.getPluginPatternMatcher().replaceFirst("(?i)directhttp://", ""));
+                // link.setHost("high-way.me");
+                // link.setLivePlugin(plg);
+                newlink.setFinalFileName(link.getFinalFileName());
+                newlink.setVerifiedFileSize(link.getVerifiedFileSize());
+                newlink.setRelativeDownloadFolderPath(link.getRelativeDownloadFolderPath());
+                newlink.setAvailable(true);
+                correctedResults.add(newlink);
+            } else {
+                correctedResults.add(link);
             }
         }
         /* Set additional properties */
-        for (final DownloadLink link : crawledItems) {
+        for (final DownloadLink link : correctedResults) {
             link.setProperty(PROPERTY_ALTERNATIVE_ROOT_FOLDER_TITLE, this.betterRootFolderName);
         }
-        return crawledItems;
+        return correctedResults;
     }
 
     @Override
@@ -109,7 +151,7 @@ public class HighWayMeFolder extends GenericHTTPDirectoryIndexCrawler {
             if (betterRootFolderName != null) {
                 rootFolderName = betterRootFolderName;
             } else {
-                rootFolderName = new Regex(br.getURL(), "/dl(?:u|t)/([a-z0-9]+)").getMatch(0);
+                rootFolderName = new Regex(br.getURL(), "/dl(?:u|t|[0-9]+)/([a-z0-9]+)").getMatch(0);
             }
             if (path.equals("/")) {
                 return rootFolderName;

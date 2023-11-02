@@ -118,10 +118,10 @@ public abstract class HighWayCore extends UseNet {
 
     /** Returns true if an account is required to download the given item. */
     private boolean requiresAccount(final DownloadLink link) {
-        if (link.getPluginPatternMatcher() != null && link.getPluginPatternMatcher() != null && link.getPluginPatternMatcher().matches(PATTERN_DIRECT)) {
-            return false;
-        } else {
+        if (link.getPluginPatternMatcher() != null && link.getPluginPatternMatcher() != null && link.getPluginPatternMatcher().matches(PATTERN_TV)) {
             return true;
+        } else {
+            return false;
         }
     }
 
@@ -254,6 +254,7 @@ public abstract class HighWayCore extends UseNet {
                 link.setName(this.getFID(link));
             }
             if (account == null) {
+                /* Some items might be checkable without account but we require an account for all items just in case. */
                 link.getLinkStatus().setStatusText("Only downloadable via account!");
                 return AvailableStatus.UNCHECKABLE;
             }

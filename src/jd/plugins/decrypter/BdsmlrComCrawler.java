@@ -298,6 +298,15 @@ public class BdsmlrComCrawler extends PluginForDecrypt {
                 }
             }
         }
+        /* Special handling for possible empty pages with ID for next page */
+        final String[] countinfs = br.getRegex("<div class=\"countinf\" data-id=\"(\\d+)\" style=\"display:none\"[^>]*></div>").getColumn(0);
+        if (countinfs != null && countinfs.length > 0) {
+            final String lastPostID2 = countinfs[countinfs.length - 1];
+            if (!lastPostID2.equals(this.lastPostID)) {
+                logger.info("Override lastPostID via countinf handling | Old: " + this.lastPostID + " | New: " + lastPostID2);
+                this.lastPostID = lastPostID2;
+            }
+        }
         lastNumberofPosts = posts.length;
         lastPostIDList.add(this.lastPostID);
         if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {

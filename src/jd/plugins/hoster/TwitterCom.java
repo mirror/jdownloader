@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.regex.Pattern;
 
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.IO;
@@ -120,7 +121,7 @@ public class TwitterCom extends PluginForHost {
     private final String                  TYPE_DIRECT                                       = "https?://[a-z0-9]+\\.twimg\\.com/.+";
     public static final String            TYPE_VIDEO_DIRECT                                 = "https?://amp\\.twimg\\.com/v/.+";
     public static final String            TYPE_VIDEO_VMAP                                   = "^https?://.*\\.vmap$";
-    public static final String            TYPE_VIDEO_EMBED                                  = "https?://[^/]+/i/videos/tweet/(\\d+)";
+    public static final Pattern           TYPE_VIDEO_EMBED                                  = Pattern.compile("(?i)https?://[^/]+/i/videos/tweet/(\\d+)");
     public static final String            TYPE_VIDEO_SPECIFIC                               = "https://[^/]+/([^/]+)/status/(\\d+)/video/(\\d+)";
     private static final String           TYPE_TWEET_TEXT                                   = "https?://[^/]+/([^/]+)/status/(\\d+)";
     /* Connection stuff - don't allow chunks as we only download small pictures/videos */
@@ -193,7 +194,7 @@ public class TwitterCom extends PluginForHost {
 
     public static boolean isVideo(final DownloadLink link) {
         final String url = link.getPluginPatternMatcher();
-        if (url.matches(TYPE_VIDEO_EMBED) || url.matches(TYPE_VIDEO_SPECIFIC) || url.matches(TYPE_VIDEO_VMAP) || url.matches(TYPE_VIDEO_DIRECT)) {
+        if (new Regex(url, TYPE_VIDEO_EMBED).patternFind() || url.matches(TYPE_VIDEO_SPECIFIC) || url.matches(TYPE_VIDEO_VMAP) || url.matches(TYPE_VIDEO_DIRECT)) {
             return true;
         } else if (StringUtils.equals(link.getStringProperty(TwitterComCrawler.PROPERTY_TYPE), TwitterComCrawler.TYPE_VIDEO)) {
             return true;
@@ -213,7 +214,7 @@ public class TwitterCom extends PluginForHost {
     }
 
     private String getTweetIDFromURL(final String url) {
-        if (url.matches(TYPE_VIDEO_EMBED)) {
+        if (new Regex(url, TYPE_VIDEO_EMBED).patternFind()) {
             return new Regex(url, TYPE_VIDEO_EMBED).getMatch(0);
         } else if (url.matches(TYPE_VIDEO_SPECIFIC)) {
             return new Regex(url, TYPE_VIDEO_SPECIFIC).getMatch(1);

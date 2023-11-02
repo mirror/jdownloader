@@ -43,6 +43,7 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -559,7 +560,7 @@ public class PornportalCom extends PluginForHost {
                     final Map<String, Object> authInfo = restoreFromString(brlogin.getRequest().getHtmlCode(), TypeRef.MAP);
                     final String authenticationUrl = (String) authInfo.get("authenticationUrl");
                     if (StringUtils.isEmpty(authenticationUrl)) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        throw new AccountInvalidException();
                     }
                     /* Now continue without API */
                     brlogin.getPage(authenticationUrl);
@@ -637,7 +638,7 @@ public class PornportalCom extends PluginForHost {
              */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "External portal login failed");
         } else {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            throw new AccountInvalidException();
         }
     }
 
@@ -795,7 +796,7 @@ public class PornportalCom extends PluginForHost {
                      */
                     final boolean trustBannedFlag = false;
                     if (trustBannedFlag) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "Account banned", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                        throw new AccountInvalidException("Account banned");
                     } else {
                         logger.info("Account might be banned??");
                     }

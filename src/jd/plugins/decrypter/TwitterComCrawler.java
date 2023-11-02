@@ -96,11 +96,11 @@ public class TwitterComCrawler extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String            TYPE_CARD                                                        = "https?://[^/]+/i/cards/tfw/v1/(\\d+)";
+    private static final Pattern           PATTERN_CARD                                                     = Pattern.compile("(?i)https?://[^/]+/i/cards/tfw/v1/(\\d+)");
     private static final String            TYPE_USER_ALL                                                    = "https?://[^/]+/([\\w\\-]+)(?:/(?:media|likes))?(\\?.*)?";
     private static final String            TYPE_USER_LIKES                                                  = "https?://[^/]+/([\\w\\-]+)/likes.*";
     private static final String            TYPE_USER_MEDIA                                                  = "https?://[^/]+/([\\w\\-]+)/media.*";
-    private static final String            TYPE_USER_POST                                                   = "https?://[^/]+/([^/]+)/status/(\\d+).*?";
+    private static final Pattern           PATTERN_SINGLE_TWEET                                             = Pattern.compile("(?i)https?://[^/]+/([^/]+)/status/(\\d+).*?");
     // private ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
     private static AtomicReference<String> GUEST_TOKEN                                                      = new AtomicReference<String>();
     private static AtomicLong              GUEST_TOKEN_TS                                                   = new AtomicLong(-1);
@@ -207,10 +207,10 @@ public class TwitterComCrawler extends PluginForDecrypt {
         } catch (final Throwable ignore) {
         }
         br.setAllowedResponseCodes(new int[] { 429 });
-        final String newURL = getContentURL(param);
-        if (!newURL.equals(param.getCryptedUrl())) {
-            logger.info("Currected URL: Old: " + param.getCryptedUrl() + " | New: " + newURL);
-            param.setCryptedUrl(newURL);
+        final String contenturl = getContentURL(param);
+        if (!contenturl.equals(param.getCryptedUrl())) {
+            logger.info("Currected URL: Old: " + param.getCryptedUrl() + " | New: " + contenturl);
+            param.setCryptedUrl(contenturl);
         }
         br.setFollowRedirects(true);
         /* Some profiles can only be accessed if they accepted others as followers --> Login if the user has added his twitter account */
@@ -223,12 +223,17 @@ public class TwitterComCrawler extends PluginForDecrypt {
                 throw new AccountRequiredException();
             }
         }
-        if (param.getCryptedUrl().matches(TYPE_CARD)) {
-            return this.crawlCard(param, account);
-        } else if (param.getCryptedUrl().matches(TwitterCom.TYPE_VIDEO_EMBED)) {
-            return this.crawlSingleTweet(account, null, new Regex(param.getCryptedUrl(), TwitterCom.TYPE_VIDEO_EMBED).getMatch(0));
-        } else if (param.getCryptedUrl().matches(TYPE_USER_POST)) {
-            return this.crawlSingleTweet(param, account);
+        final Regex singletweetVideoEmbed = new Regex(contenturl, TwitterCom.TYPE_VIDEO_EMBED);
+        final Regex singletweet = new Regex(contenturl, PATTERN_SINGLE_TWEET);
+        if (new Regex(contenturl, PATTERN_CARD).patternFind()) {
+            return this.crawlCard(contenturl);
+        } else if (singletweetVideoEmbed.patternFind()) {
+            final String tweetID = singletweetVideoEmbed.getMatch(0);
+            return this.crawlSingleTweet(account, null, tweetID);
+        } else if (singletweet.patternFind()) {
+            final String username = singletweet.getMatch(0);
+            final String tweetID = singletweet.getMatch(1);
+            return this.crawlSingleTweet(account, username, tweetID);
         } else {
             return this.crawlUser(param, account);
         }
@@ -314,13 +319,14 @@ public class TwitterComCrawler extends PluginForDecrypt {
     }
 
     @Deprecated
-    private ArrayList<DownloadLink> crawlCard(final CryptedLink param, final Account account) throws Exception {
+    private ArrayList<DownloadLink> crawlCard(final String contenturl) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final String tweetID = new Regex(param.getCryptedUrl(), TYPE_CARD).getMatch(0);
+        final String tweetID = new Regex(contenturl, PATTERN_CARD).getMatch(0);
         if (tweetID == null) {
+            /* Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        getPage(param.getCryptedUrl());
+        getPage(contenturl);
         if (br.getRequest().getHttpConnection().getResponseCode() == 403 || br.getRequest().getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML("class=\"ProtectedTimeline\"")) {
@@ -348,17 +354,6 @@ public class TwitterComCrawler extends PluginForDecrypt {
             ret.add(dl);
         }
         return ret;
-    }
-
-    private ArrayList<DownloadLink> crawlSingleTweet(final CryptedLink param, final Account account) throws Exception {
-        final Regex urlinfo = new Regex(param.getCryptedUrl(), TYPE_USER_POST);
-        if (!urlinfo.patternFind()) {
-            /* Developer mistake */
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        final String username = urlinfo.getMatch(0);
-        final String tweetID = urlinfo.getMatch(1);
-        return crawlSingleTweet(account, username, tweetID);
     }
 
     private ArrayList<DownloadLink> crawlSingleTweet(final Account account, final String username, final String tweetID) throws Exception {
