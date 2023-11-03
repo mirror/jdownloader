@@ -29,6 +29,20 @@ import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import jd.config.Property;
+import jd.controlling.downloadcontroller.DownloadLinkCandidate;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.HistoryEntry;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.linkcollector.LinknameCleaner;
+import jd.controlling.linkcrawler.CheckableLink;
+import jd.controlling.packagecontroller.AbstractNodeNotifier;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
+import jd.plugins.DownloadLinkDatabindingInterface.Key;
+import jd.plugins.download.DownloadInterface;
+import jd.plugins.download.HashInfo;
+import jd.plugins.download.HashInfo.TYPE;
+
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
@@ -57,20 +71,6 @@ import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 
-import jd.config.Property;
-import jd.controlling.downloadcontroller.DownloadLinkCandidate;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.downloadcontroller.HistoryEntry;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.linkcollector.LinknameCleaner;
-import jd.controlling.linkcrawler.CheckableLink;
-import jd.controlling.packagecontroller.AbstractNodeNotifier;
-import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
-import jd.plugins.DownloadLinkDatabindingInterface.Key;
-import jd.plugins.download.DownloadInterface;
-import jd.plugins.download.HashInfo;
-import jd.plugins.download.HashInfo.TYPE;
-
 /**
  * Hier werden alle notwendigen Informationen zu einem einzelnen Download festgehalten. Die Informationen werden dann in einer Tabelle
  * dargestellt
@@ -83,7 +83,6 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         FALSE(_GUI.T.linkgrabber_onlinestatus_offline()),
         UNCHECKABLE(_GUI.T.linkgrabber_onlinestatus_uncheckable()),
         TRUE(_GUI.T.linkgrabber_onlinestatus_online());
-
         private final String exp;
 
         private AvailableStatus(String exp) {
@@ -970,14 +969,30 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         return this.getStringProperty(PROPERTY_COMMENT, null);
     }
 
-    @Deprecated
     public List<String> getSourcePluginPasswordList() {
         final Object ret = this.getProperty(PROPERTY_PWLIST);
-        if (ret != null && ret instanceof List && ((List) ret).size() > 0) {
-            return (List<String>) ret;
-        } else {
-            return null;
+        if (ret != null) {
+            if (ret instanceof String[]) {
+                if (((String[]) ret).length > 0) {
+                    return Arrays.asList((String[]) ret);
+                } else {
+                    return null;
+                }
+            } else if (ret instanceof String) {
+                if (StringUtils.isNotEmpty((String) ret)) {
+                    return Arrays.asList((String) ret);
+                } else {
+                    return null;
+                }
+            } else if (ret instanceof List) {
+                if (((List) ret).size() > 0) {
+                    return (List<String>) ret;
+                } else {
+                    return null;
+                }
+            }
         }
+        return null;
     }
 
     /**
@@ -1037,7 +1052,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     /*
      * Gibt zurueck ob Dieser Link schon auf verfuegbarkeit getestet wurde.+ Diese FUnktion fuehrt keinen!! Check durch. Sie prueft nur ob
      * schon geprueft worden ist. anschiessend kann mit isAvailable() die verfuegbarkeit ueberprueft werden
-     *
+     * 
      * @return Link wurde schon getestet (true) nicht getestet(false)
      */
     public boolean isAvailabilityStatusChecked() {
@@ -1532,14 +1547,18 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         }
     }
 
-    @Deprecated
-    public DownloadLink setSourcePluginPasswordList(ArrayList<String> sourcePluginPassword) {
+    public DownloadLink setSourcePluginPasswordList(List<String> sourcePluginPassword) {
         if (sourcePluginPassword == null || sourcePluginPassword.size() == 0) {
             this.removeProperty(PROPERTY_PWLIST);
         } else {
             this.setProperty(PROPERTY_PWLIST, sourcePluginPassword);
         }
         return this;
+    }
+
+    @Deprecated
+    public DownloadLink setSourcePluginPasswordList(ArrayList<String> sourcePluginPassword) {
+        return setSourcePluginPasswordList((List<String>) sourcePluginPassword);
     }
 
     /**
@@ -1655,11 +1674,11 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
      * Users can pre-set download passwords on any items so setting a password doesn't necessarily mean that the item is password protected
      * nor that that password is valid. </br>
      *
-     * @param pass:
-     *            The download password.
+     * @param pass
+     *            : The download password.
      *
-     * @param isPasswordProtected:
-     *            Set this to true if you know that the item is password protected.
+     * @param isPasswordProtected
+     *            : Set this to true if you know that the item is password protected.
      *
      *
      */
@@ -1682,9 +1701,8 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     /**
-     * Returns whether or not a download password is required to download this item. 7 </br>
-     * In most of all cases, this cannot be known until downloads are started but in some instances this can be set e.g. during folder
-     * crawling already.
+     * Returns whether or not a download password is required to download this item. 7 </br> In most of all cases, this cannot be known
+     * until downloads are started but in some instances this can be set e.g. during folder crawling already.
      */
     public boolean isPasswordProtected() {
         return this.getBooleanProperty(PROPERTY_PASSWORD_PROTECTED, false);
@@ -1915,17 +1933,16 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     /**
-     * This date will later be written in the file if wanted by the user. </br>
-     * Preferable not(!) set this because in most of all cases this information will be obtained via the "Last-Modified" header once a
-     * download is complete.
+     * This date will later be written in the file if wanted by the user. </br> Preferable not(!) set this because in most of all cases this
+     * information will be obtained via the "Last-Modified" header once a download is complete.
      */
     public void setLastModifiedTimestamp(final long timestamp) {
         this.setProperty(PROPERTY_LAST_MODIFIED, timestamp);
     }
 
     /**
-     * Returns timestamp when this file was last modified. </br>
-     * Typically only given [before download] if provided by an API and set on this DownloadLink.
+     * Returns timestamp when this file was last modified. </br> Typically only given [before download] if provided by an API and set on
+     * this DownloadLink.
      */
     public long getLastModifiedTimestamp() {
         return this.getLongProperty(PROPERTY_LAST_MODIFIED, -1);

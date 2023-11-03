@@ -26,26 +26,6 @@ import java.util.WeakHashMap;
 
 import javax.crypto.Cipher;
 
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.storage.TypeRef;
-import org.appwork.storage.flexijson.FlexiJSONParser;
-import org.appwork.storage.flexijson.FlexiJSonNode;
-import org.appwork.storage.flexijson.FlexiParserException;
-import org.appwork.storage.flexijson.mapper.FlexiJSonMapper;
-import org.appwork.storage.flexijson.mapper.FlexiMapperException;
-import org.appwork.utils.Files;
-import org.appwork.utils.Hash;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.crypto.AWSign;
-import org.appwork.utils.encoding.Base64;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.controlling.linkcrawler.LinkVariant;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.host.PluginFinder;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -74,8 +54,28 @@ import jd.plugins.components.gopro.Media;
 import jd.plugins.components.gopro.Variation;
 import jd.plugins.decrypter.GoProCloudDecrypter;
 
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.storage.TypeRef;
+import org.appwork.storage.flexijson.FlexiJSONParser;
+import org.appwork.storage.flexijson.FlexiJSonNode;
+import org.appwork.storage.flexijson.FlexiParserException;
+import org.appwork.storage.flexijson.mapper.FlexiJSonMapper;
+import org.appwork.storage.flexijson.mapper.FlexiMapperException;
+import org.appwork.utils.Files;
+import org.appwork.utils.Hash;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.crypto.AWSign;
+import org.appwork.utils.encoding.Base64;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.controlling.linkcrawler.LinkVariant;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.host.PluginFinder;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "gopro.com" }, urls = { GoProCloud.HTTPS_GOPRO_COM_DOWNLOAD_PREMIUM_FREE })
-public class GoProCloud extends PluginForHost/* implements MenuExtenderHandler */ {
+public class GoProCloud extends PluginForHost/* implements MenuExtenderHandler */{
     public static final String MEDIA                                 = "media";
     public static final String MEDIA_DOWNLOAD                        = "media/download";
     public static final String HTTPS_GOPRO_COM_DOWNLOAD_PREMIUM_FREE = "https?://gopro\\.com/download(?:premium|free)/([^/]+)/([^/]+)";
@@ -143,12 +143,16 @@ public class GoProCloud extends PluginForHost/* implements MenuExtenderHandler *
                     br.getPage("https://gopro.com/login");
                     final Map<String, Object> loginData = new HashMap<String, Object>();
                     final String token = br.getRegex("<meta name=\"csrf-token\" content=([^>]+)").getMatch(0);
-                    final String publicKey = br.getRegex("\"pwPubKey\"\\s*:\\s*\"([^\"]+)").getMatch(0);
+                    final String publicKeyPem = br.getRegex("\"pwPubKey\"\\s*:\\s*\"([^\"]+)").getMatch(0);
                     String json = br.getRegex("<script>window.__bootstrap=(.+)").getMatch(0);
                     FlexiJSONParser parser = new FlexiJSONParser(json);
                     parser.setBreakAtEndOfObject(true);
                     try {
-                        PublicKey pub = AWSign.getPublicKey(publicKey);
+                        String base64Encoded = publicKeyPem;
+                        base64Encoded = base64Encoded.replaceAll("(?i)^\\s*[\\-]*BEGIN\\s*PUBLIC\\s*KEY[\\-]*\\s*", "");
+                        base64Encoded = base64Encoded.replaceAll("(?i)\\s*[\\-]*END\\s*PUBLIC\\s*KEY[\\-]*\\s*$", "");
+                        base64Encoded = base64Encoded.replaceAll("\\s+", "");
+                        PublicKey pub = AWSign.getPublicKey(publicKeyPem);
                         Cipher cipher = Cipher.getInstance("RSA");
                         cipher.init(Cipher.ENCRYPT_MODE, pub);
                         String encryptedPassword = Base64.encodeToString(cipher.doFinal(account.getPass().getBytes("UTF-8")));
@@ -621,6 +625,7 @@ public class GoProCloud extends PluginForHost/* implements MenuExtenderHandler *
             link.setProperty(MEDIA, responseMedia);
         }
     }
+
     // @Override
     // public MenuItemData updateMenuModel(ContextMenuManager manager, MenuContainerRoot mr) {
     // if (manager instanceof MenuManagerMainmenu) {
@@ -639,7 +644,6 @@ public class GoProCloud extends PluginForHost/* implements MenuExtenderHandler *
     // }
     // return null;
     // }
-
     public static String createVideoVariantID(Variation v, Media media) {
         final int digits = (int) (Math.log10(media.getItem_count()) + 1);
         return v.getLabel() + "_" + StringUtils.fillPre(v.getItem_number() + "", "0", digits);
