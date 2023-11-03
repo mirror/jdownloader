@@ -84,7 +84,7 @@ public class StorjshareIoCrawler extends PluginForDecrypt {
         if (br.containsHTML("download=1")) {
             /* Single file */
             final String filenameFromURL = new Regex(path, "/([^/]+)$").getMatch(0);
-            final DownloadLink singlefile = this.createDownloadlink(DirectHTTP.createURLForThisPlugin(br.getURL() + "?download=1"));
+            final DownloadLink singlefile = this.createDownloadlink(DirectHTTP.createURLForThisPlugin(br.getURL("?download=1").toExternalForm()), false);
             singlefile.setName(filenameFromURL);
             final String filesizeStr = br.getRegex("<p class=\"mt-3\"[^>]*>([^<]+)</p>").getMatch(0);
             if (filesizeStr != null) {
@@ -114,9 +114,7 @@ public class StorjshareIoCrawler extends PluginForDecrypt {
                 url = br.getURL(url).toExternalForm();
                 url = URLHelper.getUrlWithoutParams(url);
                 url += "?download=1";
-                /* 2023-11-02: Use .jdeatme as workaround for directhttp encoding problem */
-                // final DownloadLink link = createDownloadlink(DirectHTTP.createURLForThisPlugin(url));
-                final DownloadLink link = createDownloadlink(url + ".jdeatme");
+                final DownloadLink link = createDownloadlink(DirectHTTP.createURLForThisPlugin(url), false);
                 if (filename != null) {
                     link.setFinalFileName(Encoding.htmlDecode(filename).trim());
                 }
@@ -131,6 +129,8 @@ public class StorjshareIoCrawler extends PluginForDecrypt {
                 if (filesize > 0) {
                     link.setAvailable(true);
                     link.setDownloadSize(filesize);
+                } else {
+                    logger.info("File will be checked manually to determine real filesize: " + url);
                 }
                 link.setRelativeDownloadFolderPath(path);
                 link._setFilePackage(fp);

@@ -120,9 +120,6 @@ public class Keep2ShareCcDecrypter extends PluginForDecrypt {
         // set cross browser support
         plugin.setBrowser(br);
         final String referer = K2SApi.getRefererFromURL(param.getCryptedUrl());
-        final boolean addRefererToRequest = false;
-        final DownloadLink dummy = this.createDownloadlink(generateFileUrl(contentidFromURL, null, referer));
-        final String refererForHttpRequest = plugin.getCustomReferer(dummy);
         Map<String, Object> response = null;
         List<Map<String, Object>> items = null;
         FilePackage fp = null;
@@ -185,12 +182,6 @@ public class Keep2ShareCcDecrypter extends PluginForDecrypt {
                 postdataGetfilestatus.put("id", contentid);
                 postdataGetfilestatus.put("limit", maxItemsPerPage);
                 postdataGetfilestatus.put("offset", offset);
-                if (refererForHttpRequest != null && addRefererToRequest) {
-                    postdataGetfilestatus.put("url_referrer", refererForHttpRequest);
-                    /* "referer" and "site" are the Browser params */
-                    postdataGetfilestatus.put("referer", refererForHttpRequest);
-                    postdataGetfilestatus.put("site", "vipergirls.to");
-                }
                 response = plugin.postPageRaw(br, "/getfilestatus", postdataGetfilestatus, null);
                 items = (List<Map<String, Object>>) response.get("files");
                 if (items == null && response.containsKey("is_available") && !response.containsKey("id")) {

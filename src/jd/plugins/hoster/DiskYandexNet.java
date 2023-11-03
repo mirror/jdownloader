@@ -19,7 +19,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
@@ -111,6 +110,7 @@ public class DiskYandexNet extends PluginForHost {
     public static final String   PROPERTY_ACCOUNT_ENFORCE_COOKIE_LOGIN = "enforce_cookie_login";
     private final String         PROPERTY_ACCOUNT_USERID               = "account_userid";
     public static final String   APIV1_BASE                            = "https://cloud-api.yandex.net/v1";
+    private static final String  ERRORTEXT_FILE_DOWNLOAD_DISABLED      = "File owner has disabled downloads for this file";
     /*
      * https://tech.yandex.com/disk/api/reference/public-docpage/ 2018-08-09: API(s) seem to work fine again - in case of failure, please
      * disable use_api_file_free_availablecheck ONLY!!
@@ -384,6 +384,7 @@ public class DiskYandexNet extends PluginForHost {
                     br.getHeaders().put("Content-Type", "text/plain");
                     br.postPageRaw("/public-api-desktop/download-url", String.format("{\"hash\":\"%s\",\"sk\":\"%s\"}", getRawHash(link), sk));
                     handleErrorsFree(br);
+                    // TODO: 2023-11-03: Also use json parser for/inside errorhandling
                     dllink = PluginJSonUtils.getJsonValue(br, "url");
                     if (StringUtils.isEmpty(dllink)) {
                         logger.warning("Failed to find final downloadurl");
@@ -393,8 +394,17 @@ public class DiskYandexNet extends PluginForHost {
                     /* sure json will return url with htmlentities? */
                     dllink = HTMLEntities.unhtmlentities(dllink);
                 }
-                if (StringUtils.isEmpty(dllink) && isVideo(link)) {
-                    getStreamDownloadurl(link, account);
+                if (dllink != null && dllink.equals("")) {
+                    if (isVideo(link)) {
+                        getStreamDownloadurl(link, account);
+                    } else {
+                        /**
+                         * Dead end </br>
+                         * Some of such files can be viewed in browser e.g. documents and .txt files but all in all we can't really do much
+                         * if the owner has disabled download button.
+                         */
+                        throw new PluginException(LinkStatus.ERROR_FATAL, ERRORTEXT_FILE_DOWNLOAD_DISABLED);
+                    }
                 }
                 if (StringUtils.isEmpty(dllink)) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -435,7 +445,7 @@ public class DiskYandexNet extends PluginForHost {
         /* 2023-07-15: For video files which can officially only be streamed and not downloaded. */
         final boolean allowAttemptStreamingDownload = true;
         if (!allowAttemptStreamingDownload) {
-            throw new PluginException(LinkStatus.ERROR_FATAL, "Owner has disabled downloads for this file");
+            throw new PluginException(LinkStatus.ERROR_FATAL, ERRORTEXT_FILE_DOWNLOAD_DISABLED);
         }
         logger.info("Trying to find stream downloadlink");
         final Browser brc = br.cloneBrowser();

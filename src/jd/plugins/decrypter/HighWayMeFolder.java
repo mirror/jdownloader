@@ -82,10 +82,10 @@ public class HighWayMeFolder extends GenericHTTPDirectoryIndexCrawler {
         betterRootFolderName = param.getDownloadLink() != null ? param.getDownloadLink().getStringProperty(PROPERTY_ALTERNATIVE_ROOT_FOLDER_TITLE) : null;
         final String domainHW = "high-way.me";
         final Account account = AccountController.getInstance().getValidAccount(domainHW);
-        final HighWayMe2 plg = (HighWayMe2) this.getNewPluginForHostInstance(domainHW);
+        final HighWayMe2 hosterplugin = (HighWayMe2) this.getNewPluginForHostInstance(domainHW);
         if (account != null) {
             /* Required for WebDAV URLs. */
-            plg.login(account, false);
+            hosterplugin.login(account, false);
         }
         final boolean accountRequired;
         if (param.getCryptedUrl().matches("(?i)https?://[^/]+/dav/.+")) {
@@ -132,32 +132,17 @@ public class HighWayMeFolder extends GenericHTTPDirectoryIndexCrawler {
          * Workaround! We want directURLs to be handled by our high-way.me host plugin, not directhttp a it's usually expected to happen
          * with results of the parent plugin "GenericHTTPDirectoryIndexCrawler".
          */
-        final ArrayList<DownloadLink> correctedResults = new ArrayList<DownloadLink>();
         for (final DownloadLink link : crawledItems) {
             if (StringUtils.startsWithCaseInsensitive(link.getPluginPatternMatcher(), "directhttp://")) {
-                /* Ugly workaround */
-                final String directurl = link.getPluginPatternMatcher().replaceFirst("(?i)directhttp://", "");
-                final DownloadLink newlink = new DownloadLink(plg, null, plg.getHost(), directurl, true);
-                // link.setPluginPatternMatcher(link.getPluginPatternMatcher().replaceFirst("(?i)directhttp://", ""));
-                // link.setHost("high-way.me");
-                // link.setLivePlugin(plg);
-                newlink.setFinalFileName(link.getFinalFileName());
-                newlink.setVerifiedFileSize(link.getVerifiedFileSize());
-                newlink.setRelativeDownloadFolderPath(link.getRelativeDownloadFolderPath());
-                newlink.setAvailable(true);
-                if (link.getFilePackage() != null) {
-                    newlink._setFilePackage(link.getFilePackage());
-                }
-                correctedResults.add(newlink);
-            } else {
-                correctedResults.add(link);
+                /* Workaround to make single file links to into our high-way.me hosterplugin */
+                final String directurlCorrected = link.getPluginPatternMatcher().replaceFirst("(?i)directhttp://", "");
+                link.setPluginPatternMatcher(directurlCorrected);
+                link.setHost(domainHW);
+                link.setDefaultPlugin(hosterplugin);
             }
-        }
-        /* Set additional properties */
-        for (final DownloadLink link : correctedResults) {
             link.setProperty(PROPERTY_ALTERNATIVE_ROOT_FOLDER_TITLE, this.betterRootFolderName);
         }
-        return correctedResults;
+        return crawledItems;
     }
 
     @Override
