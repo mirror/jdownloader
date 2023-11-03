@@ -32,6 +32,8 @@ import jd.http.requests.GetRequest;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
@@ -43,6 +45,12 @@ import jd.plugins.components.SiteType.SiteTemplate;
 public class GenericHTTPDirectoryIndexCrawler extends PluginForDecrypt {
     public GenericHTTPDirectoryIndexCrawler(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.setFollowRedirects(true);
+        return br;
     }
 
     @Override
@@ -59,8 +67,7 @@ public class GenericHTTPDirectoryIndexCrawler extends PluginForDecrypt {
         return this.crawlHTTPDirectory(param);
     }
 
-    protected ArrayList<DownloadLink> crawlHTTPDirectory(final CryptedLink param) throws IOException, PluginException {
-        br.setFollowRedirects(true);
+    protected ArrayList<DownloadLink> crawlHTTPDirectory(final CryptedLink param) throws IOException, PluginException, DecrypterRetryException {
         /* First check if maybe the user has added a directURL. */
         final GetRequest getRequest = br.createGetRequest(param.getCryptedUrl());
         final URLConnectionAdapter con = this.br.openRequestConnection(getRequest);
@@ -91,8 +98,12 @@ public class GenericHTTPDirectoryIndexCrawler extends PluginForDecrypt {
         }
     }
 
-    /** Does parsing only, without any HTTP requests! */
-    protected ArrayList<DownloadLink> parseHTTPDirectory(final CryptedLink param, final Browser br) throws IOException, PluginException {
+    /**
+     * Does parsing only, without any HTTP requests!
+     *
+     * @throws DecrypterRetryException
+     */
+    protected ArrayList<DownloadLink> parseHTTPDirectory(final CryptedLink param, final Browser br) throws IOException, PluginException, DecrypterRetryException {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String path = this.getCurrentDirectoryPath(br);
         /* Path should always be given! */
@@ -109,21 +120,20 @@ public class GenericHTTPDirectoryIndexCrawler extends PluginForDecrypt {
         /* nginx (default?): Entries sometimes contain the create-date, sometimes only the filesize (for folders, only "-"). */
         String[][] filesAndFolders = br.getRegex("<a href=\"([^\"]+)\">([^>]+)</a>(?: *\\d{1,2}-[A-Za-z]{3}-\\d{4} \\d{1,2}:\\d{1,2})?[ ]+(\\d+|-)").getMatches();
         if (filesAndFolders.length > 0) {
-            /* nginx */
+            /* Nginx */
             for (final String[] finfo : filesAndFolders) {
-                final DownloadLink downloadLink = parseEntry(DirectoryListingMode.NGINX, br, finfo);
-                downloadLink.setRelativeDownloadFolderPath(path);
+                final DownloadLink link = parseEntry(DirectoryListingMode.NGINX, br, finfo);
+                link.setRelativeDownloadFolderPath(path);
                 if (fp != null) {
-                    downloadLink._setFilePackage(fp);
+                    link._setFilePackage(fp);
                 }
-                ret.add(downloadLink);
+                ret.add(link);
             }
         } else {
             /* Apache default http dir index */
             filesAndFolders = br.getRegex("<a href=\"([^\"]+)\">[^<]*</a>\\s*</td><td align=\"right\">\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}\\s*</td><td align=\"right\">[ ]*(\\d+(\\.\\d)?[A-Z]?|-)[ ]*</td>").getMatches();
             if (filesAndFolders == null || filesAndFolders.length == 0) {
-                ret.add(this.createOfflinelink(param.getCryptedUrl(), "EMPTY_FOLDER " + path, "EMPTY_FOLDER " + path));
-                return ret;
+                throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER, "EMPTY_FOLDER_" + path);
             }
             for (final String[] finfo : filesAndFolders) {
                 final DownloadLink downloadLink = parseEntry(DirectoryListingMode.APACHE, br, finfo);
@@ -152,7 +162,7 @@ public class GenericHTTPDirectoryIndexCrawler extends PluginForDecrypt {
         }
         /* Is it a file or a folder? */
         if (filesizeStr.equals("-")) {
-            /* Folder */
+            /* Folder -> Will go back into this crawler */
             final DownloadLink dlfolder = this.createDownloadlink(url);
             return dlfolder;
         } else {

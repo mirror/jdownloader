@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.storage.JSonMapperException;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
@@ -218,7 +219,7 @@ public abstract class HighWayCore extends UseNet {
                 link.setName(this.getFID(link) + ".mp4");
             }
             if (account == null) {
-                link.getLinkStatus().setStatusText("Only downloadable via account!");
+                link.getLinkStatus().setStatusText("Only downloadable/checkable via account!");
                 return AvailableStatus.UNCHECKABLE;
             }
             br.setFollowRedirects(true);
@@ -275,9 +276,10 @@ public abstract class HighWayCore extends UseNet {
             }
             if (account == null) {
                 /* Some items might be checkable without account but we require an account for all items just in case. */
-                link.getLinkStatus().setStatusText("Only downloadable via account!");
+                link.getLinkStatus().setStatusText("Only downloadable/checkable via account!");
                 return AvailableStatus.UNCHECKABLE;
             }
+            this.login(account, false);
             URLConnectionAdapter con = null;
             try {
                 final Browser brc = br.cloneBrowser();
@@ -285,22 +287,21 @@ public abstract class HighWayCore extends UseNet {
                 con = brc.openHeadConnection(link.getPluginPatternMatcher());
                 if (!this.looksLikeDownloadableContent(con)) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                final String serverFilename = getFileNameFromHeader(con);
+                if (!StringUtils.isEmpty(serverFilename)) {
+                    link.setFinalFileName(serverFilename);
                 } else {
-                    final String serverFilename = getFileNameFromHeader(con);
-                    if (!StringUtils.isEmpty(serverFilename)) {
-                        link.setFinalFileName(serverFilename);
+                    /* Fallback: This should not be needed. */
+                    final String realExtension = this.getExtensionFromMimeType(con.getContentType());
+                    if (realExtension != null) {
+                        link.setFinalFileName(applyFilenameExtension(fallbackFilename, "." + realExtension));
                     } else {
-                        /* Fallback: This should not be needed. */
-                        final String realExtension = this.getExtensionFromMimeType(con.getContentType());
-                        if (realExtension != null) {
-                            link.setFinalFileName(applyFilenameExtension(fallbackFilename, "." + realExtension));
-                        } else {
-                            link.setFinalFileName(fallbackFilename);
-                        }
+                        link.setFinalFileName(fallbackFilename);
                     }
-                    if (con.getCompleteContentLength() != -1) {
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
-                    }
+                }
+                if (con.getCompleteContentLength() != -1) {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
                 }
             } finally {
                 try {
@@ -800,15 +801,16 @@ public abstract class HighWayCore extends UseNet {
                     throw new AccountInvalidException("Invalid API key format");
                 }
             }
+            br.getHeaders().put(HTTPConstants.HEADER_REQUEST_AUTHORIZATION, "Basic " + Encoding.Base64Encode(account.getUser() + ":" + account.getPass()));
             final Cookies cookies = account.loadCookies("");
             if (cookies != null) {
-                this.br.setCookies(this.getHost(), cookies);
+                br.setCookies(this.getHost(), cookies);
                 if (!validateCookies) {
                     /* Do not validate cookies */
                     return;
                 } else {
                     logger.info("Checking cookies");
-                    this.br.getPage(this.getAPIBase() + "?logincheck");
+                    br.getPage(this.getAPIBase() + "?logincheck");
                     /* Don't check for errors here as a failed login can trigger error dialogs which we don't want here! */
                     // this.checkErrors(this.br, account);
                     try {
@@ -820,6 +822,7 @@ public abstract class HighWayCore extends UseNet {
                     } catch (final PluginException ignore) {
                         logger.log(ignore);
                         logger.info("Cookie login failed");
+                        br.clearCookies(null);
                     }
                 }
             }

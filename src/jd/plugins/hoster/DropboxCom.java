@@ -538,12 +538,14 @@ public class DropboxCom extends PluginForHost {
             logger.warning("Failed to find final downloadurl");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        boolean allowFixFileExtension = false;
+        final boolean allowFixFileExtension;
         final String directurlPreview = link.getStringProperty(PROPERTY_PREVIEW_DOWNLOADLINK);
         if (StringUtils.equals(dllink, directurlPreview)) {
             /* Stream download active -> Filesize can be different from size of original file. */
             link.setVerifiedFileSize(-1);
             allowFixFileExtension = true;
+        } else {
+            allowFixFileExtension = false;
         }
         /* Important: URL needs to contain "www."! */
         dllink = dllink.replaceFirst("(?i)/dropbox.com/", "/www.dropbox.com/");
@@ -581,6 +583,8 @@ public class DropboxCom extends PluginForHost {
                     }
                 } else if (con.getResponseCode() == 403) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403");
+                } else if (con.getResponseCode() == 500) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 500", 1 * 60 * 1000);
                 } else {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }

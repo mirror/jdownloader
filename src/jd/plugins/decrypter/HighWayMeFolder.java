@@ -24,8 +24,10 @@ import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 
 import jd.PluginWrapper;
+import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -60,7 +62,7 @@ public class HighWayMeFolder extends GenericHTTPDirectoryIndexCrawler {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://\\w+\\." + buildHostsPatternPart(domains) + "/dl(?:u|t|[0-9]+)/[a-z0-9]+(?:/$|/.+)");
+            ret.add("https?://\\w+\\." + buildHostsPatternPart(domains) + "/(dl(?:u|t|[0-9]+)/[a-z0-9]+(?:/$|/.+)|dav/.+)");
         }
         return ret.toArray(new String[0]);
     }
@@ -70,6 +72,22 @@ public class HighWayMeFolder extends GenericHTTPDirectoryIndexCrawler {
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         betterRootFolderName = param.getDownloadLink() != null ? param.getDownloadLink().getStringProperty(PROPERTY_ALTERNATIVE_ROOT_FOLDER_TITLE) : null;
+        final String domainHW = "high-way.me";
+        final Account account = AccountController.getInstance().getValidAccount(domainHW);
+        final HighWayMe2 plg = (HighWayMe2) this.getNewPluginForHostInstance(domainHW);
+        if (account != null) {
+            /* Required for WebDAV URLs. */
+            plg.login(account, false);
+        }
+        final boolean accountRequired;
+        if (param.getCryptedUrl().matches("(?i)https?://[^/]+/dav/.+")) {
+            accountRequired = true;
+        } else {
+            accountRequired = false;
+        }
+        if (accountRequired && account == null) {
+            logger.info("Looks like account required and no account available -> This one will most likely fail");
+        }
         final ArrayList<DownloadLink> crawledItems = super.decryptIt(param, progress);
         if (param.getCryptedUrl().matches("(?i)^https?://(?:torrentarchiv|torrent)\\.[^/]+/dlt/[a-z0-9]+/$")) {
             /*
@@ -107,7 +125,6 @@ public class HighWayMeFolder extends GenericHTTPDirectoryIndexCrawler {
          * with results of the parent plugin "GenericHTTPDirectoryIndexCrawler".
          */
         final ArrayList<DownloadLink> correctedResults = new ArrayList<DownloadLink>();
-        final HighWayMe2 plg = (HighWayMe2) this.getNewPluginForHostInstance("high-way.me");
         for (final DownloadLink link : crawledItems) {
             if (StringUtils.startsWithCaseInsensitive(link.getPluginPatternMatcher(), "directhttp://")) {
                 /* Ugly workaround */
@@ -120,6 +137,9 @@ public class HighWayMeFolder extends GenericHTTPDirectoryIndexCrawler {
                 newlink.setVerifiedFileSize(link.getVerifiedFileSize());
                 newlink.setRelativeDownloadFolderPath(link.getRelativeDownloadFolderPath());
                 newlink.setAvailable(true);
+                if (link.getFilePackage() != null) {
+                    newlink._setFilePackage(link.getFilePackage());
+                }
                 correctedResults.add(newlink);
             } else {
                 correctedResults.add(link);
