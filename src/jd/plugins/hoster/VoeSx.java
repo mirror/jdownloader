@@ -22,6 +22,7 @@ import java.util.List;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
+import org.jdownloader.plugins.components.config.XFSConfigVideo.DownloadMode;
 import org.jdownloader.plugins.components.config.XFSConfigVideoVoeSx;
 
 import jd.PluginWrapper;
@@ -209,7 +210,7 @@ public class VoeSx extends XFileSharingProBasic {
             /* Fallback. Do this again as now we got the html code available so we can e.g. know if this is a video-filehoster or not. */
             this.setWeakFilename(link, br);
         }
-        final String dllink = getDllinkVideohost(link, account, null, br.toString());
+        final String dllink = getDllinkVideohost(link, account, null, br.getRequest().getHtmlCode());
         if (StringUtils.isEmpty(dllink) && embedOnly) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "This video can be watched as embed only");
         }
@@ -240,12 +241,20 @@ public class VoeSx extends XFileSharingProBasic {
                 logger.info("Failed to find any official video downloads");
                 return null;
             }
+            final String streamDownloadlink = getDllinkVideohost(link, account, br, br.getRequest().getHtmlCode());
+            final DownloadMode mode = this.getPreferredDownloadModeFromConfig();
+            if (streamDownloadlink != null && (mode == DownloadMode.STREAM || mode == DownloadMode.AUTO)) {
+                /*
+                 * User wants to download stream. Obtaining an official downloadlink would require the user to enter a captcha -> Skip that.
+                 */
+                return null;
+            }
             if (br.containsHTML("&embed=&adb=")) {
                 /* 2022-08-24: This might give us more download-speed, not sure though. */
                 continueLink += "&embed=&adb=0";
             }
             this.getPage(br, continueLink);
-            final Form dlform = br.getFormbyActionRegex(".+/download$");
+            final Form dlform = br.getFormbyActionRegex("(?i).+/download$");
             if (dlform != null) {
                 try {
                     reCaptchaSiteurlWorkaround = br.getURL();
@@ -312,5 +321,10 @@ public class VoeSx extends XFileSharingProBasic {
     @Override
     public Class<? extends XFSConfigVideoVoeSx> getConfigInterface() {
         return XFSConfigVideoVoeSx.class;
+    }
+
+    protected Boolean requiresCaptchaForOfficialVideoDownload() {
+        // TODO: Add override annotation once this gets added to XFS core
+        return Boolean.TRUE;
     }
 }
