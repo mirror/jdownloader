@@ -31,12 +31,20 @@ import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.hoster.HighWayCore;
 import jd.plugins.hoster.HighWayMe2;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class HighWayMeFolder extends GenericHTTPDirectoryIndexCrawler {
     public HighWayMeFolder(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        HighWayCore.prepBRHighway(br);
+        return br;
     }
 
     public static List<String[]> getPluginDomains() {

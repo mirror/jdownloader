@@ -103,7 +103,12 @@ public abstract class HighWayCore extends UseNet {
 
     @Override
     public Browser createNewBrowserInstance() {
-        final Browser br = new Browser();
+        final Browser br = super.createNewBrowserInstance();
+        HighWayCore.prepBRHighway(br);
+        return br;
+    }
+
+    public static Browser prepBRHighway(final Browser br) {
         br.setCookiesExclusive(true);
         br.getHeaders().put("User-Agent", "JDownloader");
         br.setCustomCharset("utf-8");

@@ -32,6 +32,7 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.plugins.Account;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.CryptedLink;
@@ -39,12 +40,20 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.hoster.HighWayCore;
 import jd.plugins.hoster.HighWayMe2;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class HighWayMeFolder2 extends PluginForDecrypt {
     public HighWayMeFolder2(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        HighWayCore.prepBRHighway(br);
+        return br;
     }
 
     public static List<String[]> getPluginDomains() {

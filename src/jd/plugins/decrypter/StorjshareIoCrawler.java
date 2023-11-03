@@ -72,9 +72,9 @@ public class StorjshareIoCrawler extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
-        final String path = Encoding.htmlDecode(new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(1));
         /** 2023-11-02: Remove all URL parameters since they can enforce a redirect to a direct file download e.g. "?download=1" */
         final String contenturl = URLHelper.getUrlWithoutParams(param.getCryptedUrl());
+        final String path = Encoding.htmlDecode(new Regex(contenturl, this.getSupportedLinks()).getMatch(1));
         br.getPage(contenturl);
         if (br.getHttpConnection().getResponseCode() == 403) {
             throw new AccountRequiredException();
@@ -100,6 +100,8 @@ public class StorjshareIoCrawler extends PluginForDecrypt {
             if (htmls == null || htmls.length == 0) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName(path);
             for (final String html : htmls) {
                 String url = new Regex(html, "class=\"directory-link\" href=\"([^\"]+)\"").getMatch(0);
                 // final String filenameFromURL = new Regex(url, "/([^/]+)$").getMatch(0);
@@ -131,11 +133,9 @@ public class StorjshareIoCrawler extends PluginForDecrypt {
                     link.setDownloadSize(filesize);
                 }
                 link.setRelativeDownloadFolderPath(path);
+                link._setFilePackage(fp);
                 ret.add(link);
             }
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName(path);
-            fp.addLinks(ret);
         }
         return ret;
     }
