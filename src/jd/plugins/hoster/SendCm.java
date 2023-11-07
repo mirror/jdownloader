@@ -570,7 +570,7 @@ public class SendCm extends XFileSharingProBasic {
             fileid_to_download = fuid;
         } else {
             /* Special: Short URL -> Usually not supported by API but they've somehow integrated it. */
-            fileid_to_download = "/d/" + fuid;
+            fileid_to_download = "d/" + fuid;
         }
         /*
          * Users can also chose a preferred quality via '&q=h' but we prefer to receive all and then chose to easily have a fallback in case

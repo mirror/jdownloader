@@ -135,6 +135,7 @@ public class Offline extends PluginForHost {
         ret.add(new String[] { "indianpornvideos.com", "indianpornvideos2.com" });
         ret.add(new String[] { "uptobox.com", "uptobox.fr", "uptobox.eu", "uptostream.com", "uptostream.fr", "uptostream.eu", "uptobox.link" });
         ret.add(new String[] { "myvi.ru" });
+        ret.add(new String[] { "easybytez.com", "easybytez.me", "easybytez.eu", "easybytez.co", "easybytez.to", "zingload.com", "easyload.to", "ezbytez.com", "ebytez.com" });
         if (cache != null) {
             cache.put(cacheID, ret);
         }
