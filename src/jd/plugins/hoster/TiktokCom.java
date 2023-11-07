@@ -1033,7 +1033,7 @@ public class TiktokCom extends PluginForHost {
                 logger.info("Attempting user cookie login");
                 prepBRWebAPI(br);
                 br.getPage("https://us." + this.getHost() + "/passport/web/account/info/?" + getWebsiteQuery().toString());
-                final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
+                final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
                 final String msg = entries.get("message").toString();
                 if (msg.equals("success")) {
                     /* Save new cookie timestamp */

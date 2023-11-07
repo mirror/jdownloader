@@ -1156,13 +1156,24 @@ public class RapidGatorNet extends PluginForHost {
         }
         final Map<String, Object> response = (Map<String, Object>) entries.get("response");
         synchronized (account) {
+            final Boolean success = (Boolean) entries.get("success");
+            if (response == null && Boolean.TRUE.equals(success)) {
+                /* No error */
+                return entries;
+            }
             String errorMessage = (String) entries.get("response_details");
             if (errorMessage == null) {
                 errorMessage = (String) entries.get("details");
+                if (errorMessage == null) {
+                    /* There can be two types of response-maps */
+                    /* E.g. {"error":"Denied by IP","success":false} */
+                    errorMessage = (String) entries.get("error");
+                }
             }
             final String details = (String) entries.get("details");
-            final int status = ((Number) entries.get("status")).intValue();
-            if (status == 200) {
+            final Object statusO = entries.get("status");
+            final int status = (statusO != null && statusO instanceof Number) ? ((Number) statusO).intValue() : 200;
+            if (statusO != null && status == 200) {
                 /* No error */
                 return response;
             }

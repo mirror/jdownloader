@@ -56,9 +56,13 @@ public class MixdropCo extends antiDDoSForHost {
     private static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "mixdrop.co", "mixdrop.to", "mixdrop.club", "mixdrop.sx", "mixdrop.bz", "mixdroop.bz", "mixdrop.vc" });
+        ret.add(new String[] { "mixdrop.co", "mixdrop.to", "mixdrop.club", "mixdrop.sx", "mixdrop.bz", "mixdroop.bz", "mixdrop.vc", "mixdrop.ag", "mixdrop.to" });
         return ret;
     }
+    // @Override
+    // public String rewriteHost(final String host) {
+    // return this.rewriteHost(getPluginDomains(), host);
+    // }
 
     public static String[] getAnnotationNames() {
         return buildAnnotationNames(getPluginDomains());

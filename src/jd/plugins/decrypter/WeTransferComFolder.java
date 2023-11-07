@@ -35,30 +35,36 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.hoster.WeTransferCom;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "wetransfer.com" }, urls = { "https?://(?:[\\w\\-]+.)?(?:(?:we\\.tl|shorturls\\.wetransfer\\.com)/[\\w\\-]+|wetransfer\\.com/downloads/(?:[a-f0-9]{46}/[a-f0-9]{46}/[a-f0-9]{4,12}|[a-f0-9]{46}/[a-f0-9]{4,12}))" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "wetransfer.com" }, urls = { WeTransferComFolder.patternShort + "|" + WeTransferComFolder.patternNormal })
 public class WeTransferComFolder extends PluginForDecrypt {
     public WeTransferComFolder(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private final String shortPattern = "^https?://(?:we\\.tl|shorturls\\.wetransfer\\.com)/([\\w\\-]+)$";
+    protected static final String patternShort  = "https?://(?:we\\.tl|shorturls\\.wetransfer\\.com|go\\.wetransfer\\.com)/([\\w\\-]+)";
+    protected static final String patternNormal = "https?://wetransfer\\.com/downloads/(?:[a-f0-9]{46}/[a-f0-9]{46}/[a-f0-9]{4,12}|[a-f0-9]{46}/[a-f0-9]{4,12})";
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
-        jd.plugins.hoster.WeTransferCom.prepBRWebsite(this.br);
-        String shortID = null;
-        if (parameter.matches(shortPattern)) {
-            shortID = new Regex(parameter, shortPattern).getMatch(0);
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        String parameter = param.getCryptedUrl();
+        WeTransferCom.prepBRWebsite(this.br);
+        String shortID = new Regex(parameter, patternShort).getMatch(0);
+        if (shortID != null) {
+            /* Short link */
             br.setFollowRedirects(false);
             br.getPage(parameter);
             final String redirect = br.getRedirectLocation();
             if (redirect == null || (redirect != null && redirect.contains("/error"))) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (redirect.contains("/error")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (!this.canHandle(redirect)) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            decryptedLinks.add(createDownloadlink(redirect));
-            return decryptedLinks;
+            ret.add(createDownloadlink(redirect));
+            return ret;
         }
         final Regex urlregex = new Regex(parameter, "/downloads/([a-f0-9]+)/([a-f0-9]{46})?/?([a-f0-9]+)");
         final String id_main = urlregex.getMatch(0);
@@ -99,8 +105,8 @@ public class WeTransferComFolder extends PluginForDecrypt {
         if (shortID == null) {
             /* Fallback */
             final String shortened_url = (String) map.get("shortened_url");
-            if (shortened_url != null && shortened_url.matches(shortPattern)) {
-                shortID = new Regex(shortened_url, shortPattern).getMatch(0);
+            if (shortened_url != null && shortened_url.matches(patternShort)) {
+                shortID = new Regex(shortened_url, patternShort).getMatch(0);
             }
         }
         final List<Object> ressourcelist = map.get("files") != null ? (List<Object>) map.get("files") : (List) map.get("items");
@@ -148,12 +154,12 @@ public class WeTransferComFolder extends PluginForDecrypt {
             dl.setVerifiedFileSize(filesize);
             dl.setContentUrl(parameter);
             dl.setAvailable(true);
-            decryptedLinks.add(dl);
+            ret.add(dl);
             /* Set individual packagename per URL because every item can have a totally different file-structure! */
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(thisPath);
             dl._setFilePackage(fp);
         }
-        return decryptedLinks;
+        return ret;
     }
 }

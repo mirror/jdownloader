@@ -42,7 +42,6 @@ import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
-import jd.config.Property;
 import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -70,11 +69,13 @@ public class FileFactory extends PluginForHost {
     // Adjust COOKIE_HOST to suite future changes, or remove COOKIE_HOST from that section of the script.
     // Connection Management
     // note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20]
-    private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
-    private static AtomicInteger maxPrem                      = new AtomicInteger(1);
-    private static AtomicInteger maxFree                      = new AtomicInteger(1);
-    private final String         PROPERTY_APIKEY              = "apiKey";
-    private String               dlUrl                        = null;
+    private static AtomicInteger totalMaxSimultanFreeDownload     = new AtomicInteger(20);
+    private static AtomicInteger maxPrem                          = new AtomicInteger(1);
+    private static AtomicInteger maxFree                          = new AtomicInteger(1);
+    private final String         PROPERTY_ACCOUNT_APIKEY          = "apiKey";
+    private final String         PROPERTY_TRAFFICSHARE            = "trafficshare";
+    private final String         PROPERTY_LAST_URL_WITH_ERRORCODE = "last_url_with_errorcode";
+    private String               dlUrl                            = null;
 
     public FileFactory(final PluginWrapper wrapper) {
         super(wrapper);
@@ -97,6 +98,37 @@ public class FileFactory extends PluginForHost {
         br.setReadTimeout(3 * 60 * 1000);
         br.setConnectTimeout(3 * 60 * 1000);
         return br;
+    }
+
+    @Override
+    public boolean isResumeable(final DownloadLink link, final Account account) {
+        if (link != null && link.hasProperty(PROPERTY_TRAFFICSHARE)) {
+            return true;
+        } else {
+            final AccountType type = account != null ? account.getType() : null;
+            if (AccountType.PREMIUM.equals(type) || AccountType.LIFETIME.equals(type)) {
+                /* Premium account */
+                return true;
+            } else {
+                /* Free(anonymous) and unknown account type */
+                return false;
+            }
+        }
+    }
+
+    public int getMaxChunks(final DownloadLink link, final Account account) {
+        if (link != null && link.hasProperty(PROPERTY_TRAFFICSHARE)) {
+            return 0;
+        } else {
+            final AccountType type = account != null ? account.getType() : null;
+            if (AccountType.PREMIUM.equals(type) || AccountType.LIFETIME.equals(type)) {
+                /* Premium account */
+                return 0;
+            } else {
+                /* Free(anonymous) and unknown account type */
+                return 1;
+            }
+        }
     }
 
     @Override
@@ -146,25 +178,16 @@ public class FileFactory extends PluginForHost {
         return ret.toArray(new String[0]);
     }
 
-    public void checkErrorsWebsite(final Browser br) throws PluginException {
+    public void checkErrorsWebsite(final DownloadLink link, final Browser br) throws PluginException {
         if (br.containsHTML("class=\"box error\"|have been deleted")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (isPremiumOnly(br)) {
             throw new AccountRequiredException();
         }
         // this should cover error codes jumping to stream links in redirect, since filefactory wont fix this issue, this is my workaround.
-        String code = new Regex(br.getURL(), "(?:\\?|&)code=(\\d+)").getMatch(0);
+        String code = getErrorcodeFromURL(br.getURL());
         if (code == null) {
-            @SuppressWarnings("unchecked")
-            final List<String> redirectUrls = (List<String>) this.getDownloadLink().getProperty(dlRedirects, null);
-            if (redirectUrls != null) {
-                for (final String url : redirectUrls) {
-                    code = new Regex(url, "(?:\\?|&)code=(\\d+)").getMatch(0);
-                    if (code != null) {
-                        break;
-                    }
-                }
-            }
+            code = link != null ? this.getErrorcodeFromURL(link.getStringProperty(PROPERTY_LAST_URL_WITH_ERRORCODE)) : null;
         }
         long waittimeFromHTMLMillis = -1;
         final String waittimeString = br.getRegex("Please try again in\\s*<span>(.*?)</span>").getMatch(0);
@@ -254,6 +277,10 @@ public class FileFactory extends PluginForHost {
         if (waitMinutesStr != null) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, Integer.parseInt(waitMinutesStr) * 60 * 1001l);
         }
+    }
+
+    private String getErrorcodeFromURL(final String url) {
+        return new Regex(url, "(?:\\?|&)code=(\\d+)").getMatch(0);
     }
 
     private final String invalidAuthKey = "Invalid authorization key";
@@ -503,7 +530,6 @@ public class FileFactory extends PluginForHost {
         return true;
     }
 
-    /* TODO: Make use of this */
     private String getContentURL(final DownloadLink link) throws PluginException {
         if (link == null || link.getPluginPatternMatcher() == null) {
             return null;
@@ -590,7 +616,6 @@ public class FileFactory extends PluginForHost {
                 if (expireTimestamp > System.currentTimeMillis()) {
                     ai.setValidUntil(expireTimestamp);
                 }
-                // TODO: 2023-01-12: Check RegExes for used space and traffic left
                 final String space = br.getRegex("<strong>([0-9\\.]+ ?(KB|MB|GB|TB))</strong>[\r\n\t ]+Free Space").getMatch(0);
                 if (space != null) {
                     ai.setUsedSpace(space);
@@ -688,8 +713,7 @@ public class FileFactory extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
-        // reset setter
-        link.setProperty(dlRedirects, Property.NULL);
+        link.removeProperty(PROPERTY_LAST_URL_WITH_ERRORCODE);
         if (checkShowFreeDialog(getHost())) {
             showFreeDialog(getHost());
         }
@@ -699,8 +723,10 @@ public class FileFactory extends PluginForHost {
         } else {
             requestFileInformationWebsite(account, link);
             if (isTrafficshareLink(br)) {
+                link.setProperty(PROPERTY_TRAFFICSHARE, true);
                 handleTrafficShare(link, account);
             } else {
+                link.removeProperty(PROPERTY_TRAFFICSHARE);
                 doFree(link, account);
             }
         }
@@ -727,7 +753,7 @@ public class FileFactory extends PluginForHost {
                 br.setFollowRedirects(true);
                 dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dlUrl, true, 1);
             } else {
-                checkErrorsWebsite(br);
+                checkErrorsWebsite(link, br);
                 if (isPasswordProtectedFile(br)) {
                     String passCode = link.getDownloadPassword();
                     if (passCode == null) {
@@ -749,6 +775,7 @@ public class FileFactory extends PluginForHost {
                     sleep(Integer.parseInt(timer) * 1001, link);
                 }
                 if (dlUrl != null) {
+                    /* Trafficshare link */
                     dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dlUrl, true, 1);
                 } else {
                     // TODO: Check if this is still needed
@@ -763,7 +790,7 @@ public class FileFactory extends PluginForHost {
                     if (skipAds != null) {
                         br.getPage(skipAds);
                     }
-                    checkErrorsWebsite(br);
+                    checkErrorsWebsite(link, br);
                     String waitSecondsStr = br.getRegex("class=\"countdown\">\\s*(\\d+)\\s*</span>").getMatch(0);
                     if (waitSecondsStr != null) {
                         waitMillis = Long.parseLong(waitSecondsStr) * 1000l;
@@ -792,7 +819,7 @@ public class FileFactory extends PluginForHost {
             }
             if (!dl.getConnection().isContentDisposition()) {
                 br.followConnection(true);
-                checkErrorsWebsite(br);
+                checkErrorsWebsite(link, br);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
@@ -826,8 +853,7 @@ public class FileFactory extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        // reset setter
-        link.setProperty(dlRedirects, Property.NULL);
+        link.removeProperty(PROPERTY_LAST_URL_WITH_ERRORCODE);
         if (useAPI(account)) {
             try {
                 handleDownload_API(link, account);
@@ -875,7 +901,7 @@ public class FileFactory extends PluginForHost {
                 dl = new jd.plugins.BrowserAdapter().openDownload(br, link, finallink, true, 0);
                 if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                     br.followConnection(true);
-                    checkErrorsWebsite(br);
+                    checkErrorsWebsite(link, br);
                     String red = br.getRegex("\"(https?://[a-z0-9]+\\.filefactory\\.com/get/[^<>\"]+)\"").getMatch(0);
                     if (red == null) {
                         red = br.getRegex(Pattern.compile("10px 0;\">.*<a href=\"(.*?)\">Download with FileFactory Premium", Pattern.DOTALL)).getMatch(0);
@@ -893,7 +919,7 @@ public class FileFactory extends PluginForHost {
                     dl = new jd.plugins.BrowserAdapter().openDownload(br, link, red, true, 0);
                     if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                         br.followConnection(true);
-                        checkErrorsWebsite(br);
+                        checkErrorsWebsite(link, br);
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                 } else {
@@ -927,7 +953,7 @@ public class FileFactory extends PluginForHost {
         dl = new jd.plugins.BrowserAdapter().openDownload(br, link, finalLink, true, 0);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             br.followConnection(true);
-            checkErrorsWebsite(br);
+            checkErrorsWebsite(link, br);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         // add download slot
@@ -967,7 +993,7 @@ public class FileFactory extends PluginForHost {
             br.getPage("https://www." + this.getHost() + "/member/signin.php");
             br.postPage("/member/signin.php", "loginEmail=" + Encoding.urlEncode(account.getUser()) + "&loginPassword=" + Encoding.urlEncode(account.getPass()) + "&Submit=Sign+In");
             if (!this.isLoggedinWebsite(br)) {
-                this.checkErrorsWebsite(br);
+                this.checkErrorsWebsite(null, br);
                 throw new AccountInvalidException();
             }
             account.saveCookies(br.getCookies(br.getHost()), "");
@@ -1064,7 +1090,7 @@ public class FileFactory extends PluginForHost {
         } else {
             link.setPasswordProtected(false);
         }
-        this.checkErrorsWebsite(br);
+        this.checkErrorsWebsite(link, br);
         String fileName = null;
         String fileSize = null;
         if (isTrafficshareLink(br)) {
@@ -1228,45 +1254,29 @@ public class FileFactory extends PluginForHost {
         return true;
     }
 
-    private static AtomicBoolean useAPI  = new AtomicBoolean(true);
-    private String               dllink  = null;
-    private int                  chunks  = 0;
-    private boolean              resumes = true;
-    private boolean              isFree  = true;
+    private static AtomicBoolean useAPI = new AtomicBoolean(true);
+    private String               dllink = null;
+    private boolean              isFree = true;
 
-    private void setConstants(final Account account, final boolean trafficShare) {
-        if (trafficShare) {
-            // traffic share download
-            chunks = 0;
-            resumes = true;
-            isFree = false;
-            logger.finer("setConstants = Traffic Share Download :: isFree = " + isFree + ", upperChunks = " + chunks + ", Resumes = " + resumes);
-        } else {
-            if (account != null) {
-                if (AccountType.FREE == account.getType()) {
-                    // free account
-                    chunks = 1;
-                    resumes = false;
-                    isFree = true;
-                } else {
-                    // premium account
-                    chunks = 0;
-                    resumes = true;
-                    isFree = false;
-                }
-                logger.finer("setConstants = " + account.getUser() + " @ Account Download :: isFree = " + isFree + ", upperChunks = " + chunks + ", Resumes = " + resumes);
-            } else {
-                // free non account
-                chunks = 1;
-                resumes = false;
+    private void setConstants(final Account account) {
+        if (account != null) {
+            if (AccountType.FREE == account.getType()) {
+                // free account
                 isFree = true;
-                logger.finer("setConstants = Guest Download :: isFree = " + isFree + ", upperChunks = " + chunks + ", Resumes = " + resumes);
+            } else {
+                // premium account
+                isFree = false;
             }
+            logger.finer("setConstants = " + account.getUser() + " @ Account Download :: isFree = " + isFree);
+        } else {
+            // free non account
+            isFree = true;
+            logger.finer("setConstants = Guest Download :: isFree = " + isFree);
         }
     }
 
     private void handleDownload_API(final DownloadLink link, final Account account) throws Exception {
-        setConstants(account, false);
+        setConstants(account);
         prepApiBrowser(br);
         String apiKey = null;
         if (account != null) {
@@ -1322,45 +1332,49 @@ public class FileFactory extends PluginForHost {
                 logger.warning("Failed to find final downloadlink");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            final String linkType = (String) result.get("linkType");
-            if ("trafficshare".equalsIgnoreCase(linkType)) {
-                setConstants(account, true);
-            }
-            final Number waitSeconds = (Number) result.get("delay");
-            if (!StringUtils.isEmpty(passCode)) {
-                /* We know that the entered password was correct. */
+            if (passCode != null) {
+                /* We know that the entered password was correct so let's save it to re-use it later. */
                 link.setDownloadPassword(passCode);
             }
+            final String linkType = (String) result.get("linkType");
+            if ("trafficshare".equalsIgnoreCase(linkType)) {
+                link.setProperty(PROPERTY_TRAFFICSHARE, true);
+            } else {
+                link.removeProperty(PROPERTY_TRAFFICSHARE);
+            }
+            final Number waitSeconds = (Number) result.get("delay");
             if (waitSeconds != null) {
                 sleep((waitSeconds.intValue() * 1001) + 1111, link);
             }
         }
-        handleDL(link, account, directlinkproperty);
+        handleDownload(link, account, directlinkproperty);
     }
 
-    private static final String dlRedirects = "dlRedirects";
-
-    private void handleDL(final DownloadLink link, final Account account, final String directlinkproperty) throws Exception {
+    private void handleDownload(final DownloadLink link, final Account account, final String directlinkproperty) throws Exception {
         /*
          * Since I fixed the download core setting correct redirect referrer I can no longer use redirect header to determine error code for
          * max connections. This is really only a problem with media files as filefactory redirects to /stream/ directly after code=\d+
          * which breaks our generic handling. This will fix it!! - raztoki
          */
         int i = -1;
-        ArrayList<String> urls = new ArrayList<String>();
         br.setFollowRedirects(false);
         URLConnectionAdapter con = null;
+        String lastUrlWithErrorcode = null;
+        String lastRedirect = null;
         while (i++ < 10) {
             String url = dllink;
-            if (!urls.isEmpty()) {
-                url = urls.get(urls.size() - 1);
+            if (lastRedirect != null) {
+                url = lastRedirect;
             }
             try {
                 con = br.openGetConnection(url);
                 if (!this.looksLikeDownloadableContent(con) && br.getRedirectLocation() != null) {
                     // redirect, we want to store and continue down the rabbit hole!
                     final String redirect = br.getRedirectLocation();
-                    urls.add(redirect);
+                    if (this.getErrorcodeFromURL(redirect) != null) {
+                        lastUrlWithErrorcode = redirect;
+                    }
+                    lastRedirect = redirect;
                     continue;
                 } else if (!this.looksLikeDownloadableContent(con)) {
                     // error final destination/html
@@ -1381,18 +1395,18 @@ public class FileFactory extends PluginForHost {
                 }
             }
         }
-        if (!urls.isEmpty()) {
-            link.setProperty(dlRedirects, urls);
+        if (!StringUtils.equals(br.getURL(), lastUrlWithErrorcode)) {
+            link.setProperty(PROPERTY_LAST_URL_WITH_ERRORCODE, lastUrlWithErrorcode);
         }
         if (!this.looksLikeDownloadableContent(con)) {
-            checkErrorsWebsite(br);
+            checkErrorsWebsite(link, br);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resumes, chunks);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, this.isResumeable(link, account), this.getMaxChunks(link, account));
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             // this shouldn't happen anymore!
             br.followConnection(true);
-            checkErrorsWebsite(br);
+            checkErrorsWebsite(link, br);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setProperty(directlinkproperty, dllink);
@@ -1470,7 +1484,7 @@ public class FileFactory extends PluginForHost {
                 br.followRedirect();
                 apikey = PluginJSonUtils.getJsonValue(this.br, "key");
                 if (StringUtils.isNotEmpty(apikey)) {
-                    account.setProperty(PROPERTY_APIKEY, apikey);
+                    account.setProperty(PROPERTY_ACCOUNT_APIKEY, apikey);
                     return apikey;
                 } else {
                     checkErrorsAPI(this.br, null, account, apikey);
@@ -1482,7 +1496,7 @@ public class FileFactory extends PluginForHost {
 
     private String getApiKey(final Account account) {
         synchronized (account) {
-            final String ret = account.getStringProperty(PROPERTY_APIKEY);
+            final String ret = account.getStringProperty(PROPERTY_ACCOUNT_APIKEY);
             if (StringUtils.isEmpty(ret)) {
                 return null;
             } else {
@@ -1523,8 +1537,8 @@ public class FileFactory extends PluginForHost {
     private boolean clearApiKey(final Account account, final String apiKey) {
         if (account != null) {
             synchronized (account) {
-                if (StringUtils.isEmpty(apiKey) || StringUtils.equals(apiKey, account.getStringProperty(PROPERTY_APIKEY, null))) {
-                    account.removeProperty(PROPERTY_APIKEY);
+                if (StringUtils.isEmpty(apiKey) || StringUtils.equals(apiKey, account.getStringProperty(PROPERTY_ACCOUNT_APIKEY, null))) {
+                    account.removeProperty(PROPERTY_ACCOUNT_APIKEY);
                     return true;
                 } else {
                     return false;

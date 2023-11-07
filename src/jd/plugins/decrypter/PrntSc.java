@@ -71,10 +71,11 @@ public class PrntSc extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
-        br.getPage(param.getCryptedUrl());
+        final String contenturl = param.getCryptedUrl().replaceFirst("(?i)http://", "https://");
+        br.getPage(contenturl);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (br.containsHTML("/1722/img/0_173a7b_211be8ff\\.png")) {
+        } else if (br.containsHTML("/img/0_173a7b_211be8ff\\.png")) {
             /* Picture containing text "image was removed" */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (!this.canHandle(br.getURL())) {
