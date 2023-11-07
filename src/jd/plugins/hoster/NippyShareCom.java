@@ -15,8 +15,10 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
@@ -26,9 +28,10 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nippyshare.com", "nippyspace.com", "nippyfile.com" }, urls = { "https?://(www\\.)?nippyshare\\.com/v/([a-z0-9]+)", "https?://(?:www\\.)?nippyspace\\.com/v/([a-z0-9]+)", "https?://(?:www\\.)?nippyfile\\.com/v/([a-z0-9]+)" })
-public class NippyShareCom extends antiDDoSForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
+public class NippyShareCom extends PluginForHost {
     public NippyShareCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -38,15 +41,40 @@ public class NippyShareCom extends antiDDoSForHost {
         return "https://nippyshare.com/terms.html";
     }
 
+    private static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "nippyshare.com" });
+        ret.add(new String[] { "nippyspace.com" });
+        ret.add(new String[] { "nippyfile.com" });
+        ret.add(new String[] { "yolobit.com" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : getPluginDomains()) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/v/([a-z0-9]+)");
+        }
+        return ret.toArray(new String[0]);
+    }
+
     /* Connection stuff */
     private static final boolean FREE_RESUME       = true;
     private static final int     FREE_MAXCHUNKS    = 0;
     private static final int     FREE_MAXDOWNLOADS = 20;
 
-    @SuppressWarnings("deprecation")
-    public void correctDownloadLink(final DownloadLink link) {
-        /* forced https */
-        link.setUrlDownload(link.getDownloadURL().replace("http://", "https://"));
+    private String getContentURL(final DownloadLink link) {
+        return link.getPluginPatternMatcher().replaceFirst("(?i)http://", "https://");
     }
 
     @Override
@@ -67,8 +95,10 @@ public class NippyShareCom extends antiDDoSForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        getPage(link.getPluginPatternMatcher());
-        if (br.getURL().endsWith(".html") || br.getHttpConnection().getResponseCode() == 404) {
+        br.getPage(getContentURL(link));
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.getURL().endsWith(".html")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("li>Name: ([^<>\"]*?)</li>").getMatch(0);
@@ -77,7 +107,7 @@ public class NippyShareCom extends antiDDoSForHost {
             /* Fallback */
             filename = this.getFID(link);
         }
-        link.setName(Encoding.htmlDecode(filename.trim()));
+        link.setName(Encoding.htmlDecode(filename).trim());
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
@@ -85,9 +115,9 @@ public class NippyShareCom extends antiDDoSForHost {
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS);
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
+        doFree(link, FREE_RESUME, FREE_MAXCHUNKS);
     }
 
     private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks) throws Exception, PluginException {

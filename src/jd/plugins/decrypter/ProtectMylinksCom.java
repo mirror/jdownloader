@@ -26,11 +26,11 @@ import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.controlling.linkcrawler.LinkCrawler;
 import jd.http.Browser;
 import jd.http.Request;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
+import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -70,19 +70,19 @@ public class ProtectMylinksCom extends antiDDoSForDecrypt {
             String regex = "https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(";
             regex += "decrypt(?:\\.php)?\\?i=[a-f0-9]{16}";
             regex += "|f\\?i=[a-f0-9]{16}";
-            regex += "|v\\?auth=[a-f0-9]{40}\\&l=\\d+\\&i=[a-f0-9]{16}";
+            regex += "|v(?:\\.php)?\\?auth=[a-f0-9]{40}\\&l=\\d+\\&i=[a-f0-9]{16}";
             regex += ")";
             ret.add(regex);
         }
         return ret.toArray(new String[0]);
     }
 
-    private static final String TYPE_FOLDER   = "https?://[^/]+/decrypt.+";
-    private static final String TYPE_SINGLE_1 = "https?://[^/]+/f\\?i=([a-f0-9]{16})";
-    private static final String TYPE_SINGLE_2 = "https?://[^/]+/v\\?auth=([a-f0-9]{40})\\&l=(\\d+)\\&i=([a-f0-9]{16})";
+    private static final String TYPE_FOLDER   = "(?i)https?://[^/]+/decrypt.+";
+    private static final String TYPE_SINGLE_1 = "(?i)https?://[^/]+/f\\?i=([a-f0-9]{16})";
+    private static final String TYPE_SINGLE_2 = "(?i)https?://[^/]+/v(?:\\.php)?\\?auth=([a-f0-9]{40})\\&l=(\\d+)\\&i=([a-f0-9]{16})";
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         if (param.getCryptedUrl().matches(TYPE_FOLDER)) {
             return this.crawlFolder(param);
         } else if (param.getCryptedUrl().matches(TYPE_SINGLE_2)) {
@@ -106,7 +106,7 @@ public class ProtectMylinksCom extends antiDDoSForDecrypt {
                 // return this.processCrawlFolder(param, linkPositionStr, this.br);
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             } else {
-                decryptedLinks.add(this.createDownloadlink(redirectURL));
+                ret.add(this.createDownloadlink(redirectURL));
             }
         } else if (param.getCryptedUrl().matches(TYPE_SINGLE_1)) {
             /* Old handling! */
@@ -125,12 +125,12 @@ public class ProtectMylinksCom extends antiDDoSForDecrypt {
             } else if (finallink == null) {
                 return null;
             }
-            decryptedLinks.add(this.createDownloadlink(Request.getLocation(finallink, br.getRequest())));
+            ret.add(this.createDownloadlink(Request.getLocation(finallink, br.getRequest())));
         } else {
             /* Unsupported URL --> This should never happen! */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        return decryptedLinks;
+        return ret;
     }
 
     private ArrayList<DownloadLink> crawlFolder(final CryptedLink param) throws Exception {
@@ -147,35 +147,35 @@ public class ProtectMylinksCom extends antiDDoSForDecrypt {
     private ArrayList<DownloadLink> processCrawlFolder(final CryptedLink param, final String targetIndex, final Browser br) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String title = br.getRegex("(?i)value=\"Title\\s*:\\s*([^<>\"]+)\"").getMatch(0);
-        FilePackage fp = null;
+        final FilePackage fp = FilePackage.getInstance();
         if (title != null) {
-            fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(title).trim());
             fp.setAllowMerge(true);
         }
         final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
         postPage(br.getURL(), "submit=Decrypt+link&g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response));
-        final String[] links = br.getRegex("(v\\?auth=[^<>\"\\']+)").getColumn(0);
-        if (links == null || links.length == 0) {
-            logger.warning("Decrypter broken for link: " + param.getCryptedUrl());
-            return null;
-        }
-        for (String singleLink : links) {
-            singleLink = br.getURL(singleLink).toString();
-            final UrlQuery query = UrlQuery.parse(singleLink);
+        final String[] urls = HTMLParser.getHttpLinks(br.getRequest().getHtmlCode(), br.getURL());
+        for (final String url : urls) {
+            if (!url.matches(TYPE_SINGLE_2)) {
+                continue;
+            }
+            final UrlQuery query = UrlQuery.parse(url);
             final String thisIndexStr = query.get("l");
-            final DownloadLink link = createDownloadlink(singleLink);
+            final DownloadLink link = createDownloadlink(url);
             if (fp != null) {
                 link._setFilePackage(fp);
             }
             if (StringUtils.equals(thisIndexStr, targetIndex)) {
-                logger.info("Found targetIndex: " + targetIndex + " | " + singleLink);
+                logger.info("Found targetIndex: " + targetIndex + " | " + url);
                 ret.clear();
                 ret.add(link);
                 break;
             } else {
                 ret.add(link);
             }
+        }
+        if (ret.isEmpty()) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         return ret;
     }

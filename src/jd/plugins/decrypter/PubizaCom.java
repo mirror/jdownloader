@@ -100,12 +100,20 @@ public class PubizaCom extends antiDDoSForDecrypt {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         br.setFollowRedirects(true);
-        final Form form1 = br.getFormbyProperty("id", "display_go_form");
+        Form form1 = br.getFormbyProperty("id", "display_go_form");
+        if (form1 == null) {
+            /* 2023-11-07 */
+            form1 = br.getFormbyProperty("id", "inapp_go_form");
+        }
         if (form1 != null) {
             final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
             form1.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
             br.submitForm(form1);
-            final String finallink = br.getRegex("goToUrl\\s*\\(\"(https?://[^\"]+)\"\\)").getMatch(0);
+            String finallink = br.getRegex("goToUrl\\s*\\(\"(https?://[^\"]+)\"\\)").getMatch(0);
+            if (finallink == null) {
+                /* 2023-11-07 */
+                finallink = br.getRegex("<a href=\"(http[^\"]+)\" id=\"get_link_btn").getMatch(0);
+            }
             if (finallink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }

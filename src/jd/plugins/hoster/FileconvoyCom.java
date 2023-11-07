@@ -124,7 +124,6 @@ public class FileconvoyCom extends PluginForHost {
             try {
                 handleConnectionErrors(br, con);
             } catch (final PluginException e) {
-                /* E.g. cdn.bunkr.ru -> bunkr.su/v/... -> Try to find fresh directurl */
                 logger.info("ContentURL did not lead to downloadable content -> Looking for fresh directurl");
                 final String[] urls = HTMLParser.getHttpLinks(br.getRequest().getHtmlCode(), br.getURL());
                 final String fid = this.getFID(link);

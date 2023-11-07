@@ -25,6 +25,7 @@ import java.util.Map;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.parser.UrlQuery;
@@ -34,6 +35,8 @@ import org.jdownloader.plugins.components.config.IwaraTvConfig.FilenameSchemeTyp
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings.SIZEUNIT;
+import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -111,6 +114,7 @@ public class IwaraTv extends PluginForHost {
     public static final String   PROPERTY_IS_PRIVATE           = "is_private";
     public static final String   PROPERTY_EMBED_URL            = "embed_url";
     public static final String   PROPERTY_DESCRIPTION          = "description";
+    public static final String   PROPERTY_EXPECTED_FILESIZE    = "expected_filesize";
     private final String         PROPERTY_ACCOUNT_ACCESS_TOKEN = "access_token";
     public static final String   WEBAPI_BASE                   = "https://api.iwara.tv";
 
@@ -280,11 +284,15 @@ public class IwaraTv extends PluginForHost {
         final List<Map<String, Object>> files = (List<Map<String, Object>>) entries.get("files");
         String directurl = null;
         if (file != null) {
-            link.setDownloadSize(((Number) file.get("size")).longValue());
+            final long size = ((Number) file.get("size")).longValue();
+            link.setDownloadSize(size);
+            link.setProperty(PROPERTY_EXPECTED_FILESIZE, size);
         } else if (files != null) {
             for (final Map<String, Object> filemap : files) {
                 /* First = best */
-                link.setDownloadSize(((Number) filemap.get("size")).longValue());
+                final long size = ((Number) filemap.get("size")).longValue();
+                link.setDownloadSize(size);
+                link.setProperty(PROPERTY_EXPECTED_FILESIZE, size);
                 directurl = "https://files.iwara.tv/image/large/" + filemap.get("id") + "/" + Encoding.urlEncode(filemap.get("name").toString());
                 break;
             }
@@ -415,6 +423,14 @@ public class IwaraTv extends PluginForHost {
             } else {
                 logger.info("Ignoring bad filename from header: " + serverFilename);
             }
+        }
+        /* Final check: Check if actual filesize looks to be much smaller than size reported by their Web-API. */
+        final long expectedFilesize = link.getLongProperty(PROPERTY_EXPECTED_FILESIZE, -1);
+        final long realFilesize = dl.getConnection().getCompleteContentLength();
+        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && expectedFilesize != -1 && realFilesize != -1 && realFilesize < expectedFilesize * 0.75) {
+            /* Deeper explanation: https://board.jdownloader.org/showthread.php?p=526884#post526884 */
+            final SIZEUNIT maxSizeUnit = (SIZEUNIT) CFG_GUI.MAX_SIZE_UNIT.getValue();
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File is too small! Expected " + SIZEUNIT.formatValue(maxSizeUnit, expectedFilesize) + " but got " + SIZEUNIT.formatValue(maxSizeUnit, realFilesize));
         }
         dl.startDownload();
     }
