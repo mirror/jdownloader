@@ -149,10 +149,10 @@ public class GoProCloud extends PluginForHost/* implements MenuExtenderHandler *
                     parser.setBreakAtEndOfObject(true);
                     try {
                         String base64Encoded = publicKeyPem;
-                        base64Encoded = base64Encoded.replaceAll("(?i)^\\s*[\\-]*BEGIN\\s*PUBLIC\\s*KEY[\\-]*\\s*", "");
-                        base64Encoded = base64Encoded.replaceAll("(?i)\\s*[\\-]*END\\s*PUBLIC\\s*KEY[\\-]*\\s*$", "");
+                        base64Encoded = base64Encoded.replaceAll("(?i)^\\s*[\\-]*BEGIN\\s*(RSA\\s*)?PUBLIC\\s*KEY[\\-]*\\s*", "");
+                        base64Encoded = base64Encoded.replaceAll("(?i)\\s*[\\-]*END\\s*(RSA\\s*)?PUBLIC\\s*KEY[\\-]*\\s*$", "");
                         base64Encoded = base64Encoded.replaceAll("\\s+", "");
-                        PublicKey pub = AWSign.getPublicKey(publicKeyPem);
+                        PublicKey pub = AWSign.getPublicKey(base64Encoded);
                         Cipher cipher = Cipher.getInstance("RSA");
                         cipher.init(Cipher.ENCRYPT_MODE, pub);
                         String encryptedPassword = Base64.encodeToString(cipher.doFinal(account.getPass().getBytes("UTF-8")));
