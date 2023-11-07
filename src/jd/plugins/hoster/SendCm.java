@@ -37,6 +37,7 @@ import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.parser.html.InputField;
 import jd.plugins.Account;
@@ -226,25 +227,29 @@ public class SendCm extends XFileSharingProBasic {
 
     @Override
     public void doFree(final DownloadLink link, final Account account) throws Exception, PluginException {
-        /* First bring up saved final links */
-        if (isFreeAccountWithPremiumTraffic(account)) {
+        if (allowAPIDownloadIfApikeyIsAvailable(link, account)) {
             /**
              * 2023-10-16: Special: For "Free accounts" with paid "Premium bandwidth". </br>
              * Looks like this is supposed to help with Cloudflare problems.
              */
-            final String directurl;
-            if (allowAPIDownloadIfApikeyIsAvailable(link, account)) {
-                directurl = this.getDllinkAPI(link, account);
-            } else {
-                requestFileInformationWebsite(link, account, true);
-                directurl = buildSpecialJDownloaderURL(link);
-            }
+            final String directurl = this.getDllinkAPI(link, account);
             handleDownload(link, account, null, directurl, null);
         } else {
             super.doFree(link, account);
         }
     }
 
+    @Override
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        if (allowAPIDownloadIfApikeyIsAvailable(link, account)) {
+            final String directurl = this.getDllinkAPI(link, account);
+            handleDownload(link, account, null, directurl, null);
+        } else {
+            super.handlePremium(link, account);
+        }
+    }
+
+    @Deprecated
     private String buildSpecialJDownloaderURL(final DownloadLink link) {
         final String contentURL = this.getContentURL(link);
         final String specialURL = contentURL + "/jd";
@@ -428,10 +433,10 @@ public class SendCm extends XFileSharingProBasic {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         /* 2023-10-27: Special: Try API login first */
-        String apikey = this.getAPIKeyFromAccount(account);
+        String apikey = getAPIKeyFromAccount(account);
         final boolean tryApikeyViaPasswordField = true;
         boolean apiFromAccountPasswordField = false;
-        if (apikey == null && tryApikeyViaPasswordField && DebugMode.TRUE_IN_IDE_ELSE_FALSE && isAPIKey(account.getPass())) {
+        if (apikey == null && tryApikeyViaPasswordField && isAPIKey(account.getPass())) {
             apikey = account.getPass();
             apiFromAccountPasswordField = true;
         } else if (StringUtils.equals(apikey, account.getPass())) {
@@ -543,9 +548,92 @@ public class SendCm extends XFileSharingProBasic {
     }
 
     @Override
+    protected String getDllinkAPI(final DownloadLink link, final Account account) throws Exception {
+        /**
+         * Only execute this if you know that the currently used host supports this! </br>
+         * Only execute this if an apikey is given! </br>
+         * Only execude this if you know that a particular host has enabled this API call! </br>
+         * Important: For some hosts, this API call will only be available for premium accounts, no for free accounts!
+         */
+        /* 2019-11-04: Linkcheck is not required here - download API will return offline status. */
+        // requestFileInformationAPI(link, account);
+        logger.info("Trying to get dllink via API");
+        final String apikey = getAPIKeyFromAccount(account);
+        if (StringUtils.isEmpty(apikey)) {
+            /* This should never happen */
+            logger.warning("Cannot do this without apikey");
+            return null;
+        }
+        final String fuid = this.getFUIDFromURL(link);
+        final String fileid_to_download;
+        if (fuid.matches("[a-z0-9]{12}")) {
+            fileid_to_download = fuid;
+        } else {
+            /* Special: Short URL -> Usually not supported by API but they've somehow integrated it. */
+            fileid_to_download = "/d/" + fuid;
+        }
+        /*
+         * Users can also chose a preferred quality via '&q=h' but we prefer to receive all and then chose to easily have a fallback in case
+         * the quality selected by our user is not available.
+         */
+        /* Documentation videohost: https://xfilesharingpro.docs.apiary.io/#reference/file/file-clone/get-direct-link */
+        /*
+         * Documentation filehost:
+         * https://xvideosharing.docs.apiary.io/#reference/file/file-direct-link/get-links-to-all-available-qualities
+         */
+        getPage(this.getAPIBase() + "/file/direct_link?key=" + apikey + "&file_code=" + Encoding.urlEncode(fileid_to_download));
+        this.checkErrorsAPI(this.br, link, account);
+        final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+        final Map<String, Object> result = (Map<String, Object>) entries.get("result");
+        /**
+         * TODO: Add quality selection. 2020-05-20: Did not add selection yet because so far this API call has NEVER worked for ANY
+         * filehost&videohost!
+         */
+        /* For videohosts: Pick the best quality */
+        String dllink = null;
+        final String[] qualities = new String[] { "o", "h", "n", "l" };
+        for (final String quality : qualities) {
+            final Map<String, Object> quality_tmp = (Map<String, Object>) result.get(quality);
+            if (quality_tmp != null) {
+                dllink = (String) quality_tmp.get("url");
+                if (!StringUtils.isEmpty(dllink)) {
+                    break;
+                }
+            }
+        }
+        if (StringUtils.isEmpty(dllink)) {
+            /* For filehosts (= no different qualities available) */
+            logger.info("Failed to find any quality - downloading original file");
+            dllink = (String) result.get("url");
+            // final long filesize = JavaScriptEngineFactory.toLong(entries.get("size"), 0);
+        }
+        if (!StringUtils.isEmpty(dllink)) {
+            logger.info("Successfully found dllink via API");
+            return dllink;
+        } else {
+            logger.warning("Failed to find dllink via API");
+            this.checkErrorsAPI(br, link, account);
+            /**
+             * TODO: Check if defect message makes sense here. Once we got better errorhandling we can eventually replace this with a
+             * waittime.
+             */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+    }
+
+    @Override
     protected boolean allowAPIDownloadIfApikeyIsAvailable(final DownloadLink link, final Account account) {
         final String apikey = getAPIKeyFromAccount(account);
-        if (apikey != null && (isFreeAccountWithPremiumTraffic(account) || account.getType() == AccountType.PREMIUM) && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+        if (apikey != null && (isFreeAccountWithPremiumTraffic(account) || account.getType() == AccountType.PREMIUM)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    @Override
+    protected boolean supportsAPIMassLinkcheck() {
+        if (isAPIKey(this.getAPIKey())) {
             return true;
         } else {
             return false;

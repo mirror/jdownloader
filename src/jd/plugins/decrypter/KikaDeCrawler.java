@@ -23,6 +23,7 @@ import org.appwork.storage.TypeRef;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -35,6 +36,12 @@ import jd.plugins.PluginForDecrypt;
 public class KikaDeCrawler extends PluginForDecrypt {
     public KikaDeCrawler(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.setFollowRedirects(true);
+        return br;
     }
 
     public static List<String[]> getPluginDomains() {
@@ -66,43 +73,45 @@ public class KikaDeCrawler extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        final boolean useNewHandling = true;
-        if (useNewHandling) {
-            /* Look for link to ardmediathek to the same content. */
-            final String urlSlug = new Regex(param.getCryptedUrl(), "/([a-z0-9\\-]+)$").getMatch(0);
-            if (urlSlug == null) {
-                /* Invalid url */
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            br.getPage("https://www.kika.de/_next-api/proxy/v1/videos/" + urlSlug);
-            if (br.getHttpConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
-            final String externalId = entries.get("externalId").toString();
-            if (!externalId.matches("ard-.+")) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
+        /* Look for link to ardmediathek to the same content. */
+        final String urlSlug = new Regex(param.getCryptedUrl(), "/([a-z0-9\\-]+)$").getMatch(0);
+        if (urlSlug == null) {
+            /* Invalid url */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        br.getPage("https://www.kika.de/_next-api/proxy/v1/videos/" + urlSlug);
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+        final String externalId = entries.get("externalId").toString();
+        if (externalId.matches("ard-.+")) {
+            /* This is what we want -> The easy way */
             final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
             ret.add(this.createDownloadlink("https://www.ardmediathek.de/video/dummy-series/dummy-title-url/ard/" + externalId.replace("ard-", "")));
             return ret;
         } else {
-            br.setFollowRedirects(true);
-            br.getPage(param.getCryptedUrl());
-            if (br.getHttpConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            String title = br.getRegex("<title>([^<]+)</title>").getMatch(0);
-            if (title == null) {
-                title = br.getRegex("\"VideoObject\",\"name\":\"([^\"]+)\"").getMatch(0);
-            }
-            if (title == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            title = title.replaceAll("(?i)\\s*\\(Hörfassung\\)\\s*", "");
-            title = title.replaceAll("(?i)\\s*\\| KiKA", "");
-            final ZDFMediathekDecrypter crawler = (ZDFMediathekDecrypter) this.getNewPluginForDecryptInstance("zdf.de");
-            return crawler.crawlZDFMediathekSearchResultsVOD("ZDFtivi", title, 3);
+            logger.info("Failed to find mirror in ardmediathek -> Try zdfmediathek");
         }
+        br.getPage(param.getCryptedUrl());
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        String title = br.getRegex("<title>([^<]+)</title>").getMatch(0);
+        if (title == null) {
+            title = br.getRegex("\"VideoObject\",\"name\":\"([^\"]+)\"").getMatch(0);
+        }
+        if (title == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        title = title.replaceAll("(?i)\\s*\\(Hörfassung\\)\\s*", "");
+        title = title.replaceAll("(?i)\\s*\\| KiKA", "");
+        final ZDFMediathekDecrypter crawler = (ZDFMediathekDecrypter) this.getNewPluginForDecryptInstance("zdf.de");
+        final ArrayList<DownloadLink> zdfSearchResults = crawler.crawlZDFMediathekSearchResultsVOD("ZDFtivi", title, 3);
+        if (zdfSearchResults.isEmpty()) {
+            logger.info("Unable to find mirror item in ZDFMediathek");
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        return zdfSearchResults;
     }
 }
