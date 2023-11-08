@@ -21,10 +21,12 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.plugins.controller.LazyPlugin;
@@ -152,7 +154,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
         final String contenturl = getContentURL(param);
         if (isList(contenturl)) {
             if (TYPE_SINGLE_SET.matcher(contenturl).find() || TYPE_API_PLAYLIST.matcher(contenturl).find()) {
-                crawlSet(contenturl);
+                return crawlSet(contenturl);
             } else if (TYPE_USER_SETS.matcher(contenturl).find()) {
                 crawlUserSets(contenturl);
             } else if (TYPE_USER_IN_PLAYLIST.matcher(contenturl).find()) {
@@ -215,7 +217,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
      *
      * @throws Exception
      */
-    private void crawlSet(final String contenturl) throws Exception {
+    private ArrayList<DownloadLink> crawlSet(final String contenturl) throws Exception {
         String playlistSecretToken = null;
         final String setWithSecretToken = "(?i)https?://[^/]+/[^/]+/sets/[^/]+/s-([A-Za-z0-9]+)$";
         if (contenturl.matches(setWithSecretToken)) {
@@ -225,14 +227,14 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
             playlistSecretToken = UrlQuery.parse(contenturl).get("secret_token");
         }
         resolve(this.br, contenturl);
-        Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.getRequest().getHtmlCode());
+        final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         final Map<String, Object> user = (Map<String, Object>) entries.get("user");
         final String playlistname = (String) entries.get("title");
         final String playlist_uri = (String) entries.get("uri");
         final String playlistID = entries.get("id").toString();
         final String created_at = (String) entries.get("created_at");
         if (StringUtils.isEmpty(playlist_uri) || StringUtils.isEmpty(playlistID) || StringUtils.isEmpty(created_at)) {
-            return;
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final UrlQuery queryplaylist = new UrlQuery();
         queryplaylist.add("representation", "full");
@@ -243,10 +245,10 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
             queryplaylist.add("secret_token", playlistSecretToken);
         }
         br.getPage(SoundcloudCom.API_BASEv2 + "/playlists/" + playlistID + "?" + queryplaylist.toString());
-        entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-        List<Map<String, Object>> tracks = (List<Map<String, Object>>) entries.get("tracks");
+        final Map<String, Object> playlistmap = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+        List<Map<String, Object>> tracks = (List<Map<String, Object>>) playlistmap.get("tracks");
         if (tracks == null || tracks.size() == 0) {
-            if (entries.get("duration").toString().equals("0")) {
+            if (playlistmap.get("duration").toString().equals("0")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else if (tracks != null && tracks.size() == 0) {
                 logger.info("Probably GEO-Blocked");
@@ -258,7 +260,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(this.getFormattedPackagename(user.get("permalink").toString(), user.get("username").toString(), playlistname, created_at));
         fp.setIgnoreVarious(true);
-        final ArrayList<Object> trackItemsFound = new ArrayList<Object>();
+        final List<Map<String, Object>> trackItemsFound = new ArrayList<Map<String, Object>>();
         /*
          * We will not get info about all tracks via this request - therefore we need to make another API call, collect the rest and then
          * add the URLs.
@@ -289,7 +291,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
             final StringBuilder sb = new StringBuilder();
             final ArrayList<String> tempIDs = new ArrayList<String>();
             /* Collect all found items here because they're not returning them in the requested order. */
-            final ArrayList<Object> unsortedTempTrackItemsFound = new ArrayList<Object>();
+            final List<Map<String, Object>> unsortedTempTrackItemsFound = new ArrayList<Map<String, Object>>();
             int index = 0;
             int paginationPage = 0;
             while (!this.isAbort()) {
@@ -321,9 +323,9 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                 }
                 logger.info("Found items: " + index + " / " + trackIdsForPagination.size());
                 br.getPage(SoundcloudCom.API_BASEv2 + "/tracks?" + querytracks.toString());
-                final List<Object> ressourcelist = (List<Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
-                for (final Object tracko : ressourcelist) {
-                    unsortedTempTrackItemsFound.add(tracko);
+                final List<HashMap<String, Object>> ressourcelist = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.LIST_HASHMAP);
+                for (final Map<String, Object> trackmap : ressourcelist) {
+                    unsortedTempTrackItemsFound.add(trackmap);
                 }
                 if (index == trackIdsForPagination.size()) {
                     logger.info("Stopping because: Pagination has reached end");
@@ -334,12 +336,11 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
             /* Be sure to add new items sorted to main Array - basically just to get PROPERTY_setsposition right! */
             for (final String sortedTrackID : trackIdsForPagination) {
                 boolean foundTrackID = false;
-                for (final Object tempTrackItem : unsortedTempTrackItemsFound) {
-                    final Map<String, Object> tempTrackData = (Map<String, Object>) tempTrackItem;
+                for (final Map<String, Object> tempTrackData : unsortedTempTrackItemsFound) {
                     final String unsortedTrackID = tempTrackData.get("id").toString();
                     if (unsortedTrackID.equals(sortedTrackID)) {
                         /* Found item --> Add it to main Array - it is now in order. */
-                        trackItemsFound.add(tempTrackItem);
+                        trackItemsFound.add(tempTrackData);
                         foundTrackID = true;
                         break;
                     }
@@ -351,25 +352,26 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
             }
         }
         /* Finally add items so they appear in LinkGrabber. */
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         int counter = 1;
-        for (final Object tracko : trackItemsFound) {
-            entries = (Map<String, Object>) tracko;
-            final Map<String, Object> trackUser = (Map<String, Object>) entries.get("user");
-            final String permalink_url = (String) entries.get("permalink_url");
-            final String permalink = (String) entries.get("permalink");
+        for (final Map<String, Object> trackmap : trackItemsFound) {
+            // final Map<String, Object> trackUser = (Map<String, Object>) trackmap.get("user");
+            final String permalink_url = (String) trackmap.get("permalink_url");
+            final String permalink = (String) trackmap.get("permalink");
             if (StringUtils.isEmpty(permalink)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            final DownloadLink dl = createDownloadlink(permalink_url.replaceFirst("https?://soundcloud.com/", "https://soundclouddecrypted.com/"));
-            dl.setProperty(SoundcloudCom.PROPERTY_setsposition, counter + ".");
-            dl.setProperty(SoundcloudCom.PROPERTY_playlist_id, playlistID);
-            parseFileInfo(dl, entries);
-            dl._setFilePackage(fp);
-            addLink(dl);
-            get500Thumbnail(dl, entries);
-            getOriginalThumbnail(dl, entries);
+            final DownloadLink link = createDownloadlink(permalink_url.replaceFirst("https?://soundcloud.com/", "https://soundclouddecrypted.com/"));
+            link.setProperty(SoundcloudCom.PROPERTY_setsposition, counter + ".");
+            link.setProperty(SoundcloudCom.PROPERTY_playlist_id, playlistID);
+            parseFileInfo(link, trackmap);
+            link._setFilePackage(fp);
+            ret.add(link);
+            ret.add(get500Thumbnail(link, trackmap));
+            ret.add(getOriginalThumbnail(link, trackmap));
             counter++;
         }
+        return ret;
     }
 
     /**

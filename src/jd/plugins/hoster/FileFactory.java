@@ -101,6 +101,28 @@ public class FileFactory extends PluginForHost {
         return br;
     }
 
+    private String getContentURL(final DownloadLink link) throws PluginException {
+        if (link == null || link.getPluginPatternMatcher() == null) {
+            return null;
+        }
+        String url = link.getPluginPatternMatcher();
+        url = url.replaceFirst("\\.com//", ".com/");
+        url = url.replaceFirst("://filefactory", "://www.filefactory");
+        url = url.replaceFirst("/stream/", "/file/");
+        // set trafficshare links like 'normal' links, this allows downloads to continue living if the uploader discontinues trafficshare
+        // for that uid. Also re-format premium only links!
+        final Regex trafficshareregex = new Regex(url, "(?i)(https?://.*?filefactory\\.com/)(trafficshare|digitalsales)/[a-f0-9]{32}/([^/]+)/?");
+        if (trafficshareregex.patternFind()) {
+            String[] uid = trafficshareregex.getRow(0);
+            if (uid != null && (uid[0] != null || uid[2] != null)) {
+                return uid[0] + "file/" + uid[2];
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+        }
+        return url;
+    }
+
     @Override
     public boolean isResumeable(final DownloadLink link, final Account account) {
         if (isTrafficshareLink(link)) {
@@ -180,8 +202,6 @@ public class FileFactory extends PluginForHost {
     public void checkErrorsWebsite(final DownloadLink link, final Browser br) throws PluginException {
         if (br.containsHTML("class=\"box error\"|have been deleted")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (isPremiumOnly(br)) {
-            throw new AccountRequiredException();
         }
         // this should cover error codes jumping to stream links in redirect, since filefactory wont fix this issue, this is my workaround.
         String code = getErrorcodeFromURL(br.getURL());
@@ -216,34 +236,37 @@ public class FileFactory extends PluginForHost {
             }
             waittimeFromHTMLMillis = ((years * 86400000 * 365) + (days * 86400000) + (hours * 3600000) + (minutes * 60000) + (seconds * 1000));
         }
-        final int errcode = (code != null && code.matches("\\d+") ? Integer.parseInt(code) : -1);
-        // final String errormessage = br.getRegex("id=\"wp-body-box-message\"[^>]*>([^<]+)").getMatch(0);
+        final int errorcode = (code != null && code.matches("\\d+") ? Integer.parseInt(code) : -1);
+        final String errormessage = br.getRegex("id=\"wp-body-box-message\"[^>]*>([^<]+)").getMatch(0);
+        logger.info("errorcode: " + errorcode + " | errormessage: " + errormessage);
         /* Error-Code based errors */
-        if (errcode == 152) {
+        if (errorcode == 152) {
             throw new AccountInvalidException("The account you have tried to sign into is pending deletion. Please contact FileFactory support if you require further assistance.");
-        } else if (errcode == 251) {
+        } else if (errorcode == 251) {
             /* Invalid downloadlink */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (errcode == 252) {
+        } else if (errorcode == 252) {
             /* File is not available anymore due to an unexpected error (= also permanently offline) */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (errcode == 254) {
+        } else if (errorcode == 254) {
             /* File does not exist anymore */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (errcode == 257) {
+        } else if (errorcode == 257) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "No free slots available", 10 * 60 * 1000l);
-        } else if (errcode == 263) {
+        } else if (errorcode == 258) {
+            throw new AccountRequiredException();
+        } else if (errorcode == 263) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Could not retrieve information about your download, or your download key has expired. Please try again. ", 5 * 60 * 1000l);
-        } else if (errcode == 265) {
+        } else if (errorcode == 265) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "The requested Download URL was invalid.  Please retry your download", 5 * 60 * 1000l);
-        } else if (errcode == 266) {
+        } else if (errorcode == 266) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Error 266: This download is not yet ready", 2 * 60 * 1000l);
-        } else if (errcode == 274) {
+        } else if (errorcode == 274) {
             // <h2>File Unavailable</h2>
             // <p>
             // This file cannot be downloaded at this time. Please let us know about this issue by using the contact link below. </p>
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "This file cannot be downloaded at this time.", 20 * 60 * 1000l);
-        } else if (errcode == 275 || br.containsHTML("You are currently downloading too many files at once") || br.containsHTML(">\\s*You have recently started a download")) {
+        } else if (errorcode == 275 || br.containsHTML("You are currently downloading too many files at once") || br.containsHTML(">\\s*You have recently started a download")) {
             final long waitMillis;
             if (waittimeFromHTMLMillis == -1) {
                 waitMillis = 5 * 60 * 1000l;
@@ -279,7 +302,11 @@ public class FileFactory extends PluginForHost {
     }
 
     private String getErrorcodeFromURL(final String url) {
-        return new Regex(url, "(?:\\?|&)code=(\\d+)").getMatch(0);
+        if (url == null) {
+            return null;
+        } else {
+            return new Regex(url, "(?i)(?:\\?|&)code=(\\d+)").getMatch(0);
+        }
     }
 
     private final String invalidAuthKey = "Invalid authorization key";
@@ -529,28 +556,6 @@ public class FileFactory extends PluginForHost {
         return true;
     }
 
-    private String getContentURL(final DownloadLink link) throws PluginException {
-        if (link == null || link.getPluginPatternMatcher() == null) {
-            return null;
-        }
-        String url = link.getPluginPatternMatcher();
-        url = url.replaceFirst("\\.com//", ".com/");
-        url = url.replaceFirst("://filefactory", "://www.filefactory");
-        url = url.replaceFirst("/stream/", "/file/");
-        // set trafficshare links like 'normal' links, this allows downloads to continue living if the uploader discontinues trafficshare
-        // for that uid. Also re-format premium only links!
-        final Regex trafficshareregex = new Regex(url, "(?i)(https?://.*?filefactory\\.com/)(trafficshare|digitalsales)/[a-f0-9]{32}/([^/]+)/?");
-        if (trafficshareregex.patternFind()) {
-            String[] uid = trafficshareregex.getRow(0);
-            if (uid != null && (uid[0] != null || uid[2] != null)) {
-                return uid[0] + "file/" + uid[2];
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-        }
-        return url;
-    }
-
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         if (!isMail(account.getUser())) {
@@ -615,7 +620,7 @@ public class FileFactory extends PluginForHost {
                 if (expireTimestamp > System.currentTimeMillis()) {
                     ai.setValidUntil(expireTimestamp);
                 }
-                final String space = br.getRegex("<strong>([0-9\\.]+ ?(KB|MB|GB|TB))</strong>[\r\n\t ]+Free Space").getMatch(0);
+                final String space = br.getRegex("<strong>([0-9\\.]+ ?(KB|MB|GB|TB))\\s*</strong>\\s*Free Space").getMatch(0);
                 if (space != null) {
                     ai.setUsedSpace(space);
                 }
@@ -675,6 +680,7 @@ public class FileFactory extends PluginForHost {
      * Returns final downloadurl </br>
      * TODO: 2023-11-03: Check if this is still needed
      */
+    @Deprecated
     public String getUrl() throws Exception {
         String url = br.getRegex("\"(https?://[a-z0-9\\-]+\\.filefactory\\.com/dl/[^<>\"]*?)\"").getMatch(0);
         if (url == null) {
@@ -747,108 +753,89 @@ public class FileFactory extends PluginForHost {
         } else {
             /* Maybe trafficshare direct-URL */
         }
-        try {
-            long waitMillis;
+        long waitMillis;
+        if (dllink != null) {
+            logger.finer("DIRECT free-download (or saved directurl)");
+            br.setFollowRedirects(true);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, true, 1);
+        } else {
+            checkErrorsWebsite(link, br);
+            if (isPasswordProtectedFile(br)) {
+                String passCode = link.getDownloadPassword();
+                if (passCode == null) {
+                    passCode = getUserInput("Password?", link);
+                }
+                // stable is lame
+                br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
+                br.postPage(br.getURL(), "password=" + Encoding.urlEncode(passCode) + "&Submit=Continue");
+                br.getHeaders().put("Content-Type", null);
+                if (isPasswordProtectedFile(br)) {
+                    throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password");
+                }
+                link.setDownloadPassword(passCode);
+            }
+            // new 20130911
+            dllink = br.getRegex("\"(https?://[a-z0-9\\-]+\\.filefactory\\.com/get/[^<>\"]+)\"").getMatch(0);
+            String timer = br.getRegex("<div id=\"countdown_clock\" data-delay=\"(\\d+)").getMatch(0);
+            if (timer != null) {
+                sleep(Integer.parseInt(timer) * 1001, link);
+            }
             if (dllink != null) {
-                logger.finer("DIRECT free-download (or saved directurl)");
-                br.setFollowRedirects(true);
+                /* Trafficshare link */
                 dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, true, 1);
             } else {
+                // TODO: Check if this is still needed
+                final String urlWithFilename = getUrl();
+                if (urlWithFilename == null) {
+                    logger.warning("getUrl is broken!");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                br.getPage(urlWithFilename);
+                // Sometimes there is an ad
+                final String skipAds = br.getRegex("\"(https?://(www\\.)?filefactory\\.com/dlf/[^<>\"]+)\"").getMatch(0);
+                if (skipAds != null) {
+                    br.getPage(skipAds);
+                }
                 checkErrorsWebsite(link, br);
-                if (isPasswordProtectedFile(br)) {
-                    String passCode = link.getDownloadPassword();
-                    if (passCode == null) {
-                        passCode = getUserInput("Password?", link);
-                    }
-                    // stable is lame
-                    br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded");
-                    br.postPage(br.getURL(), "password=" + Encoding.urlEncode(passCode) + "&Submit=Continue");
-                    br.getHeaders().put("Content-Type", null);
-                    if (isPasswordProtectedFile(br)) {
-                        throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password");
-                    }
-                    link.setDownloadPassword(passCode);
-                }
-                // new 20130911
-                dllink = br.getRegex("\"(https?://[a-z0-9\\-]+\\.filefactory\\.com/get/[^<>\"]+)\"").getMatch(0);
-                String timer = br.getRegex("<div id=\"countdown_clock\" data-delay=\"(\\d+)").getMatch(0);
-                if (timer != null) {
-                    sleep(Integer.parseInt(timer) * 1001, link);
-                }
-                if (dllink != null) {
-                    /* Trafficshare link */
-                    dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, true, 1);
-                } else {
-                    // TODO: Check if this is still needed
-                    final String urlWithFilename = getUrl();
-                    if (urlWithFilename == null) {
-                        logger.warning("getUrl is broken!");
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    br.getPage(urlWithFilename);
-                    // Sometimes there is an ad
-                    final String skipAds = br.getRegex("\"(https?://(www\\.)?filefactory\\.com/dlf/[^<>\"]+)\"").getMatch(0);
-                    if (skipAds != null) {
-                        br.getPage(skipAds);
-                    }
-                    checkErrorsWebsite(link, br);
-                    String waitSecondsStr = br.getRegex("class=\"countdown\">\\s*(\\d+)\\s*</span>").getMatch(0);
-                    if (waitSecondsStr != null) {
-                        waitMillis = Long.parseLong(waitSecondsStr) * 1000l;
-                        if (waitMillis > 60000) {
-                            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waitMillis);
-                        }
-                    }
-                    dllink = getUrl();
-                    if (dllink == null) {
-                        logger.warning("getUrl is broken!");
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    waitSecondsStr = br.getRegex("class=\"countdown\">(\\d+)</span>").getMatch(0);
-                    waitMillis = 60 * 1000l;
-                    if (waitSecondsStr != null) {
-                        waitMillis = Long.parseLong(waitSecondsStr) * 1000l;
-                    }
-                    if (waitMillis > 60000l) {
+                String waitSecondsStr = br.getRegex("class=\"countdown\">\\s*(\\d+)\\s*</span>").getMatch(0);
+                if (waitSecondsStr != null) {
+                    waitMillis = Long.parseLong(waitSecondsStr) * 1000l;
+                    if (waitMillis > 60000) {
                         throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waitMillis);
                     }
-                    waitMillis += 1000;
-                    sleep(waitMillis, link);
-                    br.setFollowRedirects(true);
-                    dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink);
                 }
+                dllink = getUrl();
+                if (dllink == null) {
+                    logger.warning("getUrl is broken!");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                waitSecondsStr = br.getRegex("class=\"countdown\">(\\d+)</span>").getMatch(0);
+                waitMillis = 60 * 1000l;
+                if (waitSecondsStr != null) {
+                    waitMillis = Long.parseLong(waitSecondsStr) * 1000l;
+                }
+                if (waitMillis > 60000l) {
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waitMillis);
+                }
+                waitMillis += 1000;
+                sleep(waitMillis, link);
+                br.setFollowRedirects(true);
+                dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink);
             }
-            if (!dl.getConnection().isContentDisposition()) {
-                br.followConnection(true);
-                checkErrorsWebsite(link, br);
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
-            // add download slot
-            controlSlot(+1, account);
-            try {
-                dl.startDownload();
-            } finally {
-                // remove download slot
-                controlSlot(-1, account);
-            }
-        } catch (final PluginException e4) {
-            throw e4;
-        } catch (final InterruptedException e2) {
-            return;
-        } catch (final IOException e) {
-            logger.log(e);
-            if (e.getMessage() != null && e.getMessage().contains("502")) {
-                logger.severe("Filefactory returned Bad gateway.");
-                Thread.sleep(1000);
-                throw new PluginException(LinkStatus.ERROR_RETRY);
-            } else if (e.getMessage() != null && e.getMessage().contains("503")) {
-                logger.severe("Filefactory returned Bad gateway.");
-                Thread.sleep(1000);
-                throw new PluginException(LinkStatus.ERROR_RETRY);
-            } else {
-                throw e;
-            }
+        }
+        if (!dl.getConnection().isContentDisposition()) {
+            br.followConnection(true);
+            checkErrorsWebsite(link, br);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
+        // add download slot
+        controlSlot(+1, account);
+        try {
+            dl.startDownload();
+        } finally {
+            // remove download slot
+            controlSlot(-1, account);
         }
     }
 
@@ -926,6 +913,7 @@ public class FileFactory extends PluginForHost {
                 controlSlot(-1, account);
             }
         } else {
+            /* Free account handling */
             if (checkShowFreeDialog(getHost())) {
                 showFreeDialog(getHost());
             }
@@ -933,12 +921,11 @@ public class FileFactory extends PluginForHost {
         }
     }
 
+    /*
+     * This is for filefactory.com/trafficshare/ sharing links or I guess what we call public premium links.
+     */
     public void handleTrafficShare(final DownloadLink link, final Account account) throws Exception {
-        /*
-         * This is for filefactory.com/trafficshare/ sharing links or I guess what we call public premium links. This might replace dlUrl,
-         * Unknown until proven otherwise.
-         */
-        logger.finer("Traffic sharing link - Free Premium Download");
+        logger.info("Traffic sharing link - Free Premium Download");
         String finalLink = br.getRegex("<a href=\"(https?://\\w+\\.filefactory\\.com/get/t/[^\"]+)\"[^\r\n]*Download with FileFactory TrafficShare").getMatch(0);
         if (finalLink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -962,6 +949,7 @@ public class FileFactory extends PluginForHost {
         }
     }
 
+    @Deprecated
     private void loginWebsite(final Account account, final boolean force, final Browser br) throws Exception {
         synchronized (account) {
             setBrowserExclusive();
@@ -997,6 +985,7 @@ public class FileFactory extends PluginForHost {
     }
 
     /** Checks html code and or cookies to see if we're logged in. */
+    @Deprecated
     private boolean isLoggedinWebsite(final Browser br) {
         if (br.getCookie(br.getHost(), "auth", Cookies.NOTDELETEDPATTERN) != null) {
             return true;
@@ -1077,7 +1066,7 @@ public class FileFactory extends PluginForHost {
             }
         }
         if (isPasswordProtectedFile(br)) {
-            final String fileName = br.getRegex("<title>([^<>\"]*?)- FileFactory</title>").getMatch(0);
+            final String fileName = br.getRegex("<title>([^<>\"]*?)- FileFactory\\s*</title>").getMatch(0);
             if (fileName != null) {
                 link.setName(Encoding.htmlDecode(fileName));
             }
@@ -1131,15 +1120,7 @@ public class FileFactory extends PluginForHost {
     }
 
     private boolean isPasswordProtectedFile(final Browser br) {
-        if (br.containsHTML("(?i)>\\s*You are trying to access a password protected file|This File has been password protected by the uploader\\.")) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    private boolean isPremiumOnly(Browser tbr) {
-        if ((tbr.getURL() != null && tbr.getURL().contains("/error.php?code=258")) || tbr.containsHTML("(Please purchase an account to download this file\\.|>This file is only available to Premium Members|Sorry, this file can only be downloaded by Premium members|Please purchase an account in order to instantly download this file|Currently only Premium Members can download files larger)")) {
+        if (br.containsHTML("(?i)>\\s*You are trying to access a password protected file|This File has been password protected by the uploader")) {
             return true;
         } else {
             return false;

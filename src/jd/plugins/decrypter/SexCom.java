@@ -18,7 +18,9 @@ package jd.plugins.decrypter;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 import org.appwork.utils.Files;
 import org.jdownloader.plugins.controller.LazyPlugin;
@@ -28,6 +30,7 @@ import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
@@ -35,7 +38,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "sex.com" }, urls = { "https?://(?:www\\.)?sex\\.com/(?:pin/\\d+(-[a-z0-9\\-]+)?/|picture/\\d+|video/\\d+|galleries/[a-z0-9\\-_]+/\\d+|link/out\\?id=\\d+|user/[^/]+/[^/]+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class SexCom extends PornEmbedParser {
     public SexCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -46,10 +49,39 @@ public class SexCom extends PornEmbedParser {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
     }
 
-    /* DEV NOTES */
-    /* Porn_plugin */
-    private static final String TYPE_VIDEO           = "(?i)https?://[^/]+/video/\\d+.*?";
-    private static final String TYPE_EXTERN_REDIRECT = "(?i)https?://[^/]+/link/out\\?id=\\d+";
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "sex.com" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    private static final String PATTERN_RELATIVE_VIDEO           = "(?i)/video/\\d+.*?";
+    private static final String PATTERN_RELATIVE_EXTERN_REDIRECT = "(?i)/link/out\\?id=\\d+";
+    private static final String PATTERN_RELATIVE_USER            = "(?i)/user/([a-z0-9\\-]+)/([a-z0-9\\-]+)/";
+    private static final String PATTERN_RELATIVE_PIN             = "(?i)/pin/\\d+(-[a-z0-9\\-]+)?/";
+    private static final String PATTERN_RELATIVE_PICTURE         = "(?i)/picture/\\d+/?";
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "(" + PATTERN_RELATIVE_VIDEO + "|" + PATTERN_RELATIVE_USER + "|" + PATTERN_RELATIVE_PIN + "|" + PATTERN_RELATIVE_PICTURE + "|" + PATTERN_RELATIVE_EXTERN_REDIRECT + ")");
+        }
+        return ret.toArray(new String[0]);
+    }
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
@@ -58,7 +90,7 @@ public class SexCom extends PornEmbedParser {
         br.setAllowedResponseCodes(502);
         final String contenturl = param.getCryptedUrl().replaceFirst("(?i)http://", "https://");
         String redirect = null;
-        if (contenturl.matches(TYPE_EXTERN_REDIRECT)) {
+        if (contenturl.matches(PATTERN_RELATIVE_EXTERN_REDIRECT)) {
             br.setFollowRedirects(false);
             br.getPage(contenturl);
             redirect = this.br.getRedirectLocation();
@@ -77,29 +109,46 @@ public class SexCom extends PornEmbedParser {
         if (redirect != null) {
             br.getPage(redirect);
         }
-        if (br.getURL().matches("(?i).*/user/[^/]+/[^/]+/?")) {
-            // find all pins
-            final Set<String> dups = new HashSet<String>();
+        final Pattern videopatternfull = Pattern.compile("https?://[^/]+" + PATTERN_RELATIVE_VIDEO);
+        final Pattern userpatternfull = Pattern.compile("https?://[^/]+" + PATTERN_RELATIVE_USER);
+        if (new Regex(br.getURL(), userpatternfull).patternFind()) {
+            /* Find all items of profile. Those can be spread across multiple pages -> Handle pagination */
+            final Set<String> dupes = new HashSet<String>();
             final String userProfilePin = br.getRegex("\"user_profile_picture\"\\s*>\\s*<a\\s*href\\s*=\\s*\"(/pin/\\d+)").getMatch(0);
-            dups.add(userProfilePin);
-            while (!isAbort()) {
-                final String items[] = br.getRegex("(/(pin|picture|video)/\\d+)").getColumn(0);
-                for (String item : items) {
-                    if (dups.add(item)) {
-                        final DownloadLink dl = createDownloadlink(br.getURL(item).toString());
+            dupes.add(userProfilePin);
+            int page = 1;
+            do {
+                int numberofNewItems = 0;
+                final String[] urls = HTMLParser.getHttpLinks(br.getRequest().getHtmlCode(), br.getURL());
+                for (final String url : urls) {
+                    if (this.canHandle(url) && !new Regex(url, userpatternfull).patternFind() && dupes.add(url)) {
+                        final DownloadLink dl = createDownloadlink(br.getURL(url).toExternalForm());
                         ret.add(dl);
+                        distribute(dl);
+                        numberofNewItems++;
                     }
                 }
+                logger.info("Crawled page " + page + " | Found items so far: " + ret.size());
                 final String next = br.getRegex("rel\\s*=\\s*\"next\"\\s*href\\s*=\\s*\"(https?://[^\"]*page=\\d+)").getMatch(0);
-                if (next != null && dups.add(next)) {
-                    br.getPage(next);
-                } else {
+                if (this.isAbort()) {
+                    logger.info("Stopping because: Aborted by user");
                     break;
+                } else if (numberofNewItems == 0) {
+                    logger.info("Stopping because: Failed to find any new items on current page");
+                    break;
+                } else if (next == null) {
+                    logger.info("Stopping because: Failed to find nextpage");
+                    break;
+                } else {
+                    /* Continue to next page */
+                    br.getPage(next);
+                    page++;
                 }
-            }
-        } else if (br.getURL().matches(TYPE_VIDEO) || br.containsHTML("<h1>\\s*Video\\s*.*?Pin")) {
+            } while (!this.isAbort());
+        } else if (new Regex(br.getURL(), videopatternfull).patternFind() || br.containsHTML("<h1>\\s*Video\\s*.*?Pin")) {
             ret.addAll(this.findLink());
         } else {
+            /* "PIN" item */
             filename = br.getRegex("<title>\\s*([^<>\"]*?)\\s*(?:\\|\\s*Sex Videos and Pictures\\s*\\|\\s*Sex\\.com)?\\s*</title>").getMatch(0);
             if (filename == null || filename.length() <= 2) {
                 filename = br.getRegex("addthis:title=\"([^<>\"]*?)\"").getMatch(0);
@@ -188,7 +237,7 @@ public class SexCom extends PornEmbedParser {
             if (Encoding.isHtmlEntityCoded(title)) {
                 title = Encoding.htmlDecode(title);
             }
-            final DownloadLink fina = createDownloadlink("directhttp://" + br.getURL(externID).toString());
+            final DownloadLink fina = createDownloadlink("directhttp://" + br.getURL(externID).toExternalForm());
             fina.setContentUrl(br.getURL());
             if (title != null) {
                 fina.setFinalFileName(title + ".mp4");
@@ -201,7 +250,7 @@ public class SexCom extends PornEmbedParser {
             externID = br.getRegex("href=\"([^<>\"]+)\" data-rel=\"source\"").getMatch(0); // Picture
         }
         if (externID != null) {
-            ret.add(this.createDownloadlink(br.getURL(externID).toString()));
+            ret.add(this.createDownloadlink(br.getURL(externID).toExternalForm()));
             return ret;
         }
         return null;

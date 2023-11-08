@@ -364,18 +364,22 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             req.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             getPageAutoLogin(account, loggedIN, req.getUrl(), param, br, req, null, null);
             Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
-            if (Boolean.TRUE.equals(entries.get("require_login"))) {
+            if (Boolean.TRUE.equals(entries.get("require_login")) || br.getHttpConnection().getResponseCode() == 401) {
                 /*
                  * 2022-10-07 E.g.
                  * {"message":"Bitte warte einige Minuten und versuche es dann noch einmal.","require_login":true,"status":"fail"}
                  */
-                sleep(2000, param);
-                logger.info("Logging in because: " + entries.get("message"));
+                /* 2023-11-08: Also possible: response 401 with {"message":"Server Error","status":"fail"} */
                 if (loggedIN.get()) {
-                    /* This should never happen */
+                    /* Already logged in -> This should never happen */
                     logger.warning("Login required but we're already logged in -> Possible problem with account/session");
                     throw new AccountRequiredException();
+                } else if (account == null) {
+                    /* Account required but not available */
+                    throw new AccountRequiredException();
                 }
+                sleep(2000, param);
+                logger.info("Logging in because: " + entries.get("message"));
                 /* We're logged in now -> Perform request again. */
                 req = req.cloneRequest();
                 getPageAutoLogin(account, loggedIN, true, req.getUrl(), param, br, req, null, null);

@@ -24,6 +24,7 @@ import org.appwork.storage.TypeRef;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -106,6 +107,8 @@ public class KikaDeCrawler extends PluginForDecrypt {
         }
         title = title.replaceAll("(?i)\\s*\\(Hörfassung\\)\\s*", "");
         title = title.replaceAll("(?i)\\s*\\| KiKA", "");
+        title = Encoding.htmlDecode(title).trim();
+        logger.info("Searching this title in ZDFMediathek: " + title);
         final ZDFMediathekDecrypter crawler = (ZDFMediathekDecrypter) this.getNewPluginForDecryptInstance("zdf.de");
         final ArrayList<DownloadLink> zdfSearchResults = crawler.crawlZDFMediathekSearchResultsVOD("ZDFtivi", title, 3);
         if (zdfSearchResults.isEmpty()) {
