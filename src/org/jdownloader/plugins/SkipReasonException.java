@@ -28,12 +28,11 @@ public class SkipReasonException extends Exception {
         this.reason = reason;
     }
 
-    private static String constructMessage(SkipReason reason, String message) {
+    private static String constructMessage(final SkipReason reason, String message) {
         if (message != null) {
             return reason.name() + ":" + message;
         } else {
             return reason.name();
         }
     }
-
 }

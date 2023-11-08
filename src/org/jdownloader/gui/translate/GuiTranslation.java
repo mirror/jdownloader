@@ -555,6 +555,12 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Login cookies invalid" })
     String accountdialog_check_cookies_invalid();
 
+    @Default(lngs = { "en" }, values = { "Cookie login is not supported for this provider." })
+    String accountdialog_LoginValidationErrorCookieLoginUnsupportedButGiven();
+
+    @Default(lngs = { "en" }, values = { "Cookie login is required for this provider but you did not provide login cookies." })
+    String accountdialog_LoginValidationErrorCookieLoginMandatoryButNoCookiesGiven();
+
     @Default(lngs = { "en" }, values = { "Enter Username..." })
     String jd_gui_swing_components_AccountDialog_help_username();
 
@@ -1257,6 +1263,12 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Enter password..." })
     String BuyAndAddPremiumAccount_layoutDialogContent_pass();
+
+    @Default(lngs = { "en" }, values = { "Enter password or exported cookies..." })
+    String BuyAndAddPremiumAccount_layoutDialogContent_pass_or_cookies();
+
+    @Default(lngs = { "en" }, values = { "Enter cookies..." })
+    String BuyAndAddPremiumAccount_layoutDialogContent_cookies();
 
     @Default(lngs = { "en" }, values = { "Max. sim. Downloads per Hoster" })
     String ParalellDownloadsEditor_ParallelDownloadsPerHostEditor_();
@@ -4534,6 +4546,12 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Publishing Date(Year,month,day). *date* or e.g. *date[yyyy/MM/dd]*" })
     String YoutubeHelper_getDescription_date();
 
+    @Default(lngs = { "en" }, values = { "Livestream start date" })
+    String YoutubeHelper_getDescription_date_livestream_start();
+
+    @Default(lngs = { "en" }, values = { "Livestream end date" })
+    String YoutubeHelper_getDescription_date_livestream_end();
+
     @Default(lngs = { "en" }, values = { "Uploaded Date(Year,month,day). *date_upload* or e.g. *date_upload[yyyy/MM/dd]*" })
     String YoutubeHelper_getDescription_date_upload();
 
@@ -6686,6 +6704,9 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Filename for Description files" })
     String YoutubeDashConfigPanel_YoutubeDashConfigPanel_filename_pattern_description();
+
+    @Default(lngs = { "en" }, values = { "Playlist items: Include position at beginning of filenames?" })
+    String YoutubeDashConfigPanel_YoutubeDashConfigPanel_PlaylistItemsIncludePlaylistPositionAtBeginningOfFilenames();
 
     @Default(lngs = { "en" }, values = { "Add an account to get the best our of this plugin. By using a premium account, JDownloader is able to bypass all limitations  for this plugin (like speed limits, banned IPs,...)" })
     String description_accountmanager_button();

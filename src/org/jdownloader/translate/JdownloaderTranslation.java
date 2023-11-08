@@ -179,6 +179,9 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Livestreams are not supported." })
     String decrypter_unavailable_unsupported_livestream();
 
+    @Default(lngs = { "en" }, values = { "Captcha 'Cloudflare Turnstile' is not supported." })
+    String decrypter_unavailable_unsupported_captcha_cloudflare_turnstile();
+
     @Default(lngs = { "en" }, values = { "Blocked by" })
     String decrypter_unavailable_blocked_by();
 
@@ -440,6 +443,24 @@ public interface JdownloaderTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Invalid download directory" })
     String DownloadLink_setSkipped_statusmessage_invalid_path();
+
+    @Default(lngs = { "en" }, values = { "Invalid download directory: Permission issue" })
+    String DownloadLink_setSkipped_statusmessage_invalid_path_permission_issue();
+
+    @Default(lngs = { "en" }, values = { "Invalid download directory: Permission issue: Failed to write file %s" })
+    String DownloadLink_setSkipped_statusmessage_invalid_path_permission_issue_file(final String str);
+
+    @Default(lngs = { "en" }, values = { "Invalid download directory: Permission issue: Failed to write folder %s" })
+    String DownloadLink_setSkipped_statusmessage_invalid_path_permission_issue_folder(final String str);
+
+    @Default(lngs = { "en" }, values = { "Invalid download directory: Permission issue: Can't write into folder %s" })
+    String DownloadLink_setSkipped_statusmessage_invalid_path_permission_issue_failed_to_write_into_folder(final String str);
+
+    @Default(lngs = { "en" }, values = { "Invalid download directory: Filename too long" })
+    String DownloadLink_setSkipped_statusmessage_invalid_path_too_long_filename();
+
+    @Default(lngs = { "en" }, values = { "Invalid download directory: Path too long" })
+    String DownloadLink_setSkipped_statusmessage_invalid_path_too_long_path();
 
     @Default(lngs = { "en" }, values = { "Skipped - Account is missing" })
     String DownloadLink_setSkipped_statusmessage_account();

@@ -16,12 +16,16 @@ public enum SkipReason {
     DISK_FULL(_JDT.T.DownloadLink_setSkipped_statusmessage_disk_full(), IconKey.ICON_SAVE),
     NO_ACCOUNT(_JDT.T.DownloadLink_setSkipped_statusmessage_account(), IconKey.ICON_PREMIUM),
     INVALID_DESTINATION(_JDT.T.DownloadLink_setSkipped_statusmessage_invalid_path(), IconKey.ICON_SAVETO),
+    INVALID_DESTINATION_PERMISSION_ISSUE(_JDT.T.DownloadLink_setSkipped_statusmessage_invalid_path_permission_issue(), IconKey.ICON_SAVETO),
+    INVALID_DESTINATION_TOO_LONG_FILENAME(_JDT.T.DownloadLink_setSkipped_statusmessage_invalid_path_too_long_filename(), IconKey.ICON_SAVETO),
+    INVALID_DESTINATION_TOO_LONG_PATH(_JDT.T.DownloadLink_setSkipped_statusmessage_invalid_path_too_long_path(), IconKey.ICON_SAVETO),
     FILE_EXISTS(_JDT.T.DownloadLink_setSkipped_statusmessage_file_exists(), IconKey.ICON_COPY),
     UPDATE_RESTART_REQUIRED(_JDT.T.DownloadLink_setSkipped_statusmessage_update_restart(), IconKey.ICON_RESTART),
     FFMPEG_MISSING(_JDT.T.DownloadLink_setSkipped_statusmessage_ffmpeg(), IconKey.ICON_LOGO_FFMPEG),
     FFPROBE_MISSING(_JDT.T.DownloadLink_setSkipped_statusmessage_ffprobe(), IconKey.ICON_LOGO_FFMPEG),
     PHANTOM_JS_MISSING(_JDT.T.DownloadLink_setSkipped_statusmessage_phantom(), IconKey.ICON_LOGO_PHANTOMJS_LOGO),
     PLUGIN_DEFECT(_JDT.T.downloadlink_status_error_defect(), IconKey.ICON_FALSE);
+
     private final String exp;
     private final String iconKey;
 
