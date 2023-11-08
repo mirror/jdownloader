@@ -26,10 +26,12 @@ import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
 import jd.plugins.hoster.EasyuploadIo;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
@@ -57,7 +59,11 @@ public class EasyuploadIoFolder extends PluginForDecrypt {
     }
 
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
-        return EasyuploadIo.getAnnotationUrls();
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : getPluginDomains()) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/.+");
+        }
+        return ret.toArray(new String[0]);
     }
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
@@ -67,23 +73,35 @@ public class EasyuploadIoFolder extends PluginForDecrypt {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        final PluginForHost hosterplugin = this.getNewPluginForHostInstance(this.getHost());
         final String[] fileids = br.getRegex("data-url=\"([a-z0-9]+)\"").getColumn(0);
-        final String[] filenames = br.getRegex("class=\"col s5 left-align valign-wrapper\"><p>([^<]+)</p>").getColumn(0);
-        final String[] filesizes = br.getRegex("<div class=\"col s3 left-align valign-wrapper\"><p>([^<]+)<").getColumn(0);
-        if (fileids != null && filenames != null && filesizes != null && fileids.length > 0 && (fileids.length == filenames.length && fileids.length == filesizes.length)) {
+        final String[] filenames = br.getRegex("class=\"col s\\d+ left-align valign-wrapper\"><p>([^<]+)<").getColumn(0);
+        String[] filesizes = br.getRegex("<div class=\"col s3 left-align valign-wrapper\"><p>([^<]+)<").getColumn(0);
+        if (filesizes == null || filesizes.length == 0) {
+            filesizes = br.getRegex("class=\"turbo\"[^>]*>\\(([^<]+)\\)\\s*<").getColumn(0);
+        }
+        if (fileids != null && fileids.length > 0) {
+            final FilePackage fp = FilePackage.getInstance();
             for (int i = 0; i < fileids.length; i++) {
                 final String fileid = fileids[i];
-                final String filename = filenames[i];
-                final String filesize = filesizes[i];
                 final DownloadLink link = this.createDownloadlink(br.getURL("/" + fileid).toString());
-                link.setName(Encoding.htmlDecode(filename));
-                link.setDownloadSize(SizeFormatter.getSize(filesize));
+                link.setDefaultPlugin(hosterplugin);
+                link._setFilePackage(fp);
+                if (filenames.length == fileids.length) {
+                    final String filename = filenames[i];
+                    link.setName(Encoding.htmlDecode(filename));
+                }
+                if (filesizes.length == fileids.length) {
+                    final String filesize = filesizes[i];
+                    link.setDownloadSize(SizeFormatter.getSize(filesize));
+                }
                 link.setAvailable(true);
                 ret.add(link);
             }
         } else {
             /* Assume we got a single file */
             final DownloadLink file = this.createDownloadlink(br.getURL());
+            file.setDefaultPlugin(hosterplugin);
             EasyuploadIo.parseFileInfo(br, file);
             file.setAvailable(true);
             ret.add(file);

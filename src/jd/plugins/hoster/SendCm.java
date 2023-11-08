@@ -43,6 +43,7 @@ import jd.parser.html.InputField;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -442,6 +443,9 @@ public class SendCm extends XFileSharingProBasic {
         } else if (StringUtils.equals(apikey, account.getPass())) {
             apiFromAccountPasswordField = true;
         }
+        if (enableAccountApiOnlyMode() && (apikey == null || !apiFromAccountPasswordField)) {
+            throw new AccountInvalidException("Invalid API key! Enter your API key into the password field.\r\nYou can find your API key here: " + getHost() + "/?op=my_account -> 'Upload settings'");
+        }
         if (apikey != null) {
             /* Prefer API */
             try {
@@ -460,6 +464,9 @@ public class SendCm extends XFileSharingProBasic {
                 logger.log(e);
                 logger.info("API login failed");
                 account.removeProperty(PROPERTY_ACCOUNT_apikey);
+                if (enableAccountApiOnlyMode()) {
+                    throw e;
+                }
             }
         }
         /* Fallback to upper handling */
@@ -638,5 +645,10 @@ public class SendCm extends XFileSharingProBasic {
         } else {
             return false;
         }
+    }
+
+    @Override
+    protected boolean enableAccountApiOnlyMode() {
+        return true;
     }
 }
