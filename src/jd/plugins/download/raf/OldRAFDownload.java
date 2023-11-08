@@ -33,6 +33,7 @@ import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Application;
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.Exceptions;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
@@ -91,7 +92,6 @@ public class OldRAFDownload extends DownloadInterface {
     protected Downloadable                          downloadable;
     protected PluginException                       caughtPluginException    = null;
     public LogInterface                             logger;
-    public static final String                      PROPERTY_DOFILESIZECHECK = "DOFILESIZECHECK";
     protected Request                               request                  = null;
     protected ManagedThrottledConnectionHandler     connectionHandler        = null;
     private long                                    startTimeStamp           = -1;
@@ -469,6 +469,7 @@ public class OldRAFDownload extends DownloadInterface {
     public boolean startDownload() throws Exception {
         try {
             try {
+                /* We are about to start downloading so we know that if there was a captcha, it has been solved successfully. */
                 downloadable.validateLastChallengeResponse();
             } catch (final Throwable e) {
                 LogSource.exception(logger, e);
@@ -515,12 +516,22 @@ public class OldRAFDownload extends DownloadInterface {
             }
             // Erst hier Dateinamen holen, somit umgeht man das Problem das bei
             // mehrfachAufruf von connect entstehen kann
-            if (this.downloadable.getFinalFileName() == null && ((connection != null && connection.isContentDisposition()) || this.allowFilenameFromURL)) {
-                String name = Plugin.getFileNameFromHeader(connection);
+            final String filenameFromHeader = Plugin.getFileNameFromHeader(connection);
+            if (this.downloadable.getFinalFileName() == null && (filenameFromHeader != null || this.allowFilenameFromURL)) {
                 if (this.fixWrongContentDispositionHeader) {
-                    this.downloadable.setFinalFileName(Encoding.htmlDecode(name));
+                    this.downloadable.setFinalFileName(Encoding.htmlDecode(filenameFromHeader));
                 } else {
-                    this.downloadable.setFinalFileName(name);
+                    this.downloadable.setFinalFileName(filenameFromHeader);
+                }
+            } else if (filenameFromHeader == null) {
+                /**
+                 * TODO: Review this: Maybe don't correct filenames if they were forced by the user(?) On the other hand we may know which
+                 * file-extension is the correct one. I'd do it like browsers do it and correct the file-extension.
+                 */
+                /* Fix wrong file-extension */
+                final String ext = Plugin.getExtensionFromMimeTypeStatic(connection.getContentType());
+                if (ext != null && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                    this.downloadable.setFinalFileName(Plugin.getCorrectOrApplyFileNameExtension(this.downloadable.getName(), "." + ext));
                 }
             }
             if (connection == null || !connection.isOK()) {
@@ -532,8 +543,7 @@ public class OldRAFDownload extends DownloadInterface {
                 } catch (final Throwable e) {
                 }
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
-            }
-            if (connection.getRequest().getLocation() != null) {
+            } else if (connection.getRequest().getLocation() != null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             if (downloadable.getVerifiedFileSize() < 0) {

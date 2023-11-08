@@ -3,6 +3,7 @@ package org.jdownloader.container;
 import java.io.File;
 import java.io.FileInputStream;
 import java.util.ArrayList;
+import java.util.regex.Pattern;
 
 import jd.controlling.linkcrawler.ArchiveInfo;
 import jd.controlling.linkcrawler.CrawledLink;
@@ -23,20 +24,20 @@ public class NZB extends PluginsC {
     }
 
     /* Default .nzb filename scheme containing a title and file-password. */
-    public static final String PATTERN_COMMON_FILENAME_SCHEME = "^([^\\{]+)\\{\\{(.*?)\\}\\}\\.nzb$";
+    public static final Pattern PATTERN_COMMON_FILENAME_SCHEME = Pattern.compile("^([^\\{]+)\\{\\{(.*?)\\}\\}\\.nzb$", Pattern.CASE_INSENSITIVE);
 
     public ContainerStatus callDecryption(final File nzbFile) {
         final ContainerStatus cs = new ContainerStatus(nzbFile);
-        final ArrayList<DownloadLink> downloadLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         FileInputStream fileInputStream = null;
         try {
             fileInputStream = new FileInputStream(nzbFile);
             final Regex nzbCommonFilenameScheme = new Regex(nzbFile.getName(), PATTERN_COMMON_FILENAME_SCHEME);
-            downloadLinks.addAll(NZBSAXHandler.parseNZB(fileInputStream));
-            final ArrayList<CrawledLink> crawledLinks = new ArrayList<CrawledLink>(downloadLinks.size());
+            ret.addAll(NZBSAXHandler.parseNZB(fileInputStream));
+            final ArrayList<CrawledLink> crawledLinks = new ArrayList<CrawledLink>(ret.size());
             final ArchiveInfo archiveInfo;
             final FilePackage fp;
-            if (nzbCommonFilenameScheme.matches()) {
+            if (nzbCommonFilenameScheme.patternFind()) {
                 fp = FilePackage.getInstance();
                 fp.setName(nzbCommonFilenameScheme.getMatch(0));
                 archiveInfo = new ArchiveInfo();
@@ -45,7 +46,7 @@ public class NZB extends PluginsC {
                 fp = null;
                 archiveInfo = null;
             }
-            for (final DownloadLink downloadLink : downloadLinks) {
+            for (final DownloadLink downloadLink : ret) {
                 if (fp != null) {
                     downloadLink._setFilePackage(fp);
                 }
@@ -62,10 +63,8 @@ public class NZB extends PluginsC {
             return cs;
         } finally {
             try {
-                if (fileInputStream != null) {
-                    fileInputStream.close();
-                }
-            } catch (final Throwable igrnoe) {
+                fileInputStream.close();
+            } catch (final Throwable ignore) {
             }
         }
     }

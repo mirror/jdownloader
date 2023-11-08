@@ -52,6 +52,7 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 import org.jdownloader.plugins.controller.PluginClassLoader;
 import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
 import org.jdownloader.plugins.controller.host.PluginFinder;
@@ -65,12 +66,14 @@ import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.WarnLevel;
 import jd.http.Browser;
 import jd.http.BrowserSettingsThread;
+import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountError;
 import jd.plugins.Account.AccountPropertyChangeHandler;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.AccountProperty;
 import jd.plugins.PluginForHost;
 
@@ -319,9 +322,14 @@ public class AccountController implements AccountControllerListener, AccountProp
                 }
                 long tempDisabledCounterBefore = account.getTmpDisabledTimeout();
                 try {
-                    /*
-                     * make sure the current Thread uses the PluginClassLoaderChild of the Plugin in use
-                     */
+                    // TODO: Maybe add function to plugin for account pre-check validation(?)
+                    /* We can't rely on validation via GUI as myjdownloader remote controller JDownloader instances have no Java GUI. */
+                    final Cookies userCookies = account.loadUserCookies();
+                    if (userCookies == null && plugin.hasFeature(FEATURE.COOKIE_LOGIN_ONLY)) {
+                        throw new AccountInvalidException(_GUI.T.accountdialog_LoginValidationErrorCookieLoginMandatoryButNoCookiesGiven());
+                    } else if (userCookies != null && !plugin.hasFeature(FEATURE.COOKIE_LOGIN_OPTIONAL)) {
+                        throw new AccountInvalidException(_GUI.T.accountdialog_LoginValidationErrorCookieLoginUnsupportedButGiven());
+                    }
                     ai = plugin.fetchAccountInfo(account);
                     plugin.validateLastChallengeResponse();
                     account.setAccountInfo(ai);
@@ -344,7 +352,7 @@ public class AccountController implements AccountControllerListener, AccountProp
                     return ai;
                 }
                 if (tempDisabledCounterBefore > 0 && account.getTmpDisabledTimeout() == tempDisabledCounterBefore) {
-                    /* reset temp disabled information */
+                    /* Reset temp disabled information */
                     logger.info("no longer temp disabled!");
                     account.setTempDisabled(false);
                 }
