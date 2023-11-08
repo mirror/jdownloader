@@ -105,8 +105,10 @@ public class KikaDeCrawler extends PluginForDecrypt {
         if (title == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        title = title.trim();
         title = title.replaceAll("(?i)\\s*\\(Hörfassung\\)\\s*", "");
         title = title.replaceAll("(?i)\\s*\\| KiKA", "");
+        title = title.replaceAll("^(?i)\\s*Filme:\\s*", "");
         title = Encoding.htmlDecode(title).trim();
         logger.info("Searching this title in ZDFMediathek: " + title);
         final ZDFMediathekDecrypter crawler = (ZDFMediathekDecrypter) this.getNewPluginForDecryptInstance("zdf.de");

@@ -97,11 +97,6 @@ public class ZeveraCom extends ZeveraCore {
     }
 
     @Override
-    public boolean supportsFreeAccountDownloadMode(final Account acc) {
-        return false;
-    }
-
-    @Override
     public boolean usePairingLogin(final Account account) {
         /** 2019-08-05: Pairing login is not supported by this service! */
         return false;

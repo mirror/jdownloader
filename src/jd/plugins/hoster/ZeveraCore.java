@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.appwork.storage.JSonMapperException;
-import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
@@ -865,8 +864,23 @@ abstract public class ZeveraCore extends UseNet {
         return false;
     }
 
-    /** Indicates whether downloads via free accounts are possible or not. */
-    public boolean supportsFreeAccountDownloadMode(final Account account) {
+    /**
+     * Indicates whether downloads via free accounts are possible or not. </br>
+     * 2023-11-08: That feature has been removed serverside.
+     */
+    @Deprecated
+    private final boolean supportsFreeAccountDownloadMode(final Account account) {
+        return false;
+    }
+
+    /**
+     * Indicates whether or not to display free account download dialogs which tell the user to activate free mode via website. </br>
+     * Some users find this annoying and will deactivate it. </br>
+     * default = true </br>
+     * 2023-11-08: That feature has been removed serverside.
+     */
+    @Deprecated
+    private final boolean displayFreeAccountDownloadDialogs(final Account account) {
         return false;
     }
 
@@ -874,15 +888,6 @@ abstract public class ZeveraCore extends UseNet {
      * Indicates whether or not the new 'pairing' login is supported & enabled: https://alexbilbie.com/2016/04/oauth-2-device-flow-grant/
      */
     public boolean usePairingLogin(final Account account) {
-        return false;
-    }
-
-    /**
-     * Indicates whether or not to display free account download dialogs which tell the user to activate free mode via website. </br>
-     * Some users find this annoying and will deactivate it. </br>
-     * default = true
-     */
-    public boolean displayFreeAccountDownloadDialogs(final Account account) {
         return false;
     }
 

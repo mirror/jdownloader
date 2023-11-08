@@ -38,7 +38,7 @@ public class RashaPornoCom extends PornEmbedParser {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "rasha-porno.com" });
+        ret.add(new String[] { "rasha-porno.cc", "rasha-porno.com" });
         return ret;
     }
 

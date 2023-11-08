@@ -22,6 +22,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -66,13 +67,19 @@ public class EasyuploadIoFolder extends PluginForDecrypt {
         return ret.toArray(new String[0]);
     }
 
+    public static void checkErrors(final Browser br) throws PluginException {
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("(?i)>\\s*FILE NOT FOUND")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+    }
+
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
         br.getPage(param.getCryptedUrl());
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
+        checkErrors(br);
         final PluginForHost hosterplugin = this.getNewPluginForHostInstance(this.getHost());
         final String[] fileids = br.getRegex("data-url=\"([a-z0-9]+)\"").getColumn(0);
         final String[] filenames = br.getRegex("class=\"col s\\d+ left-align valign-wrapper\"><p>([^<]+)<").getColumn(0);

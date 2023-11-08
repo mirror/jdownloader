@@ -96,10 +96,6 @@ public class PremiumizeMe extends ZeveraCore {
 
     public static interface PremiumizeMeConfigInterface extends UsenetAccountConfigInterface {
         public class Translation {
-            public String getAllowFreeAccountDownloads_label() {
-                return "Allow free account downloads?\r\nFor more information visit: premiumize.me/free";
-            }
-
             public String getEnablePairingLogin_label() {
                 return "Enable pairing login?\r\nOnce enabled, you won't be able to use Usenet with Premiumize in JD anymore!!";
             }
@@ -107,20 +103,9 @@ public class PremiumizeMe extends ZeveraCore {
             public String getEnableBoosterPointsUnlimitedTrafficWorkaround_label() {
                 return "Enable booster points unlimited traffic workaround for this account? \r\nThis is only for owners of booster-points! \r\nMore information: premiumize.me/booster";
             }
-
-            public String getDisplayFreeAccountDownloadDialogs_label() {
-                return "Display info-dialogs for enabled 'Free-Account-Download of cached files' Feature?";
-            }
         }
 
         public static final PremiumizeMeConfigInterface.Translation TRANSLATION = new Translation();
-
-        @AboutConfig
-        @DefaultBooleanValue(false)
-        @Order(10)
-        boolean isAllowFreeAccountDownloads();
-
-        void setAllowFreeAccountDownloads(boolean b);
 
         // @AboutConfig
         @DefaultBooleanValue(false)
@@ -135,13 +120,6 @@ public class PremiumizeMe extends ZeveraCore {
         boolean isEnableBoosterPointsUnlimitedTrafficWorkaround();
 
         void setEnableBoosterPointsUnlimitedTrafficWorkaround(boolean b);
-
-        @AboutConfig
-        @DefaultBooleanValue(true)
-        @Order(40)
-        boolean isDisplayFreeAccountDownloadDialogs();
-
-        void setDisplayFreeAccountDownloadDialogs(boolean b);
     };
 
     @Override
@@ -156,12 +134,12 @@ public class PremiumizeMe extends ZeveraCore {
 
             @Override
             protected boolean showKeyHandler(KeyHandler<?> keyHandler) {
-                return "allowfreeaccountdownloads".equals(keyHandler.getKey()) || "enableboosterpointsunlimitedtrafficworkaround".equals(keyHandler.getKey()) || "displayfreeaccountdownloaddialogs".equals(keyHandler.getKey());
+                return "enablepairinglogin".equals(keyHandler.getKey()) || "enableboosterpointsunlimitedtrafficworkaround".equals(keyHandler.getKey());
             }
 
             @Override
             protected boolean useCustomUI(KeyHandler<?> keyHandler) {
-                return !"allowfreeaccountdownloads".equals(keyHandler.getKey()) && !"enablepairinglogin".equals(keyHandler.getKey()) && !"enableboosterpointsunlimitedtrafficworkaround".equals(keyHandler.getKey()) && !"displayfreeaccountdownloaddialogs".equals(keyHandler.getKey());
+                return !"enablepairinglogin".equals(keyHandler.getKey()) && !"enableboosterpointsunlimitedtrafficworkaround".equals(keyHandler.getKey());
             }
 
             @Override
@@ -193,11 +171,6 @@ public class PremiumizeMe extends ZeveraCore {
     }
 
     @Override
-    public boolean supportsFreeAccountDownloadMode(final Account account) {
-        return this.getAccountJsonConfig(account).isAllowFreeAccountDownloads();
-    }
-
-    @Override
     public boolean usePairingLogin(final Account account) {
         /**
          * 2021-01-29: Hardcoded-disabled this because API changes would be required to make Usenet work when logged in via this method.
@@ -213,15 +186,6 @@ public class PremiumizeMe extends ZeveraCore {
     @Override
     public boolean isBoosterPointsUnlimitedTrafficWorkaroundActive(final Account account) {
         if (this.getAccountJsonConfig(account).isEnableBoosterPointsUnlimitedTrafficWorkaround()) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    @Override
-    public boolean displayFreeAccountDownloadDialogs(final Account account) {
-        if (this.getAccountJsonConfig(account).isDisplayFreeAccountDownloadDialogs()) {
             return true;
         } else {
             return false;
