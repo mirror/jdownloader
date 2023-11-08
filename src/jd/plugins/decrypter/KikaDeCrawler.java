@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -29,9 +30,11 @@ import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.hoster.DirectHTTP;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class KikaDeCrawler extends PluginForDecrypt {
@@ -85,6 +88,8 @@ public class KikaDeCrawler extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+        // final boolean preferJsonTitle = true;
+        // final String titleJson = entries.get("title").toString();
         final String externalId = entries.get("externalId").toString();
         if (externalId.matches("ard-.+")) {
             /* This is what we want -> The easy way */
@@ -113,10 +118,51 @@ public class KikaDeCrawler extends PluginForDecrypt {
         logger.info("Searching this title in ZDFMediathek: " + title);
         final ZDFMediathekDecrypter crawler = (ZDFMediathekDecrypter) this.getNewPluginForDecryptInstance("zdf.de");
         final ArrayList<DownloadLink> zdfSearchResults = crawler.crawlZDFMediathekSearchResultsVOD("ZDFtivi", title, 3);
-        if (zdfSearchResults.isEmpty()) {
-            logger.info("Unable to find mirror item in ZDFMediathek");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (zdfSearchResults.size() > 0) {
+            return zdfSearchResults;
+        } else {
+            logger.info("Unable to find mirror item in ZDFMediathek -> Crawl directly from kika.de");
+            br.getPage("https://www.kika.de/_next-api/proxy/v1/videos/" + urlSlug + "/assets");
+            final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+            final Map<String, Object> entries2 = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+            final String subtitlevtt = (String) entries2.get("webvttUrl");
+            if (!StringUtils.isEmpty(subtitlevtt)) {
+                final DownloadLink subtitle = this.createDownloadlink(DirectHTTP.createURLForThisPlugin(subtitlevtt));
+                if (title != null) {
+                    subtitle.setFinalFileName(title + ".vtt");
+                }
+                ret.add(subtitle);
+            }
+            final List<Map<String, Object>> assets = (List<Map<String, Object>>) entries2.get("assets");
+            for (final Map<String, Object> asset : assets) {
+                if (!asset.get("type").toString().equalsIgnoreCase("progressive")) {
+                    /* Skip all non-progressive streams */
+                    continue;
+                }
+                final DownloadLink video = this.createDownloadlink(DirectHTTP.createURLForThisPlugin(asset.get("url").toString()));
+                final String filename = (String) asset.get("fileName");
+                if (filename != null) {
+                    video.setFinalFileName(filename);
+                }
+                final Number fileSizeO = (Number) asset.get("fileSize");
+                if (fileSizeO != null) {
+                    video.setDownloadSize(fileSizeO.longValue());
+                }
+                ret.add(video);
+            }
+            if (ret.isEmpty()) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            /* Set additional properties */
+            final FilePackage fp = FilePackage.getInstance();
+            if (title != null) {
+                fp.setName(title);
+            }
+            for (final DownloadLink result : ret) {
+                result.setAvailable(true);
+                result._setFilePackage(fp);
+            }
+            return ret;
         }
-        return zdfSearchResults;
     }
 }

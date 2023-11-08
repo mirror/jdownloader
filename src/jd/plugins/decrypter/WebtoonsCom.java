@@ -28,6 +28,8 @@ import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
@@ -41,16 +43,26 @@ public class WebtoonsCom extends PluginForDecrypt {
         super(wrapper);
     }
 
-    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        this.br.setAllowedResponseCodes(400);
-        /* This cookie will allow us to access 18+ content */
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
         setImportantCookies(br, this.getHost());
         br.setFollowRedirects(true);
+        br.setAllowedResponseCodes(400, 429);
+        return br;
+    }
+
+    private void setImportantCookies(final Browser br, final String host) {
+        /* These cookies will allow us to access 18+ content. */
+        br.setCookie(host, "pagGDPR", "true");
+        br.setCookie(host, "atGDPR", "AD_CONSENT");
+        br.setCookie(host, "needGDPR", "false");
+    }
+
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.getPage(param.getCryptedUrl());
-        if (br.getHttpConnection().getResponseCode() == 400 || br.getHttpConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
+        checkErrors(br);
         final UrlQuery query = UrlQuery.parse(param.getCryptedUrl());
         final String titlenumber = query.get("title_no");
         final String episodenumber = query.get("episode_no");
@@ -136,6 +148,7 @@ public class WebtoonsCom extends PluginForDecrypt {
                         setImportantCookies(br, this.br.getHost());
                         this.br.getPage(nextPage);
                     }
+                    checkErrors(br);
                     // continue;
                 }
             } while (!this.isAbort());
@@ -146,10 +159,12 @@ public class WebtoonsCom extends PluginForDecrypt {
         return ret;
     }
 
-    private void setImportantCookies(final Browser br, final String host) {
-        br.setCookie(host, "pagGDPR", "true");
-        br.setCookie(host, "atGDPR", "AD_CONSENT");
-        br.setCookie(host, "needGDPR", "false");
+    private void checkErrors(final Browser br) throws PluginException, DecrypterRetryException {
+        if (br.getHttpConnection().getResponseCode() == 400 || br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.getHttpConnection().getResponseCode() == 429) {
+            throw new DecrypterRetryException(RetryReason.HOST_RATE_LIMIT);
+        }
     }
 
     @Override
