@@ -444,7 +444,7 @@ public class SendCm extends XFileSharingProBasic {
             apiFromAccountPasswordField = true;
         }
         if (enableAccountApiOnlyMode() && (apikey == null || !apiFromAccountPasswordField)) {
-            throw new AccountInvalidException("Invalid API key! Enter your API key into the password field.\r\nYou can find your API key here: " + getHost() + "/?op=my_account -> 'Upload settings'");
+            throw new AccountInvalidException("Invalid API key! Enter your API key into the password field.\r\nYou can find your API key here: " + getHost() + "/?op=my_account -> 'API' field");
         }
         if (apikey != null) {
             /* Prefer API */

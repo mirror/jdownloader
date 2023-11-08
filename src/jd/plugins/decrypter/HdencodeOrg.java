@@ -93,7 +93,7 @@ public class HdencodeOrg extends PluginForDecrypt {
             captchaform.put(Encoding.urlEncode(keyValuePair[0]), Encoding.urlEncode(keyValuePair[1]));
         }
         final String recaptchaV2Response;
-        if (br.containsHTML("\"version\"\\s*:\\s*\"invisible")) {
+        if (br.containsHTML("\"version\"\\s*:\\s*\"(invisible|v3)")) {
             /* Invisible reCaptchaV2 */
             recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br) {
                 public TYPE getType() {
