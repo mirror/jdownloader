@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.decrypter;
 
 import java.io.File;
@@ -34,9 +33,8 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "jdloader" }, urls = { "(jdlist://.+)|((dlc|rsdf|ccf)://.*/.+)" }) 
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "jdloader" }, urls = { "(jdlist://.+)|((dlc|rsdf|ccf)://.*/.+)" })
 public class DLdr extends PluginForDecrypt {
-
     public DLdr(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -81,9 +79,7 @@ public class DLdr extends PluginForDecrypt {
         return decryptedLinks;
     }
 
-    // @Override
-
-    /* NO OVERRIDE!! */
+    @Override
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
@@ -92,5 +88,4 @@ public class DLdr extends PluginForDecrypt {
     public Boolean siteTesterDisabled() {
         return Boolean.TRUE;
     }
-
 }

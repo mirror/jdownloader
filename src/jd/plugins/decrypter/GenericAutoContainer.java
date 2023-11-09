@@ -5,6 +5,12 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.storage.config.JsonConfig;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
+import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.controlling.linkcrawler.LinkCrawlerConfig;
@@ -16,13 +22,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 
-import org.appwork.storage.config.JsonConfig;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
-import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin;
-
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "genericautocontainer" }, urls = { "https?://[\\w\\.:\\-@]*/.*\\.(dlc|ccf|rsdf|nzb)$" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "genericautocontainer" }, urls = { "https?://[\\w\\.:\\-@]*/.*\\.(dlc|ccf|rsdf|nzb|sfdl)$" })
 public class GenericAutoContainer extends PluginForDecrypt {
     @Override
     public Boolean siteTesterDisabled() {
@@ -39,9 +39,9 @@ public class GenericAutoContainer extends PluginForDecrypt {
     }
 
     @Override
-    public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final String url = parameter.getCryptedUrl();
+        final String url = param.getCryptedUrl();
         if (!JsonConfig.create(LinkCrawlerConfig.class).isAutoImportContainer()) {
             ret.add(createDownloadlink(url));
         } else {
