@@ -19,13 +19,17 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.URLHelper;
 import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -45,13 +49,8 @@ public class RlGalleriesNt extends PluginForDecrypt {
     }
 
     @Override
-    public LazyPlugin.FEATURE[] getFeatures() {
-        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
-    }
-
-    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final String addedurl = param.getCryptedUrl().replace("http://", "https://");
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
         br.setReadTimeout(3 * 60 * 1000);
         // br.setCookie(".urlgalleries.net", "popundr", "1");
         if (agent == null) {
@@ -61,64 +60,155 @@ public class RlGalleriesNt extends PluginForDecrypt {
         br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9");
         br.setFollowRedirects(true);
-        String galleryID = new Regex(addedurl, "https?://[^/]+/[^/]+/(\\d+)").getMatch(0);
+        return br;
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
+    }
+
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final String contenturl = param.getCryptedUrl().replace("http://", "https://");
+        String galleryID = new Regex(contenturl, "(?i)https?://[^/]+/[^/]+/(\\d+)").getMatch(0);
         if (galleryID == null) {
             /* For old links */
-            galleryID = new Regex(addedurl, "(?:porn-gallery-|blog_gallery\\.php\\?id=)(\\d+)").getMatch(0);
+            galleryID = new Regex(contenturl, "(?i)(?:porn-gallery-|blog_gallery\\.php\\?id=)(\\d+)").getMatch(0);
         }
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         if (galleryID != null) {
             /* Gallery */
             logger.info("Crawling gallery");
-            br.getPage("https://urlgalleries.net/api/v1.php?endpoint=get_gallery&gallery_id=" + galleryID + "&exclude_cat=undefined&_=" + System.currentTimeMillis());
-            if (br.getHttpConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
-            final Map<String, Object> data = (Map<String, Object>) entries.get("data");
-            final String title = data.get("name").toString();
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName(title);
-            int page = 1;
-            String nextpage = null;
-            final HashSet<String> dupes = new HashSet<String>();
-            do {
-                logger.info("Crawling page " + page + " of ??");
-                final List<Map<String, Object>> thumbs = (List<Map<String, Object>>) data.get("thumbs");
-                int numberofNewItems = 0;
-                for (final Map<String, Object> thumb : thumbs) {
-                    final String redirecturl = thumb.get("url").toString();
-                    final String thumbnailurl = thumb.get("imgcode").toString();
-                    if (dupes.add(redirecturl)) {
-                        ret.add(this.createDownloadlink(redirecturl));
-                        numberofNewItems++;
-                    }
-                    if (dupes.add(thumbnailurl)) {
-                        ret.add(this.createDownloadlink(thumbnailurl));
-                        numberofNewItems++;
-                    }
+            /* 2023-11-09: API does not work anymore */
+            final boolean useAPI = false;
+            if (useAPI) {
+                br.getPage("https://urlgalleries.net/api/v1.php?endpoint=get_gallery&gallery_id=" + galleryID + "&exclude_cat=undefined&_=" + System.currentTimeMillis());
+                if (br.getHttpConnection().getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                if (isAbort()) {
-                    logger.info("Stopping because: Aborted by user");
-                    break;
-                } else if (numberofNewItems == 0) {
-                    /* Fail-safe */
-                    logger.info("Stopping because: Failed to find any new item on this page");
-                    break;
-                } else if (nextpage == null) {
-                    logger.info("Stopping because: Reached last page?");
-                    break;
+                final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+                final Map<String, Object> data = (Map<String, Object>) entries.get("data");
+                final String title = data.get("name").toString();
+                final FilePackage fp = FilePackage.getInstance();
+                fp.setName(title);
+                int page = 1;
+                String nextpage = null;
+                final HashSet<String> dupes = new HashSet<String>();
+                do {
+                    logger.info("Crawling page " + page + " of ??");
+                    final List<Map<String, Object>> thumbs = (List<Map<String, Object>>) data.get("thumbs");
+                    final ArrayList<DownloadLink> newitems = new ArrayList<DownloadLink>();
+                    for (final Map<String, Object> thumb : thumbs) {
+                        final String redirecturl = thumb.get("url").toString();
+                        final String thumbnailurl = thumb.get("imgcode").toString();
+                        if (dupes.add(redirecturl)) {
+                            newitems.add(this.createDownloadlink(redirecturl));
+                        }
+                        if (dupes.add(thumbnailurl)) {
+                            newitems.add(this.createDownloadlink(thumbnailurl));
+                        }
+                    }
+                    for (final DownloadLink newitem : newitems) {
+                        newitem._setFilePackage(fp);
+                        ret.add(newitem);
+                        distribute(newitem);
+                    }
+                    if (isAbort()) {
+                        logger.info("Stopping because: Aborted by user");
+                        break;
+                    } else if (newitems.isEmpty()) {
+                        /* Fail-safe */
+                        logger.info("Stopping because: Failed to find any new item on this page");
+                        break;
+                    } else if (nextpage == null) {
+                        logger.info("Stopping because: Reached last page?");
+                        break;
+                    } else {
+                        br.getPage(nextpage);
+                        page++;
+                    }
+                } while (true);
+            } else {
+                /* Website */
+                final String url = URLHelper.getUrlWithoutParams(contenturl);
+                /* Display as many items as possible to avoid having to deal with pagination. */
+                br.getPage(url + "?a=10000");
+                if (isOffline(br)) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                String title = br.getRegex("border='0' /></a></div>(?:\\s*<h\\d+[^>]*>\\s*)?(.*?)(?:\\s*</h\\d+>\\s*)?</td></tr><tr>").getMatch(0);
+                if (title == null) {
+                    title = br.getRegex("<title>([^<]*?)</title>").getMatch(0);
+                }
+                final FilePackage fp = FilePackage.getInstance();
+                if (title != null) {
+                    title = Encoding.htmlDecode(title).trim();
+                    title = title.replaceAll("(?i) - URLGalleries$", "");
+                }
+                if (!StringUtils.isEmpty(title)) {
+                    fp.setName(title);
                 } else {
-                    br.getPage(nextpage);
-                    page++;
+                    /* Fallback */
+                    fp.setName(br._getURL().getPath());
                 }
-            } while (true);
-            fp.addLinks(ret);
+                int page = 1;
+                String nextpage = null;
+                final HashSet<String> dupes = new HashSet<String>();
+                do {
+                    logger.info("Crawling page " + page + " of ??");
+                    final ArrayList<DownloadLink> newitems = new ArrayList<DownloadLink>();
+                    final String[] redirecturls = br.getRegex("rel='nofollow noopener' href='(/[^/\\']+)' target='_blank'").getColumn(0);
+                    /*
+                     * Check for imagevenue thumbnails that our imagevenue host plugin will change to the original URLs without needing to
+                     * crawl the individual urlgalleries.net URLs -> Saves a lot of time
+                     */
+                    final String[] thumbnailurls = br.getRegex("class='gallery' src='(https?://[^/]*\\.(imagevenue\\.com|fappic\\.com)/[^<>\"\\']+)'").getColumn(0);
+                    for (final String thumbnailurl : thumbnailurls) {
+                        if (dupes.add(thumbnailurl)) {
+                            final DownloadLink link = this.createDownloadlink(thumbnailurl);
+                            newitems.add(link);
+                        }
+                    }
+                    if (redirecturls.length > thumbnailurls.length) {
+                        for (String redirecturl : redirecturls) {
+                            if (dupes.add(redirecturl)) {
+                                redirecturl = br.getURL(redirecturl).toExternalForm();
+                                final DownloadLink link = this.createDownloadlink(redirecturl);
+                                newitems.add(link);
+                            }
+                        }
+                    } else {
+                        logger.info("Thumbnail crawling was successful");
+                    }
+                    for (final DownloadLink newitem : newitems) {
+                        newitem._setFilePackage(fp);
+                        ret.add(newitem);
+                        distribute(newitem);
+                    }
+                    logger.info("Crawled page " + page + " | Found items so far: " + ret.size());
+                    nextpage = br.getRegex("(" + Pattern.quote(br._getURL().getPath()) + "\\?p=" + (page + 1) + ")").getMatch(0);
+                    if (isAbort()) {
+                        logger.info("Stopping because: Aborted by user");
+                        break;
+                    } else if (newitems.size() == 0) {
+                        /* Fail-safe */
+                        logger.info("Stopping because: Failed to find any new item on this page");
+                        break;
+                    } else if (nextpage == null || !dupes.add(nextpage)) {
+                        logger.info("Stopping because: Reached last page?");
+                        break;
+                    } else {
+                        br.getPage(nextpage);
+                        page++;
+                    }
+                } while (!this.isAbort());
+            }
             return ret;
         } else {
             /* Single image */
             logger.info("Crawling single image");
             br.setFollowRedirects(false);
-            br.getPage(addedurl.replaceFirst("http://", "https://"));
+            br.getPage(contenturl.replaceFirst("(?i)http://", "https://"));
             int counter = 0;
             String redirect = null;
             do {

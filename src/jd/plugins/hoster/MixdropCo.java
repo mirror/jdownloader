@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
@@ -49,6 +50,13 @@ public class MixdropCo extends antiDDoSForHost {
     }
 
     @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.setFollowRedirects(true);
+        return br;
+    }
+
+    @Override
     public String getAGBLink() {
         return "https://mixdrop.co/terms/";
     }
@@ -56,13 +64,22 @@ public class MixdropCo extends antiDDoSForHost {
     private static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "mixdrop.co", "mixdrop.to", "mixdrop.club", "mixdrop.sx", "mixdrop.bz", "mixdroop.bz", "mixdrop.vc", "mixdrop.ag", "mixdrop.to" });
+        ret.add(new String[] { "mixdrop.ag", "mixdrop.co", "mixdrop.to", "mixdrop.club", "mixdrop.sx", "mixdrop.bz", "mixdroop.bz", "mixdrop.vc", "mixdrop.to" });
         return ret;
     }
-    // @Override
-    // public String rewriteHost(final String host) {
-    // return this.rewriteHost(getPluginDomains(), host);
-    // }
+
+    protected List<String> getDeadDomains() {
+        final ArrayList<String> deadDomains = new ArrayList<String>();
+        deadDomains.add("mixdrop.co");
+        return deadDomains;
+    }
+
+    @Override
+    public String rewriteHost(final String host) {
+        /* 2023-11-09: They are frequently changing their main domain. */
+        /* 2023-11-09: Changed from mixdrop.co to mixdrop.ag */
+        return this.rewriteHost(getPluginDomains(), host);
+    }
 
     public static String[] getAnnotationNames() {
         return buildAnnotationNames(getPluginDomains());
@@ -86,7 +103,7 @@ public class MixdropCo extends antiDDoSForHost {
     private static final int     FREE_MAXCHUNKS        = 1;
     private static final int     FREE_MAXDOWNLOADS     = 20;
     /** Documentation: https://mixdrop.co/api */
-    private static final String  API_BASE              = "https://api.mixdrop.co";
+    private static final String  API_BASE              = "https://api.mixdrop.ag";
     private static final boolean USE_API_FOR_LINKCHECK = true;
 
     // private static final boolean ACCOUNT_FREE_RESUME = true;
@@ -109,7 +126,13 @@ public class MixdropCo extends antiDDoSForHost {
     }
 
     private String getNormalFileURL(final DownloadLink link) {
-        return link.getPluginPatternMatcher().replaceFirst("/e/", "/f/").replaceAll("(?i)http://", "https://");
+        String url = link.getPluginPatternMatcher().replaceFirst("(?i)/e/", "/f/").replaceAll("(?i)http://", "https://");
+        final List<String> deadDomains = getDeadDomains();
+        final String domainFromURL = Browser.getHost(url, false);
+        if (deadDomains.contains(domainFromURL)) {
+            url = url.replaceFirst(Pattern.quote(domainFromURL), this.getHost());
+        }
+        return url;
     }
 
     private String getFID(final DownloadLink link) {
@@ -140,7 +163,7 @@ public class MixdropCo extends antiDDoSForHost {
              */
             final Browser brc = br.cloneBrowser();
             getPage(brc, API_BASE + "/fileinfo?email=" + Encoding.urlEncode(getAPIMail()) + "&key=" + getAPIKey() + "&ref[]=" + this.getFID(link));
-            final Map<String, Object> json = restoreFromString(brc.toString(), TypeRef.MAP);
+            final Map<String, Object> json = restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.MAP);
             final Boolean success = (Boolean) json.get("success");
             if (brc.getHttpConnection().getResponseCode() == 404 || success == Boolean.FALSE) {
                 /* E.g. {"success":false,"result":{"msg":"file not found"}} */
@@ -217,7 +240,7 @@ public class MixdropCo extends antiDDoSForHost {
             }
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             postPage(br.getURL(), query.toString());
-            final Map<String, Object> json = restoreFromString(br.toString(), TypeRef.MAP);
+            final Map<String, Object> json = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
             dllink = (String) json.get("url");
             if (StringUtils.isEmpty(dllink)) {
                 final String errormsg = (String) json.get("msg");
@@ -250,7 +273,7 @@ public class MixdropCo extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
+        link.setProperty(directlinkproperty, dl.getConnection().getURL().toExternalForm());
         dl.startDownload();
     }
 
