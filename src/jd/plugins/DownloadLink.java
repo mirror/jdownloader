@@ -239,6 +239,14 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         return tempProperties != null;
     }
 
+    public DownloadLink(String pluginPatternMatcher) {
+        init(null, null, null, pluginPatternMatcher, true);
+    }
+
+    public DownloadLink(String pluginPatternMatcher, boolean isEnabled) {
+        init(null, null, null, pluginPatternMatcher, isEnabled);
+    }
+
     /**
      * Erzeugt einen neuen DownloadLink
      *
