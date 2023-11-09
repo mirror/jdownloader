@@ -327,7 +327,7 @@ public class AccountController implements AccountControllerListener, AccountProp
                     final Cookies userCookies = account.loadUserCookies();
                     if (userCookies == null && plugin.hasFeature(FEATURE.COOKIE_LOGIN_ONLY)) {
                         throw new AccountInvalidException(_GUI.T.accountdialog_LoginValidationErrorCookieLoginMandatoryButNoCookiesGiven());
-                    } else if (userCookies != null && !plugin.hasFeature(FEATURE.COOKIE_LOGIN_OPTIONAL)) {
+                    } else if (userCookies != null && !plugin.hasFeature(FEATURE.COOKIE_LOGIN_OPTIONAL) && !plugin.hasFeature(FEATURE.COOKIE_LOGIN_ONLY)) {
                         throw new AccountInvalidException(_GUI.T.accountdialog_LoginValidationErrorCookieLoginUnsupportedButGiven());
                     }
                     ai = plugin.fetchAccountInfo(account);
