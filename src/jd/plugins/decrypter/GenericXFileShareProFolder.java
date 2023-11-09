@@ -277,6 +277,9 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
         String fpName;
         if ("hotlink.cc".equals(br.getHost())) {
             fpName = br.getRegex("<i class=\"glyphicon glyphicon-folder-open\"></i>\\s*(.*?)\\s*</span>").getMatch(0);
+        } else if ("imagetwist.com".equals(br.getHost())) {
+            /* 2023-11-09 */
+            fpName = br.getRegex("page_main_title\"[^>]*>([^<]+)<").getMatch(0);
         } else {
             // ex-load.com
             fpName = br.getRegex("Files in\\s*(.*?)\\s*folder\\s*</title>").getMatch(0);

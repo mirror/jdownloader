@@ -133,7 +133,8 @@ public class FileCryptCc extends PluginForDecrypt {
         if (mirrorIdFromURL == null && !StringUtils.endsWithCaseInsensitive(contenturl, ".html")) {
             contenturl += ".html";
         }
-        String successfullyUsedPassword = null;
+        String logoPW = null;
+        String successfullyUsedFolderPassword = null;
         int cutCaptchaRetryIndex = -1;
         final int cutCaptchaAvoidanceMaxRetries = PluginJsonConfig.get(this.getConfigInterface()).getMaxCutCaptchaAvoidanceRetries();
         cutcaptchaAvoidanceLoop: while (cutCaptchaRetryIndex++ <= cutCaptchaAvoidanceMaxRetries && !this.isAbort()) {
@@ -150,46 +151,50 @@ public class FileCryptCc extends PluginForDecrypt {
                 /* Empty link/folder. */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            /* Separate password and captcha handling. this is easier for count reasons! */
+            final String customLogoID = br.getRegex("custom/([a-z0-9]+)\\.png").getMatch(0);
+            if (customLogoID != null && logoPW == null) {
+                /**
+                 * Magic auto passwords: </br>
+                 * Creators can set custom logos on each folder. Each logo has a unique ID. This way we can try specific passwords first
+                 * that are typically associated with folders published by those sources.
+                 */
+                if ("53d1b".equals(customLogoID) || "80d13".equals(customLogoID) || "fde1d".equals(customLogoID) || "8abe0".equals(customLogoID)) {
+                    logoPW = "serienfans.org";
+                } else if ("975e4".equals(customLogoID)) {
+                    logoPW = "filmfans.org";
+                } else if ("51967".equals(customLogoID)) {
+                    logoPW = "kellerratte";
+                } else if ("aaf75".equals(customLogoID)) {
+                    /* 2023-10-23 */
+                    logoPW = "cs.rin.ru";
+                }
+                if (logoPW != null) {
+                    logger.info("Found possible PW by logoID: " + logoPW);
+                } else {
+                    logger.info("Found unknown logoID: " + customLogoID);
+                }
+            } else {
+                logger.info("Failed to find logoID");
+            }
+            /* Separate password and captcha handling. This is easier for several reasons! */
             if (containsPassword()) {
                 int passwordCounter = 0;
                 final int maxPasswordRetries = 3;
                 final List<String> passwords = getPreSetPasswords();
                 final HashSet<String> usedPasswords = new HashSet<String>();
                 final String lastUsedPassword = this.getPluginConfig().getStringProperty(PROPERTY_PLUGIN_LAST_USED_PASSWORD);
-                /**
-                 * Magic auto passwords: </br>
-                 * Creators can set custom logos on each folder. Each logo has a unique ID. This way we can try specific passwords first
-                 * that are typically associated with folders published by those sources.
-                 */
-                final String customLogoID = br.getRegex("custom/([a-z0-9]+)\\.png").getMatch(0);
-                if (customLogoID != null) {
-                    String logoPW = null;
-                    if ("53d1b".equals(customLogoID) || "80d13".equals(customLogoID) || "fde1d".equals(customLogoID) || "8abe0".equals(customLogoID)) {
-                        logoPW = "serienfans.org";
-                    } else if ("51967".equals(customLogoID)) {
-                        logoPW = "kellerratte";
-                    } else if ("aaf75".equals(customLogoID)) {
-                        /* 2023-10-23 */
-                        logoPW = "cs.rin.ru";
-                    }
-                    if (logoPW != null) {
-                        logger.info("Try PW by logo: " + logoPW);
-                        passwords.add(0, logoPW);
-                    } else {
-                        logger.info("Found unknown logoID: " + customLogoID);
-                    }
-                } else {
-                    logger.info("Failed to find logoID");
+                if (logoPW != null) {
+                    logger.info("Try PW by logo: " + logoPW);
+                    passwords.add(0, logoPW);
                 }
-                if (successfullyUsedPassword != null) {
+                if (successfullyUsedFolderPassword != null) {
                     /**
                      * This may happen if user first enters correct password but then wrong captcha or retry was done to try to avoid
                      * cutcaptcha.
                      */
-                    logger.info("Entering password handling with known correct password [user probably entered wrong captcha before]: " + successfullyUsedPassword);
+                    logger.info("Entering password handling with known correct password [user probably entered wrong captcha before]: " + successfullyUsedFolderPassword);
                     passwords.clear();
-                    passwords.add(successfullyUsedPassword);
+                    passwords.add(successfullyUsedFolderPassword);
                 } else if (StringUtils.isNotEmpty(lastUsedPassword)) {
                     logger.info("Trying last used password first: " + lastUsedPassword);
                     passwords.add(0, lastUsedPassword);
@@ -243,15 +248,15 @@ public class FileCryptCc extends PluginForDecrypt {
                     submitForm(passwordForm);
                     if (!containsPassword()) {
                         logger.info("Password success: " + passCode);
-                        successfullyUsedPassword = passCode;
+                        successfullyUsedFolderPassword = passCode;
                         break passwordLoop;
                     }
                 }
                 if (passwordCounter >= maxPasswordRetries && containsPassword()) {
                     throw new DecrypterException(DecrypterException.PASSWORD);
                 }
-                logger.info("Saving correct password for future usage: " + successfullyUsedPassword);
-                this.getPluginConfig().setProperty(PROPERTY_PLUGIN_LAST_USED_PASSWORD, successfullyUsedPassword);
+                logger.info("Saving correct password for future usage: " + successfullyUsedFolderPassword);
+                this.getPluginConfig().setProperty(PROPERTY_PLUGIN_LAST_USED_PASSWORD, successfullyUsedFolderPassword);
             }
             /* Process captcha */
             int captchaCounter = -1;
@@ -385,10 +390,16 @@ public class FileCryptCc extends PluginForDecrypt {
             }
         }
         ArrayList<String> extractionPasswordList = null;
-        if (successfullyUsedPassword != null) {
+        if (successfullyUsedFolderPassword != null || logoPW != null) {
             /* Assume that the required password is also the extract password. */
             extractionPasswordList = new ArrayList<String>();
-            extractionPasswordList.add(successfullyUsedPassword);
+            if (successfullyUsedFolderPassword != null) {
+                extractionPasswordList.add(successfullyUsedFolderPassword);
+            }
+            /* Password by custom logo can differ from folder password and can also be given if no folder password is needed. */
+            if (logoPW != null && !logoPW.equals(successfullyUsedFolderPassword)) {
+                extractionPasswordList.add(logoPW);
+            }
         }
         /* Crawl links */
         FilePackage fp = null;
@@ -448,7 +459,7 @@ public class FileCryptCc extends PluginForDecrypt {
                 mirrorLooksToBeOffline = false;
             }
             /* Use clicknload first as it doesn't rely on JD service.jdownloader.org, which can go down! */
-            final ArrayList<DownloadLink> cnlResults = handleCnl2(contenturl, successfullyUsedPassword);
+            final ArrayList<DownloadLink> cnlResults = handleCnl2(contenturl, successfullyUsedFolderPassword);
             if (!cnlResults.isEmpty()) {
                 logger.info("CNL success");
                 for (final DownloadLink link : cnlResults) {

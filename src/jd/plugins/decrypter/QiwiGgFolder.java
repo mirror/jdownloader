@@ -129,7 +129,9 @@ public class QiwiGgFolder extends PluginForDecrypt {
                 // [^>]*>([^<]+)</p>").getMatch(0);
                 // }
                 if (filename != null) {
+                    filename = Encoding.htmlDecode(filename).trim();
                     file.setName(filename);
+                    file.setProperty(QiwiGg.PROPERTY_FILENAME, filename);
                 }
                 final String filesize = br.getRegex("FileSize_[^\"]*\"[^>]*>([^<]+)</div></div></div><div><a class=\"DownloadButton_DownloadButton_[^\"]+\"[^<]*href=\"" + urlQuoted).getMatch(0);
                 if (filesize != null) {

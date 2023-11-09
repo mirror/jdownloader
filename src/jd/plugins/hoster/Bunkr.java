@@ -313,7 +313,7 @@ public class Bunkr extends PluginForHost {
                     } catch (final Throwable ignore) {
                     }
                     if (br.getHttpConnection().getResponseCode() == 416) {
-                        /* E.g. resume of download. */
+                        /* E.g. resume of download which does not work at this stage -> Access URL to get HTML code. */
                         br.getPage(singleFileURL);
                     }
                     final String freshDirecturl = getDirecturlFromSingleFileAvailablecheck(link, br.getURL(), false);
@@ -362,6 +362,11 @@ public class Bunkr extends PluginForHost {
         }
         handleResponsecodeErrors(br.getHttpConnection());
         final String filenameFromURL = Plugin.getFileNameFromURL(br.getURL());
+        String filenameFromHTML = br.getRegex("<title>([^<]+)</title>").getMatch(0);
+        if (filenameFromHTML != null) {
+            filenameFromHTML = Encoding.htmlDecode(filenameFromHTML).trim();
+            filenameFromHTML = filenameFromHTML.replaceAll("(?i)\\s*\\|\\s*Bunkr\\s*", "");
+        }
         String directurl = br.getRegex("(?i)href\\s*=\\s*\"(https?://[^\"]+)[^>]*>\\s*Download").getMatch(0);
         if (directurl == null) {
             /* Video stream (For "/v/ URLs."URL is usually the same as downloadurl.) */
@@ -383,7 +388,7 @@ public class Bunkr extends PluginForHost {
                             /* Image URLs: bunkr.bla/i/... */
                             directurl = url;
                             break;
-                        } else if (filenameFromURL != null && url.contains(filenameFromURL) && !url.equals(br.getURL())) {
+                        } else if (!url.equals(br.getURL()) && (StringUtils.contains(url, filenameFromURL) || StringUtils.contains(url, filenameFromHTML))) {
                             unsafeDirecturlResult = url;
                         }
                     }
@@ -403,6 +408,10 @@ public class Bunkr extends PluginForHost {
                         /* 2023-10-06 e.g. burger.bunkr.ru/... or pizza.bunkr.ru/... */
                         directurl = br.getRegex("(https?://[a-z0-9\\-]+\\.[^/]+/" + Pattern.quote(filenameFromURL) + ")").getMatch(0);
                     }
+                    if (directurl == null && filenameFromHTML != null) {
+                        /* 2023-10-06 e.g. burger.bunkr.ru/... or pizza.bunkr.ru/... */
+                        directurl = br.getRegex("(https?://[a-z0-9\\-]+\\.[^/]+/" + Pattern.quote(filenameFromHTML) + ")").getMatch(0);
+                    }
                 }
             }
         }
@@ -414,6 +423,10 @@ public class Bunkr extends PluginForHost {
             final long parsedFilesize = SizeFormatter.getSize(filesize);
             link.setDownloadSize(parsedFilesize);
             link.setProperty(PROPERTY_PARSED_FILESIZE, parsedFilesize);
+        }
+        if (filenameFromHTML != null) {
+            /* Unsafe name */
+            setFilename(link, filenameFromHTML, false, false);
         }
         if (directurl == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
