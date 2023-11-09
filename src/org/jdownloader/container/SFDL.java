@@ -78,13 +78,14 @@ public class SFDL extends PluginsC {
             if (sdfl_Encrypted) {
                 logger.info("SFDL is password protected");
                 if (passwordFromFilename == null) {
-                    throw new Exception("Password is nit given in filename");
+                    throw new Exception("Password is not given in filename");
                 }
                 password = passwordFromFilename;
                 // TODO: Maybe use extraction password list here? Or a dedicated list?
                 String decodedValue = decrypt(sfdl_Host, password);
                 if (decodedValue == null) {
                     logger.info("Failed due to invalid password: " + password);
+                    // TODO: Add container state STATUS_INVALID_PASSWORD
                     cs.setStatus(ContainerStatus.STATUS_FINISHED);
                     return cs;
                 }

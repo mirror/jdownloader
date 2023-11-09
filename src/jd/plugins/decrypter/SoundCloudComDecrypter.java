@@ -93,9 +93,9 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
     private final String     CUSTOM_PACKAGENAME            = "CUSTOM_PACKAGENAME";
     private final String     CUSTOM_DATE                   = "CUSTOM_DATE";
     private SubConfiguration cfg                           = null;
-    private boolean          crawlPurchaseURL            = false;
-    private boolean          crawl500Thumb               = false;
-    private boolean          crawlOriginalThumb          = false;
+    private boolean          crawlPurchaseURL              = false;
+    private boolean          crawl500Thumb                 = false;
+    private boolean          crawlOriginalThumb            = false;
 
     public boolean isProxyRotationEnabledForLinkCrawler() {
         return false;
@@ -642,49 +642,45 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
     }
 
     private DownloadLink getThumbnail(final DownloadLink audiolink, final Map<String, Object> track, final String urlReplaceStr) throws ParseException {
-        if (crawlOriginalThumb) {
-            /* Not all tracks have artwork available. */
-            String artworkurl = (String) track.get("artwork_url");
-            if (!StringUtils.isEmpty(artworkurl)) {
-                if (urlReplaceStr != null) {
-                    artworkurl = artworkurl.replaceFirst("-large\\.jpg", urlReplaceStr);
-                }
-                final DownloadLink thumb = createDownloadlink(artworkurl);
-                thumb.setProperties(audiolink.getProperties());
-                if (urlReplaceStr != null) {
-                    final String thumbnailSizeHintForFilename = new Regex(urlReplaceStr, "-([A-Za-z0-9]+)\\.jpg$").getMatch(0);
-                    if (thumbnailSizeHintForFilename != null) {
-                        thumb.setProperty(SoundcloudCom.PROPERTY_title, audiolink.getStringProperty(SoundcloudCom.PROPERTY_title) + "_" + thumbnailSizeHintForFilename);
-                    }
-                }
-                thumb.setProperty("type", "jpg");
-                final String formattedFilename = SoundcloudCom.getFormattedFilename(thumb);
-                thumb.setFinalFileName(formattedFilename);
-                thumb.setAvailable(true);
-                if (audiolink.getFilePackage() != null) {
-                    thumb._setFilePackage(audiolink.getFilePackage());
-                }
-                return thumb;
+        /* Not all tracks have artwork available. */
+        String artworkurl = (String) track.get("artwork_url");
+        if (!StringUtils.isEmpty(artworkurl)) {
+            if (urlReplaceStr != null) {
+                artworkurl = artworkurl.replaceFirst("-large\\.jpg", urlReplaceStr);
             }
+            final DownloadLink thumb = createDownloadlink(artworkurl);
+            thumb.setProperties(audiolink.getProperties());
+            if (urlReplaceStr != null) {
+                final String thumbnailSizeHintForFilename = new Regex(urlReplaceStr, "-([A-Za-z0-9]+)\\.jpg$").getMatch(0);
+                if (thumbnailSizeHintForFilename != null) {
+                    thumb.setProperty(SoundcloudCom.PROPERTY_title, audiolink.getStringProperty(SoundcloudCom.PROPERTY_title) + "_" + thumbnailSizeHintForFilename);
+                }
+            }
+            thumb.setProperty("type", "jpg");
+            final String formattedFilename = SoundcloudCom.getFormattedFilename(thumb);
+            thumb.setFinalFileName(formattedFilename);
+            thumb.setAvailable(true);
+            if (audiolink.getFilePackage() != null) {
+                thumb._setFilePackage(audiolink.getFilePackage());
+            }
+            return thumb;
         }
         return null;
     }
 
     private DownloadLink crawlPurchaseURL(final Map<String, Object> track) throws ParseException {
-        if (this.crawlPurchaseURL) {
-            try {
-                final String purchase_url = (String) track.get("purchase_url");
-                if (!StringUtils.isEmpty(purchase_url)) {
-                    logger.info("Found purchase_url");
-                    final DownloadLink result = createDownloadlink(purchase_url);
-                    return result;
-                } else {
-                    logger.info("Failed to find purchase_url - probably doesn't exist");
-                }
-            } catch (final Throwable e) {
-                logger.log(e);
-                logger.warning("Failed to find purchase_url...");
+        try {
+            final String purchase_url = (String) track.get("purchase_url");
+            if (!StringUtils.isEmpty(purchase_url)) {
+                logger.info("Found purchase_url");
+                final DownloadLink result = createDownloadlink(purchase_url);
+                return result;
+            } else {
+                logger.info("Failed to find purchase_url - probably doesn't exist");
             }
+        } catch (final Throwable e) {
+            logger.log(e);
+            logger.warning("Failed to find purchase_url...");
         }
         return null;
     }

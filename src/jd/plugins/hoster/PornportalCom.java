@@ -373,7 +373,6 @@ public class PornportalCom extends PluginForHost {
                 con = br.openHeadConnection(newDirecturl);
             }
             if (con.getResponseCode() == 404) {
-                br.followConnection(true);
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else if (!this.looksLikeDownloadableContent(con)) {
                 br.followConnection(true);
@@ -789,15 +788,17 @@ public class PornportalCom extends PluginForHost {
             try {
                 login(this.br, account, this.getHost(), true);
                 final AccountInfo ai = new AccountInfo();
+                account.setConcurrentUsePossible(true);
+                ai.setUnlimitedTraffic();
                 if (br.getURL() == null || !br.getURL().contains("/v1/self")) {
                     br.getPage(getAPIBase() + "/self");
                 }
-                final Map<String, Object> map = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
-                final String joinDate = (String) map.get("joinDate");
+                final Map<String, Object> user = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+                final String joinDate = (String) user.get("joinDate");
                 if (!StringUtils.isEmpty(joinDate)) {
                     ai.setCreateTime(TimeFormatter.getMilliSeconds(joinDate, "yyyy'-'MM'-'dd'T'HH':'mm':'ss", null));
                 }
-                if ((Boolean) map.get("isBanned")) {
+                if (Boolean.TRUE.equals(user.get("isBanned"))) {
                     /*
                      * 2021-11-08: This may randomly be "true" (also via website) although the account is definitely not banned! Tested with
                      * a brazzers.com account. --> Ignore this for now!
@@ -809,8 +810,10 @@ public class PornportalCom extends PluginForHost {
                         logger.info("Account might be banned??");
                     }
                 }
-                final Boolean isExpired = (Boolean) map.get("isExpired");
-                final Boolean isTrial = (Boolean) map.get("isTrial");
+                final Boolean isExpired = (Boolean) user.get("isExpired");
+                final Boolean isTrial = (Boolean) user.get("isTrial");
+                final Boolean isCanceled = (Boolean) user.get("isCanceled");
+                final Number initialAmount = (Number) user.get("initialAmount");
                 boolean foundValidExpireDate = false;
                 if (Boolean.TRUE.equals(isExpired)) {
                     account.setType(AccountType.FREE);
@@ -820,13 +823,22 @@ public class PornportalCom extends PluginForHost {
                     /* Free trial -> Free Account with premium capability */
                     account.setType(AccountType.PREMIUM);
                     ai.setStatus("Free Account (Trial)");
+                } else if (initialAmount == null || initialAmount.longValue() <= 0) {
+                    /* Free user who never (?) had a premium subscription. */
+                    account.setType(AccountType.FREE);
                 } else {
+                    /* Premium account [well...most likely] */
                     /**
                      * Premium accounts must not have any expire-date! </br>
                      * 2021-06-05: Only set expire-date if it is still valid. Premium accounts are premium as long as "isExpired" != true.
                      */
                     account.setType(AccountType.PREMIUM);
-                    final String expiryDate = (String) map.get("expiryDate");
+                    if (Boolean.TRUE.equals(isCanceled)) {
+                        ai.setStatus("Premium Account (subscription cancelled)");
+                    } else {
+                        ai.setStatus("Premium Account (subscription running)");
+                    }
+                    final String expiryDate = (String) user.get("expiryDate");
                     if (!StringUtils.isEmpty(expiryDate)) {
                         final long expireTimestamp = TimeFormatter.getMilliSeconds(expiryDate, "yyyy'-'MM'-'dd'T'HH':'mm':'ss", null);
                         if (expireTimestamp > System.currentTimeMillis()) {
@@ -834,45 +846,36 @@ public class PornportalCom extends PluginForHost {
                             foundValidExpireDate = true;
                         }
                     }
-                    if ((Boolean) map.get("isCanceled")) {
-                        ai.setStatus("Premium Account (subscription cancelled)");
-                    } else {
-                        ai.setStatus("Premium Account (subscription running)");
-                    }
-                }
-                if (!foundValidExpireDate && map.containsKey("addons")) {
-                    /**
-                     * Try to find alternative expire-date inside users' additional purchased "bundles". </br>
-                     * Each bundle can have different expire-dates and also separate pricing and so on.
-                     */
-                    logger.info("Looking for alternative expiredate");
-                    long highestExpireTimestamp = -1;
-                    String titleOfBundleWithHighestExpireDate = null;
-                    final List<Map<String, Object>> bundles = (List<Map<String, Object>>) map.get("addons");
-                    for (final Map<String, Object> bundle : bundles) {
-                        if (!(Boolean) bundle.get("isActive")) {
-                            continue;
+                    final List<Map<String, Object>> bundles = (List<Map<String, Object>>) user.get("addons");
+                    if (!foundValidExpireDate && bundles != null) {
+                        /**
+                         * Try to find alternative expire-date inside users' additional purchased "bundles". </br>
+                         * Each bundle can have different expire-dates and also separate pricing and so on.
+                         */
+                        logger.info("Looking for alternative expiredate");
+                        long highestExpireTimestamp = -1;
+                        String titleOfBundleWithHighestExpireDate = null;
+                        for (final Map<String, Object> bundle : bundles) {
+                            if (!(Boolean) bundle.get("isActive")) {
+                                continue;
+                            }
+                            final String expireDateStrTmp = (String) bundle.get("expirationDate");
+                            final long expireTimestampTmp = TimeFormatter.getMilliSeconds(expireDateStrTmp, "yyyy'-'MM'-'dd'T'HH':'mm':'ss", null);
+                            if (expireTimestampTmp > highestExpireTimestamp) {
+                                highestExpireTimestamp = expireTimestampTmp;
+                                titleOfBundleWithHighestExpireDate = (String) bundle.get("title");
+                            }
                         }
-                        final String expireDateStrTmp = (String) bundle.get("expirationDate");
-                        final long expireTimestampTmp = TimeFormatter.getMilliSeconds(expireDateStrTmp, "yyyy'-'MM'-'dd'T'HH':'mm':'ss", null);
-                        if (expireTimestampTmp > highestExpireTimestamp) {
-                            highestExpireTimestamp = expireTimestampTmp;
-                            titleOfBundleWithHighestExpireDate = (String) bundle.get("title");
+                        if (highestExpireTimestamp > System.currentTimeMillis()) {
+                            logger.info("Successfully found alternative expiredate");
+                            ai.setValidUntil(highestExpireTimestamp, br);
+                            if (!StringUtils.isEmpty(titleOfBundleWithHighestExpireDate)) {
+                                ai.setStatus(ai.getStatus() + " [" + titleOfBundleWithHighestExpireDate + "]");
+                            }
+                        } else {
+                            logger.info("Failed to find alternative expiredate");
                         }
                     }
-                    if (highestExpireTimestamp > System.currentTimeMillis()) {
-                        logger.info("Successfully found alternative expiredate");
-                        ai.setValidUntil(highestExpireTimestamp, br);
-                        if (!StringUtils.isEmpty(titleOfBundleWithHighestExpireDate)) {
-                            ai.setStatus(ai.getStatus() + " [" + titleOfBundleWithHighestExpireDate + "]");
-                        }
-                    } else {
-                        logger.info("Failed to find alternative expiredate");
-                    }
-                }
-                account.setConcurrentUsePossible(true);
-                ai.setUnlimitedTraffic();
-                if (account.getType() == AccountType.PREMIUM) {
                     /* Now check which other websites we can now use as well and add them via multihoster handling. */
                     try {
                         br.getPage("https://site-ma." + this.getHost() + "/");

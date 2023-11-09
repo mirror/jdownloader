@@ -108,14 +108,16 @@ public class Keep2ShareCcDecrypter extends PluginForDecrypt {
         }
         final String contentid = fixContentID(contentidFromURL);
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        // TODO: Add plugin setting for this
+        // TODO: Use plugin setting for this
+        final K2SApi plugin = (jd.plugins.hoster.K2SApi) getNewPluginForHostInstance(this.getHost());
+        // final Keep2shareConfig cfg = PluginJsonConfig.get(plugin.getConfigInterface());
+        // if (looksLikeSingleFileItem && !cfg.isEnableFolderWorkaround()) {
         final boolean handleFileLinksInCrawler = DebugMode.TRUE_IN_IDE_ELSE_FALSE;
         if (looksLikeSingleFileItem && !handleFileLinksInCrawler) {
             /* URL looks like single file URL -> Pass to hosterplugin so we can make use of mass-linkchecking feature. */
             ret.add(this.createDownloadlink(param.getCryptedUrl().replaceFirst(Pattern.quote(contentidFromURL), contentid)));
             return ret;
         }
-        final K2SApi plugin = (jd.plugins.hoster.K2SApi) getNewPluginForHostInstance(this.getHost());
         br = plugin.createNewBrowserInstance();
         // set cross browser support
         plugin.setBrowser(br);
