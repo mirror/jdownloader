@@ -30,9 +30,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.hoster.DirectHTTP;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "imagecurl.com", "girlswithmuscle.com" }, urls = { "http://(?:www\\.)?imagecurl\\.com/viewer\\.php\\?file=[\\w-]+\\.[a-z]{2,4}", "https?://(www.)?girlswithmuscle\\.com/\\d+/?" })
-public class ImageHosterDecrypter extends antiDDoSForDecrypt {
-    public ImageHosterDecrypter(final PluginWrapper wrapper) {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "girlswithmuscle.com" }, urls = { "https?://(www.)?girlswithmuscle\\.com/\\d+/?" })
+public class GirlswithmuscleCom extends antiDDoSForDecrypt {
+    public GirlswithmuscleCom(final PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -43,30 +43,18 @@ public class ImageHosterDecrypter extends antiDDoSForDecrypt {
         br.setFollowRedirects(false);
         String finallink = null;
         String finalfilename = null;
-        if (parameter.contains("imagecurl.com/")) {
-            br.setFollowRedirects(true);
-            br.getPage(parameter);
-            finallink = br.getRegex("\\('<br/><a href=\"(https?://cdn\\.imagecurl\\.com/images/\\w+\\.[a-z]{2,4})\">").getMatch(0);
-            if (finallink == null) {
-                finallink = br.getRegex("To view its <a href=\"(https?://cdn\\.imagecurl\\.com/images/\\w+\\.[a-z]{2,4})\">true size<").getMatch(0) + finallink;
-            }
-        } else if (parameter.contains("girlswithmuscle.com/")) {
-            String fuid = new Regex(parameter, "([\\d+]+)/?$").getMatch(0);
-            if (!parameter.endsWith("/")) {
-                parameter = parameter + "/";
-            }
-            br.setFollowRedirects(true);
-            br.getPage(parameter);
-            if (br.getHttpConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            finallink = br.getRegex("<a href=\"([^\"]+)\">Link to full-size").getMatch(0);
-            String ext = new Regex(finallink, "(\\.[a-z0-9]+$)").getMatch(0);
-            finalfilename = fuid + " " + br.getRegex("<title>([^<>]+)</title>").getMatch(0) + ext;
-        } else {
-            /* Unsupported URL -> This should never happen. */
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        String fuid = new Regex(parameter, "([\\d+]+)/?$").getMatch(0);
+        if (!parameter.endsWith("/")) {
+            parameter = parameter + "/";
         }
+        br.setFollowRedirects(true);
+        br.getPage(parameter);
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        finallink = br.getRegex("<a href=\"([^\"]+)\">Link to full-size").getMatch(0);
+        String ext = new Regex(finallink, "(\\.[a-z0-9]+$)").getMatch(0);
+        finalfilename = fuid + " " + br.getRegex("<title>([^<>]+)</title>").getMatch(0) + ext;
         if (finallink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -79,6 +67,7 @@ public class ImageHosterDecrypter extends antiDDoSForDecrypt {
         return ret;
     }
 
+    @Override
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }
