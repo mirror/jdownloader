@@ -15,12 +15,10 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
-import java.nio.charset.StandardCharsets;
 import java.security.DigestException;
 import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Base64;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -29,10 +27,6 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -51,6 +45,11 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.hoster.BatoTo;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.Base64;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 @PluginDependencies(dependencies = { BatoTo.class })
@@ -188,22 +187,22 @@ public class BatoToCrawler extends PluginForDecrypt {
     }
 
     /**
-     * Source: https://stackoverflow.com/questions/41432896/cryptojs-aes-encryption-and-java-aes-decryption </br>
-     * Replacement function for this js call: JSON.parse(CryptoJS.AES.decrypt(server, batojs).toString(CryptoJS.enc.Utf8))
+     * Source: https://stackoverflow.com/questions/41432896/cryptojs-aes-encryption-and-java-aes-decryption </br> Replacement function for
+     * this js call: JSON.parse(CryptoJS.AES.decrypt(server, batojs).toString(CryptoJS.enc.Utf8))
      */
     private String aesDecrypt(final String secret, final String cipherText) {
         try {
-            byte[] cipherData = Base64.getDecoder().decode(cipherText);
+            byte[] cipherData = Base64.decode(cipherText);
             byte[] saltData = Arrays.copyOfRange(cipherData, 8, 16);
             MessageDigest md5 = MessageDigest.getInstance("MD5");
-            final byte[][] keyAndIV = GenerateKeyAndIV(32, 16, 1, saltData, secret.getBytes(StandardCharsets.UTF_8), md5);
+            final byte[][] keyAndIV = GenerateKeyAndIV(32, 16, 1, saltData, secret.getBytes("UTF-8"), md5);
             SecretKeySpec key = new SecretKeySpec(keyAndIV[0], "AES");
             IvParameterSpec iv = new IvParameterSpec(keyAndIV[1]);
             byte[] encrypted = Arrays.copyOfRange(cipherData, 16, cipherData.length);
             Cipher aesCBC = Cipher.getInstance("AES/CBC/PKCS5Padding");
             aesCBC.init(Cipher.DECRYPT_MODE, key, iv);
             byte[] decryptedData = aesCBC.doFinal(encrypted);
-            String decryptedText = new String(decryptedData, StandardCharsets.UTF_8);
+            String decryptedText = new String(decryptedData, "UTF-8");
             return decryptedText;
         } catch (final Throwable e) {
             logger.log(e);

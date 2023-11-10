@@ -28,6 +28,23 @@ import java.util.Locale;
 import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
 
+import jd.controlling.accountchecker.AccountChecker;
+import jd.controlling.accountchecker.AccountCheckerThread;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.WarnLevel;
+import jd.http.Browser;
+import jd.http.BrowserSettingsThread;
+import jd.nutils.encoding.Encoding;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountError;
+import jd.plugins.Account.AccountPropertyChangeHandler;
+import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
+import jd.plugins.AccountProperty;
+import jd.plugins.PluginForHost;
+
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
@@ -59,35 +76,17 @@ import org.jdownloader.plugins.controller.host.PluginFinder;
 import org.jdownloader.settings.AccountData;
 import org.jdownloader.settings.AccountSettings;
 
-import jd.controlling.accountchecker.AccountChecker;
-import jd.controlling.accountchecker.AccountCheckerThread;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.WarnLevel;
-import jd.http.Browser;
-import jd.http.BrowserSettingsThread;
-import jd.http.Cookies;
-import jd.nutils.encoding.Encoding;
-import jd.plugins.Account;
-import jd.plugins.Account.AccountError;
-import jd.plugins.Account.AccountPropertyChangeHandler;
-import jd.plugins.Account.AccountType;
-import jd.plugins.AccountInfo;
-import jd.plugins.AccountInvalidException;
-import jd.plugins.AccountProperty;
-import jd.plugins.PluginForHost;
-
 public class AccountController implements AccountControllerListener, AccountPropertyChangeHandler {
     private static final long                                                    serialVersionUID = -7560087582989096645L;
     private final HashMap<String, List<Account>>                                 ACCOUNTS;
     private final HashMap<String, List<Account>>                                 MULTIHOSTER_ACCOUNTS;
     private static AccountController                                             INSTANCE         = new AccountController();
     private final Eventsender<AccountControllerListener, AccountControllerEvent> broadcaster      = new Eventsender<AccountControllerListener, AccountControllerEvent>() {
-                                                                                                      @Override
-                                                                                                      protected void fireEvent(final AccountControllerListener listener, final AccountControllerEvent event) {
-                                                                                                          listener.onAccountControllerEvent(event);
-                                                                                                      }
-                                                                                                  };
+        @Override
+        protected void fireEvent(final AccountControllerListener listener, final AccountControllerEvent event) {
+            listener.onAccountControllerEvent(event);
+        }
+    };
 
     public Eventsender<AccountControllerListener, AccountControllerEvent> getEventSender() {
         return broadcaster;
@@ -324,11 +323,14 @@ public class AccountController implements AccountControllerListener, AccountProp
                 try {
                     // TODO: Maybe add function to plugin for account pre-check validation(?)
                     /* We can't rely on validation via GUI as myjdownloader remote controller JDownloader instances have no Java GUI. */
-                    final Cookies userCookies = account.loadUserCookies();
-                    if (userCookies == null && plugin.hasFeature(FEATURE.COOKIE_LOGIN_ONLY)) {
-                        throw new AccountInvalidException(_GUI.T.accountdialog_LoginValidationErrorCookieLoginMandatoryButNoCookiesGiven());
-                    } else if (userCookies != null && !plugin.hasFeature(FEATURE.COOKIE_LOGIN_OPTIONAL) && !plugin.hasFeature(FEATURE.COOKIE_LOGIN_ONLY)) {
-                        throw new AccountInvalidException(_GUI.T.accountdialog_LoginValidationErrorCookieLoginUnsupportedButGiven());
+                    if (plugin.hasFeature(FEATURE.COOKIE_LOGIN_ONLY)) {
+                        if (account.loadUserCookies() == null) {
+                            throw new AccountInvalidException(_GUI.T.accountdialog_LoginValidationErrorCookieLoginMandatoryButNoCookiesGiven());
+                        }
+                    } else if (!plugin.hasFeature(FEATURE.COOKIE_LOGIN_OPTIONAL)) {
+                        if (account.loadUserCookies() != null) {
+                            throw new AccountInvalidException(_GUI.T.accountdialog_LoginValidationErrorCookieLoginUnsupportedButGiven());
+                        }
                     }
                     ai = plugin.fetchAccountInfo(account);
                     plugin.validateLastChallengeResponse();

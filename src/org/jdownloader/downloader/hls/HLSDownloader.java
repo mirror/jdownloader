@@ -1655,7 +1655,7 @@ public class HLSDownloader extends DownloadInterface {
                             downloadable.lockFiles(requiredFiles.toArray(new File[0]));
                         } catch (FileIsLockedException e) {
                             downloadable.unlockFiles(requiredFiles.toArray(new File[0]));
-                            throw new PluginException(LinkStatus.ERROR_ALREADYEXISTS);
+                            throw new PluginException(LinkStatus.ERROR_ALREADYEXISTS, null, e);
                         }
                     }
                 }, null)) {

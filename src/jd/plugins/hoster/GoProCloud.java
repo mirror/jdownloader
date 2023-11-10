@@ -143,26 +143,24 @@ public class GoProCloud extends PluginForHost/* implements MenuExtenderHandler *
                     br.getPage("https://gopro.com/login");
                     final Map<String, Object> loginData = new HashMap<String, Object>();
                     final String token = br.getRegex("<meta name=\"csrf-token\" content=([^>]+)").getMatch(0);
+                    if (StringUtils.isEmpty(token)) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
                     final String publicKeyPem = br.getRegex("\"pwPubKey\"\\s*:\\s*\"([^\"]+)").getMatch(0);
-                    String json = br.getRegex("<script>window.__bootstrap=(.+)").getMatch(0);
-                    FlexiJSONParser parser = new FlexiJSONParser(json);
-                    parser.setBreakAtEndOfObject(true);
+                    // String json = br.getRegex("<script>window.__bootstrap=(.+)").getMatch(0);
                     try {
                         String base64Encoded = publicKeyPem;
                         base64Encoded = base64Encoded.replaceAll("(?i)^\\s*[\\-]*BEGIN\\s*(RSA\\s*)?PUBLIC\\s*KEY[\\-]*\\s*", "");
                         base64Encoded = base64Encoded.replaceAll("(?i)\\s*[\\-]*END\\s*(RSA\\s*)?PUBLIC\\s*KEY[\\-]*\\s*$", "");
                         base64Encoded = base64Encoded.replaceAll("\\s+", "");
-                        PublicKey pub = AWSign.getPublicKey(base64Encoded);
-                        Cipher cipher = Cipher.getInstance("RSA");
+                        final PublicKey pub = AWSign.getPublicKey(base64Encoded);
+                        final Cipher cipher = Cipher.getInstance("RSA");
                         cipher.init(Cipher.ENCRYPT_MODE, pub);
-                        String encryptedPassword = Base64.encodeToString(cipher.doFinal(account.getPass().getBytes("UTF-8")));
+                        final String encryptedPassword = Base64.encodeToString(cipher.doFinal(account.getPass().getBytes("UTF-8")));
                         loginData.put("password", encryptedPassword);
                     } catch (Exception e) {
                         logger.log(e);
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    if (StringUtils.isEmpty(token)) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, null, e);
                     }
                     loginData.put("email", account.getUser());
                     loginData.put("referrer", "");

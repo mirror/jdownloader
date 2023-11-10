@@ -301,7 +301,7 @@ public class SegmentDownloader extends DownloadInterface {
                             downloadable.lockFiles(outputCompleteFile, outputFinalCompleteFile, outputPartFile);
                         } catch (FileIsLockedException e) {
                             downloadable.unlockFiles(outputCompleteFile, outputFinalCompleteFile, outputPartFile);
-                            throw new PluginException(LinkStatus.ERROR_ALREADYEXISTS);
+                            throw new PluginException(LinkStatus.ERROR_ALREADYEXISTS, null, e);
                         }
                     }
                 }, null)) {

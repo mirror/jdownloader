@@ -1,29 +1,17 @@
 package org.jdownloader.container;
 
 import java.io.File;
-import java.io.UnsupportedEncodingException;
-import java.nio.charset.StandardCharsets;
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Base64;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
-
-import org.w3c.dom.Document;
-import org.w3c.dom.NodeList;
 
 import jd.controlling.linkcrawler.ArchiveInfo;
 import jd.controlling.linkcrawler.CrawledLink;
@@ -32,6 +20,10 @@ import jd.plugins.ContainerStatus;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginsC;
+
+import org.appwork.utils.encoding.Base64;
+import org.w3c.dom.Document;
+import org.w3c.dom.NodeList;
 
 public class SFDL extends PluginsC {
     /* Documentation: https://github.com/n0ix/SFDL.NET/wiki/How-it-Works-(SFDL-File-documentation) */
@@ -102,9 +94,9 @@ public class SFDL extends PluginsC {
                     sfdl_Password = "anonymous@anonymous.com";
                 }
             }
-            final List<String> sfdl_BulkFolderPathArray = new ArrayList<>();
-            final List<String> sfdl_FileListArray = new ArrayList<>();
-            final List<Long> sfdl_FileSizeArray = new ArrayList<>();
+            final List<String> sfdl_BulkFolderPathArray = new ArrayList<String>();
+            final List<String> sfdl_FileListArray = new ArrayList<String>();
+            final List<Long> sfdl_FileSizeArray = new ArrayList<Long>();
             if (sfdl_BulkFolderMode) {
                 final NodeList downloadFiles = document.getElementsByTagName("BulkFolderPath");
                 for (int i = 0; i < downloadFiles.getLength(); i++) {
@@ -200,63 +192,35 @@ public class SFDL extends PluginsC {
         }
     }
 
-    private static String decrypt(final String encodedString, final String password) {
-        byte[] data = null;
+    private String decrypt(final String encodedString, final String password) {
         try {
-            data = Base64.getDecoder().decode(encodedString.getBytes("UTF-8"));
-        } catch (UnsupportedEncodingException e) {
-            return null;
-        }
-        MessageDigest md5pass = null;
-        try {
-            md5pass = MessageDigest.getInstance("MD5");
-        } catch (NoSuchAlgorithmException e) {
-            return null;
-        }
-        byte[] pass = null;
-        try {
-            pass = md5pass.digest(password.getBytes("UTF-8"));
-        } catch (UnsupportedEncodingException e) {
-            return null;
-        }
-        IvParameterSpec iv = new IvParameterSpec(Arrays.copyOfRange(data, 0, 16));
-        SecretKeySpec keyspec = new SecretKeySpec(pass, "AES");
-        Cipher cipher = null;
-        try {
-            cipher = Cipher.getInstance("AES/CBC/PKCS5PADDING");
-        } catch (NoSuchAlgorithmException e) {
-            return null;
-        } catch (NoSuchPaddingException e) {
-            return null;
-        }
-        try {
+            byte[] data = Base64.decode(encodedString);
+            final MessageDigest md5pass = MessageDigest.getInstance("MD5");
+            final byte[] pass = md5pass.digest(password.getBytes("UTF-8"));
+            final IvParameterSpec iv = new IvParameterSpec(Arrays.copyOfRange(data, 0, 16));
+            final SecretKeySpec keyspec = new SecretKeySpec(pass, "AES");
+            final Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5PADDING");
             cipher.init(Cipher.DECRYPT_MODE, keyspec, iv);
-        } catch (InvalidKeyException e) {
-            return null;
-        } catch (InvalidAlgorithmParameterException e) {
-            return null;
-        }
-        byte[] decrypted = null;
-        try {
-            decrypted = cipher.doFinal(data);
-        } catch (IllegalBlockSizeException e) {
-            return null;
-        } catch (BadPaddingException e) {
+            final byte[] decrypted = cipher.doFinal(data);
+            if (decrypted.length < 17) {
+                return null;
+            } else {
+                byte[] return_byte = Arrays.copyOfRange(decrypted, 16, decrypted.length);
+                return new String(return_byte, "UTF-8");
+            }
+        } catch (Exception e) {
+            logger.log(e);
             return null;
         }
-        if (decrypted.length < 17) {
-            return null;
-        }
-        byte[] return_byte = Arrays.copyOfRange(decrypted, 16, decrypted.length);
-        return new String(return_byte, StandardCharsets.UTF_8);
     }
 
     private static String getNode(final Document document, final String node) {
-        NodeList chk = document.getElementsByTagName(node);
+        final NodeList chk = document.getElementsByTagName(node);
         if (chk.getLength() > 0) {
             return new String(document.getElementsByTagName(node).item(0).getTextContent());
+        } else {
+            return null;
         }
-        return null;
     }
 
     @Override

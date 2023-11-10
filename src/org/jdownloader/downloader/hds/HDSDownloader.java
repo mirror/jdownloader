@@ -486,7 +486,7 @@ public class HDSDownloader extends DownloadInterface {
                             downloadable.lockFiles(outputCompleteFile, outputPartFile);
                         } catch (FileIsLockedException e) {
                             downloadable.unlockFiles(outputCompleteFile, outputPartFile);
-                            throw new PluginException(LinkStatus.ERROR_ALREADYEXISTS);
+                            throw new PluginException(LinkStatus.ERROR_ALREADYEXISTS, null, e);
                         }
                     }
                 }, null)) {
