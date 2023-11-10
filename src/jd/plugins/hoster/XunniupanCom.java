@@ -330,12 +330,11 @@ public class XunniupanCom extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
-            this.dl.startDownload();
         } catch (final Exception e) {
             if (storedDirecturl != null) {
                 logger.log(e);
                 link.removeProperty(directlinkproperty);
-                throw new PluginException(LinkStatus.ERROR_RETRY, "Stored directurl expired");
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Stored directurl expired", e);
             } else {
                 throw e;
             }

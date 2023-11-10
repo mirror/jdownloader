@@ -377,7 +377,7 @@ public class TeraboxCom extends PluginForHost {
         } catch (final Exception e) {
             if (storedDirecturl != null) {
                 link.removeProperty(PROPERTY_DIRECTURL);
-                throw new PluginException(LinkStatus.ERROR_RETRY, "Stored directurl expired");
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Stored directurl expired", e);
             } else {
                 throw e;
             }

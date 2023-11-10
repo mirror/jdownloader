@@ -815,7 +815,7 @@ public abstract class K2SApi extends PluginForHost {
         } catch (final Exception e) {
             if (storedDirecturl != null) {
                 link.removeProperty(this.getDirectLinkProperty(account));
-                throw new PluginException(LinkStatus.ERROR_RETRY, "Stored directurl expired");
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Stored directurl expired", e);
             } else {
                 throw e;
             }

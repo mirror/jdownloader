@@ -208,16 +208,16 @@ public class TropicShareCom extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error: Got html code instead of file");
                 }
             }
-            link.setProperty(directlinkproperty, dl.getConnection().getURL().toExternalForm());
-            dl.startDownload();
         } catch (final Exception e) {
             if (storedDirecturl != null) {
                 link.removeProperty(directlinkproperty);
-                throw new PluginException(LinkStatus.ERROR_RETRY, "Stored directurl expired");
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Stored directurl expired", e);
             } else {
                 throw e;
             }
         }
+        link.setProperty(directlinkproperty, dl.getConnection().getURL().toExternalForm());
+        dl.startDownload();
     }
 
     private void login(final Account account, final boolean force) throws Exception {

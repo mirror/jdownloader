@@ -568,7 +568,7 @@ public class EHentaiOrg extends PluginForHost {
         } catch (final Exception e) {
             if (storedDirecturl != null) {
                 link.removeProperty(directurlproperty);
-                throw new PluginException(LinkStatus.ERROR_RETRY, "Stored directurl expired");
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Stored directurl expired", e);
             } else {
                 throw e;
             }

@@ -375,23 +375,23 @@ abstract public class ZeveraCore extends UseNet {
                     }
                     getMultiHosterManagement().handleErrorGeneric(account, link, "Unknown download error", 50, 5 * 60 * 1000l);
                 }
-                link.setProperty(directlinkproperty, dllink);
-                dl.setFilenameFix(true);
-                final long verifiedFileSize = link.getVerifiedFileSize();
-                final long completeContentLength = dl.getConnection().getCompleteContentLength();
-                if (completeContentLength != verifiedFileSize) {
-                    logger.info("Update Filesize: old=" + verifiedFileSize + "|new=" + completeContentLength);
-                    link.setVerifiedFileSize(completeContentLength);
-                }
-                dl.startDownload();
             } catch (final Exception e) {
                 if (storedDirecturl != null) {
                     link.removeProperty(directlinkproperty);
-                    throw new PluginException(LinkStatus.ERROR_RETRY, "Stored directurl expired");
+                    throw new PluginException(LinkStatus.ERROR_RETRY, "Stored directurl expired", e);
                 } else {
                     throw e;
                 }
             }
+            link.setProperty(directlinkproperty, dllink);
+            dl.setFilenameFix(true);
+            final long verifiedFileSize = link.getVerifiedFileSize();
+            final long completeContentLength = dl.getConnection().getCompleteContentLength();
+            if (completeContentLength != verifiedFileSize) {
+                logger.info("Update Filesize: old=" + verifiedFileSize + "|new=" + completeContentLength);
+                link.setVerifiedFileSize(completeContentLength);
+            }
+            dl.startDownload();
         }
     }
 

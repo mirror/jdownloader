@@ -296,19 +296,19 @@ public class EPornerCom extends PluginForHost {
         try {
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, directurl, true, 0);
             connectionErrorhandling(dl.getConnection(), link, account);
-            final String ext = Plugin.getExtensionFromMimeTypeStatic(dl.getConnection().getContentType());
-            if (ext != null && link.getName() != null) {
-                link.setFinalFileName(this.correctOrApplyFileNameExtension(link.getName(), "." + ext));
-            }
-            dl.startDownload();
         } catch (final Exception e) {
             if (storedDirecturl != null) {
                 link.removeProperty(PROPERTY_DIRECTURL);
-                throw new PluginException(LinkStatus.ERROR_RETRY, "Stored directurl expired");
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Stored directurl expired", e);
             } else {
                 throw e;
             }
         }
+        final String ext = Plugin.getExtensionFromMimeTypeStatic(dl.getConnection().getContentType());
+        if (ext != null && link.getName() != null) {
+            link.setFinalFileName(this.correctOrApplyFileNameExtension(link.getName(), "." + ext));
+        }
+        dl.startDownload();
     }
 
     private void connectionErrorhandling(final URLConnectionAdapter con, final DownloadLink link, final Account account) throws PluginException, IOException {

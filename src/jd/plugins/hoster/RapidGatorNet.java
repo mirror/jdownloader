@@ -628,36 +628,36 @@ public class RapidGatorNet extends PluginForHost {
                 }
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errorMsg);
             }
-            if (!StringUtils.containsIgnoreCase(dl.getConnection().getHeaderField(HTTPConstants.HEADER_RESPONSE_ACCEPT_RANGES), "bytes")) {
-                /* First download attempt and resume is not possible according to header: Disable it for future download-attempts. */
-                logger.info("Resume disabled: missing Accept-Ranges response!");
-                link.setResumeable(false);
-            }
-            link.setProperty(directlinkproperty, dl.getConnection().getURL().toExternalForm());
-            /* Serverside wait time until next download can be started counts from beginning of first/last download. */
-            if (currentIP != null) {
-                synchronized (blockedIPsMap) {
-                    blockedIPsMap.put(currentIP, System.currentTimeMillis());
-                    this.getPluginConfig().setProperty(PROPERTY_LAST_BLOCKED_IPS_MAP, new HashMap<String, Long>(blockedIPsMap));
-                }
-            }
-            this.getPluginConfig().setProperty(PROPERTY_LAST_DOWNLOAD_STARTED_TIMESTAMP, System.currentTimeMillis());
-            /* Add a download slot */
-            controlMaxFreeDownloads(account, link, +1);
-            try {
-                /* Start download */
-                dl.startDownload();
-            } finally {
-                /* Remove download slot */
-                controlMaxFreeDownloads(account, link, -1);
-            }
         } catch (final Exception e) {
             if (storedDirecturl != null && finalDownloadURL.equals(storedDirecturl)) {
                 link.removeProperty(directlinkproperty);
-                throw new PluginException(LinkStatus.ERROR_RETRY, "Stored directurl expired");
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Stored directurl expired?", e);
             } else {
                 throw e;
             }
+        }
+        if (!StringUtils.containsIgnoreCase(dl.getConnection().getHeaderField(HTTPConstants.HEADER_RESPONSE_ACCEPT_RANGES), "bytes")) {
+            /* First download attempt and resume is not possible according to header: Disable it for future download-attempts. */
+            logger.info("Resume disabled: missing Accept-Ranges response!");
+            link.setResumeable(false);
+        }
+        link.setProperty(directlinkproperty, dl.getConnection().getURL().toExternalForm());
+        /* Serverside wait time until next download can be started counts from beginning of first/last download. */
+        if (currentIP != null) {
+            synchronized (blockedIPsMap) {
+                blockedIPsMap.put(currentIP, System.currentTimeMillis());
+                this.getPluginConfig().setProperty(PROPERTY_LAST_BLOCKED_IPS_MAP, new HashMap<String, Long>(blockedIPsMap));
+            }
+        }
+        this.getPluginConfig().setProperty(PROPERTY_LAST_DOWNLOAD_STARTED_TIMESTAMP, System.currentTimeMillis());
+        /* Add a download slot */
+        controlMaxFreeDownloads(account, link, +1);
+        try {
+            /* Start download */
+            dl.startDownload();
+        } finally {
+            /* Remove download slot */
+            controlMaxFreeDownloads(account, link, -1);
         }
     }
 

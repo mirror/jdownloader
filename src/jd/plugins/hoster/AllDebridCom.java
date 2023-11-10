@@ -613,15 +613,15 @@ public class AllDebridCom extends PluginForHost {
                 br.followConnection(true);
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Directurl did not lead to downloadable content");
             }
-            this.dl.startDownload();
         } catch (final Exception e) {
             if (storedDirecturl != null) {
                 link.removeProperty(directlinkproperty);
-                throw new PluginException(LinkStatus.ERROR_RETRY, "Stored directurl expired");
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Stored directurl expired", e);
             } else {
                 throw e;
             }
         }
+        dl.startDownload();
     }
 
     private static void setAuthHeader(final Browser br, final String auth) {

@@ -165,12 +165,12 @@ public class MultiupOrg extends PluginForHost {
         } catch (final Exception e) {
             if (storedDirecturl != null) {
                 link.removeProperty(directlinkproperty);
-                throw new PluginException(LinkStatus.ERROR_RETRY, "Stored directurl expired");
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Stored directurl expired", e);
             } else {
                 throw e;
             }
         }
-        this.dl.startDownload();
+        dl.startDownload();
     }
 
     @Override
