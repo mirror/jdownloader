@@ -146,7 +146,6 @@ public class ImcontentMe extends PluginForDecrypt {
 
     public static final String findKey(final Plugin plg, final String src) {
         /* Old function used in hoster-plugins "StreamonTo" and "UpvideoTo" until including revision 44721. */
-        String dllink = null;
         String[][] hunters = new Regex(src, "<script[^>]*>\\s*(var _[^<]*?\\})eval(\\(function\\(h,u,n,t,e,r\\).*?)</script>").getMatches();
         int counter = 0;
         for (final String[] hunter : hunters) {
@@ -192,6 +191,6 @@ public class ImcontentMe extends PluginForDecrypt {
             }
             counter += 1;
         }
-        return dllink;
+        return null;
     }
 }
