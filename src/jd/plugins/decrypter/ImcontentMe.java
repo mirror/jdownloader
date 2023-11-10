@@ -93,7 +93,7 @@ public class ImcontentMe extends PluginForDecrypt {
         if (param.getDownloadLink() != null) {
             referer = param.getDownloadLink().getReferrerUrl();
         }
-        if (referer == null) {
+        if (StringUtils.isEmpty(referer)) {
             /* Fallback */
             referer = "https://fbjav.com/";
         }
@@ -118,6 +118,9 @@ public class ImcontentMe extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         // TODO: Decrypt 'cryptedData'
+        if (true) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         String title = null;
         if (param.getDownloadLink() != null) {
             title = param.getDownloadLink().getStringProperty(PROPERTY_TITLE);
