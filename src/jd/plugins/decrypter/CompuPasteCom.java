@@ -81,7 +81,7 @@ public class CompuPasteCom extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://" + buildHostsPatternPart(domains) + "/(?:index\\.php)?\\?v=([A-Za-z0-9]+)");
+            ret.add("https?://" + buildHostsPatternPart(domains) + "/(?:index\\.php)?\\?v=([A-Za-z0-9\\-]+)");
         }
         return ret.toArray(new String[0]);
     }
@@ -159,6 +159,12 @@ public class CompuPasteCom extends PluginForDecrypt {
             /* Some websites use multiple h3 tags (fuu) e.g. lupaste.com */
             title = h3s[h3s.length - 1];
         }
+        if (title == null) {
+            title = br.getRegex("<title>([^<]+)</title>").getMatch(0);
+        }
+        if (title != null) {
+            title = Encoding.htmlDecode(title).trim();
+        }
         final String htmlToCrawlLinksFrom;
         final String pasteText = br.getRegex("class\\s*=\\s*\"tab_content\"[^>]*>\\s*(.*?)\"wp-pagenavi\"\\s*>").getMatch(0);
         if (pasteText != null) {
@@ -168,8 +174,15 @@ public class CompuPasteCom extends PluginForDecrypt {
             htmlToCrawlLinksFrom = br.getRequest().getHtmlCode();
         }
         final String[] links = HTMLParser.getHttpLinks(htmlToCrawlLinksFrom, br.getURL());
+        final String currenthost = br.getHost(true);
         for (final String singleLink : links) {
-            if (!this.canHandle(singleLink)) {
+            final String host = Browser.getHost(singleLink, true);
+            if (this.canHandle(singleLink)) {
+                continue;
+            } else if (host.equalsIgnoreCase(currenthost)) {
+                /* Ignore URLs which are part of the current website for example .js files/URLs. */
+                continue;
+            } else {
                 ret.add(createDownloadlink(singleLink));
             }
         }
@@ -190,12 +203,12 @@ public class CompuPasteCom extends PluginForDecrypt {
                 }
             }
         }
+        final FilePackage fp = FilePackage.getInstance();
         if (title != null) {
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(title).trim());
-            fp.setAllowInheritance(Boolean.TRUE);
-            fp.addLinks(ret);
+            fp.setName(title);
         }
+        fp.setAllowInheritance(Boolean.TRUE);
+        fp.addLinks(ret);
         if (ret.isEmpty()) {
             logger.info("Failed to find any results");
             return ret;

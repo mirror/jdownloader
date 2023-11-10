@@ -80,7 +80,6 @@ public class OneDriveLiveComCrawler extends PluginForDecrypt {
         // String subFolderBase = getAdoptedCloudFolderStructure();
         String subFolderBase = null;
         br.setLoadLimit(Integer.MAX_VALUE);
-        final DownloadLink main = createDownloadlink("http://onedrivedecrypted.live.com/" + System.currentTimeMillis() + new Random().nextInt(100000));
         FilePackage fp = null;
         if (contenturl.matches(TYPE_SKYDRIVE_REDIRECT2)) {
             br.getPage(contenturl);
@@ -231,6 +230,7 @@ public class OneDriveLiveComCrawler extends PluginForDecrypt {
                     /* Empty folder */
                     throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER);
                 }
+                final DownloadLink main = createDownloadlink("http://onedrivedecrypted.live.com/" + System.currentTimeMillis() + new Random().nextInt(100000));
                 main.setProperty("mainlink", contenturl);
                 main.setProperty("original_link", original_link);
                 main.setProperty("plain_cid", cid);

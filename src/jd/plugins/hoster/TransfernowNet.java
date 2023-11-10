@@ -20,6 +20,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -30,11 +34,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class TransfernowNet extends PluginForHost {
@@ -107,9 +106,10 @@ public class TransfernowNet extends PluginForHost {
         }
     }
 
-    private static final String TYPE_1   = "https?://[^/]+/dl/([A-Za-z0-9]+)(/([A-Za-z0-9]+))?";
-    private static final String TYPE_2   = "https?://[^/]+/[a-z]{2,}/dltransfer\\?utm_source=([A-Za-z0-9]+)(\\&utm_medium=([A-Za-z0-9]+))?";
-    private static final String API_BASE = "https://www.transfernow.net/api";
+    private final String        PROPERTY_SINGLE_FILE_ID = "single_file_id";
+    private static final String TYPE_1                  = "https?://[^/]+/dl/([A-Za-z0-9]+)(/([A-Za-z0-9]+))?";
+    private static final String TYPE_2                  = "https?://[^/]+/[a-z]{2,}/dltransfer\\?utm_source=([A-Za-z0-9]+)(\\&utm_medium=([A-Za-z0-9]+))?";
+    private static final String API_BASE                = "https://www.transfernow.net/api";
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
@@ -128,18 +128,32 @@ public class TransfernowNet extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final Map<String, Object> root = restoreFromString(br.toString(), TypeRef.MAP);
+        final Map<String, Object> root = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         final List<Map<String, Object>> files = (List<Map<String, Object>>) root.get("files");
         long totalSize = 0;
+        String nameOfFirstFile = null;
+        String idOfFirstFile = null;
         for (final Map<String, Object> file : files) {
+            if (nameOfFirstFile == null) {
+                nameOfFirstFile = file.get("name").toString();
+            }
+            if (idOfFirstFile == null) {
+                idOfFirstFile = file.get("id").toString();
+            }
             totalSize += ((Number) file.get("size")).longValue();
         }
         link.setPasswordProtected(((Boolean) root.get("needPassword")).booleanValue());
         String title = (String) root.get("transferName");
-        if (!StringUtils.isEmpty(title)) {
-            link.setFinalFileName(title + ".zip");
+        if (files.size() == 1 && nameOfFirstFile != null) {
+            link.setFinalFileName(nameOfFirstFile);
+            link.setProperty(PROPERTY_SINGLE_FILE_ID, idOfFirstFile);
         } else {
-            link.setFinalFileName(this.getFID(link) + ".zip");
+            link.removeProperty(PROPERTY_SINGLE_FILE_ID);
+            if (!StringUtils.isEmpty(title)) {
+                link.setFinalFileName(title + ".zip");
+            } else {
+                link.setFinalFileName(this.getFID(link) + ".zip");
+            }
         }
         link.setDownloadSize(totalSize);
         /* Files can be offline while file info is still given. */
@@ -157,15 +171,17 @@ public class TransfernowNet extends PluginForHost {
     private void handleDownload(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         if (!attemptStoredDownloadurlDownload(link, directlinkproperty, resumable, maxchunks)) {
             requestFileInformation(link);
+            final String idOfFirstFile = link.getStringProperty(PROPERTY_SINGLE_FILE_ID);
             final UrlQuery query = new UrlQuery();
             query.add("transferId", this.getFID(link));
             final String secret = getSecret(link);
             query.add("userSecret", secret != null ? secret : "");
             query.add("preview", "false");
-            query.add("fileId", "");
+            /* Empty string = Download all files inside a folder as .zip file */
+            query.add("fileId", idOfFirstFile != null ? idOfFirstFile : "");
+            String passCode = link.getDownloadPassword();
             if (link.isPasswordProtected()) {
                 /* Check for stored password. Ask user if none is available. */
-                String passCode = link.getDownloadPassword();
                 if (passCode == null) {
                     passCode = getUserInput("Password?", link);
                 }
@@ -173,9 +189,13 @@ public class TransfernowNet extends PluginForHost {
             }
             br.getPage(API_BASE + "/transfer/downloads/link?" + query.toString());
             if (br.getHttpConnection().getResponseCode() == 403 && link.isPasswordProtected()) {
+                link.setDownloadPassword(null);
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
             }
-            final Map<String, Object> root = restoreFromString(br.toString(), TypeRef.MAP);
+            if (passCode != null) {
+                link.setDownloadPassword(passCode);
+            }
+            final Map<String, Object> root = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
             final String dllink = (String) root.get("url");
             if (StringUtils.isEmpty(dllink)) {
                 logger.warning("Failed to find final downloadurl");
