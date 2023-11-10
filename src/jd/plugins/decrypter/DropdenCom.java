@@ -84,10 +84,6 @@ public class DropdenCom extends PluginForDecrypt {
         int attempts = 0;
         String passCode = null;
         do {
-            if (attempts > 0) {
-                passCode = getUserInput("Password?", param);
-                br.getHeaders().put("X-Download-Pass", passCode);
-            }
             br.getPage("https://" + this.getHost() + "/" + folderID + ".json");
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -99,6 +95,8 @@ public class DropdenCom extends PluginForDecrypt {
                 } else {
                     logger.info("Password required");
                 }
+                passCode = getUserInput("Password?", param);
+                br.getHeaders().put("X-Download-Pass", passCode);
                 attempts++;
                 continue;
             } else {
