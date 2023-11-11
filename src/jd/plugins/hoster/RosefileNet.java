@@ -293,7 +293,7 @@ public class RosefileNet extends PluginForHost {
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
                     logger.info("Attempting cookie login");
-                    this.br.setCookies(this.getHost(), cookies);
+                    br.setCookies(this.getHost(), cookies);
                     if (!force) {
                         /* Do not verify cookies */
                         return false;
@@ -302,7 +302,7 @@ public class RosefileNet extends PluginForHost {
                     if (this.isLoggedin(br)) {
                         logger.info("Cookie login successful");
                         /* Refresh cookie timestamp */
-                        account.saveCookies(this.br.getCookies(this.getHost()), "");
+                        account.saveCookies(br.getCookies(br.getHost()), "");
                         return true;
                     } else {
                         logger.info("Cookie login failed");
@@ -322,7 +322,7 @@ public class RosefileNet extends PluginForHost {
                 if (!isLoggedin(br)) {
                     throw new AccountInvalidException();
                 }
-                account.saveCookies(this.br.getCookies(this.getHost()), "");
+                account.saveCookies(br.getCookies(br.getHost()), "");
                 return true;
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
@@ -349,15 +349,15 @@ public class RosefileNet extends PluginForHost {
             br.getPage("/mydisk.php?item=profile&menu=cp");
         }
         ai.setUnlimitedTraffic();
-        final String premiumExpire = br.getRegex("(?i)<td>Account type</td>\\s*<td>\\s*<b class=\"text-danger\">\\s*Premium\\s*<small>\\((\\d{4}-\\d{2}-\\d{2})\\)</small>").getMatch(0);
-        if (premiumExpire == null) {
-            account.setType(AccountType.FREE);
-            account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
-        } else {
+        final String premiumExpire = br.getRegex("(?i)<td>\\s*Account type\\s*</td>\\s*<td>\\s*<b class=\"text-danger\">\\s*Premium\\s*<small>\\((\\d{4}-\\d{2}-\\d{2})\\)</small>").getMatch(0);
+        if (premiumExpire != null) {
             ai.setValidUntil(TimeFormatter.getMilliSeconds(premiumExpire, "yyyy-MM-dd", Locale.ENGLISH), br);
             account.setType(AccountType.PREMIUM);
             account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
             account.setConcurrentUsePossible(true);
+        } else {
+            account.setType(AccountType.FREE);
+            account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
         }
         return ai;
     }

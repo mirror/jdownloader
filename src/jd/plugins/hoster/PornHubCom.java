@@ -337,7 +337,7 @@ public class PornHubCom extends PluginForHost {
 
     public static Object RNKEYLOCK = new Object();
 
-    public static Request getPage(Browser br, final Request request) throws Exception {
+    public static Request getPage(final Browser br, final Request request) throws Exception {
         br.getPage(request);
         String RNKEY = evalRNKEY(br);
         if (RNKEY != null) {
@@ -1773,16 +1773,17 @@ public class PornHubCom extends PluginForHost {
         return "https://";
     }
 
+    /* Similar in: PornHubCom, PornportalCom */
     public final static String evalRNKEY(Browser br) throws ScriptException {
         if (br.containsHTML("document.cookie=\"RNKEY") && br.containsHTML("leastFactor")) {
             ScriptEngineManager mgr = JavaScriptEngineFactory.getScriptEngineManager(null);
             ScriptEngine engine = mgr.getEngineByName("JavaScript");
-            String js = br.toString();
+            String js = br.getRequest().getHtmlCode();
             js = new Regex(js, "<script.*?>(?:<!--)?(.*?)(?://-->)?</script>").getMatch(0);
             js = js.replace("document.cookie=", "return ");
             js = js.replaceAll("(/\\*.*?\\*/)", "");
             engine.eval(js + " var ret=go();");
-            final String answer = (engine.get("ret").toString());
+            final String answer = engine.get("ret").toString();
             return new Regex(answer, "RNKEY=(.+)").getMatch(0);
         } else {
             return null;

@@ -40,11 +40,31 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.hoster.GenericM3u8;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class ImcontentMe extends PluginForDecrypt {
     public ImcontentMe(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    public static String decodeData(final String t) {
+        final String e = "2";
+        final String b64decoded = Encoding.Base64Decode(t);
+        final StringBuilder res = new StringBuilder();
+        for (int i = 0; i < b64decoded.length(); i++) {
+            char c = b64decoded.charAt(i);
+            char eChar = e.charAt(i % e.length());
+            char xor = (char) (c ^ eChar);
+            res.append(xor);
+        }
+        return res.toString();
+    }
+
+    public static void main(String[] args) {
+        String t = "testStringHere";
+        String result = decodeData(t);
+        System.out.println(result);
     }
 
     public static List<String[]> getPluginDomains() {
@@ -117,30 +137,29 @@ public class ImcontentMe extends PluginForDecrypt {
         if (StringUtils.isEmpty(cryptedData)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        // TODO: Decrypt 'cryptedData'
-        if (true) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        String title = null;
-        if (param.getDownloadLink() != null) {
-            title = param.getDownloadLink().getStringProperty(PROPERTY_TITLE);
-        }
-        if (title == null && titleSlug != null) {
+        final String title;
+        final String betterTitle = param.getDownloadLink() != null ? param.getDownloadLink().getStringProperty(PROPERTY_TITLE) : null;
+        if (betterTitle != null) {
+            title = betterTitle;
+        } else {
             title = titleSlug.replace("-", " ").trim();
         }
-        final String[] links = br.getRegex("").getColumn(0);
-        if (links == null || links.length == 0) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        for (final String singleLink : links) {
-            ret.add(createDownloadlink(singleLink));
-        }
-        if (title != null) {
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(title).trim());
-            fp.addLinks(ret);
-        }
+        final String decodedDataJson = decodeData(cryptedData);
+        final Map<String, Object> entries2 = restoreFromString(decodedDataJson, TypeRef.MAP);
+        final String hlsMaster = entries2.get("url").toString();
+        final DownloadLink video = this.createDownloadlink(hlsMaster);
+        video.setProperty(GenericM3u8.PRESET_NAME_PROPERTY, title);
+        ret.add(video);
+        /* 2023-11-11: This is not a subtitle but a list of thumbnails / preview-seek-frames. */
+        // final String subtitleURL = entries2.get("vtt").toString();
+        // final DownloadLink subtitle = this.createDownloadlink(DirectHTTP.createURLForThisPlugin(subtitleURL));
+        // subtitle.setFinalFileName(title + ".vtt");
+        // subtitle.setAvailable(true);
+        // ret.add(subtitle);
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(title);
+        fp.addLinks(ret);
         return ret;
     }
 
