@@ -32,11 +32,9 @@ import org.appwork.utils.net.URLHelper;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
-import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
-import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.parser.html.InputField;
@@ -48,7 +46,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
@@ -145,51 +142,13 @@ public class SendCm extends XFileSharingProBasic {
 
     @Override
     public AvailableStatus requestFileInformationWebsite(final DownloadLink link, Account account, final boolean isDownload) throws Exception {
-        final Account accountToUseInSpecialHandling;
-        if (account != null) {
-            accountToUseInSpecialHandling = account;
-        } else {
-            /* Get ANY available account. */
-            accountToUseInSpecialHandling = AccountController.getInstance().getValidAccount(this.getHost());
+        final AvailableStatus status = super.requestFileInformationWebsite(link, account, isDownload);
+        // 2023-04-12: MD5 seems to be base64 encoded but doesn't match, maybe just fake info?!*/
+        final String sha256 = br.getRegex("(?i)SHA-256\\s*:\\s*</b>\\s*([a-f0-9]{64})\\s*</span>").getMatch(0);
+        if (sha256 != null) {
+            link.setSha256Hash(sha256);
         }
-        if (isFreeAccountWithPremiumTraffic(accountToUseInSpecialHandling)) {
-            /* Special to avoid Cloudflare problems */
-            this.loginWebsite(link, accountToUseInSpecialHandling, false);
-            final String directurl = buildSpecialJDownloaderURL(link);
-            URLConnectionAdapter con = null;
-            try {
-                final Browser brc = br.cloneBrowser();
-                brc.setFollowRedirects(true);
-                // con = brc.openHeadConnection(directurl);
-                con = brc.openGetConnection(directurl);
-                if (!this.looksLikeDownloadableContent(con)) {
-                    brc.followConnection(true);
-                    this.checkErrors(brc, brc.getRequest().getHtmlCode(), link, accountToUseInSpecialHandling, false);
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Special '/jd' handling failed");
-                }
-                if (con.getCompleteContentLength() > 0) {
-                    link.setVerifiedFileSize(con.getCompleteContentLength());
-                }
-                final String filename = Plugin.getFileNameFromHeader(con);
-                if (filename != null) {
-                    link.setFinalFileName(filename);
-                }
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (final Throwable e) {
-                }
-            }
-            return AvailableStatus.TRUE;
-        } else {
-            final AvailableStatus status = super.requestFileInformationWebsite(link, account, isDownload);
-            // 2023-04-12: MD5 seems to be base64 encoded but doesn't match, maybe just fake info?!*/
-            final String sha256 = br.getRegex("(?i)SHA-256\\s*:\\s*</b>\\s*([a-f0-9]{64})\\s*</span>").getMatch(0);
-            if (sha256 != null) {
-                link.setSha256Hash(sha256);
-            }
-            return status;
-        }
+        return status;
     }
 
     @Override
@@ -248,13 +207,6 @@ public class SendCm extends XFileSharingProBasic {
         } else {
             super.handlePremium(link, account);
         }
-    }
-
-    @Deprecated
-    private String buildSpecialJDownloaderURL(final DownloadLink link) {
-        final String contentURL = this.getContentURL(link);
-        final String specialURL = contentURL + "/jd";
-        return specialURL;
     }
 
     private boolean isFreeAccountWithPremiumTraffic(final Account account) {

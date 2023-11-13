@@ -24,11 +24,11 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.plugins.components.YetiShareCore;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -44,13 +44,21 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class GenericYetiShareFolder extends antiDDoSForDecrypt {
+public class GenericYetiShareFolder extends PluginForDecrypt {
     public GenericYetiShareFolder(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.setFollowRedirects(true);
+        return br;
     }
 
     /** 2020-11-13: Preventive measure */
@@ -111,9 +119,9 @@ public class GenericYetiShareFolder extends antiDDoSForDecrypt {
         return ret.toArray(new String[0]);
     }
 
-    private static final String TYPE_OLD                  = "https?://[^/]+/folder/(\\d+)(?:/[^<>\"]+)?(?:\\?sharekey=[A-Za-z0-9\\-_]+)?";
-    private static final String TYPE_NEW                  = "https?://[^/]+/folder/([a-f0-9]{32})";
-    private static final String TYPE_NEW_NONACCOUNTSHARED = "https?://[^/]+/shared/([a-z0-9\\-_]+)";
+    private static final String TYPE_OLD                  = "(?i)https?://[^/]+/folder/(\\d+)(?:/[^<>\"]+)?(?:\\?sharekey=[A-Za-z0-9\\-_]+)?";
+    private static final String TYPE_NEW                  = "(?i)https?://[^/]+/folder/([a-f0-9]{32})";
+    private static final String TYPE_NEW_NONACCOUNTSHARED = "(?i)https?://[^/]+/shared/([a-z0-9\\-_]+)";
 
     /**
      * Generic Crawler for YetiShare file-hosts. <br />
@@ -129,8 +137,7 @@ public class GenericYetiShareFolder extends antiDDoSForDecrypt {
     }
 
     private ArrayList<DownloadLink> crawlFolderNEW(final CryptedLink param) throws Exception {
-        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+        final String parameter = param.getCryptedUrl();
         final String currentFolderID;
         if (param.getCryptedUrl().matches(TYPE_NEW)) {
             currentFolderID = new Regex(parameter, TYPE_NEW).getMatch(0);
@@ -154,24 +161,23 @@ public class GenericYetiShareFolder extends antiDDoSForDecrypt {
                     }
                     final boolean validatedCookies = ((YetiShareCore) plg).loginWebsite(account, false);
                     br.setFollowRedirects(true);
-                    getPage(parameter);
+                    br.getPage(parameter);
                     if (!validatedCookies && !((YetiShareCore) plg).isLoggedin(br, account)) {
                         logger.info("Session expired? Trying again, this time with cookie validation");
                         ((YetiShareCore) plg).loginWebsite(account, true);
                         br.setFollowRedirects(true);
-                        getPage(parameter);
+                        br.getPage(parameter);
                         /* Assume that we are logged in now. */
                         if (!((YetiShareCore) plg).isLoggedin(br, account)) {
                             logger.warning("Possible login failure");
                         }
                     }
-                } catch (PluginException e) {
-                    handleAccountException(account, e);
+                } catch (final PluginException e) {
+                    handleAccountException(plg, account, e);
                 }
             }
         } else {
-            br.setFollowRedirects(true);
-            getPage(parameter);
+            br.getPage(parameter);
         }
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -179,17 +185,21 @@ public class GenericYetiShareFolder extends antiDDoSForDecrypt {
             /* 2020-11-12: Invalid folderHash --> Redirect to mainpage */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        return crawlProcessFolderNEW(param, br, param.getCryptedUrl(), currentFolderID);
+    }
+
+    private ArrayList<DownloadLink> crawlProcessFolderNEW(final CryptedLink param, final Browser br, final String contenturl, final String currentFolderID) throws Exception {
         // final String expectedMaxNumberofItemsPerPage = br.getRegex("var perPage = (\\d+);").getMatch(0);
         final UrlQuery folderquery = new UrlQuery();
-        if (param.getCryptedUrl().matches(TYPE_NEW)) {
-            final String folderID = br.getRegex("loadImages\\('folder', '(\\d+)'").getMatch(0);
-            if (folderID == null) {
-                /* Most likely we've been logged-out and/or account is required to view this folder! */
-                // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                throw new AccountRequiredException();
-            }
+        final String folderIDFromHTML = br.getRegex("loadImages\\('folder', '(\\d+)'").getMatch(0);
+        if (contenturl.matches(TYPE_NEW) && folderIDFromHTML == null) {
+            /* Most likely we've been logged-out and/or account is required to view this folder! */
+            // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            throw new AccountRequiredException();
+        }
+        if (folderIDFromHTML != null) {
             folderquery.add("pageType", "folder");
-            folderquery.add("nodeId", folderID);
+            folderquery.add("nodeId", folderIDFromHTML);
         } else {
             folderquery.add("pageType", "nonaccountshared");
             folderquery.add("nodeId", "");
@@ -199,7 +209,7 @@ public class GenericYetiShareFolder extends antiDDoSForDecrypt {
         folderquery.add("additionalParams%5BsearchTerm%5D", "");
         folderquery.add("additionalParams%5BfilterUploadedDateRange%5D", "");
         folderquery.add("pageStart", "1");
-        postPage("/account/ajax/load_files", folderquery.toString());
+        br.postPage("/account/ajax/load_files", folderquery.toString());
         Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
         if (entries.containsKey("javascript")) {
             final String js = (String) entries.get("javascript");
@@ -231,7 +241,7 @@ public class GenericYetiShareFolder extends antiDDoSForDecrypt {
             pwForm.setMethod(MethodType.POST);
             passCode = getUserInput("Password?", param);
             pwForm.put("folderPassword", Encoding.urlEncode(passCode));
-            this.submitForm(pwForm);
+            br.submitForm(pwForm);
             entries = restoreFromString(br.toString(), TypeRef.MAP);
             passwordSuccess = ((Boolean) entries.get("success")).booleanValue();
             counter++;
@@ -240,14 +250,14 @@ public class GenericYetiShareFolder extends antiDDoSForDecrypt {
             throw new DecrypterException(DecrypterException.PASSWORD);
         } else if (passCode != null) {
             /* Re-do request to access folder content */
-            postPage("/account/ajax/load_files", folderquery.toString());
+            br.postPage("/account/ajax/load_files", folderquery.toString());
             entries = restoreFromString(br.toString(), TypeRef.MAP);
             htmlInsideJson = (String) entries.get("html");
             br.getRequest().setHtmlCode(htmlInsideJson);
         }
         int page = 1;
         FilePackage fp = null;
-        if (param.getCryptedUrl().matches(TYPE_NEW) && !StringUtils.isEmpty(fpName)) {
+        if (contenturl.matches(TYPE_NEW) && !StringUtils.isEmpty(fpName)) {
             fp = FilePackage.getInstance();
             fp.setName(fpName);
         }
@@ -268,6 +278,7 @@ public class GenericYetiShareFolder extends antiDDoSForDecrypt {
             /* We'll allow this to happen but it should never happen not even if we're in the root folder! */
             logger.warning("Failed to find absolute folder path");
         }
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         do {
             logger.info("Crawling page: " + page);
             /* 2021-04-30: "</div></div>" when loggedin */
@@ -337,7 +348,7 @@ public class GenericYetiShareFolder extends antiDDoSForDecrypt {
             if (nextpageStr != null && nextpageStr.equals(Integer.toString(page + 1))) {
                 page++;
                 folderquery.add("pageStart", Integer.toString(page));
-                postPage("/account/ajax/load_files", folderquery.toString());
+                br.postPage("/account/ajax/load_files", folderquery.toString());
                 entries = restoreFromString(br.toString(), TypeRef.MAP);
                 htmlInsideJson = (String) entries.get("html");
                 br.getRequest().setHtmlCode(htmlInsideJson);
@@ -348,7 +359,12 @@ public class GenericYetiShareFolder extends antiDDoSForDecrypt {
             }
         } while (!this.isAbort());
         if (ret.isEmpty()) {
-            String offlineName = currentFolderID;
+            String offlineName;
+            if (currentFolderID != null) {
+                offlineName = currentFolderID;
+            } else {
+                offlineName = br._getURL().getPath();
+            }
             if (!StringUtils.isEmpty(subfolderPath)) {
                 offlineName += subfolderPath;
             }
@@ -358,14 +374,13 @@ public class GenericYetiShareFolder extends antiDDoSForDecrypt {
     }
 
     private ArrayList<DownloadLink> crawlFolderOLD(final CryptedLink param) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
-        final String folderID = new Regex(parameter, TYPE_OLD).getMatch(0);
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final String contenturl = param.getCryptedUrl();
+        final String folderID = new Regex(contenturl, TYPE_OLD).getMatch(0);
         if (folderID == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        br.setFollowRedirects(true);
-        getPage(parameter);
+        br.getPage(contenturl);
         if (br.getHttpConnection().getResponseCode() == 404 || !br.getURL().contains(folderID)) {
             /* 2019-04-29: E.g. letsupload.co offline folder --> Redirect to /index.html */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -380,7 +395,7 @@ public class GenericYetiShareFolder extends antiDDoSForDecrypt {
             do {
                 folderPassword = getUserInput("Password?", param);
                 folderPasswordForm.put("folderPassword", folderPassword);
-                this.submitForm(folderPasswordForm);
+                br.submitForm(folderPasswordForm);
                 folderPasswordForm = oldStyleGetFolderPasswordForm();
                 counter++;
             } while (counter <= 2 && folderPasswordForm != null);
@@ -388,7 +403,7 @@ public class GenericYetiShareFolder extends antiDDoSForDecrypt {
                 throw new DecrypterException(DecrypterException.PASSWORD);
             }
         }
-        String fpNameFallback = new Regex(parameter, "/folder/\\d+/([^/\\?]+)").getMatch(0);
+        String fpNameFallback = new Regex(contenturl, "/folder/\\d+/([^/\\?]+)").getMatch(0);
         if (fpNameFallback != null) {
             /* Nicer fallback packagename */
             fpNameFallback = fpNameFallback.replace("_", " ");
@@ -405,8 +420,8 @@ public class GenericYetiShareFolder extends antiDDoSForDecrypt {
             urls = br.getRegex("href=\"(https?://[^<>/]+/[A-Za-z0-9]+(?:/[^<>/]+)?)\" target=\"_blank\"").getColumn(0);
         }
         if (urls == null || urls.length == 0) {
-            logger.warning("Failed to find any content");
-            return null;
+            logger.info("Old handling failed -> Trying new handling as fallback");
+            return this.crawlProcessFolderNEW(param, br, contenturl, null);
         }
         for (final String urlInfo : urls) {
             String url = null, filename = null, filesize = null;
@@ -450,14 +465,14 @@ public class GenericYetiShareFolder extends antiDDoSForDecrypt {
                  */
                 dl.setDownloadPassword(folderPassword);
             }
-            decryptedLinks.add(dl);
+            ret.add(dl);
         }
         if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName.trim()));
-            fp.addLinks(decryptedLinks);
+            fp.addLinks(ret);
         }
-        return decryptedLinks;
+        return ret;
     }
 
     private Form oldStyleGetFolderPasswordForm() {

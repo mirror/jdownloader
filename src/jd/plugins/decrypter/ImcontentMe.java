@@ -130,7 +130,12 @@ public class ImcontentMe extends PluginForDecrypt {
         final String titleSlug = (String) entries.get("jid");
         final String cryptedData = (String) entries.get("data");
         if (StringUtils.isEmpty(cryptedData)) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (entries.containsKey("error")) {
+                /* .g. {"status":true,"current_request":"CENSORED","error":{"code":500,"message":"Source is empty try restart"}} */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         final String title;
         final String betterTitle = param.getDownloadLink() != null ? param.getDownloadLink().getStringProperty(PROPERTY_TITLE) : null;

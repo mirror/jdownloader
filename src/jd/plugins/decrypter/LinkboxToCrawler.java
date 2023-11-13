@@ -120,6 +120,10 @@ public class LinkboxToCrawler extends PluginForDecrypt {
             }
             final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
             final Map<String, Object> data = (Map<String, Object>) entries.get("data");
+            if (data == null) {
+                /* 2023-11-13: E.g. content abused: {"data":null,"msg":"data removed","status":700} */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             final List<Map<String, Object>> ressources = (List<Map<String, Object>>) data.get("list");
             if (ressources.isEmpty()) {
                 throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER, path + "_" + folderID);

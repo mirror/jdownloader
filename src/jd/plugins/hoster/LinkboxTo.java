@@ -25,6 +25,7 @@ import org.appwork.utils.StringUtils;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -161,12 +162,22 @@ public class LinkboxTo extends PluginForHost {
                 } else if (dl.getConnection().getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 5 * 60 * 1000l);
                 } else {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    /* 2023-11-13: API does not necessarily report abused files as offline. */
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "File offline or broken");
                 }
             }
+            preDownloadErrorCheck(dl.getConnection());
             link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
         }
         dl.startDownload();
+    }
+
+    private void preDownloadErrorCheck(final URLConnectionAdapter con) throws PluginException {
+        final String etag = con.getRequest().getResponseHeader("etag");
+        if (StringUtils.equalsIgnoreCase(etag, "\"28a14757bfe1522e447b544b7d7e5885\"")) {
+            /* 2023-11-13: Dummy video for abused video content. */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
     }
 
     @Override
@@ -184,6 +195,7 @@ public class LinkboxTo extends PluginForHost {
             final Browser brc = br.cloneBrowser();
             dl = new jd.plugins.BrowserAdapter().openDownload(brc, link, url, FREE_RESUME, FREE_MAXCHUNKS);
             if (this.looksLikeDownloadableContent(dl.getConnection())) {
+                preDownloadErrorCheck(dl.getConnection());
                 return true;
             } else {
                 brc.followConnection(true);

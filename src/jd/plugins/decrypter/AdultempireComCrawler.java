@@ -88,6 +88,12 @@ public class AdultempireComCrawler extends PluginForDecrypt {
     private final String PROPERTY_TITLE = "title";
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        // final Account account = AccountController.getInstance().getValidAccount(this.getHost());
+        // if (account != null) {
+        // // TODO: Make use of the account
+        // final AdultempireCom hosterplugin = (AdultempireCom) this.getNewPluginForHostInstance(this.getHost());
+        // hosterplugin.login(account, false);
+        // }
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String internalIDStr;
         String[][] scenesData = null;
