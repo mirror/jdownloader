@@ -18,9 +18,11 @@ package jd.plugins.hoster;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import org.appwork.storage.JSonMapperException;
 import org.appwork.storage.TypeRef;
@@ -32,7 +34,6 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -80,7 +81,7 @@ public class DeepbridCom extends PluginForHost {
 
     @Override
     public Browser createNewBrowserInstance() {
-        final Browser br = new Browser();
+        final Browser br = super.createNewBrowserInstance();
         br.setCookiesExclusive(true);
         br.getHeaders().put("User-Agent", "JDownloader");
         /* See handleRedirects */
@@ -358,7 +359,22 @@ public class DeepbridCom extends PluginForHost {
         }
         getPage(br, API_BASE + "?page=api&action=hosters");
         Map<String, Object> entries;
-        final List<Object> supportedhostslistO = (List<Object>) JavaScriptEngineFactory.jsonToJavaObject(br.getRequest().getHtmlCode());
+        final List<Object> supportedhostslistO;
+        final Object supportedhostsO = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.OBJECT);
+        if (supportedhostsO instanceof Map) {
+            /*
+             * 2023-11-13: A map of string objects called "0", "1" an so on. Basically they are returnign a map of what is supposed to be an
+             * array.
+             */
+            supportedhostslistO = new ArrayList<Object>();
+            final Iterator<Entry<String, Object>> iterator = ((Map<String, Object>) supportedhostsO).entrySet().iterator();
+            while (iterator.hasNext()) {
+                final Entry<String, Object> entry = iterator.next();
+                supportedhostslistO.add(entry.getValue());
+            }
+        } else {
+            supportedhostslistO = (List<Object>) supportedhostsO;
+        }
         final ArrayList<String> supportedhostslist = new ArrayList<String>();
         for (final Object hostO : supportedhostslistO) {
             /* List can be given in two different varieties */
