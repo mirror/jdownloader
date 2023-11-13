@@ -15,21 +15,24 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class OncamMe extends antiDDoSForHost {
@@ -70,7 +73,7 @@ public class OncamMe extends antiDDoSForHost {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(\\d+)(/([a-z0-9\\-]+)/)?");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(embed/)?(\\d+)(/([a-z0-9\\-]+)/)?");
         }
         return ret.toArray(new String[0]);
     }
@@ -91,7 +94,7 @@ public class OncamMe extends antiDDoSForHost {
     }
 
     private String getFID(final DownloadLink link) {
-        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(1);
     }
 
     @Override
@@ -100,18 +103,30 @@ public class OncamMe extends antiDDoSForHost {
     }
 
     private AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
-        final String titleUrl = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(2);
+        dllink = null;
+        final String extDefault = ".mp4";
+        final String fid = this.getFID(link);
+        final String titleUrl = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(3);
         if (titleUrl != null) {
-            link.setFinalFileName(titleUrl.replace("-", " ").trim() + ".mp4");
+            link.setFinalFileName(titleUrl.replace("-", " ").trim() + extDefault);
         } else {
             link.setFinalFileName(this.getFID(link) + ".mp4");
         }
         dllink = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        getPage(link.getPluginPatternMatcher());
+        final boolean isEmbedURL = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0) != null;
+        if (isEmbedURL) {
+            getPage("https://" + this.getHost() + "/" + fid + "/");
+        } else {
+            getPage(link.getPluginPatternMatcher());
+        }
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final String title = br.getRegex("<h1 class=\"content-title\"[^>]*>([^<]+)</h1>").getMatch(0);
+        if (title != null) {
+            link.setFinalFileName(Encoding.htmlDecode(title).trim() + extDefault);
         }
         String jsStr = br.getRegex("var f = \\[([^\\]]+)\\]").getMatch(0);
         jsStr = jsStr.replace("'", "");
@@ -122,12 +137,9 @@ public class OncamMe extends antiDDoSForHost {
             URLConnectionAdapter con = null;
             try {
                 con = openAntiDDoSRequestConnection(br, br.createHeadRequest(dllink));
-                if (!this.looksLikeDownloadableContent(con)) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Video broken?");
-                } else {
-                    if (con.getCompleteContentLength() > 0) {
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
-                    }
+                handleConnectionErrors(br, con);
+                if (con.getCompleteContentLength() > 0) {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
                 }
             } finally {
                 try {
@@ -146,17 +158,21 @@ public class OncamMe extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
-        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+        handleConnectionErrors(br, dl.getConnection());
+        dl.startDownload();
+    }
+
+    private void handleConnectionErrors(final Browser br, final URLConnectionAdapter con) throws PluginException, IOException {
+        if (!this.looksLikeDownloadableContent(con)) {
             br.followConnection(true);
-            if (dl.getConnection().getResponseCode() == 403) {
+            if (con.getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
+            } else if (con.getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             } else {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Video broken?");
             }
         }
-        dl.startDownload();
     }
 
     @Override

@@ -521,6 +521,9 @@ public class SendCm extends XFileSharingProBasic {
             ai.setValidUntil(System.currentTimeMillis() + premiumDurationMilliseconds);
             setAccountLimitsByType(account, AccountType.PREMIUM);
         }
+        if (premium_bandwidthStr == null) {
+            throw new AccountInvalidException("You can only use premium accounts or free accounts with premium traffic via API");
+        }
         {
             /* Now set less relevant account information */
             final Object balanceO = result.get("balance");

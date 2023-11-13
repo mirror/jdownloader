@@ -155,7 +155,7 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
              */
             final String reCaptchaSiteURL;
             if (this.getSpecialReferer() != null) {
-                /* Required e.g. for sh2rt.com. */
+                /* Required e.g. for ClicksflyCom. */
                 reCaptchaSiteURL = br.getBaseURL();
             } else if (this.autoDetectedSpecialReferer.get() != null) {
                 /* E.g. up4cash.com */
@@ -244,7 +244,7 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
                         }
                         final String siteURL;
                         if (this.getSpecialReferer() != null) {
-                            /* Required e.g. for sh2rt.com. */
+                            /* Required e.g. for ClicksflyCom. */
                             siteURL = br.getBaseURL();
                         } else {
                             /* Fine for most of all websites. */

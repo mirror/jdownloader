@@ -25,7 +25,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
@@ -111,11 +110,20 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
             }
             checkErrors(br);
             /* video == 'video_item', user == 'user_home' */
-            final String route_name = PluginJSonUtils.getJson(this.br, "route_name");
+            String username = null;
+            final Regex profileregex1 = new Regex(param.getCryptedUrl(), "(?i)https?://(?:www\\.)?dailymotion\\.com/(user/([A-Za-z0-9_\\-]+)/\\d+|([^/]+)/videos)");
+            if (profileregex1.patternFind()) {
+                username = profileregex1.getMatch(2);
+                if (username == null) {
+                    username = profileregex1.getMatch(1);
+                }
+            } else {
+                username = new Regex(param.getCryptedUrl(), "(?i)https?://(?:www\\.)?dailymotion\\.com/([^/]+)$").getMatch(0);
+            }
             if (contenturl.matches(TYPE_PLAYLIST)) {
                 return crawlPlaylist(contenturl);
-            } else if (contenturl.matches(TYPE_USER) || "user_home".equalsIgnoreCase(route_name)) {
-                return crawlUser(contenturl);
+            } else if (username != null) {
+                return crawlUser(username);
             } else if (contenturl.matches(TYPE_VIDEO)) {
                 return crawlSingleVideo(param, contenturl, SubConfiguration.getConfig(this.getHost()), false);
             } else if (contenturl.matches(TYPE_USER_SEARCH)) {
@@ -144,17 +152,14 @@ public class DailyMotionComDecrypter extends PluginForDecrypt {
      * same limits).
      */
     @SuppressWarnings({ "unchecked" })
-    private ArrayList<DownloadLink> crawlUser(final String contenturl) throws Exception {
+    private ArrayList<DownloadLink> crawlUser(final String username) throws Exception {
         /*
          * 2019-01-18: The API used in decryptPlaylist can also be used to crawl all videos of a user but as long as this one is working,
          * we'll stick to that.
          */
-        logger.info("Crawling user profile: " + contenturl);
-        String username = new Regex(contenturl, "(?i)dailymotion\\.com/user/([A-Za-z0-9\\-_]+)").getMatch(0);
+        logger.info("Crawling user profile: " + username);
         if (username == null) {
-            username = new Regex(contenturl, "(?i)dailymotion\\.com/([^/]+)").getMatch(0);
-        }
-        if (username == null) {
+            /* Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final FilePackage fp = FilePackage.getInstance();

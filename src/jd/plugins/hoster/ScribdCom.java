@@ -29,6 +29,8 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -39,9 +41,11 @@ import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -69,6 +73,11 @@ public class ScribdCom extends PluginForHost {
         setConfigElements();
         /* 2019-08-12: Seems like this startintervall is not needed anymore */
         // this.setStartIntervall(5 * 1000l);
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.COOKIE_LOGIN_ONLY };
     }
 
     public void correctDownloadLink(final DownloadLink link) {
@@ -421,37 +430,69 @@ public class ScribdCom extends PluginForHost {
 
     public void login(final Account account, final boolean force) throws Exception {
         synchronized (account) {
-            try {
-                br.setCookiesExclusive(true);
-                prepBRGeneral(br);
-                br.setFollowRedirects(true);
-                final Cookies cookies = account.loadCookies("");
-                String authenticity_token = null;
-                if (cookies != null) {
-                    br.setCookies(account.getHoster(), cookies);
-                    authenticity_token = getauthenticity_token(account);
-                    logger.info("Verifying login cookies");
-                    br.getPage("https://www." + this.getHost() + "/");
-                    if (isLoggedin(br)) {
-                        /* Cookie login successful --> Save cookie timestamp */
-                        logger.info("Cookie login successful");
+            br.setCookiesExclusive(true);
+            prepBRGeneral(br);
+            br.setFollowRedirects(true);
+            final boolean allowCookieLoginOnly = true; // 2023-11-13
+            final Cookies cookies = account.loadCookies("");
+            final Cookies userCookies = account.loadUserCookies();
+            if (userCookies == null && allowCookieLoginOnly) {
+                showCookieLoginInfo();
+                throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_required());
+            }
+            if (cookies != null || userCookies != null) {
+                if (userCookies != null) {
+                    br.setCookies(userCookies);
+                } else {
+                    br.setCookies(cookies);
+                }
+                logger.info("Verifying login cookies");
+                br.getPage("https://www." + this.getHost() + "/");
+                if (isLoggedIN(br)) {
+                    /* Cookie login successful --> Save cookie timestamp */
+                    logger.info("Cookie login successful");
+                    if (userCookies == null) {
                         account.saveCookies(br.getCookies(br.getHost()), "");
-                        return;
-                    } else {
-                        logger.info("Cookie login failed");
-                        br.clearAll();
+                    }
+                    return;
+                } else {
+                    logger.info("Cookie login failed");
+                    br.clearCookies(null);
+                    if (userCookies != null) {
+                        /* Dead end */
+                        logger.info("User Cookie login failed");
+                        if (account.hasEverBeenValid()) {
+                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
+                        } else {
+                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
+                        }
                     }
                 }
-                br.getPage("https://www." + this.getHost() + "/login");
-                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                /* 2020-06-08: No required anymore(?) */
-                authenticity_token = createCSRFTOKEN(br.cloneBrowser(), account.getHoster());
-                if (authenticity_token != null) {
-                    br.getHeaders().put("X-Csrf-Token", authenticity_token);
+            }
+            br.getPage("https://www." + this.getHost() + "/login");
+            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            // br.getHeaders().put("origin", "https://de.scribd.com");
+            // br.getHeaders().put("referer", "https://de.scribd.com/");
+            final Form loginform = br.getFormbyKey("password");
+            if (loginform != null) {
+                /* 2023-11-13: New */
+                final String rcSitekey = br.getRegex("data-captcha-sitekey=\"([^\"]+)").getMatch(0);
+                loginform.put("username", Encoding.urlEncode(account.getUser()));
+                loginform.put("password", Encoding.urlEncode(account.getPass()));
+                if (rcSitekey != null) {
+                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, rcSitekey) {
+                        @Override
+                        public TYPE getType() {
+                            return TYPE.INVISIBLE;
+                        }
+                    }.getToken();
+                    loginform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                } else {
+                    logger.warning("Failed to find rcSitekey -> Login will probably fail");
                 }
-                br.getHeaders().put("Content-Type", "application/json");
-                // br.getHeaders().put("origin", "https://de.scribd.com");
-                // br.getHeaders().put("referer", "https://de.scribd.com/");
+                br.submitForm(loginform);
+            } else {
+                /* Old handling */
                 final Map<String, Object> post = new HashMap<String, Object>();
                 post.put("login_or_email", account.getUser());
                 post.put("login_password", account.getPass());
@@ -469,29 +510,33 @@ public class ScribdCom extends PluginForHost {
                     }
                     post.put("g-recaptcha-response", recaptchaV2Response);
                 }
+                br.getHeaders().put("Content-Type", "application/json");
                 br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 br.postPageRaw("/login", JSonStorage.serializeToJson(post));
-                /* E.g. success: {"login":true,"success":true,"user":{"id":123456789}} */
-                final String loginstatus = PluginJSonUtils.getJson(br, "login");
-                if (br.containsHTML("Invalid username or password") || !"true".equals(loginstatus) || !isLoggedin(br)) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-                account.saveCookies(br.getCookies(br.getHost()), "");
-                account.setProperty("authenticity_token", authenticity_token);
-            } catch (final PluginException e) {
-                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
-                    account.clearCookies("");
-                    account.removeProperty("authenticity_token");
-                }
-                throw e;
             }
+            /* E.g. success: {"login":true,"success":true,"user":{"id":123456789}} */
+            final String loginstatus = PluginJSonUtils.getJson(br, "login");
+            if (br.containsHTML("Invalid username or password") || !"true".equals(loginstatus) || !isLoggedinViaCookie(br)) {
+                throw new AccountInvalidException();
+            }
+            account.saveCookies(br.getCookies(br.getHost()), "");
         }
     }
 
-    public static boolean isLoggedin(final Browser br) {
+    private boolean isLoggedIN(final Browser br) {
+        if (br.containsHTML("/logout")) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    @Deprecated
+    public static boolean isLoggedinViaCookie(final Browser br) {
         return br.getCookie(br.getHost(), "_scribd_session", Cookies.NOTDELETEDPATTERN) != null;
     }
 
+    @Deprecated
     public static String createCSRFTOKEN(final Browser br, final String host) throws IOException, PluginException {
         br.getPage("https://www." + host + "/csrf_token?href=http%3A%2F%2Fwww.scribd.com%2F");
         final String authenticity_token = PluginJSonUtils.getJson(br, "csrf_token");
@@ -617,6 +662,7 @@ public class ScribdCom extends PluginForHost {
     }
 
     /** Returns the most important account token */
+    @Deprecated
     private static String getauthenticity_token(final Account acc) {
         return acc.getStringProperty("authenticity_token", null);
     }

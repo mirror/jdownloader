@@ -321,7 +321,10 @@ public class AccountController implements AccountControllerListener, AccountProp
                 }
                 long tempDisabledCounterBefore = account.getTmpDisabledTimeout();
                 try {
-                    /* We can't rely on validation via GUI as myjdownloader remote controller JDownloader instances have no Java GUI. */
+                    /**
+                     * We can't rely on validation via GUI as myjdownloader remote controller JDownloader instances have no Java GUI. </br>
+                     * This is also useful for websites where login gets changed from normal login to cookie login only.
+                     */
                     if (plugin.hasFeature(FEATURE.COOKIE_LOGIN_ONLY)) {
                         if (account.loadUserCookies() == null) {
                             throw new AccountInvalidException(_GUI.T.accountdialog_LoginValidationErrorCookieLoginMandatoryButNoCookiesGiven());

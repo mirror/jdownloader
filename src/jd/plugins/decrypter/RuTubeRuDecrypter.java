@@ -31,7 +31,6 @@ import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -60,15 +59,15 @@ public class RuTubeRuDecrypter extends PluginForDecrypt {
     /* TODO: Eliminate this global variable. */
     private String privatevalue = null;
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final DownloadLink link = crawlSingleVideo(param);
         if (link == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         } else {
-            decryptedLinks.add(link);
+            ret.add(link);
         }
-        return decryptedLinks;
+        return ret;
     }
 
     private void getPage(final String url) throws IOException {
@@ -93,6 +92,9 @@ public class RuTubeRuDecrypter extends PluginForDecrypt {
         if (videoID == null) {
             videoID = new Regex(param.getCryptedUrl(), "video\\.rutube\\.ru/(\\d{3,})").getMatch(0);
         }
+        if (videoID == null) {
+            videoID = new Regex(param.getCryptedUrl(), "/tracks/(\\d+)").getMatch(0);
+        }
         privatevalue = new Regex(param.getCryptedUrl(), "p=([A-Za-z0-9\\-_]+)").getMatch(0);
         if (videoID == null) {
             if (videoHash == null) {
@@ -112,14 +114,19 @@ public class RuTubeRuDecrypter extends PluginForDecrypt {
         }
         final Browser ajax = getAjaxBR(br.cloneBrowser());
         getPage(ajax, "http://" + this.getHost() + "/api/play/options/" + videoID + "/?format=json&no_404=true&sqr4374_compat=1&referer=" + Encoding.urlEncode(param.getCryptedUrl()) + "&_t=" + System.currentTimeMillis());
-        final Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(ajax.toString());
+        final Map<String, Object> entries = restoreFromString(ajax.getRequest().getHtmlCode(), TypeRef.MAP);
+        final Map<String, Object> detailmap = (Map<String, Object>) entries.get("detail");
         videoHash = (String) entries.get("effective_video");
-        if (!(Boolean) entries.get("has_video")) {
+        if (Boolean.FALSE.equals(entries.get("has_video"))) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (ajax.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (StringUtils.isEmpty(videoHash)) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (detailmap != null && detailmap.get("name").toString().equalsIgnoreCase("default_does_not_exists_video")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         final DownloadLink ret = super.createDownloadlink("https://" + this.getHost() + "/video/" + videoHash);
         final String title = (String) entries.get("title");
