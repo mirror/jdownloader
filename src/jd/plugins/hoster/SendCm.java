@@ -585,11 +585,15 @@ public class SendCm extends XFileSharingProBasic {
 
     @Override
     protected boolean allowAPIDownloadIfApikeyIsAvailable(final DownloadLink link, final Account account) {
-        final String apikey = getAPIKeyFromAccount(account);
-        if (apikey != null && (isFreeAccountWithPremiumTraffic(account) || account.getType() == AccountType.PREMIUM)) {
-            return true;
-        } else {
+        if (account == null) {
             return false;
+        } else {
+            final String apikey = getAPIKeyFromAccount(account);
+            if (apikey != null && (isFreeAccountWithPremiumTraffic(account) || account.getType() == AccountType.PREMIUM)) {
+                return true;
+            } else {
+                return false;
+            }
         }
     }
 

@@ -495,15 +495,15 @@ public class TbCmV2 extends PluginForDecrypt {
                 logger.info(playlistHandlingLogtextForUserDisabledCrawlerByLimitSetting);
                 return ret;
             }
-            // TODO: Clean this code mess
             final Regex legacyurl = new Regex(cleanedurl, "(?i)https?://[^/]+/user/([^/]+).*");
-            if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && legacyurl.patternFind()) {
-                // TODO:
+            if (legacyurl.patternFind()) {
+                /* Workaround / legacy handling for such old URLs. */
+                // TODO: Maybe add check/errorhandling for offline/invalid channels
                 /*
                  * Such old URLs can redirect to other usernames e.g. /user/nameOld -> Redirects to '/@nameNew/videos' while we can't just
                  * call '/@nameOld/videos'
                  */
-                logger.info("Checking for changed username");
+                logger.info("Checking for changed username | Currently known username: " + this.userName);
                 helper.getPage(br, cleanedurl);
                 helper.parse();
                 final Map<String, Object> root = helper.getYtInitialData();
