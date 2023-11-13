@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.parser.UrlQuery;
 
 import jd.PluginWrapper;
@@ -41,6 +42,13 @@ import jd.plugins.PluginForDecrypt;
 public class SextbNet extends PluginForDecrypt {
     public SextbNet(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.setFollowRedirects(true);
+        return br;
     }
 
     public static List<String[]> getPluginDomains() {
@@ -66,13 +74,12 @@ public class SextbNet extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/([A-Za-z0-9\\-_]+-\\d+)$");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/([A-Za-z0-9\\-_]+)$");
         }
         return ret.toArray(new String[0]);
     }
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        br.setFollowRedirects(true);
         final String slug = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
         br.getPage(param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 404) {
@@ -111,6 +118,9 @@ public class SextbNet extends PluginForDecrypt {
             brc.postPage("/ajax/player", query);
             final Map<String, Object> entries = restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.MAP);
             final String html = entries.get("player").toString();
+            if (StringUtils.containsIgnoreCase(html, "This is a server for VIP Members")) {
+                logger.info("Potential premium only mirror: " + mirrorID);
+            }
             final String[] urls = HTMLParser.getHttpLinks(html, br.getURL());
             for (final String url : urls) {
                 if (this.canHandle(url)) {
@@ -123,6 +133,7 @@ public class SextbNet extends PluginForDecrypt {
                 distribute(link);
             }
             if (this.isAbort()) {
+                logger.info("Stopping because: Aborted by user");
                 break;
             }
         }

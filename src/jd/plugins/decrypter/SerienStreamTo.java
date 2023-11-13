@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.regex.Pattern;
 
 import org.appwork.utils.Regex;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2;
@@ -93,7 +94,7 @@ public class SerienStreamTo extends PluginForDecrypt {
     private DownloadLink crawlSingleRedirect(String url, final Browser br) throws PluginException, InterruptedException, DecrypterException, IOException {
         br.setFollowRedirects(false);
         /* Enforce https */
-        url = url.replaceFirst("http://", "https://");
+        url = url.replaceFirst("(?i)http://", "https://");
         final String initialHost = Browser.getHost(url, true);
         String redirectPage = br.getPage(url);
         String finallink = null;
@@ -139,7 +140,7 @@ public class SerienStreamTo extends PluginForDecrypt {
         final String title = br.getRegex("<meta property=\"og:title\" content=\"(?:Episode \\d+\\s|Staffel \\d+\\s|von+\\s)+([^\"]+)\"/>").getMatch(0);
         final String itemSlug = new Regex(br.getURL(), "https?://[^/]+/[^/]+/[^/]+/(.*)").getMatch(0);
         // If we're on a show site, add the seasons, if we're on a season page, add the episodes and so on ...
-        String[][] itemLinks = br.getRegex("href=\"([^\"]+" + Regex.escape(itemSlug) + "/[^\"]+)\"").getMatches();
+        final String[][] itemLinks = br.getRegex("href=\"([^\"]+" + Pattern.quote(itemSlug) + "/[^\"]+)\"").getMatches();
         for (String[] itemLink : itemLinks) {
             ret.add(createDownloadlink(br.getURL(Encoding.htmlDecode(itemLink[0])).toString()));
         }
@@ -192,6 +193,10 @@ public class SerienStreamTo extends PluginForDecrypt {
                 final String redirectURL = new Regex(episodeHTML, "href=\"([^\"]+redirect[^\"]+)\" target=\"_blank\"").getMatch(0);
                 final String languageKey = new Regex(episodeHTML, "data-lang-key=\"(\\d+)\"").getMatch(0);
                 final String hoster = new Regex(episodeHTML, "(?i)title=\"Hoster ([^\"]+)\"").getMatch(0).toLowerCase(Locale.ENGLISH);
+                if (redirectURL == null || languageKey == null || hoster == null) {
+                    logger.warning("Something is null: redirectURL =" + redirectURL + " | languageKey = " + languageKey + " | hoster = " + hoster);
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
                 // boolean allowByPrio;
                 // if (!userLanguageIDsPrioList.isEmpty() && userLanguageIDsPrioList.contains(languageKey) && !userHosterPrioList.isEmpty()
                 // && userHosterPrioList.contains(hoster)) {
@@ -291,40 +296,41 @@ public class SerienStreamTo extends PluginForDecrypt {
             int index = 0;
             final HashSet<String> dup = new HashSet<String>();
             for (String videoURL : urlsToProcess) {
-                if (dup.add(videoURL)) {
-                    logger.info("Working on item " + index + "/" + urlsToProcess.size());
-                    final Browser br2 = br.cloneBrowser();
-                    br2.setFollowRedirects(false);
-                    videoURL = br.getURL(Encoding.htmlDecode(videoURL)).toString();
-                    String redirectPage = br2.getPage(videoURL);
-                    if (br2.getRedirectLocation() != null) {
-                        videoURL = br2.getRedirectLocation();
-                    } else if (br2.containsHTML("grecaptcha")) {
-                        final Form captcha = br2.getForm(0);
-                        final String sitekey = new Regex(redirectPage, "grecaptcha\\.execute\\('([^']+)'").getMatch(0);
-                        final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br2, sitekey) {
-                            @Override
-                            public TYPE getType() {
-                                return TYPE.INVISIBLE;
-                            }
-                        }.getToken();
-                        captcha.put("original", "");
-                        captcha.put("token", Encoding.urlEncode(recaptchaV2Response));
-                        try {
-                            redirectPage = br2.submitForm(captcha);
-                        } catch (IOException e) {
-                            logger.log(e);
-                        }
-                        videoURL = br2.getURL().toString();
-                    }
-                    final DownloadLink link = createDownloadlink(videoURL);
-                    if (filePackage != null) {
-                        filePackage.add(link);
-                    }
-                    ret.add(link);
-                    distribute(link);
-                    index += 1;
+                if (!dup.add(videoURL)) {
+                    continue;
                 }
+                logger.info("Working on item " + index + "/" + urlsToProcess.size());
+                final Browser br2 = br.cloneBrowser();
+                br2.setFollowRedirects(false);
+                videoURL = br.getURL(Encoding.htmlDecode(videoURL)).toExternalForm();
+                String redirectPage = br2.getPage(videoURL);
+                if (br2.getRedirectLocation() != null) {
+                    videoURL = br2.getRedirectLocation();
+                } else if (br2.containsHTML("grecaptcha")) {
+                    final Form captcha = br2.getForm(0);
+                    final String sitekey = new Regex(redirectPage, "grecaptcha\\.execute\\('([^']+)'").getMatch(0);
+                    final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br2, sitekey) {
+                        @Override
+                        public TYPE getType() {
+                            return TYPE.INVISIBLE;
+                        }
+                    }.getToken();
+                    captcha.put("original", "");
+                    captcha.put("token", Encoding.urlEncode(recaptchaV2Response));
+                    try {
+                        redirectPage = br2.submitForm(captcha);
+                    } catch (IOException e) {
+                        logger.log(e);
+                    }
+                    videoURL = br2.getURL().toString();
+                }
+                final DownloadLink link = createDownloadlink(videoURL);
+                if (filePackage != null) {
+                    filePackage.add(link);
+                }
+                ret.add(link);
+                distribute(link);
+                index += 1;
             }
         }
         return ret;

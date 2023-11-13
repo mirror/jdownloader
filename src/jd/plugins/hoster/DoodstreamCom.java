@@ -78,7 +78,7 @@ public class DoodstreamCom extends XFileSharingProBasic {
         return ret;
     }
 
-    public static void setSSLSocketStreamOptions(Browser br) {
+    public static void setSSLSocketStreamOptions(final Browser br) {
         br.setSSLSocketStreamOptions(new SSLSocketStreamOptionsModifier() {
             @Override
             public SSLSocketStreamOptions modify(SSLSocketStreamOptions sslSocketStreamOptions, HTTPConnection httpConnection) {

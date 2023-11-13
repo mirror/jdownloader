@@ -40,6 +40,7 @@ import jd.parser.html.Form.MethodType;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -54,6 +55,13 @@ public class EPornerCom extends PluginForHost {
     public EPornerCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.eporner.com/");
+    }
+
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.setFollowRedirects(true);
+        return br;
     }
 
     @Override
@@ -150,7 +158,6 @@ public class EPornerCom extends PluginForHost {
         if (account != null) {
             this.login(account, false);
         }
-        br.setFollowRedirects(true);
         br.getPage(link.getPluginPatternMatcher());
         if (this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -251,7 +258,6 @@ public class EPornerCom extends PluginForHost {
             /* Only get filesize from url if we were not able to find it in html --> Saves us time! */
             final Browser br2 = br.cloneBrowser();
             // In case the link redirects to the finallink
-            br2.setFollowRedirects(true);
             URLConnectionAdapter con = null;
             try {
                 con = br2.openHeadConnection(dllink);
@@ -408,21 +414,20 @@ public class EPornerCom extends PluginForHost {
     private boolean login(final Account account, final boolean force) throws Exception {
         synchronized (account) {
             try {
-                br.setFollowRedirects(true);
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
                     logger.info("Attempting cookie login");
                     this.br.setCookies(this.getHost(), cookies);
-                    if (!force && System.currentTimeMillis() - account.getCookiesTimeStamp("") < 5 * 60 * 1000l) {
-                        logger.info("Cookies are still fresh --> Trust cookies without login");
+                    if (!force) {
+                        /* Do not validate cookies. */
                         return false;
                     }
                     br.getPage("https://" + this.getHost() + "/");
                     if (this.isLoggedin()) {
                         logger.info("Cookie login successful");
                         /* Refresh cookie timestamp */
-                        account.saveCookies(this.br.getCookies(this.getHost()), "");
+                        account.saveCookies(br.getCookies(br.getHost()), "");
                         return true;
                     } else {
                         logger.info("Cookie login failed");
@@ -441,9 +446,9 @@ public class EPornerCom extends PluginForHost {
                 /* 2020-05-26: E.g. login failed: {"status":0,"msg_head":"Login failed.","msg_body":"Bad login\/password"} */
                 br.getPage("/");
                 if (!isLoggedin()) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    throw new AccountInvalidException();
                 }
-                account.saveCookies(this.br.getCookies(this.getHost()), "");
+                account.saveCookies(this.br.getCookies(br.getHost()), "");
                 return true;
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {

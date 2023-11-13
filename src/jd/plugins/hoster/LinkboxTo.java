@@ -41,6 +41,13 @@ public class LinkboxTo extends PluginForHost {
     }
 
     @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.setFollowRedirects(true);
+        return br;
+    }
+
+    @Override
     public String getAGBLink() {
         return "https://www.sharezweb.com/terms-of-service";
     }
@@ -109,7 +116,6 @@ public class LinkboxTo extends PluginForHost {
             link.setName(this.getFID(link));
         }
         this.setBrowserExclusive();
-        br.setFollowRedirects(true);
         br.getPage("https://www." + this.getHost() + "/api/file/detail?itemId=" + fid + "&needUser=1&needTpInfo=1&token=");
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

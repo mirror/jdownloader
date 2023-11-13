@@ -23,7 +23,6 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
 import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
@@ -102,10 +101,6 @@ public class ImcontentMe extends PluginForDecrypt {
         final String contentID = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
         if (contentID == null) {
             /* Developer mistake */
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-            /* 2023-09-14: Plugin does not yet work. */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br.setFollowRedirects(true);

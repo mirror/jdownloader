@@ -20,9 +20,11 @@ import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import javax.imageio.ImageIO;
 
@@ -116,26 +118,34 @@ public class VidguardTo extends PluginForHost {
         return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
-    private String getContentURL(final DownloadLink link) {
-        return "https://" + this.getHost() + "/v/" + this.getFID(link);
-    }
+    private final Pattern PATTERN_VIDEO_EMBED = Pattern.compile("(?i)https?://[^/]+/e/(.+)");
+    private final Pattern PATTERN_VIDEO_VIEW  = Pattern.compile("(?i)https?://[^/]+/v/(.+)");
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        final String fuid = this.getFID(link);
         if (!link.isNameSet()) {
             /* Set dummy filenames as fallback / weak filenames. */
-            link.setName(this.getFID(link) + ".mp4");
+            link.setName(fuid + ".mp4");
         }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(getContentURL(link));
+        String filename;
+        if (new Regex(link.getPluginPatternMatcher(), PATTERN_VIDEO_EMBED).patternFind()) {
+            /* Embed-URL */
+            br.getPage("https://" + this.getHost() + new URL(link.getPluginPatternMatcher()).getPath());
+            filename = br.getRegex("name=\"twitter:title\" content=\"([^\"]+)").getMatch(0);
+        } else {
+            /* Access "/v/..." URL (also when user adds other types of URLs) */
+            br.getPage("https://" + this.getHost() + getUrlPathVideoView(fuid));
+            filename = br.getRegex("<h4>([^<]+)</h4>").getMatch(0);
+            if (StringUtils.isEmpty(filename)) {
+                filename = br.getRegex("<title>([^<]+)</title>").getMatch(0);
+            }
+        }
         if (br.getHttpConnection().getResponseCode() == 404) {
             /* E.g. response: Not found err:1002 */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        String filename = br.getRegex("<h4>([^<]+)</h4>").getMatch(0);
-        if (StringUtils.isEmpty(filename)) {
-            filename = br.getRegex("<title>([^<]+)</title>").getMatch(0);
         }
         String filesize = br.getRegex("Download\\s*<br />([^<]+)").getMatch(0);
         if (filename != null) {
@@ -148,6 +158,18 @@ public class VidguardTo extends PluginForHost {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
         return AvailableStatus.TRUE;
+    }
+
+    private String getUrlPathVideoEmbed(final String fuid) {
+        return "/e/" + fuid;
+    }
+
+    private String getUrlPathVideoView(final String fuid) {
+        return "/v/" + fuid;
+    }
+
+    private String getUrlPathVideoDownload(final String fuid) {
+        return "/d/" + fuid;
     }
 
     @Override
@@ -166,9 +188,14 @@ public class VidguardTo extends PluginForHost {
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, storedDirecturl, this.isResumeable(link, null), this.getMaxChunks(null));
         } else {
             requestFileInformation(link);
-            final String nextStepURL = "/d/" + this.getFID(link);
+            final String fuid = this.getFID(link);
+            if (!new Regex(br.getURL(), PATTERN_VIDEO_VIEW).patternFind()) {
+                br.getPage(getUrlPathVideoView(fuid));
+            }
+            final String nextStepURL = this.getUrlPathVideoDownload(fuid);
             if (!br.containsHTML(nextStepURL)) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                /* TODO: Implement embed stream download: https://svn.jdownloader.org/issues/90418 */
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Video download has been disabled by uploader");
             }
             br.getPage(nextStepURL);
             final Browser brc = br.cloneBrowser();

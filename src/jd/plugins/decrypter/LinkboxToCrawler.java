@@ -26,6 +26,7 @@ import org.appwork.utils.parser.UrlQuery;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -44,6 +45,13 @@ import jd.plugins.hoster.LinkboxTo;
 public class LinkboxToCrawler extends PluginForDecrypt {
     public LinkboxToCrawler(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.setFollowRedirects(true);
+        return br;
     }
 
     public static List<String[]> getPluginDomains() {
@@ -77,7 +85,6 @@ public class LinkboxToCrawler extends PluginForDecrypt {
         final String folderID = urlinfo.getMatch(1);
         final String subfolderID = urlinfo.getMatch(3);
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        br.setFollowRedirects(true);
         final int maxItemsPerPage = 50;
         final UrlQuery query = new UrlQuery();
         query.add("sortField", "name");
@@ -101,9 +108,8 @@ public class LinkboxToCrawler extends PluginForDecrypt {
         final HashSet<String> dupes = new HashSet<String>();
         int page = 1;
         String path = this.getAdoptedCloudFolderStructure("");
-        FilePackage packageForFiles = null;
+        FilePackage packageForFiles = FilePackage.getInstance();
         if (!StringUtils.isEmpty(path)) {
-            packageForFiles = FilePackage.getInstance();
             packageForFiles.setName(path);
         }
         do {
@@ -118,7 +124,7 @@ public class LinkboxToCrawler extends PluginForDecrypt {
             if (ressources.isEmpty()) {
                 throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER, path + "_" + folderID);
             }
-            int numberofNewItems = 0;
+            int numberofNewItemsOnCurrentPage = 0;
             for (final Map<String, Object> ressource : ressources) {
                 final DownloadLink link;
                 if (ressource.get("type").equals("dir")) {
@@ -127,7 +133,7 @@ public class LinkboxToCrawler extends PluginForDecrypt {
                     if (!dupes.add(thisSubfolderID)) {
                         continue;
                     }
-                    numberofNewItems++;
+                    numberofNewItemsOnCurrentPage++;
                     link = this.createDownloadlink(createFolderURL(folderID, thisSubfolderID));
                     link.setRelativeDownloadFolderPath("/" + ressource.get("name"));
                 } else {
@@ -136,27 +142,26 @@ public class LinkboxToCrawler extends PluginForDecrypt {
                     if (!dupes.add(fileID)) {
                         continue;
                     }
-                    numberofNewItems++;
+                    numberofNewItemsOnCurrentPage++;
                     link = this.createDownloadlink(createFileURL(fileID));
                     LinkboxTo.parseFileInfoAndSetFilename(link, ressource);
                     if (!StringUtils.isEmpty(path)) {
                         link.setRelativeDownloadFolderPath(path);
-                        link._setFilePackage(packageForFiles);
                     }
+                    link._setFilePackage(packageForFiles);
                 }
                 ret.add(link);
                 distribute(link);
             }
+            logger.info("Crawled page " + page + " | Found items so far: " + ret.size());
             if (this.isAbort()) {
                 logger.info("Stopping because: Aborted by user");
                 break;
-            } else if (data.size() < maxItemsPerPage) {
-                logger.info("Stopping because: Current page contains less items than a full page is expected to contain");
-                break;
-            } else if (numberofNewItems == 0) {
-                logger.info("Stopping because: Failed to find any new items on current page");
+            } else if (numberofNewItemsOnCurrentPage == 0) {
+                logger.info("Stopping because: Failed to find any new items on current page: " + page);
                 break;
             } else {
+                /* Continue to next page */
                 page++;
             }
         } while (true);
