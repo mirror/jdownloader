@@ -146,9 +146,6 @@ public class DefaultEditAccountPanel extends MigPanel implements AccountBuilderI
 
     @Override
     public boolean validateInputs() {
-        if (true) {
-            return true;
-        }
         final boolean userok;
         final boolean passok;
         if (this.name != null) {

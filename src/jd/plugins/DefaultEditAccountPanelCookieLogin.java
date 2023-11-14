@@ -129,9 +129,6 @@ public class DefaultEditAccountPanelCookieLogin extends MigPanel implements Acco
 
     @Override
     public boolean validateInputs() {
-        if (true) {
-            return true;
-        }
         final String pw = getPassword();
         final Cookies cookies = Cookies.parseCookiesFromJsonString(pw);
         final boolean userok;
