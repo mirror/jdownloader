@@ -20,6 +20,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.ReflectionUtils;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -41,13 +47,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.ReflectionUtils;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filer.net" }, urls = { "https?://(?:www\\.)?filer\\.net/(?:app\\.php/)?(?:get|dl)/([a-z0-9]+)" })
 public class FilerNet extends PluginForHost {
@@ -73,6 +72,14 @@ public class FilerNet extends PluginForHost {
         this.enablePremium("http://filer.net/upgrade");
         this.setStartIntervall(2000l);
         setConfigElements();
+    }
+
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.setFollowRedirects(true);
+        br.getHeaders().put("User-Agent", "JDownloader");
+        return br;
     }
 
     public static List<String[]> getPluginDomains() {
@@ -127,12 +134,6 @@ public class FilerNet extends PluginForHost {
         }
     }
 
-    private Browser prepBrowserAPI(final Browser br) {
-        br.setFollowRedirects(true);
-        br.getHeaders().put("User-Agent", "JDownloader");
-        return br;
-    }
-
     @Override
     public String getAGBLink() {
         return "https://filer.net/agb.htm";
@@ -155,7 +156,6 @@ public class FilerNet extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        prepBrowserAPI(br);
         callAPI(null, API_BASE + "/status/" + getFID(link) + ".json");
         if (statusCode == STATUSCODE_APIDISABLED) {
             link.getLinkStatus().setStatusText(ERRORMESSAGE_APIDISABLEDTEXT);
@@ -351,7 +351,6 @@ public class FilerNet extends PluginForHost {
         synchronized (account) {
             /** Load cookies */
             br.setCookiesExclusive(true);
-            prepBrowserAPI(br);
             br.getHeaders().put("Authorization", "Basic " + Encoding.Base64Encode(account.getUser() + ":" + account.getPass()));
             callAPI(account, API_BASE + "/profile.json");
         }
@@ -374,7 +373,7 @@ public class FilerNet extends PluginForHost {
                     br.getPage("https://" + this.getHost());
                     if (this.isLoggedInWebsite(br)) {
                         logger.info("Successfully logged in via cookies");
-                        account.saveCookies(this.br.getCookies(this.getHost()), "");
+                        account.saveCookies(this.br.getCookies(br.getHost()), "");
                         return;
                     } else {
                         logger.info("Cookie login failed");
@@ -403,7 +402,7 @@ public class FilerNet extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username or password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                account.saveCookies(this.br.getCookies(this.getHost()), "");
+                account.saveCookies(this.br.getCookies(br.getHost()), "");
             } catch (final PluginException e) {
                 account.clearCookies("");
                 throw e;
@@ -424,7 +423,7 @@ public class FilerNet extends PluginForHost {
         final AccountInfo ai = new AccountInfo();
         this.setBrowserExclusive();
         loginAPI(account);
-        final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
+        final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         final Map<String, Object> data = (Map<String, Object>) entries.get("data");
         if (data.get("state").toString().equalsIgnoreCase("free")) {
             account.setType(AccountType.FREE);
@@ -478,32 +477,8 @@ public class FilerNet extends PluginForHost {
             /* 2021-09-20: Error 500 may happen quite often. */
             if (!looksLikeDownloadableContent(dl.getConnection())) {
                 br.followConnection(true);
-                /**
-                 * there error handling is fubared, the message is the same for all /error/\d+ <br />
-                 * logs show they can be downloaded, at least in free mode test I've done -raztoki20160510 <br />
-                 * just retry!
-                 */
-                // // Temporary errorhandling for a bug which isn't handled by the API
-                // if (br.getURL().equals("http://filer.net/error/500")) {
-                // throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverfehler", 60 * 60 * 1000l);
-                // }
-                // if (br.getURL().equals("http://filer.net/error/430") || br.containsHTML("Diese Adresse ist nicht bekannt oder")) {
-                // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                // }
-                if (br.getURL().matches(".+/error/\\d+") || dl.getConnection().getCompleteContentLength() == 0) {
-                    final int failed = link.getIntegerProperty("errorFailure", 0) + 1;
-                    link.setProperty("errorFailure", failed);
-                    if (failed > 10) {
-                        throw new PluginException(LinkStatus.ERROR_FATAL, "Retry count over 10, count=" + failed);
-                    } else if (failed > 4) {
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Hoster has issues, count=" + failed, 15 * 60 * 1000l);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_RETRY);
-                    }
-                } else {
-                    /* Do not throw plugin_Defect errors here as we're using an API which we can trust. */
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Final downloadurl did not lead to downloadable content", 3 * 60 * 1000l);
-                }
+                this.handleErrors(account, true);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dl.setAllowFilenameFromURL(true);
             this.dl.startDownload();
@@ -540,11 +515,10 @@ public class FilerNet extends PluginForHost {
 
     private void handleErrors(final Account account, final boolean afterDownload) throws PluginException {
         // Temporary errorhandling for a bug which isn't handled by the API
-        if (br.getURL().endsWith("/error/500")) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverfehler", 60 * 60 * 1000l);
-        }
-        if (br.getURL().endsWith("/error/430") || br.containsHTML("Diese Adresse ist nicht bekannt oder")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        final String errorIDStr = new Regex(br.getURL(), "(?i).+/error/(\\d+)").getMatch(0);
+        if (errorIDStr != null) {
+            // final int errorID = Integer.parseInt(errorIDStr);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Error " + errorIDStr, 15 * 60 * 1000l);
         }
         if (afterDownload && br.containsHTML("filer\\.net/register")) {
             errorNoFreeSlotsAvailable();
@@ -562,12 +536,16 @@ public class FilerNet extends PluginForHost {
                 } else {
                     throw new AccountUnavailableException("Limit reached", 60 * 60 * 1000l);
                 }
-            }
-            if (time != null) {
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Free limit reached", (Integer.parseInt(time) + 60) * 1000l);
             } else {
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Free limit reached", 60 * 60 * 1000l);
+                if (time != null) {
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Free limit reached", (Integer.parseInt(time) + 60) * 1000l);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Free limit reached", 60 * 60 * 1000l);
+                }
             }
+        }
+        if (afterDownload) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Final downloadurl did not lead to downloadable content", 3 * 60 * 1000l);
         }
     }
 

@@ -15,11 +15,13 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.plugins.components.hls.HlsContainer;
@@ -28,7 +30,9 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.HTMLSearch;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -110,8 +114,9 @@ public class BibeltvDe extends PluginForHost {
 
     public AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
         /* This website contains video content ONLY! */
+        final String extDefault = ".mp4";
         if (!link.isNameSet()) {
-            link.setName(getTitleFromURL(link.getPluginPatternMatcher()) + ".mp4");
+            link.setName(getTitleFromURL(link.getPluginPatternMatcher()) + extDefault);
         }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -153,57 +158,71 @@ public class BibeltvDe extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final String json;
-        if (true) {
-            // new, 01.10.2021
-            br.getPage(link.getPluginPatternMatcher());
-            if (br.getHttpConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            json = br.getRegex("<script id=\"__NEXT_DATA__\"\\s*type\\s*=\\s*\"application/json\"\\s*>\\s*(.*?)\\s*</script>").getMatch(0);
-            if (json == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-        } else {
-            if (useCRNURL) {
-                br.getPage("https://www.bibeltv.de/mediathek/api/videodetails/videos?q=contains(crn,%22" + fid + "%22)&expand=");
-            } else {
-                br.getPage(String.format("https://www.bibeltv.de/mediathek/api/videodetails/videos?q=contains(api_id,%s)&expand=", fid));
-            }
-            json = br.toString();
-        }
-        if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 500) {
+        // new, 01.10.2021
+        br.getPage(link.getPluginPatternMatcher());
+        if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        try {
-            entries = JavaScriptEngineFactory.jsonToJavaMap(json);
-        } catch (final Throwable e) {
-            /* 2019-12-17: No parsable json --> Offline */
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, null, e);
+        /* 2023-11-14: Very very lazy regexes */
+        String internalVideoID = br.getRegex("video.\":..\"id.\":(\\d+)").getMatch(0);
+        if (internalVideoID == null) {
+            internalVideoID = br.getRegex("\"id.\":(\\d+),.\"active.\":true,.\"crn.\":.\"\\d+.\"").getMatch(0);
         }
-        entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "props/pageProps/videoPageData/videos/{0}");
-        if (entries == null) {
-            /* Probably no video item available / video offline --> Website redirects to 404 page. */
-            if (br.containsHTML("\"isFallback\":\\s*true")) {
-                /* 2023-03-30: This sometimes happens randomly. */
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Website under maintenance");
-            } else {
+        if (internalVideoID == null) {
+            /* Either plugin is broken or this is not a single video page. */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        /* 2023-11-14: TODO: Re-add json handling. I was just too lazy to regex it out of their html. */
+        json = br.getRegex("<script id=\"__NEXT_DATA__\"\\s*type\\s*=\\s*\"application/json\"\\s*>\\s*(.*?)\\s*</script>").getMatch(0);
+        String description = null;
+        if (json != null) {
+            if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 500) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
+            try {
+                entries = restoreFromString(json, TypeRef.MAP);
+            } catch (final Throwable e) {
+                /* 2019-12-17: No parsable json --> Offline */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, null, e);
+            }
+            entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "props/pageProps/videoPageData/videos/{0}");
+            if (entries == null) {
+                /* Probably no video item available / video offline --> Website redirects to 404 page. */
+                if (br.containsHTML("\"isFallback\":\\s*true")) {
+                    /* 2023-03-30: This sometimes happens randomly. */
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Website under maintenance");
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+            }
+            internalVideoID = entries.get("id").toString();
+            String filename = (String) entries.get("name");
+            if (filename == null) {
+                filename = (String) entries.get("title");
+            }
+            if (StringUtils.isEmpty(filename)) {
+                /* Fallback */
+                filename = getFID(link);
+            }
+            link.setFinalFileName(filename + extDefault);
+            description = (String) entries.get("descriptionLong");
+        } else {
+            /* Obtain all info from HTML */
+            String title = HTMLSearch.searchMetaTag(br, "og:title");
+            if (title != null) {
+                title = Encoding.htmlDecode(title).trim();
+                title = title.replaceFirst("(?i)\\s* \\| Bibel TV$", "");
+                link.setFinalFileName(title + extDefault);
+            } else {
+                /* Final fallback */
+                link.setName(br._getURL().getPath() + extDefault);
+            }
+            description = HTMLSearch.searchMetaTag(br, "og:description");
         }
-        final String internalID = entries.get("id").toString();
-        String filename = (String) entries.get("name");
-        if (filename == null) {
-            filename = (String) entries.get("title");
+        if (!StringUtils.isEmpty(description) && link.getComment() == null) {
+            link.setComment(Encoding.htmlOnlyDecode(description).trim());
         }
-        final String description = (String) entries.get("descriptionLong");
-        if (StringUtils.isEmpty(filename)) {
-            /* Fallback */
-            filename = getFID(link);
-        }
-        link.setFinalFileName(filename + ".mp4");
-        if (description != null && link.getComment() == null) {
-            link.setComment(description);
-        }
+        final Browser br2 = br.cloneBrowser();
         String key = null;
         synchronized (apiKey) {
             if (apiKey.get() == null) {
@@ -220,11 +239,11 @@ public class BibeltvDe extends PluginForHost {
                 final HashSet<String> dupes = new HashSet<String>();
                 for (final String jsURL : jsURLs) {
                     progress++;
+                    logger.info("Working on jsURL " + progress + "/" + jsURLs.length + " | " + jsURL);
                     if (this.isAbort()) {
-                        /* Aborted by user */
+                        logger.info("Aborted by user");
                         throw new InterruptedException();
                     }
-                    logger.info("Working on jsURL " + progress + "/" + jsURLs.length + " | " + jsURL);
                     /* Skip dupes */
                     if (!dupes.add(jsURL)) {
                         continue;
@@ -232,7 +251,7 @@ public class BibeltvDe extends PluginForHost {
                     brc.getPage(jsURL);
                     final String apiKeyTemp = brc.getRegex("Authorization\\s*:\"([^\"]+)\"").getMatch(0);
                     if (apiKeyTemp != null) {
-                        if (apiKeyTemp.matches("(?i)^Bearer $")) {
+                        if (apiKeyTemp.matches("(?i)^(Bearer|Basic) $")) {
                             logger.info("Skipping invalid authentication key: " + apiKeyTemp);
                             continue;
                         } else {
@@ -249,18 +268,27 @@ public class BibeltvDe extends PluginForHost {
                 apiKey.set(apiKeyDetected);
             }
             key = apiKey.get();
-        }
-        final Browser br2 = br.cloneBrowser();
-        br2.getHeaders().put("Authorization", key);
-        br2.getPage("/mediathek/api/video/" + internalID);
-        entries = JavaScriptEngineFactory.jsonToJavaMap(br2.getRequest().getHtmlCode());
-        try {
-            /* 2019-12-18: They provide HLS, DASH and http(highest quality only) */
-            final List<Map<String, Object>> ressourcelist = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entries, "video/videoUrls");
-            if (ressourcelist == null) {
-                /* Most likely video is not available anymore because current date is > date value in field "schedulingEnd". */
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            br2.getHeaders().put("Authorization", key);
+            br2.getPage("/mediathek/api/video/" + internalVideoID);
+            if (br2.getHttpConnection().getResponseCode() == 401) {
+                /* This should never happen */
+                apiKey.set(null);
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "API authorization failure");
             }
+        }
+        entries = restoreFromString(br2.getRequest().getHtmlCode(), TypeRef.MAP);
+        /* 2019-12-18: They provide HLS, DASH and http(highest quality only) */
+        final List<Map<String, Object>> ressourcelist = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entries, "video/videoUrls");
+        if (ressourcelist == null || ressourcelist.isEmpty()) {
+            /* Most likely video is not available anymore because current date is > date value in field "schedulingEnd". */
+            /*
+             * E.g.
+             * {"status":"no-video-urls","video":{"id":12345,"active":true,"crn":"12345","ovpId":"1234567890123","campaigns":[],"videoUrls":
+             * [],"cuePoints":[]}}
+             */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        try {
             long max_width = -1;
             for (final Map<String, Object> entry : ressourcelist) {
                 String type = (String) entry.get("type");
@@ -288,13 +316,9 @@ public class BibeltvDe extends PluginForHost {
                     }
                 }
             }
-        } catch (final Throwable e) {
-            if (e instanceof PluginException) {
-                throw (PluginException) e;
-            } else {
-                logger.log(e);
-                logger.warning("Failed to find downloadurl due to exception");
-            }
+        } catch (final Exception e) {
+            logger.log(e);
+            logger.warning("Failed to find downloadurl due to exception");
         }
         if (StringUtils.isEmpty(mp4URL) && StringUtils.isEmpty(this.hlsURL)) {
             logger.info("Cannot download this item");
@@ -320,9 +344,7 @@ public class BibeltvDe extends PluginForHost {
                 brc.setFollowRedirects(true);
                 /* 2022-03-07: HEAD-request doesn't work for all items anymore. Use GET-request instead. */
                 con = brc.openGetConnection(mp4URL);
-                if (!looksLikeDownloadableContent(con)) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Broken video file?");
-                }
+                handleConnectionErrors(brc, con);
                 if (con.getCompleteContentLength() > 0) {
                     link.setVerifiedFileSize(con.getCompleteContentLength());
                 }
@@ -341,16 +363,7 @@ public class BibeltvDe extends PluginForHost {
         requestFileInformation(link, true);
         if (mp4URL != null) {
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, mp4URL, free_resume, free_maxchunks);
-            if (!looksLikeDownloadableContent(dl.getConnection())) {
-                br.followConnection(true);
-                if (dl.getConnection().getResponseCode() == 403) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-                } else if (dl.getConnection().getResponseCode() == 404) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-            }
+            handleConnectionErrors(br, dl.getConnection());
         } else if (hlsURL != null) {
             if (true) {
                 // split audio/video
@@ -370,6 +383,19 @@ public class BibeltvDe extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private void handleConnectionErrors(final Browser br, final URLConnectionAdapter con) throws PluginException, IOException {
+        if (!this.looksLikeDownloadableContent(con)) {
+            br.followConnection(true);
+            if (con.getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+            } else if (con.getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Video broken?");
+            }
+        }
     }
 
     @Override

@@ -30,6 +30,8 @@ import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class StreamhideCom extends XFileSharingProBasic {
@@ -48,7 +50,7 @@ public class StreamhideCom extends XFileSharingProBasic {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "streamhide.to", "streamhide.com", "guccihide.com", "streamhide.com", "streamtb.me", "louishide.com", "ahvsh.com" });
+        ret.add(new String[] { "streamhide.to", "streamhide.com", "guccihide.com", "guccihide.store", "streamhide.com", "streamtb.me", "louishide.com", "ahvsh.com" });
         return ret;
     }
 
@@ -64,7 +66,7 @@ public class StreamhideCom extends XFileSharingProBasic {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "(?::\\d+)?" + "/(?:d|e|w)/([a-z0-9]{12})");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "(?::\\d+)?" + "/(?:d|e|v|w)/([a-z0-9]{12})");
         }
         return ret.toArray(new String[0]);
     }
@@ -174,6 +176,14 @@ public class StreamhideCom extends XFileSharingProBasic {
             }
         }
         return status;
+    }
+
+    @Override
+    protected void checkErrors(final Browser br, final String html, final DownloadLink link, final Account account, final boolean checkAll) throws NumberFormatException, PluginException {
+        super.checkErrors(br, html, link, account, checkAll);
+        if (br.containsHTML(">\\s*Video temporarily not available")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Video temporarily not available");
+        }
     }
 
     @Override

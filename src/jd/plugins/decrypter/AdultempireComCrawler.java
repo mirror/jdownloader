@@ -28,9 +28,11 @@ import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
+import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
+import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -40,6 +42,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
+import jd.plugins.hoster.AdultempireCom;
 import jd.plugins.hoster.DirectHTTP;
 import jd.plugins.hoster.GenericM3u8;
 
@@ -79,23 +82,22 @@ public class AdultempireComCrawler extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(\\d+/[a-z0-9\\-]+\\.html|gw/player/[^/]*item_id=\\d+.*)");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/((unlimited/)?\\d+/[a-z0-9\\-]+\\.html|gw/player/[^/]*item_id=\\d+.*)");
         }
         return ret.toArray(new String[0]);
     }
 
-    private final String TYPE_EMBED     = "https://www.adultempire.com/gw/player/[^/]*item_id=(\\d+).*";
+    private final String TYPE_EMBED     = "(?i)https?://[^/]+/gw/player/[^/]*item_id=(\\d+).*";
     private final String PROPERTY_TITLE = "title";
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        // final Account account = AccountController.getInstance().getValidAccount(this.getHost());
-        // if (account != null) {
-        // // TODO: Make use of the account
-        // final AdultempireCom hosterplugin = (AdultempireCom) this.getNewPluginForHostInstance(this.getHost());
-        // hosterplugin.login(account, false);
-        // }
+        final Account account = AccountController.getInstance().getValidAccount(this.getHost());
+        if (account != null) {
+            final AdultempireCom hosterplugin = (AdultempireCom) this.getNewPluginForHostInstance(this.getHost());
+            hosterplugin.login(account, false);
+        }
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final String internalIDStr;
+        String internalIDStr;
         String[][] scenesData = null;
         Browser sceneBR = null;
         if (param.getCryptedUrl().matches(TYPE_EMBED)) {
@@ -109,6 +111,9 @@ public class AdultempireComCrawler extends PluginForDecrypt {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             internalIDStr = sceneBR.getRegex("item:\\s*'(\\d+)'").getMatch(0);
+            if (internalIDStr == null) {
+                internalIDStr = sceneBR.getRegex("item:\\s*(\\d+)").getMatch(0);
+            }
             scenesData = sceneBR.getRegex("ShowMoreScreens2017\\((\\d+),(\\d+),(\\d+),(\\d+), \\'(/\\d+/[^\\']+)'").getMatches();
         }
         if (internalIDStr == null) {
