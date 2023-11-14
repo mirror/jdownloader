@@ -15,11 +15,20 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.awt.Color;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 
+import javax.swing.JComponent;
+import javax.swing.JLabel;
+
+import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.ExtPasswordField;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.gui.InputChangedCallbackInterface;
+import org.jdownloader.plugins.accounts.AccountBuilderInterface;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -44,7 +53,6 @@ public class OldGamesCom extends PluginForHost {
     public OldGamesCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.old-games.com/");
-        this.setAccountwithoutUsername(true);
     }
 
     @Override
@@ -199,8 +207,8 @@ public class OldGamesCom extends PluginForHost {
                     return;
                 }
                 br.setFollowRedirects(false);
-                this.br.setCookie(this.getHost(), "acc", account.getPass());
-                br.getPage("http://www.old-games.com/getfile/10");
+                br.setCookie(this.getHost(), "acc", account.getPass());
+                br.getPage("http://www." + this.getHost() + "/getfile/10");
                 if (this.br.containsHTML("name=\"acc\"")) {
                     throw new AccountInvalidException();
                 }
@@ -247,6 +255,84 @@ public class OldGamesCom extends PluginForHost {
         link.setFinalFileName(getFileNameFromHeader(dl.getConnection()));
         link.setProperty("premium_directlink", dllink);
         dl.startDownload();
+    }
+
+    @Override
+    public AccountBuilderInterface getAccountFactory(final InputChangedCallbackInterface callback) {
+        return new OldGamesComAccountFactory(callback);
+    }
+
+    public static class OldGamesComAccountFactory extends MigPanel implements AccountBuilderInterface {
+        /**
+         *
+         */
+        private static final long serialVersionUID = 1L;
+
+        private String getPassword() {
+            if (this.pass == null) {
+                return null;
+            } else {
+                return new String(this.pass.getPassword());
+            }
+        }
+
+        public boolean updateAccount(Account input, Account output) {
+            boolean changed = false;
+            if (!StringUtils.equals(input.getUser(), output.getUser())) {
+                output.setUser(input.getUser());
+                changed = true;
+            }
+            if (!StringUtils.equals(input.getPass(), output.getPass())) {
+                output.setPass(input.getPass());
+                changed = true;
+            }
+            return changed;
+        }
+
+        private final ExtPasswordField pass;
+        private final JLabel           apiPINLabel;
+
+        public OldGamesComAccountFactory(final InputChangedCallbackInterface callback) {
+            super("ins 0, wrap 2", "[][grow,fill]", "");
+            add(apiPINLabel = new JLabel("Access code:"));
+            add(this.pass = new ExtPasswordField() {
+                @Override
+                public void onChanged() {
+                    callback.onChangedInput(this);
+                }
+            }, "");
+            pass.setHelpText("Enter your access code");
+        }
+
+        @Override
+        public JComponent getComponent() {
+            return this;
+        }
+
+        @Override
+        public void setAccount(Account defaultAccount) {
+            if (defaultAccount != null) {
+                // name.setText(defaultAccount.getUser());
+                pass.setText(defaultAccount.getPass());
+            }
+        }
+
+        @Override
+        public boolean validateInputs() {
+            final String pw = getPassword();
+            if (pw != null) {
+                apiPINLabel.setForeground(Color.BLACK);
+                return true;
+            } else {
+                apiPINLabel.setForeground(Color.RED);
+                return false;
+            }
+        }
+
+        @Override
+        public Account getAccount() {
+            return new Account(null, getPassword());
+        }
     }
 
     @Override
