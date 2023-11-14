@@ -19,6 +19,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
@@ -29,25 +34,20 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "stackstorage.com" }, urls = { "https?://([a-z0-9]+)\\.stackstorage\\.com/s/([A-Za-z0-9]+)(\\?dir=([^\\&]+)\\&node\\-id=(\\d+))?" })
 public class StackstorageCom extends antiDDoSForDecrypt {
     public StackstorageCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String parameter = param.toString();
         br.setFollowRedirects(true);
         getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 503) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            ret.add(this.createOfflinelink(parameter));
+            return ret;
         }
         final String subdomain = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
         final String folderID = new Regex(parameter, this.getSupportedLinks()).getMatch(1);
@@ -61,8 +61,8 @@ public class StackstorageCom extends antiDDoSForDecrypt {
             /* 2019-02-01: TODO: Not yet supported */
             /* Password required */
             logger.info("Password protected URLs are not yet supported");
-            decryptedLinks.add(this.createOfflinelink(parameter, "PASSWORD_PROTECTED"));
-            return decryptedLinks;
+            ret.add(this.createOfflinelink(parameter, "PASSWORD_PROTECTED"));
+            return ret;
         }
         final String csrftoken = br.getRegex("name=\"csrf-token\" content=\"([^\"]+)\"").getMatch(0);
         if (StringUtils.isEmpty(csrftoken)) {
@@ -82,8 +82,8 @@ public class StackstorageCom extends antiDDoSForDecrypt {
         do {
             getPage(String.format("https://%s.stackstorage.com/public-share/%s/list?public=true&token=%s&type=folder&offset=%d&limit=%d&sortBy=default&order=asc&query=&dir=%s&_=%s", subdomain, folderID, folderID, offset, maxItemsPerRequest, subdir, System.currentTimeMillis()));
             if (br.getHttpConnection().getResponseCode() == 404) {
-                decryptedLinks.add(this.createOfflinelink(parameter));
-                return decryptedLinks;
+                ret.add(this.createOfflinelink(parameter));
+                return ret;
             }
             Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
             List<Object> ressourcelist = (List<Object>) entries.get("nodes");
@@ -116,7 +116,6 @@ public class StackstorageCom extends antiDDoSForDecrypt {
                     /* Path also contains filename but we need to separate that and remove filename from path */
                     final String path_without_filename;
                     final String[] pathParts = path_with_filename.split("/");
-                    // path = CrossSystem.alleviatePathParts(path);
                     String filename = pathParts[pathParts.length - 1];
                     if (filename == null) {
                         /* Fallback */
@@ -155,13 +154,13 @@ public class StackstorageCom extends antiDDoSForDecrypt {
                         dl.setProperty("download_path", path_with_filename);
                     }
                 }
-                decryptedLinks.add(dl);
+                ret.add(dl);
                 distribute(dl);
                 offset++;
             }
             hasNext = ressourcelist.size() >= maxItemsPerRequest;
             page++;
         } while (!this.isAbort() && hasNext);
-        return decryptedLinks;
+        return ret;
     }
 }

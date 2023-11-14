@@ -136,6 +136,7 @@ import org.jdownloader.plugins.accounts.AccountBuilderInterface;
 import org.jdownloader.plugins.config.AccountConfigInterface;
 import org.jdownloader.plugins.config.AccountJsonConfig;
 import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
 import org.jdownloader.plugins.controller.crawler.CrawlerPluginController;
 import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
@@ -1520,11 +1521,6 @@ public abstract class PluginForHost extends Plugin {
     public void resetPluginGlobals() {
     }
 
-    /**
-     * JD2 only
-     *
-     * @return
-     */
     protected boolean isAbort() {
         final DownloadLink link = getDownloadLink();
         if (link != null) {
@@ -1567,9 +1563,6 @@ public abstract class PluginForHost extends Plugin {
      * @return
      */
     public String getBuyPremiumUrl() {
-        if (premiumurl != null) {
-            return premiumurl;
-        }
         return premiumurl;
     }
 
@@ -2184,7 +2177,14 @@ public abstract class PluginForHost extends Plugin {
      * @return
      */
     public AccountBuilderInterface getAccountFactory(InputChangedCallbackInterface callback) {
-        return new DefaultEditAccountPanel(callback, !getAccountwithoutUsername());
+        if (this.hasFeature(FEATURE.COOKIE_LOGIN_ONLY)) {
+            return new DefaultEditAccountPanelCookieLogin(callback, true);
+        } else if (this.hasFeature(FEATURE.COOKIE_LOGIN_OPTIONAL)) {
+            /* TODO: Add indicator into EditAccountPanel that cookie login is possible (?) */
+            return new DefaultEditAccountPanel(callback, !getAccountwithoutUsername(), true);
+        } else {
+            return new DefaultEditAccountPanel(callback, !getAccountwithoutUsername(), false);
+        }
     }
 
     public void resumeDownloadlink(DownloadLink downloadLink) {
@@ -2477,8 +2477,6 @@ public abstract class PluginForHost extends Plugin {
     }
 
     /**
-     * JD2 ONLY
-     *
      * sort accounts for best order to download downloadLink
      *
      * @param accounts
@@ -2490,8 +2488,6 @@ public abstract class PluginForHost extends Plugin {
     }
 
     /**
-     * JD2 ONLY
-     *
      * sort downloadLinks for best order to download via account
      *
      * @param accounts
