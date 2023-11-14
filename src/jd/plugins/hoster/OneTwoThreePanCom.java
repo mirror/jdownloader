@@ -22,6 +22,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -34,11 +39,6 @@ import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.OneTwoThreePanComFolder;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 @PluginDependencies(dependencies = { OneTwoThreePanComFolder.class })
@@ -129,9 +129,16 @@ public class OneTwoThreePanCom extends PluginForHost {
             /* This should never happen! */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        final String fileidStr = getFileID(link);
+        final Object fileidO;
+        if (fileidStr.matches("\\d+")) {
+            fileidO = Integer.parseInt(fileidStr);
+        } else {
+            fileidO = fileidStr;
+        }
         final Map<String, Object> postdata = new HashMap<String, Object>();
         postdata.put("Etag", etag);
-        postdata.put("FileID", getFileID(link));
+        postdata.put("FileID", fileidO);
         postdata.put("S3keyFlag", s3keyflag);
         postdata.put("ShareKey", getShareKey(link));
         postdata.put("Size", sizebytes);

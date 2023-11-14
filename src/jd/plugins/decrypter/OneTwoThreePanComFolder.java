@@ -48,6 +48,7 @@ public class OneTwoThreePanComFolder extends PluginForDecrypt {
     }
 
     public static final String API_BASE = "https://www.123pan.com/a/api";
+    // public static final String API_BASE_2 = "https://www.123pan.com/b/api";
 
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
