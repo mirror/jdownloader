@@ -135,10 +135,10 @@ public class BadoinkvrCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         final Account account = AccountController.getInstance().getValidAccount(this.getHost());
-        return requestFileInformation(link, account);
+        return requestFileInformation(link, account, false);
     }
 
-    private AvailableStatus requestFileInformation(final DownloadLink link, final Account account) throws Exception {
+    private AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
         dllink = null;
         final String videoid = this.getFID(link);
         final String extDefault = ".mp4";
@@ -196,6 +196,7 @@ public class BadoinkvrCom extends PluginForHost {
                         this.dllink = url;
                         break;
                     } else if (StringUtils.containsIgnoreCase(url, ".m3u8")) {
+                        // TODO: Make use of this HLS URL e.g. as fallback if http stream download fails.
                         trailerHlsMaster = url;
                     }
                 }
@@ -246,7 +247,7 @@ public class BadoinkvrCom extends PluginForHost {
         if (filesize > 0) {
             /* Successfully found 'MOCH-filesize' --> Display assumed filesize for MOCH download. */
             link.setDownloadSize(filesize);
-        } else if (!StringUtils.isEmpty(dllink)) {
+        } else if (!StringUtils.isEmpty(dllink) && !isDownload) {
             /* Find filesize via header */
             URLConnectionAdapter con = null;
             try {
@@ -271,7 +272,7 @@ public class BadoinkvrCom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
-        requestFileInformation(link, null);
+        requestFileInformation(link, null, true);
         if (StringUtils.isEmpty(dllink)) {
             /* Assume that trailer download is impossible and this content can only be accessed by premium users. */
             throw new AccountRequiredException();
@@ -372,7 +373,7 @@ public class BadoinkvrCom extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        requestFileInformation(link, account);
+        requestFileInformation(link, account, true);
         if (StringUtils.isEmpty(dllink)) {
             /* No download or only trailer download possible. */
             throw new AccountRequiredException();
