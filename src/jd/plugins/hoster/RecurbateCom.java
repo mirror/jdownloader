@@ -216,7 +216,8 @@ public class RecurbateCom extends PluginForHost {
                 logger.info("Found highspeed downloadurl: " + officialHighspeedDownloadlink);
                 dl = jd.plugins.BrowserAdapter.openDownload(br, link, officialHighspeedDownloadlink, RESUMABLE, MAXCHUNKS);
             } else {
-                final String token = br.getRegex("data-token\\s*=\\s*\"([a-f0-9]{32,})\"\\s*data-video-id").getMatch(0);
+                logger.info("Failed to find highspeed downloadurl -> Trying to download stream");
+                final String token = br.getRegex("data-token\\s*=\\s*\"([^\"]+)\"\\s*data-video-id").getMatch(0);
                 if (token == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
@@ -227,8 +228,8 @@ public class RecurbateCom extends PluginForHost {
                 brc.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 brc.getHeaders().put("Accept", "*/*");
                 final UrlQuery query = new UrlQuery();
-                query.add("video", this.getFID(link));
-                query.add("token", token);
+                query.add("video", Encoding.urlEncode(this.getFID(link)));
+                query.add("token", Encoding.urlEncode(token));
                 brc.getPage("/api/get.php?" + query.toString());
                 final String streamLink = brc.getRegex("<source\\s*src\\s*=\\s*\"(https?://[^\"]+)\"[^>]*type=\"video/mp4\"\\s*/>").getMatch(0);
                 if (streamLink == null) {
