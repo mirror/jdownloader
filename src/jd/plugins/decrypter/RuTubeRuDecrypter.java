@@ -122,11 +122,12 @@ public class RuTubeRuDecrypter extends PluginForDecrypt {
         } else if (ajax.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (StringUtils.isEmpty(videoHash)) {
-            if (detailmap != null && detailmap.get("name").toString().equalsIgnoreCase("default_does_not_exists_video")) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (detailmap != null) {
+                /* E.g. UGC_copyright_abuse or default_does_not_exists_video */
+                final String name = detailmap.get("name").toString();
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Video offline because: " + name);
             }
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final DownloadLink ret = super.createDownloadlink("https://" + this.getHost() + "/video/" + videoHash);
         final String title = (String) entries.get("title");

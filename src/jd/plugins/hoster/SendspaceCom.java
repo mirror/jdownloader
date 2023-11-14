@@ -46,13 +46,21 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sendspace.com" }, urls = { "https?://(www\\.)?(beta\\.)?sendspace\\.com/(file|pro/dl)/[0-9a-zA-Z]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sendspace.com" }, urls = { "https?://(\\w+\\.)?sendspace\\.com/(file|pro/dl)/[0-9a-zA-Z]+" })
 public class SendspaceCom extends PluginForHost {
     public SendspaceCom(PluginWrapper wrapper) {
         super(wrapper);
         enablePremium("https://www.sendspace.com/joinpro_pay.html");
         setConfigElements();
         setStartIntervall(5000l);
+    }
+
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:16.0) Gecko/20100101 Firefox/16.0");
+        br.setFollowRedirects(true);
+        return br;
     }
 
     private final static String SSL_CONNECTION    = "SSL_CONNECTION";
@@ -88,8 +96,9 @@ public class SendspaceCom extends PluginForHost {
         return 1;
     }
 
-    public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("beta.sendspace.com/", "sendspace.com/"));
+    private String getContentURL(final DownloadLink link) {
+        final String urlpath = new Regex(link.getPluginPatternMatcher(), "(?i)https?://[^/]+/(.+)").getMatch(0);
+        return "https://www." + this.getHost() + "/" + urlpath;
     }
 
     @Override
@@ -99,8 +108,6 @@ public class SendspaceCom extends PluginForHost {
 
     public AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
         this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        prepBrowser();
         // createSessToken();
         // final Account aa =
         // AccountController.getInstance().getValidAccount(this);
@@ -142,18 +149,37 @@ public class SendspaceCom extends PluginForHost {
                         Thread.sleep(w - t);
                     }
                 }
-                String url = link.getDownloadURL();
-                if (!url.contains("/pro/dl/")) {
-                    getPage(this.br, url);
+                String contenturl = this.getContentURL(link);
+                if (contenturl.contains("/pro/dl/")) {
+                    URLConnectionAdapter con = null;
+                    try {
+                        con = br.openGetConnection(contenturl);
+                        if (!this.looksLikeDownloadableContent(con)) {
+                            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                        }
+                        final String filenameFromHeader = getFileNameFromHeader(con);
+                        if (filenameFromHeader != null) {
+                            link.setName(Encoding.htmlDecode(filenameFromHeader));
+                        }
+                        if (con.getCompleteContentLength() > 0) {
+                            link.setVerifiedFileSize(con.getCompleteContentLength());
+                        }
+                        return AvailableStatus.TRUE;
+                    } finally {
+                        try {
+                            con.disconnect();
+                        } catch (Throwable e) {
+                        }
+                    }
+                } else {
+                    getPage(this.br, contenturl);
                     final Form securityform = getSecurityForm();
-                    if (br.containsHTML("The page you are looking for is  not available\\. It has either been moved") && url.contains("X")) {
-                        /* 2020-03-11: TODO: Check if this is still required */
-                        url = url.replaceAll("X", "x");
-                        link.setUrlDownload(url);
-                        return requestFileInformation(link);
+                    if (br.containsHTML("The page you are looking for is  not available\\. It has either been moved")) {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     } else if (br.containsHTML("the file you requested is not available")) {
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    } else if (securityform != null) {
+                    }
+                    if (securityform != null) {
                         final boolean userOverrideCaptchaBehavior = this.getPluginConfig().getBooleanProperty("ALLOW_CAPTCHA_DURING_LINKCHECK", false);
                         if (!isDownload && !userOverrideCaptchaBehavior) {
                             logger.info("Cannot check URL because of anti-DDoS captcha");
@@ -207,26 +233,6 @@ public class SendspaceCom extends PluginForHost {
                         return requestFileInformation(link);
                     } else {
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    }
-                } else {
-                    URLConnectionAdapter con = null;
-                    try {
-                        con = br.openGetConnection(url);
-                        if (!con.getContentType().contains("html")) {
-                            link.setDownloadSize(con.getLongContentLength());
-                        } else {
-                            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                        }
-                        link.setName(Encoding.htmlDecode(getFileNameFromHeader(con)));
-                        if (con.getCompleteContentLength() > 0) {
-                            link.setVerifiedFileSize(con.getCompleteContentLength());
-                        }
-                        return AvailableStatus.TRUE;
-                    } finally {
-                        try {
-                            con.disconnect();
-                        } catch (Throwable e) {
-                        }
                     }
                 }
             } finally {
@@ -293,7 +299,16 @@ public class SendspaceCom extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink link) throws Exception {
-        if (!link.getDownloadURL().contains("/pro/dl/")) {
+        final String contenturl = this.getContentURL(link);
+        if (contenturl.contains("/pro/dl/")) {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, contenturl, true, 0);
+            final URLConnectionAdapter con = dl.getConnection();
+            if (!this.looksLikeDownloadableContent(con)) {
+                br.followConnection(true);
+                handleErrors(true);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+        } else {
             // Re-use old directlinks to avoid captchas, especially good after
             // reconnects
             String linkurl = checkDirectLink(link, "savedlink");
@@ -384,7 +399,6 @@ public class SendspaceCom extends PluginForHost {
                 }
             }
             /* Datei herunterladen */
-            br.setFollowRedirects(true);
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, linkurl, true, 1);
             final URLConnectionAdapter con = dl.getConnection();
             if (!this.looksLikeDownloadableContent(con)) {
@@ -400,14 +414,6 @@ public class SendspaceCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, 10 * 60 * 1000l);
             }
             link.setProperty("savedlink", linkurl);
-        } else {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL(), true, 0);
-            final URLConnectionAdapter con = dl.getConnection();
-            if (!this.looksLikeDownloadableContent(con)) {
-                br.followConnection(true);
-                handleErrors(true);
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
         }
         dl.startDownload();
     }
@@ -438,19 +444,19 @@ public class SendspaceCom extends PluginForHost {
         /* 2020-03-11: Do NOT use website check anymore as it can cause captchas --> Rely 100% on API */
         // requestFileInformation(link, true);
         login(account);
+        final String contenturl = this.getContentURL(link);
         try {
-            apiRequest(API_BASE + "?method=download.getinfo", "&session_key=" + SESSIONKEY + "&file_id=" + Encoding.urlEncode(link.getDownloadURL()));
+            apiRequest(API_BASE + "?method=download.getinfo", "&session_key=" + SESSIONKEY + "&file_id=" + Encoding.urlEncode(contenturl));
         } catch (final Exception e) {
             logger.info("Unexpected error while trying to download, maybe old sessionkey, logging in again...");
             login(account);
-            apiRequest(API_BASE + "?method=download.getinfo", "&session_key=" + SESSIONKEY + "&file_id=" + Encoding.urlEncode(link.getDownloadURL()));
+            apiRequest(API_BASE + "?method=download.getinfo", "&session_key=" + SESSIONKEY + "&file_id=" + Encoding.urlEncode(contenturl));
         }
         String linkurl = br.getRegex("url=\"(https?[^<>\"]*?)\"").getMatch(0);
         if (linkurl == null) {
             logger.warning("Final downloadlink couldn't be found!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        br.setFollowRedirects(true);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, linkurl, true, 1);
         if (dl.getConnection().getContentType().contains("html")) {
             logger.warning("Received html code, stopping...");
@@ -543,10 +549,6 @@ public class SendspaceCom extends PluginForHost {
         }
         ai.setStatus("Account type: " + accounttype);
         return ai;
-    }
-
-    private void prepBrowser() {
-        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:16.0) Gecko/20100101 Firefox/16.0");
     }
 
     private String get(final String parameter) {

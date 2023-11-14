@@ -108,7 +108,9 @@ public class SendspaceComFolder extends PluginForDecrypt {
                 fp.setName(path);
             }
             final PluginForHost hosterplugin = this.getNewPluginForHostInstance(this.getHost());
+            final String[] filesizes = br.getRegex("</td>\\s*<td>\\s*(\\d+[^<]+)</td>").getColumn(0);
             final String[] urls = HTMLParser.getHttpLinks(br.getRequest().getHtmlCode(), br.getURL());
+            int fileindex = 0;
             for (final String url : urls) {
                 if (hosterplugin.canHandle(url)) {
                     final String filename = br.getRegex("title=\"Click to download ([^\"]+)\" target=\"_blank\" href=\"" + Pattern.quote(url)).getMatch(0);
@@ -116,13 +118,18 @@ public class SendspaceComFolder extends PluginForDecrypt {
                     if (filename != null) {
                         file.setName(Encoding.htmlDecode(filename).trim());
                     }
+                    if (filesizes != null && fileindex < filesizes.length) {
+                        final String filesizeStr = filesizes[fileindex];
+                        file.setDownloadSize(SizeFormatter.getSize(filesizeStr));
+                    }
                     file.setAvailable(true);
                     if (path != null) {
                         file.setRelativeDownloadFolderPath(path);
                     }
                     file._setFilePackage(fp);
                     ret.add(file);
-                } else if (this.canHandle(url)) {
+                    fileindex++;
+                } else if (new Regex(url, "^" + this.getSupportedLinks().pattern()).patternFind()) {
                     /* Subfolder */
                     final DownloadLink subfolder = this.createDownloadlink(url);
                     if (path != null) {

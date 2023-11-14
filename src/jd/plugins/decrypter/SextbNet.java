@@ -84,11 +84,14 @@ public class SextbNet extends PluginForDecrypt {
         br.getPage(param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("/images/404\\.png\"")) {
+            /* 404 error page with http response 200 */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String title = br.getRegex("<title>([^>]+)</title>").getMatch(0);
         if (title == null) {
             /* Fallback */
-            title = slug.replace("-", " ");
+            title = slug.replace("-", " ").trim();
         }
         title = Encoding.htmlDecode(title).trim();
         final String filmID = br.getRegex("filmId\\s*=\\s*(\\d+);").getMatch(0);
