@@ -857,7 +857,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
         boolean ret = br.containsHTML(pattern);
         if (ret) {
             /* Double-check in cleaned HTML */
-            ret = new Regex(correctBR(br), pattern).matches();
+            ret = new Regex(correctBR(br), pattern).patternFind();
         }
         return ret;
     }
@@ -869,7 +869,16 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
      *         false: Link is downloadable for all users.
      */
     private boolean isPremiumOnlyURL(final Browser br) {
-        return br != null && br.getURL() != null && br.getURL().contains("/?op=login&redirect=");
+        if (br == null || br.getURL() == null) {
+            return false;
+        } else if (StringUtils.containsIgnoreCase(br.getURL(), "/?op=login&redirect=")) {
+            return true;
+        } else if (br.getURL().matches("(?i).*/login\\?redirect=.*")) {
+            /* 2023-11-15 e.g. rapidbytez.com, EzvnNet */
+            return true;
+        } else {
+            return false;
+        }
     }
 
     /**
@@ -1201,7 +1210,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
                 br.setFollowRedirects(true);
                 if (probeDirectDownload(link, account, br, br.createGetRequest(contentURL), true)) {
                     return;
-                } else if (this.isOffline(link, br, br.toString())) {
+                } else if (this.isOffline(link, br, br.getRequest().getHtmlCode())) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
                 URL_TYPE type = getURLType(br.getURL());
@@ -1220,7 +1229,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
                      * Even while a limit is reached, such URLs can sometimes be checked via: "/?op=check_files" but we won't do this for
                      * now!
                      */
-                    this.checkErrors(br, br.toString(), link, account, false);
+                    this.checkErrors(br, br.getRequest().getHtmlCode(), link, account, false);
                     /* Assume that this URL is offline */
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "realFUID:" + realFUID);
                 } else {
@@ -1269,12 +1278,11 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
              * Important: Do NOT use 404 as offline-indicator here as the website-owner could have simply disabled embedding while it was
              * enabled before --> This would return 404 for all '/embed' URLs! Only rely on precise errormessages!
              */
-            if (br.toString().equalsIgnoreCase("File was deleted")) {
+            if (br.getRequest().getHtmlCode().equalsIgnoreCase("File was deleted")) {
                 /* Should be valid for all XFS hosts e.g. speedvideo.net, uqload.com */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            dllink = getDllink(link, account, br, br.toString());
-            // final String url_thumbnail = getVideoThumbnailURL(br.toString());
+            dllink = getDllink(link, account, br, br.getRequest().getHtmlCode());
         }
         if (findFilesize && !StringUtils.isEmpty(dllink) && !dllink.contains(".m3u8")) {
             /* Get- and set filesize from directurl */
@@ -1741,7 +1749,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
             return filename;
         } else {
             logger.info("Failed to find filename via report_file");
-            final boolean fnameViaAbuseUnsupported = br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 500 || !br.getURL().contains("report_file") || br.toString().trim().equals("No such file");
+            final boolean fnameViaAbuseUnsupported = br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 500 || !br.getURL().contains("report_file") || br.getRequest().getHtmlCode().trim().equalsIgnoreCase("No such file");
             if (fnameViaAbuseUnsupported) {
                 logger.info("Seems like report_file availablecheck seems not to be supported by this host");
                 final SubConfiguration config = this.getPluginConfig();
@@ -2175,7 +2183,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
          * 2019-10-04: TODO: Unsure whether we should use the general 'getDllink' method here as it contains a lot of RegExes (e.g. for
          * streaming URLs) which are completely useless here.
          */
-        dllink = this.getDllink(link, account, br, br.toString());
+        dllink = this.getDllink(link, account, br, br.getRequest().getHtmlCode());
         if (StringUtils.isEmpty(dllink)) {
             /*
              * 2019-05-30: Test - worked for: xvideosharing.com - not exactly required as getDllink will usually already return a result.
@@ -2292,7 +2300,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
             this.submitForm(br, download1);
             this.checkErrors(br, br.getRequest().getHtmlCode(), link, account, false);
         }
-        dllink = this.getDllink(link, account, br, br.toString());
+        dllink = this.getDllink(link, account, br, br.getRequest().getHtmlCode());
         if (StringUtils.isEmpty(dllink)) {
             /*
              * 2019-05-30: Test - worked for: xvideosharing.com - not exactly required as getDllink will usually already return a result.
@@ -2466,14 +2474,12 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
             /* User existing Browser object as we get a cookie which is required later. */
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             this.submitForm(br, ajaxCaptchaForm);
-            if (!br.toString().equalsIgnoreCase("OK")) {
-                if (br.toString().equalsIgnoreCase("ERROR: Wrong captcha")) {
-                    /* 2019-12-14: Happens but should never happen ... */
-                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                } else {
-                    this.logger.warning("Fatal " + captchaHelper + " ajax handling failure");
-                    checkErrorsLastResort(br, null);
-                }
+            if (br.getRequest().getHtmlCode().equalsIgnoreCase("ERROR: Wrong captcha")) {
+                /* 2019-12-14: Happens but should never happen ... */
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            } else if (!br.getRequest().getHtmlCode().equalsIgnoreCase("OK")) {
+                this.logger.warning("Fatal " + captchaHelper + " ajax handling failure");
+                checkErrorsLastResort(br, null);
             }
             br.getHeaders().remove("X-Requested-With");
             link.setProperty(PROPERTY_captcha_required, Boolean.TRUE);
@@ -2492,7 +2498,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
                 String[][] letters = new Regex(br, "<span style=.position:absolute;padding-left:(\\d+)px;padding-top:\\d+px;.>(&#\\d+;)</span>").getMatches();
                 if (letters == null || letters.length == 0) {
                     /* Try again, this time look in non-cleaned-up html as correctBR() could have removed this part! */
-                    letters = new Regex(br.toString(), "<span style=.position:absolute;padding-left:(\\d+)px;padding-top:\\d+px;.>(&#\\d+;)</span>").getMatches();
+                    letters = new Regex(br.getRequest().getHtmlCode(), "<span style=.position:absolute;padding-left:(\\d+)px;padding-top:\\d+px;.>(&#\\d+;)</span>").getMatches();
                     if (letters == null || letters.length == 0) {
                         logger.warning("plaintext captchahandling broken!");
                         checkErrorsLastResort(br, null);
@@ -2511,7 +2517,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
                 link.setProperty(PROPERTY_captcha_required, Boolean.TRUE);
             } else if (StringUtils.containsIgnoreCase(getCorrectBR(br), "/captchas/")) {
                 logger.info("Detected captcha method \"Standard captcha\" for this host");
-                final String[] sitelinks = HTMLParser.getHttpLinks(br.toString(), "");
+                final String[] sitelinks = HTMLParser.getHttpLinks(br.getRequest().getHtmlCode(), "");
                 String captchaurl = null;
                 if (sitelinks == null || sitelinks.length == 0) {
                     logger.warning("Standard captcha captchahandling broken!");
@@ -3760,6 +3766,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         if (this.enableAccountApiOnlyMode()) {
+            account.setPass(correctPasswordAsApikey(account.getPass()));
             return this.fetchAccountInfoAPI(this.br, account);
         } else {
             return this.fetchAccountInfoWebsite(account);
@@ -4386,7 +4393,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
     }
 
     protected boolean containsInvalidLoginsMessage(final Browser br) {
-        return br != null && br.containsHTML("(?i)>\\s*Incorrect Login or Password\\s*<");
+        return br != null && br.containsHTML("(?i)>\\s*Incorrect (Login|Username) or Password\\s*<");
     }
 
     protected boolean containsBlockedIPLoginMessage(final Browser br) {
@@ -5106,7 +5113,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
              */
             getPage(this.getAPIBase() + "/file/direct_link?key=" + apikey + "&file_code=" + fileid_to_download);
             this.checkErrorsAPI(this.br, link, account);
-            final Map<String, Object> entries = restoreFromString(this.br.toString(), TypeRef.MAP);
+            final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
             final Map<String, Object> result = (Map<String, Object>) entries.get("result");
             /**
              * TODO: Add quality selection. 2020-05-20: Did not add selection yet because so far this API call has NEVER worked for ANY
@@ -5159,7 +5166,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
          */
         final AccountInfo ai = new AccountInfo();
         loginAPI(br, account);
-        Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
+        Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         /** 2019-07-31: Better compare expire-date against their serverside time if possible! */
         final String server_timeStr = (String) entries.get("server_time");
         entries = (Map<String, Object>) entries.get("result");
@@ -5339,7 +5346,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
                         logger.info("Fatal failure");
                         return false;
                     }
-                    Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
+                    Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
                     final List<Object> ressourcelist = (List<Object>) entries.get("result");
                     for (final DownloadLink link : apiLinkcheckLinks) {
                         Map<String, Object> fileInfo = null;
@@ -5450,7 +5457,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
         String errorMsg = null;
         int statuscode = -1;
         try {
-            final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
+            final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
             final Object statusO = entries.get("status");
             if (statusO instanceof String) {
                 errorCodeStr = (String) statusO;
@@ -5564,8 +5571,10 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
         }
     }
 
-    protected boolean isAPIKey(final String apiKey) {
-        if (apiKey != null && apiKey.matches("^[a-z0-9]{16,}$")) {
+    protected boolean isAPIKey(final String str) {
+        if (str == null) {
+            return false;
+        } else if (str.matches("^[a-z0-9]{16,}$")) {
             return true;
         } else {
             return false;
@@ -5575,7 +5584,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
     @Override
     public AccountBuilderInterface getAccountFactory(final InputChangedCallbackInterface callback) {
         if (this.enableAccountApiOnlyMode()) {
-            return new XFSApiAccountFactory(callback);
+            return new XFSApiAccountFactory(callback, this);
         } else {
             return super.getAccountFactory(callback);
         }
@@ -5588,11 +5597,9 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
         private String getPassword() {
             if (this.pass == null) {
                 return null;
+            } else {
+                return correctPasswordAsApikey(new String(this.pass.getPassword()));
             }
-            if (EMPTYPW.equals(new String(this.pass.getPassword()))) {
-                return null;
-            }
-            return new String(this.pass.getPassword());
         }
 
         public boolean updateAccount(Account input, Account output) {
@@ -5608,15 +5615,14 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
             return changed;
         }
 
-        private final ExtPasswordField pass;
-        private static String          EMPTYPW = " ";
-        private final JLabel           idLabel;
+        private final ExtPasswordField     pass;
+        private final JLabel               idLabel;
+        private final XFileSharingProBasic plg;
 
-        public XFSApiAccountFactory(final InputChangedCallbackInterface callback) {
+        public XFSApiAccountFactory(final InputChangedCallbackInterface callback, final XFileSharingProBasic plg) {
             super("ins 0, wrap 2", "[][grow,fill]", "");
             add(new JLabel("Click here to find your API Key:"));
-            // TODO: Update this to include domain of current plugin instance
-            add(new JLink("https://examplehost.com/?op=my_account"));
+            add(new JLink(plg.getMainPage() + "/?op=my_account"));
             this.add(this.idLabel = new JLabel("Enter your API Key:"));
             add(this.pass = new ExtPasswordField() {
                 @Override
@@ -5625,6 +5631,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
                 }
             }, "");
             pass.setHelpText(PINHELP);
+            this.plg = plg;
         }
 
         @Override
@@ -5643,17 +5650,26 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
         @Override
         public boolean validateInputs() {
             final String password = getPassword();
-            if (password == null || !password.trim().matches("^[a-z0-9]{16,}$")) {
+            if (plg.isAPIKey(password)) {
+                idLabel.setForeground(Color.BLACK);
+                return true;
+            } else {
                 idLabel.setForeground(Color.RED);
                 return false;
             }
-            idLabel.setForeground(Color.BLACK);
-            return getPassword() != null;
         }
 
         @Override
         public Account getAccount() {
             return new Account(null, getPassword());
+        }
+    }
+
+    private static String correctPasswordAsApikey(final String pw) {
+        if (pw != null) {
+            return pw.trim();
+        } else {
+            return null;
         }
     }
 
