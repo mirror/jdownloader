@@ -48,6 +48,13 @@ public class UltimboxOrg extends YetiShareCore {
         return ret;
     }
 
+    @Override
+    protected List<String> getDeadDomains() {
+        final ArrayList<String> deadDomains = new ArrayList<String>();
+        deadDomains.add("ultimbox.com");
+        return deadDomains;
+    }
+
     public static String[] getAnnotationNames() {
         return buildAnnotationNames(getPluginDomains());
     }

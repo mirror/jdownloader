@@ -140,13 +140,12 @@ public abstract class YetiShareCore extends antiDDoSForHost {
 
     /**
      * For sites which use this script: http://www.yetishare.com/<br />
-     * YetiShareCore Version 2.0.1.0-psp<br />
+     * YetiShareCore Version 2.0.1.0-psp <br />
      * mods: see overridden functions in host plugins<br />
      * limit-info:<br />
      * captchatype: null, solvemedia, reCaptchaV2, hcaptcha<br />
      * Another alternative method of linkchecking (displays filename only): host.tld/<fid>~s (statistics) 2019-06-12: Consider adding API
-     * support: https://fhscript.com/api Examples for websites which have the API enabled (but not necessarily unlocked for all users,
-     * usually only special-uploaders): secufiles.com <br />
+     * support: https://fhscript.com/api <br />
      * 2020-03-30: I failed to make ANY successful API tests. 100% of all websites which support this API are running a broken version!
      */
     @Override
@@ -1374,6 +1373,7 @@ public abstract class YetiShareCore extends antiDDoSForHost {
             logger.info("Found errormessage in current URL: " + errorMsgURL);
             final Map<String, Object> errorMap = getErrorKeyFromErrorMessage(errorMsgURL);
             if (errorMap != null) {
+                /* This is the safest method to find out which error happened. */
                 /**
                  * Checks for errormessages inside the current browsers' URL and also for errors based on the current browsers' URL
                  * structure. </br>
@@ -1457,8 +1457,7 @@ public abstract class YetiShareCore extends antiDDoSForHost {
                     logger.warning("Unknown errorkey: " + errorkey + " --> Checking errormessage py URL parameter");
                 }
             }
-            /* Not all websites have (all) language keys present e.g. ultimbox.com */
-            logger.info("Failed to find an error_key --> Trying to identify errormessage by error parameter from URL");
+            logger.info("Trying to identify errormessage by error parameter from URL");
             /**
              * Checks for errormessages inside the current browsers' URL and also for errors based on the current browsers' URL structure.
              * </br>
@@ -2371,7 +2370,7 @@ public abstract class YetiShareCore extends antiDDoSForHost {
 
     /**
      * If enabled this plugin will attempt to generate an API key if no API key was found and it looks like the website supports that. </br>
-     * Example website(s) with broken API: megaup.net, ultimbox.org, secufiles.com
+     * Example website(s) with broken API: megaup.net, ultimbox.org
      */
     protected boolean allowToGenerateAPIKeyInWebsiteModeDuringAccountCheck() {
         return true;
