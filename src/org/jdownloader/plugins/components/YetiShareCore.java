@@ -809,7 +809,7 @@ public abstract class YetiShareCore extends antiDDoSForHost {
                                 // TODO: Check if this is still needed
                                 continueform.put("capcode", "false");
                             }
-                            continueform.put("g-recaptcha-response", recaptchaV2Response);
+                            continueform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                             continueform.setMethod(MethodType.POST);
                             br.setFollowRedirects(true);
                             hookBeforeCaptchaFormSubmit(br, continueform);
@@ -955,7 +955,7 @@ public abstract class YetiShareCore extends antiDDoSForHost {
     }
 
     protected boolean containsCaptcha(final Browser br) {
-        if (AbstractRecaptchaV2.containsRecaptchaV2Class(br) || SolveMedia.containsSolvemediaCaptcha(br.toString()) || br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/|solvemedia\\.com/papi/)") || AbstractHCaptcha.containsHCaptcha(br)) {
+        if (AbstractRecaptchaV2.containsRecaptchaV2Class(br) || SolveMedia.containsSolvemediaCaptcha(br) || br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/|solvemedia\\.com/papi/)") || AbstractHCaptcha.containsHCaptcha(br)) {
             return true;
         } else {
             return false;
@@ -1297,7 +1297,7 @@ public abstract class YetiShareCore extends antiDDoSForHost {
      * Checks for errormessages inside the current browsers' URL and also for errors based on the current browsers' URL structure. </br>
      * It was intended to replace this with checkErrorsLanguageIndependant but this doesn't work out as different templates/versions of
      * YetiShare are using different errors and not all have their full language keys available. </br>
-     * Newer versions of YetiShare don't provide any language keys at all but provide mostly English errors inside URLs ("?e=...").
+     * Newer versions of YetiShare do not provide any language keys at all but provide mostly English errors inside URLs ("?e=...").
      */
     private void checkErrorsURL(final Browser br, final DownloadLink link, final Account account) throws PluginException {
         final String errorMsgURL = this.getErrorMsgURL(br);
@@ -1305,18 +1305,21 @@ public abstract class YetiShareCore extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads", 3 * 60 * 1000l);
         }
         if (errorMsgURL != null) {
+            /**
+             * ENGLISH [and misc] errors. </br>
+             * If we know a lot of error messages in one particular language, put them in an extra block of code to avoid creating a huge
+             * mess.
+             */
             if (StringUtils.containsIgnoreCase(errorMsgURL, "You have reached the maximum concurrent downloads")) {
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Max. simultan downloads limit reached, wait to start more downloads", 1 * 60 * 1000l);
             } else if (StringUtils.containsIgnoreCase(errorMsgURL, "Could not open file for reading")) {
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error 'Could not open file for reading'", 60 * 60 * 1000l);
-            } else if (new Regex(errorMsgURL, "(?i).*(You must register for a premium account to|Ten plik jest za duży do pobrania dla darmowego użytkownika).*").matches()) {
-                throw new AccountRequiredException(errorMsgURL);
-            } else if (new Regex(errorMsgURL, "(?i).*File is not publicly available.*").matches()) {
+            } else if (new Regex(errorMsgURL, "(?i).*File is not publicly available.*").patternFind()) {
                 /* Private file -> Only owner can download it. */
                 throw new AccountRequiredException(errorMsgURL);
             } else if (StringUtils.containsIgnoreCase(errorMsgURL, "You have reached the maximum permitted downloads in")) {
                 ipBlockedOrAccountLimit(link, account, errorMsgURL, 3 * 60 * 60 * 1001l);
-            } else if (StringUtils.containsIgnoreCase(errorMsgURL, "File not found") || StringUtils.containsIgnoreCase(errorMsgURL, "File has been removed") || StringUtils.containsIgnoreCase(errorMsgURL, "Dosya kaldırıldı") || StringUtils.containsIgnoreCase(errorMsgURL, "Nie znaleziono pliku")) {
+            } else if (StringUtils.containsIgnoreCase(errorMsgURL, "File not found") || StringUtils.containsIgnoreCase(errorMsgURL, "File has been removed") || StringUtils.containsIgnoreCase(errorMsgURL, "Dosya kaldırıldı")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else if (errorMsgURL.matches("(?i).*(You must wait |Você deve esperar).*")) {
                 final long extraWaittimeMilliseconds = 1000;
@@ -1333,9 +1336,28 @@ public abstract class YetiShareCore extends antiDDoSForHost {
                 } else {
                     ipBlockedOrAccountLimit(link, account, errorMsgURL, waittime);
                 }
-            } else {
-                logger.info("Found unidentified errormessage: " + errorMsgURL);
             }
+            /* POLISH errors */
+            if (new Regex(errorMsgURL, "(?i).*Ten plik jest za duży do pobrania dla darmowego użytkownika.*").patternFind()) {
+                /* This file is too big to be downloaded via free account */
+                throw new AccountRequiredException(errorMsgURL);
+            } else if (new Regex(errorMsgURL, "(?i).*Aby pobierać pliki tego rozmiaru, musisz zarejestrować konto w naszym serwisie.*").patternFind()) {
+                /* To download files of this size you need to register an account */
+                throw new AccountRequiredException(errorMsgURL);
+            } else if (new Regex(errorMsgURL, "(?i).*Osiągnięto maksymalną liczbę jednoczesnych pobrań.*").patternFind()) {
+                /*
+                 * Full message: Osiągnięto maksymalną liczbę jednoczesnych pobrań. Poczekaj na zakończenie pobierania lub przejdź na konto
+                 * Premium.
+                 */
+                /*
+                 * Translation: Max number of simultaneous downloads has been reached. Wait until a download is finished or upgrade to
+                 * premium.
+                 */
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, errorMsgURL, 3 * 60 * 1000l);
+            } else if (StringUtils.containsIgnoreCase(errorMsgURL, "Nie znaleziono pliku")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            logger.info("Found unidentified errormessage: " + errorMsgURL);
         } else if (br.getURL().matches("(?i)https?://[^/]+/register\\?f=.+")) {
             throw new AccountRequiredException();
         }
@@ -1393,7 +1415,12 @@ public abstract class YetiShareCore extends antiDDoSForHost {
                 logger.info("Failed to find error_key --> Trying checkErrorsURL");
                 checkErrorsURL(br, link, account);
                 logger.info("checkErrorsURL did not do anything --> Throwing Exception ERROR_TEMPORARILY_UNAVAILABLE because of errorMsgURL: " + errorMsgURL);
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown error without errorkey: " + errorMsgURL);
+                final String errormessageInGUI = "Unknown error without errorkey: " + errorMsgURL;
+                if (link == null) {
+                    throw new AccountUnavailableException(errormessageInGUI, 5 * 60 * 1000);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errormessageInGUI);
+                }
             }
             final String errorkey = (String) errorMap.get("error_key");
             synchronized (errorMsgURLMap) {
@@ -1522,9 +1549,9 @@ public abstract class YetiShareCore extends antiDDoSForHost {
              * happens!
              */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (br.toString().equalsIgnoreCase("unknown user")) {
+        } else if (br.getRequest().getHtmlCode().equalsIgnoreCase("unknown user")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Unknown user'", 30 * 60 * 1000l);
-        } else if (br.toString().equalsIgnoreCase("ERROR: Wrong IP")) {
+        } else if (br.getRequest().getHtmlCode().equalsIgnoreCase("ERROR: Wrong IP")) {
             /*
              * 2019-07-05: New: rare case but this can either happen randomly or when you try to resume a stored downloadurl with a new IP.
              */
@@ -1850,7 +1877,7 @@ public abstract class YetiShareCore extends antiDDoSForHost {
                 final Cookies cookies = account.loadCookies("");
                 final Cookies userCookies = account.loadUserCookies();
                 if (userCookies != null) {
-                    this.br.setCookies(this.getHost(), userCookies);
+                    br.setCookies(getHost(), userCookies);
                     if (!force) {
                         /* Trust cookies without checking */
                         return false;
@@ -1865,14 +1892,14 @@ public abstract class YetiShareCore extends antiDDoSForHost {
                         }
                     }
                 } else if (cookies != null) {
-                    this.br.setCookies(this.getHost(), cookies);
+                    br.setCookies(this.getHost(), cookies);
                     if (!force) {
                         /* Trust cookies without checking */
                         return false;
                     }
                     if (this.verifyCookies(br, account, cookies)) {
                         /* Refresh stored cookies */
-                        account.saveCookies(this.br.getCookies(this.getHost()), "");
+                        account.saveCookies(br.getCookies(br.getHost()), "");
                         return true;
                     }
                 }
@@ -1902,8 +1929,10 @@ public abstract class YetiShareCore extends antiDDoSForHost {
                         loginform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                     }
                     submitForm(loginform);
-                    if (!br.containsHTML("\"login_status\"\\s*:\\s*\"success\"")) {
-                        throw new AccountInvalidException();
+                    final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+                    if (!entries.get("login_status").toString().equalsIgnoreCase("success")) {
+                        /* E.g. {"error":"Your username and password are invalid","login_status":"invalid"} */
+                        throw new AccountInvalidException(entries.get("error").toString());
                     }
                 } else {
                     /* Old non-ajax method - rare case! Example: All extremely old YetiShare versions and all >= 5.0 */
@@ -1949,7 +1978,7 @@ public abstract class YetiShareCore extends antiDDoSForHost {
                         throw new AccountInvalidException();
                     }
                 }
-                account.saveCookies(this.br.getCookies(this.getHost()), "");
+                account.saveCookies(br.getCookies(br.getHost()), "");
                 return true;
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
