@@ -2170,7 +2170,7 @@ public abstract class PluginForHost extends Plugin {
      */
     public AccountBuilderInterface getAccountFactory(InputChangedCallbackInterface callback) {
         if (this.hasFeature(FEATURE.COOKIE_LOGIN_ONLY)) {
-            return new DefaultEditAccountPanelCookieLogin(callback, true);
+            return new DefaultEditAccountPanelCookieLogin(callback);
         } else if (this.hasFeature(FEATURE.COOKIE_LOGIN_OPTIONAL)) {
             /* TODO: Add indicator into EditAccountPanel that cookie login is possible (?) */
             return new DefaultEditAccountPanel(callback, true);

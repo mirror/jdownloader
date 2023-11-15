@@ -61,10 +61,6 @@ public class DefaultEditAccountPanelCookieLogin extends MigPanel implements Acco
     }
 
     public DefaultEditAccountPanelCookieLogin(final InputChangedCallbackInterface callback) {
-        this(callback, true);
-    }
-
-    public DefaultEditAccountPanelCookieLogin(final InputChangedCallbackInterface callback, boolean requiresUserName) {
         super("ins 0, wrap 2", "[][grow,fill]", "");
         this.callback = callback;
         add(new JLabel("Click here to get help:"));
