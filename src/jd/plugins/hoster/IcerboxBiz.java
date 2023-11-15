@@ -15,9 +15,20 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.awt.Color;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 
+import javax.swing.JComponent;
+import javax.swing.JLabel;
+
+import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.ExtPasswordField;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.gui.InputChangedCallbackInterface;
+import org.jdownloader.plugins.accounts.AccountBuilderInterface;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
 import jd.PluginWrapper;
@@ -38,7 +49,6 @@ import jd.plugins.PluginException;
 public class IcerboxBiz extends antiDDoSForHost {
     public IcerboxBiz(PluginWrapper wrapper) {
         super(wrapper);
-        this.setAccountwithoutUsername(true);
         this.enablePremium("https://www.icerbox.biz/payment");
     }
 
@@ -52,11 +62,6 @@ public class IcerboxBiz extends antiDDoSForHost {
     private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
     private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-
-    @SuppressWarnings("deprecation")
-    public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("/watch/", "/view/"));
-    }
 
     @Override
     public String rewriteHost(String host) {
@@ -80,8 +85,17 @@ public class IcerboxBiz extends antiDDoSForHost {
         return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
+    private String getContenturl(final DownloadLink link) {
+        try {
+            return "https://www." + this.getHost() + new URL(link.getPluginPatternMatcher()).getPath();
+        } catch (final MalformedURLException e) {
+            /* This should never happen */
+            e.printStackTrace();
+            return null;
+        }
+    }
+
     /** Premium FULL browser response for case 'daily downloadlimit reached': "0הורדת קובץ זה תעבור על המכסה היומית" */
-    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception, PluginException {
         final String fuid = getFID(link);
@@ -90,7 +104,7 @@ public class IcerboxBiz extends antiDDoSForHost {
         }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        getPage(br, link.getDownloadURL());
+        getPage(br, getContenturl(link));
         if (br.containsHTML(">רוב הסיכויים שנמחק. אתה מועבר לדף הראשי<") || this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (!br.getURL().contains(fuid)) {
@@ -198,6 +212,84 @@ public class IcerboxBiz extends antiDDoSForHost {
         final AccountInfo ai = new AccountInfo();
         ai.setStatus("Unchecked account");
         return ai;
+    }
+
+    @Override
+    public AccountBuilderInterface getAccountFactory(final InputChangedCallbackInterface callback) {
+        return new IcerboxBizAccountFactory(callback);
+    }
+
+    public static class IcerboxBizAccountFactory extends MigPanel implements AccountBuilderInterface {
+        /**
+         *
+         */
+        private static final long serialVersionUID = 1L;
+
+        private String getPassword() {
+            if (this.pass == null) {
+                return null;
+            } else {
+                return new String(this.pass.getPassword());
+            }
+        }
+
+        public boolean updateAccount(Account input, Account output) {
+            boolean changed = false;
+            if (!StringUtils.equals(input.getUser(), output.getUser())) {
+                output.setUser(input.getUser());
+                changed = true;
+            }
+            if (!StringUtils.equals(input.getPass(), output.getPass())) {
+                output.setPass(input.getPass());
+                changed = true;
+            }
+            return changed;
+        }
+
+        private final ExtPasswordField pass;
+        private final JLabel           apiPINLabel;
+
+        public IcerboxBizAccountFactory(final InputChangedCallbackInterface callback) {
+            super("ins 0, wrap 2", "[][grow,fill]", "");
+            add(apiPINLabel = new JLabel("Access code:"));
+            add(this.pass = new ExtPasswordField() {
+                @Override
+                public void onChanged() {
+                    callback.onChangedInput(this);
+                }
+            }, "");
+            pass.setHelpText("Enter your premium key");
+        }
+
+        @Override
+        public JComponent getComponent() {
+            return this;
+        }
+
+        @Override
+        public void setAccount(Account defaultAccount) {
+            if (defaultAccount != null) {
+                // name.setText(defaultAccount.getUser());
+                pass.setText(defaultAccount.getPass());
+            }
+        }
+
+        @Override
+        public boolean validateInputs() {
+            final String pw = getPassword();
+            if (pw != null) {
+                apiPINLabel.setForeground(Color.BLACK);
+                return true;
+            } else {
+                apiPINLabel.setForeground(Color.RED);
+                return false;
+            }
+        }
+
+        @Override
+        public Account getAccount() {
+            return new Account(null, getPassword());
+        }
     }
 
     @Override
