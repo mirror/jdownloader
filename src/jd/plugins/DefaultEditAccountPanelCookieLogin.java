@@ -69,24 +69,20 @@ public class DefaultEditAccountPanelCookieLogin extends MigPanel implements Acco
         this.callback = callback;
         add(new JLabel("Click here to get help:"));
         add(new JLink("https://support.jdownloader.org/Knowledgebase/Article/View/account-cookie-login-instructions"));
-        if (requiresUserName) {
-            add(usernameLabel = new JLabel(_GUI.T.jd_gui_swing_components_AccountDialog_name()));
-            add(this.name = new ExtTextField() {
-                @Override
-                public void onChanged() {
-                    callback.onChangedInput(name);
-                }
-                // {
-                // final HighlightPainter painter = new DefaultHighlighter.DefaultHighlightPainter(Color.yellow);
-                // addTextHighlighter(new ExtTextHighlighter(painter, Pattern.compile("^(\\s+)")));
-                // addTextHighlighter(new ExtTextHighlighter(painter, Pattern.compile("(\\s+)$")));
-                // refreshTextHighlighter();
-                // }
-            });
-            name.setHelpText(_GUI.T.jd_gui_swing_components_AccountDialog_help_username());
-        } else {
-            name = null;
-        }
+        add(usernameLabel = new JLabel(_GUI.T.jd_gui_swing_components_AccountDialog_name()));
+        add(this.name = new ExtTextField() {
+            @Override
+            public void onChanged() {
+                callback.onChangedInput(name);
+            }
+            // {
+            // final HighlightPainter painter = new DefaultHighlighter.DefaultHighlightPainter(Color.yellow);
+            // addTextHighlighter(new ExtTextHighlighter(painter, Pattern.compile("^(\\s+)")));
+            // addTextHighlighter(new ExtTextHighlighter(painter, Pattern.compile("(\\s+)$")));
+            // refreshTextHighlighter();
+            // }
+        });
+        name.setHelpText(_GUI.T.jd_gui_swing_components_AccountDialog_help_username());
         add(passwordCookiesLabel = new JLabel("Exported cookies:"));
         add(this.pass = new ExtPasswordField() {
             @Override
