@@ -46,9 +46,7 @@ import org.jdownloader.captcha.v2.challenge.oauth.AccountLoginOAuthChallenge;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.captcha.v2.solver.service.BrowserSolverService;
 import org.jdownloader.captcha.v2.solverjob.SolverJob;
-import org.jdownloader.gui.InputChangedCallbackInterface;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.accounts.AccountBuilderInterface;
 import org.jdownloader.plugins.components.realDebridCom.RealDebridComConfig;
 import org.jdownloader.plugins.components.realDebridCom.api.Error;
 import org.jdownloader.plugins.components.realDebridCom.api.json.CheckLinkResponse;
@@ -66,7 +64,6 @@ import org.jdownloader.translate._JDT;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
-import jd.config.Property;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
 import jd.controlling.captcha.SkipException;
@@ -81,7 +78,6 @@ import jd.plugins.AccountInfo;
 import jd.plugins.AccountInvalidException;
 import jd.plugins.AccountUnavailableException;
 import jd.plugins.CaptchaException;
-import jd.plugins.DefaultEditAccountPanel;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -253,6 +249,8 @@ public class RealDebridCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
+        /* Do not store password which user may enter as login happens in browser and all we need to login is the generated token. */
+        account.setPass("dummypw");
         account.setConcurrentUsePossible(true);
         account.setMaxSimultanDownloads(-1);
         final UserResponse user = callRestAPI(account, "/user", null, UserResponse.TYPE);
@@ -271,7 +269,8 @@ public class RealDebridCom extends PluginForHost {
         } else {
             account.setType(AccountType.FREE);
             /* 2020-08-11: Free accounts cannot be used to download anything */
-            ai.setProperty("multiHostSupport", Property.NULL);
+            ai.setMultiHostSupport(this, null);
+            ;
             ai.setTrafficLeft(0);
             ai.setExpired(true);
         }
@@ -547,20 +546,6 @@ public class RealDebridCom extends PluginForHost {
 
     public ClientSecret checkCredentials(CodeResponse code) throws Exception {
         return callRestAPIInternal(null, API + "/oauth/v2/device/credentials?client_id=" + Encoding.urlEncode(CLIENT_ID) + "&code=" + Encoding.urlEncode(code.getDevice_code()), null, ClientSecret.TYPE);
-    }
-
-    @Override
-    public AccountBuilderInterface getAccountFactory(InputChangedCallbackInterface callback) {
-        return new DefaultEditAccountPanel(callback, !getAccountwithoutUsername(), false) {
-            @Override
-            public boolean validateInputs() {
-                if (StringUtils.isNotEmpty(getUsername())) {
-                    return true;
-                } else {
-                    return super.validateInputs();
-                }
-            }
-        };
     }
 
     private TokenResponse login(Account account, boolean force) throws PluginException, IOException, APIException, InterruptedException {

@@ -26,6 +26,7 @@ import org.jdownloader.plugins.components.config.Keep2shareConfig;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 
 import jd.PluginWrapper;
+import jd.controlling.captcha.SkipRequest;
 import jd.controlling.proxy.AbstractProxySelectorImpl;
 import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
 import jd.http.Browser;
@@ -43,6 +44,7 @@ import jd.plugins.AccountInfo;
 import jd.plugins.AccountInvalidException;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.AccountUnavailableException;
+import jd.plugins.CaptchaException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -714,26 +716,14 @@ public abstract class K2SApi extends PluginForHost {
                 // final Map<String, Object> requestcaptcha = postPageRaw(this.br, "/requestcaptcha", postdata, account, link);
                 final Map<String, Object> requestcaptcha = postPageRaw(this.br, "/requestcaptcha", new HashMap<String, Object>(), account, link);
                 final String challenge = (String) requestcaptcha.get("challenge");
-                String captcha_url = (String) requestcaptcha.get("captcha_url");
+                final String captcha_url = (String) requestcaptcha.get("captcha_url");
                 // Dependency
                 if (StringUtils.isEmpty(challenge) || StringUtils.isEmpty(captcha_url)) {
                     logger.warning("challenge = " + challenge + " | captcha_url = " + captcha_url);
                     this.handleErrorsAPI(account, link, this.br);
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                if (!captcha_url.startsWith("https://")) {
-                    /*
-                     * 2020-02-03: Possible workaround for this issues reported here: board.jdownloader.org/showthread.php?t=82989 and
-                     * 2020-04-23: board.jdownloader.org/showthread.php?t=83927 and board.jdownloader.org/showthread.php?t=83781
-                     */
-                    logger.info("download-captcha_url is not https --> Changing it to https");
-                    captcha_url = captcha_url.replaceFirst("(?i)http://", "https://");
-                }
-                final String code = getCaptchaCode(captcha_url, link);
-                if (StringUtils.isEmpty(code)) {
-                    // captcha can't be blank! Why we don't return null I don't know (raztoki?)!
-                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                }
+                final String code = getCaptchaCode(captcha_url, link, account, false);
                 postdata.put("captcha_challenge", challenge);
                 postdata.put("captcha_response", code);
             }
@@ -828,6 +818,41 @@ public abstract class K2SApi extends PluginForHost {
         } finally {
             // remove download slot
             controlSlot(-1, account);
+        }
+    }
+
+    private String getCaptchaCode(String captchaAddress, final DownloadLink link, final Account account, final boolean isLoginCaptcha) throws Exception {
+        if (StringUtils.isEmpty(captchaAddress)) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (StringUtils.startsWithCaseInsensitive(captchaAddress, "http://")) {
+            /*
+             * 2020-02-03: Possible workaround for this issues reported here: board.jdownloader.org/showthread.php?t=82989 and 2020-04-23:
+             * board.jdownloader.org/showthread.php?t=83927 and board.jdownloader.org/showthread.php?t=83781
+             */
+            logger.info("login-captcha_url is not https --> Changing it to https");
+            captchaAddress = captchaAddress.replaceFirst("(?i)http://", "https://");
+        }
+        try {
+            final String code = getCaptchaCode(getHost(), captchaAddress, link);
+            if (StringUtils.isEmpty(code)) {
+                /* This should never happen(?) */
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+            }
+            return code;
+        } catch (final CaptchaException ce) {
+            if (ce.getSkipRequest() == SkipRequest.TIMEOUT) {
+                /* User did not respond to captcha request */
+                final String text = "You did not answer the captcha on time | Waiting in order to avoid IP ban";
+                final long waitMillis = 3 * 60 * 60 * 1000;
+                if (isLoginCaptcha) {
+                    throw new AccountUnavailableException(text, waitMillis);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, text, waitMillis);
+                }
+            } else {
+                throw ce;
+            }
         }
     }
 
@@ -963,17 +988,7 @@ public abstract class K2SApi extends PluginForHost {
                 if (CAPTCHA.REQUESTCAPTCHA.equals(loginCaptcha)) {
                     final Map<String, Object> requestcaptcha = postPageRaw(cbr, "/requestcaptcha", new HashMap<String, Object>(), account, link);
                     final String challenge = (String) requestcaptcha.get("challenge");
-                    String captcha_url = (String) requestcaptcha.get("captcha_url");
-                    if (captcha_url.startsWith("https://")) {
-                        logger.info("login-captcha_url is already https");
-                    } else {
-                        /*
-                         * 2020-02-03: Possible workaround for this issues reported here: board.jdownloader.org/showthread.php?t=82989 and
-                         * 2020-04-23: board.jdownloader.org/showthread.php?t=83927 and board.jdownloader.org/showthread.php?t=83781
-                         */
-                        logger.info("login-captcha_url is not https --> Changing it to https");
-                        captcha_url = captcha_url.replace("http://", "https://");
-                    }
+                    final String captcha_url = (String) requestcaptcha.get("captcha_url");
                     if (StringUtils.isEmpty(challenge)) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     } else if (StringUtils.isEmpty(captcha_url)) {
@@ -981,11 +996,7 @@ public abstract class K2SApi extends PluginForHost {
                     }
                     // final dummy
                     final DownloadLink dummyLink = new DownloadLink(null, "Account", getInternalAPIDomain(), "https://" + getInternalAPIDomain(), true);
-                    final String code = getCaptchaCode(captcha_url, dummyLink);
-                    if (StringUtils.isEmpty(code)) {
-                        // captcha can't be blank! Why we don't return null I don't know!
-                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                    }
+                    final String code = getCaptchaCode(captcha_url, dummyLink, account, true);
                     postdata.put("captcha_challenge", challenge);
                     postdata.put("captcha_response", code);
                 } else if (CAPTCHA.REQUESTRECAPTCHA.equals(loginCaptcha)) {

@@ -77,6 +77,9 @@ public class ShrtflyVip extends MightyScriptAdLinkFly {
         getPage(contentURL);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.getURL().matches("(?i)^https?://[^/]+/?$")) {
+            /* Redirect to mainpage -> URL is offline */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         /* They call this "alias". */
         // final String contentID = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
