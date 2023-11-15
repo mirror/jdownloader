@@ -17,6 +17,7 @@ package jd.plugins.decrypter;
 
 import java.net.MalformedURLException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
@@ -77,7 +78,7 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
     private String appVars = null;
 
     protected String getContentURL(final CryptedLink param) {
-        final ArrayList<String> deadDomains = this.getDeadDomains();
+        final List<String> deadDomains = this.getDeadDomains();
         if (deadDomains != null) {
             /* Change domain in added URL if we know that the domain inside added URL is dead. */
             final String domain = Browser.getHost(param.getCryptedUrl(), false);
@@ -92,7 +93,7 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
      * Override this and add dead domains so upper handling can auto update added URLs and change domain if it contains a dead domain. This
      * way a lot of "old" URLs will continue to work in JD while they may fail in browser.
      */
-    protected ArrayList<String> getDeadDomains() {
+    protected List<String> getDeadDomains() {
         return null;
     }
 

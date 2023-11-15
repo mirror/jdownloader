@@ -42,8 +42,15 @@ public class ShrtflyVip extends MightyScriptAdLinkFly {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "shrtfly.com", "shrtfly.vip", "shrtvip.com", "stfly.me", "stfly.xyz", "smwebs.xyz" });
+        ret.add(new String[] { "shrtfly.com", "shrtfly.vip", "shrtvip.com", "stfly.io", "stfly.me", "stfly.cc", "stfly.xyz", "smwebs.xyz" });
         return ret;
+    }
+
+    @Override
+    protected List<String> getDeadDomains() {
+        final List<String> deadDomains = new ArrayList<String>();
+        deadDomains.add("shrtvip.com"); // 2023-11-15
+        return deadDomains;
     }
 
     public static String[] getAnnotationNames() {
