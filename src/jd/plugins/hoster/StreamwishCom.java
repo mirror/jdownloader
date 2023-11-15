@@ -21,6 +21,7 @@ import java.util.List;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
@@ -149,5 +150,14 @@ public class StreamwishCom extends XFileSharingProBasic {
     @Override
     protected boolean supports_availablecheck_filename_abuse() {
         return false;
+    }
+
+    @Override
+    protected boolean isOffline(final DownloadLink link, final Browser br, final String correctedBR) {
+        if (br.containsHTML("<div>\\s*This video has been locked watch or does not exist")) {
+            return true;
+        } else {
+            return super.isOffline(link, br, correctedBR);
+        }
     }
 }

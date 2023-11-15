@@ -842,12 +842,12 @@ public class PornHubComVideoCrawler extends PluginForDecrypt {
         final boolean bestselectiononly = cfg.getBooleanProperty(PornHubCom.BEST_SELECTION_ONLY, false);
         final boolean fastlinkcheck = cfg.getBooleanProperty(PornHubCom.FAST_LINKCHECK, false);
         boolean crawlHLS = cfg.getBooleanProperty(PornHubCom.CRAWL_VIDEO_HLS, true);
-        boolean crawlMP4 = PornHubCom.MP4_SUPPORTED && cfg.getBooleanProperty(PornHubCom.CRAWL_VIDEO_MP4, true);
+        boolean crawlMP4 = PornHubCom.ENABLE_INTERNAL_MP4_PROGRESSIVE_SUPPORT && cfg.getBooleanProperty(PornHubCom.CRAWL_VIDEO_MP4, true);
         final boolean crawlThumbnail = cfg.getBooleanProperty(PornHubCom.CRAWL_THUMBNAIL, false);
         if (!crawlHLS && !crawlMP4) {
             logger.info("User disabled HLS and HTTP versions -> Force-enable both");
             crawlHLS = true;
-            crawlMP4 = PornHubCom.MP4_SUPPORTED;
+            crawlMP4 = PornHubCom.ENABLE_INTERNAL_MP4_PROGRESSIVE_SUPPORT;
         }
         final boolean prefer_server_filename = cfg.getBooleanProperty("USE_ORIGINAL_SERVER_FILENAME", false);
         /* Convert embed links to normal links */
@@ -969,11 +969,11 @@ public class PornHubComVideoCrawler extends PluginForDecrypt {
                 if (StringUtils.isEmpty(url)) {
                     continue;
                 } else if (!crawlHLS && "hls".equals(format)) {
-                    logger.info("Don't grab:" + format + "/" + quality);
+                    logger.info("Do not grab: " + format + "/" + quality);
                     skippedFlag = true;
                     continue;
                 } else if (!crawlMP4 && "mp4".equals(format)) {
-                    logger.info("Don't grab:" + format + "/" + quality);
+                    logger.info("Do not grab: " + format + "/" + quality);
                     skippedFlag = true;
                     continue;
                 }

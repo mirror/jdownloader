@@ -26,6 +26,8 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -192,17 +194,35 @@ public class RosefileNet extends PluginForHost {
                 ajax.postPage("/ajax.php", query);
             } else {
                 /** 2021-04-12: Waittime and captcha (required for anonymous downloads in browser) is skippable! */
-                br.getPage("/ajax.php?action=load_time&ctime=" + System.currentTimeMillis());
-                final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
-                final int waitSeconds = ((Number) entries.get("waittime")).intValue();
-                this.sleep(waitSeconds * 1001l, link);
-                br.getPage("https://" + this.br.getHost() + "/d/" + this.getFID(link) + "/" + Encoding.urlEncode(link.getName()) + ".html");
-                final String code = getCaptchaCode("/imagecode.php?t=" + System.currentTimeMillis(), link);
-                br.postPage("/ajax.php", "action=check_code&code=" + Encoding.urlEncode(code));
-                if (br.getRequest().getHtmlCode().equalsIgnoreCase("false")) {
-                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                ajax.getPage("/ajax.php?action=load_time&ctime=" + System.currentTimeMillis());
+                final Map<String, Object> entries = restoreFromString(ajax.getRequest().getHtmlCode(), TypeRef.MAP);
+                final int waitSeconds = ((Number) entries.get("waittime_s")).intValue();
+                if (waitSeconds > 300) {
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waitSeconds * 1000l);
                 }
-                ajax.postPage("/ajax.php", "action=load_down_addr1&file_id=" + internalFileID);
+                this.sleep(waitSeconds * 1001l, link);
+                br.getPage("/d/" + this.getFID(link) + "/" + Encoding.urlEncode(link.getName()) + ".html");
+                if (AbstractRecaptchaV2.containsRecaptchaV2Class(br)) {
+                    /* New 2023-11-15 */
+                    final UrlQuery query = new UrlQuery();
+                    query.add("action", "check_recaptchac");
+                    query.add("file_id", internalFileID);
+                    final String reCaptchav2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                    query.add("token", Encoding.urlEncode(reCaptchav2Response));
+                    ajax.postPage("/ajax.php", query);
+                    if (ajax.getRequest().getHtmlCode().equalsIgnoreCase("false")) {
+                        /* This should never happen! */
+                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                    }
+                } else {
+                    /* Old handling */
+                    final String code = getCaptchaCode("/imagecode.php?t=" + System.currentTimeMillis(), link);
+                    ajax.postPage("/ajax.php", "action=check_code&code=" + Encoding.urlEncode(code));
+                    if (ajax.getRequest().getHtmlCode().equalsIgnoreCase("false")) {
+                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                    }
+                    ajax.postPage("/ajax.php", "action=load_down_addr1&file_id=" + internalFileID);
+                }
             }
             String dllink = ajax.getRegex("true\\|<a href=\"([^<>\"]+)").getMatch(0);
             if (dllink == null) {

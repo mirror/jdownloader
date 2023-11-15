@@ -93,56 +93,57 @@ public class PornHubCom extends PluginForHost {
     /* Connection stuff */
     // private static final boolean FREE_RESUME = true;
     // private static final int FREE_MAXCHUNKS = 0;
-    private static final int                      FREE_MAXDOWNLOADS                     = 5;
-    private static final boolean                  ACCOUNT_FREE_RESUME                   = true;
-    private static final int                      ACCOUNT_FREE_MAXCHUNKS                = 0;
-    private static final int                      ACCOUNT_FREE_MAXDOWNLOADS             = 5;
-    public static final boolean                   use_download_workarounds              = true;
-    private static final String                   type_photo                            = "(?i).+/photo/\\d+";
-    private static final String                   type_gif_webm                         = "(?i).+/(embed)?gif/\\d+";
-    private static final String                   type_modelhub                         = "(?i).+modelhub\\.com/.+";
-    public static final String                    html_privatevideo                     = "id=\"iconLocked\"";
-    public static final String                    html_privateimage                     = "profile/private-lock\\.png";
-    public static final String                    html_purchase_only                    = "(?i)'Buy on video player'";
-    public static final String                    html_premium_only                     = "(?i)<h2>\\s*Upgrade to Pornhub Premium to enjoy this video\\.</h2>";
-    private String                                dlUrl                                 = null;
+    private static final int                      FREE_MAXDOWNLOADS                       = 5;
+    private static final boolean                  ACCOUNT_FREE_RESUME                     = true;
+    private static final int                      ACCOUNT_FREE_MAXCHUNKS                  = 0;
+    private static final int                      ACCOUNT_FREE_MAXDOWNLOADS               = 5;
+    public static final boolean                   use_download_workarounds                = true;
+    private static final String                   type_photo                              = "(?i).+/photo/\\d+";
+    private static final String                   type_gif_webm                           = "(?i).+/(embed)?gif/\\d+";
+    private static final String                   type_modelhub                           = "(?i).+modelhub\\.com/.+";
+    public static final String                    html_privatevideo                       = "id=\"iconLocked\"";
+    public static final String                    html_privateimage                       = "profile/private-lock\\.png";
+    public static final String                    html_purchase_only                      = "(?i)'Buy on video player'";
+    public static final String                    html_premium_only                       = "(?i)<h2>\\s*Upgrade to Pornhub Premium to enjoy this video\\.</h2>";
+    private String                                dlUrl                                   = null;
+    /** Dev: disable this if pornhub plugins shall skip all mp4 progressive streams and disable user setting for mp4 progressive streams. */
+    public static final boolean                   ENABLE_INTERNAL_MP4_PROGRESSIVE_SUPPORT = true;
     /* Note: Video bitrates and resolutions are not exact, they can vary. */
     /* Quality, { videoCodec, videoBitrate, videoResolution, audioCodec, audioBitrate } */
-    public static LinkedHashMap<String, String[]> formats                               = new LinkedHashMap<String, String[]>(new LinkedHashMap<String, String[]>() {
-                                                                                            {
-                                                                                                put("240", new String[] { "AVC", "400", "420x240", "AAC LC", "54" });
-                                                                                                put("480", new String[] { "AVC", "600", "850x480", "AAC LC", "54" });
-                                                                                                put("720", new String[] { "AVC", "1500", "1280x720", "AAC LC", "54" });
-                                                                                                put("1080", new String[] { "AVC", "4000", "1920x1080", "AAC LC", "96" });
-                                                                                                put("1440", new String[] { "AVC", "6000", " 2560x1440", "AAC LC", "96" });
-                                                                                                put("2160", new String[] { "AVC", "8000", "3840x2160", "AAC LC", "128" });
-                                                                                            }
-                                                                                        });
-    public static final String                    BEST_ONLY                             = "BEST_ONLY";
-    public static final String                    BEST_SELECTION_ONLY                   = "BEST_SELECTION_ONLY";
-    public static final String                    CRAWL_VIDEO_HLS                       = "CRAWL_VIDEO_HLS";
-    public static final String                    CRAWL_VIDEO_MP4                       = "CRAWL_VIDEO_MP4";
-    public static final boolean                   MP4_SUPPORTED                         = false;                                                                          // 2023-08-16:
+    public static LinkedHashMap<String, String[]> formats                                 = new LinkedHashMap<String, String[]>(new LinkedHashMap<String, String[]>() {
+                                                                                              {
+                                                                                                  put("240", new String[] { "AVC", "400", "420x240", "AAC LC", "54" });
+                                                                                                  put("480", new String[] { "AVC", "600", "850x480", "AAC LC", "54" });
+                                                                                                  put("720", new String[] { "AVC", "1500", "1280x720", "AAC LC", "54" });
+                                                                                                  put("1080", new String[] { "AVC", "4000", "1920x1080", "AAC LC", "96" });
+                                                                                                  put("1440", new String[] { "AVC", "6000", " 2560x1440", "AAC LC", "96" });
+                                                                                                  put("2160", new String[] { "AVC", "8000", "3840x2160", "AAC LC", "128" });
+                                                                                              }
+                                                                                          });
+    public static final String                    BEST_ONLY                               = "BEST_ONLY";
+    public static final String                    BEST_SELECTION_ONLY                     = "BEST_SELECTION_ONLY";
+    public static final String                    CRAWL_VIDEO_HLS                         = "CRAWL_VIDEO_HLS";
+    public static final String                    CRAWL_VIDEO_MP4                         = "CRAWL_VIDEO_MP4";
     // mp4
     // no
     // longer
     // available?
-    public static final String                    CRAWL_THUMBNAIL                       = "CRAWL_THUMBNAIL";
-    public static final String                    FAST_LINKCHECK                        = "FAST_LINKCHECK";
-    private static final String                   USE_ORIGINAL_SERVER_FILENAME          = "USE_ORIGINAL_SERVER_FILENAME";
-    public static final String                    GIFS_WEBM                             = "GIFS_WEBM";
-    private final String                          REMOVED_VIDEO                         = "(?i)>\\s*This video has been removed\\s*<";
-    public static final String                    PROPERTY_TITLE                        = "title";
-    public static final String                    PROPERTY_FORMAT                       = "format";
-    public static final String                    PROPERTY_QUALITY                      = "quality";
-    public static final String                    PROPERTY_DIRECTLINK                   = "directlink";
-    public static final String                    PROPERTY_DATE                         = "date";
-    public static final String                    PROPERTY_CATEGORIES_COMMA_SEPARATED   = "categories_comma_separated";
-    public static final String                    PROPERTY_TAGS_COMMA_SEPARATED         = "tags_comma_separated";
-    public static final String                    PROPERTY_ACTORS_COMMA_SEPARATED       = "actors_comma_separated";
-    public static final String                    PROPERTY_USERNAME                     = "username";
-    public static final String                    PROPERTY_VIEWKEY                      = "viewkey";
-    public static final String                    PROPERTY_ACCOUNT_is_cookie_login_only = "is_cookie_login_only";
+    public static final String                    CRAWL_THUMBNAIL                         = "CRAWL_THUMBNAIL";
+    public static final String                    FAST_LINKCHECK                          = "FAST_LINKCHECK";
+    private static final String                   USE_ORIGINAL_SERVER_FILENAME            = "USE_ORIGINAL_SERVER_FILENAME";
+    public static final String                    GIFS_WEBM                               = "GIFS_WEBM";
+    private final String                          REMOVED_VIDEO                           = "(?i)>\\s*This video has been removed\\s*<";
+    public static final String                    PROPERTY_TITLE                          = "title";
+    public static final String                    PROPERTY_FORMAT                         = "format";
+    public static final String                    PROPERTY_QUALITY                        = "quality";
+    public static final String                    PROPERTY_DIRECTLINK                     = "directlink";
+    public static final String                    PROPERTY_DATE                           = "date";
+    public static final String                    PROPERTY_CATEGORIES_COMMA_SEPARATED     = "categories_comma_separated";
+    public static final String                    PROPERTY_TAGS_COMMA_SEPARATED           = "tags_comma_separated";
+    public static final String                    PROPERTY_ACTORS_COMMA_SEPARATED         = "actors_comma_separated";
+    public static final String                    PROPERTY_USERNAME                       = "username";
+    public static final String                    PROPERTY_VIEWKEY                        = "viewkey";
+    public static final String                    PROPERTY_ACCOUNT_is_cookie_login_only   = "is_cookie_login_only";
 
     public static List<String[]> getPluginDomains() {
         return PornHubComVideoCrawler.getPluginDomains();
@@ -617,16 +618,16 @@ public class PornHubCom extends PluginForHost {
                 this.dlUrl = qualities.containsKey(quality) ? qualities.get(quality).get(format) : null;
                 if (this.dlUrl == null && StringUtils.equalsIgnoreCase("mp4", format)) {
                     // 2020-01-11, only HLS available, auto check for hls
-                    logger.warning("Failed to get fresh directurl:" + format + "/" + quality + "|auto check for hls");
+                    logger.warning("Failed to get fresh directurl: " + format + "/" + quality + " | auto check for hls");
                     format = "hls";
                     this.dlUrl = qualities.containsKey(quality) ? qualities.get(quality).get(format) : null;
                 }
                 if (this.dlUrl == null) {
-                    logger.warning("Failed to get fresh directurl:" + format + "/" + quality);
+                    logger.warning("Failed to get fresh directurl: " + format + "/" + quality);
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 } else {
                     /* Last chance */
-                    logger.warning("Check fresh directurl:" + format + "/" + quality + "/" + dlUrl);
+                    logger.warning("Check fresh directurl: " + format + "/" + quality + "/" + dlUrl);
                     if (!verifyFinalURL(link, format, this.dlUrl, false)) {
                         logger.info("Fresh directurl did not lead to downloadable content");
                         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to refresh directurl");
@@ -693,18 +694,15 @@ public class PornHubCom extends PluginForHost {
                 URLConnectionAdapter con = null;
                 try {
                     con = urlCheck.openHeadConnection(dlUrl);
-                    if (urlCheck.getHttpConnection().getResponseCode() != 200) {
-                        urlCheck.followConnection(true);
-                        return false;
-                    } else if (StringUtils.containsIgnoreCase(urlCheck.getHttpConnection().getContentType(), "text")) {
-                        urlCheck.followConnection(true);
-                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    } else {
+                    if (this.looksLikeDownloadableContent(con)) {
                         if (con.getLongContentLength() > 0) {
                             link.setDownloadSize(con.getLongContentLength());
                         }
                         link.setProperty(PROPERTY_DIRECTLINK, url);
                         return true;
+                    } else {
+                        urlCheck.followConnection(true);
+                        return false;
                     }
                 } finally {
                     if (con != null) {
@@ -738,8 +736,6 @@ public class PornHubCom extends PluginForHost {
 
     @SuppressWarnings({ "unchecked" })
     public static Map<String, Map<String, String>> getVideoLinks(final Plugin plugin, final Browser br) throws Exception {
-        boolean success = false;
-        final Map<String, Map<String, String>> qualities = new LinkedHashMap<String, Map<String, String>>();
         String flashVars = br.getRegex("\\'flashvars\\' :[\t\n\r ]+\\{([^\\}]+)").getMatch(0);
         if (flashVars == null) {
             flashVars = br.getRegex("(var\\s*flashvars_\\d+.+quality_\\d+p;)\\s*playerObj").getMatch(0);
@@ -778,130 +774,154 @@ public class PornHubCom extends PluginForHost {
                 }
             }
         }
+        final Map<String, Map<String, String>> qualities = new LinkedHashMap<String, Map<String, String>>();
         if (flashVars != null) {
-            final Object obj = flashVars == null ? null : JavaScriptEngineFactory.jsonToJavaObject(flashVars);
-            if (obj instanceof Map) {
-                final Map<String, Object> values = (Map<String, Object>) obj;
-                if (values == null || values.size() < 1) {
-                    return null;
+            final Map<String, Object> values = JavaScriptEngineFactory.jsonToJavaMap(flashVars);
+            if (values == null || values.size() < 1) {
+                return null;
+            }
+            // dllink_temp = (String) values.get("video_url");
+            final List<Map<String, Object>> mediaDefinitions = (List<Map<String, Object>>) values.get("mediaDefinitions");
+            if (mediaDefinitions.size() == 0) {
+                /*
+                 * 2019-04-30: Very rare case - video is supposed to be online but ZERO qualities are available --> Video won't load in
+                 * browser either --> Offline
+                 */
+                plugin.getLogger().info("Found ZERO available qualities");
+                return qualities;
+            }
+            for (final Map<String, Object> mediaDefinition : mediaDefinitions) {
+                String format = (String) mediaDefinition.get("format");
+                final String videoUrl = (String) mediaDefinition.get("videoUrl");
+                format = format.toLowerCase(Locale.ENGLISH);
+                Object qualityO = mediaDefinition.get("quality");
+                if (qualityO == null) {
+                    /* This should never happen */
+                    plugin.getLogger().info("Skipping mediaDefinition due to missing 'quality' field: " + mediaDefinition);
+                    continue;
                 }
-                String dllink_temp = null;
-                // dllink_temp = (String) values.get("video_url");
-                final List<Object> entries = (List<Object>) values.get("mediaDefinitions");
-                if (entries.size() == 0) {
-                    /*
-                     * 2019-04-30: Very rare case - video is supposed to be online but ZERO qualities are available --> Video won't load in
-                     * browser either --> Offline
-                     */
-                    return qualities;
-                }
-                final List<Object> medias = new ArrayList<Object>(entries);
-                while (medias.size() > 0) {
-                    final Map<String, Object> e = (Map<String, Object>) medias.remove(0);
-                    String format = (String) e.get("format");
-                    if (StringUtils.equalsIgnoreCase(format, "dash")) {
-                        plugin.getLogger().info("Dash not yet supported:" + JSonStorage.toString(e));
+                if (StringUtils.equalsIgnoreCase(format, "mp4")) {
+                    final boolean mp4WorkaroundState = MP4_WORKAROUND.get();
+                    final boolean supportAutoEnableMp4Workaround = false;
+                    if (!ENABLE_INTERNAL_MP4_PROGRESSIVE_SUPPORT) {
+                        plugin.getLogger().info("Skip unsupported progressive MP4: Disabled by developer");
+                        continue;
+                    } else if (!TRY_MP4.get()) {
+                        plugin.getLogger().info("Skip unsupported progressive MP4: Disabled by auto handling");
                         continue;
                     }
-                    dllink_temp = (String) e.get("videoUrl");
-                    format = format.toLowerCase(Locale.ENGLISH);
-                    Object qualityInfo = e.get("quality");
-                    if (qualityInfo == null) {
-                        continue;
-                    } else if (qualityInfo instanceof List) {
-                        final int size = ((List) qualityInfo).size();
-                        if (size == 1) {
-                            qualityInfo = ((List) qualityInfo).get(0);
-                        } else {
-                            if (StringUtils.equalsIgnoreCase(format, "mp4")) {
-                                final boolean mp4Workaround = MP4_WORKAROUND.get();
-                                try {
-                                    if (TRY_MP4.get() && MP4_SUPPORTED) {
-                                        final Browser brc = br.cloneBrowser();
-                                        brc.setFollowRedirects(true);
-                                        // no keep alive for this request
-                                        brc.getHeaders().put("Connection", "close");
-                                        brc.getPage(dllink_temp);
-                                        final List<Object> mp4Medias = plugin.restoreFromString(brc.toString(), TypeRef.LIST);
-                                        medias.addAll(mp4Medias);
-                                    } else {
-                                        plugin.getLogger().info("progressive MP4 seems no longer to be supported!");
-                                    }
-                                } catch (IOException ioe) {
-                                    plugin.getLogger().log(ioe);
-                                } catch (final JSonMapperException jme) {
-                                    if (!mp4Workaround) {
-                                        plugin.getLogger().info("Enable mp4 workaround");
-                                        MP4_WORKAROUND.set(true);
-                                    } else {
-                                        plugin.getLogger().info("Disable mp4 support");
-                                        TRY_MP4.set(false);
-                                    }
-                                    plugin.getLogger().log(jme);
-                                    plugin.getLogger().info("Found invalid/broken quality: " + dllink_temp);
-                                }
-                                continue;
-                            } else if (StringUtils.equalsIgnoreCase(format, "hls")) {
-                                try {
-                                    for (final Object quality : (List) qualityInfo) {
-                                        final String q = quality + "P";
-                                        final String replacement = new Regex(dllink_temp, "(" + q + "_\\d+K)").getMatch(0);
-                                        if (replacement != null && quality instanceof Number && qualities.get(quality.toString()) == null) {
-                                            final String m3u8 = dllink_temp.replaceFirst("(\\d+/,)(.*?)(,_\\d+\\.mp4)", "$1" + replacement + "$3");
-                                            final Browser brc = br.cloneBrowser();
-                                            brc.setFollowRedirects(true);
-                                            brc.getPage(m3u8);
-                                            final List<HlsContainer> hlsQualities = HlsContainer.getHlsQualities(brc);
-                                            if (hlsQualities.size() == 1) {
-                                                Map<String, String> formatMap = qualities.get(quality.toString());
-                                                if (formatMap == null) {
-                                                    // prefer single quality m3u8 files, see blow
-                                                    formatMap = new HashMap<String, String>();
-                                                    qualities.put(quality.toString(), formatMap);
-                                                    formatMap.put(format, dllink_temp);
-                                                }
-                                            }
-                                        }
-                                    }
-                                } catch (IOException ioe) {
-                                    plugin.getLogger().log(ioe);
-                                } catch (JSonMapperException jme) {
-                                    plugin.getLogger().log(jme);
-                                }
-                                continue;
-                            }
-                            plugin.getLogger().info("Skip:" + JSonStorage.toString(e));
+                    try {
+                        final Browser brc = br.cloneBrowser();
+                        brc.setFollowRedirects(true);
+                        // no keep alive for this request
+                        brc.getHeaders().put("Connection", "close");
+                        brc.getPage(videoUrl);
+                        final List<HashMap<String, Object>> mp4Medias = plugin.restoreFromString(brc.toString(), TypeRef.LIST_HASHMAP);
+                        if (mp4Medias.isEmpty()) {
+                            plugin.getLogger().info("No MP4 media available for this item");
                             continue;
                         }
-                    }
-                    final Boolean encrypted = e.get("encrypted") == null ? null : ((Boolean) e.get("encrypted")).booleanValue();
-                    if (encrypted == Boolean.TRUE) {
-                        final String decryptkey = (String) values.get("video_title");
-                        try {
-                            dllink_temp = new BouncyCastleAESCounterModeDecrypt().decrypt(dllink_temp, decryptkey, 256);
-                        } catch (Throwable t) {
-                            /* Fallback for stable version */
-                            dllink_temp = AESCounterModeDecrypt(dllink_temp, decryptkey, 256);
+                        for (final Map<String, Object> mp4media : mp4Medias) {
+                            final String qualityVideoHeightStr = mp4media.get("quality").toString();
+                            Map<String, String> formatMap = qualities.get(qualityVideoHeightStr);
+                            if (formatMap == null) {
+                                formatMap = new HashMap<String, String>();
+                                qualities.put(qualityVideoHeightStr, formatMap);
+                            }
+                            formatMap.put(format, mp4media.get("videoUrl").toString());
                         }
-                        if (dllink_temp != null && (dllink_temp.startsWith("Error:") || !dllink_temp.startsWith("http"))) {
-                            success = false;
+                    } catch (IOException ioe) {
+                        plugin.getLogger().log(ioe);
+                    } catch (final JSonMapperException jme) {
+                        /* TODO: 2023-11-15: Check if this old auto handling is still needed */
+                        if (!mp4WorkaroundState && supportAutoEnableMp4Workaround) {
+                            plugin.getLogger().info("Enable mp4 workaround");
+                            MP4_WORKAROUND.set(true);
                         } else {
-                            success = true;
+                            plugin.getLogger().info("Disable mp4 support");
+                            TRY_MP4.set(false);
+                        }
+                        plugin.getLogger().log(jme);
+                        plugin.getLogger().info("Found invalid/broken mp4 progressive quality: " + videoUrl);
+                    }
+                    continue;
+                } else if (StringUtils.equalsIgnoreCase(format, "hls")) {
+                    if (qualityO instanceof String) {
+                        final String qualityVideoHeight = qualityO.toString();
+                        if (qualities.containsKey(qualityVideoHeight)) {
+                            /* Skip already existing quality */
+                            continue;
+                        }
+                        final Browser brc = br.cloneBrowser();
+                        brc.setFollowRedirects(true);
+                        brc.getPage(videoUrl);
+                        final List<HlsContainer> hlsQualities = HlsContainer.getHlsQualities(brc);
+                        if (hlsQualities.size() == 1) {
+                            Map<String, String> formatMap = qualities.get(qualityVideoHeight);
+                            if (formatMap == null) {
+                                // prefer single quality m3u8 files, see blow
+                                formatMap = new HashMap<String, String>();
+                                qualities.put(qualityVideoHeight, formatMap);
+                            }
+                            formatMap.put(format, videoUrl);
+                        } else {
+                            plugin.getLogger().warning("WTF: Single HLS item with multiple qualities: " + videoUrl);
                         }
                     } else {
-                        success = true;
+                        /* Old handling */
+                        final boolean skipThis = true;
+                        if (skipThis) {
+                            continue;
+                        }
+                        /* TODO: Remove the old code down below */
+                        for (final Object quality : (List) qualityO) {
+                            final String q = quality + "P";
+                            final String replacement = new Regex(videoUrl, "(" + q + "_\\d+K)").getMatch(0);
+                            if (replacement == null || !(quality instanceof Number) || qualities.containsKey(quality.toString())) {
+                                continue;
+                            }
+                            final String m3u8 = videoUrl.replaceFirst("(\\d+/,)(.*?)(,_\\d+\\.mp4)", "$1" + replacement + "$3");
+                            final Browser brc = br.cloneBrowser();
+                            brc.setFollowRedirects(true);
+                            brc.getPage(m3u8);
+                            final List<HlsContainer> hlsQualities = HlsContainer.getHlsQualities(brc);
+                            if (hlsQualities.size() == 1) {
+                                Map<String, String> formatMap = qualities.get(quality.toString());
+                                if (formatMap == null) {
+                                    // prefer single quality m3u8 files, see blow
+                                    formatMap = new HashMap<String, String>();
+                                    qualities.put(quality.toString(), formatMap);
+                                }
+                                formatMap.put(format, videoUrl);
+                            }
+                        }
                     }
-                    final String quality = new Regex(qualityInfo.toString(), "(\\d+)").getMatch(0);
-                    Map<String, String> formatMap = qualities.get(quality);
-                    if (formatMap == null) {
-                        formatMap = new HashMap<String, String>();
-                        qualities.put(quality, formatMap);
-                    }
-                    formatMap.put(format, dllink_temp);
+                    continue;
+                } else {
+                    plugin.getLogger().info("Skipping unsupported media format: " + format);
+                    continue;
                 }
+                /* TODO: 2023-11-15: Check if the code below is still needed. */
+                // final Boolean encrypted = mediaDefinition.get("encrypted") == null ? null : ((Boolean)
+                // mediaDefinition.get("encrypted")).booleanValue();
+                // if (encrypted == Boolean.TRUE) {
+                // final String decryptkey = (String) values.get("video_title");
+                // try {
+                // videoUrl = new BouncyCastleAESCounterModeDecrypt().decrypt(videoUrl, decryptkey, 256);
+                // } catch (Throwable t) {
+                // /* Fallback for stable version */
+                // videoUrl = AESCounterModeDecrypt(videoUrl, decryptkey, 256);
+                // }
+                // if (videoUrl != null && (videoUrl.startsWith("Error:") || !videoUrl.startsWith("http"))) {
+                // success = false;
+                // } else {
+                // success = true;
+                // }
+                // }
             }
         }
-        if (!success) {
+        if (qualities.isEmpty()) {
+            // TODO: 2023-11-15: Remove this old code?
             String[][] var_player_quality_dp;
             /* 0 = match for quality, 1 = match for url */
             int[] matchPlaces;
@@ -1897,7 +1917,7 @@ public class PornHubCom extends PluginForHost {
             getConfig().addEntry(vidcfg);
         }
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), CRAWL_VIDEO_HLS, "Crawl video (HLS)?").setDefaultValue(true));
-        if (MP4_SUPPORTED) {
+        if (ENABLE_INTERNAL_MP4_PROGRESSIVE_SUPPORT) {
             getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), CRAWL_VIDEO_MP4, "Crawl video (HTTP)?").setDefaultValue(true));
         }
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), CRAWL_THUMBNAIL, "Crawl video thumbnail?").setDefaultValue(false));
