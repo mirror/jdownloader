@@ -29,6 +29,7 @@ public class DefaultEditAccountPanel extends MigPanel implements AccountBuilderI
         if (this.pass == null) {
             return null;
         }
+        // TODO: Evaluate if this check is still required
         if (EMPTYPW.equals(new String(this.pass.getPassword()))) {
             return null;
         }
@@ -68,31 +69,27 @@ public class DefaultEditAccountPanel extends MigPanel implements AccountBuilderI
     }
 
     public DefaultEditAccountPanel(final InputChangedCallbackInterface callback) {
-        this(callback, true, true);
+        this(callback, true);
     }
 
-    public DefaultEditAccountPanel(final InputChangedCallbackInterface callback, boolean requiresUserName, final boolean allowCookieLogin) {
+    public DefaultEditAccountPanel(final InputChangedCallbackInterface callback, final boolean allowCookieLogin) {
         super("ins 0, wrap 2", "[][grow,fill]", "");
         this.callback = callback;
-        if (requiresUserName) {
-            add(usernameLabel = new JLabel(_GUI.T.jd_gui_swing_components_AccountDialog_name()));
-            add(this.name = new ExtTextField() {
-                @Override
-                public void onChanged() {
-                    callback.onChangedInput(name);
-                }
+        add(usernameLabel = new JLabel(_GUI.T.jd_gui_swing_components_AccountDialog_name()));
+        add(this.name = new ExtTextField() {
+            @Override
+            public void onChanged() {
+                callback.onChangedInput(name);
+            }
 
-                {
-                    final HighlightPainter painter = new DefaultHighlighter.DefaultHighlightPainter(Color.yellow);
-                    addTextHighlighter(new ExtTextHighlighter(painter, Pattern.compile("^(\\s+)")));
-                    addTextHighlighter(new ExtTextHighlighter(painter, Pattern.compile("(\\s+)$")));
-                    refreshTextHighlighter();
-                }
-            });
-            name.setHelpText(_GUI.T.jd_gui_swing_components_AccountDialog_help_username());
-        } else {
-            name = null;
-        }
+            {
+                final HighlightPainter painter = new DefaultHighlighter.DefaultHighlightPainter(Color.yellow);
+                addTextHighlighter(new ExtTextHighlighter(painter, Pattern.compile("^(\\s+)")));
+                addTextHighlighter(new ExtTextHighlighter(painter, Pattern.compile("(\\s+)$")));
+                refreshTextHighlighter();
+            }
+        });
+        name.setHelpText(_GUI.T.jd_gui_swing_components_AccountDialog_help_username());
         add(passwordLabel = new JLabel(_GUI.T.jd_gui_swing_components_AccountDialog_pass()));
         add(this.pass = new ExtPasswordField() {
             @Override

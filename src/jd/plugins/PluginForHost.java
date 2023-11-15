@@ -923,14 +923,6 @@ public abstract class PluginForHost extends Plugin {
         return ai;
     }
 
-    public boolean getAccountwithoutUsername() {
-        return accountWithoutUsername;
-    }
-
-    public void setAccountwithoutUsername(boolean b) {
-        accountWithoutUsername = b;
-    }
-
     public abstract String getAGBLink();
 
     protected void enablePremium() {
@@ -2181,9 +2173,9 @@ public abstract class PluginForHost extends Plugin {
             return new DefaultEditAccountPanelCookieLogin(callback, true);
         } else if (this.hasFeature(FEATURE.COOKIE_LOGIN_OPTIONAL)) {
             /* TODO: Add indicator into EditAccountPanel that cookie login is possible (?) */
-            return new DefaultEditAccountPanel(callback, !getAccountwithoutUsername(), true);
+            return new DefaultEditAccountPanel(callback, true);
         } else {
-            return new DefaultEditAccountPanel(callback, !getAccountwithoutUsername(), false);
+            return new DefaultEditAccountPanel(callback, false);
         }
     }
 

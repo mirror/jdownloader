@@ -64,7 +64,6 @@ abstract public class ZeveraCore extends UseNet {
 
     public ZeveraCore(PluginWrapper wrapper) {
         super(wrapper);
-        this.setAccountwithoutUsername(true);
         // this.enablePremium("https://www." + this.getHost() + "/premium");
     }
 
