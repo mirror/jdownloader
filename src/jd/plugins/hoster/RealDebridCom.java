@@ -249,8 +249,6 @@ public class RealDebridCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        /* Do not store password which user may enter as login happens in browser and all we need to login is the generated token. */
-        account.setPass("dummypw");
         account.setConcurrentUsePossible(true);
         account.setMaxSimultanDownloads(-1);
         final UserResponse user = callRestAPI(account, "/user", null, UserResponse.TYPE);
