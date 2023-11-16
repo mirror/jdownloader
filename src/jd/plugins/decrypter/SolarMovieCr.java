@@ -16,39 +16,81 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-import java.util.LinkedHashSet;
+import java.util.List;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "solarmovie.cr" }, urls = { "https?://w+\\d*\\.?solarmovie\\.(?:cr|one)/movie/[\\w-]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class SolarMovieCr extends PluginForDecrypt {
     public SolarMovieCr(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final LinkedHashSet<String> dupe = new LinkedHashSet<String>();
-        String parameter = param.toString() + "/watching";
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
         br.setFollowRedirects(true);
-        br.getPage(parameter);
+        return br;
+    }
+
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "solarmovie.cr", "solarmovie.one" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:\\w+\\.)?" + buildHostsPatternPart(domains) + "/movie/[\\w-]+");
+        }
+        return ret.toArray(new String[0]);
+    }
+
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final String contenturl = param.getCryptedUrl() + "/watching";
+        br.getPage(contenturl);
         String fpName = br.getRegex("<meta name=\"description\" content=[\"']Watch ([^\"]*) Online For Free").getMatch(0);
-        String[] links = br.getRegex("<a[^>]+data-file=\"([^\"]+)\"[^>]+>").getColumn(0);
+        final String[] links = br.getRegex("<a[^>]+data-file=\"([^\"]+)\"[^>]+>").getColumn(0);
+        if (links == null || links.length == 0) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         for (String link : links) {
-            decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(link)));
+            ret.add(createDownloadlink(Encoding.htmlDecode(link)));
         }
+        final FilePackage fp = FilePackage.getInstance();
         if (fpName != null) {
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName.trim()));
-            fp.addLinks(decryptedLinks);
+            fp.setName(Encoding.htmlDecode(fpName).trim());
+        } else {
+            /* Fallback */
+            fp.setName(br._getURL().getPath());
         }
-        return decryptedLinks;
+        fp.addLinks(ret);
+        return ret;
     }
 }

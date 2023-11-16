@@ -25,7 +25,6 @@ import java.util.Map;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.UniqueAlltimeID;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
@@ -50,6 +49,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.DirectHTTP;
 import jd.plugins.hoster.SpankBangCom;
@@ -286,6 +286,7 @@ public class SpankBangComCrawler extends PluginForDecrypt {
         if (q240p) {
             selectedQualities.add("240p");
         }
+        final PluginForHost plg = this.getNewPluginForHostInstance(this.getHost());
         final String predefinedVariant = UrlQuery.parse(currenturl).get("quality");
         for (final String selectedQualityValue : selectedQualities) {
             // if quality marker is in the url. skip all others
@@ -294,8 +295,8 @@ public class SpankBangComCrawler extends PluginForDecrypt {
             }
             final String directlink = foundQualities.get(selectedQualityValue);
             if (directlink != null) {
-                final DownloadLink video = createDownloadlink("http://spankbangdecrypted.com/" + UniqueAlltimeID.create());
-                // dl.setContentUrl(br.getURL());
+                final DownloadLink video = createDownloadlink(br.getURL());
+                video.setDefaultPlugin(plg);
                 video.setLinkID("spankbangcom_" + videoID + "_" + selectedQualityValue);
                 if (username != null) {
                     video.setProperty(SpankBangCom.PROPERTY_UPLOADER, username);

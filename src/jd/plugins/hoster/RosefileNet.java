@@ -184,12 +184,12 @@ public class RosefileNet extends PluginForHost {
             if (internalFileID == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            final Browser ajax = this.br.cloneBrowser();
+            final Browser ajax = br.cloneBrowser();
             ajax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             final boolean looksLikePremiumADownloadWithoutWait = br.containsHTML("load_down");
             if (account != null && looksLikePremiumADownloadWithoutWait) {
                 final UrlQuery query = new UrlQuery();
-                query.add("action", "check_recaptcha");
+                query.add("action", "check_recaptchac");
                 query.add("file_id", internalFileID);
                 ajax.postPage("/ajax.php", query);
             } else {
@@ -280,11 +280,11 @@ public class RosefileNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML("(?i)Your IP address exceeds the number of downloads within the time limit")) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Downloadlimit reached", 5 * 60 * 1000l);
-        } else if (dl.getConnection().getResponseCode() == 403) {
+        } else if (br.getHttpConnection().getResponseCode() == 403) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 5 * 60 * 1000l);
-        } else if (dl.getConnection().getResponseCode() == 404) {
+        } else if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 5 * 60 * 1000l);
-        } else if (dl.getConnection().getResponseCode() == 503) {
+        } else if (br.getHttpConnection().getResponseCode() == 503) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 503 too many connections", 5 * 60 * 1000l);
         } else {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");

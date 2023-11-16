@@ -78,7 +78,8 @@ public class SpankBangCom extends PluginForHost {
     }
 
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
-        return new String[] { "http://spankbangdecrypted\\.com/\\d+" };
+        /* No regular expression -> Crawler plugin is adding links. */
+        return new String[] { "" };
     }
 
     @Override

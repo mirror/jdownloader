@@ -17,6 +17,9 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+
+import org.appwork.storage.TypeRef;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -95,17 +98,33 @@ public class SlidesliveCom extends PluginForDecrypt {
         }
         ret.add(this.createDownloadlink(YoutubeDashV2.generateContentURL(youtubeVideoID)));
         final Browser brc = br.cloneBrowser();
-        brc.getPage("https://slides.slideslive.com/" + contentID + "/" + contentID + ".xml");
-        final String[] items = brc.getRegex("<slideName>([^<]+)</slideName>").getColumn(0);
-        if (items == null || items.length == 0) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
+        final boolean useJsonAPI = true;
         final String imagesExt = ".png";
-        for (final String slideName : items) {
-            final String directurl = "https://" + slidesHost + "/" + contentID + "/slides/" + slideName + imagesExt + "?h=432&f=webp&s=lambda&accelerate_s3=1";
-            final DownloadLink image = createDownloadlink(DirectHTTP.createURLForThisPlugin(directurl));
-            image.setAvailable(true);
-            ret.add(image);
+        if (useJsonAPI) {
+            /* 2023-11-16 */
+            brc.getPage("https://s.slideslive.com/" + contentID + "/v5/slides.json?" + System.currentTimeMillis() / 1000);
+            final Map<String, Object> entries = restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.MAP);
+            final List<Map<String, Object>> slides = (List<Map<String, Object>>) entries.get("slides");
+            for (final Map<String, Object> slide : slides) {
+                final Map<String, Object> imagemap = (Map<String, Object>) slide.get("image");
+                final String slideName = imagemap.get("name").toString();
+                final String directurl = "https://" + slidesHost + "/" + contentID + "/slides/" + slideName + imagesExt + "?h=432&f=webp&s=lambda&accelerate_s3=1";
+                final DownloadLink image = createDownloadlink(DirectHTTP.createURLForThisPlugin(directurl));
+                image.setAvailable(true);
+                ret.add(image);
+            }
+        } else {
+            brc.getPage("https://slides.slideslive.com/" + contentID + "/" + contentID + ".xml");
+            final String[] items = brc.getRegex("<slideName>([^<]+)</slideName>").getColumn(0);
+            if (items == null || items.length == 0) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            for (final String slideName : items) {
+                final String directurl = "https://" + slidesHost + "/" + contentID + "/slides/" + slideName + imagesExt + "?h=432&f=webp&s=lambda&accelerate_s3=1";
+                final DownloadLink image = createDownloadlink(DirectHTTP.createURLForThisPlugin(directurl));
+                image.setAvailable(true);
+                ret.add(image);
+            }
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(title);
