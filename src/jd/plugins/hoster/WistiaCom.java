@@ -18,7 +18,7 @@ package jd.plugins.hoster;
 import java.util.List;
 import java.util.Map;
 
-import org.jdownloader.scripting.JavaScriptEngineFactory;
+import org.appwork.storage.TypeRef;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
@@ -90,30 +90,28 @@ public class WistiaCom extends PluginForHost {
             /* Offline */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(json);
-        entries = (Map<String, Object>) entries.get("media");
-        final List<Object> ressourcelist = (List<Object>) entries.get("assets");
-        String filename = (String) entries.get("name");
-        final String description = (String) entries.get("seoDescription");
+        final Map<String, Object> entries = restoreFromString(json, TypeRef.MAP);
+        Map<String, Object> media = (Map<String, Object>) entries.get("media");
+        final List<Object> ressourcelist = (List<Object>) media.get("assets");
+        String filename = (String) media.get("name");
+        final String description = (String) media.get("seoDescription");
         if (filename == null) {
             filename = fid;
         }
         /* Find highest quality */
         long sizemax = 0;
-        long sizetemp = 0;
         String ext = null;
-        String dllink_temp = null;
         for (final Object videoo : ressourcelist) {
-            entries = (Map<String, Object>) videoo;
-            final String type = (String) entries.get("type");
+            media = (Map<String, Object>) videoo;
+            final String type = (String) media.get("type");
             if (type.contains("hls")) {
                 /* 2017-10-05: Skip hls for now as we do not need it */
                 continue;
             }
-            dllink_temp = (String) entries.get("url");
-            sizetemp = JavaScriptEngineFactory.toLong(entries.get("size"), 0);
+            final String dllink_temp = media.get("url").toString();
+            final long sizetemp = ((Number) media.get("size")).longValue();
             if (sizetemp > sizemax && dllink_temp != null) {
-                ext = (String) entries.get("ext");
+                ext = (String) media.get("ext");
                 dllink = dllink_temp;
                 sizemax = sizetemp;
             }
@@ -125,19 +123,11 @@ public class WistiaCom extends PluginForHost {
         if (dllink_id == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dllink = "https://embedwistia-a.akamaihd.net/deliveries/" + dllink_id + "/file.mp4";
+        // dllink = "https://embedwistia-a.akamaihd.net/deliveries/" + dllink_id + "/file.mp4";
         filename = Encoding.htmlDecode(filename);
         filename = filename.trim();
-        if (ext != null && ext.equalsIgnoreCase("m3u8")) {
-            ext = "mp4";
-        }
-        if (ext != null && !ext.startsWith(".")) {
-            ext = "." + ext;
-        } else if (ext == null) {
-            ext = getFileNameExtensionFromString(dllink, default_Extension);
-        }
-        if (!filename.endsWith(ext)) {
-            filename += ext;
+        if (ext != null && !filename.endsWith(ext)) {
+            filename += ".mp4";
         }
         if (description != null && description.length() > 0 && link.getComment() == null) {
             link.setComment(description);

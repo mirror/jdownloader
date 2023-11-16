@@ -24,7 +24,6 @@ import java.util.Map;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
@@ -97,7 +96,7 @@ public class BadoinkvrCom extends PluginForHost {
              * cosplaypornvideo: vrcosplayx.com </br>
              * bdsm-vr-video: kinkvr.com
              */
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/[\\w\\-]+/([a-z0-9\\-_]+)\\-(\\d+)/?");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:members/)?[\\w\\-]+/([a-z0-9\\-_]+)\\-(\\d+)/?");
         }
         return ret.toArray(new String[0]);
     }
@@ -148,6 +147,7 @@ public class BadoinkvrCom extends PluginForHost {
         }
         this.setBrowserExclusive();
         long filesize = -1;
+        String filename = null;
         String title = null;
         String description = null;
         if (account != null && account.getType() == AccountType.PREMIUM) {
@@ -158,18 +158,41 @@ public class BadoinkvrCom extends PluginForHost {
             title = entries.get("title").toString();
             description = (String) entries.get("description");
             long filesizeMax = 0;
+            int resolutionMax = 0;
             String pickedMediaName = null;
             final List<Map<String, Object>> medias = (List<Map<String, Object>>) entries.get("media");
             for (final Map<String, Object> media : medias) {
+                final String mediaName = media.get("name").toString();
                 final List<Map<String, Object>> sources = (List<Map<String, Object>>) media.get("sources");
                 for (final Map<String, Object> source : sources) {
-                    final long thisfilesize = ((Number) source.get("size")).longValue();
-                    if (thisfilesize > filesizeMax) {
-                        filesizeMax = thisfilesize;
-                        this.dllink = source.get("url").toString();
-                        pickedMediaName = media.get("name").toString();
+                    final Object filesizeO = source.get("size");
+                    final Object resolutionO = source.get("resolution");
+                    final String url = source.get("url").toString();
+                    if (filesizeO != null) {
+                        /* Filesize is not always given */
+                        final long thisFilesize = ((Number) filesizeO).longValue();
+                        if (thisFilesize > filesizeMax) {
+                            filesizeMax = thisFilesize;
+                            this.dllink = url;
+                            pickedMediaName = mediaName;
+                        }
+                    } else if (resolutionO instanceof Number) {
+                        final int thisResolutionValue = ((Number) resolutionO).intValue();
+                        if (thisResolutionValue > resolutionMax) {
+                            resolutionMax = thisResolutionValue;
+                            this.dllink = url;
+                            pickedMediaName = mediaName;
+                        }
+                    }
+                    /* Fallback: We always want to have a result */
+                    if (this.dllink == null) {
+                        this.dllink = url;
+                        pickedMediaName = mediaName;
                     }
                 }
+            }
+            if (this.dllink != null) {
+                filename = Plugin.getFileNameFromURL(this.dllink);
             }
             title += "_" + pickedMediaName;
             filesize = filesizeMax;
@@ -202,43 +225,14 @@ public class BadoinkvrCom extends PluginForHost {
                 }
             }
             title = titleFromURL;
-            final boolean enterLegacyHandling = false;
-            if (enterLegacyHandling) {
-                // TODO: 2023-11-14: Remove this?
-                boolean userHasCompatibleMOCHAccount = false;
-                final List<Account> moch_accounts = AccountController.getInstance().getMultiHostAccounts(this.getHost());
-                if (moch_accounts != null) {
-                    for (final Account moch_account_temp : moch_accounts) {
-                        if (moch_account_temp.isValid() && moch_account_temp.isEnabled()) {
-                            userHasCompatibleMOCHAccount = true;
-                            break;
-                        }
-                    }
-                }
-                long lowest_filesize = 0;
-                if (userHasCompatibleMOCHAccount) {
-                    /* Assume that MOCH will return lowest quality possible, see if we can find the lowest filesize. */
-                    final String[] filesizes = br.getRegex("class=\"video-dl-options-file-info\">\\d+fps \\(([^\"]+)\\)</span>").getColumn(0);
-                    int i = 0;
-                    for (final String filesize_str : filesizes) {
-                        final long filesize_tmp = SizeFormatter.getSize(filesize_str);
-                        if (i == 0) {
-                            lowest_filesize = filesize_tmp;
-                            continue;
-                        }
-                        if (filesize_tmp < lowest_filesize) {
-                            lowest_filesize = filesize_tmp;
-                        }
-                        i++;
-                    }
-                }
-                filesize = lowest_filesize;
-            }
         }
         if (!StringUtils.isEmpty(description) && link.getComment() == null) {
             link.setComment(description);
         }
-        if (!StringUtils.isEmpty(title)) {
+        if (filename != null) {
+            /* Pre defined filename -> Prefer that and use it as final filename. */
+            link.setFinalFileName(filename);
+        } else if (!StringUtils.isEmpty(title)) {
             title = videoid + "_" + title;
             title = Encoding.htmlDecode(title);
             title = title.trim();

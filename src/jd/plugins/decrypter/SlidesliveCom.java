@@ -35,6 +35,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.DirectHTTP;
+import jd.plugins.hoster.GenericM3u8;
 import jd.plugins.hoster.YoutubeDashV2;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
@@ -92,17 +93,37 @@ public class SlidesliveCom extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br.getPage("https://ben.slideslive.com/player/" + contentID + "?player_token=" + Encoding.urlEncode(playerToken));
-        final String youtubeVideoID = br.getRegex("EXT-SL-VOD-VIDEO-ID:(.+)").getMatch(0);
-        if (youtubeVideoID == null) {
+        final String externalVideoServiceID = br.getRegex("#EXT-SL-VOD-VIDEO-SERVICE-NAME:(.*?)\\s").getMatch(0);
+        final String videoID = br.getRegex("EXT-SL-VOD-VIDEO-ID:(.*?)\\s").getMatch(0);
+        if (videoID == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        ret.add(this.createDownloadlink(YoutubeDashV2.generateContentURL(youtubeVideoID)));
+        if (externalVideoServiceID.equalsIgnoreCase("youtube")) {
+            /* E.g. https://slideslive.com/38893320/lhani-detekce-lzi-a-emoce-z-pohledu-forenzni-psychologie */
+            ret.add(this.createDownloadlink(YoutubeDashV2.generateContentURL(videoID)));
+        } else if (externalVideoServiceID.equalsIgnoreCase("yoda")) {
+            /* E.g. https://slideslive.com/38955218/diffusion-models-and-lossy-generative-modeling */
+            final String serversArray = br.getRegex("#EXT-SL-VOD-VIDEO-SERVERS:(\\[.*?)\\s").getMatch(0);
+            final List<String> servers = restoreFromString(serversArray, TypeRef.STRING_LIST);
+            final String hlsMaster = "https://" + servers.get(0) + "/" + videoID + "/master.m3u8";
+            final DownloadLink video = this.createDownloadlink(hlsMaster);
+            video.setProperty(GenericM3u8.PRESET_NAME_PROPERTY, title);
+            ret.add(video);
+        }
         final Browser brc = br.cloneBrowser();
-        final boolean useJsonAPI = true;
+        brc.getHeaders().put("Origin", "https://" + br.getHost());
+        brc.getHeaders().put("Accept", "application/json");
+        final boolean useJsonAPI = false;
+        final String slidesjsonurl = br.getRegex("EXT-SL-VOD-SLIDES-JSON-URL:(https?://.*?)\\s").getMatch(0);
+        final String slidesxmlurl = br.getRegex("EXT-SL-VOD-SLIDES-XML-URL:(https?://.*?)\\s").getMatch(0);
+        if (slidesjsonurl == null && slidesxmlurl == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         final String imagesExt = ".png";
-        if (useJsonAPI) {
+        if ((useJsonAPI && slidesjsonurl != null) || slidesxmlurl == null) {
             /* 2023-11-16 */
-            brc.getPage("https://s.slideslive.com/" + contentID + "/v5/slides.json?" + System.currentTimeMillis() / 1000);
+            // brc.getPage("https://s.slideslive.com/" + contentID + "/v5/slides.json?" + System.currentTimeMillis() / 1000);
+            brc.getPage(slidesjsonurl);
             final Map<String, Object> entries = restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.MAP);
             final List<Map<String, Object>> slides = (List<Map<String, Object>>) entries.get("slides");
             for (final Map<String, Object> slide : slides) {
@@ -114,7 +135,8 @@ public class SlidesliveCom extends PluginForDecrypt {
                 ret.add(image);
             }
         } else {
-            brc.getPage("https://slides.slideslive.com/" + contentID + "/" + contentID + ".xml");
+            // brc.getPage("https://slides.slideslive.com/" + contentID + "/" + contentID + ".xml");
+            brc.getPage(slidesxmlurl);
             final String[] items = brc.getRegex("<slideName>([^<]+)</slideName>").getColumn(0);
             if (items == null || items.length == 0) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

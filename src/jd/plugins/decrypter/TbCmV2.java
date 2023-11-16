@@ -1219,30 +1219,36 @@ public class TbCmV2 extends PluginForDecrypt {
             }
             helper.parse();
             rootMap = helper.getYtInitialData();
-            final List<String> availableChannelTabs = new ArrayList<String>();
-            Map<String, Object> playlisttab = null;
-            Map<String, Object> shortstab = null;
-            Map<String, Object> videostab = null;
             ytConfigData = (Map<String, Object>) JavaScriptEngineFactory.walkJson(rootMap, "responseContext/webResponseContextExtensionData/ytConfigData");
             String videosCountText = null;
             final Map<String, Object> autoGeneratexYoutubeMixPlaylistProbe = (Map<String, Object>) JavaScriptEngineFactory.walkJson(rootMap, "contents/twoColumnWatchNextResults/playlist/playlist");
             if (autoGeneratexYoutubeMixPlaylistProbe != null && Boolean.TRUE.equals(autoGeneratexYoutubeMixPlaylistProbe.get("isInfinite"))) {
+                /* Auto generated "youtube mix" playlist */
                 globalPropertiesForDownloadLink.put(YoutubeHelper.YT_PLAYLIST_TITLE, autoGeneratexYoutubeMixPlaylistProbe.get("title").toString());
                 varray = (List<Map<String, Object>>) autoGeneratexYoutubeMixPlaylistProbe.get("contents");
                 /* Such playlists can contain an infinite amount of items -> Stop after first page */
                 abortPaginationAfterFirstPage = true;
-            } else {
+            } else if (run == 0) {
+                /* Channel */
+                final List<String> availableChannelTabs = new ArrayList<String>();
+                Map<String, Object> playlisttab = null;
+                Map<String, Object> shortstab = null;
+                Map<String, Object> videostab = null;
                 final List<Map<String, Object>> tabs = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(rootMap, "contents/twoColumnBrowseResultsRenderer/tabs");
                 if (tabs != null) {
                     for (final Map<String, Object> tab : tabs) {
                         /* We will get this one if a real playlist is our currently opened tab. */
                         final Map<String, Object> tabRenderer = (Map<String, Object>) tab.get("tabRenderer");
                         final Object varrayPlaylistProbe = JavaScriptEngineFactory.walkJson(tabRenderer, "content/sectionListRenderer/contents/{}/itemSectionRenderer/contents/{}/playlistVideoListRenderer/contents");
+                        final Object varrayChannelShortsPlaylist = JavaScriptEngineFactory.walkJson(tabRenderer, "content/sectionListRenderer/contents/{}/itemSectionRenderer/contents/{}/richGridRenderer/contents");
                         if (varrayPlaylistProbe != null) {
                             /* Real playlist */
                             playlisttab = tab;
                             varray = (List<Map<String, Object>>) varrayPlaylistProbe;
                             break;
+                        } else if (varrayChannelShortsPlaylist != null) {
+                            /* Channel playlist when channel only contains shorts */
+                            varray = (List<Map<String, Object>>) varrayChannelShortsPlaylist;
                         } else if (tabRenderer != null) {
                             /* Channel/User */
                             final String tabTitle = (String) tabRenderer.get("title");
@@ -1269,7 +1275,7 @@ public class TbCmV2 extends PluginForDecrypt {
                     logger.info("Available channel tabs: " + availableChannelTabs);
                     final boolean isChannelOrProfileShorts = isChannelOrProfileShorts(referenceUrl);
                     if (shortstab == null && isChannelOrProfileShorts && videostab != null && run == 0) {
-                        logger.info("User wanted shorts but channel doesn't contain shorts tab -> Fallback to Videos tab");
+                        logger.info("User wanted shorts but channel doesn't contain shorts tab -> Fallback to Videos tab and re-do loop with that URL");
                         if (channelID != null) {
                             userOrPlaylistURL = getChannelURLOLD(userName, "videos");
                             desiredChannelTab = "Videos";
@@ -1280,7 +1286,7 @@ public class TbCmV2 extends PluginForDecrypt {
                         }
                         continue;
                     } else if (videostab == null && shortstab != null && !isChannelOrProfileShorts && run == 0) {
-                        logger.info("User wanted videos but channel doesn't contain videos tab -> Fallback to shorts tab");
+                        logger.info("User wanted videos but channel doesn't contain videos tab -> Fallback to shorts tab and re-do loop with that URL");
                         if (channelID != null) {
                             userOrPlaylistURL = getChannelURLOLD(userName, "shorts");
                             desiredChannelTab = "Shorts";
@@ -1291,6 +1297,8 @@ public class TbCmV2 extends PluginForDecrypt {
                         }
                         continue;
                     }
+                } else {
+                    logger.warning("Failed to find any tabs");
                 }
             }
             /**
