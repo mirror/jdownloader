@@ -58,6 +58,7 @@ public class DefaultEditAccountPanel extends MigPanel implements AccountBuilderI
     public boolean updateAccount(Account input, Account output) {
         boolean changed = false;
         if (!StringUtils.equals(input.getUser(), output.getUser())) {
+            output.setUser(input.getUser());
             changed = true;
         }
         if (!StringUtils.equals(input.getPass(), output.getPass())) {
