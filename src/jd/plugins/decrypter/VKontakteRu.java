@@ -1076,15 +1076,16 @@ public class VKontakteRu extends PluginForDecrypt {
                 }
             }
         }
-        final String albumsJson = br.getRegex("extend\\(cur, (\\{\".*?\\})\\);\\s+").getMatch(0);
-        final Map<String, Object> albumInfo = restoreFromString(albumsJson, TypeRef.MAP);
-        if (numberOfItemsStr == null || numberOfItemsStr.equals("0")) {
-            numberOfItemsStr = albumInfo.get("count").toString();
+        String albumsJson = br.getRegex("extend\\(cur, (\\{\".*?\\})\\);\\s+").getMatch(0);
+        if (albumsJson == null) {
+            /* 2023-11-17 */
+            albumsJson = br.getRegex("extend\\(window\\.cur \\|\\| \\{\\}, (\\{\".*?\\})\\);").getMatch(0);
         }
+        final Map<String, Object> albumInfo = restoreFromString(albumsJson, TypeRef.MAP);
         if (numberOfItemsStr != null && numberOfItemsStr.equals("0")) {
             throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER);
         }
-        final String startOffset = albumInfo.get("offset").toString();
+        final String startOffset = albumInfo != null ? (String) albumInfo.get("offset") : null;
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(new Regex(param.getCryptedUrl(), "(-?(\\d+_)?\\d+)$").getMatch(0));
         fp.setCleanupPackageName(false);
@@ -2108,6 +2109,87 @@ public class VKontakteRu extends PluginForDecrypt {
                 final DownloadLink dl = this.createDownloadlink("https://" + this.getHost() + "/" + albumContentStr);
                 ret.add(dl);
             }
+        }
+        final String websiteJson = br.getRegex("extend\\(window\\.cur \\|\\| \\{\\}, (\\{\".*?\\})\\);").getMatch(0);
+        if (websiteJson != null) {
+            /* 2023-11-17: New */
+            final Map<String, Object> entries = restoreFromString(websiteJson, TypeRef.MAP);
+            final List<Map<String, Object>> apiPrefetchCache = (List<Map<String, Object>>) entries.get("apiPrefetchCache");
+            Map<String, Object> photosResponse = null;
+            for (final Map<String, Object> apiPrefetchCacheItem : apiPrefetchCache) {
+                final String method = apiPrefetchCacheItem.get("method").toString();
+                if (method.equalsIgnoreCase("photos.get")) {
+                    photosResponse = (Map<String, Object>) apiPrefetchCacheItem.get("response");
+                    break;
+                }
+            }
+            if (grabPhoto && photosResponse != null) {
+                final List<Map<String, Object>> photos = (List<Map<String, Object>>) photosResponse.get("items");
+                for (final Map<String, Object> photo : photos) {
+                    final String owner_id = photo.get("owner_id").toString();
+                    final String content_id = photo.get("id").toString();
+                    final String photoContentStr = owner_id + "_" + content_id;
+                    if (!global_dupes.add(photoContentStr)) {
+                        /* Important: Skip dupes so upper handling will e.g. see that nothing has been added! */
+                        logger.info("Skipping dupe: " + photoContentStr);
+                        continue;
+                    }
+                    final DownloadLink photodl = getSinglePhotoDownloadLink(owner_id + "_" + content_id, null);
+                    /*
+                     * Override previously set content URL as this really is the direct link to the picture which works fine via browser.
+                     */
+                    photodl.setContentUrl("https://vk.com/photo" + owner_id + "_" + content_id);
+                    if (isContentFromWall) {
+                        photodl.setProperty("postID", wall_post_content_id);
+                        photodl.setProperty(VKontakteRuHoster.PROPERTY_GENERAL_owner_id, owner_id);
+                    } else {
+                        /* Album content */
+                        photodl.setProperty(VKontakteRuHoster.PROPERTY_PHOTOS_album_id, album_ID);
+                    }
+                    /*
+                     * 2020-01-27: Regarding photo_list_id and photo_module: If not set but required, it will more likely happen that a
+                     * "Too many requests in a short time" message appears on download attempt!
+                     */
+                    if (photo_list_id != null) {
+                        photodl.setProperty(VKontakteRuHoster.PROPERTY_PHOTOS_photo_list_id, photo_list_id);
+                    }
+                    if (photo_module != null) {
+                        photodl.setProperty(VKontakteRuHoster.PROPERTY_PHOTOS_photo_module, photo_module);
+                    }
+                    final List<Map<String, Object>> photosizes = (List<Map<String, Object>>) photo.get("sizes");
+                    if (photosizes != null) {
+                        final Map<String, Integer> sizeAltMapping = new HashMap<String, Integer>();
+                        sizeAltMapping.put("s", 100);
+                        sizeAltMapping.put("m", 200);
+                        sizeAltMapping.put("x", 300);
+                        sizeAltMapping.put("y", 400);
+                        sizeAltMapping.put("z", 500);
+                        sizeAltMapping.put("w", 600);
+                        int bestHeight = -1;
+                        String bestDirecturl = null;
+                        for (final Map<String, Object> photosize : photosizes) {
+                            int height = ((Number) photosize.get("height")).intValue();
+                            if (height == 0) {
+                                /* Fallback */
+                                height = sizeAltMapping.get(photosize.get("type").toString());
+                            }
+                            if (bestDirecturl == null || height > bestHeight) {
+                                bestHeight = height;
+                                bestDirecturl = photosize.get("url").toString();
+                            }
+                        }
+                        if (bestDirecturl != null) {
+                            photodl.setProperty(VKontakteRuHoster.PROPERTY_PHOTOS_picturedirectlink, bestDirecturl);
+                        }
+                    }
+                    if (fp != null) {
+                        photodl._setFilePackage(fp);
+                    }
+                    ret.add(photodl);
+                }
+            }
+        } else {
+            logger.warning("Failed to find prefetched json in html");
         }
         if (grabPhoto) {
             String[] photo_ids = new Regex(html, "showPhoto\\(\\'(-?\\d+_\\d+)").getColumn(0);

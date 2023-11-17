@@ -90,13 +90,13 @@ public class LibGenCrawler extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         /* Always use current host */
-        String addedurl = param.getCryptedUrl().replaceFirst("(?i)http://", "https://");
-        final String addedLinkDomain = Browser.getHost(addedurl, true);
+        String contenturl = param.getCryptedUrl().replaceFirst("(?i)http://", "https://");
+        final String addedLinkDomain = Browser.getHost(contenturl, true);
         final List<String> deadDomains = getDeadDomains();
         String domainToUse = addedLinkDomain;
         if (deadDomains.contains(addedLinkDomain)) {
             domainToUse = this.getHost();
-            addedurl = addedurl.replaceFirst(Pattern.quote(addedLinkDomain), domainToUse);
+            contenturl = contenturl.replaceFirst(Pattern.quote(addedLinkDomain), domainToUse);
         }
         final Regex editionRegex = new Regex(param.getCryptedUrl(), "(?i)https?://[^/]+/edition\\.php\\?id=(\\d+)");
         final Regex seriesRegex = new Regex(param.getCryptedUrl(), "(?i)https?://[^/]+/series\\.php\\?id=(\\d+)");
@@ -144,7 +144,7 @@ public class LibGenCrawler extends PluginForDecrypt {
                 ret.add(this.createDownloadlink("https://" + domainToUse + "/edition.php?id=" + editionentry.getKey()));
             }
         } else {
-            final String md5 = UrlQuery.parse(addedurl).get("md5");
+            final String md5 = UrlQuery.parse(contenturl).get("md5");
             if (md5 == null) {
                 /* Developer mistake */
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -153,7 +153,7 @@ public class LibGenCrawler extends PluginForDecrypt {
             br.setCustomCharset("utf-8");
             /* Allow redirects to other of their domains */
             br.setFollowRedirects(true);
-            br.getPage(addedurl);
+            br.getPage(contenturl);
             if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(?i)entry not found in the database")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -167,11 +167,11 @@ public class LibGenCrawler extends PluginForDecrypt {
                 mirrors = HTMLParser.getHttpLinks(mirrorsHTML, br.getURL());
             } else {
                 /* Fallback */
-                mirrors = HTMLParser.getHttpLinks(br.toString(), br.getURL());
+                mirrors = HTMLParser.getHttpLinks(br.getRequest().getHtmlCode(), br.getURL());
             }
             /* Add selfhosted mirror to host plugin */
-            final DownloadLink selfhosted = this.createDownloadlink("https://" + domainToUse + "/ads.php?md5=" + md5);
-            jd.plugins.hoster.LibGenInfo.parseFileInfo(selfhosted, this.br);
+            final DownloadLink selfhosted = this.createDownloadlink(generateSingleFileDownloadurl(domainToUse, md5));
+            jd.plugins.hoster.LibGenInfo.parseFileInfoWebsite(selfhosted, this.br);
             selfhosted.setAvailable(true);
             ret.add(selfhosted);
             if (selfhosted.isNameSet()) {
@@ -200,14 +200,21 @@ public class LibGenCrawler extends PluginForDecrypt {
                 dl.setAvailable(true);
                 ret.add(dl);
             }
+            final FilePackage fp = FilePackage.getInstance();
             if (title != null) {
                 title = Encoding.htmlDecode(title).trim();
-                final FilePackage fp = FilePackage.getInstance();
                 fp.setName(title);
-                fp.addLinks(ret);
+            } else {
+                /* Fallback */
+                fp.setName(md5);
             }
+            fp.addLinks(ret);
         }
         return ret;
+    }
+
+    private String generateSingleFileDownloadurl(final String domain, final String md5) {
+        return "https://" + domain + "/ads.php?md5=" + md5;
     }
 
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {

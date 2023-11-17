@@ -113,39 +113,56 @@ public class SlidesliveCom extends PluginForDecrypt {
         final Browser brc = br.cloneBrowser();
         brc.getHeaders().put("Origin", "https://" + br.getHost());
         brc.getHeaders().put("Accept", "application/json");
-        final boolean useJsonAPI = false;
+        final boolean preferJsonAPI = false;
         final String slidesjsonurl = br.getRegex("EXT-SL-VOD-SLIDES-JSON-URL:(https?://.*?)\\s").getMatch(0);
         final String slidesxmlurl = br.getRegex("EXT-SL-VOD-SLIDES-XML-URL:(https?://.*?)\\s").getMatch(0);
         if (slidesjsonurl == null && slidesxmlurl == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final String imagesExt = ".png";
-        if ((useJsonAPI && slidesjsonurl != null) || slidesxmlurl == null) {
+        boolean useJsonAPI = false;
+        if ((preferJsonAPI && slidesjsonurl != null) || slidesxmlurl == null) {
             /* 2023-11-16 */
+            useJsonAPI = true;
+        } else {
+            // brc.getPage("https://slides.slideslive.com/" + contentID + "/" + contentID + ".xml");
+            brc.getPage(slidesxmlurl);
+            final String[] items = brc.getRegex("<slideName>([^<]+)</slideName>").getColumn(0);
+            if (items != null && items.length > 0) {
+                for (final String slideName : items) {
+                    final String directurl = "https://" + slidesHost + "/" + contentID + "/slides/" + slideName + imagesExt + "?h=432&f=webp&s=lambda&accelerate_s3=1";
+                    final DownloadLink image = createDownloadlink(DirectHTTP.createURLForThisPlugin(directurl));
+                    image.setAvailable(true);
+                    ret.add(image);
+                }
+            } else {
+                logger.info("XML handling failed -> Use json as fallback");
+                useJsonAPI = true;
+            }
+        }
+        if (useJsonAPI) {
+            if (slidesjsonurl == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             // brc.getPage("https://s.slideslive.com/" + contentID + "/v5/slides.json?" + System.currentTimeMillis() / 1000);
             brc.getPage(slidesjsonurl);
             final Map<String, Object> entries = restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.MAP);
             final List<Map<String, Object>> slides = (List<Map<String, Object>>) entries.get("slides");
+            int index = 0;
             for (final Map<String, Object> slide : slides) {
                 final Map<String, Object> imagemap = (Map<String, Object>) slide.get("image");
+                final Map<String, Object> videomap = (Map<String, Object>) slide.get("video");
+                if (imagemap == null && videomap != null) {
+                    /* Not supported */
+                    logger.info("Skipping slide in index: " + index);
+                    continue;
+                }
                 final String slideName = imagemap.get("name").toString();
                 final String directurl = "https://" + slidesHost + "/" + contentID + "/slides/" + slideName + imagesExt + "?h=432&f=webp&s=lambda&accelerate_s3=1";
                 final DownloadLink image = createDownloadlink(DirectHTTP.createURLForThisPlugin(directurl));
                 image.setAvailable(true);
                 ret.add(image);
-            }
-        } else {
-            // brc.getPage("https://slides.slideslive.com/" + contentID + "/" + contentID + ".xml");
-            brc.getPage(slidesxmlurl);
-            final String[] items = brc.getRegex("<slideName>([^<]+)</slideName>").getColumn(0);
-            if (items == null || items.length == 0) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            for (final String slideName : items) {
-                final String directurl = "https://" + slidesHost + "/" + contentID + "/slides/" + slideName + imagesExt + "?h=432&f=webp&s=lambda&accelerate_s3=1";
-                final DownloadLink image = createDownloadlink(DirectHTTP.createURLForThisPlugin(directurl));
-                image.setAvailable(true);
-                ret.add(image);
+                index++;
             }
         }
         final FilePackage fp = FilePackage.getInstance();

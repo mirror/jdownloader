@@ -18,6 +18,7 @@ package jd.plugins.decrypter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.parser.UrlQuery;
@@ -50,9 +51,17 @@ public class Gogoplay4Com extends PluginForDecrypt {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "gogoplay4.com", "gogoplay5.com", "gogoplay1.com", "goload.pro", "asianwatch.net", "dembed1.com", "membed.net", "asianplay.net", "asianplay.pro", "gogohd.net", "anihdplay.com", "goone.pro" });
+        ret.add(new String[] { "gogoplay4.com", "gogoplay5.com", "gogoplay1.com", "goload.pro", "asianwatch.net", "dembed1.com", "membed.net", "membed1.net", "asianplay.net", "asianplay.pro", "gogohd.net", "anihdplay.com", "goone.pro" });
         ret.add(new String[] { "asianload.net", "asianembed.io", "k-vid.net", "asianhdplay.net", "asianhdplay.pro", "asianhd1.com" });
         return ret;
+    }
+
+    private List<String> getDeadDomains() {
+        final ArrayList<String> deadDomains = new ArrayList<String>();
+        deadDomains.add("membed.net");
+        deadDomains.add("membed1.net");
+        deadDomains.add("dembed1.com");
+        return deadDomains;
     }
 
     public static String[] getAnnotationNames() {
@@ -112,6 +121,17 @@ public class Gogoplay4Com extends PluginForDecrypt {
         return br;
     }
 
+    private String getContentURL(final CryptedLink param) {
+        String contentURL = param.getCryptedUrl();
+        final String hostFromAddedURLWithoutSubdomain = Browser.getHost(contentURL, false);
+        final List<String> deadDomains = getDeadDomains();
+        if (deadDomains != null && deadDomains.contains(hostFromAddedURLWithoutSubdomain)) {
+            contentURL = param.getCryptedUrl().replaceFirst(Pattern.quote(hostFromAddedURLWithoutSubdomain) + "/", getHost() + "/");
+            logger.info("Corrected domain in added URL: " + hostFromAddedURLWithoutSubdomain + " --> " + getHost());
+        }
+        return contentURL;
+    }
+
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         prepBR(br);
         if (param.getCryptedUrl().matches(TYPE_STREAM_SELFEMBED)) {
@@ -122,8 +142,9 @@ public class Gogoplay4Com extends PluginForDecrypt {
     }
 
     private ArrayList<DownloadLink> crawlStream(final CryptedLink param) throws IOException, PluginException, InterruptedException, DecrypterException {
+        final String contenturl = getContentURL(param);
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        br.getPage(param.getCryptedUrl());
+        br.getPage(contenturl);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -140,8 +161,9 @@ public class Gogoplay4Com extends PluginForDecrypt {
     }
 
     private ArrayList<DownloadLink> crawlDownloadlinks(final CryptedLink param) throws IOException, PluginException, InterruptedException, DecrypterException {
-        final String hostInsideAddedURL = Browser.getHost(param.getCryptedUrl(), true);
-        final UrlQuery query = UrlQuery.parse(param.getCryptedUrl());
+        final String contenturl = getContentURL(param);
+        final String hostInsideContentURL = Browser.getHost(contenturl, true);
+        final UrlQuery query = UrlQuery.parse(contenturl);
         final String id = query.get("id");
         if (id == null) {
             /* Developer mistake */
@@ -166,15 +188,15 @@ public class Gogoplay4Com extends PluginForDecrypt {
             fp.setName(id);
         }
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        if (param.getCryptedUrl().matches(TYPE_STREAMING)) {
+        if (contenturl.matches(TYPE_STREAMING)) {
             /* This step doesn't require a captcha to be solved. */
             logger.info("Looking for streamingURLs");
             try {
-                br.getPage(param.getCryptedUrl());
+                br.getPage(contenturl);
                 final String[] embedurls = br.getRegex("data-video=\"(https?://[^\"]+)").getColumn(0);
                 if (embedurls != null && embedurls.length > 0) {
                     for (final String embedurl : embedurls) {
-                        if (embedurl.equals(param.getCryptedUrl()) || embedurl.contains("id=" + id)) {
+                        if (embedurl.equals(contenturl) || embedurl.contains("id=" + id)) {
                             logger.info("Found origin again; skipping it: " + embedurl);
                             continue;
                         }
@@ -191,7 +213,7 @@ public class Gogoplay4Com extends PluginForDecrypt {
                 logger.warning("Stream crawler failed");
             }
         }
-        br.getPage("https://" + hostInsideAddedURL + "/download?" + query.toString());
+        br.getPage("https://" + hostInsideContentURL + "/download?" + query.toString());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -250,7 +272,7 @@ public class Gogoplay4Com extends PluginForDecrypt {
                 link = createDownloadlink(streamLink);
             }
             /* Important otherwise we cannot use their selfhosted URLs! */
-            link.setReferrerUrl(param.getCryptedUrl());
+            link.setReferrerUrl(contenturl);
             ret.add(link);
         }
         fp.addLinks(ret);

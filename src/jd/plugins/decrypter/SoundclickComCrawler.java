@@ -78,7 +78,11 @@ public class SoundclickComCrawler extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String contenturl = param.getCryptedUrl();
-        final String singleSongID = UrlQuery.parse(contenturl).get("ID");
+        final UrlQuery query = UrlQuery.parse(contenturl);
+        String singleSongID = query.get("ID");
+        if (singleSongID == null) {
+            singleSongID = query.get("songID");
+        }
         if (singleSongID != null) {
             /* Single song -> Will be handled by hosterplugin. */
             final DownloadLink link = createDownloadlink(generateSingleSongURL(singleSongID));
@@ -93,9 +97,12 @@ public class SoundclickComCrawler extends PluginForDecrypt {
             if (title == null) {
                 title = HTMLSearch.searchMetaTag(br, "og:title");
             }
-            final String[] songIDs = br.getRegex("data-songid=\"(\\d+)").getColumn(0);
+            String[] songIDs = br.getRegex("data-songid=\"(\\d+)").getColumn(0);
             if (songIDs == null || songIDs.length == 0) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                songIDs = br.getRegex("songid=(\\d+)").getColumn(0);
+                if (songIDs == null || songIDs.length == 0) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
             final FilePackage fp = FilePackage.getInstance();
             if (title != null) {

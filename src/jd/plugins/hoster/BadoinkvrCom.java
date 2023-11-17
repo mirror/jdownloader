@@ -137,6 +137,15 @@ public class BadoinkvrCom extends PluginForHost {
         return requestFileInformation(link, account, false);
     }
 
+    private boolean useHereSphereAPI(final Account account) {
+        // TODO: Allow API usage without account for some websites such as czechvrnetwork.com
+        if (account != null && account.getType() == AccountType.PREMIUM) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     private AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
         dllink = null;
         final String videoid = this.getFID(link);
@@ -150,7 +159,7 @@ public class BadoinkvrCom extends PluginForHost {
         String filename = null;
         String title = null;
         String description = null;
-        if (account != null && account.getType() == AccountType.PREMIUM) {
+        if (useHereSphereAPI(account)) {
             /* Use heresphere API */
             this.login(account, false);
             br.postPageRaw("https://" + this.getHost() + "/heresphere/video/" + videoid, "");
@@ -391,6 +400,50 @@ public class BadoinkvrCom extends PluginForHost {
     public int getMaxSimultanFreeDownloadNum() {
         return free_maxdownloads;
     }
+    // @Override
+    // public Class<? extends PluginConfigInterface> getConfigInterface() {
+    // return HereSphereConfig.class;
+    // }
+    //
+    // @PluginHost(host = "badoinkvr.com", type = Type.HOSTER)
+    // public static interface HereSphereConfig extends PluginConfigInterface {
+    // public static final TRANSLATION TRANSLATION = new TRANSLATION();
+    //
+    // public static class TRANSLATION {
+    // public String getPreferredQuality_label() {
+    // return "Use https for final downloadurls?";
+    // }
+    // }
+    //
+    // public static enum PreferredQuality implements LabelInterface {
+    // BEST {
+    // @Override
+    // public String getLabel() {
+    // return "Best";
+    // }
+    // },
+    // Q_144P {
+    // @Override
+    // public String getLabel() {
+    // return "144p";
+    // }
+    // },
+    // Q_270P {
+    // @Override
+    // public String getLabel() {
+    // return "270p";
+    // }
+    // };
+    // }
+    //
+    // @AboutConfig
+    // @DefaultEnumValue("BEST")
+    // @DescriptionForConfigEntry("Preferred quality")
+    // @Order(100)
+    // PreferredQuality getPreferredQuality();
+    //
+    // void setPreferredQuality(PreferredQuality quality);
+    // }
 
     @Override
     public void reset() {

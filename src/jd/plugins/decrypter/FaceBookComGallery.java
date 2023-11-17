@@ -213,7 +213,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
         /* Same as previous RegEx but lazier. */
         jsonRegExes.add(Pattern.quote("(new ServerJS()).handleWithCustomApplyEach(ScheduledApplyEach,") + "(\\{.*?\\})" + Pattern.quote(");"));
         /* 2022-08-01: Lazier attempt: On RegEx which is simply supposed to find all jsons on the current page. */
-        jsonRegExes.add("<script type=\"application/json\" data-content-len=\"\\d+\" data-sjs>(\\{.*?)</script>");
+        jsonRegExes.add("<script type=\"application/json\"[^>]*>(\\{.*?)</script>");
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         // final ArrayList<DownloadLink> videoPermalinks = new ArrayList<DownloadLink>();
         final HashSet<String> processedJsonStrings = new HashSet<String>();

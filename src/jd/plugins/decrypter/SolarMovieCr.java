@@ -66,7 +66,7 @@ public class SolarMovieCr extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:\\w+\\.)?" + buildHostsPatternPart(domains) + "/movie/[\\w-]+");
+            ret.add("https?://(?:\\w+\\.)?" + buildHostsPatternPart(domains) + "/movie/[\\w-]+-\\d+/?");
         }
         return ret.toArray(new String[0]);
     }
