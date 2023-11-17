@@ -21,6 +21,11 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
@@ -32,58 +37,55 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "sourceforge.net" }, urls = { "https?://(?:www\\.)?sourceforge\\.net/(?:projects/[^/]+/files/[^\\?<>\"]{0,}|settings/mirror_choices\\?projectname=.+\\&filename=.+)" })
-public class SourceForgeNet extends PluginForDecrypt {
+public class SourceForgeNetCrawler extends PluginForDecrypt {
     @SuppressWarnings("deprecation")
-    public SourceForgeNet(PluginWrapper wrapper) {
+    public SourceForgeNetCrawler(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String TYPE_MIRRORCHOICES = ".+/mirror_choices\\?projectname=.+\\&filename=.+";
+    private static final String TYPE_MIRRORCHOICES = "(?i).+/mirror_choices\\?projectname=.+\\&filename=.+";
 
     @SuppressWarnings({ "unchecked", "deprecation" })
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         String target_filename = null;
         String list_url = null;
-        String parameter;
+        String contenturl;
         if (param.toString().matches(TYPE_MIRRORCHOICES)) {
             final UrlQuery query = UrlQuery.parse(param.toString());
-            parameter = "https://" + this.getHost() + "/projects/" + query.get("projectname") + "/files/" + query.get("filename");
+            contenturl = "https://" + this.getHost() + "/projects/" + query.get("projectname") + "/files/" + query.get("filename");
         } else {
-            parameter = param.toString().replace("http://", "https://").replaceAll("(/stats/?(timeline)?)$", "");
+            contenturl = param.getCryptedUrl().replaceFirst("(?i)http://", "https://").replaceAll("(/stats/?(timeline)?)$", "");
         }
         /* We get downloadlinks depending on our useragent Update 07.04.2015: Really? Do we? Who added this comment? Me? */
         br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:14.0) Gecko/20100101 Firefox/14.0.1");
         br.setLoadLimit(br.getLoadLimit() * 5);
         br.setFollowRedirects(true);
-        br.getPage(parameter);
+        br.getPage(contenturl);
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">This folder has no files")) {
-            decryptedLinks.add(createOfflinelink(parameter));
-            return decryptedLinks;
-        } else if (!br.getURL().contains(this.getHost() + "/")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.getHttpConnection().getResponseCode() == 410) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        if (!br.getURL().contains(this.getHost() + "/")) {
             /* Redirect to external website (extremely rare case) */
             final DownloadLink dl = createDownloadlink(br.getURL());
-            decryptedLinks.add(dl);
-            return decryptedLinks;
+            ret.add(dl);
+            return ret;
         }
         DownloadLink fallBackDownloadLink = null;
         if (br.containsHTML("File may contain malware|Your download will start shortly")) {
             target_filename = br.getRegex("<div\\s*class\\s*=\\s*\"file-name\"\\s*>\\s*(.*?)\\s*</").getMatch(0);
-            parameter = parameter.replaceAll("(/download)$", "");
+            contenturl = contenturl.replaceAll("(/download)$", "");
             // TODO: optimize to avoid /stats->list_url
-            br.getPage(parameter + "/stats/timeline");
+            br.getPage(contenturl + "/stats/timeline");
             list_url = br.getRegex("<a data-type\\s*=\\s*\"file\"\\s*id\\s*=\\s*\"stat-file-picker-trigger\"\\s*href\\s*=\\s*\"(.*?)(/[^/]+/?)\"").getMatch(0);
-            fallBackDownloadLink = (createDownloadlink(parameter.replace("sourceforge.net/", "sourceforgedecrypted.net/")));
+            fallBackDownloadLink = (createDownloadlink(contenturl.replace("sourceforge.net/", "sourceforgedecrypted.net/")));
             fallBackDownloadLink.setAvailable(true);
-            fallBackDownloadLink.setContentUrl(parameter);
+            fallBackDownloadLink.setContentUrl(contenturl);
             if (target_filename == null) {
-                final String url_filename = new Regex(parameter, "/([^/]+)(/?|/download)$").getMatch(0);
+                final String url_filename = new Regex(contenturl, "/([^/]+)(/?|/download)$").getMatch(0);
                 if (url_filename != null) {
                     target_filename = URLEncode.decodeURIComponent(url_filename);
                 }
@@ -92,8 +94,8 @@ public class SourceForgeNet extends PluginForDecrypt {
                 fallBackDownloadLink.setName(target_filename);
             }
             if (list_url == null || target_filename == null) {
-                decryptedLinks.add(fallBackDownloadLink);
-                return decryptedLinks;
+                ret.add(fallBackDownloadLink);
+                return ret;
             }
         }
         /*
@@ -103,7 +105,7 @@ public class SourceForgeNet extends PluginForDecrypt {
         String json = br.getRegex("net\\.sf\\.files\\s*?=\\s*?(\\{.*?\\}\\});").getMatch(0);
         if (json == null && list_url == null) {
             final Regex info = new Regex(br.getURL(), "projects/([^/]+)/files/([^/]+)/([^/]+)(/download)?");
-            final String project_name = new Regex(parameter, "projects/([^/]+)").getMatch(0);
+            final String project_name = new Regex(contenturl, "projects/([^/]+)").getMatch(0);
             final String project_version = info.getMatch(1);
             if (target_filename == null) {
                 target_filename = info.getMatch(2);
@@ -114,11 +116,11 @@ public class SourceForgeNet extends PluginForDecrypt {
                 /*
                  * Fix that URL.
                  */
-                final String toRemove = new Regex(parameter, "/(?:download|latest|stats).+").getMatch(-1);
+                final String toRemove = new Regex(contenturl, "/(?:download|latest|stats).+").getMatch(-1);
                 if (toRemove != null) {
-                    list_url = parameter.replace(toRemove, "");
+                    list_url = contenturl.replace(toRemove, "");
                 } else {
-                    list_url = parameter;
+                    list_url = contenturl;
                 }
             }
         }
@@ -188,12 +190,12 @@ public class SourceForgeNet extends PluginForDecrypt {
                 /* Folderlink - goes back into the decrypter */
                 dl = createDownloadlink(url);
             }
-            decryptedLinks.add(dl);
+            ret.add(dl);
         }
-        if (decryptedLinks.size() == 0 && fallBackDownloadLink != null) {
-            decryptedLinks.add(fallBackDownloadLink);
+        if (ret.size() == 0 && fallBackDownloadLink != null) {
+            ret.add(fallBackDownloadLink);
         }
-        return decryptedLinks;
+        return ret;
     }
 
     /**
