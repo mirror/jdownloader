@@ -300,50 +300,43 @@ public class BadoinkvrCom extends PluginForHost {
 
     private Map<String, Object> login(final Account account, final boolean force) throws Exception {
         synchronized (account) {
-            try {
-                br.setCookiesExclusive(true);
-                br.getHeaders().put("User-Agent", "HereSphere");
-                String token = account.getStringProperty(PROPERTY_ACCOUNT_TOKEN);
-                final String urlpathAccountinfo = "/heresphere";
-                if (token != null) {
-                    // TODO: If we know a token validity, add forced token refresh every X time
-                    prepLoginHeader(br, token);
-                    if (!force) {
-                        /* Don't validate token */
-                        return null;
-                    }
-                    logger.info("Attempting token login");
-                    br.postPageRaw("https://" + this.getHost() + urlpathAccountinfo, "");
-                    final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
-                    if (isLoggedin(entries)) {
-                        logger.info("token login successful");
-                        return entries;
-                    } else {
-                        logger.info("token login failed: Token expired?");
-                        /* Remove token so we won't try again with this one */
-                        account.removeProperty(PROPERTY_ACCOUNT_TOKEN);
-                    }
-                }
-                logger.info("Performing full login");
-                final Map<String, Object> postdata = new HashMap<String, Object>();
-                postdata.put("username", account.getUser());
-                postdata.put("password", account.getPass());
-                br.postPageRaw("https://" + getHost() + "/heresphere/auth", JSonStorage.serializeToJson(postdata));
-                final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
-                if (!isLoggedin(entries)) {
-                    throw new AccountInvalidException();
-                }
-                token = entries.get("auth-token").toString();
-                account.setProperty(PROPERTY_ACCOUNT_TOKEN, token);
+            br.setCookiesExclusive(true);
+            br.getHeaders().put("User-Agent", "HereSphere");
+            String token = account.getStringProperty(PROPERTY_ACCOUNT_TOKEN);
+            final String urlpathAccountinfo = "/heresphere";
+            if (token != null) {
+                // TODO: If we know a token validity, add forced token refresh every X time
                 prepLoginHeader(br, token);
-                br.getPage(urlpathAccountinfo);
-                return entries;
-            } catch (final PluginException e) {
-                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
-                    account.clearCookies("");
+                if (!force) {
+                    /* Don't validate token */
+                    return null;
                 }
-                throw e;
+                logger.info("Attempting token login");
+                br.postPageRaw("https://" + this.getHost() + urlpathAccountinfo, "");
+                final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+                if (isLoggedin(entries)) {
+                    logger.info("token login successful");
+                    return entries;
+                } else {
+                    logger.info("token login failed: Token expired?");
+                    /* Remove token so we won't try again with this one */
+                    account.removeProperty(PROPERTY_ACCOUNT_TOKEN);
+                }
             }
+            logger.info("Performing full login");
+            final Map<String, Object> postdata = new HashMap<String, Object>();
+            postdata.put("username", account.getUser());
+            postdata.put("password", account.getPass());
+            br.postPageRaw("https://" + getHost() + "/heresphere/auth", JSonStorage.serializeToJson(postdata));
+            final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+            if (!isLoggedin(entries)) {
+                throw new AccountInvalidException();
+            }
+            token = entries.get("auth-token").toString();
+            account.setProperty(PROPERTY_ACCOUNT_TOKEN, token);
+            prepLoginHeader(br, token);
+            br.getPage(urlpathAccountinfo);
+            return entries;
         }
     }
 

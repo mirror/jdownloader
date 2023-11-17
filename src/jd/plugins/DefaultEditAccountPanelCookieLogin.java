@@ -52,6 +52,8 @@ public class DefaultEditAccountPanelCookieLogin extends MigPanel implements Acco
     private JLabel                              usernameLabel = null;
     private final JLabel                        passwordOrCookiesLabel;
     private final PluginForHost                 plg;
+    private final boolean                       cookieLoginOnly;
+    private final boolean                       cookieLoginOptional;
 
     public boolean updateAccount(Account input, Account output) {
         boolean changed = false;
@@ -70,8 +72,8 @@ public class DefaultEditAccountPanelCookieLogin extends MigPanel implements Acco
         super("ins 0, wrap 2", "[][grow,fill]", "");
         this.plg = plg;
         this.callback = callback;
-        final boolean cookieLoginOnly = this.plg.hasFeature(FEATURE.COOKIE_LOGIN_ONLY);
-        final boolean cookieLoginOptional = this.plg.hasFeature(FEATURE.COOKIE_LOGIN_OPTIONAL);
+        this.cookieLoginOnly = this.plg.hasFeature(FEATURE.COOKIE_LOGIN_ONLY);
+        this.cookieLoginOptional = this.plg.hasFeature(FEATURE.COOKIE_LOGIN_OPTIONAL);
         if (cookieLoginOnly) {
             // TODO: Add translation
             add(new JLabel("Cookie login instructions:"));
@@ -146,9 +148,7 @@ public class DefaultEditAccountPanelCookieLogin extends MigPanel implements Acco
 
     public void setAccount(final Account defaultAccount) {
         if (defaultAccount != null) {
-            if (name != null) {
-                name.setText(defaultAccount.getUser());
-            }
+            name.setText(defaultAccount.getUser());
             pass.setText(defaultAccount.getPass());
         }
     }
@@ -157,26 +157,22 @@ public class DefaultEditAccountPanelCookieLogin extends MigPanel implements Acco
     public boolean validateInputs() {
         final boolean userok;
         final boolean passok;
-        if (this.name != null) {
-            if (StringUtils.isEmpty(this.getUsername())) {
-                usernameLabel.setForeground(Color.RED);
-                userok = false;
-            } else {
-                usernameLabel.setForeground(Color.BLACK);
-                userok = true;
-            }
+        if (StringUtils.isEmpty(this.getUsername())) {
+            usernameLabel.setForeground(Color.RED);
+            userok = false;
         } else {
-            /* No username needed */
+            usernameLabel.setForeground(Color.BLACK);
             userok = true;
         }
-        final boolean cookieLoginOnly = this.plg.hasFeature(FEATURE.COOKIE_LOGIN_ONLY);
-        final boolean cookieLoginOptional = this.plg.hasFeature(FEATURE.COOKIE_LOGIN_OPTIONAL);
         final String pw = getPassword();
         final Cookies cookies = Cookies.parseCookiesFromJsonString(pw);
         if (StringUtils.isEmpty(pw)) {
             passok = false;
-        } else if (cookies != null && !cookieLoginOnly && !cookieLoginOptional) {
-            /* Cookie login is not allowed but user has entered exported cookies into password field. */
+        } else if (cookieLoginOnly && cookies == null) {
+            /* Cookies are needed but not given. */
+            passok = false;
+        } else if (!cookieLoginOnly && !cookieLoginOptional && cookies != null) {
+            /* Cookies are given while user is not allowed to use cookies. */
             passok = false;
         } else {
             passok = true;

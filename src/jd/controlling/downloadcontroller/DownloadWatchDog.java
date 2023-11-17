@@ -692,13 +692,9 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
         return dsm;
     }
 
-    public void validateDestination(final File file) throws BadDestinationException {
-        validateDestination(file, true);
-    }
-
     /** Throws Exception if given download destination looks to be invalid. */
-    public void validateDestination(final File file, final boolean checkIfFileExists) throws BadDestinationException {
-        if (checkIfFileExists && file.exists()) {
+    public void validateDestination(final File file) throws BadDestinationException {
+        if (file.exists()) {
             return;
         }
         File checking = null;
@@ -3959,13 +3955,13 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                 if (!fileExists) {
                     /* File does not exist: Check- and prepare path. */
                     try {
-                        validateDestination(fileOutput, false);
+                        validateDestination(fileOutput);
                     } catch (final PathTooLongException e) {
                         controller.getLogger().severe("not allowed to create path (too long) " + e.getFile());
-                        throw new SkipReasonException(SkipReason.INVALID_DESTINATION_TOO_LONG_PATH);
+                        throw new SkipReasonException(SkipReason.INVALID_DESTINATION_TOO_LONG_PATH, e);
                     } catch (final BadDestinationException e) {
                         controller.getLogger().severe("not allowed to create path (invalid path) " + e.getFile());
-                        throw new SkipReasonException(SkipReason.INVALID_DESTINATION);
+                        throw new SkipReasonException(SkipReason.INVALID_DESTINATION, e);
                     }
                     if (fileOutput.getParentFile() == null) {
                         /* This should never happen! */
@@ -3983,15 +3979,15 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                         final List<File> folderCreateList = new ArrayList<File>();
                         File folder = fileOutput.getParentFile();
                         while (!folder.exists()) {
-                            folderCreateList.add(folder);
+                            folderCreateList.add(0, folder);
                             folder = folder.getParentFile();
+                            if (folder == null) {
+                                throw new SkipReasonException(SkipReason.INVALID_DESTINATION);
+                            }
                         }
                         if (folderCreateList.size() > 0) {
                             /* Create missing folders. */
-                            /* Reverse array as it now contains folders from inner path to outer path. */
-                            Collections.reverse(folderCreateList);
-                            controller.getLogger().info("Creating path from: " + folderCreateList.get(0));
-                            controller.getLogger().info("Creating path to: " + folderCreateList.get(folderCreateList.size() - 1));
+                            controller.getLogger().info("Creating path from: " + folderCreateList);
                             for (int index = 0; index < folderCreateList.size(); index++) {
                                 final File thisfolder = folderCreateList.get(index);
                                 if (!thisfolder.mkdir()) {
@@ -4035,7 +4031,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                 try {
                                     final RandomAccessFile raf = IO.open(writeTest, "rw");
                                     raf.close();
-                                } catch (IOException e) {
+                                } catch (final IOException e) {
                                     throw new SkipReasonException(SkipReason.INVALID_DESTINATION_PERMISSION_ISSUE, _JDT.T.DownloadLink_setSkipped_statusmessage_invalid_path_permission_issue_failed_to_write_into_folder(fileOutput.getParentFile().getName()));
                                 }
                             }
