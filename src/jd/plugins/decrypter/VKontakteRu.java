@@ -175,6 +175,8 @@ public class VKontakteRu extends PluginForDecrypt {
     private HashSet<String>     global_dupes                              = new HashSet<String>();
     /* Properties especially for DownloadLink instances that go back into this crawler */
     private final String        VIDEO_PROHIBIT_FASTCRAWL                  = "prohibit_fastcrawl";
+    /* Ugly public variables */
+    private boolean             grabPhotoAlbums                           = false;
 
     private ArrayList<DownloadLink> getReturnArray() {
         return new ArrayList<DownloadLink>() {
@@ -1220,6 +1222,8 @@ public class VKontakteRu extends PluginForDecrypt {
             logger.info("Parsing page " + (i + 1) + " of " + (maxLoops + 1));
             correctedBR = br.toString().replace("\\", "");
             final int linksnumBefore = ret.size();
+            /* 2023-11-17: Very ugly I know */
+            this.grabPhotoAlbums = true;
             ret.addAll(websiteCrawlContent(br.getURL(), correctedBR, fp, false, false, false, false, false, false));
             final int linksnumAfter = ret.size();
             addedLinks = linksnumAfter - linksnumBefore;
@@ -2115,16 +2119,18 @@ public class VKontakteRu extends PluginForDecrypt {
             /* 2023-11-17: New */
             final Map<String, Object> entries = restoreFromString(websiteJson, TypeRef.MAP);
             final List<Map<String, Object>> apiPrefetchCache = (List<Map<String, Object>>) entries.get("apiPrefetchCache");
-            Map<String, Object> photosResponse = null;
+            Map<String, Object> albumsMap = null;
+            Map<String, Object> photosMap = null;
             for (final Map<String, Object> apiPrefetchCacheItem : apiPrefetchCache) {
                 final String method = apiPrefetchCacheItem.get("method").toString();
-                if (method.equalsIgnoreCase("photos.get")) {
-                    photosResponse = (Map<String, Object>) apiPrefetchCacheItem.get("response");
-                    break;
+                if (method.equalsIgnoreCase("photos.getAlbums")) {
+                    albumsMap = (Map<String, Object>) apiPrefetchCacheItem.get("response");
+                } else if (method.equalsIgnoreCase("photos.get")) {
+                    photosMap = (Map<String, Object>) apiPrefetchCacheItem.get("response");
                 }
             }
-            if (grabPhoto && photosResponse != null) {
-                final List<Map<String, Object>> photos = (List<Map<String, Object>>) photosResponse.get("items");
+            if (grabPhoto && photosMap != null) {
+                final List<Map<String, Object>> photos = (List<Map<String, Object>>) photosMap.get("items");
                 for (final Map<String, Object> photo : photos) {
                     final String owner_id = photo.get("owner_id").toString();
                     final String content_id = photo.get("id").toString();
@@ -2186,6 +2192,18 @@ public class VKontakteRu extends PluginForDecrypt {
                         photodl._setFilePackage(fp);
                     }
                     ret.add(photodl);
+                }
+            }
+            if (grabPhotoAlbums && albumsMap != null) {
+                final List<Map<String, Object>> albums = (List<Map<String, Object>>) albumsMap.get("items");
+                for (final Map<String, Object> photoalbum : albums) {
+                    String albumID = photoalbum.get("id").toString();
+                    /* 2023-11-17: I have no idea what I'm doing lol */
+                    albumID = albumID.replace("-6", "0");
+                    albumID = albumID.replace("-7", "00");
+                    final String url = "https://vk.com/album" + photoalbum.get("owner_id") + "_" + albumID;
+                    final DownloadLink albumdl = this.createDownloadlink(url);
+                    ret.add(albumdl);
                 }
             }
         } else {

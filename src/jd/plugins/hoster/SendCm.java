@@ -450,7 +450,8 @@ public class SendCm extends XFileSharingProBasic {
              */
             premium_expireStr = (String) entries.get("premim_expire");
         }
-        final String premium_bandwidthStr = (String) result.get("premium_bandwidth");
+        final String premium_bandwidthBytesStr = (String) result.get("premium_bandwidth");
+        final String traffic_leftBytesStr = (String) result.get("traffic_left");
         /*
          * 2019-08-22: For newly created free accounts, an expire-date will always be given, even if the account has never been a premium
          * account. This expire-date will usually be the creation date of the account then --> Handling will correctly recognize it as a
@@ -459,8 +460,10 @@ public class SendCm extends XFileSharingProBasic {
         if (premium_expireStr != null && premium_expireStr.matches("\\d{4}\\-\\d{2}\\-\\d{2} \\d{2}:\\d{2}:\\d{2}")) {
             expire_milliseconds_precise_to_the_second = TimeFormatter.getMilliSeconds(premium_expireStr, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH);
         }
-        if (premium_bandwidthStr != null) {
-            ai.setTrafficLeft(SizeFormatter.getSize(premium_bandwidthStr));
+        if (premium_bandwidthBytesStr != null) {
+            ai.setTrafficLeft(SizeFormatter.getSize(premium_bandwidthBytesStr));
+        } else if (traffic_leftBytesStr != null) {
+            ai.setTrafficLeft(SizeFormatter.getSize(traffic_leftBytesStr));
         } else {
             ai.setUnlimitedTraffic();
         }
@@ -473,7 +476,7 @@ public class SendCm extends XFileSharingProBasic {
             ai.setValidUntil(System.currentTimeMillis() + premiumDurationMilliseconds);
             setAccountLimitsByType(account, AccountType.PREMIUM);
         }
-        if (premium_bandwidthStr == null) {
+        if (account.getType() == AccountType.FREE && premium_bandwidthBytesStr == null) {
             throw new AccountInvalidException("You can only use premium accounts or free accounts with premium traffic via API");
         }
         {
