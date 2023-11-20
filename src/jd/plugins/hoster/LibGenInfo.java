@@ -153,7 +153,12 @@ public class LibGenInfo extends PluginForHost {
             final String extension = (String) book.get("extension");
             final String filesizeBytesStr = book.get("filesize").toString();
             final String internalPath = book.get("locator").toString();
-            final String filename = new Regex(internalPath, "\\\\([^\\\\]+)$").getMatch(0);
+            final String filename;
+            if (internalPath.contains("\\")) {
+                filename = new Regex(internalPath, "\\\\([^\\\\]+)$").getMatch(0);
+            } else {
+                filename = internalPath;
+            }
             if (!StringUtils.isEmpty(filename)) {
                 if (extension != null) {
                     link.setFinalFileName(this.applyFilenameExtension(filename, "." + extension));

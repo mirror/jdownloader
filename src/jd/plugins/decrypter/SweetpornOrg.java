@@ -19,7 +19,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.Regex;
 import org.jdownloader.plugins.controller.LazyPlugin;
@@ -89,14 +88,15 @@ public class SweetpornOrg extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         /* Obtain title from URL */
-        final String fpName = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0).replace("-", " ");
+        final String urlSlug = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
+        final String fpName = urlSlug.replace("-", " ").trim();
         final String[] ids = br.getRegex("get_download_link\\('([^<>\"\\']+)").getColumn(0);
         if (ids.length == 0) {
             logger.info("Either plugin broken or failed to find any downloadable content");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final FilePackage fp = FilePackage.getInstance();
-        fp.setName(Encoding.htmlDecode(fpName).trim());
+        fp.setName(fpName);
         final String thumbnails[] = br.getRegex("href\\s*=\\s*\"[^\"]*goto[^\"]*\"[^>]*>\\s*<img\\s*src\\s*=\\s*\"(https?://.*?)\"").getColumn(0);
         for (String thumbnail : thumbnails) {
             final DownloadLink dl = createDownloadlink(thumbnail);

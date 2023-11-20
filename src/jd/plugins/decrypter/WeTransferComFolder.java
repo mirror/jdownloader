@@ -44,40 +44,38 @@ public class WeTransferComFolder extends PluginForDecrypt {
     }
 
     protected static final String patternShort  = "https?://(?:we\\.tl|shorturls\\.wetransfer\\.com|go\\.wetransfer\\.com)/([\\w\\-]+)";
-    protected static final String patternNormal = "https?://wetransfer\\.com/downloads/(?:[a-f0-9]{46}/[a-f0-9]{46}/[a-f0-9]{4,12}|[a-f0-9]{46}/[a-f0-9]{4,12})";
+    protected static final String patternNormal = "https?://(?:\\w+\\.)?wetransfer\\.com/downloads/(?:[a-f0-9]{46}/[a-f0-9]{46}/[a-f0-9]{4,12}|[a-f0-9]{46}/[a-f0-9]{4,12})";
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        String parameter = param.getCryptedUrl();
+        String contenturl = param.getCryptedUrl();
         WeTransferCom.prepBRWebsite(this.br);
-        String shortID = new Regex(parameter, patternShort).getMatch(0);
+        String shortID = new Regex(contenturl, patternShort).getMatch(0);
+        final boolean accessURL;
         if (shortID != null) {
             /* Short link */
-            br.setFollowRedirects(false);
-            br.getPage(parameter);
-            final String redirect = br.getRedirectLocation();
-            if (redirect == null || (redirect != null && redirect.contains("/error"))) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else if (redirect.contains("/error")) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else if (!this.canHandle(redirect)) {
+            br.getPage(contenturl);
+            /* Redirects to somewhere */
+            if (!this.canHandle(br.getURL())) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            ret.add(createDownloadlink(redirect));
-            return ret;
+            contenturl = br.getURL();
+            accessURL = false;
+        } else {
+            accessURL = true;
         }
-        final Regex urlregex = new Regex(parameter, "/downloads/([a-f0-9]+)/([a-f0-9]{46})?/?([a-f0-9]+)");
+        final Regex urlregex = new Regex(contenturl, "/downloads/([a-f0-9]+)/([a-f0-9]{46})?/?([a-f0-9]+)");
         final String id_main = urlregex.getMatch(0);
         final String recipient_id = urlregex.getMatch(1);
         final String security_hash = urlregex.getMatch(2);
         if (security_hash == null || id_main == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        // Allow redirects for change to https
-        br.setFollowRedirects(true);
-        br.getPage(parameter);
-        if (br.getHttpConnection().getResponseCode() == 410 || br.getHttpConnection().getResponseCode() == 503) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (accessURL) {
+            br.getPage(contenturl);
+            if (br.getHttpConnection().getResponseCode() == 410 || br.getHttpConnection().getResponseCode() == 503) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
         }
         final String csrfToken = br.getRegex("name\\s*=\\s*\"csrf-token\"\\s*content\\s*=\\s*\"(.*?)\"").getMatch(0);
         // final String domain_user_id = br.getRegex("user\\s*:\\s*\\{\\s*\"key\"\\s*:\\s*\"(.*?)\"").getMatch(0);
@@ -152,7 +150,7 @@ public class WeTransferComFolder extends PluginForDecrypt {
             dl.setRelativeDownloadFolderPath(thisPath);
             dl.setFinalFileName(filename);
             dl.setVerifiedFileSize(filesize);
-            dl.setContentUrl(parameter);
+            dl.setContentUrl(contenturl);
             dl.setAvailable(true);
             ret.add(dl);
             /* Set individual packagename per URL because every item can have a totally different file-structure! */

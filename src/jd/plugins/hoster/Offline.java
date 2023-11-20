@@ -136,6 +136,8 @@ public class Offline extends PluginForHost {
         ret.add(new String[] { "uptobox.com", "uptobox.fr", "uptobox.eu", "uptostream.com", "uptostream.fr", "uptostream.eu", "uptobox.link" });
         ret.add(new String[] { "myvi.ru" });
         ret.add(new String[] { "easybytez.com", "easybytez.me", "easybytez.eu", "easybytez.co", "easybytez.to", "zingload.com", "easyload.to", "ezbytez.com", "ebytez.com" });
+        ret.add(new String[] { "stahomat.cz", "stahomat.sk" });
+        ret.add(new String[] { "storjshare.io" });
         if (cache != null) {
             cache.put(cacheID, ret);
         }

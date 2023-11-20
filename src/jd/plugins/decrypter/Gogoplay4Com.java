@@ -193,6 +193,12 @@ public class Gogoplay4Com extends PluginForDecrypt {
             logger.info("Looking for streamingURLs");
             try {
                 br.getPage(contenturl);
+                if (br.getHttpConnection().getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                } else if (br.containsHTML("/player/error\\.jpg")) {
+                    /* E.g. https://goone.pro/player/error.jpg */
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
                 final String[] embedurls = br.getRegex("data-video=\"(https?://[^\"]+)").getColumn(0);
                 if (embedurls != null && embedurls.length > 0) {
                     for (final String embedurl : embedurls) {
@@ -209,8 +215,12 @@ public class Gogoplay4Com extends PluginForDecrypt {
                     logger.info("Failed to find any streamURLs");
                 }
             } catch (final Exception e) {
-                logger.log(e);
-                logger.warning("Stream crawler failed");
+                if (e instanceof PluginException) {
+                    throw e;
+                } else {
+                    logger.log(e);
+                    logger.warning("Stream crawler failed");
+                }
             }
         }
         br.getPage("https://" + hostInsideContentURL + "/download?" + query.toString());

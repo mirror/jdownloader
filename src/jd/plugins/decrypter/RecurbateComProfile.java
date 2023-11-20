@@ -19,12 +19,14 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 import org.appwork.utils.Regex;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
@@ -75,11 +77,17 @@ public class RecurbateComProfile extends PluginForDecrypt {
         /* Init hosterplugin so we're using the same browser (same headers/settings). */
         final RecurbateCom hosterplugin = (RecurbateCom) this.getNewPluginForHostInstance(this.getHost());
         final Account account = AccountController.getInstance().getValidAccount(this.getHost());
+        final List<String> deadDomains = hosterplugin.getDeadDomains();
+        String contenturl = param.getCryptedUrl();
+        final String hostFromURL = Browser.getHost(contenturl);
+        if (deadDomains.contains(hostFromURL)) {
+            contenturl = contenturl.replaceFirst(Pattern.quote(hostFromURL), this.getHost());
+        }
         if (account != null) {
             /* Login whenever possible. This is not needed to get the content but can help to get around Cloudflare. */
-            hosterplugin.login(account, param.getCryptedUrl(), true);
+            hosterplugin.login(account, contenturl, true);
         } else {
-            br.getPage(param.getCryptedUrl());
+            br.getPage(contenturl);
         }
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

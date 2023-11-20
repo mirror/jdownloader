@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.regex.Pattern;
 
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.utils.DebugMode;
@@ -84,8 +85,22 @@ public class RecurbateCom extends PluginForHost {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "recurbate.com", "recurbate.xyz", "recurbate.cc" });
+        ret.add(new String[] { "recurbate.me", "recurbate.com", "recurbate.xyz", "recurbate.cc" });
         return ret;
+    }
+
+    @Override
+    public String rewriteHost(final String host) {
+        /* 2023-11-20: Main domain has changed from recurbate.com to recurbate.me */
+        return this.rewriteHost(getPluginDomains(), host);
+    }
+
+    public List<String> getDeadDomains() {
+        final ArrayList<String> deadDomains = new ArrayList<String>();
+        deadDomains.add("recurbate.com");
+        deadDomains.add("recurbate.xyz");
+        deadDomains.add("recurbate.cc");
+        return deadDomains;
     }
 
     public static String[] getAnnotationNames() {
@@ -124,6 +139,21 @@ public class RecurbateCom extends PluginForHost {
         return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
+    private String getContentURL(final DownloadLink link) {
+        /* Get full host with subdomain and correct base domain. */
+        final String pluginHost = this.getHost();
+        final List<String> deadDomains = this.getDeadDomains();
+        final String url = link.getPluginPatternMatcher();
+        final String urlHost = Browser.getHost(link.getPluginPatternMatcher());
+        if (deadDomains != null && deadDomains.contains(urlHost)) {
+            /* Fallback to plugin domain */
+            /* e.g. down.xx.com -> down.yy.com, keep subdomain(s) */
+            return url.replaceFirst("(?i)" + Pattern.quote(Browser.getHost(url, false)), pluginHost);
+        } else {
+            return url;
+        }
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         return requestFileInformation(link, null);
@@ -135,10 +165,11 @@ public class RecurbateCom extends PluginForHost {
             /* Set fallback filename e.g. for offline items. */
             link.setName(fid + ".mp4");
         }
+        final String contenturl = getContentURL(link);
         if (account != null) {
-            login(account, link.getPluginPatternMatcher(), true);
+            login(account, contenturl, true);
         } else {
-            br.getPage(link.getPluginPatternMatcher());
+            br.getPage(contenturl);
         }
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

@@ -54,6 +54,7 @@ public class WeTransferCom extends PluginForHost {
     public static Browser prepBRWebsite(final Browser br) {
         br.addAllowedResponseCodes(new int[] { 410, 503 });
         br.setCookie("wetransfer.com", "wt_tandc", "20170208");
+        br.setFollowRedirects(true);
         return br;
     }
 
