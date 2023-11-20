@@ -24,6 +24,7 @@ import java.util.Map;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.parser.UrlQuery;
 
@@ -31,6 +32,7 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -142,12 +144,35 @@ public class OneTwoThreePanCom extends PluginForHost {
         postdata.put("S3keyFlag", s3keyflag);
         postdata.put("ShareKey", getShareKey(link));
         postdata.put("Size", sizebytes);
-        br.postPageRaw(OneTwoThreePanComFolder.API_BASE + "/share/download/info", JSonStorage.serializeToJson(postdata));
+        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            /* 2023-11-20: Testing as some parts of their website were changed. */
+            br.getHeaders().put("App-Version", "3");
+            br.getHeaders().put("Content-Type", "application/json;charset=UTF-8");
+            br.getHeaders().put("Platform", "web"); // Important! (even case-sensitive!)
+            br.getHeaders().put("Origin", "https://www." + this.getHost());
+            // br.getHeaders().put("Loginuuid", "\"<someHash>\"");
+            // br.postPageRaw(OneTwoThreePanComFolder.API_BASE_2 + "/share/download/info", JSonStorage.serializeToJson(postdata));
+            /*
+             * TODO: Some ID / signature is missing here, leading to this response: "message":"签名错误,请检查您的本地时间是否为东八区时间-dykey illegality 1001"
+             */
+            br.postPageRaw("https://www.123pan.com/b/api/share/download/info?" + System.currentTimeMillis(), JSonStorage.serializeToJson(postdata));
+        } else {
+            br.postPageRaw(OneTwoThreePanComFolder.API_BASE + "/share/download/info", JSonStorage.serializeToJson(postdata));
+        }
         final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
-        final Map<String, Object> data = (Map<String, Object>) entries.get("data");
+        final Object dataO = entries.get("data");
+        final Map<String, Object> data = dataO instanceof Map ? (Map<String, Object>) dataO : null;
         if (data == null) {
             /* E.g. {"code":400,"message":"非法请求,源文件不存在","data":null} */
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            // TODO: 2023-11-20: Update errorhandling
+            final int code = Integer.parseInt(entries.get("code").toString());
+            if (code == 429) {
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Error 429 rate limit reached", 3 * 60 * 1000l);
+            } else if (code == 5112) {
+                throw new AccountRequiredException();
+            } else {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
         }
         final String url = data.get("DownloadURL").toString();
         if (StringUtils.isEmpty(url)) {

@@ -167,6 +167,7 @@ public class DefaultEditAccountPanelCookieLogin extends MigPanel implements Acco
         final String pw = getPassword();
         final Cookies cookies = Cookies.parseCookiesFromJsonString(pw);
         if (StringUtils.isEmpty(pw)) {
+            /* Password field is never allowed to be empty/null. */
             passok = false;
         } else if (cookieLoginOnly && cookies == null) {
             /* Cookies are needed but not given. */

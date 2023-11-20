@@ -68,6 +68,7 @@ import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+import jd.plugins.hoster.DirectHTTP;
 import jd.plugins.hoster.RedditCom;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
@@ -457,6 +458,26 @@ public class RedditComCrawler extends PluginForDecrypt {
                          * http requests see down below.
                          */
                         logger.info("Ignoring URL found in 'url' field: " + maybeExternalURL);
+                    }
+                }
+                final Map<String, Object> preview = (Map<String, Object>) data.get("preview");
+                if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && preview != null) {
+                    // TODO: Add setting to grab previews
+                    final List<Map<String, Object>> images = (List<Map<String, Object>>) preview.get("images");
+                    for (final Map<String, Object> image : images) {
+                        final Map<String, Object> variants = (Map<String, Object>) image.get("variants");
+                        final String gif = (String) JavaScriptEngineFactory.walkJson(variants, "gif/source/url");
+                        final String mp4 = (String) JavaScriptEngineFactory.walkJson(variants, "mp4/source/url");
+                        if (!StringUtils.isEmpty(gif)) {
+                            final DownloadLink direct = this.createDownloadlink(DirectHTTP.createURLForThisPlugin(Encoding.htmlOnlyDecode(gif)));
+                            direct.setAvailable(true);
+                            thisCrawledLinks.add(direct);
+                        }
+                        if (!StringUtils.isEmpty(mp4)) {
+                            final DownloadLink direct = this.createDownloadlink(DirectHTTP.createURLForThisPlugin(Encoding.htmlOnlyDecode(mp4)));
+                            direct.setAvailable(true);
+                            thisCrawledLinks.add(direct);
+                        }
                     }
                 }
                 /* 2022-03-10: When a gallery is removed, 'is_gallery' can be true while 'gallery_data' does not exist. */

@@ -105,21 +105,22 @@ public class RecurbateComProfile extends PluginForDecrypt {
             }
             boolean foundNewItemsOnCurrentPage = false;
             for (final String videoID : videoIDs) {
-                if (dupes.add(videoID)) {
-                    final String videoDetails = br.getRegex("play\\.php\\?video=" + videoID + ".*?(<div\\s*class\\s*=\\s*\"video-info-sub.*?</div>)").getMatch(0);
-                    foundNewItemsOnCurrentPage = true;
-                    final DownloadLink dl = createDownloadlink("https://" + this.getHost() + "/play.php?video=" + videoID);
-                    if (videoDetails != null) {
-                        final String dateStr = new Regex(videoDetails, "(?i)>\\s*•?\\s*(\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2})").getMatch(0);
-                        RecurbateCom.setDate(dl, dateStr);
-                    }
-                    dl.setProperty(RecurbateCom.PROPERTY_USER, username);
-                    RecurbateCom.setFilename(dl, videoID);
-                    dl.setAvailable(true);
-                    dl._setFilePackage(fp);
-                    ret.add(dl);
-                    distribute(dl);
+                if (!dupes.add(videoID)) {
+                    continue;
                 }
+                final String videoDetails = br.getRegex("play\\.php\\?video=" + videoID + ".*?(<div\\s*class\\s*=\\s*\"video-info-sub.*?</div>)").getMatch(0);
+                foundNewItemsOnCurrentPage = true;
+                final DownloadLink dl = createDownloadlink("https://" + this.getHost() + "/play.php?video=" + videoID);
+                if (videoDetails != null) {
+                    final String dateStr = new Regex(videoDetails, "(?i)>\\s*•?\\s*(\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2})").getMatch(0);
+                    RecurbateCom.setDate(dl, dateStr);
+                }
+                dl.setProperty(RecurbateCom.PROPERTY_USER, username);
+                RecurbateCom.setFilename(dl, videoID);
+                dl.setAvailable(true);
+                dl._setFilePackage(fp);
+                ret.add(dl);
+                distribute(dl);
             }
             logger.info("Crawled page " + page + " | Found items so far: " + ret.size());
             final String nextpage = br.getRegex("(/performer/[^/]+/page/" + (page + 1) + ")").getMatch(0);
