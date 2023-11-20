@@ -47,6 +47,13 @@ public class SweetpornOrg extends PluginForDecrypt {
     }
 
     @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.setFollowRedirects(true);
+        return br;
+    }
+
+    @Override
     public LazyPlugin.FEATURE[] getFeatures() {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
     }
@@ -84,7 +91,6 @@ public class SweetpornOrg extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.getPage(param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -95,10 +101,9 @@ public class SweetpornOrg extends PluginForDecrypt {
         /* Obtain title from URL */
         final String urlSlug = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
         final String fpName = urlSlug.replace("-", " ").trim();
-        final String[] ids = br.getRegex("get_download_link\\('([^<>\"\\']+)").getColumn(0);
-        final String[] b64Strings = br.getRegex("/goto\\?([a-zA-Z0-9_/\\+\\=\\-%]+)").getColumn(0);
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(fpName);
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String thumbnails[] = br.getRegex("href\\s*=\\s*\"[^\"]*goto[^\"]*\"[^>]*>\\s*<img\\s*src\\s*=\\s*\"(https?://.*?)\"").getColumn(0);
         for (String thumbnail : thumbnails) {
             final DownloadLink dl = createDownloadlink(thumbnail);
@@ -106,6 +111,8 @@ public class SweetpornOrg extends PluginForDecrypt {
             ret.add(dl);
             distribute(dl);
         }
+        final String[] ids = br.getRegex("get_download_link\\('([^<>\"\\']+)").getColumn(0);
+        final String[] b64Strings = br.getRegex("/goto\\?([a-zA-Z0-9_/\\+\\=\\-%]+)").getColumn(0);
         final HashSet<String> dupes = new HashSet<String>();
         if (ids != null && ids.length > 0) {
             int index = 0;
@@ -116,7 +123,7 @@ public class SweetpornOrg extends PluginForDecrypt {
                 logger.info("Crawling item " + (index + 1) + " / " + ids.length);
                 final Browser brc = br.cloneBrowser();
                 brc.postPage("/get_file.php", "id=" + Encoding.urlEncode(id));
-                final Map<String, Object> entries = restoreFromString(brc.toString(), TypeRef.MAP);
+                final Map<String, Object> entries = restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.MAP);
                 final String html = (String) entries.get("htmlcode");
                 final String url = new Regex(html, "<a href=\"([^\"]+)").getMatch(0);
                 if (url != null) {
@@ -133,13 +140,6 @@ public class SweetpornOrg extends PluginForDecrypt {
                     logger.info("HTML=");
                     logger.info(html);
                 }
-                // final String[] urls = HTMLParser.getHttpLinks(html, br.getURL());
-                // for (final String url : urls) {
-                // final DownloadLink dl = createDownloadlink(url);
-                // dl._setFilePackage(fp);
-                // decryptedLinks.add(dl);
-                // distribute(dl);
-                // }
                 if (this.isAbort()) {
                     logger.info("Stopping because: Aborted by user");
                     break;
