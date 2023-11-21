@@ -1381,14 +1381,32 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             downloadLink = downloadLinkCandidates.get(0).getLink();
         }
         /* TODO: 2023-11-21: Update this so that name of part file is never longer than name of target file. */
-        final File partFile = new File(downloadLink.getFileOutput() + ".part");
-        final long doneSize = Math.max((partFile.exists() ? partFile.length() : 0l), downloadLink.getView().getBytesLoaded());
+        final String partFilenameSuffix = ".part";
+        final String fileoutput = downloadLink.getFileOutput();
+        File partFile;
+        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            /* New handling */
+            /* First check if part file of older handling exists */
+            partFile = new File(fileoutput + partFilenameSuffix);
+            if (!partFile.exists()) {
+                /* New handling: Ensure that filename of partFile is not longer than final filename. */
+                if (fileoutput.length() > partFilenameSuffix.length()) {
+                    final String smallerFilename = fileoutput.substring(0, fileoutput.length() - partFilenameSuffix.length());
+                    partFile = new File(smallerFilename + partFilenameSuffix);
+                }
+            }
+        } else {
+            /* Old handling */
+            partFile = new File(fileoutput + partFilenameSuffix);
+        }
+        final File partFileFinal = partFile;
+        final long doneSize = Math.max((partFileFinal.exists() ? partFileFinal.length() : 0l), downloadLink.getView().getBytesLoaded());
         final long remainingSize = downloadLink.getView().getBytesTotal() - Math.max(0, doneSize);
         final DownloadLink finalDownloadLink = downloadLink;
         return getSession().getDiskSpaceManager().check(new DiskSpaceReservation() {
             @Override
             public File getDestination() {
-                return partFile;
+                return partFileFinal;
             }
 
             @Override
