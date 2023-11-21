@@ -61,6 +61,7 @@ import org.appwork.uio.ExceptionDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.ConcatIterator;
 import org.appwork.utils.DebugMode;
+import org.appwork.utils.Exceptions;
 import org.appwork.utils.IO;
 import org.appwork.utils.NullsafeAtomicReference;
 import org.appwork.utils.StringUtils;
@@ -3991,7 +3992,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                             controller.getLogger().info("Creating path from: " + folderCreateList);
                             for (int index = 0; index < folderCreateList.size(); index++) {
                                 final File thisfolder = folderCreateList.get(index);
-                                if (!thisfolder.mkdir()) {
+                                if (!thisfolder.mkdir() && !thisfolder.exists() && !thisfolder.isDirectory()) {
                                     controller.getLogger().severe("could not create folder[" + index + "]: " + thisfolder.getAbsolutePath());
                                     if (CrossSystem.isWindows() && looksLikeTooLongWindowsPathOrFilename(thisfolder)) {
                                         controller.getLogger().severe("Looks like too long downloadpath for Windows: " + thisfolder.getAbsolutePath());
@@ -4155,7 +4156,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                      */
                                     shortenFilenameOnAutoRename = true;
                                     fileExists = true;
-                                    throw new PluginException(LinkStatus.ERROR_ALREADYEXISTS);
+                                    throw new PluginException(LinkStatus.ERROR_ALREADYEXISTS, null, e);
                                 }
                                 try {
                                     final RandomAccessFile raf2 = IO.open(writeTest2, "rw");
@@ -4172,7 +4173,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                     return;
                                 } catch (final IOException e2) {
                                     /* Permission issue or some other length limitation is in place. */
-                                    throw new SkipReasonException(SkipReason.INVALID_DESTINATION, e);
+                                    throw new SkipReasonException(SkipReason.INVALID_DESTINATION, Exceptions.addSuppressed(e2, e));
                                 }
                             } else {
                                 /*
