@@ -88,7 +88,12 @@ public class KrakenfilesCom extends PluginForHost {
         this.setBrowserExclusive();
         /* This json is part of their embed functions :) */
         br.getPage("https://" + this.getHost() + "/json/" + this.getFID(link));
-        final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+        final Object jsonO = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.OBJECT);
+        if (!(jsonO instanceof Map)) {
+            /* 2023-11-21: Returns empty array when given fileID is invalid. */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final Map<String, Object> entries = (Map<String, Object>) jsonO;
         final String hash = (String) entries.get("hash");
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

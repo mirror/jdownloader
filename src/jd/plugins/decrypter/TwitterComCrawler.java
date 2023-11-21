@@ -1057,12 +1057,13 @@ public class TwitterComCrawler extends PluginForDecrypt {
             logger.info("Account required to crawl all liked items of a user");
             throw new DecrypterRetryException(RetryReason.NO_ACCOUNT, "ACCOUNT_REQUIRED_TO_CRAWL_LIKED_ITEMS_OF_PROFILE_" + username, "Account is required to crawl liked items of profiles.");
         }
+        final String warningtextNoAccount = "You did not add a Twitter account to JDownloader or you've disabled it.\r\nAdd your twitter.com account under: Settings -> Account Manager -> Add";
         if (account == null) {
-            displayBubblenotifyMessage("Profile crawler " + username + " | Warning", "Results may be incomplete!\r\nTwitter is hiding some posts (e.g. NSFW content) or profiles when a user is not logged in\r\nYou did not add a Twitter account to JDownloader or you've disabled it.");
+            displayBubblenotifyMessage("Profile crawler " + username + " | Warning", "Results may be incomplete!\r\nTwitter is hiding some posts (e.g. NSFW content) or profiles when a user is not logged in\r\n" + warningtextNoAccount);
         }
         final boolean crawlRetweets = PluginJsonConfig.get(TwitterConfigInterface.class).isCrawlRetweetsV2();
         if (account == null && crawlRetweets) {
-            displayBubblenotifyMessage("Profile crawler " + username + " | Warning", "Results may be incomplete!\r\nYou've enabled re-tweet crawling in twitter plugin settings.\r\nTwitter is sometimes hiding Re-Tweets when users are not logged in.\r\nYou did not add a Twitter account to JDownloader or you've disabled it.");
+            displayBubblenotifyMessage("Profile crawler " + username + " | Warning", "Results may be incomplete!\r\nYou've enabled re-tweet crawling in twitter plugin settings.\r\nTwitter is sometimes hiding Re-Tweets when users are not logged in.\r\n" + warningtextNoAccount);
         }
         if (crawlRetweets) {
             return this.crawlUserViaGraphqlAPI(username, account);
