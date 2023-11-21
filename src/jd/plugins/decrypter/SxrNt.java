@@ -16,11 +16,13 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import org.appwork.utils.StringUtils;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.HTMLParser;
@@ -32,23 +34,57 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "sexuria.net" }, urls = { "https?://(?:www\\.)?sexuria\\.net/(\\d+)-([a-z0-9\\-]+)\\.html" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class SxrNt extends PluginForDecrypt {
     public SxrNt(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    /** This may be the future replacement of {@link #Sxrcm} jd.plugins.decrypter.Sxrcm */
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
-        br.getPage(parameter);
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.setFollowRedirects(true);
+        return br;
+    }
+
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "sexuria.net", "sexuria.org" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(\\d+)-([a-z0-9\\-]+)\\.html");
         }
-        final String url_name = new Regex(parameter, this.getSupportedLinks()).getMatch(1);
-        String fpName = url_name.replace("-", " ");
+        return ret.toArray(new String[0]);
+    }
+
+    /** This may be the future replacement of {@link #Sxrcm} jd.plugins.decrypter.Sxrcm */
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final String contenturl = param.getCryptedUrl();
+        br.getPage(contenturl);
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final String url_name = new Regex(contenturl, this.getSupportedLinks()).getMatch(1);
+        final String fpName = url_name.replace("-", " ").trim();
         String[] links = br.getRegex("target=\"_blank\" href=\"(https?://[^\"]+)\" class=\"btn vertab\"").getColumn(0);
         if (links.length == 0) {
             /* 2020-12-15 */
@@ -58,7 +94,7 @@ public class SxrNt extends PluginForDecrypt {
             /* Fallback */
             links = HTMLParser.getHttpLinks(br.toString(), br.getURL());
         }
-        String extractionPassword = br.getRegex("<strong>Password file</strong></td>\\s*<td>([^<>\"]+)</td>").getMatch(0);
+        String extractionPassword = br.getRegex("<strong>\\s*Password file\\s*</strong></td>\\s*<td>([^<>\"]+)</td>").getMatch(0);
         if (links == null || links.length == 0) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -79,13 +115,16 @@ public class SxrNt extends PluginForDecrypt {
             if (extractionPassword_s != null) {
                 dl.setSourcePluginPasswordList(extractionPassword_s);
             }
-            decryptedLinks.add(dl);
+            ret.add(dl);
         }
+        final FilePackage fp = FilePackage.getInstance();
         if (fpName != null) {
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName.trim()));
-            fp.addLinks(decryptedLinks);
+            fp.setName(Encoding.htmlDecode(fpName).trim());
+        } else {
+            /* Fallback */
+            fp.setName(br._getURL().getPath());
         }
-        return decryptedLinks;
+        fp.addLinks(ret);
+        return ret;
     }
 }

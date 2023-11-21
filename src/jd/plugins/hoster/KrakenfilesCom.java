@@ -16,10 +16,14 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.Map;
+
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
-import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
@@ -28,15 +32,18 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "krakenfiles.com" }, urls = { "https?://(?:www\\.)?krakenfiles\\.com/view/([a-z0-9]+)/file\\.html" })
 public class KrakenfilesCom extends PluginForHost {
     public KrakenfilesCom(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.setFollowRedirects(true);
+        return br;
     }
 
     @Override
@@ -81,18 +88,17 @@ public class KrakenfilesCom extends PluginForHost {
         this.setBrowserExclusive();
         /* This json is part of their embed functions :) */
         br.getPage("https://" + this.getHost() + "/json/" + this.getFID(link));
-        final String hash = PluginJSonUtils.getJson(br, "hash");
-        if (br.getHttpConnection().getResponseCode() == 404 || StringUtils.isEmpty(hash) || !StringUtils.equalsIgnoreCase(hash, this.getFID(link))) {
+        final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+        final String hash = (String) entries.get("hash");
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (StringUtils.isEmpty(hash) || !StringUtils.equalsIgnoreCase(hash, this.getFID(link))) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String filename = PluginJSonUtils.getJson(br, "title");
-        final String filesize = PluginJSonUtils.getJson(br, "size");
-        if (!StringUtils.isEmpty(filename)) {
-            link.setName(Encoding.htmlDecode(filename).trim());
-        }
-        if (!StringUtils.isEmpty(filesize)) {
-            link.setDownloadSize(SizeFormatter.getSize(filesize));
-        }
+        final String filename = entries.get("title").toString();
+        final String filesize = entries.get("size").toString();
+        link.setFinalFileName(filename);
+        link.setDownloadSize(SizeFormatter.getSize(filesize));
         return AvailableStatus.TRUE;
     }
 
@@ -111,7 +117,8 @@ public class KrakenfilesCom extends PluginForHost {
             }
             br.getHeaders().put("hash", this.getFID(link));
             br.submitForm(dlform);
-            final String dllink = PluginJSonUtils.getJson(br, "url");
+            final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+            final String dllink = entries.get("url").toString();
             if (StringUtils.isEmpty(dllink) && dllink.startsWith("http")) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
