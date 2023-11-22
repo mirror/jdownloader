@@ -146,6 +146,7 @@ public class TbCmV2 extends PluginForDecrypt {
             String pattern = "https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/";
             pattern += "(";
             pattern += "embed(\\?v=|/)" + VIDEO_ID_PATTERN + ".*";
+            pattern += "|live/" + VIDEO_ID_PATTERN;
             pattern += "|watch.*";
             pattern += "|shorts/" + VIDEO_ID_PATTERN + ".*";
             pattern += "|(?:view_play_list|playlist)\\?.+";
@@ -208,6 +209,9 @@ public class TbCmV2 extends PluginForDecrypt {
                 vuid = new Regex(url, "(?i)/shorts/" + VIDEO_ID_PATTERN).getMatch(0);
                 if (vuid == null) {
                     vuid = new Regex(url, "(?i)/embed/(?!videoseries\\?)" + VIDEO_ID_PATTERN).getMatch(0);
+                    if (vuid == null) {
+                        vuid = new Regex(url, "(?i)/live/" + VIDEO_ID_PATTERN).getMatch(0);
+                    }
                 }
             }
         }

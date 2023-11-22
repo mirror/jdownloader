@@ -313,6 +313,8 @@ public class DeviantArtCom extends PluginForHost {
         String officialDownloadurl = null;
         String json = br.getRegex("window\\.__INITIAL_STATE__ = JSON\\.parse\\(\"(.*?)\"\\);").getMatch(0);
         Number officialDownloadsizeBytes = null;
+        Number originalFileSizeBytes = null;
+        String tierAccess = null;
         if (json != null) {
             json = PluginJSonUtils.unescape(json);
             final Map<String, Object> entries = restoreFromString(json, TypeRef.MAP);
@@ -333,6 +335,7 @@ public class DeviantArtCom extends PluginForHost {
                     }
                 }
             }
+            tierAccess = (String) thisArt.get("tierAccess");
             final Map<String, Object> deviationResult = parseDeviationJSON(this, link, thisArt);
             displayedImageURL = (String) deviationResult.get("displayedImageURL");
             unlimitedImageSize = (Number) deviationResult.get("unlimitedImageSize");
@@ -367,9 +370,13 @@ public class DeviantArtCom extends PluginForHost {
                     }
                     if (deviationExtendedThisArt != null) {
                         final Map<String, Object> download = (Map<String, Object>) deviationExtendedThisArt.get("download");
+                        final Map<String, Object> originalFile = (Map<String, Object>) deviationExtendedThisArt.get("originalFile");
                         if (download != null) {
                             officialDownloadurl = download.get("url").toString();
                             officialDownloadsizeBytes = (Number) download.get("filesize");
+                        }
+                        if (originalFile != null) {
+                            originalFileSizeBytes = (Number) originalFile.get("filesize");
                         }
                     }
                 }
@@ -425,6 +432,7 @@ public class DeviantArtCom extends PluginForHost {
              */
         }
         String extByMimeType = null;
+        boolean allowGrabFilesizeFromHeader = false;
         if (downloadHTML) {
             try {
                 link.setDownloadSize(br.getRequest().getHtmlCode().getBytes("UTF-8").length);
@@ -446,28 +454,8 @@ public class DeviantArtCom extends PluginForHost {
                 link.setVerifiedFileSize(displayedVideoSize.longValue());
             } else if (isImage && unlimitedImageSize != null && dllink != null && !dllink.matches("(?i).*/v1/.+")) {
                 link.setVerifiedFileSize(unlimitedImageSize.longValue());
-            } else if (cfg.isFastLinkcheckForSingleItems() == false && !isDownload && !StringUtils.isEmpty(dllink)) {
-                /* No filesize value given -> Obtain from header */
-                final Browser br2 = br.cloneBrowser();
-                /* Workaround for old downloadcore bug that can lead to incomplete files */
-                br2.getHeaders().put("Accept-Encoding", "identity");
-                URLConnectionAdapter con = null;
-                try {
-                    con = br2.openHeadConnection(dllink);
-                    handleConnectionErrors(br2, con);
-                    if (con.getCompleteContentLength() > 0) {
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
-                    }
-                    final String mimeTypeExtTmp = getExtensionFromMimeType(con.getRequest().getResponseHeader("Content-Type"));
-                    if (mimeTypeExtTmp != null) {
-                        extByMimeType = "." + mimeTypeExtTmp;
-                    }
-                } finally {
-                    try {
-                        con.disconnect();
-                    } catch (Throwable e) {
-                    }
-                }
+            } else {
+                allowGrabFilesizeFromHeader = true;
             }
         }
         final String extByURL = dllink != null ? Plugin.getFileNameExtensionFromURL(dllink) : null;
@@ -497,6 +485,41 @@ public class DeviantArtCom extends PluginForHost {
             final String filenameFromURL = Plugin.getFileNameFromURL(new URL(dllink));
             if (filenameFromURL != null) {
                 link.setName(filenameFromURL);
+            }
+        }
+        if ("locked".equalsIgnoreCase(tierAccess)) {
+            /* Paid content. All we could download would be a blurred image of the content. */
+            /* Example: https://www.deviantart.com/ohshinakai/art/Stretched-to-the-limit-Shanoli-996105058 */
+            if (originalFileSizeBytes != null) {
+                link.setDownloadSize(originalFileSizeBytes.longValue());
+            }
+            if (isDownload) {
+                throw new AccountRequiredException();
+            } else {
+                return AvailableStatus.TRUE;
+            }
+        }
+        if (allowGrabFilesizeFromHeader && !cfg.isFastLinkcheckForSingleItems() && !isDownload && !StringUtils.isEmpty(dllink)) {
+            /* No filesize value given -> Obtain from header */
+            final Browser br2 = br.cloneBrowser();
+            /* Workaround for old downloadcore bug that can lead to incomplete files */
+            br2.getHeaders().put("Accept-Encoding", "identity");
+            URLConnectionAdapter con = null;
+            try {
+                con = br2.openHeadConnection(dllink);
+                handleConnectionErrors(br2, con);
+                if (con.getCompleteContentLength() > 0) {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                }
+                final String mimeTypeExtTmp = getExtensionFromMimeType(con.getRequest().getResponseHeader("Content-Type"));
+                if (mimeTypeExtTmp != null) {
+                    extByMimeType = "." + mimeTypeExtTmp;
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (Throwable e) {
+                }
             }
         }
         return AvailableStatus.TRUE;

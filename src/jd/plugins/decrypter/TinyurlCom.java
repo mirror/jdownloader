@@ -22,6 +22,8 @@ import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tinyurl.com" }, urls = { "https?://(?:www\\.)?tinyurl\\.com/[a-z0-9]+(?:/[^/]+){0,}" })
@@ -30,9 +32,9 @@ public class TinyurlCom extends PluginForDecrypt {
         super(wrapper);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString().replaceFirst("preview\\.tinyurl\\.com", "tinyurl\\.com");
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final String parameter = param.getCryptedUrl().replaceFirst("(?i)preview\\.tinyurl\\.com", "tinyurl\\.com");
         br.setFollowRedirects(false);
         br.getPage(parameter);
         final String finallink = br.getRedirectLocation();
@@ -42,10 +44,9 @@ public class TinyurlCom extends PluginForDecrypt {
             } else {
                 logger.info("Probably offline offline");
             }
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        decryptedLinks.add(createDownloadlink(finallink));
-        return decryptedLinks;
+        ret.add(createDownloadlink(finallink));
+        return ret;
     }
 }
