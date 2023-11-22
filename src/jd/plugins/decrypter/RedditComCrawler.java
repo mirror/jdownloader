@@ -476,7 +476,13 @@ public class RedditComCrawler extends PluginForDecrypt {
                             thisCrawledLinks.add(direct);
                         }
                         if (!StringUtils.isEmpty(mp4)) {
-                            final DownloadLink direct = this.createDownloadlink(DirectHTTP.createURLForThisPlugin(Encoding.htmlOnlyDecode(mp4)));
+                            final String url = Encoding.htmlOnlyDecode(mp4);
+                            final String filenameFromURL = Plugin.getFileNameFromURL(url);
+                            final DownloadLink direct = this.createDownloadlink(DirectHTTP.createURLForThisPlugin(url));
+                            if (filenameFromURL != null) {
+                                /* Filename from URL contains .gif extension but this is a .mp4 file -> Correct that */
+                                direct.setFinalFileName(this.correctOrApplyFileNameExtension(filenameFromURL, ".mp4"));
+                            }
                             direct.setAvailable(true);
                             thisCrawledLinks.add(direct);
                         }
