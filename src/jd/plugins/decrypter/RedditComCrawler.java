@@ -241,7 +241,7 @@ public class RedditComCrawler extends PluginForDecrypt {
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            final Map<String, Object> root = restoreFromString(br.toString(), TypeRef.MAP);
+            final Map<String, Object> root = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
             final Map<String, Object> data = (Map<String, Object>) root.get("data");
             final int numberofItemsOnCurrentPage = ((Number) data.get("dist")).intValue();
             numberofItemsWalkedThrough += numberofItemsOnCurrentPage;
@@ -299,7 +299,7 @@ public class RedditComCrawler extends PluginForDecrypt {
             page++;
             logger.info("Crawling page: " + page);
             getPage(br, getApiBaseOauth() + "/user/" + Encoding.urlEncode(acc.getUser()) + "/saved?" + query.toString());
-            final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
+            final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
             crawledLinks.addAll(this.crawlListing(entries, fp));
             final Map<String, Object> data = (Map<String, Object>) entries.get("data");
             final String fullnameAfter = (String) data.get("after");
@@ -314,9 +314,11 @@ public class RedditComCrawler extends PluginForDecrypt {
             } else if (lastItemDupes.contains(fullnameAfter)) {
                 logger.info("Stopping because we already know this fullnameAfter");
                 break;
+            } else {
+                /* Continue to next page */
+                lastItemDupes.add(fullnameAfter);
+                query.addAndReplace("after", fullnameAfter);
             }
-            lastItemDupes.add(fullnameAfter);
-            query.addAndReplace("after", fullnameAfter);
         } while (!this.isAbort());
         return crawledLinks;
     }
@@ -342,10 +344,10 @@ public class RedditComCrawler extends PluginForDecrypt {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final List<Object> ressourcelist = (List<Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+        final List<Map<String, Object>> ressourcelist = (List<Map<String, Object>>) restoreFromString(br.getRequest().getHtmlCode(), TypeRef.OBJECT);
         /* [0] = post/"first comment" */
         /* [1] = Comments */
-        final Map<String, Object> entries = (Map<String, Object>) ressourcelist.get(0);
+        final Map<String, Object> entries = ressourcelist.get(0);
         crawledLinks.addAll(this.crawlListing(entries, null));
         return crawledLinks;
     }

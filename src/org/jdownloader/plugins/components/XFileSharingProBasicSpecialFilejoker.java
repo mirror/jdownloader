@@ -6,6 +6,7 @@ import java.util.Locale;
 import java.util.Map;
 
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
@@ -20,6 +21,7 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
@@ -596,20 +598,28 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
                         logger.log(e);
                         logger.info("API handling in website handling failed");
                     }
-                    this.getPage(this.getMainPage());
+                    this.getPage(getMainPage() + getRelativeAccountInfoURL());
                     if (!this.isLoggedin(this.br)) {
                         logger.info("We are NOT loggedIN according to website --> Either wrong logindata or some other kind of issue");
                         /* Throw exception which will set property to avoid API login next time. */
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        /* All okay, return account information obtained via API although we are in website mode! */
-                        logger.info("Successfully logged in via API and used API cookies for website");
-                        if (ai != null) {
-                            logger.info("Returning AccountInfo from API");
-                            return ai;
-                        } else {
-                            logger.info("NOT returning AccountInfo from API --> Continue via website handling from now on");
+                        throw new AccountInvalidException();
+                    }
+                    /* All okay, return account information obtained via API although we are in website mode! */
+                    logger.info("Successfully logged in via API and used API cookies for website");
+                    if (ai != null) {
+                        logger.info("Returning AccountInfo from API");
+                        final String trafficleftWebsiteStr = regExTrafficLeft(br);
+                        if (trafficleftWebsiteStr != null) {
+                            final long trafficleftWebsiteBytes = SizeFormatter.getSize(trafficleftWebsiteStr);
+                            final long trafficleftFromAPI = ai.getTrafficLeft();
+                            if (trafficleftWebsiteBytes > trafficleftFromAPI) {
+                                logger.info("Prefer traffic left from website: " + trafficleftWebsiteStr + " | API would be: " + SizeFormatter.formatBytes(trafficleftFromAPI));
+                                ai.setTrafficLeft(trafficleftWebsiteBytes);
+                            }
                         }
+                        return ai;
+                    } else {
+                        logger.info("NOT returning AccountInfo from API --> Continue via website handling from now on");
                     }
                 } catch (final PluginException e) {
                     if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {

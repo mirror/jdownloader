@@ -237,12 +237,6 @@ public class NovaFileCom extends XFileSharingProBasicSpecialFilejoker {
         }
     }
 
-    /* 2020-01-16: Not required anymore as they're using '?op=my_account' again. */
-    // @Override
-    // protected String getRelativeAccountInfoURL() {
-    // /* 2019-08-20: Special */
-    // return "/profile";
-    // }
     @Override
     protected String getDllink(final DownloadLink link, final Account account, final Browser br, final String src) {
         /* 2019-08-21: Special */
@@ -382,8 +376,15 @@ public class NovaFileCom extends XFileSharingProBasicSpecialFilejoker {
 
     @Override
     protected boolean tryAPILoginInWebsiteMode_get_account_info_from_api(final Account account) {
-        /* 2020-05-20: Verified and working */
-        return true;
+        /*
+         * 2023-11-22: Only us this for free accounts as their API returns invalid 'trafficleft' values for PREMIUM accounts! Seems like
+         * this field is simply not updated anymore!
+         */
+        if (account.getType() == AccountType.PREMIUM) {
+            return false;
+        } else {
+            return true;
+        }
     }
 
     @Override
