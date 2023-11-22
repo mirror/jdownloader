@@ -4117,7 +4117,6 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                             }
                         }
                     }
-                    boolean shortenFilenameOnAutoRename = false;
                     if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && fileInProgress == null) {
                         /**
                          * We know that we can write in the directory but can we write the specific file we want to write? </br>
@@ -4138,23 +4137,41 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                 throw new SkipReasonException(SkipReason.INVALID_DESTINATION);
                             }
                         } catch (final IOException e) {
-                            if (fileName.length() > maxFilenameLength || looksLikeTooLongWindowsPathOrFilename(writeTest)) {
+                            if (fileName.length() > maxFilenameLength) {
+                                // TODO: Check looksLikeTooLongWindowsPathOrFilename
                                 /* Check if writing a shortened filename would be possible. */
                                 // TODO: Add setting for this shortening handling
                                 final boolean allowAutoShortenFilenames = true;
                                 if (!allowAutoShortenFilenames) {
                                     throw new SkipReasonException(SkipReason.INVALID_DESTINATION_TOO_LONG_FILENAME, e);
                                 }
-                                final String shortenedFilename = DownloadWatchDog.shortenFilename(fileName, maxFilenameLength);
+                                final String shortenedFilename;
+                                if (fileName.contains(".")) {
+                                    final int targetFilenameLengthWithoutExt = 200;
+                                    /*
+                                     * Buffer zone for file extension so that shortening filenames will hopefully not destroy the filename
+                                     * structure of multi part archives [also an edge case].
+                                     */
+                                    final int remainingMaxLengthForExt = maxFilenameLength - targetFilenameLengthWithoutExt;
+                                    final String ext = fileName.substring(fileName.lastIndexOf("."));
+                                    if (ext.length() > remainingMaxLengthForExt) {
+                                        /*
+                                         * Edge case: Looks like super long file-extension -> Do not care about "buffer-zone", just shorten
+                                         * filename to total max length.
+                                         */
+                                        shortenedFilename = fileName.substring(0, maxFilenameLength - ext.length()) + ext;
+                                    } else {
+                                        final int shortenToLength = Math.min(targetFilenameLengthWithoutExt, fileName.length() - ext.length());
+                                        shortenedFilename = fileName.substring(0, shortenToLength) + ext;
+                                    }
+                                } else {
+                                    shortenedFilename = fileName.substring(0, maxFilenameLength);
+                                }
                                 logger.info("Looks like too long filename | Checking shortened filename: " + shortenedFilename);
                                 final File writeTest2 = new File(writeTest.getParent(), shortenedFilename);
                                 if (writeTest2.exists()) {
                                     logger.info("File with shortened filename already exists!");
-                                    /**
-                                     * TODO: Is this okay or do we want to let it jump into auto rename handling down below? </br>
-                                     * Browsers can auto-rename files that are too long && were shortened!
-                                     */
-                                    shortenFilenameOnAutoRename = true;
+                                    /* TODO: Maybe don't throw an exception here and let rename handling down below take care about it. */
                                     fileExists = true;
                                     throw new PluginException(LinkStatus.ERROR_ALREADYEXISTS, null, e);
                                 }
@@ -4391,22 +4408,6 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             throw (Exception) ret;
         }
         throw new WTFException("WTF? Result: " + ret);
-    }
-
-    /** Shortens given filename to max length, keeping file-extension if existent. */
-    private static String shortenFilename(final String fileName, final int maxLength) {
-        if (maxLength <= 0) {
-            throw new IllegalArgumentException();
-        }
-        if (fileName.length() <= maxLength) {
-            return fileName;
-        }
-        if (fileName.contains(".")) {
-            final String ext = fileName.substring(fileName.lastIndexOf("."));
-            return fileName.substring(0, maxLength - ext.length()) + ext;
-        } else {
-            return fileName.substring(0, maxLength);
-        }
     }
 
     @Override
