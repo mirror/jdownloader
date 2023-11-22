@@ -516,21 +516,31 @@ public class OldRAFDownload extends DownloadInterface {
             }
             // Erst hier Dateinamen holen, somit umgeht man das Problem das bei
             // mehrfachAufruf von connect entstehen kann
-            final String filenameFromHeader = Plugin.getFileNameFromHeader(connection);
-            if (this.downloadable.getFinalFileName() == null && (filenameFromHeader != null || this.allowFilenameFromURL)) {
+            /* Do some filename corrections. */
+            final String filenameFromContentDispositionHeader = Plugin.getFileNameFromDispositionHeader(connection);
+            final String filenameFromURL = Plugin.getFileNameFromURL(connection.getURL());
+            if (this.downloadable.getFinalFileName() == null && (filenameFromContentDispositionHeader != null || this.allowFilenameFromURL)) {
                 if (this.fixWrongContentDispositionHeader) {
-                    this.downloadable.setFinalFileName(Encoding.htmlDecode(filenameFromHeader));
+                    this.downloadable.setFinalFileName(Encoding.htmlDecode(filenameFromContentDispositionHeader));
                 } else {
-                    this.downloadable.setFinalFileName(filenameFromHeader);
+                    this.downloadable.setFinalFileName(filenameFromContentDispositionHeader);
                 }
-            } else if (filenameFromHeader == null) {
+            } else if (this.downloadable.getFinalFileName() == null && (filenameFromURL != null || this.allowFilenameFromURL)) {
+                if (this.fixWrongContentDispositionHeader) {
+                    this.downloadable.setFinalFileName(Encoding.htmlDecode(filenameFromURL));
+                } else {
+                    this.downloadable.setFinalFileName(filenameFromURL);
+                }
+            }
+            /* Now check if we are allowed to fix the filename extension. Filenames from URL can have the wrong extension! */
+            if (filenameFromContentDispositionHeader == null && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
                 /**
                  * TODO: Review this: Maybe don't correct filenames if they were forced by the user(?) On the other hand we may know which
                  * file-extension is the correct one. I'd do it like browsers do it and correct the file-extension.
                  */
                 /* Fix wrong file-extension */
                 final String ext = Plugin.getExtensionFromMimeTypeStatic(connection.getContentType());
-                if (ext != null && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                if (ext != null) {
                     this.downloadable.setFinalFileName(Plugin.getCorrectOrApplyFileNameExtension(this.downloadable.getName(), "." + ext));
                 }
             }
