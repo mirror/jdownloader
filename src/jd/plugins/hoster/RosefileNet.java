@@ -97,7 +97,7 @@ public class RosefileNet extends PluginForHost {
     /* Connection stuff */
     private static final int FREE_MAXDOWNLOADS            = 1;
     private static final int ACCOUNT_FREE_MAXDOWNLOADS    = 1;
-    private static final int ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
+    private static final int ACCOUNT_PREMIUM_MAXDOWNLOADS = Integer.MAX_VALUE;
 
     @Override
     public String getLinkID(final DownloadLink link) {
@@ -134,6 +134,7 @@ public class RosefileNet extends PluginForHost {
             filename = br.getRegex("<h3>([^<]+)</h3>").getMatch(0);
         }
         if (filename == null) {
+            /* Try to get filename from URL */
             filename = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(2);
         }
         if (filename != null) {
@@ -146,6 +147,8 @@ public class RosefileNet extends PluginForHost {
                 filesize += "b";
             }
             link.setDownloadSize(SizeFormatter.getSize(filesize));
+        } else {
+            logger.warning("Failed to find filesize");
         }
         return AvailableStatus.TRUE;
     }
@@ -205,7 +208,7 @@ public class RosefileNet extends PluginForHost {
                 if (AbstractRecaptchaV2.containsRecaptchaV2Class(br)) {
                     /* New 2023-11-15 */
                     final UrlQuery query = new UrlQuery();
-                    query.add("action", "check_recaptchac");
+                    query.add("action", "check_recaptcha");
                     query.add("file_id", internalFileID);
                     final String reCaptchav2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
                     query.add("token", Encoding.urlEncode(reCaptchav2Response));

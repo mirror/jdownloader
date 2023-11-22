@@ -36,6 +36,7 @@ import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.DirectHTTP;
@@ -69,7 +70,7 @@ public class ThreeQVideo extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://" + buildHostsPatternPart(domains) + "/(?:config|embed)/([a-f0-9\\-]+(\\?[^/]+)?)");
+            ret.add("https?://" + buildHostsPatternPart(domains) + "/(?:(?:config|embed)/)?([a-f0-9\\-]+(\\?[^/]+)?)");
         }
         return ret.toArray(new String[0]);
     }
@@ -79,6 +80,8 @@ public class ThreeQVideo extends PluginForDecrypt {
         br.setFollowRedirects(true);
         final String contentID = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
         if (contentID == null) {
+            /* Developer mistake */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br.getHeaders().put("Accept", "*/*");
         try {
@@ -110,24 +113,40 @@ public class ThreeQVideo extends PluginForDecrypt {
             fp.setComment(description);
         }
         final ThreeQVideoConfig cfg = PluginJsonConfig.get(ThreeQVideoConfig.class);
+        /* Crawl audio/video items */
         final Map<String, Object> sources = (Map<String, Object>) root.get("sources");
         final List<Map<String, Object>> sourcesProgressive = (List<Map<String, Object>>) sources.get("progressive");
         int heightMax = -1;
         DownloadLink maxQuality = null;
         for (final Map<String, Object> sourceProgressive : sourcesProgressive) {
             final String directurl = sourceProgressive.get("src").toString();
+            String ext = null;
+            final String mimetype = (String) sourceProgressive.get("type");
+            if (mimetype != null) {
+                ext = Plugin.getExtensionFromMimeTypeStatic(mimetype);
+            }
+            if (ext != null) {
+                ext = "." + ext;
+            } else {
+                /* Fallback 1 */
+                ext = Plugin.getFileNameExtensionFromURL(directurl);
+            }
+            if (ext == null) {
+                /* Fallback 2 */
+                ext = ".mp4";
+            }
             final int height = ((Number) sourceProgressive.get("height")).intValue();
-            final String filename = dateFormatted + "_" + title + "_" + height + "p.mp4";
-            final DownloadLink video = this.createDownloadlink(directurl);
-            video.setFinalFileName(filename);
-            video.setProperty(DirectHTTP.FIXNAME, filename);
-            video.setAvailable(true);
-            video._setFilePackage(fp);
+            final String filename = dateFormatted + "_" + title + "_" + height + "p" + ext;
+            final DownloadLink media = this.createDownloadlink(DirectHTTP.createURLForThisPlugin(directurl));
+            media.setFinalFileName(filename);
+            media.setProperty(DirectHTTP.FIXNAME, filename);
+            media.setAvailable(true);
+            media._setFilePackage(fp);
             if (height > heightMax) {
                 heightMax = height;
-                maxQuality = video;
+                maxQuality = media;
             }
-            ret.add(video);
+            ret.add(media);
         }
         /* Check if user wants best quality only. */
         if (cfg.isOnlyGrabBestQuality()) {
