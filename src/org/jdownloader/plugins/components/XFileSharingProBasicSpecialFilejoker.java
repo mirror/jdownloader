@@ -608,6 +608,7 @@ public class XFileSharingProBasicSpecialFilejoker extends XFileSharingProBasic {
                     logger.info("Successfully logged in via API and used API cookies for website");
                     if (ai != null) {
                         logger.info("Returning AccountInfo from API");
+                        /* 2023-11-22: Workaround for wrong "traffic left" value returned by API. */
                         final String trafficleftWebsiteStr = regExTrafficLeft(br);
                         if (trafficleftWebsiteStr != null) {
                             final long trafficleftWebsiteBytes = SizeFormatter.getSize(trafficleftWebsiteStr);
