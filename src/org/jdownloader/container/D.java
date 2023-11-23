@@ -650,6 +650,7 @@ public class D extends PluginsC {
             String oos = ps.item(pgs).getAttributes().getNamedItem("passwords") == null ? null : Encoding.Base64Decode(ps.item(pgs).getAttributes().getNamedItem("passwords").getNodeValue());
             String cs2 = ps.item(pgs).getAttributes().getNamedItem("comment") == null ? null : Encoding.Base64Decode(ps.item(pgs).getAttributes().getNamedItem("comment").getNodeValue());
             String ca3 = ps.item(pgs).getAttributes().getNamedItem("category") == null ? null : Encoding.Base64Decode(ps.item(pgs).getAttributes().getNamedItem("category").getNodeValue());
+            // TODO: 2023-11-23: Why is this check for "n.A." here?
             if (packagename != null && !"n.A.".equals(packagename)) {
                 // n.A. is no good default packageName
                 dpi.setName(LinknameCleaner.cleanPackagename(packagename, false, true, LinknameCleaner.EXTENSION_SETTINGS.KEEP, false));
