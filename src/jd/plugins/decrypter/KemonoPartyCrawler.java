@@ -383,7 +383,8 @@ public class KemonoPartyCrawler extends PluginForDecrypt {
         return ret;
     }
 
-    private DownloadLink buildFileDownloadLinkAPI(final HashSet<String> dupes, final Map<String, Object> filemap, final int index) {
+    private DownloadLink buildFileDownloadLinkAPI(final HashSet<String> dupes, final Map<String, Object> filemap, final int index) throws PluginException {
+        this.ensureInitHosterplugin();
         final String filename = filemap.get("name").toString();
         final String filepath = filemap.get("path").toString();
         final String url = "https://" + this.getHost() + "/data" + filepath + "?f=" + Encoding.urlEncode(filename);
