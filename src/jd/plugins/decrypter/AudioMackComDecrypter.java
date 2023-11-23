@@ -19,7 +19,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.controller.LazyPlugin;
@@ -27,7 +26,6 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -85,25 +83,24 @@ public class AudioMackComDecrypter extends PluginForDecrypt {
     /* 2019-01-24: API support is broken */
     private static final boolean USE_OAUTH_API = true;
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         if (USE_OAUTH_API) {
-            final String parameter = param.toString();
+            final String contenturl = param.getCryptedUrl();
             br.setFollowRedirects(true);
-            br.getPage(parameter);
+            br.getPage(contenturl);
             String ogurl = br.getRegex("\"og:url\" content=\"([^\"]+)\"").getMatch(0);
-            final String title_url = new Regex(parameter, "https?://[^<>\"/]+/(.+)").getMatch(0);
-            final String musicType = new Regex(ogurl, ".*(album|playlist)/.*").getMatch(0);
+            final String title_url = new Regex(contenturl, "https?://[^<>\"/]+/(.+)").getMatch(0);
+            final String musicType = new Regex(ogurl, "(?i).*(album|playlist)/.*").getMatch(0);
             if (musicType == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             boolean embedMode = new Regex(ogurl, ".+?/embed/(?:album|playlist)/.+?/.+$").matches();
             br.getPage(AudioMa.getOAuthQueryString(br));
-            if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("\"track_count\":0,")) {
-                decryptedLinks.add(createOfflinelink(parameter, title_url, null));
-                return decryptedLinks;
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
+            final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
             final Map<String, Object> results = (Map<String, Object>) entries.get("results");
             final String status = (String) results.get("status");
             if (status != null && status.equalsIgnoreCase("suspended")) {
@@ -116,12 +113,10 @@ public class AudioMackComDecrypter extends PluginForDecrypt {
             @SuppressWarnings("unchecked")
             final List<Map<String, Object>> tracks = (List<Map<String, Object>>) results.get("tracks");
             int index = 0;
-            for (Map<String, Object> track : tracks) {
-                String url = (String) track.get("download_url");
-                if (StringUtils.isEmpty(url)) {
-                    url = (String) track.get("streaming_url");
-                }
-                final DownloadLink dl = createDownloadlink(url);
+            for (final Map<String, Object> track : tracks) {
+                final String uploader_url_slug = track.get("uploader_url_slug").toString();
+                final String url_slug = track.get("url_slug").toString();
+                final DownloadLink dl = createDownloadlink("https://audiomack.com/" + uploader_url_slug + "/song/" + url_slug);
                 String title = (String) track.get("title");
                 String feat = (String) track.get("featuring");
                 String fileName;
@@ -142,7 +137,7 @@ public class AudioMackComDecrypter extends PluginForDecrypt {
                     dl.setComment(description);
                 }
                 dl.setContentUrl(ogurl);
-                decryptedLinks.add(dl);
+                ret.add(dl);
                 index++;
             }
             String fpName;
@@ -155,21 +150,19 @@ public class AudioMackComDecrypter extends PluginForDecrypt {
             }
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName.trim()));
-            fp.addLinks(decryptedLinks);
-            return decryptedLinks;
+            fp.addLinks(ret);
+            return ret;
         } else {
-            br = new Browser();
-            final String parameter = param.toString().replaceFirst("/embed\\d-album/", "/album/");
+            final String contenturl = param.getCryptedUrl().replaceFirst("(?i)/embed\\d-album/", "/album/");
             br.setFollowRedirects(true);
-            br.getPage(parameter);
+            br.getPage(contenturl);
             /* Offline or not yet released */
             if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("class=\"countdown\\-clock\"|This song has been removed due to a DMCA Complaint")) {
-                decryptedLinks.add(createOfflinelink(parameter, new Regex(parameter, "https?://[^<>\"/]+/(.+)").getMatch(0), null));
-                return decryptedLinks;
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             String fpName = br.getRegex("name=\"twitter:title\" content=\"([^<>\"]*?)\"").getMatch(0);
             if (fpName == null) {
-                final Regex paraminfo = new Regex(parameter, "/([A-Za-z0-9\\-_]+)/([A-Za-z0-9\\-_]+)$");
+                final Regex paraminfo = new Regex(contenturl, "/([A-Za-z0-9\\-_]+)/([A-Za-z0-9\\-_]+)$");
                 fpName = paraminfo.getMatch(0) + " - " + paraminfo.getMatch(1).replace("-", " ");
             }
             final String plaintable = br.getRegex("<div id=\"playlist\" class=\"plwrapper\" for=\"audiomack\\-embed\">(.*?</div>[\t\n\r ]+</div>[\t\n\r ]+</div>(<\\!\\-\\-/\\.song\\-wrap\\-\\->)?)[\t\n\r ]+</div>[\t\n\r ]+</div>").getMatch(0);
@@ -190,12 +183,12 @@ public class AudioMackComDecrypter extends PluginForDecrypt {
                     fina.setFinalFileName(finalname);
                     fina.setAvailable(true);
                     fina.setProperty("plain_filename", finalname);
-                    fina.setProperty("mainlink", parameter);
+                    fina.setProperty("mainlink", contenturl);
                     if (description != null) {
                         fina.setComment(Encoding.htmlDecode(description));
                     }
-                    fina.setContentUrl(parameter);
-                    decryptedLinks.add(fina);
+                    fina.setContentUrl(contenturl);
+                    ret.add(fina);
                 }
             }
             fpName = Encoding.htmlDecode(fpName.trim());
@@ -205,12 +198,12 @@ public class AudioMackComDecrypter extends PluginForDecrypt {
                 fina.setFinalFileName(fpName + ".zip");
                 fina.setAvailable(true);
                 fina.setContentUrl(ziplink);
-                decryptedLinks.add(fina);
+                ret.add(fina);
             }
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName.trim()));
-            fp.addLinks(decryptedLinks);
-            return decryptedLinks;
+            fp.addLinks(ret);
+            return ret;
         }
     }
 }
