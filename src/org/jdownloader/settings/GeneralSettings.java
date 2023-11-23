@@ -343,13 +343,23 @@ public interface GeneralSettings extends ConfigInterface {
     @DefaultBooleanValue(true)
     boolean isCleanUpFilenames();
 
+    /** Important: Keep default value the same for: getPackagenameCharacterRegexReplaceMap and getFilenameCharacterRegexReplaceMap !! */
     @AboutConfig
-    @DescriptionForConfigEntry("Returns mapping of common invalid characters as regular expression to be replaced inside filenames / file paths. This is used to try to avoid invalid download paths/filenames and at the same time try to preserve the original filename/path.")
+    @DescriptionForConfigEntry("Returns mapping of common invalid characters as regular expression to be replaced inside filenames. This is used to try to avoid invalid download paths due to forbidden characters in filenames.")
     @DefaultJsonObject("{\":\":\";\",\"\\\\|\":\"\u00A6\",\"<\":\"[\",\">\":\"]\",\"/\":\"\u2044\",\"\\\\\\\\\":\"\u2216\",\"\\\\*\":\"#\",\"\\\\?\":\"\u00BF\",\"\\\\!\":\"\u00A1\",\"\\\"\":\"'\"}")
     @DefaultOnNull
-    Map<String, String> getFilenameAndPathCharacterRegexReplaceMap();
+    Map<String, String> getFilenameCharacterRegexReplaceMap();
 
-    public void setFilenameAndPathCharacterRegexReplaceMap(Map<String, String> map);
+    public void setFilenameCharacterRegexReplaceMap(Map<String, String> map);
+
+    /** Important: Keep default value the same for: getPackagenameCharacterRegexReplaceMap and getFilenameCharacterRegexReplaceMap !! */
+    @AboutConfig
+    @DescriptionForConfigEntry("Returns mapping of common invalid characters as regular expression to be replaced inside package names. This is used to try to avoid invalid download paths due to forbidden characters in package names.")
+    @DefaultJsonObject("{\":\":\";\",\"\\\\|\":\"\u00A6\",\"<\":\"[\",\">\":\"]\",\"/\":\"\u2044\",\"\\\\\\\\\":\"\u2216\",\"\\\\*\":\"#\",\"\\\\?\":\"\u00BF\",\"\\\\!\":\"\u00A1\",\"\\\"\":\"'\"}")
+    @DefaultOnNull
+    Map<String, String> getPackagenameCharacterRegexReplaceMap();
+
+    public void setPackagenameCharacterRegexReplaceMap(Map<String, String> map);
 
     boolean isClosedWithRunningDownloads();
 
