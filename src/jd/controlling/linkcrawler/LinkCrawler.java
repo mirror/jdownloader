@@ -3028,9 +3028,9 @@ public class LinkCrawler {
             }
             final String name;
             if (fp.isCleanupPackageName()) {
-                name = LinknameCleaner.cleanPackagename(fp.getName());
+                name = LinknameCleaner.cleanPackagename(fp, fp.getName(), false, true, LinknameCleaner.EXTENSION_SETTINGS.REMOVE_KNOWN, true);
             } else {
-                name = fp.getName();
+                name = LinknameCleaner.cleanPackagename(fp, fp.getName(), false, true, LinknameCleaner.EXTENSION_SETTINGS.REMOVE_KNOWN, false);
             }
             if (StringUtils.isNotEmpty(name)) {
                 if (fpi == null && (fpi = link.getDesiredPackageInfo()) == null) {

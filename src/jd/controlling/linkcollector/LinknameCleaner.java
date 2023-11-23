@@ -143,12 +143,20 @@ public class LinknameCleaner {
         }
     }
 
-    public static String cleanFileName(String name, boolean splitUpperLowerCase, boolean ignoreArchiveFilters, final EXTENSION_SETTINGS extensionSettings, boolean cleanup) {
-        return cleanFileName(null, name, splitUpperLowerCase, ignoreArchiveFilters, extensionSettings, cleanup);
+    public static String cleanFilename(final String filename, final boolean removeLeadingHidingDot) {
+        String newfinalFileName = filename;
+        newfinalFileName = replaceCharactersByMap(filename, FILENAME_REPLACEMAP);
+        /* We can never know how users alter the setting so let's do one more round with our default replace map. */
+        newfinalFileName = replaceCharactersByMap(filename, FILENAME_REPLACEMAP_DEFAULT);
+        newfinalFileName = CrossSystem.alleviatePathParts(newfinalFileName, removeLeadingHidingDot);
+        return newfinalFileName;
     }
 
-    /* TODO: Refactor this and rename it to "cleanPackageName" */
-    public static String cleanFileName(AbstractNode node, String name, boolean splitUpperLowerCase, boolean ignoreArchiveFilters, final EXTENSION_SETTINGS extensionSettings, boolean cleanup) {
+    public static String cleanPackagename(String name, boolean splitUpperLowerCase, boolean ignoreArchiveFilters, final EXTENSION_SETTINGS extensionSettings, boolean allowCleanup) {
+        return cleanPackagename(null, name, splitUpperLowerCase, ignoreArchiveFilters, extensionSettings, allowCleanup);
+    }
+
+    public static String cleanPackagename(AbstractNode node, String name, boolean splitUpperLowerCase, boolean ignoreArchiveFilters, final EXTENSION_SETTINGS extensionSettings, boolean allowCleanup) {
         if (name == null) {
             return null;
         }
@@ -269,7 +277,7 @@ public class LinknameCleaner {
             name = name.substring(0, removeIndex);
         }
         /* if enabled, replace dots and _ with spaces and do further clean ups */
-        if (cleanup && org.jdownloader.settings.staticreferences.CFG_GENERAL.CLEAN_UP_FILENAMES.isEnabled()) {
+        if (allowCleanup && org.jdownloader.settings.staticreferences.CFG_GENERAL.CLEAN_UP_PACKAGENAMES.isEnabled()) {
             StringBuilder sb = new StringBuilder();
             char[] cs = name.toCharArray();
             char lastChar = 'a';
@@ -297,19 +305,6 @@ public class LinknameCleaner {
             name = sb.toString();
         }
         return name.trim();
-    }
-
-    public static String cleanPackagename(final String packagename) {
-        return LinknameCleaner.cleanFileName(null, packagename, false, true, LinknameCleaner.EXTENSION_SETTINGS.REMOVE_KNOWN, true);
-    }
-
-    public static String cleanFilename(final String filename, final boolean removeLeadingHidingDot) {
-        String newfinalFileName = filename;
-        newfinalFileName = replaceCharactersByMap(filename, FILENAME_REPLACEMAP);
-        /* We can never know how users alter the setting so let's do one more round with our default replace map. */
-        newfinalFileName = replaceCharactersByMap(filename, FILENAME_REPLACEMAP_DEFAULT);
-        newfinalFileName = CrossSystem.alleviatePathParts(newfinalFileName, removeLeadingHidingDot);
-        return newfinalFileName;
     }
 
     private static String getNameMatch(String name, Pattern pattern) {

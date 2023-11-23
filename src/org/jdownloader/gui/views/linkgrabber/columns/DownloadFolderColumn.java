@@ -7,14 +7,6 @@ import java.util.ArrayList;
 
 import javax.swing.JPopupMenu;
 
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcollector.LinknameCleaner;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
-import jd.controlling.linkcrawler.CrawledPackage.TYPE;
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.controlling.packagecontroller.AbstractPackageNode;
-
 import org.appwork.swing.components.ExtButton;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.appwork.utils.StringUtils;
@@ -30,6 +22,14 @@ import org.jdownloader.gui.views.downloads.columns.FileColumn;
 import org.jdownloader.gui.views.linkgrabber.contextmenu.SetDownloadFolderInLinkgrabberAction;
 import org.jdownloader.settings.staticreferences.CFG_LINKCOLLECTOR;
 import org.jdownloader.translate._JDT;
+
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinknameCleaner;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
+import jd.controlling.linkcrawler.CrawledPackage.TYPE;
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.controlling.packagecontroller.AbstractPackageNode;
 
 public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
     /**
@@ -143,13 +143,13 @@ public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
             final CrawledPackage pkg = new CrawledPackage();
             pkg.setExpanded(CFG_LINKCOLLECTOR.CFG.isPackageAutoExpanded());
             if (TYPE.NORMAL != p.getType()) {
-                final String pkgName;
+                final String packagename;
                 if (object instanceof AbstractPackageNode) {
-                    pkgName = LinknameCleaner.cleanFileName(object.getName(), false, true, LinknameCleaner.EXTENSION_SETTINGS.REMOVE_KNOWN, true);
+                    packagename = LinknameCleaner.cleanPackagename(object.getName(), false, true, LinknameCleaner.EXTENSION_SETTINGS.REMOVE_KNOWN, true);
                 } else {
-                    pkgName = LinknameCleaner.cleanFileName(object.getName(), false, true, LinknameCleaner.EXTENSION_SETTINGS.REMOVE_ALL, true);
+                    packagename = LinknameCleaner.cleanPackagename(object.getName(), false, true, LinknameCleaner.EXTENSION_SETTINGS.REMOVE_ALL, true);
                 }
-                pkg.setName(pkgName);
+                pkg.setName(packagename);
             } else {
                 pkg.setName(p.getName());
             }

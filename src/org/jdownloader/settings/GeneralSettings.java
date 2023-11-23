@@ -338,10 +338,12 @@ public interface GeneralSettings extends ConfigInterface {
     boolean isAutoOpenContainerAfterDownload();
 
     @AboutConfig
-    @DescriptionForConfigEntry("If enabled, filenames and packagenames will be cleaned up of superfluous . and _ characters, and replaced with spaces. Please note plugins can override this setting.")
+    @DescriptionForConfigEntry("If enabled, packagenames will be cleaned up of superfluous . and _ characters, and replaced with spaces. Plugins can override this setting.")
     @RequiresRestart("A JDownloader Restart is Required")
     @DefaultBooleanValue(true)
-    boolean isCleanUpFilenames();
+    boolean isCleanUpPackagenames();
+
+    void setCleanUpPackagenames(boolean b);
 
     /** Important: Keep default value the same for: getPackagenameCharacterRegexReplaceMap and getFilenameCharacterRegexReplaceMap !! */
     @AboutConfig
@@ -420,8 +422,6 @@ public interface GeneralSettings extends ConfigInterface {
     void setBrowserCommandLine(String[] b);
 
     void setCleanupAfterDownloadAction(CleanAfterDownloadAction action);
-
-    void setCleanUpFilenames(boolean b);
 
     @DescriptionForConfigEntry("Is true, if jdownloader got closed with running downloads.")
     @DefaultBooleanValue(false)

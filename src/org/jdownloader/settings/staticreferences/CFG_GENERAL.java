@@ -159,7 +159,7 @@ public class CFG_GENERAL {
      * If enabled, filename will be cleaned up of superfluous . and _ characters, and replaced with spaces. Please note plugins can override
      * this setting.
      **/
-    public static final BooleanKeyHandler               CLEAN_UP_FILENAMES                                               = SH.getKeyHandler("CleanUpFilenames", BooleanKeyHandler.class);
+    public static final BooleanKeyHandler               CLEAN_UP_PACKAGENAMES                                            = SH.getKeyHandler("CleanUpPackagenames", BooleanKeyHandler.class);
     /**
      * How many downloads more than getMaxSimultaneDownloads should JDownloader download at once when forced?
      **/

@@ -27,6 +27,21 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
+import org.appwork.utils.Files;
+import org.appwork.utils.Hash;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ExtensionsFilterInterface;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.updatev2.UpdateController;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
+
 import jd.config.SubConfiguration;
 import jd.controlling.linkcollector.LinknameCleaner;
 import jd.controlling.linkcrawler.CrawledLink;
@@ -46,21 +61,6 @@ import jd.plugins.PluginsC;
 import jd.utils.JDHexUtils;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.Files;
-import org.appwork.utils.Hash;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ExtensionsFilterInterface;
-import org.jdownloader.logging.LogController;
-import org.jdownloader.updatev2.UpdateController;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-import org.xml.sax.InputSource;
-import org.xml.sax.SAXException;
 
 public class D extends PluginsC {
     private byte[]                  b3;
@@ -646,13 +646,13 @@ public class D extends PluginsC {
                 continue;
             }
             final PackageInfo dpi = new PackageInfo();
-            String pn = Encoding.Base64Decode(ps.item(pgs).getAttributes().getNamedItem("name").getNodeValue());
+            final String packagename = Encoding.Base64Decode(ps.item(pgs).getAttributes().getNamedItem("name").getNodeValue());
             String oos = ps.item(pgs).getAttributes().getNamedItem("passwords") == null ? null : Encoding.Base64Decode(ps.item(pgs).getAttributes().getNamedItem("passwords").getNodeValue());
             String cs2 = ps.item(pgs).getAttributes().getNamedItem("comment") == null ? null : Encoding.Base64Decode(ps.item(pgs).getAttributes().getNamedItem("comment").getNodeValue());
             String ca3 = ps.item(pgs).getAttributes().getNamedItem("category") == null ? null : Encoding.Base64Decode(ps.item(pgs).getAttributes().getNamedItem("category").getNodeValue());
-            if (pn != null && !"n.A.".equals(pn)) {
+            if (packagename != null && !"n.A.".equals(packagename)) {
                 // n.A. is no good default packageName
-                dpi.setName(LinknameCleaner.cleanFileName(pn, false, true, LinknameCleaner.EXTENSION_SETTINGS.KEEP, false));
+                dpi.setName(LinknameCleaner.cleanPackagename(packagename, false, true, LinknameCleaner.EXTENSION_SETTINGS.KEEP, false));
             }
             if (ca3 != null && ca3.trim().length() > 0) {
                 // dpi.setComment("[" + ca3 + "] " + cs2);
