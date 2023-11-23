@@ -93,9 +93,9 @@ public interface ShutdownTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Keep Shutdown enabled" })
     String config_active_by_default();
 
-    @Default(lngs = { "en" }, values = { "Enable ShutdownExtension after Downloads" })
+    @Default(lngs = { "en" }, values = { "ShutdownExtension after Downloads disabled" })
     String shutdown_toggle_action_enable();
 
-    @Default(lngs = { "en" }, values = { "Disable ShutdownExtension after Downloads" })
+    @Default(lngs = { "en" }, values = { "ShutdownExtension after Downloads enabled" })
     String shutdown_toggle_action_disable();
 }
