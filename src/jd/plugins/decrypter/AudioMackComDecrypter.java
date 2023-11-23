@@ -26,6 +26,7 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -42,6 +43,13 @@ import jd.plugins.hoster.DirectHTTP;
 public class AudioMackComDecrypter extends PluginForDecrypt {
     public AudioMackComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.setFollowRedirects(true);
+        return br;
     }
 
     @Override
@@ -89,7 +97,6 @@ public class AudioMackComDecrypter extends PluginForDecrypt {
         final String packageidprefix = "audiomack://";
         if (USE_OAUTH_API) {
             final String contenturl = param.getCryptedUrl();
-            br.setFollowRedirects(true);
             br.getPage(contenturl);
             String ogurl = br.getRegex("\"og:url\" content=\"([^\"]+)\"").getMatch(0);
             final String musicType = new Regex(ogurl, "(?i).*(album|playlist)/.*").getMatch(0);
@@ -146,7 +153,6 @@ public class AudioMackComDecrypter extends PluginForDecrypt {
             return ret;
         } else {
             final String contenturl = param.getCryptedUrl().replaceFirst("(?i)/embed\\d-album/", "/album/");
-            br.setFollowRedirects(true);
             br.getPage(contenturl);
             /* Offline or not yet released */
             if (br.getHttpConnection().getResponseCode() == 404) {
