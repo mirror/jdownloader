@@ -33,12 +33,14 @@
         }
       }
     ],
+    "description":"Pure Java Sqlite Library",
     "hashes":{"sqljet.jar":"df7463424e3560f5e8c8003e1816c0a6ea6e84673921ca5af05b90b0892b3c97"},
     "licenses":[{
       "name":"GPL (with dual licensing option)",
       "url":"http://www.gnu.org/licenses/gpl.html"
     }],
     "minJRE":"JVM_1_5",
+    "name":"SqlJet Library",
     "version":"1.1.10"
   },
   "minJRE":"1.6",

@@ -4,9 +4,11 @@
   "installed":{
     "date":"2023-09-04T11:08:34 CEST",
     "dependencies":null,
+    "description":"Synthetica Look And Feel Library",
     "hashes":{"synthetica.jar":"ae423de80385c34a925d2776b29bcca83707dcde60011a81f453a9a19819c66e"},
     "licenses":["Licensed by AppWork GmbH for all AppWork products."],
-    "minJRE":"JVM_1_5",
+    "minJRE":"JVM_1_6",
+    "name":"Synthetica",
     "version":"2.34.0"
   },
   "minJRE":"1.6",

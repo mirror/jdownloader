@@ -17,9 +17,11 @@
         "scope":"compile"
       }
     ],
+    "description":"A framework for constructing recognizers, compilers, and translators from grammatical descriptions containing Java, C#, C++, or Python actions.",
     "hashes":{"antlr-runtime.jar":"5b7cf53b7b30b034023f58030c8147c433f2bee0fe7dec8fae6bebf3708c5a63"},
-    "licenses":[],
+    "licenses":["BSD"],
     "minJRE":"JVM_1_4",
+    "name":"Antlr 3.4 Runtime",
     "version":"3.4"
   },
   "minJRE":"1.6",

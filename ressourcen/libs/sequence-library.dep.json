@@ -9,12 +9,14 @@
       "version":"3.8.2",
       "scope":"test"
     }],
+    "description":"Textual Diff and Merge Library",
     "hashes":{"sequence-library.jar":"2f36485bec6bb5f7ba97a40241462f3ce8b4dde2ad1acfe08ea3712450d9e7ea"},
     "licenses":[{
       "name":"Sequence Library License",
       "url":"http://www.svnkit.com/SEQUENCE-LICENSE.txt"
     }],
     "minJRE":"JVM_1_4",
+    "name":"Sequence Library",
     "version":"1.0.2"
   },
   "minJRE":"1.6",

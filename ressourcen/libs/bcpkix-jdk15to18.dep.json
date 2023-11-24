@@ -2,29 +2,31 @@
   "artefact":"org.bouncycastle/bcpkix-jdk15to18",
   "filter":null,
   "installed":{
-    "date":"2023-09-04T11:08:34 CEST",
+    "date":"2023-11-20T17:16:30 CET",
     "dependencies":[
       {
         "groupId":"org.bouncycastle",
         "artifactId":"bcprov-jdk15to18",
-        "version":1.76,
+        "version":1.77,
         "type":"jar"
       },
       {
         "groupId":"org.bouncycastle",
         "artifactId":"bcutil-jdk15to18",
-        "version":1.76,
+        "version":1.77,
         "type":"jar"
       }
     ],
-    "hashes":{"bcpkix-jdk15on.jar":"1b437ec94be3f5db003029884ad9426a98cfabc2e61811aed262703826d86b2b"},
+    "description":"The Bouncy Castle Java APIs for CMS, PKCS, EAC, TSP, CMP, CRMF, OCSP, and certificate generation. This jar contains APIs for JDK 1.5 to JDK 1.8. The APIs can be used in conjunction with a JCE/JCA provider such as the one provided with the Bouncy Castle Cryptography APIs.",
+    "hashes":{"bcpkix-jdk15on.jar":"264e3757d6443388ea6fcfb5e6b716c8681ec2f7c70fdd06f439f2aab17f1861"},
     "licenses":[{
       "name":"Bouncy Castle Licence",
       "url":"http://www.bouncycastle.org/licence.html",
       "distribution":"repo"
     }],
     "minJRE":"JVM_1_5",
-    "version":"1.76"
+    "name":"Bouncy Castle PKIX, CMS, EAC, TSP, PKCS, OCSP, CMP, and CRMF APIs",
+    "version":"1.77"
   },
   "minJRE":"1.6",
   "provider":"maven",

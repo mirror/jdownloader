@@ -2,15 +2,17 @@
   "artefact":"com.formdev/flatlaf",
   "filter":["flatlaf.jar"],
   "installed":{
-    "date":"2023-09-05T09:26:46 CEST",
+    "date":"2023-10-23T16:03:02 CEST",
     "dependencies":[],
-    "hashes":{"flatlaf.jar":"7d8317fe13b26088994d66663af8e87c12390ee8087f7ba74b68638f4a55f440"},
+    "description":"Flat Look and Feel",
+    "hashes":{"flatlaf.jar":"bfb14cef748b364761115fa6756409c19fa668aa8c3647fa5590ed206ecf698f"},
     "licenses":[{
       "name":"The Apache License, Version 2.0",
       "url":"https://www.apache.org/licenses/LICENSE-2.0.txt"
     }],
     "minJRE":"JVM_1_8",
-    "version":"3.2.1"
+    "name":"FlatLaf",
+    "version":"3.2.5"
   },
   "minJRE":"1.8",
   "provider":"maven",

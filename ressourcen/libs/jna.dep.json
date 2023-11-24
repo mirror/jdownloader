@@ -4,6 +4,7 @@
   "installed":{
     "date":"2023-09-04T11:08:34 CEST",
     "dependencies":[],
+    "description":"Java Native Access",
     "hashes":{"jna.jar":"66d4f819a062a51a1d5627bffc23fac55d1677f0e0a1feba144aabdd670a64bb"},
     "licenses":[
       {
@@ -20,6 +21,7 @@
       }
     ],
     "minJRE":"JVM_1_6",
+    "name":"Java Native Access",
     "version":"5.13.0"
   },
   "minJRE":"1.6",

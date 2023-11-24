@@ -53,12 +53,14 @@
         "scope":"compile"
       }
     ],
+    "description":"Pure Java Subversion Library",
     "hashes":{"svnkit.jar":"09cb0908ec713b6aa307881c3fbd3f7b504430beae1d51120b974e2fc541fb6e"},
     "licenses":[{
       "name":"TMate Open Source License (with dual licensing option)",
       "url":"http://www.svnkit.com/license.html"
     }],
     "minJRE":"JVM_1_6",
+    "name":"SVNKit Library",
     "version":"1.8.10"
   },
   "minJRE":"1.6",
