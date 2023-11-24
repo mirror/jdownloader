@@ -2130,7 +2130,9 @@ public class VKontakteRu extends PluginForDecrypt {
                 }
             }
             if (grabPhoto && photosMap != null) {
+                final int count = ((Number) photosMap.get("count")).intValue();
                 final List<Map<String, Object>> photos = (List<Map<String, Object>>) photosMap.get("items");
+                logger.info("WebAPI photos.get: Count: " + count + " | Crawling now: " + photos.size());
                 for (final Map<String, Object> photo : photos) {
                     final String owner_id = photo.get("owner_id").toString();
                     final String content_id = photo.get("id").toString();

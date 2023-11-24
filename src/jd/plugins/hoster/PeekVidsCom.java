@@ -19,7 +19,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
@@ -38,6 +37,7 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -50,6 +50,16 @@ public class PeekVidsCom extends PluginForHost {
     public PeekVidsCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://accounts.playvid.com/peekvids/join");
+    }
+
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        /* 2021-07-30: Up2date User-Agent --> Less rate-limit captchas (??) */
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.107 Safari/537.36");
+        br.setFollowRedirects(true);
+        br.addAllowedResponseCodes(410, 429);
+        return br;
     }
 
     @Override
@@ -92,14 +102,6 @@ public class PeekVidsCom extends PluginForHost {
         return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
-    private Browser prepBR(final Browser br) {
-        /* 2021-07-30: Current User-Agent --> Less rate-limit captchas (??) */
-        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.107 Safari/537.36");
-        br.setFollowRedirects(true);
-        br.addAllowedResponseCodes(410, 429);
-        return br;
-    }
-
     /**
      * Free account = HD (720p) versions are (sometimes) available.
      *
@@ -113,11 +115,11 @@ public class PeekVidsCom extends PluginForHost {
 
     public AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
         dllink = null;
+        final String extDefault = ".mp4";
         if (!link.isNameSet()) {
-            link.setName(this.getFID(link) + ".mp4");
+            link.setName(this.getFID(link) + extDefault);
         }
         this.setBrowserExclusive();
-        prepBR(this.br);
         synchronized (cookies) {
             if (cookies.containsKey(this.getHost())) {
                 br.setCookies(cookies.get(this.getHost()));
@@ -181,12 +183,12 @@ public class PeekVidsCom extends PluginForHost {
             }
         }
         if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 410 || br.containsHTML("Video not found<|class=\"play\\-error\"|This video was (deleted|removed)")) {
-            // filename can be present with offline links, so lets set it!
-            String filename = br.getRegex("<h2>((?!Related Videos).*?)</h2>").getMatch(0);
-            if (filename != null) {
-                filename = Encoding.htmlDecode(filename);
-                filename = filename.trim();
-                link.setFinalFileName(filename + ".mp4");
+            // title can be present with offline links, so lets set it!
+            String title = br.getRegex("<h2>((?!Related Videos).*?)</h2>").getMatch(0);
+            if (title != null) {
+                title = Encoding.htmlDecode(title);
+                title = title.trim();
+                link.setFinalFileName(title + extDefault);
             }
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -221,7 +223,7 @@ public class PeekVidsCom extends PluginForHost {
         }
         if (title != null) {
             title = Encoding.htmlDecode(title).trim();
-            title += ".mp4";
+            title += extDefault;
             link.setFinalFileName(title);
         }
         return AvailableStatus.TRUE;
@@ -276,7 +278,7 @@ public class PeekVidsCom extends PluginForHost {
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 br.followConnection(true);
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Video broken?");
             }
         }
         /* Add a download slot */
@@ -325,7 +327,6 @@ public class PeekVidsCom extends PluginForHost {
         synchronized (account) {
             try {
                 br.setCookiesExclusive(true);
-                this.prepBR(this.br);
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
                     br.setCookies(cookies);
@@ -348,11 +349,11 @@ public class PeekVidsCom extends PluginForHost {
                 logger.info("Performing full login");
                 br.setFollowRedirects(true);
                 br.postPage("https://accounts.playvids.com/de/login/peekvids", "remember_me=on&back_url=&login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-                final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
+                final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
                 final String status = (String) entries.get("status");
                 final String redirect = (String) entries.get("redirect");
                 if (!"ok".equals(status)) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    throw new AccountInvalidException();
                 } else if (StringUtils.isEmpty(redirect)) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
@@ -360,7 +361,7 @@ public class PeekVidsCom extends PluginForHost {
                 br.getPage(redirect);
                 if (!this.isLoggedIN(this.br)) {
                     /* Double-check though it should not fail here! */
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                    throw new AccountInvalidException();
                 }
                 account.saveCookies(br.getCookies(br.getHost()), "");
             } catch (final PluginException e) {

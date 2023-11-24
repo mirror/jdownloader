@@ -16,6 +16,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -116,8 +117,12 @@ public class ThreeQVideo extends PluginForDecrypt {
         /* Crawl audio/video items */
         final Map<String, Object> sources = (Map<String, Object>) root.get("sources");
         final List<Map<String, Object>> sourcesProgressive = (List<Map<String, Object>>) sources.get("progressive");
-        int heightMax = -1;
+        int qualityValueMax = -1;
         DownloadLink maxQuality = null;
+        final Map<String, Integer> audioqualitymap = new HashMap<String, Integer>();
+        audioqualitymap.put("audio/mp3", 100);
+        audioqualitymap.put("audio/ogg", 200);
+        audioqualitymap.put("audio/aac", 300);
         for (final Map<String, Object> sourceProgressive : sourcesProgressive) {
             final String directurl = sourceProgressive.get("src").toString();
             String ext = null;
@@ -142,8 +147,14 @@ public class ThreeQVideo extends PluginForDecrypt {
             media.setProperty(DirectHTTP.FIXNAME, filename);
             media.setAvailable(true);
             media._setFilePackage(fp);
-            if (height > heightMax) {
-                heightMax = height;
+            int valueForQualitySelection = 0;
+            if (height > 0) {
+                valueForQualitySelection = height;
+            } else if (audioqualitymap.containsKey(mimetype)) {
+                valueForQualitySelection = audioqualitymap.get(mimetype);
+            }
+            if (valueForQualitySelection > qualityValueMax) {
+                qualityValueMax = valueForQualitySelection;
                 maxQuality = media;
             }
             ret.add(media);
