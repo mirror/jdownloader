@@ -12,7 +12,6 @@ import org.jdownloader.extensions.shutdown.ShutdownExtension;
 import org.jdownloader.extensions.shutdown.translate.T;
 
 public class ShutdownToggleAction extends AbstractExtensionAction<ShutdownExtension> implements GenericConfigEventListener<Boolean> {
-
     public ShutdownToggleAction() {
         super();
         setIconKey(this._getExtension().getIconKey());
@@ -23,13 +22,11 @@ public class ShutdownToggleAction extends AbstractExtensionAction<ShutdownExtens
     public void setSelected(final boolean selected) {
         super.setSelected(selected);
         if (selected) {
-            final String string = T.T.shutdown_toggle_action_disable();
-            setName(string);
-            setTooltipText(string);
+            setName(T.T.jd_plugins_optional_jdshutdown());
+            setTooltipText(T.T.shutdown_toggle_action_disable());
         } else {
-            final String string = T.T.shutdown_toggle_action_enable();
-            setName(string);
-            setTooltipText(string);
+            setName(T.T.jd_plugins_optional_jdshutdown());
+            setTooltipText(T.T.shutdown_toggle_action_enable());
         }
     }
 
@@ -45,12 +42,10 @@ public class ShutdownToggleAction extends AbstractExtensionAction<ShutdownExtens
     @Override
     public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
         new EDTRunner() {
-
             @Override
             protected void runInEDT() {
                 setSelected(CFG_SHUTDOWN.SHUTDOWN_ACTIVE.isEnabled());
             }
         };
     }
-
 }
