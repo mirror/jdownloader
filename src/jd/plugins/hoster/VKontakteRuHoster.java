@@ -488,7 +488,7 @@ public class VKontakteRuHoster extends PluginForHost {
                             link.setProperty(PROPERTY_PHOTOS_photo_list_id, new_photo_list_id);
                         }
                     } else {
-                        /* Access normal photo / photo inside album */
+                        /* Access normal single photo or photo inside album (in context of album). */
                         String albumID = link.getStringProperty(PROPERTY_PHOTOS_album_id);
                         if (albumID == null) {
                             /* Find albumID */
@@ -501,6 +501,41 @@ public class VKontakteRuHoster extends PluginForHost {
                                  * required).
                                  */
                                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                            }
+                            final String json2023_11_24 = br.getRegex("(\\{\"zFields.*?\\})\\);").getMatch(0);
+                            if (json2023_11_24 != null) {
+                                /* Hotfix 2023-11-24 */
+                                final Map<String, Object> photojsonroot = restoreFromString(json2023_11_24, TypeRef.MAP);
+                                final Map<String, Object> photoqualitymap = (Map<String, Object>) JavaScriptEngineFactory.walkJson(photojsonroot, "zOpts/temp");
+                                final Iterator<Entry<String, Object>> iterator = photoqualitymap.entrySet().iterator();
+                                final Map<String, Integer> sizeAltMapping = new HashMap<String, Integer>();
+                                sizeAltMapping.put("s", 100);
+                                sizeAltMapping.put("m", 200);
+                                sizeAltMapping.put("x", 300);
+                                sizeAltMapping.put("y", 400);
+                                sizeAltMapping.put("z", 500);
+                                sizeAltMapping.put("w", 600);
+                                int bestQualityValue = -1;
+                                String bestDirecturl = null;
+                                while (iterator.hasNext()) {
+                                    final Entry<String, Object> entry = iterator.next();
+                                    if (!sizeAltMapping.containsKey(entry.getKey())) {
+                                        /* Skipö invalid/unsupported items */
+                                        continue;
+                                    }
+                                    final List<Object> photosize = (List<Object>) entry.getValue();
+                                    final String photodirecturl = photosize.get(0).toString();
+                                    /* Fallback */
+                                    final int qualityValue = sizeAltMapping.get(entry.getKey());
+                                    if (bestDirecturl == null || qualityValue > bestQualityValue) {
+                                        bestQualityValue = qualityValue;
+                                        bestDirecturl = photodirecturl;
+                                    }
+                                }
+                                if (bestDirecturl != null) {
+                                    link.setProperty(PROPERTY_PHOTOS_picturedirectlink, bestDirecturl);
+                                    return AvailableStatus.TRUE;
+                                }
                             }
                             albumID = br.getRegex("class=\"active_link\">[\t\n\r ]+<a href=\"/(.*?)\"").getMatch(0);
                             if (albumID == null) { /* new.vk.com */
@@ -873,11 +908,7 @@ public class VKontakteRuHoster extends PluginForHost {
     private void generalErrorhandling(final Browser br) throws PluginException {
         if (VKontakteRu.containsErrorSamePageReloadTooFast(br)) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many requests in a short time", 60 * 1000l);
-        } else if (br.containsHTML("(?i)You have to log in to view this user")) {
-            /*
-             * 2019-08-06 e.g.
-             * "CENSORED<!><!>3<!>4231<!>8<!>You have to log in to view this user&#39;s photos.<!><!>CENSORED<!><!pageview_candidate>"
-             */
+        } else if (br.getURL().contains("/login?")) {
             throw new AccountRequiredException();
         }
     }
