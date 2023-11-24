@@ -393,7 +393,7 @@ public abstract class PluginForDecrypt extends Plugin {
     }
 
     protected List<LazyCrawlerPlugin> findNextLazyCrawlerPlugins(final String url) {
-        return findNextLazyCrawlerPlugins(url);
+        return findNextLazyCrawlerPlugins(url, (LazyCrawlerPlugin.FEATURE[]) null);
     }
 
     protected List<LazyCrawlerPlugin> findNextLazyCrawlerPlugins(final String url, final LazyCrawlerPlugin.FEATURE... features) {
@@ -409,7 +409,7 @@ public abstract class PluginForDecrypt extends Plugin {
     }
 
     protected List<LazyHostPlugin> findNextLazyHostPlugins(final String url) {
-        return findNextLazyHostPlugins(url);
+        return findNextLazyHostPlugins(url, (LazyCrawlerPlugin.FEATURE[]) null);
     }
 
     protected List<LazyHostPlugin> findNextLazyHostPlugins(final String url, final LazyPlugin.FEATURE... features) {
