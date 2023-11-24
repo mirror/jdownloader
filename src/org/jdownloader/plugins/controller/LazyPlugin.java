@@ -192,6 +192,7 @@ public abstract class LazyPlugin<T extends Plugin> implements MinTimeWeakReferen
         public static final long CACHEVERSION = Math.abs(StringUtils.join(values(), "<->").hashCode()) + Math.abs(StringUtils.join(values(), ":").hashCode()) + Math.abs(StringUtils.join(values(), "<=>").hashCode());
 
         public static boolean isInternalFeature(FEATURE feature) {
+            // TODO: 2023-11-24: Move this into the FEATURE ENUM class itself via separate method
             if (feature != null) {
                 switch (feature) {
                 case FAVICON:
