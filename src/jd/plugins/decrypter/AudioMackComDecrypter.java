@@ -37,7 +37,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.AudioMa;
-import jd.plugins.hoster.DirectHTTP;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class AudioMackComDecrypter extends PluginForDecrypt {
@@ -89,119 +88,67 @@ public class AudioMackComDecrypter extends PluginForDecrypt {
         return ret.toArray(new String[0]);
     }
 
-    /* 2019-01-24: API support is broken */
-    private static final boolean USE_OAUTH_API = true;
-
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String packageidprefix = "audiomack://";
-        if (USE_OAUTH_API) {
-            final String contenturl = param.getCryptedUrl();
-            br.getPage(contenturl);
-            String ogurl = br.getRegex("\"og:url\" content=\"([^\"]+)\"").getMatch(0);
-            final String musicType = new Regex(ogurl, "(?i).*(album|playlist)/.*").getMatch(0);
-            if (musicType == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            br.getPage(AudioMa.getOAuthQueryString(br));
-            if (br.getHttpConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
-            final Map<String, Object> results = (Map<String, Object>) entries.get("results");
-            final String itemID = results.get("id").toString();
-            final String status = (String) results.get("status");
-            if (status != null && status.equalsIgnoreCase("suspended")) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            String description = (String) results.get("description");
-            if (!StringUtils.isEmpty(description)) {
-                description = Encoding.htmlDecode(description);
-            }
-            final boolean isPlaylist = "playlist".equalsIgnoreCase(musicType);
-            final List<Map<String, Object>> tracks = (List<Map<String, Object>>) results.get("tracks");
-            int index = 0;
-            for (final Map<String, Object> track : tracks) {
-                final String uploader_url_slug = track.get("uploader_url_slug").toString();
-                final String url_slug = track.get("url_slug").toString();
-                final DownloadLink dl = createDownloadlink("https://" + this.getHost() + "/" + uploader_url_slug + "/song/" + url_slug);
-                if (isPlaylist) {
-                    dl.setProperty(AudioMa.PROPERTY_PLAYLIST_POSITION, index + 1);
-                    dl.setProperty(AudioMa.PROPERTY_PLAYLIST_NUMBEROF_ITEMS, tracks.size());
-                }
-                AudioMa.parseSingleSongData(dl, track);
-                dl.setAvailable(true);
-                dl.setContentUrl(ogurl);
-                ret.add(dl);
-                index++;
-            }
-            String fpName;
-            if ("playlist".equals(musicType)) {
-                fpName = (String) JavaScriptEngineFactory.walkJson(entries, "results/title");
-            } else {
-                String artist = (String) JavaScriptEngineFactory.walkJson(entries, "results/artist");
-                String title = (String) JavaScriptEngineFactory.walkJson(entries, "results/title");
-                fpName = String.format("%s-%s", artist, title);
-            }
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setPackageKey(packageidprefix + "/item/" + itemID);
-            fp.setName(Encoding.htmlDecode(fpName).trim());
-            if (!StringUtils.isEmpty(description)) {
-                fp.setComment(description);
-            }
-            fp.addLinks(ret);
-            return ret;
-        } else {
-            final String contenturl = param.getCryptedUrl().replaceFirst("(?i)/embed\\d-album/", "/album/");
-            br.getPage(contenturl);
-            /* Offline or not yet released */
-            if (br.getHttpConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else if (br.containsHTML("class=\"countdown\\-clock\"|This song has been removed due to a DMCA Complaint")) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            String fpName = br.getRegex("name=\"twitter:title\" content=\"([^<>\"]*?)\"").getMatch(0);
-            if (fpName == null) {
-                final Regex paraminfo = new Regex(contenturl, "/([A-Za-z0-9\\-_]+)/([A-Za-z0-9\\-_]+)$");
-                fpName = paraminfo.getMatch(0) + " - " + paraminfo.getMatch(1).replace("-", " ");
-            }
-            final String plaintable = br.getRegex("<div id=\"playlist\" class=\"plwrapper\" for=\"audiomack\\-embed\">(.*?</div>[\t\n\r ]+</div>[\t\n\r ]+</div>(<\\!\\-\\-/\\.song\\-wrap\\-\\->)?)[\t\n\r ]+</div>[\t\n\r ]+</div>").getMatch(0);
-            final String[] links = plaintable.split("<div class=\"song\"");
-            if (links == null || links.length == 0) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            final String description = br.getRegex("<meta name=\"description\" content=\"(.*?)\" >").getMatch(0);
-            for (final String singleinfo : links) {
-                final Regex url_name = new Regex(singleinfo, "<a href=\"#\" data\\-url=\"(http://(www\\.)?audiomack\\.com/api/music/url/album/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+/\\d+)\">([^<>\"]*?)<");
-                final String url = url_name.getMatch(0);
-                String name = url_name.getMatch(2);
-                final String titlenumber = new Regex(singleinfo, "<div class=\"index\">(\\d+\\.)</div>").getMatch(0);
-                if (url != null && name != null && titlenumber != null) {
-                    name = Encoding.htmlDecode(name).trim();
-                    final DownloadLink fina = createDownloadlink(url);
-                    final String finalname = titlenumber + name + ".mp3";
-                    fina.setFinalFileName(finalname);
-                    fina.setAvailable(true);
-                    if (description != null) {
-                        fina.setComment(Encoding.htmlDecode(description));
-                    }
-                    fina.setContentUrl(contenturl);
-                    ret.add(fina);
-                }
-            }
-            fpName = Encoding.htmlDecode(fpName).trim();
-            final String ziplink = br.getRegex("\"(https?://music\\.audiomack\\.com/albums/[^<>\"]+\\.zip?[^<>\"]*?)\"").getMatch(0);
-            if (ziplink != null) {
-                final DownloadLink fina = createDownloadlink(DirectHTTP.createURLForThisPlugin(ziplink));
-                fina.setFinalFileName(fpName + ".zip");
-                fina.setAvailable(true);
-                fina.setContentUrl(ziplink);
-                ret.add(fina);
-            }
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName).trim());
-            fp.addLinks(ret);
-            return ret;
+        final String contenturl = param.getCryptedUrl();
+        br.getPage(contenturl);
+        String ogurl = br.getRegex("\"og:url\" content=\"([^\"]+)\"").getMatch(0);
+        final String musicType = new Regex(ogurl, "(?i).*(album|playlist)/.*").getMatch(0);
+        if (musicType == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        br.getPage(AudioMa.getOAuthQueryString(br));
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+        final Map<String, Object> results = (Map<String, Object>) entries.get("results");
+        final String itemID = results.get("id").toString();
+        final String status = (String) results.get("status");
+        if (status != null && status.equalsIgnoreCase("suspended")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        String description = (String) results.get("description");
+        if (!StringUtils.isEmpty(description)) {
+            description = Encoding.htmlDecode(description);
+        }
+        final boolean isPlaylist = "playlist".equalsIgnoreCase(musicType);
+        final List<Map<String, Object>> tracks = (List<Map<String, Object>>) results.get("tracks");
+        int index = 0;
+        for (final Map<String, Object> track : tracks) {
+            String uploader_url_slug = (String) track.get("uploader_url_slug");
+            if (StringUtils.isEmpty(uploader_url_slug)) {
+                final Map<String, Object> uploader = (Map<String, Object>) track.get("uploader");
+                uploader_url_slug = uploader.get("url_slug").toString();
+            }
+            final String url_slug = track.get("url_slug").toString();
+            final DownloadLink dl = createDownloadlink("https://" + this.getHost() + "/" + uploader_url_slug + "/song/" + url_slug);
+            if (isPlaylist) {
+                dl.setProperty(AudioMa.PROPERTY_PLAYLIST_POSITION, index + 1);
+                dl.setProperty(AudioMa.PROPERTY_PLAYLIST_NUMBEROF_ITEMS, tracks.size());
+            }
+            AudioMa.parseSingleSongData(dl, track);
+            dl.setAvailable(true);
+            dl.setContentUrl(ogurl);
+            ret.add(dl);
+            index++;
+        }
+        String fpName;
+        if ("playlist".equals(musicType)) {
+            fpName = (String) JavaScriptEngineFactory.walkJson(entries, "results/title");
+        } else {
+            String artist = (String) JavaScriptEngineFactory.walkJson(entries, "results/artist");
+            String title = (String) JavaScriptEngineFactory.walkJson(entries, "results/title");
+            fpName = String.format("%s-%s", artist, title);
+        }
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setPackageKey(packageidprefix + "/item/" + itemID);
+        fp.setName(Encoding.htmlDecode(fpName).trim());
+        if (!StringUtils.isEmpty(description)) {
+            fp.setComment(description);
+        }
+        fp.addLinks(ret);
+        return ret;
     }
 }
