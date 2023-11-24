@@ -483,6 +483,7 @@ public class RedditComCrawler extends PluginForDecrypt {
                                 /* Filename from URL contains .gif extension but this is a .mp4 file -> Correct that */
                                 direct.setFinalFileName(this.correctOrApplyFileNameExtension(filenameFromURL, ".mp4"));
                             }
+                            direct.setProperty(RedditCom.PROPERTY_TYPE, RedditCom.PROPERTY_TYPE_video);
                             direct.setAvailable(true);
                             thisCrawledLinks.add(direct);
                         }
