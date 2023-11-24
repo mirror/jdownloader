@@ -1110,6 +1110,12 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "This plugin also supports login via cookies" })
     String LazyHostPlugin_FEATURE_COOKIE_LOGIN_OPTIONAL_TOOLTIP();
 
+    @Default(lngs = { "en" }, values = { "API key login" })
+    String LazyHostPlugin_FEATURE_API_KEY_LOGIN();
+
+    @Default(lngs = { "en" }, values = { "This plugin also supports login via API key" })
+    String LazyHostPlugin_FEATURE_API_KEY_LOGIN_TOOLTIP();
+
     @Default(lngs = { "en" }, values = { "Cookie login only" })
     String LazyHostPlugin_FEATURE_COOKIE_LOGIN_ONLY();
 

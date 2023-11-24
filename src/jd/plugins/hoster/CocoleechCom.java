@@ -71,6 +71,12 @@ public class CocoleechCom extends PluginForHost {
     }
 
     @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.MULTIHOST };
+        /// return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.MULTIHOST, LazyPlugin.FEATURE.API_KEY_LOGIN };
+    }
+
+    @Override
     public String getAGBLink() {
         return "https://members.cocoleech.com/terms";
     }
@@ -133,11 +139,6 @@ public class CocoleechCom extends PluginForHost {
             }
             return false;
         }
-    }
-
-    @Override
-    public LazyPlugin.FEATURE[] getFeatures() {
-        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.MULTIHOST };
     }
 
     @Override
@@ -321,6 +322,7 @@ public class CocoleechCom extends PluginForHost {
     @Override
     public AccountBuilderInterface getAccountFactory(InputChangedCallbackInterface callback) {
         return new CocoleechAccountFactory(callback);
+        // return super.getAccountFactory(callback);
     }
 
     public static class CocoleechAccountFactory extends MigPanel implements AccountBuilderInterface {
@@ -397,6 +399,21 @@ public class CocoleechCom extends PluginForHost {
             return new Account(null, getPassword());
         }
     }
+    // @Override
+    // protected String getAPILoginHelpURL() {
+    // return "https://members.cocoleech.com/settings";
+    // }
+    //
+    // @Override
+    // protected boolean looksLikeValidAPIKey(final String str) {
+    // if (str == null) {
+    // return false;
+    // } else if (str.matches("[a-f0-9]{24}")) {
+    // return true;
+    // } else {
+    // return false;
+    // }
+    // }
 
     @Override
     public void reset() {

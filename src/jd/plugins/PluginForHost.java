@@ -2168,10 +2168,12 @@ public abstract class PluginForHost extends Plugin {
      *
      * @return
      */
-    public AccountBuilderInterface getAccountFactory(InputChangedCallbackInterface callback) {
+    public AccountBuilderInterface getAccountFactory(final InputChangedCallbackInterface callback) {
         // TODO: Add check for API key only login
         if (this.hasFeature(FEATURE.COOKIE_LOGIN_ONLY) || this.hasFeature(FEATURE.COOKIE_LOGIN_OPTIONAL)) {
             return new DefaultEditAccountPanelCookieLogin(callback, this);
+        } else if (this.hasFeature(FEATURE.API_KEY_LOGIN)) {
+            return new DefaultEditAccountPanelAPIKeyLogin(callback, this);
         } else {
             return new DefaultEditAccountPanel(callback, false);
         }
@@ -2982,6 +2984,22 @@ public abstract class PluginForHost extends Plugin {
     }
 
     public void extendAccountSettingsPanel(Account acc, PluginConfigPanelNG panel) {
+    }
+
+    /**
+     * Override this if API login is needed for this plugin. </br>
+     * Return an URL which will lead the user to his API key and/or instructions on how to login via API in JDownloader. </br>
+     * Example(s): </br>
+     * pixeldrain.com: https://pixeldrain.com/user/connect_app?app=jdownloader </br>
+     * cocoleech.com: https://members.cocoleech.com/settings
+     */
+    protected String getAPILoginHelpURL() {
+        return null;
+    }
+
+    /** Override if API key login is used for this plugins' account functionality. */
+    protected boolean looksLikeValidAPIKey(final String str) {
+        return false;
     }
 
     public boolean isSameAccount(Account downloadAccount, AbstractProxySelectorImpl downloadProxySelector, Account candidateAccount, AbstractProxySelectorImpl candidateProxySelector) {

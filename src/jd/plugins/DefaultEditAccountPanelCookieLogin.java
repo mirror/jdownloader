@@ -77,7 +77,7 @@ public class DefaultEditAccountPanelCookieLogin extends MigPanel implements Acco
         if (cookieLoginOnly) {
             // TODO: Add translation
             add(new JLabel("Cookie login instructions:"));
-            add(new JLink("https://support.jdownloader.org/Knowledgebase/Article/View/account-cookie-login-instructions"));
+            add(new JLink("Click here for instructions", "https://support.jdownloader.org/Knowledgebase/Article/View/account-cookie-login-instructions"));
         }
         add(usernameLabel = new JLabel(_GUI.T.jd_gui_swing_components_AccountDialog_name()));
         add(this.name = new ExtTextField() {

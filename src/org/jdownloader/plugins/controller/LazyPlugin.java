@@ -7,10 +7,6 @@ import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import jd.PluginWrapper;
-import jd.config.Property;
-import jd.plugins.Plugin;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.config.MinTimeWeakReference;
 import org.appwork.storage.config.MinTimeWeakReferenceCleanup;
@@ -20,6 +16,10 @@ import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
 import org.jdownloader.translate._JDT;
+
+import jd.PluginWrapper;
+import jd.config.Property;
+import jd.plugins.Plugin;
 
 public abstract class LazyPlugin<T extends Plugin> implements MinTimeWeakReferenceCleanup {
     public static enum FEATURE implements LabelInterface, TooltipInterface {
@@ -176,7 +176,19 @@ public abstract class LazyPlugin<T extends Plugin> implements MinTimeWeakReferen
             public String getTooltip() {
                 return _JDT.T.LazyHostPlugin_FEATURE_COOKIE_LOGIN_OPTIONAL_TOOLTIP();
             }
+        },
+        API_KEY_LOGIN {
+            @Override
+            public String getLabel() {
+                return _JDT.T.LazyHostPlugin_FEATURE_API_KEY_LOGIN();
+            }
+
+            @Override
+            public String getTooltip() {
+                return _JDT.T.LazyHostPlugin_FEATURE_API_KEY_LOGIN_TOOLTIP();
+            }
         };
+
         public static final long CACHEVERSION = Math.abs(StringUtils.join(values(), "<->").hashCode()) + Math.abs(StringUtils.join(values(), ":").hashCode()) + Math.abs(StringUtils.join(values(), "<=>").hashCode());
 
         public static boolean isInternalFeature(FEATURE feature) {
