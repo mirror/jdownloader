@@ -1,6 +1,5 @@
 package org.jdownloader.gui.views.downloads.columns;
 
-import java.awt.Color;
 import java.awt.Point;
 import java.awt.event.MouseEvent;
 import java.io.IOException;
@@ -14,6 +13,24 @@ import javax.swing.Icon;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPopupMenu;
+
+import org.appwork.scheduler.DelayedRunnable;
+import org.appwork.swing.MigPanel;
+import org.appwork.swing.components.tooltips.ExtTooltip;
+import org.appwork.swing.components.tooltips.ToolTipController;
+import org.appwork.swing.components.tooltips.TooltipPanel;
+import org.appwork.swing.exttable.ExtColumn;
+import org.appwork.swing.exttable.ExtDefaultRowSorter;
+import org.appwork.utils.net.httpconnection.HTTPProxy;
+import org.appwork.utils.swing.EDTRunner;
+import org.appwork.utils.swing.SwingUtils;
+import org.appwork.utils.swing.renderer.RenderLabel;
+import org.appwork.utils.swing.renderer.RendererMigPanel;
+import org.jdownloader.DomainInfo;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.NewTheme;
+import org.jdownloader.plugins.SkipReason;
 
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.downloadcontroller.SingleDownloadController;
@@ -33,24 +50,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.DownloadInterface;
 import net.miginfocom.swing.MigLayout;
-
-import org.appwork.scheduler.DelayedRunnable;
-import org.appwork.swing.MigPanel;
-import org.appwork.swing.components.tooltips.ExtTooltip;
-import org.appwork.swing.components.tooltips.ToolTipController;
-import org.appwork.swing.components.tooltips.TooltipPanel;
-import org.appwork.swing.exttable.ExtColumn;
-import org.appwork.swing.exttable.ExtDefaultRowSorter;
-import org.appwork.utils.net.httpconnection.HTTPProxy;
-import org.appwork.utils.swing.EDTRunner;
-import org.appwork.utils.swing.SwingUtils;
-import org.appwork.utils.swing.renderer.RenderLabel;
-import org.appwork.utils.swing.renderer.RendererMigPanel;
-import org.jdownloader.DomainInfo;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.NewTheme;
-import org.jdownloader.plugins.SkipReason;
 
 public class ConnectionColumn extends ExtColumn<AbstractNode> {
     /**
@@ -416,7 +415,7 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
 
         private JLabel add(JLabel lbl) {
             SwingUtils.setOpaque(lbl, false);
-            lbl.setForeground(new Color(this.getConfig().getForegroundColor()));
+            lbl.setForeground(FOREGROUND_COLOR);
             panel.add(lbl);
             return lbl;
         }

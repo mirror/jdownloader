@@ -4,14 +4,14 @@ import javax.swing.JComponent;
 import javax.swing.JPopupMenu;
 import javax.swing.SwingConstants;
 
-import jd.controlling.linkcrawler.CrawledPackage;
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.controlling.packagecontroller.AbstractPackageNode;
-
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.swing.exttable.ExtDefaultRowSorter;
 import org.appwork.utils.swing.renderer.RenderLabel;
 import org.jdownloader.gui.translate._GUI;
+
+import jd.controlling.linkcrawler.CrawledPackage;
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.controlling.packagecontroller.AbstractPackageNode;
 
 public class FileCountColumn extends ExtColumn<AbstractNode> {
     private final RenderLabel countRenderer;
@@ -87,7 +87,6 @@ public class FileCountColumn extends ExtColumn<AbstractNode> {
 
     @Override
     public void resetEditor() {
-        // TODO Auto-generated method stub
     }
 
     @Override

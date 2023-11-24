@@ -29,6 +29,18 @@ import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 import javax.swing.WindowConstants;
 
+import org.appwork.storage.config.JsonConfig;
+import org.appwork.utils.Regex;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.EDTRunner;
+import org.appwork.utils.swing.dialog.AbstractDialog;
+import org.appwork.utils.swing.dialog.Dialog;
+import org.appwork.utils.swing.dialog.DialogCanceledException;
+import org.appwork.utils.swing.dialog.DialogClosedException;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.logging.LogController;
+
 import jd.config.SubConfiguration;
 import jd.controlling.reconnect.ReconnectConfig;
 import jd.controlling.reconnect.ReconnectPluginController;
@@ -41,18 +53,6 @@ import jd.controlling.reconnect.pluginsinc.liveheader.translate.T;
 import jd.gui.UserIO;
 import jd.nutils.JDFlags;
 import net.miginfocom.swing.MigLayout;
-
-import org.appwork.storage.config.JsonConfig;
-import org.appwork.utils.Regex;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.swing.EDTRunner;
-import org.appwork.utils.swing.dialog.AbstractDialog;
-import org.appwork.utils.swing.dialog.Dialog;
-import org.appwork.utils.swing.dialog.DialogCanceledException;
-import org.appwork.utils.swing.dialog.DialogClosedException;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.logging.LogController;
 
 public class Gui extends AbstractDialog<Object> {
     public class JDRRInfoPopup extends AbstractDialog<Object> {
@@ -132,7 +132,6 @@ public class Gui extends AbstractDialog<Object> {
 
         @Override
         protected Object createReturnValue() {
-            // TODO Auto-generated method stub
             return null;
         }
 
@@ -221,7 +220,6 @@ public class Gui extends AbstractDialog<Object> {
 
     @Override
     protected Object createReturnValue() {
-        // TODO Auto-generated method stub
         return null;
     }
 

@@ -1,6 +1,5 @@
 package jd.gui.swing.jdgui.views.settings.panels.proxy;
 
-import java.awt.Color;
 import java.awt.Point;
 import java.io.IOException;
 import java.net.URL;
@@ -10,17 +9,6 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import javax.swing.Icon;
 import javax.swing.JLabel;
-
-import jd.controlling.proxy.AbstractProxySelectorImpl;
-import jd.controlling.proxy.NoProxySelector;
-import jd.controlling.proxy.PacProxySelectorImpl;
-import jd.controlling.proxy.SingleBasicProxySelectorImpl;
-import jd.controlling.proxy.SingleDirectGatewaySelector;
-import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
-import jd.controlling.reconnect.ipcheck.IP;
-import jd.controlling.reconnect.ipcheck.IPCheckException;
-import jd.http.ProxySelectorInterface;
-import jd.http.Request;
 
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.JSonStorage;
@@ -32,6 +20,17 @@ import org.appwork.utils.swing.EDTRunner;
 import org.appwork.utils.swing.SwingUtils;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
+
+import jd.controlling.proxy.AbstractProxySelectorImpl;
+import jd.controlling.proxy.NoProxySelector;
+import jd.controlling.proxy.PacProxySelectorImpl;
+import jd.controlling.proxy.SingleBasicProxySelectorImpl;
+import jd.controlling.proxy.SingleDirectGatewaySelector;
+import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
+import jd.controlling.reconnect.ipcheck.IP;
+import jd.controlling.reconnect.ipcheck.IPCheckException;
+import jd.http.ProxySelectorInterface;
+import jd.http.Request;
 
 public class HostColumn extends ExtTextColumn<AbstractProxySelectorImpl> {
     public HostColumn() {
@@ -125,7 +124,7 @@ public class HostColumn extends ExtTextColumn<AbstractProxySelectorImpl> {
             }
             panel.add(lbl = new JLabel(_GUI.T.ConnectionColumn_getStringValue_connection(proxyString + " (000.000.000.000)"), icon, JLabel.LEADING));
             SwingUtils.setOpaque(lbl, false);
-            lbl.setForeground(new Color(this.getConfig().getForegroundColor()));
+            lbl.setForeground(FOREGROUND_COLOR);
             final JLabel finalLbl = lbl;
             final long taskID = TASK.incrementAndGet();
             SCHEDULER.execute(new Runnable() {

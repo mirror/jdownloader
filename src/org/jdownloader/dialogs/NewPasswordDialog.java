@@ -17,7 +17,6 @@ import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 
 import org.appwork.swing.MigPanel;
-import org.appwork.uio.UIOManager;
 import org.appwork.utils.BinaryLogic;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
@@ -35,12 +34,6 @@ public class NewPasswordDialog extends AbstractDialog<String[]> implements NewPa
     @Override
     protected int getPreferredWidth() {
         return 500;
-    }
-
-    public static void main(final String[] args) {
-        final NewPasswordDialog d = new NewPasswordDialog(0, "titla", "msg", null, null, null);
-        NewPasswordDialogInterface handler = UIOManager.I().show(null, d);
-        System.out.println("Password: " + handler.getPassword() + " (" + (handler.getPasswordVerification().equals(handler.getPassword())) + ")");
     }
 
     private JPasswordField password;
@@ -62,7 +55,6 @@ public class NewPasswordDialog extends AbstractDialog<String[]> implements NewPa
      * @param textField
      */
     protected void modifyTextPane(JTextPane textField) {
-        // TODO Auto-generated method stub
     }
 
     protected void addMessageComponent(final MigPanel p) {
@@ -87,7 +79,6 @@ public class NewPasswordDialog extends AbstractDialog<String[]> implements NewPa
             });
         } else {
             textField.setContentType("text/plain");
-            // this.textField.setMaximumSize(new Dimension(450, 600));
         }
         textField.setFont(font);
         textField.setText(getMessage());

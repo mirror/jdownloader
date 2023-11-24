@@ -36,14 +36,6 @@ import javax.imageio.ImageIO;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 
-import jd.captcha.utils.GifDecoder;
-import jd.http.Browser;
-import jd.http.Browser.BrowserException;
-import jd.http.Request;
-import jd.http.URLConnectionAdapter;
-import jd.plugins.PluginForHost;
-import net.sf.image4j.codec.ico.ICODecoder;
-
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
@@ -68,6 +60,14 @@ import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.updatev2.gui.LAFOptions;
+
+import jd.captcha.utils.GifDecoder;
+import jd.http.Browser;
+import jd.http.Browser.BrowserException;
+import jd.http.Request;
+import jd.http.URLConnectionAdapter;
+import jd.plugins.PluginForHost;
+import net.sf.image4j.codec.ico.ICODecoder;
 
 public class FavIcons {
     private static final ThreadPoolExecutor                                      THREAD_POOL;
@@ -472,8 +472,6 @@ public class FavIcons {
     private static boolean isSameDomain(final Browser br, String host, String[] siteSupportedNames) throws IOException {
         if (host.matches("(?i)^https?://.+")) {
             host = new URL(host).getHost();
-        } else {
-            host = host;
         }
         final URL url = br != null ? br._getURL() : null;
         if (url == null) {

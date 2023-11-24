@@ -13,15 +13,6 @@ import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.ListCellRenderer;
 
-import jd.controlling.downloadcontroller.DownloadController;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcollector.LinkCollector.MoveLinksMode;
-import jd.controlling.linkcollector.LinkCollector.MoveLinksSettings;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.interfaces.View;
-
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.annotations.LabelInterface;
 import org.appwork.swing.MigPanel;
@@ -66,6 +57,15 @@ import org.jdownloader.settings.GraphicalUserInterfaceSettings.ConfirmIncomplete
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.settings.staticreferences.CFG_LINKGRABBER;
 import org.jdownloader.translate._JDT;
+
+import jd.controlling.downloadcontroller.DownloadController;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinkCollector.MoveLinksMode;
+import jd.controlling.linkcollector.LinkCollector.MoveLinksSettings;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.interfaces.View;
 
 public class ConfirmLinksContextAction extends CustomizableTableContextAppAction<CrawledPackage, CrawledLink> implements GUIListener, ActionContext {
     public static final String SELECTION_ONLY = "selectionOnly";
@@ -273,7 +273,6 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
                                     };
 
                                     protected MigPanel createBottomPanel() {
-                                        // TODO Auto-generated method stub
                                         return new MigPanel("ins 0", "[]20[grow,fill][]", "[]");
                                     }
 
@@ -305,7 +304,6 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
                                     }
 
                                     protected ListCellRenderer getRenderer(final ListCellRenderer orgRenderer) {
-                                        // TODO Auto-generated method stub
                                         return new ListCellRenderer() {
                                             @Override
                                             public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
@@ -394,7 +392,6 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
                                     };
 
                                     protected ListCellRenderer getRenderer(final ListCellRenderer orgRenderer) {
-                                        // TODO Auto-generated method stub
                                         return new ListCellRenderer() {
                                             @Override
                                             public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
@@ -461,7 +458,6 @@ public class ConfirmLinksContextAction extends CustomizableTableContextAppAction
                                     };
 
                                     protected ListCellRenderer getRenderer(final ListCellRenderer orgRenderer) {
-                                        // TODO Auto-generated method stub
                                         return new ListCellRenderer() {
                                             @Override
                                             public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {

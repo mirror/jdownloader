@@ -1021,7 +1021,6 @@ public class Subversion implements ISVNEventHandler {
                         Files.walkThroughStructure(new FileHandler<SVNException>() {
                             @Override
                             public void intro(File f) throws SVNException {
-                                // TODO Auto-generated method stub
                             }
 
                             @Override
@@ -1055,7 +1054,6 @@ public class Subversion implements ISVNEventHandler {
 
                             @Override
                             public void outro(File f) throws RuntimeException {
-                                // TODO Auto-generated method stub
                             }
                         }, folder);
                     }

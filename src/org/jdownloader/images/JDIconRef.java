@@ -8,6 +8,7 @@ import org.appwork.resources.IconRef;
 
 public enum JDIconRef implements IconRef {
     updatericon("updatericon");
+
     private final String path;
 
     /**
@@ -31,7 +32,7 @@ public enum JDIconRef implements IconRef {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.appwork.resources.IconRef#image(int)
      */
     @Override
@@ -41,12 +42,11 @@ public enum JDIconRef implements IconRef {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.appwork.resources.IconRef#path()
      */
     @Override
     public String path() {
-        // TODO Auto-generated method stub
         return path;
     }
 }

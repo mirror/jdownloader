@@ -11,8 +11,6 @@ import javax.swing.SwingConstants;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
-import net.miginfocom.swing.MigLayout;
-
 import org.appwork.swing.MigPanel;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.swing.dialog.AbstractDialog;
@@ -22,12 +20,12 @@ import org.appwork.utils.swing.dialog.locator.RememberAbsoluteDialogLocator;
 import org.jdownloader.captcha.v2.SolverService;
 import org.jdownloader.gui.translate._GUI;
 
-public class SolverPropertiesDialog extends AbstractDialog<Object> {
+import net.miginfocom.swing.MigLayout;
 
+public class SolverPropertiesDialog extends AbstractDialog<Object> {
     private AbstractCaptchaSolverConfigPanel configPanel;
 
     public static class ScrollablePanel extends MigPanel implements Scrollable {
-
         private AbstractCaptchaSolverConfigPanel panel;
         private boolean                          vScrollbarVisible = false;
 
@@ -39,7 +37,6 @@ public class SolverPropertiesDialog extends AbstractDialog<Object> {
             super("ins 0 0 0 0", "[grow,fill]", "[grow,fill]");
             add(panel);
             setOpaque(false);
-            // LAFOptions.getInstance().applyPanelBackground(this);
             this.panel = panel;
         }
 
@@ -68,14 +65,12 @@ public class SolverPropertiesDialog extends AbstractDialog<Object> {
                 return;
             }
             vScrollbarVisible = visible;
-
             if (vScrollbarVisible) {
                 setLayout("ins 0 0 0 5", "[grow,fill]", "[grow,fill]");
             } else {
                 setLayout("ins 0 0 0 0", "[grow,fill]", "[grow,fill]");
             }
         }
-
     }
 
     @Override
@@ -85,7 +80,6 @@ public class SolverPropertiesDialog extends AbstractDialog<Object> {
         final JScrollPane sp = new JScrollPane(sbp = new ScrollablePanel(configPanel));
         sp.setBorder(null);
         sp.getViewport().addChangeListener(new ChangeListener() {
-
             @Override
             public void stateChanged(ChangeEvent e) {
                 // System.err.println("Change in " + e.getSource());
@@ -94,7 +88,6 @@ public class SolverPropertiesDialog extends AbstractDialog<Object> {
                 // pane.getHopane.getVerticalScrollBar().isVisible()rizontalScrollBar().isVisible());
                 // System.out.println(sp.getVerticalScrollBar().isVisible());
                 sbp.setVerticalScrollbarVisible(sp.getVerticalScrollBar().isVisible());
-
             }
             //
         });
@@ -106,7 +99,6 @@ public class SolverPropertiesDialog extends AbstractDialog<Object> {
     }
 
     protected MigPanel createBottomPanel() {
-        // TODO Auto-generated method stub
         return new MigPanel("ins 0 0 0 0", "[]20[grow,fill][]", "[]");
     }
 

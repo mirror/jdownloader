@@ -8,7 +8,7 @@ public abstract class PluginConfigPanelEventSenderEvent extends SimpleEvent<Obje
     }
 
     public PluginConfigPanelEventSenderEvent() {
-        super(null, null, null);
+        super(null, null);
     }
 
     abstract public void callListener(PluginConfigPanelEventSenderListener listener);

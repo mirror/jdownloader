@@ -336,7 +336,6 @@ public class D extends PluginsC {
 
     // //@Override
     public String getCoder() {
-        // TODO Auto-generated method stub
         return "JD-DLC-Team";
     }
 

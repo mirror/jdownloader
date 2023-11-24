@@ -1,6 +1,7 @@
 package org.jdownloader.jna.windows;
 
 import java.awt.Frame;
+import java.awt.Window;
 
 import org.appwork.utils.logging2.extmanager.LoggerFactory;
 import org.appwork.utils.os.CrossSystem;
@@ -16,6 +17,27 @@ public class JNAWindowsWindowManager extends WindowsWindowManager {
     public JNAWindowsWindowManager() {
         // load library
         instance = User32.INSTANCE;
+    }
+
+    @Override
+    public void setZState(Window w, FrameState state) {
+        super.setZState(w, state);
+        if (CrossSystem.getOS().isMinimum(OperatingSystem.WINDOWS_XP) && w.isVisible()) {
+            switch (state) {
+            case TO_FRONT:
+            case TO_FRONT_FOCUSED:
+                if (w instanceof Frame) {
+                    try {
+                        final HWND hWnd = User32.INSTANCE.FindWindow(null, ((Frame) w).getTitle());
+                        if (hWnd != null) {
+                            User32.INSTANCE.SetForegroundWindow(hWnd);
+                        }
+                    } catch (Exception e) {
+                        LoggerFactory.getDefaultLogger().log(e);
+                    }
+                }
+            }
+        }
     }
 
     @Override

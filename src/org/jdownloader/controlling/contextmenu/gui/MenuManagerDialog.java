@@ -49,7 +49,6 @@ import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.WarnLevel;
 
 public class MenuManagerDialog extends AbstractDialog<Object> implements TreeSelectionListener, MenuManagerDialogInterface {
-
     private InfoPanel                infoPanel;
     private ContextMenuManager<?, ?> manager;
     private ManagerTreeModel         model;
@@ -58,17 +57,14 @@ public class MenuManagerDialog extends AbstractDialog<Object> implements TreeSel
 
     public MenuManagerDialog(ContextMenuManager<?, ?> manager) {
         super(UIOManager.BUTTONS_HIDE_CANCEL | UIOManager.BUTTONS_HIDE_OK, _GUI.T.ManagerFrame_ManagerFrame_title(manager.getName()), null, null, null);
-
         this.manager = manager;
         ext = manager.getFileExtension();
         setLocator(new RememberAbsoluteDialogLocator("dialogframe-" + manager.getClass().getName()));
         setDimensor(new RememberLastDialogDimension("dialogframe-" + manager.getClass().getName()));
         logger = LogController.getInstance().getLogger(MenuManagerDialog.class.getName());
-
     }
 
     protected FrameState getWindowStateOnVisible() {
-
         return FrameState.TO_FRONT_FOCUSED;
     }
 
@@ -78,13 +74,9 @@ public class MenuManagerDialog extends AbstractDialog<Object> implements TreeSel
     }
 
     protected MigPanel createBottomPanel() {
-        // TODO Auto-generated method stub
         MigPanel ret = new MigPanel("ins 0", "[]20[grow,fill][]", "[][]");
-
         MigPanel topline = new MigPanel("ins 0", "[][][grow,fill][][][][]", "[]");
-        // bottom.add(topline, "spanx,pushx,growx,wrap");
         topline.setOpaque(false);
-
         ExtButton addSubmenu = new ExtButton(new AddSubMenuAction(this)) {
             @Override
             public int getTooltipDelay(Point mousePositionOnScreen) {
@@ -97,7 +89,6 @@ public class MenuManagerDialog extends AbstractDialog<Object> implements TreeSel
                 return 500;
             }
         };
-
         ExtButton export = new ExtButton(new AppAction() {
             {
                 setIconKey(IconKey.ICON_EXPORT);
@@ -106,13 +97,10 @@ public class MenuManagerDialog extends AbstractDialog<Object> implements TreeSel
 
             @Override
             public void actionPerformed(ActionEvent e) {
-
                 ExtFileChooserDialog d = new ExtFileChooserDialog(0, _GUI.T.ManagerFrame_actionPerformed_export_title(), null, null);
                 d.setFileFilter(new FileFilter() {
-
                     @Override
                     public String getDescription() {
-
                         return "*" + ext;
                     }
 
@@ -121,21 +109,17 @@ public class MenuManagerDialog extends AbstractDialog<Object> implements TreeSel
                         return f.isDirectory() || f.getName().endsWith(ext);
                     }
                 });
-
                 d.setFileSelectionMode(FileChooserSelectionMode.FILES_AND_DIRECTORIES);
                 d.setMultiSelection(false);
-
                 d.setStorageID(ext);
                 d.setType(FileChooserType.SAVE_DIALOG);
                 try {
                     Dialog.getInstance().showDialog(d);
-
                     File saveTo = d.getSelectedFile();
                     if (!saveTo.getName().endsWith(ext)) {
                         saveTo = new File(saveTo.getAbsolutePath() + ext);
                     }
                     manager.saveTo((MenuContainerRoot) model.getRoot(), saveTo);
-
                 } catch (DialogClosedException e1) {
                     e1.printStackTrace();
                 } catch (DialogCanceledException e1) {
@@ -146,14 +130,12 @@ public class MenuManagerDialog extends AbstractDialog<Object> implements TreeSel
                     Dialog.getInstance().showExceptionDialog(_GUI.T.lit_error_occured(), e1.getMessage(), e1);
                 }
             }
-
         }) {
             @Override
             public int getTooltipDelay(Point mousePositionOnScreen) {
                 return 500;
             }
         };
-
         ExtButton importButton = new ExtButton(new AppAction() {
             {
                 setIconKey(IconKey.ICON_IMPORT);
@@ -165,10 +147,8 @@ public class MenuManagerDialog extends AbstractDialog<Object> implements TreeSel
                 try {
                     ExtFileChooserDialog d = new ExtFileChooserDialog(0, _GUI.T.ManagerFrame_actionPerformed_import_title(), null, null);
                     d.setFileFilter(new FileFilter() {
-
                         @Override
                         public String getDescription() {
-
                             return "*" + ext;
                         }
 
@@ -177,15 +157,11 @@ public class MenuManagerDialog extends AbstractDialog<Object> implements TreeSel
                             return f.isDirectory() || f.getName().endsWith(ext);
                         }
                     });
-
                     d.setFileSelectionMode(FileChooserSelectionMode.FILES_AND_DIRECTORIES);
                     d.setMultiSelection(false);
-
                     d.setStorageID(ext);
                     d.setType(FileChooserType.OPEN_DIALOG);
-
                     Dialog.getInstance().showDialog(d);
-
                     File selected = d.getSelectedFile();
                     if (selected.exists() && selected.getName().endsWith(ext)) {
                         MenuStructure data = manager.readFrom(selected);
@@ -199,19 +175,16 @@ public class MenuManagerDialog extends AbstractDialog<Object> implements TreeSel
                     Dialog.getInstance().showExceptionDialog(_GUI.T.lit_error_occured(), e1.getMessage(), e1);
                 }
             }
-
         }) {
             @Override
             public int getTooltipDelay(Point mousePositionOnScreen) {
                 return 500;
             }
         };
-
         ExtButton reset = new ExtButton(new AppAction() {
             {
                 setTooltipText(_GUI.T.ManagerFrame_layoutPanel_resettodefault());
                 setSmallIcon(new AbstractIcon(IconKey.ICON_UNDO, 20));
-
             }
 
             @Override
@@ -223,7 +196,6 @@ public class MenuManagerDialog extends AbstractDialog<Object> implements TreeSel
                     MenuContainerRoot data = manager.setupDefaultStructure();
                     data.validateFull();
                     model.set(data);
-
                     if (tree.getRowCount() > 0) {
                         tree.setSelectionRow(0);
                     }
@@ -232,9 +204,7 @@ public class MenuManagerDialog extends AbstractDialog<Object> implements TreeSel
                 } catch (DialogCanceledException e1) {
                     e1.printStackTrace();
                 }
-
             }
-
         }) {
             @Override
             public int getTooltipDelay(Point mousePositionOnScreen) {
@@ -244,18 +214,14 @@ public class MenuManagerDialog extends AbstractDialog<Object> implements TreeSel
         ExtButton remove = new ExtButton(new RemoveAction(this));
         add.setText(null);
         addSubmenu.setText(null);
-
         remove.setText(null);
         topline.add(add, "height 24!");
         topline.add(addSubmenu, "height 24!");
-
         topline.add(Box.createHorizontalBox());
-
         topline.add(remove, "height 24!");
         topline.add(reset, "height 24!");
         topline.add(importButton, "height 24!");
         topline.add(export, "height 24!");
-
         ret.add(topline, "wrap,spanx");
         return ret;
     }
@@ -273,12 +239,9 @@ public class MenuManagerDialog extends AbstractDialog<Object> implements TreeSel
                 MenuContainerRoot data = ((MenuContainerRoot) model.getRoot()).clone();
                 manager.setMenuData(data);
                 setReturnmask(true);
-
                 dispose();
             }
-
         });
-
         ExtButton cancel = new ExtButton(new AppAction() {
             {
                 setName(_GUI.T.lit_cancel());
@@ -287,12 +250,9 @@ public class MenuManagerDialog extends AbstractDialog<Object> implements TreeSel
 
             @Override
             public void actionPerformed(ActionEvent e) {
-
                 setReturnmask(false);
-
                 dispose();
             }
-
         });
         ExtButton apply = new ExtButton(new AppAction() {
             {
@@ -304,9 +264,7 @@ public class MenuManagerDialog extends AbstractDialog<Object> implements TreeSel
             public void actionPerformed(ActionEvent e) {
                 MenuContainerRoot data = ((MenuContainerRoot) model.getRoot()).clone();
                 manager.setMenuData(data);
-
                 data = manager.getMenuData();
-
                 int[] rows = tree.getSelectionRows();
                 // tree.getSelectionModel().addTreeSelectionListener(MenuManagerDialog.this);
                 model.set(data);
@@ -317,7 +275,6 @@ public class MenuManagerDialog extends AbstractDialog<Object> implements TreeSel
                         tree.setSelectionRow(0);
                     }
                 }
-
             }
         });
         bottom.add(save, "tag ok,height 24!");
@@ -325,15 +282,7 @@ public class MenuManagerDialog extends AbstractDialog<Object> implements TreeSel
         bottom.add(apply, "tag apply,height 24!");
         bottom.setOpaque(false);
         return bottom;
-
     }
-
-    // protected List<? extends Image> getAppIconList() {
-    // final java.util.List<Image> list = new ArrayList<Image>();
-    // list.add(NewTheme.I().getImage("menu", 16));
-    // list.add(NewTheme.I().getImage("menu", 32));
-    // return list;
-    // }
 
     private String ext = ".jdDlMenu";
 
@@ -344,7 +293,6 @@ public class MenuManagerDialog extends AbstractDialog<Object> implements TreeSel
 
     @Override
     protected int getPreferredHeight() {
-
         return 550;
     }
 
@@ -359,28 +307,19 @@ public class MenuManagerDialog extends AbstractDialog<Object> implements TreeSel
         setMinimumSize(new Dimension(550, 400));
         final MigPanel panel = new MigPanel("ins 2,wrap 2", "[grow,fill][fill]", "[grow,fill][]");
         panel.setOpaque(false);
-
         LAFOptions.getInstance().applyPanelBackground((JComponent) getDialog().getContentPane());
         LAFOptions.getInstance().applyPanelBackground(panel);
-
         model = new ManagerTreeModel();
         tree = new MenuManagerTree(this);
-
         tree.getSelectionModel().addTreeSelectionListener(this);
         LAFOptions.getInstance().applyPanelBackground(tree);
-
-        // tree.set
-        // tree.setShowsRootHandles(false);
         HeaderScrollPane sp = new HeaderScrollPane(tree) {
-
             @Override
             public Dimension getPreferredSize() {
                 Dimension pref = tree.getPreferredSize();
-
                 pref.width = 100;
                 return pref;
             }
-
         };
         sp.setColumnHeaderView(new TreeHeader());
         panel.add(sp);
@@ -390,9 +329,7 @@ public class MenuManagerDialog extends AbstractDialog<Object> implements TreeSel
         sp.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
         sp.setColumnHeaderView(new OptionsPaneHeader());
         panel.add(sp);
-
         LAFOptions.getInstance().applyPanelBackground(sp);
-
         if (tree.getRowCount() > 0) {
             tree.setSelectionRow(0);
         }
@@ -408,7 +345,6 @@ public class MenuManagerDialog extends AbstractDialog<Object> implements TreeSel
     }
 
     public void addAction(ActionData action) {
-
         TreePath sel = model.addAction(tree.getSelectionPath(), new MenuItemData(action));
         tree.setSelectionPath(sel);
     }
@@ -421,7 +357,6 @@ public class MenuManagerDialog extends AbstractDialog<Object> implements TreeSel
     public void deleteSelection() {
         int[] rows = tree.getSelectionRows();
         model.remove(tree.getSelectionPath());
-
         if (rows != null && rows.length > 0) {
             if (tree.getRowCount() <= rows[0]) {
                 rows[0]--;
@@ -434,7 +369,6 @@ public class MenuManagerDialog extends AbstractDialog<Object> implements TreeSel
 
     public void setVisible(boolean b) {
         super.setVisible(b);
-
         MenuContainerRoot md = manager.getMenuData();
         long t = System.currentTimeMillis();
         md.validateFull();
@@ -443,7 +377,6 @@ public class MenuManagerDialog extends AbstractDialog<Object> implements TreeSel
         if (tree.getRowCount() > 0) {
             tree.setSelectionRow(0);
         }
-
     }
 
     @Override
@@ -457,7 +390,6 @@ public class MenuManagerDialog extends AbstractDialog<Object> implements TreeSel
     }
 
     public void fireUpdate() {
-
         tree.getSelectionModel().removeTreeSelectionListener(this);
         TreePath[] sel = tree.getSelectionPaths();
         model.fireUpdate();
@@ -487,5 +419,4 @@ public class MenuManagerDialog extends AbstractDialog<Object> implements TreeSel
     public LogSource getLogger() {
         return logger;
     }
-
 }

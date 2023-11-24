@@ -1,6 +1,5 @@
 package jd.controlling.reconnect;
 
-
 public interface ProcessCallBack {
     public void setProgress(Object caller, int percent);
 
@@ -21,5 +20,4 @@ public interface ProcessCallBack {
      * @return
      */
     public boolean isMethodConfirmEnabled();
-
 }

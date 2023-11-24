@@ -13,10 +13,6 @@ import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JComboBox;
 
-import jd.controlling.AccountController;
-import jd.controlling.TaskQueue;
-import jd.plugins.PluginForHost;
-
 import org.appwork.swing.components.searchcombo.SearchComboBox;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.event.queue.QueueAction;
@@ -38,6 +34,10 @@ import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.premium.BuyAndAddPremiumAccount;
 import org.jdownloader.premium.BuyAndAddPremiumDialogInterface;
+
+import jd.controlling.AccountController;
+import jd.controlling.TaskQueue;
+import jd.plugins.PluginForHost;
 
 public class BuyAction extends AbstractAction {
     /**
@@ -117,7 +117,6 @@ public class BuyAction extends AbstractAction {
                                 }
 
                                 protected String getIconConstraints() {
-                                    // TODO Auto-generated method stub
                                     return "gapright 10,gaptop 2,width 32!,height 32!,alignx center, aligny center";
                                 }
 

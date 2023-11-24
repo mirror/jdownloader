@@ -60,7 +60,6 @@ public class EditAccountDialog extends AbstractDialog<Integer> implements InputC
         getDialog().addWindowFocusListener(new WindowFocusListener() {
             @Override
             public void windowLostFocus(final WindowEvent windowevent) {
-                // TODO Auto-generated method stub
             }
 
             @Override

@@ -37,7 +37,6 @@ public class IconedProcessIndicator extends CircledProgressBar implements MouseL
 
     @Override
     public boolean isTooltipWithoutFocusEnabled() {
-        // TODO Auto-generated method stub
         return false;
     }
 

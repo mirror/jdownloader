@@ -1,7 +1,5 @@
 package org.jdownloader.gui.views.downloads;
 
-import java.awt.Color;
-
 import javax.swing.JLabel;
 
 import org.appwork.swing.components.tooltips.ExtTooltip;
@@ -17,7 +15,7 @@ public class HosterToolTip extends ExtTooltip {
                 JLabel lbl;
                 panel.add(lbl = new JLabel(link.getDomain(), link.getFavIcon(), JLabel.LEADING));
                 SwingUtils.setOpaque(lbl, false);
-                lbl.setForeground(new Color(this.getConfig().getForegroundColor()));
+                lbl.setForeground(FOREGROUND_COLOR);
             }
         }
         this.panel.setOpaque(false);

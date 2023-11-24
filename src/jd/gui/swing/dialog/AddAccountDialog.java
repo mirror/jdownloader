@@ -415,7 +415,6 @@ public class AddAccountDialog extends AbstractDialog<Integer> implements InputCh
         getDialog().addWindowFocusListener(new WindowFocusListener() {
             @Override
             public void windowLostFocus(final WindowEvent windowevent) {
-                // TODO Auto-generated method stub
             }
 
             @Override
