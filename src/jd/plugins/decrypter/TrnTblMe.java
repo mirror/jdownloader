@@ -17,19 +17,26 @@ package jd.plugins.decrypter;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
+import org.appwork.storage.TypeRef;
 import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.hoster.DirectHTTP;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "trntbl.me" }, urls = { "http://(www\\.)?trntbl\\.me/[a-z0-9\\-]+" })
 public class TrnTblMe extends PluginForDecrypt {
@@ -42,98 +49,116 @@ public class TrnTblMe extends PluginForDecrypt {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.AUDIO_STREAMING };
     }
 
-    private final int TRACKSPERPAGE = 50;
+    private final int ITEMS_PER_PAGE = 50;
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final String contenturl = param.getCryptedUrl();
         br.setFollowRedirects(true);
-        final String user = new Regex(parameter, "trntbl\\.me/(.+)").getMatch(0);
+        final String user = new Regex(contenturl, "trntbl\\.me/(.+)").getMatch(0);
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(user);
         br.getHeaders().put("Accept", "*/*");
         final DecimalFormat df = new DecimalFormat("0000");
         int offset = 0;
         int request = 0;
         boolean cont = true;
         while (cont == true) {
-            try {
-                if (this.isAbort()) {
-                    logger.info("Decryption aborted for link: " + parameter);
-                    return decryptedLinks;
-                }
-            } catch (final Throwable e) {
-            }
-            br.getPage("http://" + user + ".tumblr.com/api/read/json?callback=Request.JSONP.request_map.request_" + request + "&type=audio&start=" + offset + "&num=" + TRACKSPERPAGE + "&cache_bust=" + df.format(new Random().nextInt(1000)));
-            br.getRequest().setHtmlCode(br.toString().replace("\\", ""));
-            final String listString = br.getRegex("type\":\"audio\",\"posts\":\\[(.*?)\\]\\}\\);").getMatch(0);
-            final String[] info = listString.split("\\},");
-            if (info == null || info.length == 0) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            }
-            for (final String singleInfo : info) {
+            br.getPage("http://" + user + ".tumblr.com/api/read/json?callback=Request.JSONP.request_map.request_" + request + "&type=audio&start=" + offset + "&num=" + ITEMS_PER_PAGE + "&cache_bust=" + df.format(new Random().nextInt(1000)));
+            final String json = new Regex(br.getRequest().getHtmlCode(), "(\\{.+)\\);$").getMatch(0);
+            final Map<String, Object> entries = restoreFromString(json, TypeRef.MAP);
+            final List<Map<String, Object>> posts = (List<Map<String, Object>>) entries.get("posts");
+            for (final Map<String, Object> post : posts) {
+                final String playerhtml = (String) post.get("audio-player");
                 String filename = null;
-                String finallink = new Regex(singleInfo, "\\?audio_file=(http[^<>\"]*?)\"").getMatch(0);
-                if (finallink == null) {
-                    // Maybe no tumblr link
-                    // Maybe soundcloud link
-                    finallink = new Regex(singleInfo, "<iframe src=\"(http[^<>\"]*?)\" frameborder=").getMatch(0);
+                String finallink = new Regex(playerhtml, "\\?audio_file=(http[^<>\"]*?)\"").getMatch(0);
+                final ArrayList<DownloadLink> thisResults = new ArrayList<DownloadLink>();
+                if (playerhtml != null) {
                     if (finallink != null) {
-                        decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(finallink.trim())));
-                        continue;
+                        finallink = Encoding.htmlDecode(finallink.trim());
+                        final String tumblrPostID = new Regex(finallink, "audio_file/[a-z0-9\\-]+/(\\d+)/").getMatch(0);
+                        final String artist = (String) post.get("id3-artist");
+                        final String album = (String) post.get("id3-album");
+                        String title = (String) post.get("id3-title");
+                        if (title == null) {
+                            title = post.get("slug").toString();
+                        }
+                        if (title == null) {
+                            title = tumblrPostID;
+                        }
+                        if (artist != null && album != null) {
+                            filename = Encoding.htmlDecode(artist.trim()) + " - " + Encoding.htmlDecode(album.trim()) + " - " + Encoding.htmlDecode(title.trim());
+                        } else if (artist != null) {
+                            filename = Encoding.htmlDecode(artist.trim()) + " - " + Encoding.htmlDecode(title) + " - ";
+                        } else {
+                            filename = Encoding.htmlDecode(title.trim());
+                        }
+                        final DownloadLink dl;
+                        if (tumblrPostID != null) {
+                            final String postLink = "http://" + user + ".tumblrdecrypted.com/post/" + tumblrPostID;
+                            dl = createDownloadlink(postLink);
+                            dl.setProperty("audiodirectlink", finallink);
+                        } else {
+                            dl = this.createDownloadlink(DirectHTTP.createURLForThisPlugin(finallink));
+                        }
+                        dl.setFinalFileName(filename + ".mp3");
+                        dl.setAvailable(true);
+                        thisResults.add(dl);
+                    } else {
+                        /* Look for external links */
+                        // Maybe soundcloud link
+                        finallink = new Regex(playerhtml, "<iframe src=\"(http[^<>\"]*?)\" frameborder=").getMatch(0);
+                        if (finallink == null) {
+                            // Maybe spotify link
+                            finallink = new Regex(playerhtml, "class=\"spotify_audio_player\" src=\"(http[^<>\"]*?)\"").getMatch(0);
+                            if (finallink == null) {
+                                // Bandcamp
+                                finallink = new Regex(playerhtml, "\"(http[^\"]+bandcamp\\.com/track/[^\"]+)").getMatch(0);
+                            }
+                        }
+                        if (finallink != null) {
+                            thisResults.add(this.createDownloadlink(Encoding.htmlDecode(finallink)));
+                        } else {
+                            /* Final fallback: Add all URLs we can find. */
+                            final String[] urls = HTMLParser.getHttpLinks(playerhtml, br.getURL());
+                            if (urls != null && urls.length > 0) {
+                                for (final String url : urls) {
+                                    thisResults.add(this.createDownloadlink(url));
+                                }
+                            }
+                        }
                     }
-                    // Maybe spotify link
-                    finallink = new Regex(singleInfo, "class=\"spotify_audio_player\" src=\"(http[^<>\"]*?)\"").getMatch(0);
-                    if (finallink != null) {
-                        decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(finallink.trim())));
-                        continue;
-                    }
-                    // Bandcap
-                    finallink = new Regex(singleInfo, "\"(http[^\"]+bandcamp\\.com/track/[^\"]+)").getMatch(0);
-                    if (finallink != null) {
-                        decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(finallink.trim())));
-                        continue;
-                    }
-                }
-                if (finallink == null) {
-                    logger.warning("Decrypter broken for link: " + parameter);
-                    return null;
-                }
-                finallink = Encoding.htmlDecode(finallink.trim());
-                final String postID = new Regex(finallink, "audio_file/[a-z0-9\\-]+/(\\d+)/").getMatch(0);
-                final String postLink = "http://" + user + ".tumblrdecrypted.com/post/" + postID;
-                final String artist = new Regex(singleInfo, "\"id3-artist\":\"([^<>\"]*?)\"").getMatch(0);
-                final String album = new Regex(singleInfo, "\"id3-album\":\"([^<>\"]*?)\"").getMatch(0);
-                String title = new Regex(singleInfo, "\"id3-title\":\"([^<>\"]*?)\"").getMatch(0);
-                if (title == null) {
-                    title = new Regex(singleInfo, "\"slug\":\"([^<>\"]*?)\"").getMatch(0);
-                }
-                if (title == null) {
-                    title = postID;
-                }
-                if (artist != null && album != null) {
-                    filename = Encoding.htmlDecode(artist.trim()) + " - " + Encoding.htmlDecode(album.trim()) + " - " + Encoding.htmlDecode(title.trim());
-                } else if (artist != null) {
-                    filename = Encoding.htmlDecode(artist.trim()) + " - " + Encoding.htmlDecode(title) + " - ";
                 } else {
-                    filename = Encoding.htmlDecode(title.trim());
+                    final String regularhtml = post.get("regular-body").toString();
+                    final String[] urls = HTMLParser.getHttpLinks(regularhtml, br.getURL());
+                    if (urls != null && urls.length > 0) {
+                        for (final String url : urls) {
+                            thisResults.add(this.createDownloadlink(url));
+                        }
+                    }
                 }
-                final DownloadLink dl = createDownloadlink(postLink);
-                dl.setProperty("audiodirectlink", finallink);
-                dl.setFinalFileName(filename + ".mp3");
-                dl.setAvailable(true);
-                decryptedLinks.add(dl);
+                if (thisResults.isEmpty()) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                for (final DownloadLink result : thisResults) {
+                    result._setFilePackage(fp);
+                    distribute(result);
+                    ret.add(result);
+                }
             }
-            if (info.length == TRACKSPERPAGE) {
-                offset += TRACKSPERPAGE;
-                request++;
-            } else {
-                cont = false;
+            logger.info("Crawled offset " + offset + " | Items found so far: " + ret.size());
+            if (this.isAbort()) {
+                logger.info("Stopping bcause: Aborted by user");
                 break;
+            } else if (posts.size() < ITEMS_PER_PAGE) {
+                logger.info("Stopping because: Current page contains less items than: " + ITEMS_PER_PAGE);
+                break;
+            } else {
+                /* Continue to next page */
+                offset += ITEMS_PER_PAGE;
+                request++;
             }
         }
-        final FilePackage fp = FilePackage.getInstance();
-        fp.setName(user);
-        fp.addLinks(decryptedLinks);
-        return decryptedLinks;
+        return ret;
     }
 }

@@ -229,24 +229,30 @@ public class BibeltvDe extends PluginForHost {
                 /* RegEx updated last time: Key last time: j88bRXY8DsEqJ9xmTdWhrByVi5Hm */
                 /* 2023-03-30: It is hard to find the correct js URL right away so I've changed this to go through all JS URLs... */
                 logger.info("Looking for authentication key...");
-                final String[] jsURLs = br.getRegex("\"(/mediathek/[^\"]+\\.js)\"").getColumn(0);
-                if (jsURLs == null || jsURLs.length == 0) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                final HashSet<String> alljsurls = new HashSet<String>();
+                final String[] jsurls1 = br.getRegex("\"(/mediathek/[^\"]+\\.js)\"").getColumn(0);
+                if (jsurls1 != null && jsurls1.length > 0) {
+                    for (String jsurl : jsurls1) {
+                        jsurl = br.getURL(jsurl).toExternalForm();
+                        alljsurls.add(jsurl);
+                    }
+                }
+                final String[] jsurls2 = br.getRegex("\"\\d+:([^\"]+\\.js).?\"").getColumn(0);
+                if (jsurls2 != null && jsurls2.length > 0) {
+                    for (String jsurl : jsurls2) {
+                        jsurl = "https://www.bibeltv.de/mediathek/_next/" + jsurl;
+                        alljsurls.add(jsurl);
+                    }
                 }
                 final Browser brc = br.cloneBrowser();
                 int progress = 0;
                 String apiKeyDetected = null;
-                final HashSet<String> dupes = new HashSet<String>();
-                for (final String jsURL : jsURLs) {
+                for (final String jsURL : alljsurls) {
                     progress++;
-                    logger.info("Working on jsURL " + progress + "/" + jsURLs.length + " | " + jsURL);
+                    logger.info("Working on jsURL " + progress + "/" + alljsurls.size() + " | " + jsURL);
                     if (this.isAbort()) {
                         logger.info("Aborted by user");
                         throw new InterruptedException();
-                    }
-                    /* Skip dupes */
-                    if (!dupes.add(jsURL)) {
-                        continue;
                     }
                     brc.getPage(jsURL);
                     final String apiKeyTemp = brc.getRegex("Authorization\\s*:\"([^\"]+)\"").getMatch(0);
