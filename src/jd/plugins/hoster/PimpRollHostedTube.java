@@ -48,7 +48,7 @@ import jd.plugins.components.SiteType.SiteTemplate;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 /* 2020-08-27: Working example: dirtymovie.com */
 public class PimpRollHostedTube extends PluginForHost {
-    public static String[] t = { "bestporno.net", "descargarpelisporno.com", "hentaiporntube.org", "porrfilmer.biz", "redgayporntube.com", "sex-cake.com", "sexernet.com", "sexfilmer.nu", "sexlifetube.com", "sexmovieporn.com", "sexparty.tv", "sexthings.com", "sextube-6.com", "smuthouse.com", "strapon.se", "swingersx.com", "tastyblackpussy.com", "teenpornocity.com", "teensteam.com", "thehotbabes.net", "themeatmen.com", "themostgay.com", "thestagparty.com", "throatpokers.com", "topfemales.com", "totalfetish.com", "videolivesex.com", "vidz.info", "vip-babes-world.com", "watchpornvideos.com", "xmovielove.com", "xpoko.com", "xtube.mobi", "xxxhelp.com", "xxxlinkshunter.com", "xxxpromos.com", "xxxthailand.net", "youjizz.net", "youjizz66.com", "wankz.com" };
+    public static String[] t = { "bestporno.net", "descargarpelisporno.com", "hentaiporntube.org", "porrfilmer.biz", "redgayporntube.com", "sex-cake.com", "sexfilmer.nu", "sexmovieporn.com", "sextube-6.com", "tastyblackpussy.com", "teenpornocity.com", "videolivesex.com", "vidz.info", "vip-babes-world.com", "watchpornvideos.com", "xmovielove.com", "xpoko.com", "xtube.mobi", "xxxhelp.com", "xxxlinkshunter.com", "xxxpromos.com", "xxxthailand.net", "youjizz.net", "youjizz66.com", "wankz.com" };
 
     @Override
     public LazyPlugin.FEATURE[] getFeatures() {

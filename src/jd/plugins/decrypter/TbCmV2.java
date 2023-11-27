@@ -374,7 +374,7 @@ public class TbCmV2 extends PluginForDecrypt {
             synchronized (DIALOGLOCK) {
                 if (this.isAbort()) {
                     logger.info("Thread Aborted!");
-                    return ret;
+                    throw new InterruptedException();
                 }
                 /* Ask user: Prevents accidental crawling of entire Play-List or Channel-List or User-List. */
                 IfUrlisAPlaylistAction playListAction = cfg.getLinkIsPlaylistUrlAction();
@@ -971,7 +971,7 @@ public class TbCmV2 extends PluginForDecrypt {
             }
             if (this.isAbort()) {
                 logger.info("Aborted!");
-                return ret;
+                throw new InterruptedException();
             }
         }
         return ret;

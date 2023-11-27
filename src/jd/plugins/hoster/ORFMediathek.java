@@ -62,6 +62,13 @@ public class ORFMediathek extends PluginForHost {
     }
 
     @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.setFollowRedirects(true);
+        return br;
+    }
+
+    @Override
     public String getAGBLink() {
         return "http://orf.at";
     }
@@ -122,7 +129,6 @@ public class ORFMediathek extends PluginForHost {
             }
             /* fetch fresh directURL */
             this.setBrowserExclusive();
-            br.setFollowRedirects(true);
             br.getPage(link.getPluginPatternMatcher());
             if (br.containsHTML("Keine aktuellen Sendungen vorhanden")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -135,8 +141,6 @@ public class ORFMediathek extends PluginForHost {
         }
         if (this.isSubtitle(link) || ("http".equals(link.getStringProperty("streamingType")) && StringUtils.equalsIgnoreCase("progressive", link.getStringProperty("delivery")))) {
             final Browser br2 = br.cloneBrowser();
-            // In case the link redirects to the finallink
-            br2.setFollowRedirects(true);
             dllink = link.getStringProperty("directURL");
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -189,27 +193,17 @@ public class ORFMediathek extends PluginForHost {
         }
         if ("hls".equals(link.getStringProperty("delivery"))) {
             checkFFmpeg(link, "Download a HLS Stream");
-            br.setFollowRedirects(true);
             br.getPage(dllink);
-            if (br.getHttpConnection().getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_FATAL, "GEO-blocked");
-            }
+            checkGeoBlockedForSegmentStreamDownloads(br);
             final HlsContainer best = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(br));
             if (best == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            } else if (StringUtils.containsIgnoreCase(best.getDownloadurl(), "geoprotection_")) {
-                throw new PluginException(LinkStatus.ERROR_FATAL, "GEO-blocked");
             }
             dl = new HLSDownloader(link, br, best.getDownloadurl());
             dl.startDownload();
         } else if ("hds".equals(link.getStringProperty("delivery"))) {
             br.getPage(dllink);
-            br.followRedirect(true);
-            if (br.getHttpConnection().getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_FATAL, "GEO-blocked");
-            } else if (StringUtils.containsIgnoreCase(br.getURL(), "geoprotection_")) {
-                throw new PluginException(LinkStatus.ERROR_FATAL, "GEO-blocked");
-            }
+            checkGeoBlockedForSegmentStreamDownloads(br);
             final List<HDSContainer> all = HDSContainer.getHDSQualities(br);
             if (all == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -233,16 +227,29 @@ public class ORFMediathek extends PluginForHost {
             dl.setEstimatedDuration(hit.getDuration());
             dl.startDownload();
         } else if (dllink.startsWith("rtmp")) {
-            throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported protocol");
+            /* 2023-11-27: This should never happen */
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported protocol rtmp(e)");
         } else {
             if (isSubtitle(link)) {
                 /* Workaround for old downloadcore bug that can lead to incomplete files */
                 br.getHeaders().put("Accept-Encoding", "identity");
             }
-            br.setFollowRedirects(true);
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
             this.handleConnectionErrors(link, br, dl.getConnection());
             dl.startDownload();
+        }
+    }
+
+    private void checkGeoBlockedForSegmentStreamDownloads(final Browser br) throws PluginException {
+        final String errortextGeoBlocked1 = "Error 403: GEO-blocked content or video temporarily unavailable via this streaming method. Check your orf.at plugin settings.";
+        final String errortextGeoBlocked2 = "GEO-blocked";
+        if (br.getHttpConnection().getResponseCode() == 403) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, errortextGeoBlocked1);
+        } else if (StringUtils.containsIgnoreCase(br.getURL(), "geoprotection_")) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, errortextGeoBlocked2);
+        } else if (StringUtils.containsIgnoreCase(br.getURL(), "nicht_verfuegbar_hr")) {
+            /* 2023-11-27 */
+            throw new PluginException(LinkStatus.ERROR_FATAL, errortextGeoBlocked2);
         }
     }
 

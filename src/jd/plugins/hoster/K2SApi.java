@@ -826,9 +826,12 @@ public abstract class K2SApi extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (StringUtils.startsWithCaseInsensitive(captchaAddress, "http://")) {
-            /*
+            /**
              * 2020-02-03: Possible workaround for this issues reported here: board.jdownloader.org/showthread.php?t=82989 and 2020-04-23:
-             * board.jdownloader.org/showthread.php?t=83927 and board.jdownloader.org/showthread.php?t=83781
+             * board.jdownloader.org/showthread.php?t=83927 </br>
+             * and board.jdownloader.org/showthread.php?t=83781 </br>
+             * Explanation: This filehost will block the users' IP if too many un-answered captcha requests are taking place. </br>
+             * This method is here to try to avoid this.
              */
             logger.info("login-captcha_url is not https --> Changing it to https");
             captchaAddress = captchaAddress.replaceFirst("(?i)http://", "https://");
@@ -848,13 +851,40 @@ public abstract class K2SApi extends PluginForHost {
                 if (isLoginCaptcha) {
                     throw new AccountUnavailableException(text, waitMillis);
                 } else {
+                    /* Captcha happened during download -> Skip all items of this host */
                     throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, text, waitMillis);
+                    // final List<Challenge<?>> challenges = this.getChallenges();
+                    // throw new SkipException(challenges.get(challenges.size() - 1), SkipRequest.BLOCK_HOSTER, "");
                 }
             } else {
                 throw ce;
             }
         }
     }
+    // @Override
+    // protected <T> T handleCaptchaChallenge(final DownloadLink link, Challenge<T> c) throws CaptchaException, PluginException,
+    // InterruptedException {
+    // final boolean isAccountLoginCaptchaChallenge = isAccountLoginCaptchaChallenge(link, c);
+    // try {
+    // return super.handleCaptchaChallenge(link, c);
+    // } catch (final CaptchaException ce) {
+    // if (ce.getSkipRequest() == SkipRequest.TIMEOUT) {
+    // /* User did not respond to captcha request */
+    // final String text = "You did not answer the captcha on time | Waiting in order to avoid IP ban";
+    // final long waitMillis = 3 * 60 * 60 * 1000;
+    // if (isAccountLoginCaptchaChallenge) {
+    // throw new AccountUnavailableException(text, waitMillis);
+    // } else {
+    // /* Captcha happened during download -> Skip all items of this host */
+    // // throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, text, waitMillis);
+    // final List<Challenge<?>> challenges = this.getChallenges();
+    // throw new SkipException(c, SkipRequest.BLOCK_HOSTER, "");
+    // }
+    // } else {
+    // throw ce;
+    // }
+    // }
+    // }
 
     private void saveFreeLimit(final Account account, final String currentIP, final long timestampLimitActivated) {
         synchronized (CTRLLOCK) {

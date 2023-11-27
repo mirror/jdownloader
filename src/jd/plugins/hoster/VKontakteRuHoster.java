@@ -31,7 +31,6 @@ import java.util.regex.Pattern;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.annotations.LabelInterface;
-import org.appwork.utils.Files;
 import org.appwork.utils.Hash;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.LogSource;
@@ -189,7 +188,7 @@ public class VKontakteRuHoster extends PluginForHost {
     private String setAndGetFileNameFromDirectURL(DownloadLink link, final String url) {
         String filename = extractFileNameFromURL(url);
         if (filename != null) {
-            final String extension = Files.getExtension(filename);
+            final String extension = Plugin.getFileNameExtensionFromString(filename);
             if (StringUtils.endsWithCaseInsensitive(filename, "." + extension)) {
                 final String urlName = new Regex(url, ".+/([^/].+\\." + Pattern.quote(extension) + ")$").getMatch(0);
                 if (urlName != null) {
@@ -210,15 +209,6 @@ public class VKontakteRuHoster extends PluginForHost {
             }
         }
         return null;
-    }
-
-    @Override
-    public String rewriteHost(String host) {
-        if (host == null || host.equalsIgnoreCase("vkontakte.ru")) {
-            return this.getHost();
-        } else {
-            return super.rewriteHost(host);
-        }
     }
 
     @Override
@@ -432,152 +422,115 @@ public class VKontakteRuHoster extends PluginForHost {
                     this.finalUrl = getHighestQualityPicFromSavedJson(link, link.getStringProperty(PROPERTY_PHOTOS_directurls_fallback, null), isDownload);
                 }
                 if (this.finalUrl == null) {
-                    final String old_photo_list_id = this.getPhotoListID(link);
-                    String new_photo_list_id = null;
+                    String photo_list_id = this.getPhotoListID(link);
                     final String module = link.getStringProperty(PROPERTY_PHOTOS_photo_module);
                     final String photoID = getPhotoID(link);
-                    String photo_list_idToUse = old_photo_list_id;
                     setHeadersPhoto(br);
-                    if (module != null) {
-                        /* Access photo inside wall-post or wall reply or photo album */
-                        int photo_counter = 0;
-                        do {
-                            photo_counter++;
-                            if (photo_counter > 1) {
-                                /* 2nd loop */
-                                /*
-                                 * 2020-01-28: Some content needs a photo_list_id which is generated when accessing the html page so this
-                                 * can be seen as a workaround but sometimes it is mandatory!
-                                 */
-                                final String content_url = link.getContentUrl();
-                                if (content_url == null || !content_url.contains(photoID)) {
-                                    logger.info("photo_list_id workaround is not possible");
-                                    break;
-                                }
-                                logger.info("Attempting photo_list_id workaround");
-                                this.getPageSafe(account, link, content_url);
-                                new_photo_list_id = br.getRegex(photoID + "(?:%2F|/)([a-f0-9]+)").getMatch(0);
-                                if (new_photo_list_id == null) {
-                                    logger.warning("photo_list_id workaround failed");
-                                    if (account == null) {
-                                        /* Assume that account is required */
-                                        throw new AccountRequiredException();
-                                    } else {
-                                        /* Assume that permissions are missing. */
-                                        throw new AccountRequiredException("Missing permissions");
-                                    }
-                                } else {
-                                    logger.warning("Successfully found new photo_list_id: " + new_photo_list_id + " | Old: " + link.getStringProperty(PROPERTY_PHOTOS_photo_list_id));
-                                    try {
-                                        /* Ugly workaround */
-                                        link.setProperty(PROPERTY_PHOTOS_photo_list_id, new_photo_list_id);
-                                        photo_list_idToUse = this.getPhotoListID(link);
-                                    } finally {
-                                        link.setProperty(PROPERTY_PHOTOS_photo_list_id, old_photo_list_id);
-                                    }
-                                }
-                            }
-                            /*
-                             * 2020-01-27: Browser request would also contain "&dmcah=".
-                             */
-                            final String postData = "act=show&al=1&al_ad=0&dmcah=&list=" + photo_list_idToUse + "&module=" + module + "&photo=" + photoID;
-                            postPageSafe(br, account, link, getBaseURL() + "/al_photos.php?act=show", postData);
-                        } while (photo_counter <= 1 && PluginJSonUtils.unescape(br.toString()).contains("\"Access denied\""));
-                        checkErrorsPhoto(br);
-                        if (!StringUtils.equalsIgnoreCase(old_photo_list_id, new_photo_list_id)) {
-                            link.setProperty(PROPERTY_PHOTOS_photo_list_id, new_photo_list_id);
+                    /* Access normal single photo or photo inside album (in context of album). */
+                    String albumID = link.getStringProperty(PROPERTY_PHOTOS_album_id);
+                    /* Find albumID */
+                    getPageSafe(account, link, getBaseURL() + "/photo" + photoID);
+                    if (br.containsHTML("(?i)>\\s*(Unknown error|Unbekannter Fehler|Access denied|Error<)") || this.br.getHttpConnection().getResponseCode() == 404) {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    } else if (!br.getURL().contains(photoID)) {
+                        /*
+                         * E.g. redirect to somewhere else --> Content is offline or we're lacking the permissions (e.g. account required).
+                         */
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    }
+                    if (photo_list_id == null) {
+                        photo_list_id = br.getRegex(photoID + "(?:%2F|/)([a-f0-9]+)").getMatch(0);
+                        // TODO: Check this
+                        // if (photo_list_id != null) {
+                        // link.setProperty(PROPERTY_PHOTOS_photo_list_id, photo_list_id);
+                        // }
+                    }
+                    if (albumID == null) {
+                        albumID = br.getRegex("class=\"active_link\">[\t\n\r ]+<a href=\"/(.*?)\"").getMatch(0);
+                        if (albumID == null) { /* new.vk.com */
+                            albumID = br.getRegex("<span class=\"photos_album_info\"><a href=\"/(.*?)\\?.*?\"").getMatch(0);
                         }
-                    } else {
-                        /* Access normal single photo or photo inside album (in context of album). */
-                        String albumID = link.getStringProperty(PROPERTY_PHOTOS_album_id);
                         if (albumID == null) {
-                            /* Find albumID */
-                            getPageSafe(account, link, getBaseURL() + "/photo" + photoID);
-                            if (br.containsHTML("(?i)>\\s*(Unknown error|Unbekannter Fehler|Access denied|Error<)") || this.br.getHttpConnection().getResponseCode() == 404) {
-                                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                            } else if (!br.getURL().contains(photoID)) {
-                                /*
-                                 * E.g. redirect to somewhere else --> Content is offline or we're lacking the permissions (e.g. account
-                                 * required).
-                                 */
-                                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                            }
-                            final String json2023_11_24 = br.getRegex("(\\{\"zFields.*?\\})\\);").getMatch(0);
-                            if (json2023_11_24 != null) {
-                                /* Hotfix 2023-11-24 */
-                                final Map<String, Object> photojsonroot = restoreFromString(json2023_11_24, TypeRef.MAP);
-                                final Map<String, Object> photoqualitymap = (Map<String, Object>) JavaScriptEngineFactory.walkJson(photojsonroot, "zOpts/temp");
-                                final Iterator<Entry<String, Object>> iterator = photoqualitymap.entrySet().iterator();
-                                final Map<String, Integer> sizeAltMapping = new HashMap<String, Integer>();
-                                sizeAltMapping.put("s", 100);
-                                sizeAltMapping.put("m", 200);
-                                sizeAltMapping.put("x", 300);
-                                sizeAltMapping.put("y", 400);
-                                sizeAltMapping.put("z", 500);
-                                sizeAltMapping.put("w", 600);
-                                int bestQualityValue = -1;
-                                String bestDirecturl = null;
-                                while (iterator.hasNext()) {
-                                    final Entry<String, Object> entry = iterator.next();
-                                    if (!sizeAltMapping.containsKey(entry.getKey())) {
-                                        /* Skipö invalid/unsupported items */
-                                        continue;
-                                    }
-                                    final List<Object> photosize = (List<Object>) entry.getValue();
-                                    final String photodirecturl = photosize.get(0).toString();
-                                    /* Fallback */
-                                    final int qualityValue = sizeAltMapping.get(entry.getKey());
-                                    if (bestDirecturl == null || qualityValue > bestQualityValue) {
-                                        bestQualityValue = qualityValue;
-                                        bestDirecturl = photodirecturl;
-                                    }
+                            /* New 2016-08-23 */
+                            final String jsonInsideHTML = this.br.getRegex("ajax\\.preload\\(\\'al_photos\\.php\\'\\s*?,\\s*?(\\{.*?)\\);").getMatch(0);
+                            if (jsonInsideHTML != null) {
+                                final String albumIDFromJson = PluginJSonUtils.getJsonValue(jsonInsideHTML, "list");
+                                if (!StringUtils.isEmpty(albumIDFromJson)) {
+                                    /* Fix id */
+                                    albumID = albumIDFromJson.replace("album", "");
                                 }
-                                if (bestDirecturl != null) {
-                                    link.setProperty(PROPERTY_PHOTOS_picturedirectlink, bestDirecturl);
-                                    return AvailableStatus.TRUE;
-                                }
-                            }
-                            albumID = br.getRegex("class=\"active_link\">[\t\n\r ]+<a href=\"/(.*?)\"").getMatch(0);
-                            if (albumID == null) { /* new.vk.com */
-                                albumID = br.getRegex("<span class=\"photos_album_info\"><a href=\"/(.*?)\\?.*?\"").getMatch(0);
-                            }
-                            if (albumID == null) {
-                                /* New 2016-08-23 */
-                                final String jsonInsideHTML = this.br.getRegex("ajax\\.preload\\(\\'al_photos\\.php\\'\\s*?,\\s*?(\\{.*?)\\);").getMatch(0);
-                                if (jsonInsideHTML != null) {
-                                    String albumIDFromJson = PluginJSonUtils.getJsonValue(jsonInsideHTML, "list");
-                                    if (!StringUtils.isEmpty(albumIDFromJson)) {
-                                        /* Fix id */
-                                        albumIDFromJson = albumIDFromJson.replace("album", "");
-                                        /* Set ID */
-                                        albumID = albumIDFromJson;
-                                    }
-                                }
-                            }
-                            if (albumID != null) {
-                                /* Save this! Important! */
-                                link.setProperty(PROPERTY_PHOTOS_album_id, albumID);
                             }
                         }
-                        if (picturesGetJsonFromHtml(br) == null) {
-                            /* Only go the json-way if we have to! */
-                            if (albumID == null) {
-                                logger.info("albumID is null and failed to find picture json");
-                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                            }
-                            postPageSafe(br, account, link, getBaseURL() + "/al_photos.php", "act=show&al=1&module=photos&list=album" + albumID + "&photo=" + photoID);
-                            checkErrorsPhoto(br);
+                        if (albumID != null) {
+                            /* Save this! Important! */
+                            link.setProperty(PROPERTY_PHOTOS_album_id, albumID);
                         }
                     }
+                    final String jsonWithImageQualities = br.getRegex("(\\{\"zFields.*?\\})\\);").getMatch(0);
+                    if (jsonWithImageQualities != null) {
+                        /* 2023-11-24 */
+                        final Map<String, Object> photojsonroot = restoreFromString(jsonWithImageQualities, TypeRef.MAP);
+                        final Map<String, Object> photoqualitymap = (Map<String, Object>) JavaScriptEngineFactory.walkJson(photojsonroot, "zOpts/temp");
+                        final Iterator<Entry<String, Object>> iterator = photoqualitymap.entrySet().iterator();
+                        final Map<String, Integer> sizeAltMapping = new HashMap<String, Integer>();
+                        sizeAltMapping.put("s", 100);
+                        sizeAltMapping.put("m", 200);
+                        sizeAltMapping.put("x", 300);
+                        sizeAltMapping.put("y", 400);
+                        sizeAltMapping.put("z", 500);
+                        sizeAltMapping.put("w", 600);
+                        int bestQualityValue = -1;
+                        String bestDirecturl = null;
+                        while (iterator.hasNext()) {
+                            final Entry<String, Object> entry = iterator.next();
+                            if (!sizeAltMapping.containsKey(entry.getKey())) {
+                                /* Skip invalid/unsupported items */
+                                continue;
+                            }
+                            final List<Object> photosize = (List<Object>) entry.getValue();
+                            final String photodirecturl = photosize.get(0).toString();
+                            /* Fallback */
+                            final int qualityValue = sizeAltMapping.get(entry.getKey());
+                            if (bestDirecturl == null || qualityValue > bestQualityValue) {
+                                bestQualityValue = qualityValue;
+                                bestDirecturl = photodirecturl;
+                            }
+                        }
+                        if (bestDirecturl == null) {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
+                        this.finalUrl = bestDirecturl;
+                        link.setProperty(PROPERTY_PHOTOS_picturedirectlink, bestDirecturl);
+                        return AvailableStatus.TRUE;
+                    } else {
+                        logger.warning("Failed to find json containing 'zFields'");
+                    }
+                    if (picturesGetJsonFromHtml(br) == null) {
+                        /* Only go the json-way if we have to! */
+                        if (albumID != null) {
+                            postPageSafe(br, account, link, getBaseURL() + "/al_photos.php", "act=show&al=1&module=photos&list=album" + albumID + "&photo=" + photoID);
+                        } else {
+                            if (photo_list_id == null || module == null) {
+                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                            }
+                            final UrlQuery query = new UrlQuery();
+                            query.add("act", "show");
+                            query.add("al", "1");
+                            query.add("al_ad", "0");
+                            query.add("dmcah", "");
+                            query.add("list", Encoding.urlEncode(photo_list_id));
+                            query.add("module", module);
+                            query.add("photo", photoID);
+                            postPageSafe(br, account, link, getBaseURL() + "/al_photos.php?act=show", query);
+                        }
+                        checkErrorsPhoto(br);
+                    }
                     try {
+                        /* 2023-11-27: TODO: Check if this is still needed */
                         this.finalUrl = getHighestQualityPictureDownloadurl(br, link, isDownload);
                         if (StringUtils.isEmpty(this.finalUrl)) {
                             /* Fallback but this will only work if the user enabled a specified plugin setting. */
                             this.finalUrl = getHighestQualityPicFromSavedJson(link, link.getStringProperty(PROPERTY_PHOTOS_directurls_fallback, null), isDownload);
-                        }
-                        if (StringUtils.isEmpty(this.finalUrl) && link.getStringProperty(PROPERTY_PHOTOS_directurls_fallback, null) == null) {
-                            /* 2019-08-08: Just a hint */
-                            logger.info("Possible failure - as a workaround download might be possible via: Enable plugin setting PROPERTY_directurls_fallback --> Re-add downloadurls --> Try again");
                         }
                     } catch (final Throwable e) {
                         logger.info("Error occured while trying to find highest quality image downloadurl");
@@ -586,13 +539,9 @@ public class VKontakteRuHoster extends PluginForHost {
                 }
                 /* 2016-10-07: Implemented to avoid host-side block although results tell me that this does not improve anything. */
                 setHeaderRefererPhoto(this.br);
-                final String temp_name = photoGetFinalFilename(getPhotoID(link), null, this.finalUrl);
-                if (temp_name != null) {
-                    if (isDownload) {
-                        link.setFinalFileName(temp_name);
-                    } else {
-                        link.setName(temp_name);
-                    }
+                final String filename = photoGetFinalFilename(getPhotoID(link), null, this.finalUrl);
+                if (filename != null) {
+                    link.setFinalFileName(filename);
                 }
             }
         }
@@ -672,17 +621,19 @@ public class VKontakteRuHoster extends PluginForHost {
                 br.getHeaders().put("Accept-Encoding", "identity");
                 dl = new jd.plugins.BrowserAdapter().openDownload(br, link, this.finalUrl, isResumeSupported(link, this.finalUrl), getMaxChunks(link, this.finalUrl));
             }
-            if (dl.getConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404");
-            } else if (dl.getConnection().getResponseCode() == 416) {
-                dl.getConnection().disconnect();
-                logger.info("Resume failed --> Retrying from zero");
-                link.setChunksProgress(null);
-                throw new PluginException(LinkStatus.ERROR_RETRY);
-            } else if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-                logger.info("vk.com: Plugin broken after download-try");
-                br.followConnection(true);
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                if (dl.getConnection().getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404");
+                } else if (dl.getConnection().getResponseCode() == 416) {
+                    dl.getConnection().disconnect();
+                    logger.info("Resume failed --> Retrying from zero");
+                    link.setChunksProgress(null);
+                    throw new PluginException(LinkStatus.ERROR_RETRY);
+                } else {
+                    logger.info("vk.com: Plugin broken after download-try");
+                    br.followConnection(true);
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
             dl.startDownload();
         }
@@ -1332,6 +1283,10 @@ public class VKontakteRuHoster extends PluginForHost {
         postPageSafe(this.br, acc, link, page, postData);
     }
 
+    private void postPageSafe(final Browser br, final Account acc, final DownloadLink link, final String page, final UrlQuery query) throws Exception {
+        postPageSafe(br, acc, link, page, query.toString());
+    }
+
     private void postPageSafe(final Browser br, final Account acc, final DownloadLink link, final String page, final String postData) throws Exception {
         br.postPage(page, postData);
         if (acc != null && br.getRedirectLocation() != null && br.getRedirectLocation().contains("login.vk.com/?role=fast")) {
@@ -1404,6 +1359,7 @@ public class VKontakteRuHoster extends PluginForHost {
      *            true: Return best quality which also can be downloaded <br/>
      *            false: return best quality downloadurl without checking whether it is downloadable or not
      */
+    @Deprecated
     @SuppressWarnings({ "unchecked" })
     private String getHighestQualityPictureDownloadurl(final Browser br, final DownloadLink dl, final boolean checkDownloadability) throws Exception {
         String json = picturesGetJsonFromHtml(br);
@@ -1412,7 +1368,7 @@ public class VKontakteRuHoster extends PluginForHost {
         }
         if (json == null) {
             /* 2019-10-02: Fallback - e.g. single image from album will return plain json. */
-            json = br.toString();
+            json = br.getRequest().getHtmlCode();
         }
         if (json == null) {
             if (br.containsHTML("<!>deleted<!>")) {
@@ -1437,30 +1393,29 @@ public class VKontakteRuHoster extends PluginForHost {
         /* 2019-10-02: New: x, r, q, p, o */
         final String[] qs = { "w_", "z_", "y_", "x_", "m_", "x_", "r_", "q_", "p_", "_o" };
         for (final String q : qs) {
-            if (this.isAbort()) {
-                logger.info("User stopped downloads --> Stepping out of getHighestQualityPic to avoid 'freeze' of the current DownloadLink");
-                /* Avoid unnecessary 'plugin defect's in the logs. */
-                throw new PluginException(LinkStatus.ERROR_RETRY, "User aborted download");
-            }
             final String srcstring = q + "src";
             final Object picobject = sourcemap.get(srcstring);
+            if (!(picobject instanceof String)) {
+                continue;
+            }
             /* Check if the link we eventually found is downloadable. */
-            if (picobject != null) {
-                dllink = (String) picobject;
-                if (!dllink.startsWith("http")) {
-                    /* Skip invalid objects */
-                    continue;
-                }
-                links_count++;
-                if (checkDownloadability) {
-                    /* Make sure that url is downloadable */
-                    if (photolinkOk(dl, null, "m_".equals(q), dllink)) {
-                        return dllink;
-                    }
-                } else {
-                    /* Don't check whether URL is downloadable or not - just return URL to highest quality picture! */
+            dllink = picobject.toString();
+            if (!dllink.startsWith("http")) {
+                /* Skip invalid objects */
+                continue;
+            }
+            links_count++;
+            if (this.isAbort()) {
+                /* Aborted by user */
+                throw new InterruptedException();
+            } else if (checkDownloadability) {
+                /* Make sure that url is downloadable */
+                if (photolinkOk(dl, null, "m_".equals(q), dllink)) {
                     return dllink;
                 }
+            } else {
+                /* Don't check whether URL is downloadable or not - just return URL to highest quality picture! */
+                return dllink;
             }
         }
         if (links_count == 0) {
@@ -1511,11 +1466,13 @@ public class VKontakteRuHoster extends PluginForHost {
     }
 
     /** RegEx source-json from html. */
+    @Deprecated
     private static String picturesGetJsonFromHtml(final Browser br) {
         return br.getRegex("ajax\\.preload\\(\\'al_photos\\.php\\'\\s*?,\\s*?\\{[^\\}]*?\\}\\s*?,\\s*?(\\[.*?)\\);\n").getMatch(0);
     }
 
     /** RegEx source-json from xml. */
+    @Deprecated
     private String picturesGetJsonFromXml(final Browser br) {
         return br.getRegex("<\\!json>(.*?)<\\!><\\!json>").getMatch(0);
     }
