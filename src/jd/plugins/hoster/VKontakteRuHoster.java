@@ -76,8 +76,8 @@ import jd.plugins.decrypter.VKontakteRu;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
 
-//Links are coming from a decrypter
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vk.com" }, urls = { "https?://vkontaktedecrypted\\.ru/(picturelink/(?:-)?\\d+_\\d+(\\?tag=[\\d\\-]+)?|audiolink/(?:-)?\\d+_\\d+)|https?://(?:new\\.)?vk\\.com/(doc[\\d\\-]+_[\\d\\-]+|s/v1/doc/[A-Za-z0-9\\-_]+|video[\\d\\-]+_[\\d\\-]+(?:#quality=\\d+p)?)(\\?hash=[^&#]+(\\&dl=[^&#]{16,})?)?|https?://(?:c|p)s[a-z0-9\\-]+\\.(?:vk\\.com|userapi\\.com|vk\\.me|vkuservideo\\.net|vkuseraudio\\.net)/[^<>\"]+\\.(?:mp[34]|(?:rar|zip|pdf).+|[rz][0-9]{2}.+)" })
+/* Most of all links are coming from a crawler plugin. */
 public class VKontakteRuHoster extends PluginForHost {
     /* Current main domain */
     private static final String DOMAIN                                                                      = "vk.com";
@@ -505,7 +505,9 @@ public class VKontakteRuHoster extends PluginForHost {
                     } else {
                         logger.warning("Failed to find json containing 'zFields'");
                     }
-                    if (picturesGetJsonFromHtml(br) == null) {
+                    this.finalUrl = getHighestQualityPictureDownloadurl(br, link, isDownload);
+                    if (this.finalUrl == null) {
+                        // TODO: Check this handling
                         /* Only go the json-way if we have to! */
                         if (albumID != null) {
                             postPageSafe(br, account, link, getBaseURL() + "/al_photos.php", "act=show&al=1&module=photos&list=album" + albumID + "&photo=" + photoID);
@@ -524,17 +526,11 @@ public class VKontakteRuHoster extends PluginForHost {
                             postPageSafe(br, account, link, getBaseURL() + "/al_photos.php?act=show", query);
                         }
                         checkErrorsPhoto(br);
-                    }
-                    try {
-                        /* 2023-11-27: TODO: Check if this is still needed */
                         this.finalUrl = getHighestQualityPictureDownloadurl(br, link, isDownload);
-                        if (StringUtils.isEmpty(this.finalUrl)) {
-                            /* Fallback but this will only work if the user enabled a specified plugin setting. */
-                            this.finalUrl = getHighestQualityPicFromSavedJson(link, link.getStringProperty(PROPERTY_PHOTOS_directurls_fallback, null), isDownload);
-                        }
-                    } catch (final Throwable e) {
-                        logger.info("Error occured while trying to find highest quality image downloadurl");
-                        logger.log(e);
+                    }
+                    if (StringUtils.isEmpty(this.finalUrl)) {
+                        /* Fallback but this will only work if the user enabled a specified plugin setting. */
+                        this.finalUrl = getHighestQualityPicFromSavedJson(link, link.getStringProperty(PROPERTY_PHOTOS_directurls_fallback, null), isDownload);
                     }
                 }
                 /* 2016-10-07: Implemented to avoid host-side block although results tell me that this does not improve anything. */
@@ -889,9 +885,7 @@ public class VKontakteRuHoster extends PluginForHost {
         handleDownload(link, account);
     }
 
-    /**
-     * JD2 CODE. DO NOT USE OVERRIDE FOR JD=) COMPATIBILITY REASONS!
-     */
+    @Override
     public boolean isProxyRotationEnabledForLinkChecker() {
         return false;
     }
@@ -1136,7 +1130,6 @@ public class VKontakteRuHoster extends PluginForHost {
         return finalfilename;
     }
 
-    /** TODO: Maybe add login via API: https://vk.com/dev/auth_mobile */
     public void login(final Browser br, final Account account, final boolean forceCookieCheck) throws Exception {
         synchronized (account) {
             br.setCookiesExclusive(true);
@@ -1362,11 +1355,11 @@ public class VKontakteRuHoster extends PluginForHost {
     @Deprecated
     @SuppressWarnings({ "unchecked" })
     private String getHighestQualityPictureDownloadurl(final Browser br, final DownloadLink dl, final boolean checkDownloadability) throws Exception {
-        String json = picturesGetJsonFromHtml(br);
+        String json = br.getRegex("ajax\\.preload\\(\\'al_photos\\.php\\'\\s*?,\\s*?\\{[^\\}]*?\\}\\s*?,\\s*?(\\[.*?)\\);\n").getMatch(0);
         if (json == null) {
-            json = picturesGetJsonFromXml(br);
+            json = br.getRegex("<\\!json>(.*?)<\\!><\\!json>").getMatch(0);
         }
-        if (json == null) {
+        if (json == null && br.getRequest().getHtmlCode().startsWith("{")) {
             /* 2019-10-02: Fallback - e.g. single image from album will return plain json. */
             json = br.getRequest().getHtmlCode();
         }
@@ -1374,12 +1367,14 @@ public class VKontakteRuHoster extends PluginForHost {
             if (br.containsHTML("<!>deleted<!>")) {
                 // we suffer some desync between website and api. I guess due to website pages been held in cache.
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else {
+                logger.warning("Failed to find source json of picturelink");
+                return null;
             }
-            logger.warning("Failed to find source json of picturelink");
-            return null;
         }
+        final Object jsonO = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.OBJECT);
         final String thisid = getPhotoID(dl);
-        final Object photoo = findPictureObject(JavaScriptEngineFactory.jsonToJavaObject(json), thisid);
+        final Object photoo = findPictureObject(jsonO, thisid);
         final Map<String, Object> sourcemap = (Map<String, Object>) photoo;
         if (sourcemap == null) {
             logger.info(json);
@@ -1428,6 +1423,7 @@ public class VKontakteRuHoster extends PluginForHost {
     }
 
     /** Recursive function to find object containing picture (download) information. */
+    @Deprecated
     private Object findPictureObject(final Object o, final String picid) {
         if (o instanceof Map) {
             final Map<String, Object> entrymap = (Map<String, Object>) o;
@@ -1463,18 +1459,6 @@ public class VKontakteRuHoster extends PluginForHost {
         } else {
             return null;
         }
-    }
-
-    /** RegEx source-json from html. */
-    @Deprecated
-    private static String picturesGetJsonFromHtml(final Browser br) {
-        return br.getRegex("ajax\\.preload\\(\\'al_photos\\.php\\'\\s*?,\\s*?\\{[^\\}]*?\\}\\s*?,\\s*?(\\[.*?)\\);\n").getMatch(0);
-    }
-
-    /** RegEx source-json from xml. */
-    @Deprecated
-    private String picturesGetJsonFromXml(final Browser br) {
-        return br.getRegex("<\\!json>(.*?)<\\!><\\!json>").getMatch(0);
     }
 
     /**
