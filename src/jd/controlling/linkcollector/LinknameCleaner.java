@@ -47,7 +47,6 @@ public class LinknameCleaner {
             /* not loaded yet */
         }
     }
-    public static final Pattern   pat12   = Pattern.compile("(CD\\d+)", Pattern.CASE_INSENSITIVE);
     public static final Pattern   pat13   = Pattern.compile("(part\\d+)", Pattern.CASE_INSENSITIVE);
     public static final Pattern   pat17   = Pattern.compile("(.+)\\.\\d+\\.xtm($|\\.html?)");
     public static final Pattern   pat18   = Pattern.compile("(.*)\\.isz($|\\.html?)", Pattern.CASE_INSENSITIVE);
@@ -229,11 +228,7 @@ public class LinknameCleaner {
         /**
          * remove CDx,Partx
          */
-        String tmpname = cutNameMatch(name, pat12);
-        if (tmpname.length() > 3) {
-            name = tmpname;
-        }
-        tmpname = cutNameMatch(name, pat13);
+        String tmpname = cutNameMatch(name, pat13);
         if (tmpname.length() > 3) {
             name = tmpname;
         }
