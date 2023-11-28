@@ -42,7 +42,6 @@ public class UnknownPornScript1Crawler extends PornEmbedParser {
         final List<String[]> ret = new ArrayList<String[]>();
         ret.add(new String[] { "pornsteep.com" });
         ret.add(new String[] { "vidxporn.com" });
-        ret.add(new String[] { "porndull.com" });
         ret.add(new String[] { "dansmovies.com" });
         return ret;
     }

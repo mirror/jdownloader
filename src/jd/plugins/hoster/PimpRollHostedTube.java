@@ -26,7 +26,6 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.nutils.encoding.HTMLEntities;
 import jd.parser.Regex;
-import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -48,7 +47,7 @@ import jd.plugins.components.SiteType.SiteTemplate;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 /* 2020-08-27: Working example: dirtymovie.com */
 public class PimpRollHostedTube extends PluginForHost {
-    public static String[] t = { "bestporno.net", "descargarpelisporno.com", "hentaiporntube.org", "porrfilmer.biz", "redgayporntube.com", "sex-cake.com", "sexfilmer.nu", "sexmovieporn.com", "sextube-6.com", "tastyblackpussy.com", "teenpornocity.com", "videolivesex.com", "vidz.info", "vip-babes-world.com", "watchpornvideos.com", "xmovielove.com", "xpoko.com", "xtube.mobi", "xxxhelp.com", "xxxlinkshunter.com", "xxxpromos.com", "xxxthailand.net", "youjizz.net", "youjizz66.com", "wankz.com" };
+    public static String[] t = { "bestporno.net", "descargarpelisporno.com", "porrfilmer.biz", "redgayporntube.com", "sex-cake.com", "sexfilmer.nu", "sexmovieporn.com", "sextube-6.com", "tastyblackpussy.com", "teenpornocity.com" };
 
     @Override
     public LazyPlugin.FEATURE[] getFeatures() {
@@ -75,7 +74,6 @@ public class PimpRollHostedTube extends PluginForHost {
             s[ssize] = constructUrl(t[ssize]);
         }
         /* Special RegExes go here */
-        s[s.length - 1] = "https?://(?:www\\.)?wankz\\.com/(?:[\\w\\-]+-\\d+|embed/)\\d+";
         return s;
     }
 
@@ -91,14 +89,6 @@ public class PimpRollHostedTube extends PluginForHost {
          * This will now handle such URLs and display them as offline if they do not lead to video content.
          */
         return "http://(?:(?:www|m)\\.)?" + Pattern.quote(host) + "/[\\w\\-]+/\\d+";
-    }
-
-    @SuppressWarnings("deprecation")
-    @Override
-    public void correctDownloadLink(final DownloadLink link) throws Exception {
-        if (link.getDownloadURL().contains("wankz.com/")) {
-            link.setUrlDownload(link.getDownloadURL().replace("/embed/", "/"));
-        }
     }
 
     public PimpRollHostedTube(PluginWrapper wrapper) {
@@ -238,10 +228,7 @@ public class PimpRollHostedTube extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
-        if (dllink == null && br.containsHTML("(?i)<h3>Access Denied</h3>")) {
-            /* E.g. wankz.com */
-            throw new AccountRequiredException();
-        } else if (dllink == null && br.containsHTML("(?i)>\\s*Free Video Limit Reached")) {
+        if (dllink == null && br.containsHTML("(?i)>\\s*Free Video Limit Reached")) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Free Video Limit Reached", 3 * 60 * 60 * 1000l);
         } else if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

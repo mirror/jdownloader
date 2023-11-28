@@ -20,6 +20,15 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -40,17 +49,23 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.CamvaultXyzCrawler;
 
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Regex;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class CamvaultXyz extends PluginForHost {
     public CamvaultXyz(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.camvault.xyz/premium");
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.COOKIE_LOGIN_OPTIONAL };
+    }
+
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.setFollowRedirects(true);
+        return br;
     }
 
     @Override
@@ -84,7 +99,7 @@ public class CamvaultXyz extends PluginForHost {
         return ret.toArray(new String[0]);
     }
 
-    public static final String PATTERN_CLOUD             = "https?://[^/]+/cloud/file/([a-zA-Z0-9_/\\+\\=\\-%]+)";
+    public static final String PATTERN_CLOUD             = "(?i)https?://[^/]+/cloud/file/([a-zA-Z0-9_/\\+\\=\\-%]+)";
     private final String       PROPERTY_INTERNAL_FILE_ID = "internal_file_id";
 
     @Override
@@ -106,11 +121,6 @@ public class CamvaultXyz extends PluginForHost {
         }
     }
 
-    private Browser prepBR(final Browser br) {
-        br.setFollowRedirects(true);
-        return br;
-    }
-
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         final Account account = AccountController.getInstance().getValidAccount(this.getHost());
@@ -128,8 +138,8 @@ public class CamvaultXyz extends PluginForHost {
         if (account == null || account.getType() != AccountType.PREMIUM) {
             throw new AccountRequiredException();
         }
-        this.login(account, false);
-        br.getPage(link.getPluginPatternMatcher());
+        final String contenturl = link.getPluginPatternMatcher();
+        this.login(account, contenturl, true);
         if (CamvaultXyzCrawler.isRateLimitReached(br)) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Rate limit reached", 1 * 60 * 1000l);
         }
@@ -162,7 +172,7 @@ public class CamvaultXyz extends PluginForHost {
             }
         } else {
             final Regex fileInfo = br.getRegex("class=\"fa fa-file-video-o\"[^>]*></i>([^<]*) \\((\\d+(\\.\\d{1,2})? [A-Za-z]+)\\)</li>");
-            if (fileInfo.matches()) {
+            if (fileInfo.patternFind()) {
                 link.setName(Encoding.htmlDecode(fileInfo.getMatch(0)).trim());
                 link.setDownloadSize(SizeFormatter.getSize(fileInfo.getMatch(1)));
             }
@@ -180,28 +190,44 @@ public class CamvaultXyz extends PluginForHost {
         return -1;
     }
 
-    public boolean login(final Account account, final boolean force) throws Exception {
+    public boolean login(final Account account, final String checkloginURL, final boolean force) throws Exception {
+        if (account == null || checkloginURL == null) {
+            throw new IllegalArgumentException();
+        }
         synchronized (account) {
             try {
-                br.setFollowRedirects(true);
                 br.setCookiesExclusive(true);
-                prepBR(br);
                 final Cookies cookies = account.loadCookies("");
-                if (cookies != null) {
+                final Cookies userCookies = account.loadUserCookies();
+                if (cookies != null || userCookies != null) {
                     logger.info("Attempting cookie login");
-                    this.br.setCookies(this.getHost(), cookies);
+                    if (userCookies != null) {
+                        br.setCookies(this.getHost(), userCookies);
+                    } else {
+                        br.setCookies(this.getHost(), cookies);
+                    }
                     if (!force) {
                         /* Don't validate cookies */
                         return false;
                     }
-                    br.getPage("https://" + this.getHost() + "/premium");
+                    br.getPage(checkloginURL);
                     if (this.isLoggedin(br)) {
                         logger.info("Cookie login successful");
                         /* Refresh cookie timestamp */
-                        account.saveCookies(this.br.getCookies(this.getHost()), "");
+                        if (userCookies == null) {
+                            account.saveCookies(br.getCookies(br.getHost()), "");
+                        }
                         return true;
                     } else {
                         logger.info("Cookie login failed");
+                        if (userCookies != null) {
+                            /* Dead end */
+                            if (account.hasEverBeenValid()) {
+                                throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
+                            } else {
+                                throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
+                            }
+                        }
                     }
                 }
                 logger.info("Performing full login");
@@ -232,12 +258,13 @@ public class CamvaultXyz extends PluginForHost {
                         continue;
                     }
                 }
+                br.getPage(checkloginURL);
                 if (CamvaultXyzCrawler.isRateLimitReached(br)) {
                     throw new AccountUnavailableException("Rate limit reached", 1 * 60 * 1000l);
                 } else if (!isLoggedin(br)) {
                     throw new AccountInvalidException();
                 }
-                account.saveCookies(this.br.getCookies(this.getHost()), "");
+                account.saveCookies(br.getCookies(br.getHost()), "");
                 return true;
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
@@ -255,10 +282,7 @@ public class CamvaultXyz extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        login(account, true);
-        if (br.getURL() == null || !br.getURL().endsWith("/premium")) {
-            br.getPage("/premium");
-        }
+        login(account, "https://www." + this.getHost() + "/premium", true);
         long expireTimestamp = 0;
         final String premiumExpiredateStr = br.getRegex("(?i)it will expire at\\s*<strong>(\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2})</strong>").getMatch(0);
         if (premiumExpiredateStr != null) {
@@ -322,18 +346,37 @@ public class CamvaultXyz extends PluginForHost {
             if (dlform == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            final Browser br2 = br.cloneBrowser();
             final String fid = dlform.getInputFieldByName("videoToken").getValue();
             link.setProperty(PROPERTY_INTERNAL_FILE_ID, fid);
+            /* 2023-11-28: They've added a captcha for premium downloads. */
+            String recaptchaV2Response = null;
+            final String reCaptchaKey = br.getRegex("google\\.com/recaptcha/api\\.js\\?render=([^\"]+)").getMatch(0);
+            if (reCaptchaKey != null) {
+                /* 2023-11-28 */
+                recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, reCaptchaKey) {
+                    @Override
+                    public TYPE getType() {
+                        return TYPE.INVISIBLE;
+                    }
+                }.getToken();
+            } else {
+                logger.info("Failed to find reCaptcha key -> Plugin broken or no captcha required");
+            }
+            final Browser br2 = br.cloneBrowser();
             br2.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
             br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            br2.postPage("/gallery/downloadtoken", "trim=&token=" + fid);
+            final UrlQuery query = new UrlQuery();
+            query.add("token", fid);
+            if (recaptchaV2Response != null) {
+                query.add("secureToken", Encoding.urlEncode(recaptchaV2Response));
+            }
+            query.add("trim", "");
+            br2.postPage("/gallery/downloadtoken", query);
             final Map<String, Object> entries = restoreFromString(br2.getRequest().getHtmlCode(), TypeRef.MAP);
             final String cdn = entries.get("cdn").toString();
             final String token = entries.get("token").toString();
             dlform.setAction(br._getURL().getProtocol() + "://" + cdn + "/");
             dlform.put("downloadToken", Encoding.urlEncode(token));
-            /* No resume and chunkload possible */
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlform, false, 1);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 br.followConnection(true);
@@ -366,7 +409,8 @@ public class CamvaultXyz extends PluginForHost {
 
     @Override
     public boolean hasCaptcha(final DownloadLink link, final Account acc) {
-        return false;
+        /* 2023-11-28: Even premium users need to solve an invisible reCaptcha captcha. */
+        return true;
     }
 
     @Override

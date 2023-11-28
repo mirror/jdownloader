@@ -51,6 +51,7 @@ public class SeedrCc extends PluginForHost {
         this.enablePremium("https://www.seedr.cc/premium");
     }
 
+    @Override
     public LazyPlugin.FEATURE[] getFeatures() {
         if (cookieLoginOnly) {
             return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.COOKIE_LOGIN_ONLY };
