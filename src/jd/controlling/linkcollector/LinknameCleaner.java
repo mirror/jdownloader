@@ -168,7 +168,7 @@ public class LinknameCleaner {
         boolean extensionStilExists = true;
         String before = name;
         // final boolean removeArchiveExtensions = false;
-        if (!removeArchiveExtensions) {
+        if (removeArchiveExtensions) {
             // TODO: Maybe remove this because EXTENSION_SETTINGS.REMOVE_ALL handling down below does the same?
             /** remove rar extensions */
             for (Pattern Pat : rarPats) {
