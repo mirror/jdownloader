@@ -16,13 +16,14 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 
 import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.parser.UrlQuery;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.http.Request;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -44,6 +45,13 @@ import jd.plugins.hoster.RapidGatorNet;
 public class RapidGatorNetFolder extends PluginForDecrypt {
     public RapidGatorNetFolder(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.setFollowRedirects(true);
+        return br;
     }
 
     public static List<String[]> getPluginDomains() {
@@ -75,7 +83,6 @@ public class RapidGatorNetFolder extends PluginForDecrypt {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String contenturl = param.getCryptedUrl().replaceFirst("(?i)http://", "https://");
         final String folderID = new Regex(contenturl, this.getSupportedLinks()).getMatch(0);
-        br.setFollowRedirects(true);
         br.getPage(contenturl);
         String folderTitle = br.getRegex("(?i)Downloading\\s*:\\s*</strong>(.*?)</p>").getMatch(0);
         if (folderTitle == null) {
@@ -95,81 +102,85 @@ public class RapidGatorNetFolder extends PluginForDecrypt {
         } else if (br.containsHTML("class=\"empty\"")) {
             throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER, titleForEmptyOrOfflineFolder);
         }
-        FilePackage fp;
+        final FilePackage fp = FilePackage.getInstance();
         if (folderTitle != null) {
-            fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(folderTitle).trim());
-            fp.addLinks(ret);
         } else {
-            fp = null;
+            /* Fallback */
+            fp.setName(br._getURL().getPath());
         }
-        String lastPageURL = null;
+        fp.addLinks(ret);
         int page = 1;
-        String lastPageStr = "Unknown";
+        int maxPage = 1;
+        final String[] pagenumbers = br.getRegex("/folder/" + folderID + "/[^>]*\\?page=(\\d+)").getColumn(0);
+        for (final String pagenumberStr : pagenumbers) {
+            final int pagenumberTmp = Integer.parseInt(pagenumberStr);
+            if (pagenumberTmp > maxPage) {
+                maxPage = pagenumberTmp;
+            }
+        }
+        final String baseurl = br.getURL();
+        final HashSet<String> dupes = new HashSet<String>();
         do {
-            ret.addAll(parsePage(fp));
-            String nextPageURL = br.getRegex("(?i)<a href=\"(/folder/" + folderID + "/[^>]+\\?page=\\d+)\">\\s*Next").getMatch(0);
-            if (lastPageURL == null) {
-                lastPageURL = br.getRegex("(?i)<a href=\"(/folder/" + folderID + "/[^>]+\\?page=\\d+)\">\\s*Last").getMatch(0);
-                if (lastPageURL != null) {
-                    lastPageStr = UrlQuery.parse(lastPageURL).get("page");
+            final String[] subfolderurls = br.getRegex("<td><a href=\"(/folder/\\d+/[^<>\"/]+\\.html)\">").getColumn(0);
+            final String[][] links = br.getRegex("\"(/file/([a-z0-9]{32}|\\d+)/([^\"]+))\".*?>([\\d\\.]+ (KB|MB|GB))").getMatches();
+            if ((links == null || links.length == 0) && (subfolderurls == null || subfolderurls.length == 0)) {
+                /* This should never happen as we check for offline/empty folder in beforehand. */
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            int numberofNewItems = 0;
+            if (links != null && links.length != 0) {
+                for (String[] dl : links) {
+                    final String url = Request.getLocation(dl[0], br.getRequest());
+                    if (!dupes.add(url)) {
+                        continue;
+                    }
+                    final DownloadLink link = createDownloadlink(url);
+                    link.setName(dl[2].replaceFirst("\\.html$", ""));
+                    link.setDownloadSize(SizeFormatter.getSize(dl[3]));
+                    link.setAvailable(true);
+                    if (fp != null) {
+                        fp.add(link);
+                    }
+                    ret.add(link);
+                    distribute(link);
+                    numberofNewItems++;
                 }
             }
-            logger.info("Crawled page " + page + "/" + lastPageStr + " | Found items so far: " + ret.size());
+            if (subfolderurls != null && subfolderurls.length != 0) {
+                for (final String subfolderurl : subfolderurls) {
+                    final String url = Request.getLocation(subfolderurl, br.getRequest());
+                    if (!dupes.add(url)) {
+                        continue;
+                    }
+                    final DownloadLink link = createDownloadlink(url);
+                    if (fp != null) {
+                        fp.add(link);
+                    }
+                    ret.add(link);
+                    distribute(link);
+                    numberofNewItems++;
+                }
+            }
+            logger.info("Crawled page " + page + "/" + maxPage + " | Found items so far: " + ret.size());
             if (this.isAbort()) {
                 logger.info("Stopping because: Aborted by user");
                 break;
-            } else if (nextPageURL == null) {
-                logger.info("Stopping because: Failed to find nextPage");
-                break;
-            } else if (lastPageURL == null || br.getURL().contains(lastPageURL)) {
+            } else if (page == maxPage) {
                 logger.info("Stopping because: Reached last page");
                 break;
+            } else if (numberofNewItems == 0) {
+                logger.info("Stopping because: Failed to find any new items on current page");
+                break;
             } else {
+                /* Continue to next page */
                 /* Small delay between requests */
                 sleep(500, param);
-                br.getPage(nextPageURL);
                 page++;
+                br.getPage(baseurl + "?page=" + page);
             }
         } while (true);
         return ret;
-    }
-
-    private List<DownloadLink> parsePage(final FilePackage fp) throws Exception {
-        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final List<DownloadLink> pageRet = new ArrayList<DownloadLink>();
-        final String[] subfolders = br.getRegex("<td><a href=\"(/folder/\\d+/[^<>\"/]+\\.html)\">").getColumn(0);
-        final String[][] links = br.getRegex("\"(/file/([a-z0-9]{32}|\\d+)/([^\"]+))\".*?>([\\d\\.]+ (KB|MB|GB))").getMatches();
-        if ((links == null || links.length == 0) && (subfolders == null || subfolders.length == 0)) {
-            /* This should never happen as we check for offline/empty folder in beforehand. */
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        if (links != null && links.length != 0) {
-            for (String[] dl : links) {
-                final DownloadLink link = createDownloadlink(Request.getLocation(dl[0], br.getRequest()));
-                link.setName(dl[2].replaceFirst("\\.html$", ""));
-                link.setDownloadSize(SizeFormatter.getSize(dl[3]));
-                link.setAvailable(true);
-                pageRet.add(link);
-                if (fp != null) {
-                    fp.add(link);
-                }
-                ret.add(link);
-                distribute(link);
-            }
-        }
-        if (subfolders != null && subfolders.length != 0) {
-            for (final String folder : subfolders) {
-                final DownloadLink link = createDownloadlink(Request.getLocation(folder, br.getRequest()));
-                pageRet.add(link);
-                if (fp != null) {
-                    fp.add(link);
-                }
-                ret.add(link);
-                distribute(link);
-            }
-        }
-        return pageRet;
     }
 
     @Override
