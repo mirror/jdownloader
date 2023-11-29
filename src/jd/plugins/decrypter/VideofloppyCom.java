@@ -79,10 +79,12 @@ public class VideofloppyCom extends PluginForDecrypt {
         } else if (br.getHttpConnection().getResponseCode() == 500) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String finallink = this.br.getRegex("src=\"(https?://[^\"]+)\"[^>]*>\\s*</iframe>").getMatch(0);
+        String finallink = this.br.getRegex("src=\"(https?://[^\"]+)\"[^>]*>\\s*</iframe>").getMatch(0);
         if (finallink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        /* 2023-11-29: Fix this: https://lulustream.com/e//xxxxxxyyyyyy */
+        finallink = finallink.replace("/e//", "/e/");
         ret.add(createDownloadlink(finallink));
         return ret;
     }

@@ -21,6 +21,9 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.RFC2047;
 import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.blacklist.BlockDownloadCaptchasByHost;
+import org.jdownloader.captcha.blacklist.CaptchaBlackList;
+import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.components.config.Keep2shareConfig;
 import org.jdownloader.plugins.config.PluginJsonConfig;
@@ -836,55 +839,26 @@ public abstract class K2SApi extends PluginForHost {
             logger.info("login-captcha_url is not https --> Changing it to https");
             captchaAddress = captchaAddress.replaceFirst("(?i)http://", "https://");
         }
-        try {
-            final String code = getCaptchaCode(getHost(), captchaAddress, link);
-            if (StringUtils.isEmpty(code)) {
-                /* This should never happen(?) */
-                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-            }
-            return code;
-        } catch (final CaptchaException ce) {
-            if (ce.getSkipRequest() == SkipRequest.TIMEOUT) {
-                /* User did not respond to captcha request */
-                final String text = "You did not answer the captcha on time | Waiting in order to avoid IP ban";
-                final long waitMillis = 3 * 60 * 60 * 1000;
-                if (isLoginCaptcha) {
-                    throw new AccountUnavailableException(text, waitMillis);
-                } else {
-                    /* Captcha happened during download -> Skip all items of this host */
-                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, text, waitMillis);
-                    // final List<Challenge<?>> challenges = this.getChallenges();
-                    // throw new SkipException(challenges.get(challenges.size() - 1), SkipRequest.BLOCK_HOSTER, "");
-                }
-            } else {
-                throw ce;
-            }
+        final String code = getCaptchaCode(getHost(), captchaAddress, link);
+        if (StringUtils.isEmpty(code)) {
+            /* This should never happen(?) */
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        }
+        return code;
+    }
+
+    @Override
+    public void onCaptchaTimeout(DownloadLink link, Challenge<?> challenge) throws CaptchaException, PluginException, InterruptedException {
+        CaptchaBlackList.getInstance().add(new BlockDownloadCaptchasByHost(link.getHost()));
+        final boolean isAccountLoginCaptchaChallenge = isAccountLoginCaptchaChallenge(link, challenge);
+        if (isAccountLoginCaptchaChallenge) {
+            final String text = "You did not answer the login captcha on time | Waiting in order to avoid IP ban";
+            final long waitMillis = 3 * 60 * 60 * 1000;
+            throw new AccountUnavailableException(text, waitMillis);
+        } else {
+            throw new CaptchaException(SkipRequest.BLOCK_HOSTER);
         }
     }
-    // @Override
-    // protected <T> T handleCaptchaChallenge(final DownloadLink link, Challenge<T> c) throws CaptchaException, PluginException,
-    // InterruptedException {
-    // final boolean isAccountLoginCaptchaChallenge = isAccountLoginCaptchaChallenge(link, c);
-    // try {
-    // return super.handleCaptchaChallenge(link, c);
-    // } catch (final CaptchaException ce) {
-    // if (ce.getSkipRequest() == SkipRequest.TIMEOUT) {
-    // /* User did not respond to captcha request */
-    // final String text = "You did not answer the captcha on time | Waiting in order to avoid IP ban";
-    // final long waitMillis = 3 * 60 * 60 * 1000;
-    // if (isAccountLoginCaptchaChallenge) {
-    // throw new AccountUnavailableException(text, waitMillis);
-    // } else {
-    // /* Captcha happened during download -> Skip all items of this host */
-    // // throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, text, waitMillis);
-    // final List<Challenge<?>> challenges = this.getChallenges();
-    // throw new SkipException(c, SkipRequest.BLOCK_HOSTER, "");
-    // }
-    // } else {
-    // throw ce;
-    // }
-    // }
-    // }
 
     private void saveFreeLimit(final Account account, final String currentIP, final long timestampLimitActivated) {
         synchronized (CTRLLOCK) {
