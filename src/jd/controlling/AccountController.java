@@ -52,7 +52,6 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.logging.LogController;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 import org.jdownloader.plugins.controller.PluginClassLoader;
 import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
 import org.jdownloader.plugins.controller.host.PluginFinder;
@@ -72,7 +71,6 @@ import jd.plugins.Account.AccountError;
 import jd.plugins.Account.AccountPropertyChangeHandler;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
-import jd.plugins.AccountInvalidException;
 import jd.plugins.AccountProperty;
 import jd.plugins.PluginForHost;
 
@@ -321,19 +319,7 @@ public class AccountController implements AccountControllerListener, AccountProp
                 }
                 long tempDisabledCounterBefore = account.getTmpDisabledTimeout();
                 try {
-                    /**
-                     * We can't rely on validation via GUI as myjdownloader remote controller JDownloader instances have no Java GUI. </br>
-                     * This is also useful for websites where login gets changed from normal login to cookie login only.
-                     */
-                    if (plugin.hasFeature(FEATURE.COOKIE_LOGIN_ONLY)) {
-                        if (account.loadUserCookies() == null) {
-                            throw new AccountInvalidException(_GUI.T.accountdialog_LoginValidationErrorCookieLoginMandatoryButNoCookiesGiven());
-                        }
-                    } else if (!plugin.hasFeature(FEATURE.COOKIE_LOGIN_OPTIONAL)) {
-                        if (account.loadUserCookies() != null) {
-                            throw new AccountInvalidException(_GUI.T.accountdialog_LoginValidationErrorCookieLoginUnsupportedButGiven());
-                        }
-                    }
+                    plugin.validateLogins(account);
                     ai = plugin.fetchAccountInfo(account);
                     plugin.validateLastChallengeResponse();
                     account.setAccountInfo(ai);

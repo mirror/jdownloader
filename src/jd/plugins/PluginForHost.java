@@ -3006,6 +3006,28 @@ public abstract class PluginForHost extends Plugin {
         return false;
     }
 
+    /**
+     * Use this to pre-validate login credentials. </br>
+     * This method works locally/offline and shall not perform any http requests!
+     *
+     * @throws AccountInvalidException
+     */
+    public void validateLogins(final Account account) throws AccountInvalidException {
+        if (this.hasFeature(FEATURE.COOKIE_LOGIN_ONLY)) {
+            if (account.loadUserCookies() == null) {
+                throw new AccountInvalidException(_GUI.T.accountdialog_LoginValidationErrorCookieLoginMandatoryButNoCookiesGiven());
+            }
+        } else if (!this.hasFeature(FEATURE.COOKIE_LOGIN_OPTIONAL)) {
+            if (account.loadUserCookies() != null) {
+                throw new AccountInvalidException(_GUI.T.accountdialog_LoginValidationErrorCookieLoginUnsupportedButGiven());
+            }
+        } else if (this.hasFeature(FEATURE.API_KEY_LOGIN)) {
+            if (!this.looksLikeValidAPIKey(account.getPass())) {
+                throw new AccountInvalidException(_GUI.T.accountdialog_LoginValidationErrorInvalidAPIKey());
+            }
+        }
+    }
+
     public boolean isSameAccount(Account downloadAccount, AbstractProxySelectorImpl downloadProxySelector, Account candidateAccount, AbstractProxySelectorImpl candidateProxySelector) {
         return downloadProxySelector == candidateProxySelector && downloadAccount == candidateAccount;
     }

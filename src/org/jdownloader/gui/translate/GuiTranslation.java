@@ -561,6 +561,9 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Cookie login is required for this provider but you did not provide login cookies." })
     String accountdialog_LoginValidationErrorCookieLoginMandatoryButNoCookiesGiven();
 
+    @Default(lngs = { "en" }, values = { "Invalid API key" })
+    String accountdialog_LoginValidationErrorInvalidAPIKey();
+
     @Default(lngs = { "en" }, values = { "Enter Username..." })
     String jd_gui_swing_components_AccountDialog_help_username();
 
