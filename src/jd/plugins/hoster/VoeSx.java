@@ -182,6 +182,9 @@ public class VoeSx extends XFileSharingProBasic {
         if (br.containsHTML(">\\s*Server overloaded, download temporary disabled|The server of this file is currently over")) {
             /* 2023-10-26 */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server overloaded");
+        } else if (br.containsHTML(">\\s*Access to this file has been temporarily restricted")) {
+            /* 2023-11-29 */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Access to this file has been temporarily restricted");
         }
     }
 
@@ -205,7 +208,7 @@ public class VoeSx extends XFileSharingProBasic {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String[] fileInfo = internal_getFileInfoArray();
-        scanInfo(fileInfo);
+        scanInfo(br.getRequest().getHtmlCode(), fileInfo);
         processFileInfo(fileInfo, br, link);
         if (!StringUtils.isEmpty(fileInfo[0])) {
             /* Correct- and set filename */
@@ -219,6 +222,20 @@ public class VoeSx extends XFileSharingProBasic {
             throw new PluginException(LinkStatus.ERROR_FATAL, "This video can be watched as embed only");
         }
         return dllink;
+    }
+
+    @Override
+    public String[] scanInfo(final String html, final String[] fileInfo) {
+        super.scanInfo(html, fileInfo);
+        String betterTitle = new Regex(html, "class=\"player-title\"[^>]*>([^<]+)").getMatch(0);
+        if (betterTitle == null) {
+            /* 2023-11-29 */
+            betterTitle = new Regex(html, "name=\"og:title\" content=\"([^\"]+\\.mp4)").getMatch(0);
+        }
+        if (betterTitle != null) {
+            fileInfo[0] = betterTitle;
+        }
+        return fileInfo;
     }
 
     @Override
@@ -314,16 +331,6 @@ public class VoeSx extends XFileSharingProBasic {
                 }
             }
         };
-    }
-
-    @Override
-    public String[] scanInfo(final String html, final String[] fileInfo) {
-        super.scanInfo(html, fileInfo);
-        final String betterTitle = br.getRegex("class=\"player-title\"[^>]*>([^<]+)").getMatch(0);
-        if (betterTitle != null) {
-            fileInfo[0] = betterTitle;
-        }
-        return fileInfo;
     }
 
     @Override
