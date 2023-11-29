@@ -154,6 +154,7 @@ import jd.config.SubConfiguration;
 import jd.controlling.accountchecker.AccountCheckerThread;
 import jd.controlling.captcha.CaptchaSettings;
 import jd.controlling.captcha.SkipException;
+import jd.controlling.captcha.SkipRequest;
 import jd.controlling.downloadcontroller.DiskSpaceManager.DISKSPACERESERVATIONRESULT;
 import jd.controlling.downloadcontroller.DiskSpaceReservation;
 import jd.controlling.downloadcontroller.DownloadSession;
@@ -747,8 +748,9 @@ public abstract class PluginForHost extends Plugin {
         }
     }
 
+    /** This gets executed whenever the user does not answer a captcha which then runs into timeout. */
     public void onCaptchaTimeout(final DownloadLink link, Challenge<?> challenge) throws CaptchaException, PluginException, InterruptedException {
-        switch (JsonConfig.create(CaptchaSettings.class).getCaptchaTimeoutAction()) {
+        switch (JsonConfig.create(CaptchaSettings.class).getHosterCaptchaTimeoutAction()) {
         case RETRY:
             throw new PluginException(LinkStatus.ERROR_RETRY);
         case ASK:
@@ -757,6 +759,8 @@ public abstract class PluginForHost extends Plugin {
             }
             break;
         case SKIP:
+        case SKIP_HOSTER:
+            throw new CaptchaException(SkipRequest.BLOCK_HOSTER);
         default:
             if (CFG_GUI.HELP_DIALOGS_ENABLED.isEnabled()) {
                 HelpDialog.show(false, true, HelpDialog.getMouseLocation(), "SKIPPEDHOSTER", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI.T.ChallengeDialogHandler_viaGUI_skipped_help_title(), _GUI.T.ChallengeDialogHandler_viaGUI_skipped_help_msg(), new AbstractIcon(IconKey.ICON_SKIPPED, 32));

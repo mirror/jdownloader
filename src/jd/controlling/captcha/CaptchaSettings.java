@@ -23,6 +23,7 @@ public interface CaptchaSettings extends ConfigInterface {
 
     public static enum CAPTCHA_TIMEOUT_ACTION {
         SKIP,
+        SKIP_HOSTER,
         RETRY,
         ASK
     }
@@ -59,14 +60,14 @@ public interface CaptchaSettings extends ConfigInterface {
 
     @AboutConfig
     @DefaultEnumValue("SKIP")
-    @DescriptionForConfigEntry("If the Dialog Countdown is reached, the link will be skipped. Disable this option to retry instead")
-    CAPTCHA_TIMEOUT_ACTION getCaptchaTimeoutAction();
+    @DescriptionForConfigEntry("Defines what should happen if a captcha prompt runs into a timeout meaning that neither the user nor any captcha solver did answer the captcha prompt. This setting affects all HOSTER download/account-check processes.")
+    CAPTCHA_TIMEOUT_ACTION getHosterCaptchaTimeoutAction();
 
-    void setCaptchaTimeoutAction(CAPTCHA_TIMEOUT_ACTION b);
+    void setHosterCaptchaTimeoutAction(CAPTCHA_TIMEOUT_ACTION b);
 
     @AboutConfig
     @DefaultEnumValue("SKIP")
-    @DescriptionForConfigEntry("If the Dialog Countdown is reached, the crawler will be skipped. Disable this option to retry instead")
+    @DescriptionForConfigEntry("Defines what should happen if a captcha prompt runs into a timeout meaning that neither the user nor any captcha solver did answer the captcha prompt. This setting affects all CRAWLER processes.")
     CAPTCHA_TIMEOUT_ACTION getCrawlerCaptchaTimeoutAction();
 
     void setCrawlerCaptchaTimeoutAction(CAPTCHA_TIMEOUT_ACTION b);

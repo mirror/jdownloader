@@ -75,6 +75,7 @@ import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
 import jd.controlling.captcha.CaptchaSettings;
 import jd.controlling.captcha.SkipException;
+import jd.controlling.captcha.SkipRequest;
 import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.controlling.linkcollector.LinkCollector;
 import jd.controlling.linkcollector.LinkCollector.JobLinkCrawler;
@@ -602,6 +603,7 @@ public abstract class PluginForDecrypt extends Plugin {
         return getCaptchaCode(br, method, captchaAddress, param);
     }
 
+    /** This gets executed whenever the user does not answer a captcha which then runs into timeout. */
     public void onCaptchaTimeout(final CrawledLink link, Challenge<?> challenge) throws CaptchaException, PluginException {
         switch (JsonConfig.create(CaptchaSettings.class).getCrawlerCaptchaTimeoutAction()) {
         case RETRY:
@@ -616,6 +618,8 @@ public abstract class PluginForDecrypt extends Plugin {
             }
             break;
         case SKIP:
+        case SKIP_HOSTER:
+            throw new CaptchaException(SkipRequest.BLOCK_HOSTER);
         default:
             break;
         }
