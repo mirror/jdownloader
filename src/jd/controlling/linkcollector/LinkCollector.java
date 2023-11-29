@@ -1134,7 +1134,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                                     }
                                 }
                                 if (crawledPackageName != null) {
-                                    crawledPackageName = LinknameCleaner.cleanPackagename(crawledPackageName, false, false, LinknameCleaner.EXTENSION_SETTINGS.REMOVE_ALL, true);
+                                    crawledPackageName = LinknameCleaner.cleanPackagename(crawledPackageName, false, true, LinknameCleaner.EXTENSION_SETTINGS.REMOVE_ALL, true);
                                 }
                             }
                             if (crawledPackageName == null && link.getLinkInfo().getExtension() instanceof ArchiveExtensions) {

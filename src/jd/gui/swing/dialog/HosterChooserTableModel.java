@@ -62,7 +62,7 @@ public class HosterChooserTableModel extends ExtTableModel<LazyHostPlugin> {
                     final LazyPlugin.FEATURE[] features = next.getFeatures();
                     if (features != null) {
                         for (final LazyPlugin.FEATURE f : features) {
-                            if (LazyPlugin.FEATURE.isInternalFeature(f)) {
+                            if (f.isInternal()) {
                                 continue;
                             } else if (pattern.matcher(clean(f.getLabel())).find()) {
                                 continue main;
@@ -210,7 +210,7 @@ public class HosterChooserTableModel extends ExtTableModel<LazyHostPlugin> {
                 final LazyPlugin.FEATURE[] features = value.getFeatures();
                 if (features != null) {
                     for (final LazyPlugin.FEATURE f : features) {
-                        if (LazyPlugin.FEATURE.isInternalFeature(f)) {
+                        if (f.isInternal()) {
                             continue;
                         } else {
                             if (sb.length() > 0) {
@@ -229,7 +229,7 @@ public class HosterChooserTableModel extends ExtTableModel<LazyHostPlugin> {
                 final LazyPlugin.FEATURE[] features = value.getFeatures();
                 if (features != null) {
                     for (final LazyPlugin.FEATURE f : features) {
-                        if (LazyPlugin.FEATURE.isInternalFeature(f)) {
+                        if (f.isInternal()) {
                             continue;
                         } else {
                             if (sb.length() > 0) {

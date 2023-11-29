@@ -3026,12 +3026,7 @@ public class LinkCrawler {
                 }
                 fpi.setDestinationFolder(CrossSystem.fixPathSeparators(fp.getDownloadDirectory() + File.separator));
             }
-            final String name;
-            if (fp.isCleanupPackageName()) {
-                name = LinknameCleaner.cleanPackagename(fp, fp.getName(), false, true, LinknameCleaner.EXTENSION_SETTINGS.REMOVE_KNOWN, true);
-            } else {
-                name = LinknameCleaner.cleanPackagename(fp, fp.getName(), false, true, LinknameCleaner.EXTENSION_SETTINGS.REMOVE_KNOWN, false);
-            }
+            final String name = LinknameCleaner.cleanPackagename(fp.getName(), false, false, LinknameCleaner.EXTENSION_SETTINGS.REMOVE_KNOWN, fp.isCleanupPackageName());
             if (StringUtils.isNotEmpty(name)) {
                 if (fpi == null && (fpi = link.getDesiredPackageInfo()) == null) {
                     fpi = new PackageInfo();

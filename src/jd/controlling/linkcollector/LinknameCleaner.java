@@ -19,8 +19,6 @@ import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ArchiveExtensio
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ExtensionsFilterInterface;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 
-import jd.controlling.packagecontroller.AbstractNode;
-
 public class LinknameCleaner {
     public static final Pattern   pat0     = Pattern.compile("(.*)(\\.|_|-)pa?r?t?\\.?[0-9]+.(rar|rev|exe)($|\\.html?)", Pattern.CASE_INSENSITIVE);
     public static final Pattern   pat1     = Pattern.compile("(.*)(\\.|_|-)part\\.?[0]*[1].(rar|rev|exe)($|\\.html?)", Pattern.CASE_INSENSITIVE);
@@ -151,11 +149,13 @@ public class LinknameCleaner {
         return newfinalFileName;
     }
 
-    public static String cleanPackagename(String name, boolean splitUpperLowerCase, boolean ignoreArchiveFilters, final EXTENSION_SETTINGS extensionSettings, boolean allowCleanup) {
-        return cleanPackagename(null, name, splitUpperLowerCase, ignoreArchiveFilters, extensionSettings, allowCleanup);
+    /** Derives package name out of given filename. */
+    public static String derivePackagenameFromFilename(final String filename) {
+        // TODO: Add functionality
+        return cleanPackagename(filename, true, true, EXTENSION_SETTINGS.REMOVE_ALL, true);
     }
 
-    public static String cleanPackagename(AbstractNode node, String name, boolean splitUpperLowerCase, boolean ignoreArchiveFilters, final EXTENSION_SETTINGS extensionSettings, boolean allowCleanup) {
+    public static String cleanPackagename(String name, boolean splitUpperLowerCase, boolean removeArchiveExtensions, final EXTENSION_SETTINGS extensionSettings, boolean allowCleanup) {
         if (name == null) {
             return null;
         }
@@ -167,7 +167,9 @@ public class LinknameCleaner {
         name = replaceCharactersByMap(name, PACKAGENAME_REPLACEMAP_DEFAULT);
         boolean extensionStilExists = true;
         String before = name;
-        if (!ignoreArchiveFilters) {
+        // final boolean removeArchiveExtensions = false;
+        if (!removeArchiveExtensions) {
+            // TODO: Maybe remove this because EXTENSION_SETTINGS.REMOVE_ALL handling down below does the same?
             /** remove rar extensions */
             for (Pattern Pat : rarPats) {
                 name = getNameMatch(name, Pat);
@@ -236,20 +238,19 @@ public class LinknameCleaner {
         if (EXTENSION_SETTINGS.REMOVE_ALL.equals(extensionSettings) || EXTENSION_SETTINGS.REMOVE_KNOWN.equals(extensionSettings)) {
             while (true) {
                 final int lastPoint = name.lastIndexOf(".");
-                if (lastPoint > 0) {
-                    final int extLength = (name.length() - (lastPoint + 1));
-                    final String ext = name.substring(lastPoint + 1);
-                    final ExtensionsFilterInterface knownExt = CompiledFiletypeFilter.getExtensionsFilterInterface(ext);
-                    if (knownExt != null && !ArchiveExtensions.NUM.equals(knownExt)) {
-                        /* make sure to cut off only known extensions */
+                if (lastPoint <= 0) {
+                    break;
+                }
+                final int extLength = (name.length() - (lastPoint + 1));
+                final String ext = name.substring(lastPoint + 1);
+                final ExtensionsFilterInterface knownExt = CompiledFiletypeFilter.getExtensionsFilterInterface(ext);
+                if (knownExt != null && !ArchiveExtensions.NUM.equals(knownExt)) {
+                    /* make sure to cut off only known extensions */
+                    name = name.substring(0, lastPoint);
+                } else if (extLength <= 4 && EXTENSION_SETTINGS.REMOVE_ALL.equals(extensionSettings) && ext.matches("^[0-9a-zA-z]+$")) {
+                    /* make sure to cut off only known extensions */
+                    if (extensionStilExists) {
                         name = name.substring(0, lastPoint);
-                    } else if (extLength <= 4 && EXTENSION_SETTINGS.REMOVE_ALL.equals(extensionSettings) && ext.matches("^[0-9a-zA-z]+$")) {
-                        /* make sure to cut off only known extensions */
-                        if (extensionStilExists) {
-                            name = name.substring(0, lastPoint);
-                        } else {
-                            break;
-                        }
                     } else {
                         break;
                     }

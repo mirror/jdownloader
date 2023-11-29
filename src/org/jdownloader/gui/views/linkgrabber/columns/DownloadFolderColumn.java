@@ -145,9 +145,9 @@ public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
             if (TYPE.NORMAL != p.getType()) {
                 final String packagename;
                 if (object instanceof AbstractPackageNode) {
-                    packagename = LinknameCleaner.cleanPackagename(object.getName(), false, true, LinknameCleaner.EXTENSION_SETTINGS.REMOVE_KNOWN, true);
+                    packagename = LinknameCleaner.cleanPackagename(object.getName(), false, false, LinknameCleaner.EXTENSION_SETTINGS.REMOVE_KNOWN, true);
                 } else {
-                    packagename = LinknameCleaner.cleanPackagename(object.getName(), false, true, LinknameCleaner.EXTENSION_SETTINGS.REMOVE_ALL, true);
+                    packagename = LinknameCleaner.cleanPackagename(object.getName(), false, false, LinknameCleaner.EXTENSION_SETTINGS.REMOVE_ALL, true);
                 }
                 pkg.setName(packagename);
             } else {
