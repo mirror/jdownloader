@@ -1,6 +1,5 @@
 package org.jdownloader.plugins.components;
 
-import java.awt.Color;
 //jDownloader - Downloadmanager
 //Copyright (C) 2013  JD-Team support@jdownloader.org
 //
@@ -37,13 +36,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
-import javax.swing.JComponent;
-import javax.swing.JLabel;
-
 import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.storage.JSonMapperException;
 import org.appwork.storage.TypeRef;
-import org.appwork.swing.MigPanel;
-import org.appwork.swing.components.ExtPasswordField;
 import org.appwork.utils.DebugMode;
 import org.appwork.utils.Exceptions;
 import org.appwork.utils.Regex;
@@ -55,13 +50,12 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.net.URLHelper;
 import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
 import org.jdownloader.captcha.v2.CaptchaHosterHelperInterface;
+import org.jdownloader.captcha.v2.challenge.cloudflareturnstile.AbstractCloudflareTurnstileCaptcha;
 import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperHostPluginHCaptcha;
 import org.jdownloader.captcha.v2.challenge.keycaptcha.KeyCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.gui.InputChangedCallbackInterface;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.accounts.AccountBuilderInterface;
 import org.jdownloader.plugins.components.config.XFSConfig;
 import org.jdownloader.plugins.components.config.XFSConfigVideo;
 import org.jdownloader.plugins.components.config.XFSConfigVideo.DownloadMode;
@@ -76,7 +70,6 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
-import jd.gui.swing.components.linkbutton.JLink;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.Request;
@@ -168,7 +161,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
     private static final String               PROPERTY_PLUGIN_ALT_AVAILABLECHECK_LAST_FAILURE_TIMESTAMP         = "ALT_AVAILABLECHECK_LAST_FAILURE_TIMESTAMP";
     private static final String               PROPERTY_PLUGIN_ALT_AVAILABLECHECK_LAST_FAILURE_VERSION           = "ALT_AVAILABLECHECK_LAST_FAILURE_VERSION";
     private static final String               PROPERTY_PLUGIN_ALT_AVAILABLECHECK_LAST_WORKING                   = "ALT_AVAILABLECHECK_LAST_WORKING";
-    protected static final String             PROPERTY_ACCOUNT_INFO_TRUST_UNLIMITED_TRAFFIC                     = "trust_unlimited_traffic";
+    private static final String               PROPERTY_ACCOUNT_ALLOW_API_DOWNLOAD_ATTEMPT_IN_WEBSITE_MODE       = "allow_api_download_attempt_in_website_mode";
 
     public static enum URL_TYPE {
         EMBED_VIDEO,
@@ -543,10 +536,13 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
     }
 
     protected boolean allowAPIDownloadIfApikeyIsAvailable(final DownloadLink link, final Account account) {
+        // TODO: Rename this to allowAttemptAPIDownloadInWebsiteMode
+        if (account == null) {
+            return false;
+        }
+        /* Allow download via API if API key is available && download via API is allowed. */
         final boolean apikey_is_available = this.getAPIKeyFromAccount(account) != null;
-        /* Enable this switch to be able to use this in dev mode. Default = off as we do not use the API by default! */
-        final boolean allow_api_premium_download = false;
-        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && apikey_is_available && allow_api_premium_download) {
+        if (apikey_is_available && account.hasProperty(PROPERTY_ACCOUNT_ALLOW_API_DOWNLOAD_ATTEMPT_IN_WEBSITE_MODE)) {
             return true;
         } else {
             return false;
@@ -921,7 +917,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
     @Override
     public boolean checkLinks(final DownloadLink[] urls) {
         final String apiKey = this.getAPIKey();
-        if ((isAPIKey(apiKey) && this.supportsAPIMassLinkcheck()) || enableAccountApiOnlyMode()) {
+        if ((this.looksLikeValidAPIKey(apiKey) && this.supportsAPIMassLinkcheck()) || enableAccountApiOnlyMode()) {
             return massLinkcheckerAPI(urls, apiKey);
         } else if (supportsMassLinkcheckOverWebsite()) {
             return this.massLinkcheckerWebsite(urls);
@@ -2412,9 +2408,9 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
     /** Handles all kinds of captchas, also login-captcha - fills the given captchaForm. */
     public void handleCaptcha(final DownloadLink link, Browser br, final Form captchaForm) throws Exception {
         /* Captcha START */
-        if (new Regex(getCorrectBR(br), "(geetest_challenge|geetest_validate|geetest_seccode)").matches()) {
+        if (new Regex(getCorrectBR(br), "(geetest_challenge|geetest_validate|geetest_seccode)").patternFind()) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unsupported captcha type geetest", 3 * 60 * 60 * 1000l);
-        } else if (new Regex(getCorrectBR(br), Pattern.compile("\\$\\.post\\(\\s*\"/ddl\"", Pattern.CASE_INSENSITIVE)).matches()) {
+        } else if (new Regex(getCorrectBR(br), Pattern.compile("\\$\\.post\\(\\s*\"/ddl\"", Pattern.CASE_INSENSITIVE)).patternFind()) {
             /* 2019-06-06: Rare case */
             final String captchaResponse;
             final CaptchaHosterHelperInterface captchaHelper;
@@ -2559,6 +2555,8 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
                 }
                 captchaForm.put("capcode", result);
                 link.setProperty(PROPERTY_captcha_required, Boolean.TRUE);
+            } else if (AbstractCloudflareTurnstileCaptcha.containsCloudflareTurnstileClass(br)) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported captcha type 'Cloudflare Turnstile'");
             } else {
                 link.setProperty(PROPERTY_captcha_required, Boolean.FALSE);
             }
@@ -2993,7 +2991,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
                  */
                 long quality_picked = -1;
                 String dllink_temp = null;
-                final List<Object> ressourcelist = (List) JavaScriptEngineFactory.jsonToJavaObject(jssource);
+                final List<Object> ressourcelist = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.LIST);
                 final boolean onlyOneQualityAvailable = ressourcelist.size() == 1;
                 final int userSelectedQuality = getPreferredStreamQuality();
                 if (userSelectedQuality == -1) {
@@ -3038,7 +3036,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
                         try {
                             final Object quality_temp_o = entries.get(possibleQualityObjectName);
                             if (quality_temp_o != null && quality_temp_o instanceof Number) {
-                                quality_temp = (int) JavaScriptEngineFactory.toLong(quality_temp_o, 0);
+                                quality_temp = ((Number) quality_temp_o).intValue();
                             } else if (quality_temp_o != null && quality_temp_o instanceof String) {
                                 /* E.g. '360p' */
                                 final String res = new Regex((String) quality_temp_o, "(\\d+)p?$").getMatch(0);
@@ -3865,7 +3863,8 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
                 }
             }
         }
-        if (apiSuccess && (!ai.isUnlimitedTraffic() || ai.hasProperty(PROPERTY_ACCOUNT_INFO_TRUST_UNLIMITED_TRAFFIC))) {
+        final boolean trustApiAvailablecheckInWebsiteMode = false;
+        if (apiSuccess && trustApiAvailablecheckInWebsiteMode) {
             /* Trust API info */
             logger.info("Successfully found complete AccountInfo via API");
             /* API with trafficleft value is uncommon -> Make sure devs easily take note of this! */
@@ -4747,7 +4746,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
             return;
         }
         if (this.enableAccountApiOnlyMode()) {
-            /* API mode */
+            /* API-only mode */
             handleDownload(link, account, null, this.getDllinkAPI(link, account), null);
         } else {
             /* Website mode (this will still prefer API whenever possible) */
@@ -4776,12 +4775,14 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
             } else {
                 /* First API --> This will also do linkcheck but only require one http request */
                 String dllink = null;
-                try {
-                    dllink = this.getDllinkAPI(link, account);
-                } catch (final Throwable e) {
-                    /* Do not allow exception to happen --> Fallback to website instead */
-                    logger.log(e);
-                    logger.warning("Error in API download handling");
+                if (this.allowAPIDownloadIfApikeyIsAvailable(link, account)) {
+                    try {
+                        dllink = this.getDllinkAPI(link, account);
+                    } catch (final Throwable e) {
+                        /* Do not throw Exception --> Fallback to website instead */
+                        logger.log(e);
+                        logger.warning("Error in API download handling");
+                    }
                 }
                 /* API failed/not supported? Try website! */
                 String officialVideoDownloadURL = null;
@@ -5070,79 +5071,69 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
          * Only execude this if you know that a particular host has enabled this API call! </br>
          * Important: For some hosts, this API call will only be available for premium accounts, no for free accounts!
          */
-        if (this.enableAccountApiOnlyMode() || this.allowAPIDownloadIfApikeyIsAvailable(link, account)) {
-            /* 2019-11-04: Linkcheck is not required here - download API will return offline status. */
-            // requestFileInformationAPI(link, account);
-            logger.info("Trying to get dllink via API");
-            final String apikey = getAPIKeyFromAccount(account);
-            if (StringUtils.isEmpty(apikey)) {
-                /* This should never happen */
-                logger.warning("Cannot do this without apikey");
-                return null;
-            }
-            final String fileid_to_download;
-            if (requiresAPIGetdllinkCloneWorkaround(account)) {
-                logger.info("Trying to download file via clone workaround");
-                getPage(this.getAPIBase() + "/file/clone?key=" + apikey + "&file_code=" + this.getFUIDFromURL(link));
-                this.checkErrorsAPI(this.br, link, account);
-                fileid_to_download = PluginJSonUtils.getJson(br, "filecode");
-                if (StringUtils.isEmpty(fileid_to_download)) {
-                    logger.warning("Failed to find new fileid in clone handling");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-            } else {
-                logger.info("Trying to download file via api without workaround");
-                fileid_to_download = this.getFUIDFromURL(link);
-            }
-            /*
-             * Users can also chose a preferred quality via '&q=h' but we prefer to receive all and then chose to easily have a fallback in
-             * case the quality selected by our user is not available.
-             */
-            /* Documentation videohost: https://xfilesharingpro.docs.apiary.io/#reference/file/file-clone/get-direct-link */
-            /*
-             * Documentation filehost:
-             * https://xvideosharing.docs.apiary.io/#reference/file/file-direct-link/get-links-to-all-available-qualities
-             */
-            getPage(this.getAPIBase() + "/file/direct_link?key=" + apikey + "&file_code=" + fileid_to_download);
+        /* 2019-11-04: Linkcheck is not required here - download API will return offline status. */
+        // requestFileInformationAPI(link, account);
+        logger.info("Trying to get dllink via API");
+        final String apikey = getAPIKeyFromAccount(account);
+        if (StringUtils.isEmpty(apikey)) {
+            /* This should never happen */
+            logger.warning("Cannot do this without apikey");
+            return null;
+        }
+        final String fileid_to_download;
+        if (requiresAPIGetdllinkCloneWorkaround(account)) {
+            logger.info("Trying to download file via clone workaround");
+            getPage(this.getAPIBase() + "/file/clone?key=" + apikey + "&file_code=" + this.getFUIDFromURL(link));
             this.checkErrorsAPI(this.br, link, account);
-            final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
-            final Map<String, Object> result = (Map<String, Object>) entries.get("result");
-            /**
-             * TODO: Add quality selection. 2020-05-20: Did not add selection yet because so far this API call has NEVER worked for ANY
-             * filehost&videohost!
-             */
-            /* For videohosts: Pick the best quality */
-            String dllink = null;
-            final String[] qualities = new String[] { "o", "h", "n", "l" };
-            for (final String quality : qualities) {
-                final Map<String, Object> quality_tmp = (Map<String, Object>) result.get(quality);
-                if (quality_tmp != null) {
-                    dllink = (String) quality_tmp.get("url");
-                    if (!StringUtils.isEmpty(dllink)) {
-                        break;
-                    }
-                }
-            }
-            if (StringUtils.isEmpty(dllink)) {
-                /* For filehosts (= no different qualities available) */
-                logger.info("Failed to find any quality - downloading original file");
-                dllink = (String) result.get("url");
-                // final long filesize = JavaScriptEngineFactory.toLong(entries.get("size"), 0);
-            }
-            if (!StringUtils.isEmpty(dllink)) {
-                logger.info("Successfully found dllink via API");
-                return dllink;
-            } else {
-                logger.warning("Failed to find dllink via API");
-                this.checkErrorsAPI(br, link, account);
-                /**
-                 * TODO: Check if defect message makes sense here. Once we got better errorhandling we can eventually replace this with a
-                 * waittime.
-                 */
+            fileid_to_download = PluginJSonUtils.getJson(br, "filecode");
+            if (StringUtils.isEmpty(fileid_to_download)) {
+                logger.warning("Failed to find new fileid in clone handling");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+        } else {
+            logger.info("Trying to download file via api without workaround");
+            fileid_to_download = this.getFUIDFromURL(link);
         }
-        return null;
+        /*
+         * Users can also chose a preferred quality via '&q=h' but we prefer to receive all and then chose to easily have a fallback in case
+         * the quality selected by our user is not available.
+         */
+        /* Documentation videohost: https://xfilesharingpro.docs.apiary.io/#reference/file/file-clone/get-direct-link */
+        /*
+         * Documentation filehost:
+         * https://xvideosharing.docs.apiary.io/#reference/file/file-direct-link/get-links-to-all-available-qualities
+         */
+        getPage(this.getAPIBase() + "/file/direct_link?key=" + apikey + "&file_code=" + fileid_to_download);
+        final Map<String, Object> entries = this.checkErrorsAPI(this.br, link, account);
+        final Map<String, Object> result = (Map<String, Object>) entries.get("result");
+        /**
+         * TODO: Add quality selection. 2020-05-20: Did not add selection yet because so far this API call has NEVER worked for ANY
+         * filehost&videohost!
+         */
+        /* For videohosts: Pick the best quality */
+        String dllink = null;
+        final String[] qualities = new String[] { "o", "h", "n", "l" };
+        for (final String quality : qualities) {
+            final Map<String, Object> quality_tmp = (Map<String, Object>) result.get(quality);
+            if (quality_tmp != null) {
+                dllink = (String) quality_tmp.get("url");
+                if (!StringUtils.isEmpty(dllink)) {
+                    break;
+                }
+            }
+        }
+        if (StringUtils.isEmpty(dllink)) {
+            /* For filehosts (= no different qualities available) */
+            logger.info("Failed to find any quality - downloading original file");
+            dllink = (String) result.get("url");
+            // final long filesize = JavaScriptEngineFactory.toLong(entries.get("size"), 0);
+        }
+        if (StringUtils.isEmpty(dllink)) {
+            /* This should never happen */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to find final downloadurl via API");
+        }
+        logger.info("Successfully found dllink via API: " + dllink);
+        return dllink;
     }
 
     /**
@@ -5152,18 +5143,12 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
      * - Consistent
      */
     protected AccountInfo fetchAccountInfoAPI(final Browser br, final Account account) throws Exception {
-        /*
-         * 2020-03-20: TODO: Check if more XFS sites include 'traffic_left' and 'premium_traffic_left' here and implement it. See Plugins
-         * ShareOnlineTo and DdlTo
-         */
         final AccountInfo ai = new AccountInfo();
-        loginAPI(br, account);
-        Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+        final Map<String, Object> entries = loginAPI(br, account);
         /** 2019-07-31: Better compare expire-date against their serverside time if possible! */
-        final String server_timeStr = (String) entries.get("server_time");
-        entries = (Map<String, Object>) entries.get("result");
+        final String server_timeStr = entries.get("server_time").toString();
+        final Map<String, Object> result = (Map<String, Object>) entries.get("result");
         long expire_milliseconds_precise_to_the_second = 0;
-        final String email = (String) entries.get("email");
         final long currentTime;
         if (server_timeStr != null && server_timeStr.matches("\\d{4}\\-\\d{2}\\-\\d{2} \\d{2}:\\d{2}:\\d{2}")) {
             currentTime = TimeFormatter.getMilliSeconds(server_timeStr, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH);
@@ -5171,49 +5156,55 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
             /* Fallback */
             currentTime = System.currentTimeMillis();
         }
-        String expireStr = (String) entries.get("premium_expire");
+        String expireStr = (String) result.get("premium_expire");
         if (StringUtils.isEmpty(expireStr)) {
             /*
              * 2019-05-30: Seems to be a typo by the guy who develops the XFS script in the early versions of thei "API mod" :D 2019-07-28:
              * Typo is fixed in newer XFSv3 versions - still we'll keep both versions in just to make sure it will always work ...
              */
-            expireStr = (String) entries.get("premim_expire");
+            expireStr = (String) result.get("premim_expire");
         }
-        /*
-         * 2019-08-22: For newly created free accounts, an expire-date will always be given, even if the account has never been a premium
-         * account. This expire-date will usually be the creation date of the account then --> Handling will correctly recognize it as a
-         * free account!
-         */
         if (expireStr != null && expireStr.matches("\\d{4}\\-\\d{2}\\-\\d{2} \\d{2}:\\d{2}:\\d{2}")) {
             expire_milliseconds_precise_to_the_second = TimeFormatter.getMilliSeconds(expireStr, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH);
         }
-        /*
-         * 2019-08-22: Sadly there is no "traffic_left" value given. Upper handling will try to find it via website. Because we access
-         * account-info page anyways during account-check we at least don't have to waste another http-request for that.
-         */
         ai.setUnlimitedTraffic();
         final long premiumDurationMilliseconds = expire_milliseconds_precise_to_the_second - currentTime;
         if (premiumDurationMilliseconds <= 0) {
-            /* Expired premium or no expire date given --> It is usually a Free Account */
+            /* Expired premium or no expire date given --> Free Account */
             setAccountLimitsByType(account, AccountType.FREE);
         } else {
-            /* Expire date is in the future --> It is a premium account */
+            /* Expire date is in the future --> Premium account */
             ai.setValidUntil(System.currentTimeMillis() + premiumDurationMilliseconds);
             setAccountLimitsByType(account, AccountType.PREMIUM);
         }
+        final String premium_bandwidthBytesStr = (String) result.get("premium_bandwidth"); // Double as string
+        final String traffic_leftBytesStr = (String) result.get("traffic_left");
+        if (premium_bandwidthBytesStr != null) {
+            ai.setTrafficLeft(SizeFormatter.getSize(premium_bandwidthBytesStr));
+        } else if (traffic_leftBytesStr != null) {
+            ai.setTrafficLeft(SizeFormatter.getSize(traffic_leftBytesStr));
+        } else {
+            ai.setUnlimitedTraffic();
+        }
         {
             /* Now set less relevant account information */
-            final long balance = JavaScriptEngineFactory.toLong(entries.get("balance"), -1);
+            final Object balanceO = result.get("balance"); // Double returned as string
+            if (balanceO != null) {
+                ai.setAccountBalance(SizeFormatter.getSize(balanceO.toString()));
+            }
             /* 2019-07-26: values can also be "inf" for "Unlimited": "storage_left":"inf" */
             // final long storage_left = JavaScriptEngineFactory.toLong(entries.get("storage_left"), 0);
-            final long storage_used_bytes = JavaScriptEngineFactory.toLong(entries.get("storage_used"), -1);
-            if (storage_used_bytes > -1) {
-                ai.setUsedSpace(storage_used_bytes);
-            }
-            if (balance > -1) {
-                ai.setAccountBalance(balance);
+            final Object storage_usedO = result.get("storage_used");
+            if (storage_usedO != null) {
+                ai.setUsedSpace(SizeFormatter.getSize(storage_usedO.toString()));
             }
         }
+        // final Object isPremium = result.get("premium"); e.g. highstream.tv
+        final Object files_totalO = result.get("files_total");
+        if (files_totalO instanceof Number) {
+            ai.setFilesNum(((Number) files_totalO).intValue());
+        }
+        final String email = (String) result.get("email");
         if (this.enableAccountApiOnlyMode() && !StringUtils.isEmpty(email)) {
             /*
              * Each account is unique. Do not care what the user entered - trust what API returns! </br> This is not really important - more
@@ -5237,28 +5228,45 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
     /**
      * More info see supports_api()
      */
-    protected final void loginAPI(final Browser br, final Account account) throws Exception {
+    protected final Map<String, Object> loginAPI(final Browser br, final Account account) throws Exception {
+        Map<String, Object> entries = null;
         synchronized (account) {
-            final boolean followRedirects = br.isFollowingRedirects();
-            try {
-                br.setCookiesExclusive(true);
-                final String apikey = this.getAPIKeyFromAccount(account);
-                if (!this.isAPIKey(apikey)) {
-                    throw new AccountInvalidException("Invalid apikey format!");
+            br.setCookiesExclusive(true);
+            final String apikey = this.getAPIKeyFromAccount(account);
+            if (!this.looksLikeValidAPIKey(apikey)) {
+                throw new AccountInvalidException("Invalid API Key format!\r\nFind your API Key here: " + this.getAPILoginHelpURL());
+            }
+            getPage(br, this.getAPIBase() + "/account/info?key=" + apikey);
+            entries = this.checkErrorsAPI(br, null, account);
+            if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                /* 2023-11-30: Experiment to find out whether or not we can download via API with this account */
+                boolean apiDownloadsPossible = false;
+                try {
+                    final Browser brc = br.cloneBrowser();
+                    getPage(brc, this.getAPIBase() + "/file/direct_link?key=" + apikey + "&file_code=xxxxxxyyyyyy");
+                    this.checkErrorsAPI(brc, null, account);
+                } catch (final PluginException ple) {
+                    /*
+                     * Typically this happens when downloads are not possible via API:
+                     * {"msg":"This function not allowed in API","server_time":"2023-11-30 15:53:27","status":403}
+                     */
+                    if (ple.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
+                        /* {"server_time":"2023-11-30 15:53:33","status":404,"msg":"no file"} */
+                        apiDownloadsPossible = true;
+                    }
+                } catch (final Throwable e) {
+                    logger.log(e);
+                    logger.info("");
                 }
-                getPage(br, this.getAPIBase() + "/account/info?key=" + apikey);
-                final String msg = PluginJSonUtils.getJson(br, "msg");
-                final String status = PluginJSonUtils.getJson(br, "status");
-                /* 2019-05-30: There are no cookies at all (only "__cfduid" [Cloudflare cookie] sometimes.) */
-                final boolean jsonOK = msg != null && msg.equalsIgnoreCase("ok") && status != null && status.equals("200");
-                if (!jsonOK) {
-                    /* E.g. {"msg":"Wrong auth","server_time":"2019-05-29 19:29:03","status":403} */
-                    throw new AccountInvalidException();
+                logger.info("API download status: " + apiDownloadsPossible);
+                if (apiDownloadsPossible) {
+                    account.setProperty(PROPERTY_ACCOUNT_ALLOW_API_DOWNLOAD_ATTEMPT_IN_WEBSITE_MODE, true);
+                } else {
+                    account.removeProperty(PROPERTY_ACCOUNT_ALLOW_API_DOWNLOAD_ATTEMPT_IN_WEBSITE_MODE);
                 }
-            } finally {
-                br.setFollowRedirects(followRedirects);
             }
         }
+        return entries;
     }
 
     protected final AvailableStatus requestFileInformationAPI(final DownloadLink link, final String apikey) throws Exception {
@@ -5273,7 +5281,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
      * Checks multiple URLs via API. Only works when an apikey is given!
      */
     public boolean massLinkcheckerAPI(final DownloadLink[] urls, final String apikey) {
-        if (urls == null || urls.length == 0 || !this.isAPIKey(apikey)) {
+        if (urls == null || urls.length == 0 || !this.looksLikeValidAPIKey(apikey)) {
             return false;
         }
         boolean linkcheckerHasFailed = false;
@@ -5330,15 +5338,15 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
                     logger.info("Seems like we got only shortURLs -> Nothing left to be checked via API");
                 } else {
                     getPage(br, getAPIBase() + "/file/info?key=" + apikey + "&file_code=" + sb.toString());
+                    Map<String, Object> entries = null;
                     try {
-                        this.checkErrorsAPI(br, links.get(0), null);
+                        entries = this.checkErrorsAPI(br, links.get(0), null);
                     } catch (final Throwable e) {
                         logger.log(e);
                         /* E.g. invalid apikey, broken serverside API, developer mistake (e.g. sent fileIDs in invalid format) */
                         logger.info("Fatal failure");
                         return false;
                     }
-                    Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
                     final List<Object> ressourcelist = (List<Object>) entries.get("result");
                     for (final DownloadLink link : apiLinkcheckLinks) {
                         Map<String, Object> fileInfo = null;
@@ -5368,7 +5376,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
                             continue;
                         }
                         /* E.g. check for "result":[{"status":404,"filecode":"xxxxxxyyyyyy"}] */
-                        final long status = JavaScriptEngineFactory.toLong(fileInfo.get("status"), 404);
+                        final int status = ((Number) fileInfo.get("status")).intValue();
                         if (!link.isNameSet()) {
                             setWeakFilename(link, null);
                         }
@@ -5440,71 +5448,51 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
      * Can be executed after API calls to check for- and handle errors. </br>
      * Example good API response: {"msg":"OK","server_time":"2020-05-25 13:09:37","status":200,"result":[{"...
      */
-    protected void checkErrorsAPI(final Browser br, final DownloadLink link, final Account account) throws NumberFormatException, PluginException {
+    protected Map<String, Object> checkErrorsAPI(final Browser br, final DownloadLink link, final Account account) throws NumberFormatException, PluginException {
         /**
          * 2019-10-31: TODO: Add support for more errorcodes e.g. downloadlimit reached, premiumonly, password protected, wrong password,
          * wrong captcha. [PW protected + captcha protected download handling is not yet implemented serverside]
          */
-        String errorCodeStr = null;
-        String errorMsg = null;
-        int statuscode = -1;
+        final long defaultWaitAccount = 3 * 60 * 1000;
+        final long defaultWaitLink = 3 * 60 * 1000;
+        Map<String, Object> entries = null;
         try {
-            final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
-            final Object statusO = entries.get("status");
-            if (statusO instanceof String) {
-                errorCodeStr = (String) statusO;
-            } else {
-                statuscode = ((Number) statusO).intValue();
-            }
-            errorMsg = (String) entries.get("msg");
-        } catch (final Throwable e) {
+            entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+        } catch (final JSonMapperException e) {
             logger.log(e);
-            logger.info("API json parsing error");
+            final String errormessage = "Invalid API response";
+            if (link == null) {
+                throw new AccountUnavailableException(errormessage, defaultWaitAccount);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errormessage, defaultWaitLink);
+            }
         }
-        if (StringUtils.isEmpty(errorMsg)) {
-            errorMsg = "Unknown error";
+        final int statuscode = ((Number) entries.get("status")).intValue();
+        if (statuscode == 200) {
+            /* No error */
+            return entries;
+        }
+        String errormsg = (String) entries.get("msg");
+        if (StringUtils.isEmpty(errormsg)) {
+            errormsg = "Unknown error";
         }
         /**
          * TODO: Maybe first check for errormessage based on text, then handle statuscode. </br>
          * One statuscode can be returned with different errormessages!
          */
-        switch (statuscode) {
-        case -1:
-            /* No error */
-            break;
-        case 200:
-            /* No error */
-            break;
-        case 400:
-            /* {"msg":"Invalid key","server_time":"2019-10-31 17:20:02","status":400} */
-            /* 2021-04-01: This can also happen: {"msg":"Invalid file codes","server_time":"2021-04-01 13:39:48","status":400} */
-            /*
-             * This should never happen!
-             */
-            throw new AccountInvalidException("Invalid apikey!\r\nEntered apikey does not match expected format.");
-        case 403:
-            if (errorMsg.equalsIgnoreCase("This function not allowed in API")) {
-                /* {"msg":"This function not allowed in API","server_time":"2019-10-31 17:02:31","status":403} */
-                /* This should never happen! Plugin needs to be */
-                if (link == null) {
-                    /*
-                     * Login via API either not supported at all (wtf why is there an apikey available) or only for special/unlocked users!
-                     */
-                    throw new AccountInvalidException("API login impossible!");
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Unsupported API function - plugin might need update", 2 * 60 * 60 * 1000l);
-                }
-            } else {
-                /* {"msg":"Wrong auth","server_time":"2019-10-31 16:54:05","status":403} */
-                throw new AccountInvalidException("Invalid or expired apikey!\r\nWhen changing your apikey via website, make sure to update it in JD too!");
-            }
-        case 404:
+        if (statuscode == 403) {
+            /* Account related error */
+            throw new AccountInvalidException(errormsg);
+        } else if (statuscode == 404) {
             /* {"msg":"No file","server_time":"2019-10-31 17:23:17","status":404} */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        default:
-            /* Do not throw Exception here - usually website will be used as fallback and website-errors will be handled correctly */
-            logger.info("Unknown API error: " + errorCodeStr);
-            break;
+        } else {
+            logger.info("Unknown API error: " + statuscode);
+            if (link == null) {
+                throw new AccountUnavailableException(errormsg, defaultWaitAccount);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errormsg, defaultWaitLink);
+            }
         }
     }
 
@@ -5518,7 +5506,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
                 /* In website mode we store apikey as a property on our current account object. */
                 apikey = account.getStringProperty(PROPERTY_ACCOUNT_apikey);
             }
-            if (isAPIKey(apikey)) {
+            if (looksLikeValidAPIKey(apikey)) {
                 return apikey;
             } else {
                 return null;
@@ -5533,7 +5521,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
             return null;
         } else {
             final String apikey = PluginJsonConfig.get(cfgO).getApikey();
-            if (this.isAPIKey(apikey)) {
+            if (looksLikeValidAPIKey(apikey)) {
                 return apikey;
             } else {
                 return null;
@@ -5564,96 +5552,23 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
     }
 
     protected boolean isAPIKey(final String str) {
+        // TODO: 2023-11-30: Remove this
+        return looksLikeValidAPIKey(str);
+    }
+
+    @Override
+    protected String getAPILoginHelpURL() {
+        return getMainPage() + "/?op=my_account";
+    }
+
+    @Override
+    protected boolean looksLikeValidAPIKey(final String str) {
         if (str == null) {
             return false;
         } else if (str.matches("^[a-z0-9]{16,}$")) {
             return true;
         } else {
             return false;
-        }
-    }
-
-    @Override
-    public AccountBuilderInterface getAccountFactory(final InputChangedCallbackInterface callback) {
-        if (this.enableAccountApiOnlyMode()) {
-            return new XFSApiAccountFactory(callback, this);
-        } else {
-            return super.getAccountFactory(callback);
-        }
-    }
-
-    public static class XFSApiAccountFactory extends MigPanel implements AccountBuilderInterface {
-        private static final long serialVersionUID = 1L;
-        private final String      PINHELP          = "Enter your API Key";
-
-        private String getPassword() {
-            if (this.pass == null) {
-                return null;
-            } else {
-                return correctPasswordAsApikey(new String(this.pass.getPassword()));
-            }
-        }
-
-        public boolean updateAccount(Account input, Account output) {
-            boolean changed = false;
-            if (!StringUtils.equals(input.getUser(), output.getUser())) {
-                output.setUser(input.getUser());
-                changed = true;
-            }
-            if (!StringUtils.equals(input.getPass(), output.getPass())) {
-                output.setPass(input.getPass());
-                changed = true;
-            }
-            return changed;
-        }
-
-        private final ExtPasswordField     pass;
-        private final JLabel               idLabel;
-        private final XFileSharingProBasic plg;
-
-        public XFSApiAccountFactory(final InputChangedCallbackInterface callback, final XFileSharingProBasic plg) {
-            super("ins 0, wrap 2", "[][grow,fill]", "");
-            add(new JLabel("Click here to find your API Key:"));
-            add(new JLink(plg.getMainPage() + "/?op=my_account"));
-            this.add(this.idLabel = new JLabel("Enter your API Key:"));
-            add(this.pass = new ExtPasswordField() {
-                @Override
-                public void onChanged() {
-                    callback.onChangedInput(this);
-                }
-            }, "");
-            pass.setHelpText(PINHELP);
-            this.plg = plg;
-        }
-
-        @Override
-        public JComponent getComponent() {
-            return this;
-        }
-
-        @Override
-        public void setAccount(Account defaultAccount) {
-            if (defaultAccount != null) {
-                // name.setText(defaultAccount.getUser());
-                pass.setText(defaultAccount.getPass());
-            }
-        }
-
-        @Override
-        public boolean validateInputs() {
-            final String password = getPassword();
-            if (plg.isAPIKey(password)) {
-                idLabel.setForeground(Color.BLACK);
-                return true;
-            } else {
-                idLabel.setForeground(Color.RED);
-                return false;
-            }
-        }
-
-        @Override
-        public Account getAccount() {
-            return new Account(null, getPassword());
         }
     }
 

@@ -22,7 +22,6 @@ import java.util.Map;
 
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -34,19 +33,26 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
+import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
+import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
-public class WCOStream extends antiDDoSForDecrypt {
+@PluginDependencies(dependencies = { WCOForever.class })
+public class WCOStream extends PluginForDecrypt {
     public WCOStream(PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.setFollowRedirects(true);
+        return br;
+    }
+
     public static List<String[]> getPluginDomains() {
-        final List<String[]> ret = new ArrayList<String[]>();
-        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "wcostream.net", "wcostream.com" });
-        return ret;
+        return WCOForever.getPluginDomains();
     }
 
     public static String[] getAnnotationNames() {
@@ -71,9 +77,7 @@ public class WCOStream extends antiDDoSForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        br.setFollowRedirects(true);
-        getPage(param.getCryptedUrl());
+        br.getPage(param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -149,6 +153,7 @@ public class WCOStream extends antiDDoSForDecrypt {
                 }
             }
         }
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         for (String url : links) {
             if (StringUtils.isNotEmpty(url)) {
                 url = Encoding.htmlDecode(url).replaceAll("^//", "https://");
@@ -160,13 +165,13 @@ public class WCOStream extends antiDDoSForDecrypt {
                 ret.add(dl);
             }
         }
-        if (StringUtils.isNotEmpty(title)) {
-            final FilePackage fp = FilePackage.getInstance();
+        final FilePackage fp = FilePackage.getInstance();
+        if (title != null) {
             fp.setName(title);
-            fp.setAllowMerge(true);
-            fp.setAllowInheritance(true);
-            fp.addLinks(ret);
         }
+        fp.setAllowMerge(true);
+        fp.setAllowInheritance(true);
+        fp.addLinks(ret);
         return ret;
     }
 }

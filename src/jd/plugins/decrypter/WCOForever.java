@@ -20,26 +20,36 @@ import java.util.Collections;
 import java.util.List;
 
 import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
-public class WCOForever extends antiDDoSForDecrypt {
+public class WCOForever extends PluginForDecrypt {
     public WCOForever(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.setFollowRedirects(true);
+        return br;
     }
 
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "wcoforever.net", "wcoforever.com" });
+        ret.add(new String[] { "wcoforever.tv", "wcoforever.net", "wcoforever.com" });
         return ret;
     }
 
@@ -65,9 +75,10 @@ public class WCOForever extends antiDDoSForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        br.setFollowRedirects(true);
-        getPage(param.getCryptedUrl());
+        br.getPage(param.getCryptedUrl());
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         String fpName = br.getRegex("<title>(?:Watch\\s+)?([^<]+)Online\\s+-\\s+").getMatch(0);
         if (StringUtils.isEmpty(fpName)) {
             fpName = br.getRegex("<title>\\s*([^<]+)\\s+\\w+\\s+[DSds]ubbed\\s*(?:\\s+-\\s+|<)").getMatch(0);
@@ -75,17 +86,22 @@ public class WCOForever extends antiDDoSForDecrypt {
         final ArrayList<String> links = new ArrayList<String>();
         Collections.addAll(links, br.getRegex("<div[^>]*class\\s*=\\s*\"[^\"]*cat-eps[^\"]*\"[^>]*>\\s*<a[^>]*href\\s*=\\s*\"([^\"]+)\"").getColumn(0));
         Collections.addAll(links, br.getRegex("(?i)Is the video too slow[^<]+<a[^>]+href\\s*=\\s*\"([^\"]+)\"").getColumn(0));
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         for (String link : links) {
-            if (StringUtils.isNotEmpty(link)) {
-                link = Encoding.htmlDecode(link).replaceAll("^//", "https://");
-                decryptedLinks.add(createDownloadlink(link));
+            if (StringUtils.isEmpty(link)) {
+                continue;
             }
+            link = Encoding.htmlDecode(link).replaceAll("^//", "https://");
+            ret.add(createDownloadlink(link));
         }
-        if (StringUtils.isNotEmpty(fpName)) {
-            final FilePackage fp = FilePackage.getInstance();
+        final FilePackage fp = FilePackage.getInstance();
+        if (fpName != null) {
             fp.setName(Encoding.htmlDecode(fpName).trim());
-            fp.addLinks(decryptedLinks);
+        } else {
+            /* Fallback */
+            fp.setName(br._getURL().getPath());
         }
-        return decryptedLinks;
+        fp.addLinks(ret);
+        return ret;
     }
 }

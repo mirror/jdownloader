@@ -80,6 +80,7 @@ public class BoobinspectorComDecrypter extends PornEmbedParser {
         }
     }
 
+    @Override
     protected boolean isSelfhosted(final Browser br) {
         if (br.containsHTML("/videos/embed/\\d+")) {
             return true;

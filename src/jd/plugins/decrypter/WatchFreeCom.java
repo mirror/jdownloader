@@ -16,47 +16,77 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.List;
+
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
-import jd.controlling.ProgressController;
+import jd.http.Browser;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
-import jd.plugins.DownloadLink;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "watchfree.com" }, urls = { "https?://(www\\.)?watchfree\\.com/video/.+\\.html" })
-public class WatchFreeCom extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
+public class WatchFreeCom extends PornEmbedParser {
     public WatchFreeCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
-        br.getPage(parameter);
-        if (br.getHttpConnection() == null || br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("404 Not Found<|Page not found")) {
-            decryptedLinks.add(createOfflinelink(parameter));
-            return decryptedLinks;
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
+    }
+
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "watchfree.com" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/video/([a-z0-9\\-]+)-(\\d+)\\.html");
         }
-        String iframe = br.getRegex("iframe src=(?:'|\")([^'\"]*?)(?:'|\")").getMatch(0);
-        logger.info("iframe: " + iframe);
-        if (iframe == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        return ret.toArray(new String[0]);
+    }
+
+    @Override
+    protected Browser prepareBrowser(final Browser br) {
+        br.setAllowedResponseCodes(410);
+        return br;
+    }
+
+    @Override
+    protected boolean isOffline(final Browser br) {
+        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("404 Not Found<|Page not found")) {
+            return true;
+        } else {
+            return false;
         }
-        if (iframe != null) {
-            if (iframe.contains("watchfree")) {
-                br.setFollowRedirects(true);
-                br.getPage(iframe);
-                iframe = br.getRegex("iframe.*?src=(?:'|\")([^'\"]*?)(?:'|\")").getMatch(0);
-                logger.info("iframe: " + iframe);
-                if (iframe != null && iframe.contains(".spankmasters.com")) {
-                    iframe = iframe.replace(".spankmasters.com", "");
-                }
-            }
-            decryptedLinks.add(createDownloadlink(iframe));
-        }
-        return decryptedLinks;
+    }
+
+    @Override
+    protected String getFileTitle(final CryptedLink param, final Browser br) {
+        return new Regex(br.getURL(), this.getSupportedLinks()).getMatch(0);
+    }
+
+    @Override
+    protected boolean returnRedirectToUnsupportedLinkAsResult() {
+        return true;
     }
 }
