@@ -227,9 +227,6 @@ public class LinknameCleaner {
                 }
             }
         }
-        /**
-         * remove CDx,Partx
-         */
         String tmpname = cutNameMatch(name, pat13);
         if (tmpname.length() > 3) {
             name = tmpname;
