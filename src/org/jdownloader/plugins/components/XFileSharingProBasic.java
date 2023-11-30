@@ -1943,93 +1943,73 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
             }
             download1counter++;
         } while (download1counter <= download1max && StringUtils.isEmpty(dllink));
-        if (StringUtils.isEmpty(dllink) && (mode == DownloadMode.STREAM || StringUtils.isEmpty(officialVideoDownloadURL))) {
-            Form download2 = findFormDownload2Free(br);
-            if (download2 == null) {
-                /* Last chance - maybe our errorhandling kicks in here. */
+        if (!StringUtils.isEmpty(dllink) && mode == DownloadMode.STREAM) {
+            logger.info("User prefers stream download and stream downloadlink has been found -> Download2 handling is not needed");
+        } else if (!StringUtils.isEmpty(dllink) && mode == DownloadMode.AUTO && Boolean.TRUE.equals(requiresCaptchaForOfficialVideoDownload())) {
+            logger.info("Prefer stream download via auto handling because official video download would require a captcha");
+        } else {
+            /* Go further if needed. */
+            download2: if (StringUtils.isEmpty(officialVideoDownloadURL) && StringUtils.isEmpty(dllink)) {
+                logger.info("Jumping into download2 handling");
+                Form download2 = findFormDownload2Free(br);
+                if (download2 == null) {
+                    logger.warning("Failed to find download2 Form");
+                    break download2;
+                }
+                logger.info("Found download2 Form");
                 checkErrors(br, getCorrectBR(br), link, account, false);
-                /* Okay we finally have no idea what happened ... */
-                logger.warning("Failed to find download2 Form");
-                checkErrorsLastResort(br, account);
-            }
-            logger.info("Found download2 Form");
-            /*
-             * E.g. html contains text which would lead to error ERROR_IP_BLOCKED --> We're not checking for it as there is a download Form
-             * --> Then when submitting it, html will contain another error e.g. 'Skipped countdown' --> In this case we want to prefer the
-             * first thrown Exception. Why do we not check errors before submitting download2 Form? Because html could contain faulty
-             * errormessages!
-             */
-            Exception exceptionBeforeDownload2Submit = null;
-            try {
-                checkErrors(br, getCorrectBR(br), link, account, false);
-            } catch (final Exception e) {
-                logger.log(e);
-                exceptionBeforeDownload2Submit = e;
-                logger.info("Found Exception before download2 Form submit");
-            }
-            /* Define how many forms deep do we want to try? */
-            final int download2start = 0;
-            final int download2max = 2;
-            for (int download2counter = download2start; download2counter <= download2max; download2counter++) {
-                logger.info(String.format("Download2 loop %d / %d", download2counter + 1, download2max + 1));
-                final long timeBefore = Time.systemIndependentCurrentJVMTimeMillis();
-                handlePassword(download2, link);
-                handleCaptcha(link, br, download2);
-                /* 2019-02-08: MD5 can be on the subsequent pages - it is to be found very rare in current XFS versions */
-                if (link.getMD5Hash() == null) {
-                    final String md5hash = new Regex(getCorrectBR(br), "<b>MD5.*?</b>.*?nowrap>(.*?)<").getMatch(0);
-                    if (md5hash != null) {
-                        link.setMD5Hash(md5hash.trim());
+                /* Define how many forms deep do we want to try? */
+                final int download2start = 0;
+                final int download2max = 2;
+                for (int download2counter = download2start; download2counter <= download2max; download2counter++) {
+                    logger.info(String.format("Download2 loop %d / %d", download2counter + 1, download2max + 1));
+                    final long timeBefore = Time.systemIndependentCurrentJVMTimeMillis();
+                    handlePassword(download2, link);
+                    handleCaptcha(link, br, download2);
+                    waitTime(link, timeBefore);
+                    final URLConnectionAdapter formCon = openAntiDDoSRequestConnection(br, br.createFormRequest(download2));
+                    if (looksLikeDownloadableContent(formCon)) {
+                        /* Very rare case - e.g. tiny-files.com */
+                        handleDownload(link, account, null, dllink, formCon.getRequest());
+                        return;
+                    } else {
+                        br.followConnection(true);
+                        this.correctBR(br);
+                        try {
+                            formCon.disconnect();
+                        } catch (final Throwable e) {
+                        }
+                    }
+                    logger.info("Submitted Form download2");
+                    checkErrors(br, getCorrectBR(br), link, account, true);
+                    /* 2020-03-02: E.g. akvideo.stream */
+                    officialVideoDownloadURL = getDllinkViaOfficialVideoDownload(this.br.cloneBrowser(), link, account, false);
+                    if (!StringUtils.isEmpty(officialVideoDownloadURL) && mode == DownloadMode.ORIGINAL) {
+                        logger.info("Stepping out of download2 loop because: User wants original download && we found original download");
+                        break;
+                    }
+                    dllink = getDllink(link, account, br, getCorrectBR(br));
+                    download2 = findFormDownload2Free(br);
+                    if (!StringUtils.isEmpty(officialVideoDownloadURL) || !StringUtils.isEmpty(dllink)) {
+                        /* Success */
+                        validateLastChallengeResponse();
+                        break;
+                    } else if (download2 == null) {
+                        /* Failure */
+                        logger.info("Stepping out of download2 loop because: download2 form is null");
+                        break;
+                    } else {
+                        /* Continue to next round / next pre-download page */
+                        invalidateLastChallengeResponse();
+                        continue;
                     }
                 }
-                waitTime(link, timeBefore);
-                final URLConnectionAdapter formCon = openAntiDDoSRequestConnection(br, br.createFormRequest(download2));
-                if (looksLikeDownloadableContent(formCon)) {
-                    /* Very rare case - e.g. tiny-files.com */
-                    handleDownload(link, account, null, dllink, formCon.getRequest());
-                    return;
-                } else {
-                    br.followConnection(true);
-                    this.correctBR(br);
-                    try {
-                        formCon.disconnect();
-                    } catch (final Throwable e) {
-                    }
-                }
-                logger.info("Submitted Form download2");
-                checkErrors(br, getCorrectBR(br), link, account, true);
-                /* 2020-03-02: E.g. akvideo.stream */
-                officialVideoDownloadURL = getDllinkViaOfficialVideoDownload(this.br.cloneBrowser(), link, account, false);
-                if (!StringUtils.isEmpty(officialVideoDownloadURL) && mode == DownloadMode.ORIGINAL) {
-                    logger.info("Stepping out of download2 loop because: User wants original download && we found original download");
-                    break;
-                }
-                dllink = getDllink(link, account, br, getCorrectBR(br));
-                download2 = findFormDownload2Free(br);
-                if (!StringUtils.isEmpty(officialVideoDownloadURL) || !StringUtils.isEmpty(dllink)) {
-                    /* Success */
-                    validateLastChallengeResponse();
-                    break;
-                } else if (download2 == null) {
-                    /* Failure */
-                    logger.info("Stepping out of download2 loop because: download2 form is null");
-                    break;
-                } else {
-                    /* Continue to next round / next pre-download page */
-                    invalidateLastChallengeResponse();
-                    continue;
-                }
             }
-            if (StringUtils.isEmpty(officialVideoDownloadURL) && StringUtils.isEmpty(dllink)) {
-                logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
-                /* Check if maybe an error happened before stepping in download2 loop --> Throw that */
-                if (exceptionBeforeDownload2Submit != null) {
-                    logger.info("Throwing exceptionBeforeDownload2Submit");
-                    throw exceptionBeforeDownload2Submit;
-                } else {
-                    checkErrorsLastResort(br, account);
-                }
-            }
+        }
+        if (StringUtils.isEmpty(officialVideoDownloadURL) && StringUtils.isEmpty(dllink)) {
+            logger.warning("Failed to find final downloadurl");
+            checkErrors(br, getCorrectBR(br), link, account, false);
+            checkErrorsLastResort(br, account);
         }
         handleDownload(link, account, officialVideoDownloadURL, dllink, null);
     }
@@ -2801,6 +2781,14 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
             /* Premium accounts don't have captchas */
             return false;
         }
+    }
+
+    /**
+     * Return true if you know that a captcha will be required for official video download. </br>
+     * This can be used so that upper handling can try to avoid captchas if configured this way.
+     */
+    protected Boolean requiresCaptchaForOfficialVideoDownload() {
+        return Boolean.TRUE;
     }
 
     /** Cleans correctedBrowserRequestMap */

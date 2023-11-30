@@ -157,14 +157,14 @@ public class VoeSx extends XFileSharingProBasic {
 
     @Override
     protected String getDllinkVideohost(DownloadLink link, Account account, Browser br, final String src) {
-        final String mp4Master = new Regex(src, "(\"|')mp4\\1\\s*:\\s*(\"|')(https?://[^\"']+)").getMatch(2);
+        final String mp4Master = new Regex(src, "(?i)(\"|')mp4\\1\\s*:\\s*(\"|')(https?://[^\"']+)").getMatch(2);
         if (mp4Master != null) {
             return mp4Master;
         }
-        String hlsMaster = new Regex(src, "(\"|')hls\\1\\s*:\\s*(\"|')(https?://[^\"']+)").getMatch(2);
+        String hlsMaster = new Regex(src, "(?i)(\"|')hls\\1\\s*:\\s*(\"|')(https?://[^\"']+)").getMatch(2);
         if (hlsMaster == null) {
             /* 2023-11-21 */
-            hlsMaster = new Regex(src, "\"(https?://[^/]+/engine/hls[^\"]+)").getMatch(0);
+            hlsMaster = new Regex(src, "(?i)\"(https?://[^/]+/engine/hls[^\"]+)").getMatch(0);
         }
         if (hlsMaster != null) {
             return hlsMaster;
@@ -264,7 +264,7 @@ public class VoeSx extends XFileSharingProBasic {
             }
             final String streamDownloadlink = getDllinkVideohost(link, account, br, br.getRequest().getHtmlCode());
             final DownloadMode mode = this.getPreferredDownloadModeFromConfig();
-            if (streamDownloadlink != null && (mode == DownloadMode.STREAM || mode == DownloadMode.AUTO)) {
+            if (streamDownloadlink != null && (mode == DownloadMode.STREAM || mode == DownloadMode.AUTO) && Boolean.TRUE.equals(requiresCaptchaForOfficialVideoDownload())) {
                 /*
                  * User wants to download stream. Obtaining an official downloadlink would require the user to enter a captcha -> Skip that.
                  */
