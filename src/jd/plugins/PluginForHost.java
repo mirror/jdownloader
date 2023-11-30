@@ -758,9 +758,10 @@ public abstract class PluginForHost extends Plugin {
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
             break;
-        case SKIP:
         case SKIP_HOSTER:
             throw new CaptchaException(SkipRequest.BLOCK_HOSTER);
+        case SKIP:
+            // fallthrough
         default:
             if (CFG_GUI.HELP_DIALOGS_ENABLED.isEnabled()) {
                 HelpDialog.show(false, true, HelpDialog.getMouseLocation(), "SKIPPEDHOSTER", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI.T.ChallengeDialogHandler_viaGUI_skipped_help_title(), _GUI.T.ChallengeDialogHandler_viaGUI_skipped_help_msg(), new AbstractIcon(IconKey.ICON_SKIPPED, 32));

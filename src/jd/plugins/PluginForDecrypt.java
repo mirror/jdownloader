@@ -617,9 +617,10 @@ public abstract class PluginForDecrypt extends Plugin {
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
             break;
-        case SKIP:
         case SKIP_HOSTER:
             throw new CaptchaException(SkipRequest.BLOCK_HOSTER);
+        case SKIP:
+            // fallthrough
         default:
             break;
         }
