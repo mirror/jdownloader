@@ -414,7 +414,8 @@ public class IwaraTv extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        final FilenameSchemeType preferredFilenameSchemeType = PluginJsonConfig.get(IwaraTvConfig.class).getPreferredFilenameSchemeType();
+        final IwaraTvConfig cfg = PluginJsonConfig.get(IwaraTvConfig.class);
+        final FilenameSchemeType preferredFilenameSchemeType = cfg.getPreferredFilenameSchemeType();
         final String serverFilename = Plugin.getFileNameFromHeader(dl.getConnection());
         final String mimeExt = getExtensionFromMimeType(dl.getConnection().getContentType());
         if (preferredFilenameSchemeType == FilenameSchemeType.ORIGINAL_SERVER_FILENAMES) {
@@ -427,6 +428,9 @@ public class IwaraTv extends PluginForHost {
         /* Final check: Check if actual filesize looks to be much smaller than size reported by their Web-API. */
         final long expectedFilesize = link.getLongProperty(PROPERTY_EXPECTED_FILESIZE, -1);
         final long realFilesize = dl.getConnection().getCompleteContentLength();
+        // TODO: Make use of this new plugin setting
+        // if (cfg.isDisplayErrorOnTooSmallVideoFilesize() && expectedFilesize != -1 && realFilesize != -1 && realFilesize <
+        // expectedFilesize * 0.75) {
         if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && expectedFilesize != -1 && realFilesize != -1 && realFilesize < expectedFilesize * 0.75) {
             /* Deeper explanation: https://board.jdownloader.org/showthread.php?p=526884#post526884 */
             final SIZEUNIT maxSizeUnit = (SIZEUNIT) CFG_GUI.MAX_SIZE_UNIT.getValue();

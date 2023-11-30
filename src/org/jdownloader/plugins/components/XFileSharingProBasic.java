@@ -183,10 +183,14 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
     @Override
     public LazyPlugin.FEATURE[] getFeatures() {
         final List<LazyPlugin.FEATURE> ret = new ArrayList<LazyPlugin.FEATURE>();
-        if (requiresCookieLogin()) {
-            ret.add(LazyPlugin.FEATURE.COOKIE_LOGIN_ONLY);
+        if (enableAccountApiOnlyMode()) {
+            ret.add(LazyPlugin.FEATURE.API_KEY_LOGIN);
         } else {
-            ret.add(LazyPlugin.FEATURE.COOKIE_LOGIN_OPTIONAL);
+            if (requiresCookieLogin()) {
+                ret.add(LazyPlugin.FEATURE.COOKIE_LOGIN_ONLY);
+            } else {
+                ret.add(LazyPlugin.FEATURE.COOKIE_LOGIN_OPTIONAL);
+            }
         }
         if (isImagehoster()) {
             ret.add(LazyPlugin.FEATURE.IMAGE_HOST);

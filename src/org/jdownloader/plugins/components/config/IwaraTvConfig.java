@@ -21,6 +21,7 @@ public interface IwaraTvConfig extends PluginConfigInterface {
     final String                                  text_ProfileCrawlerSkipExternalURLs                   = "Profile crawler: Skip externally hosted videos e.g. youtube.com URLs?";
     final String                                  text_ScanForDownloadableLinksInContentDescription     = "Scan for URLs in content description?";
     final String                                  text_RegexWhitelistForCrawledUrlsInContentDescription = "RegEx whitelist for crawled URLs from content description e.g. '(?i).*(site\\.tld|site2\\.tld).*' [Empty = Allow all URLs]";
+    final String                                  text_DisplayErrorOnTooSmallVideoFilesize              = "Display error if video size is lower than 75% of expected highest filesize?";
 
     public static class TRANSLATION {
         public String getProfileCrawlerEnableFastLinkcheck_label() {
@@ -49,6 +50,10 @@ public interface IwaraTvConfig extends PluginConfigInterface {
 
         public String getRegexWhitelistForCrawledUrlsInContentDescription_label() {
             return text_RegexWhitelistForCrawledUrlsInContentDescription;
+        }
+
+        public String getDisplayErrorOnTooSmallVideoFilesize_label() {
+            return text_DisplayErrorOnTooSmallVideoFilesize;
         }
     }
 
@@ -161,4 +166,12 @@ public interface IwaraTvConfig extends PluginConfigInterface {
     String getRegexWhitelistForCrawledUrlsInContentDescription();
 
     void setRegexWhitelistForCrawledUrlsInContentDescription(String str);
+
+    @AboutConfig
+    @DefaultBooleanValue(false)
+    @DescriptionForConfigEntry(text_FindFilesizeDuringAvailablecheck)
+    @Order(70)
+    boolean isDisplayErrorOnTooSmallVideoFilesize();
+
+    void setDisplayErrorOnTooSmallVideoFilesize(boolean b);
 }

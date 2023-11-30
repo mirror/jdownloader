@@ -243,6 +243,7 @@ public class FreeM3DownloadNet extends PluginForHost {
         }
         if (!attemptStoredDownloadurlDownload(link, directlinkproperty, FREE_RESUME, FREE_MAXCHUNKS)) {
             String dllink = null;
+            String formatID = null;
             String formatLabel = null;
             synchronized (antiCaptchaCookies) {
                 requestFileInformation(link);
@@ -252,12 +253,12 @@ public class FreeM3DownloadNet extends PluginForHost {
                 // final String str = UUID.randomUUID().toString();
                 // postdata.put("ch", str);
                 final String[] formatInfo = getFormatInfo(br);
-                final String formatInternalName = formatInfo[0];
+                formatID = formatInfo[0];
                 formatLabel = formatInfo[1];
-                if (formatInternalName == null) {
+                if (formatID == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                postdata.put("f", Encoding.urlEncode(formatInternalName));
+                postdata.put("f", Encoding.urlEncode(formatID));
                 boolean captchaRequiredInThisRun;
                 if (br.containsHTML("class=\"g-recaptcha\"")) {
                     final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
@@ -292,7 +293,7 @@ public class FreeM3DownloadNet extends PluginForHost {
                 }
                 link.setProperty(directlinkproperty, dllink);
             }
-            final String textForBrokenOrUnavailableAudioFiles = "Broken audio file or chosen format " + formatLabel + " is not available";
+            final String textForBrokenOrUnavailableAudioFiles = "Broken audio file or chosen format " + formatLabel + " is not available. Select another format in plugin settings and try again.";
             if (dllink.matches("(?i)^https?://[^/]+/?$")) {
                 /* 2023-11-30: This can happen via browser too. */
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, textForBrokenOrUnavailableAudioFiles);

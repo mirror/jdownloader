@@ -47,7 +47,7 @@ import jd.plugins.components.SiteType.SiteTemplate;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 /* 2020-08-27: Working example: dirtymovie.com */
 public class PimpRollHostedTube extends PluginForHost {
-    public static String[] t = { "bestporno.net", "descargarpelisporno.com", "redgayporntube.com", "teenpornocity.com" };
+    public static String[] t = { "descargarpelisporno.com", "redgayporntube.com", "teenpornocity.com" };
 
     @Override
     public LazyPlugin.FEATURE[] getFeatures() {
