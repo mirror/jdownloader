@@ -5220,7 +5220,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
             } else {
                 accStatus = account.getType().toString();
             }
-            ai.setStatus("[API] " + accStatus);
+            ai.setStatus("[API] | DLs: " + account.hasProperty(PROPERTY_ACCOUNT_ALLOW_API_DOWNLOAD_ATTEMPT_IN_WEBSITE_MODE) + " | " + accStatus);
         }
         return ai;
     }
@@ -5713,8 +5713,9 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
     private boolean test_looks_like_supports_api() throws IOException {
         br.getPage(this.getAPIBase() + "/account/info");
         /* 2020-05-29: Answer we'd expect if API is available: {"msg":"Invalid key","server_time":"2020-05-29 17:16:36","status":400} */
-        final String msg = PluginJSonUtils.getJson(br, "msg");
-        final String server_time = PluginJSonUtils.getJson(br, "server_time");
+        final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+        final String msg = (String) entries.get("msg");
+        final String server_time = (String) entries.get("server_time");
         if (!StringUtils.isEmpty(msg) && !StringUtils.isEmpty(server_time)) {
             return true;
         } else {
