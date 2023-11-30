@@ -16,10 +16,12 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -36,6 +38,13 @@ import jd.plugins.hoster.WebShareCz;
 public class WebShareCzFolder extends PluginForDecrypt {
     public WebShareCzFolder(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.setFollowRedirects(true);
+        return br;
     }
 
     public static List<String[]> getPluginDomains() {
@@ -58,7 +67,7 @@ public class WebShareCzFolder extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/#/folder/[a-z0-9]{8,}");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:#/)?folder/[a-z0-9]{8,}");
         }
         return ret.toArray(new String[0]);
     }
@@ -70,14 +79,14 @@ public class WebShareCzFolder extends PluginForDecrypt {
             /* Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final FilePackage fp = FilePackage.getInstance();
-        fp.setName(folderid);
+        FilePackage fp = null;
         int offset = 0;
         final int maxItemsPerPage = 100;
-        int numberofCrawledItems = 0;
+        int page = 1;
+        final HashSet<String> dupes = new HashSet<String>();
         do {
-            numberofCrawledItems = 0;
-            this.br.postPage("https://" + this.getHost() + "/api/folder/", "ident=" + folderid + "&offset=" + offset + "&limit=" + maxItemsPerPage + "&wst=");
+            int numberofNewItemsThisPage = 0;
+            br.postPage("https://" + this.getHost() + "/api/folder/", "ident=" + folderid + "&offset=" + offset + "&limit=" + maxItemsPerPage + "&wst=");
             if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("Folder not found")) {
                 /*
                  * <response><status>FATAL</status><code>FOLDER_FATAL_1</code><message>Folder not
@@ -85,14 +94,23 @@ public class WebShareCzFolder extends PluginForDecrypt {
                  */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
+            if (fp == null) {
+                fp = FilePackage.getInstance();
+                /* Very very cheap solution: First "name" tag in XML is name of the folder. */
+                fp.setName(br.getRegex("<name>([^<]+)</name>").getMatch(0));
+            }
             final String[] xmls = br.getRegex("<file>(.*?)</file>").getColumn(0);
             if (xmls == null || xmls.length == 0) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             for (final String singleXML : xmls) {
-                final String fileid = new Regex(singleXML, "<ident>([^<>\"]+)</ident>").getMatch(0);
-                final String filesize = new Regex(singleXML, "<size>([^<>\"]+)</size>").getMatch(0);
-                final String filename = new Regex(singleXML, "<name>([^<>\"]+)</name>").getMatch(0);
+                final String fileid = new Regex(singleXML, "<ident>([^<]+)</ident>").getMatch(0);
+                if (!dupes.add(fileid)) {
+                    /* Skip dupes */
+                    continue;
+                }
+                final String filesize = new Regex(singleXML, "<size>([^<]+)</size>").getMatch(0);
+                final String filename = new Regex(singleXML, "<name>([^<]+)</name>").getMatch(0);
                 final String content_url = "https://webshare.cz/#/file/" + fileid;
                 final DownloadLink dl = createDownloadlink(content_url);
                 dl.setContentUrl(content_url);
@@ -103,15 +121,19 @@ public class WebShareCzFolder extends PluginForDecrypt {
                 dl._setFilePackage(fp);
                 ret.add(dl);
                 distribute(dl);
-                numberofCrawledItems++;
+                numberofNewItemsThisPage++;
                 offset++;
             }
+            logger.info("Crawled page " + page + " | Found items so far: " + ret.size());
             if (this.isAbort()) {
                 logger.info("Stopping because: Aborted by user");
                 break;
-            } else if (numberofCrawledItems < maxItemsPerPage) {
+            } else if (numberofNewItemsThisPage < maxItemsPerPage) {
                 logger.info("Stopping because: Current page contains less items than full page pagination");
                 break;
+            } else {
+                /* Continue to next page */
+                page++;
             }
         } while (true);
         return ret;
