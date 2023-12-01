@@ -150,9 +150,121 @@ public class LinknameCleaner {
     }
 
     /** Derives package name out of given filename. */
-    public static String derivePackagenameFromFilename(final String filename) {
+    public static String derivePackagenameFromFilename(String name) {
         // TODO: Add functionality
-        return cleanPackagename(filename, true, true, EXTENSION_SETTINGS.REMOVE_ALL, true);
+        /*
+         * Basic cleanup: Remove typical invalid characters because in many cases the package name will be used as part of our download
+         * path.
+         */
+        name = replaceCharactersByMap(name, PACKAGENAME_REPLACEMAP);
+        name = replaceCharactersByMap(name, PACKAGENAME_REPLACEMAP_DEFAULT);
+        boolean extensionStilExists = true;
+        String before = name;
+        {
+            /* Remove known archive file-extensions */
+            /** remove rar extensions */
+            for (Pattern Pat : rarPats) {
+                name = getNameMatch(name, Pat);
+                if (!before.equals(name)) {
+                    extensionStilExists = false;
+                    break;
+                }
+            }
+            if (extensionStilExists) {
+                /**
+                 * remove 7zip/zip and merge extensions
+                 */
+                before = name;
+                for (Pattern Pat : zipPats) {
+                    name = getNameMatch(name, Pat);
+                    if (!before.equals(name)) {
+                        extensionStilExists = false;
+                        break;
+                    }
+                }
+            }
+            if (extensionStilExists) {
+                /**
+                 * remove isz extensions
+                 */
+                before = name;
+                for (Pattern Pat : iszPats) {
+                    name = getNameMatch(name, Pat);
+                    if (!before.equals(name)) {
+                        extensionStilExists = false;
+                        break;
+                    }
+                }
+            }
+            if (extensionStilExists) {
+                before = name;
+                /* xtremsplit */
+                name = getNameMatch(name, pat17);
+                if (!before.equals(name)) {
+                    extensionStilExists = false;
+                }
+            }
+            if (extensionStilExists && ffsjPats != null) {
+                /**
+                 * FFSJ splitted files
+                 *
+                 */
+                before = name;
+                for (Pattern Pat : ffsjPats) {
+                    name = getNameMatch(name, Pat);
+                    if (!before.equalsIgnoreCase(name)) {
+                        extensionStilExists = false;
+                        break;
+                    }
+                }
+            }
+        }
+        String tmpname = cutNameMatch(name, pat13);
+        if (tmpname.length() > 3) {
+            name = tmpname;
+        }
+        /* Remove other file extensions */
+        {
+            final EXTENSION_SETTINGS extensionSettings = EXTENSION_SETTINGS.REMOVE_ALL;
+            if (EXTENSION_SETTINGS.REMOVE_ALL.equals(extensionSettings) || EXTENSION_SETTINGS.REMOVE_KNOWN.equals(extensionSettings)) {
+                while (true) {
+                    final int lastPoint = name.lastIndexOf(".");
+                    if (lastPoint <= 0) {
+                        break;
+                    }
+                    final int extLength = (name.length() - (lastPoint + 1));
+                    final String ext = name.substring(lastPoint + 1);
+                    final ExtensionsFilterInterface knownExt = CompiledFiletypeFilter.getExtensionsFilterInterface(ext);
+                    if (knownExt != null && !ArchiveExtensions.NUM.equals(knownExt)) {
+                        /* make sure to cut off only known extensions */
+                        name = name.substring(0, lastPoint);
+                    } else if (extLength <= 4 && EXTENSION_SETTINGS.REMOVE_ALL.equals(extensionSettings) && ext.matches("^[0-9a-zA-z]+$")) {
+                        /* make sure to cut off only known extensions */
+                        if (extensionStilExists) {
+                            name = name.substring(0, lastPoint);
+                        } else {
+                            break;
+                        }
+                    } else {
+                        break;
+                    }
+                }
+            }
+        }
+        /* remove ending ., - , _ */
+        int removeIndex = -1;
+        for (int i = name.length() - 1; i >= 0; i--) {
+            final char c = name.charAt(i);
+            if (c == ',' || c == '_' || c == '-') {
+                removeIndex = i;
+            } else {
+                break;
+            }
+        }
+        if (removeIndex > 0) {
+            name = name.substring(0, removeIndex);
+        }
+        return cleanPackagename(name, true, true, EXTENSION_SETTINGS.REMOVE_ALL, true);
     }
 
     public static String cleanPackagename(String name, boolean splitUpperLowerCase, boolean removeArchiveExtensions, final EXTENSION_SETTINGS extensionSettings, boolean allowCleanup) {
@@ -163,13 +275,13 @@ public class LinknameCleaner {
          * Basic cleanup: Remove typical invalid characters because in many cases the package name will be used as part of our download
          * path.
          */
+        // TODO: Remove this into the optional "CLEAN_UP_PACKAGENAMES" handling down below
         name = replaceCharactersByMap(name, PACKAGENAME_REPLACEMAP);
         name = replaceCharactersByMap(name, PACKAGENAME_REPLACEMAP_DEFAULT);
         boolean extensionStilExists = true;
         String before = name;
         // final boolean removeArchiveExtensions = false;
         if (removeArchiveExtensions) {
-            // TODO: Maybe remove this because EXTENSION_SETTINGS.REMOVE_ALL handling down below does the same?
             /** remove rar extensions */
             for (Pattern Pat : rarPats) {
                 name = getNameMatch(name, Pat);
