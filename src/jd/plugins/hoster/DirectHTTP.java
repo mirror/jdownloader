@@ -624,7 +624,6 @@ public class DirectHTTP extends antiDDoSForHost implements DownloadConnectionVer
                 } else if ("GET".equals(requestType)) {
                     // PROPERTY_REQUEST_TYPE is set to GET
                     request = br.createGetRequest(downloadURL);
-                    request.getHeaders().put("Referer", "https://mauriceradiolibre.com/podcast-maurice-cest-la-nuit-du-mercredi-29-novembre-2023/");
                     urlConnection = openAntiDDoSRequestConnection(br, request);
                 } else if (!Boolean.FALSE.equals(trustHeadRequest) && "HEAD".equals(requestType)) {
                     // PROPERTY_REQUEST_TYPE is set to HEAD or preferHeadRequest
