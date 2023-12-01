@@ -16,13 +16,9 @@ import org.jdownloader.plugins.config.Type;
 @PluginHost(host = "twitter.com", type = Type.HOSTER)
 public interface TwitterConfigInterface extends PluginConfigInterface {
     public static final TRANSLATION TRANSLATION                                              = new TRANSLATION();
-    final String                    text_FilenameScheme                                      = "Filename scheme";
     final String                    text_MarkTweetRepliesViaFilename                         = "Append '_reply' to filenames of tweets that are replies to other tweets?";
-    final String                    text_SingleTweetCrawlerTextCrawlMode                     = "Single Tweet crawler: Text crawl mode";
-    final String                    text_SingleTweetCrawlerCrawlMode                         = "Single Tweet crawler: Crawl mode";
     final String                    text_CrawlURLsInsideTweetText                            = "Crawl URLs inside post text?\r\nWarning: This may result in endless crawling activity!";
     final String                    text_RegexWhitelistForCrawledUrlsInTweetText             = "RegEx whitelist for crawled URLs in tweet text e.g. '(?i).*(site\\.tld|site2\\.tld).*' [Empty = Allow all URLs]";
-    final String                    text_CrawlRetweetsV2                                     = "Crawl retweets?";
     final String                    text_CrawlVideoThumbnail                                 = "Crawl video thumbnail?";
     final String                    text_PreferHLSVideoDownload                              = "Videos: Prefer HLS over http download?";
     final String                    text_GlobalRequestIntervalLimitApiTwitterComMilliseconds = "Define global request limit for api.twitter.com in milliseconds (0 = no limit)";
@@ -36,7 +32,7 @@ public interface TwitterConfigInterface extends PluginConfigInterface {
         // add URLs without '/media'!)";
         // }
         public String getFilenameScheme_label() {
-            return text_FilenameScheme;
+            return "Filename scheme";
         }
 
         public String getMarkTweetRepliesViaFilename_label() {
@@ -44,11 +40,11 @@ public interface TwitterConfigInterface extends PluginConfigInterface {
         }
 
         public String getSingleTweetCrawlerTextCrawlMode_label() {
-            return text_SingleTweetCrawlerTextCrawlMode;
+            return "Single Tweet crawler: Text crawl mode";
         }
 
         public String getSingleTweetCrawlerCrawlMode_label() {
-            return text_SingleTweetCrawlerCrawlMode;
+            return "Single Tweet crawler: Crawl mode";
         }
 
         public String getCrawlURLsInsideTweetText_label() {
@@ -60,7 +56,7 @@ public interface TwitterConfigInterface extends PluginConfigInterface {
         }
 
         public String getCrawlRetweetsV2_label() {
-            return text_CrawlRetweetsV2;
+            return "Crawl Retweets?";
         }
 
         public String getCrawlVideoThumbnail_label() {
@@ -126,7 +122,7 @@ public interface TwitterConfigInterface extends PluginConfigInterface {
     @AboutConfig
     @DefaultEnumValue("AUTO")
     @Order(20)
-    @DescriptionForConfigEntry(text_FilenameScheme)
+    @DescriptionForConfigEntry("Define how filenames of twitter items should look like.")
     FilenameScheme getFilenameScheme();
 
     void setFilenameScheme(final FilenameScheme scheme);
@@ -169,7 +165,7 @@ public interface TwitterConfigInterface extends PluginConfigInterface {
     @AboutConfig
     @DefaultEnumValue("AUTO")
     @Order(30)
-    @DescriptionForConfigEntry(text_SingleTweetCrawlerTextCrawlMode)
+    @DescriptionForConfigEntry("Select if and when text of a tweet should be crawled.")
     SingleTweetCrawlerTextCrawlMode getSingleTweetCrawlerTextCrawlMode();
 
     void setSingleTweetCrawlerTextCrawlMode(final SingleTweetCrawlerTextCrawlMode mode);
@@ -198,14 +194,14 @@ public interface TwitterConfigInterface extends PluginConfigInterface {
     @AboutConfig
     @DefaultEnumValue("AUTO")
     @Order(31)
-    @DescriptionForConfigEntry(text_SingleTweetCrawlerCrawlMode)
+    @DescriptionForConfigEntry("Define which API should be used when crawling single Tweets.")
     SingleTweetCrawlerMode getSingleTweetCrawlerCrawlMode();
 
     void setSingleTweetCrawlerCrawlMode(final SingleTweetCrawlerMode mode);
 
     @DefaultBooleanValue(false)
     @AboutConfig
-    @DescriptionForConfigEntry(text_CrawlRetweetsV2)
+    @DescriptionForConfigEntry("Crawl Retweets when crawling a Twitter profile?")
     @Order(35)
     boolean isCrawlRetweetsV2();
 

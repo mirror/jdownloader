@@ -21,61 +21,109 @@ import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "workupload.com" }, urls = { "https?://(?:www\\.)?workupload\\.com/archive/[A-Za-z0-9]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "workupload.com" }, urls = { "https?://(?:www\\.)?workupload\\.com/archive/([A-Za-z0-9]+)" })
 public class WorkuploadComFolder extends PluginForDecrypt {
     public WorkuploadComFolder(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
-        br.getPage(parameter);
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.setFollowRedirects(true);
+        return br;
+    }
+
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final String contenturl = param.getCryptedUrl().replaceFirst("(?i)http://", "https://");
+        final String folderID = new Regex(contenturl, this.getSupportedLinks()).getMatch(0);
+        br.getPage(contenturl);
         if (br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String fpName = br.getRegex("<h1>([^<>\"]+)</h1>").getMatch(0);
+        String passCode = null;
+        Form pwform = this.getPasswordForm(br);
+        if (pwform != null) {
+            boolean success = false;
+            for (int i = 0; i <= 3; i++) {
+                passCode = getUserInput("Password?", param);
+                pwform.put("passwordprotected_archive%5Bpassword%5D", Encoding.urlEncode(passCode));
+                br.submitForm(pwform);
+                pwform = this.getPasswordForm(br);
+                if (pwform == null) {
+                    success = true;
+                    break;
+                }
+            }
+            if (!success) {
+                throw new DecrypterException(DecrypterException.PASSWORD);
+            }
+        }
+        String foldername = br.getRegex("<td>Archivname[^<]*</td><td>([^<]+)").getMatch(0);
         final String[] htmls = br.getRegex("<div class=\"frame\">.*?class=\"filedownload\"").getColumn(-1);
         if (htmls == null || htmls.length == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            if (br.containsHTML(folderID + "\\s*0\\.00 B")) {
+                /**
+                 * 2023-12-01: Broken/offline item e.g. https://workupload.com/archive/2WvJvPpS </br>
+                 * -> Folder with single 0kb file linking to itself
+                 */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         for (final String singleHTML : htmls) {
             final String url = new Regex(singleHTML, "(/file/[^\"]+)").getMatch(0);
-            final String filename = new Regex(singleHTML, "class=\"filename[^\"]*?\">\\s*?<p>([^<>\"]+)<").getMatch(0);
+            String filename = new Regex(singleHTML, "class=\"filename[^\"]*?\">\\s*?<p>([^<>\"]+)<").getMatch(0);
+            if (filename == null) {
+                filename = new Regex(singleHTML, "class=\"filecontent\"[^>]*data-content=\"([^\"]+)\"").getMatch(0);
+            }
             final String filesize = new Regex(singleHTML, "class=\"filesize[^\"]*?\">([^<>\"]+)<").getMatch(0);
             if (url == null) {
+                logger.warning("Skipping invalid html snippet: " + singleHTML);
                 continue;
             }
-            final DownloadLink dl = createDownloadlink("https://" + this.getHost() + url);
-            boolean setAvailable = false;
+            final DownloadLink dl = createDownloadlink(br.getURL(url).toExternalForm());
             if (filename != null) {
                 dl.setName(filename);
-                setAvailable = true;
+            } else {
+                logger.warning("Filename regex failed");
             }
             if (filesize != null) {
                 dl.setDownloadSize(SizeFormatter.getSize(filesize));
-                setAvailable = true;
+            } else {
+                logger.warning("Filesize regex failed");
             }
-            if (setAvailable) {
-                dl.setAvailable(true);
+            if (passCode != null) {
+                /* All single files are protected with the same password. */
+                dl.setDownloadPassword(passCode, true);
             }
-            decryptedLinks.add(dl);
+            dl.setAvailable(true);
+            ret.add(dl);
         }
-        if (fpName != null) {
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName.trim()));
-            fp.addLinks(decryptedLinks);
+        final FilePackage fp = FilePackage.getInstance();
+        if (foldername != null) {
+            fp.setName(Encoding.htmlDecode(foldername).trim());
         }
-        return decryptedLinks;
+        fp.addLinks(ret);
+        return ret;
+    }
+
+    private Form getPasswordForm(final Browser br) {
+        return br.getFormbyProperty("name", "passwordprotected_archive");
     }
 }

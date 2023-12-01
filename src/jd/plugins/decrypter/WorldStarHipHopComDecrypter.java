@@ -20,7 +20,9 @@ import java.util.List;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
+import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -33,6 +35,13 @@ import jd.plugins.hoster.WorldStarHipHopCom;
 public class WorldStarHipHopComDecrypter extends PluginForDecrypt {
     public WorldStarHipHopComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.setFollowRedirects(true);
+        return br;
     }
 
     public static List<String[]> getPluginDomains() {
@@ -58,67 +67,70 @@ public class WorldStarHipHopComDecrypter extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(video(\\d+)?\\.php\\?v=[a-zA-Z0-9]+|videos/[A-Za-z0-9]+/[a-z0-9\\-]+|embed/\\d+)");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(video(\\d+)?\\.php\\?v=[a-zA-Z0-9]+|videos/[A-Za-z0-9]+/[a-z0-9\\-]+|embed/\\d+|featured/\\d+)");
         }
         return ret.toArray(new String[0]);
     }
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        br.setFollowRedirects(true);
-        br.getPage(param.getCryptedUrl());
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final String contenturl = param.getCryptedUrl().replaceFirst("(?i)http://", "https://");
+        br.getPage(contenturl);
         if (WorldStarHipHopCom.isOffline(br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String externID = br.getRegex("\"file\",\"(https?://(www\\.)?youtube\\.com/v/[^<>\"]*?)\"\\);").getMatch(0);
-        if (externID == null) {
-            externID = br.getRegex("\"file\",\"(https?://(www\\.)?youtube\\.com/v/[A-Za-z0-9\\-_]+)\"").getMatch(0);
-        }
-        if (externID == null) {
-            externID = br.getRegex("<iframe src=\"(https?://(?:www\\.)?youtube\\.com/[^<>\"]*?)\"").getMatch(0);
+        final PluginForDecrypt youtubecrawler = this.getNewPluginForDecryptInstance("youtube.com");
+        final String[] urls = HTMLParser.getHttpLinks(br.getRequest().getHtmlCode(), br.getURL());
+        String externID = null;
+        for (final String url : urls) {
+            if (youtubecrawler.canHandle(url)) {
+                externID = url;
+                break;
+            }
         }
         if (externID != null) {
-            decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(externID.trim())));
-            return decryptedLinks;
+            /* We found a youtube url */
+            ret.add(createDownloadlink(externID));
+            return ret;
         }
         externID = br.getRegex("\"(https?://player\\.vimeo\\.com/video/[^<>\"]*?)\"").getMatch(0);
         if (externID != null) {
-            decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(externID.trim())));
-            return decryptedLinks;
+            ret.add(createDownloadlink(Encoding.htmlDecode(externID.trim())));
+            return ret;
         }
         externID = br.getRegex("\"(https?://media\\.mtvnservices\\.com/(embed/)?mgid:uma:video:mtv\\.com:\\d+)\"").getMatch(0);
         if (externID != null) {
-            decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(externID.trim())));
-            return decryptedLinks;
+            ret.add(createDownloadlink(Encoding.htmlDecode(externID.trim())));
+            return ret;
         }
         externID = br.getRegex("\"(https?://(www\\.)?facebook\\.com/video/embed\\?video_id=\\d+)\"").getMatch(0);
         if (externID != null) {
             final DownloadLink dl = createDownloadlink(Encoding.htmlDecode(externID.trim()));
             dl.setProperty("nologin", true);
-            decryptedLinks.add(dl);
-            return decryptedLinks;
+            ret.add(dl);
+            return ret;
         }
         externID = br.getRegex("\"(https?://cdnapi\\.kaltura\\.com/index\\.php/kwidget/[^<>\"]*?)\"").getMatch(0);
         if (externID != null) {
-            decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(externID.trim())));
-            return decryptedLinks;
+            ret.add(createDownloadlink(Encoding.htmlDecode(externID.trim())));
+            return ret;
         }
         externID = br.getRegex("<iframe src=\"(https?://(www\\.)?bet\\.com/[^<>\"]*?)\" ").getMatch(0);
         if (externID != null) {
-            decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(externID.trim())));
-            return decryptedLinks;
+            ret.add(createDownloadlink(Encoding.htmlDecode(externID.trim())));
+            return ret;
         }
         externID = br.getRegex("url=(https?%3A%2F%2Fapi\\.soundcloud\\.com%2Ftracks%2F[^<>\"]*?)\"").getMatch(0);
         if (externID != null) {
-            decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(externID.trim())));
-            return decryptedLinks;
+            ret.add(createDownloadlink(Encoding.htmlDecode(externID.trim())));
+            return ret;
         }
         if (externID == null) {
             externID = br.getRegex("<iframe[^<>]*?src=\"([^\"]+)\"").getMatch(0);
             if (!externID.contains("worldstarhiphop")) {
                 logger.info("External link found: " + externID);
-                decryptedLinks.add(createDownloadlink(Encoding.htmlDecode(externID.trim())));
-                return decryptedLinks;
+                ret.add(createDownloadlink(Encoding.htmlDecode(externID.trim())));
+                return ret;
             }
         }
         final WorldStarHipHopCom hosterPlugin = (WorldStarHipHopCom) this.getNewPluginForHostInstance(this.getHost());
@@ -126,8 +138,8 @@ public class WorldStarHipHopComDecrypter extends PluginForDecrypt {
         final DownloadLink dl = new DownloadLink(hosterPlugin, this.getHost(), br.getURL());
         hosterPlugin.requestFileInformation(dl, br);
         dl.setAvailable(true);
-        decryptedLinks.add(dl);
-        return decryptedLinks;
+        ret.add(dl);
+        return ret;
     }
 
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
