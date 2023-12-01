@@ -87,11 +87,13 @@ public class WebShareCzFolder extends PluginForDecrypt {
         do {
             int numberofNewItemsThisPage = 0;
             br.postPage("https://" + this.getHost() + "/api/folder/", "ident=" + folderid + "&offset=" + offset + "&limit=" + maxItemsPerPage + "&wst=");
-            if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("Folder not found")) {
+            if (br.getHttpConnection().getResponseCode() == 404) {
                 /*
                  * <response><status>FATAL</status><code>FOLDER_FATAL_1</code><message>Folder not
                  * found.</message><app_version>26</app_version></response>
                  */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (this.br.containsHTML("<message>\\s*Folder not found")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             if (fp == null) {

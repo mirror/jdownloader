@@ -21,6 +21,8 @@ import jd.http.requests.PutRequest;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountRequiredException;
+import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -40,6 +42,15 @@ public class PutIO extends PluginForHost {
     }
 
     @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.getHeaders().put(new HTTPHeader("User-Agent", "jdownloader", false));
+        br.getHeaders().put(new HTTPHeader("Accept", "application/json", false));
+        br.setFollowRedirects(true);
+        return br;
+    }
+
+    @Override
     public boolean canHandle(final DownloadLink downloadLink, final Account account) throws Exception {
         if (account == null) {
             return false;
@@ -54,23 +65,15 @@ public class PutIO extends PluginForHost {
         }
     }
 
-    private Browser prepBR(final Browser br) {
-        br.getHeaders().put(new HTTPHeader("User-Agent", "jdownloader", false));
-        br.getHeaders().put(new HTTPHeader("Accept", "application/json", false));
-        br.setFollowRedirects(true);
-        return br;
-    }
-
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final String access_token = login(account);
         final AccountInfo ai = new AccountInfo();
         if (br.getURL() == null || !br.getURL().contains("/account/info")) {
-            prepBR(br);
             br.getHeaders().put(new HTTPHeader("Authorization", "token " + access_token, false));
             br.getPage(API_BASE + "/account/info");
             if (br.getHttpConnection().getResponseCode() != 200) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                throw new AccountUnavailableException("http error " + br.getHttpConnection().getResponseCode(), 5 * 60 * 1000);
             }
         }
         final Map<String, Object> infoResponse = restoreFromString(br.toString(), TypeRef.MAP);
@@ -94,7 +97,7 @@ public class PutIO extends PluginForHost {
 
     @Override
     public void handleFree(DownloadLink link) throws Exception {
-        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+        throw new AccountRequiredException();
     }
 
     private String getToken(String url) {
@@ -123,7 +126,6 @@ public class PutIO extends PluginForHost {
         final String access_token = login(account);
         final String url = getDownloadURL(link, access_token);
         final Browser brc = br.cloneBrowser();
-        brc.setFollowRedirects(true);
         brc.getHeaders().put("Authorization", "token " + access_token);
         dl = jd.plugins.BrowserAdapter.openDownload(brc, link, url, true, 0);
         final int responseCode = dl.getConnection().getResponseCode();
@@ -156,7 +158,6 @@ public class PutIO extends PluginForHost {
             String access_token = account.getStringProperty("access_token", null);
             if (!StringUtils.isEmpty(access_token)) {
                 logger.info("Trying to re-use saved access_token");
-                prepBR(br);
                 br.getHeaders().put(new HTTPHeader("Authorization", "token " + access_token, false));
                 br.getPage(API_BASE + "/account/info");
                 if (br.getHttpConnection().getResponseCode() == 200) {
@@ -167,18 +168,16 @@ public class PutIO extends PluginForHost {
                 }
             }
             logger.info("Performing full login");
-            br = prepBR(new Browser());
             final PutRequest authRequest = new PutRequest(API_BASE + "/oauth2/authorizations/clients/" + CLIENT_ID + "?client_secret=" + CLIENT_SECRET);
             final String credentials = account.getUser() + ":" + account.getPass();
             final String auth = org.appwork.utils.encoding.Base64.encodeToString(credentials.getBytes("UTF-8"));
             authRequest.getHeaders().put(new HTTPHeader("Authorization", "Basic " + auth, false));
             authRequest.getHeaders().put(new HTTPHeader("User-Agent", "jdownloader", false));
             authRequest.getHeaders().put(new HTTPHeader("Accept", "application/json", false));
-            br.setFollowRedirects(true);
             br.getPage(authRequest);
             final int responseCode = br.getHttpConnection().getResponseCode();
             if (responseCode != 200) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                throw new AccountUnavailableException("http error " + br.getHttpConnection().getResponseCode(), 5 * 60 * 1000);
             }
             final Map<String, Object> authResponse = restoreFromString(br.toString(), TypeRef.HASHMAP);
             access_token = (String) authResponse.get("access_token");
@@ -220,7 +219,6 @@ public class PutIO extends PluginForHost {
                     final String access_token = login(account);
                     final Request request = new HeadRequest(getDownloadURL(link, access_token));
                     request.getHeaders().put(new HTTPHeader("Authorization", "token " + access_token, false));
-                    br.setFollowRedirects(true);
                     br.getPage(request);
                     final URLConnectionAdapter connection = br.getHttpConnection();
                     try {
@@ -249,7 +247,7 @@ public class PutIO extends PluginForHost {
                 }
             }
         }
-        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+        throw new AccountRequiredException();
     }
 
     @Override

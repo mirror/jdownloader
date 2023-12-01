@@ -50,9 +50,9 @@ public class WiadomosciPlessPl extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         // look for a name for the package
-        final String fpName = br.getRegex("<title>(.*?)</title>").getMatch(0);
+        final String title = br.getRegex("<title>(.*?)</title>").getMatch(0);
         // now look for all the images we want..
-        final String[] links = br.getRegex("data-url=\"(https?://gal\\.pless\\.pl/[^\"]+\\.jpe?g)\"").getColumn(0);
+        final String[] links = br.getRegex("data-url=\"(https?://gal\\.pless\\.pl/[^\"]+\\.jpe?g[^\"]*)\"").getColumn(0);
         if (links == null || links.length == 0) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -66,11 +66,14 @@ public class WiadomosciPlessPl extends PluginForDecrypt {
             ret.add(dl);
         }
         // set file package name, this places all links into one package in JDownloader.
-        if (fpName != null) {
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName).trim());
-            fp.addLinks(ret);
+        final FilePackage fp = FilePackage.getInstance();
+        if (title != null) {
+            fp.setName(Encoding.htmlDecode(title).trim());
+        } else {
+            /* Fallback */
+            fp.setName(br._getURL().getPath());
         }
+        fp.addLinks(ret);
         return ret;
     }
 
