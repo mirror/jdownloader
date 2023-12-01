@@ -294,6 +294,9 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Name:" })
     String jd_gui_swing_components_AccountDialog_name();
 
+    @Default(lngs = { "en" }, values = { "E-Mail:" })
+    String jd_gui_swing_components_AccountDialog_email();
+
     @Default(lngs = { "en" }, values = { "Pass:" })
     String jd_gui_swing_components_AccountDialog_pass();
 
@@ -555,6 +558,9 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Login cookies invalid" })
     String accountdialog_check_cookies_invalid();
 
+    @Default(lngs = { "en" }, values = { "Please enter a valid e-mail address into the username field." })
+    String accountdialog_LoginValidationErrorInputIsNotEmailAddress();
+
     @Default(lngs = { "en" }, values = { "Cookie login is not supported for this provider." })
     String accountdialog_LoginValidationErrorCookieLoginUnsupportedButGiven();
 
@@ -566,6 +572,9 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en" }, values = { "Enter Username..." })
     String jd_gui_swing_components_AccountDialog_help_username();
+
+    @Default(lngs = { "en" }, values = { "Enter E-Mail..." })
+    String jd_gui_swing_components_AccountDialog_help_email();
 
     @Default(lngs = { "en" }, values = { "Really remove %s1 account(s)?" })
     String account_remove_action_title(int num);

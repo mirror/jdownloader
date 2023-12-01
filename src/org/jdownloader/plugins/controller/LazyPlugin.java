@@ -22,15 +22,7 @@ import jd.config.Property;
 import jd.plugins.Plugin;
 
 public abstract class LazyPlugin<T extends Plugin> implements MinTimeWeakReferenceCleanup {
-    /**
-     * Return true if this is an internal feature. </br>
-     * Internal features are used internally only and are not displayed in GUI.
-     */
-    public interface FeatureInterface {
-        public boolean isInternal();
-    }
-
-    public static enum FEATURE implements LabelInterface, TooltipInterface, FeatureInterface {
+    public static enum FEATURE implements LabelInterface, TooltipInterface {
         IMAGE_GALLERY {
             @Override
             public String getLabel() {
@@ -270,6 +262,22 @@ public abstract class LazyPlugin<T extends Plugin> implements MinTimeWeakReferen
             public boolean isInternal() {
                 return false;
             }
+        },
+        USERNAME_IS_EMAIL {
+            @Override
+            public String getLabel() {
+                return _JDT.T.LazyHostPlugin_FEATURE_USERNAME_IS_EMAIL();
+            }
+
+            @Override
+            public String getTooltip() {
+                return _JDT.T.LazyHostPlugin_FEATURE_USERNAME_IS_EMAIL();
+            }
+
+            @Override
+            public boolean isInternal() {
+                return false;
+            }
         };
 
         public static final long CACHEVERSION = Math.abs(StringUtils.join(values(), "<->").hashCode()) + Math.abs(StringUtils.join(values(), ":").hashCode()) + Math.abs(StringUtils.join(values(), "<=>").hashCode());
@@ -284,6 +292,12 @@ public abstract class LazyPlugin<T extends Plugin> implements MinTimeWeakReferen
             }
             return false;
         }
+
+        /**
+         * Return true if this is an internal feature. </br>
+         * Internal features are used internally only and are not displayed in GUI.
+         */
+        public abstract boolean isInternal();
     }
 
     /**

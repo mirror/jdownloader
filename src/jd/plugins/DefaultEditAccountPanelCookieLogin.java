@@ -52,6 +52,7 @@ public class DefaultEditAccountPanelCookieLogin extends MigPanel implements Acco
     private JLabel                              usernameLabel = null;
     private final JLabel                        passwordOrCookiesLabel;
     private final PluginForHost                 plg;
+    private final boolean                       usernameIsEmail;
     private final boolean                       cookieLoginOnly;
     private final boolean                       cookieLoginOptional;
 
@@ -72,6 +73,7 @@ public class DefaultEditAccountPanelCookieLogin extends MigPanel implements Acco
         super("ins 0, wrap 2", "[][grow,fill]", "");
         this.plg = plg;
         this.callback = callback;
+        this.usernameIsEmail = this.plg.hasFeature(FEATURE.USERNAME_IS_EMAIL);
         this.cookieLoginOnly = this.plg.hasFeature(FEATURE.COOKIE_LOGIN_ONLY);
         this.cookieLoginOptional = this.plg.hasFeature(FEATURE.COOKIE_LOGIN_OPTIONAL);
         if (cookieLoginOnly) {
@@ -79,7 +81,11 @@ public class DefaultEditAccountPanelCookieLogin extends MigPanel implements Acco
             add(new JLabel("Cookie login instructions:"));
             add(new JLink("Click here for instructions", "https://support.jdownloader.org/Knowledgebase/Article/View/account-cookie-login-instructions"));
         }
-        add(usernameLabel = new JLabel(_GUI.T.jd_gui_swing_components_AccountDialog_name()));
+        if (this.usernameIsEmail) {
+            add(usernameLabel = new JLabel(_GUI.T.jd_gui_swing_components_AccountDialog_email()));
+        } else {
+            add(usernameLabel = new JLabel(_GUI.T.jd_gui_swing_components_AccountDialog_name()));
+        }
         add(this.name = new ExtTextField() {
             @Override
             public void onChanged() {
@@ -93,7 +99,11 @@ public class DefaultEditAccountPanelCookieLogin extends MigPanel implements Acco
                 refreshTextHighlighter();
             }
         });
-        name.setHelpText(_GUI.T.jd_gui_swing_components_AccountDialog_help_username());
+        if (this.usernameIsEmail) {
+            name.setHelpText(_GUI.T.jd_gui_swing_components_AccountDialog_help_email());
+        } else {
+            name.setHelpText(_GUI.T.jd_gui_swing_components_AccountDialog_help_username());
+        }
         if (cookieLoginOnly) {
             add(passwordOrCookiesLabel = new JLabel("Exported cookies:"));
         } else if (cookieLoginOptional) {
@@ -158,6 +168,10 @@ public class DefaultEditAccountPanelCookieLogin extends MigPanel implements Acco
         final boolean userok;
         final boolean passok;
         if (StringUtils.isEmpty(this.getUsername())) {
+            usernameLabel.setForeground(Color.RED);
+            userok = false;
+        } else if (this.usernameIsEmail && !PluginForHost.looksLikeValidEmailAddress(this.getUsername())) {
+            /* E-Mail is needed but user did not enter a valid looking e-mail address. */
             usernameLabel.setForeground(Color.RED);
             userok = false;
         } else {

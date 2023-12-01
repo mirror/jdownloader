@@ -2177,6 +2177,8 @@ public abstract class PluginForHost extends Plugin {
         // TODO: Add check for API key only login
         if (this.hasFeature(FEATURE.COOKIE_LOGIN_ONLY) || this.hasFeature(FEATURE.COOKIE_LOGIN_OPTIONAL)) {
             return new DefaultEditAccountPanelCookieLogin(callback, this);
+        } else if (this.hasFeature(FEATURE.USERNAME_IS_EMAIL)) {
+            return new DefaultEditAccountPanelCookieLogin(callback, this);
         } else if (this.hasFeature(FEATURE.API_KEY_LOGIN)) {
             return new DefaultEditAccountPanelAPIKeyLogin(callback, this);
         } else {
@@ -3014,6 +3016,11 @@ public abstract class PluginForHost extends Plugin {
      * @throws AccountInvalidException
      */
     public void validateLogins(final Account account) throws AccountInvalidException {
+        if (this.hasFeature(FEATURE.USERNAME_IS_EMAIL)) {
+            if (!looksLikeValidEmailAddress(account.getUser())) {
+                throw new AccountInvalidException(_GUI.T.accountdialog_LoginValidationErrorInputIsNotEmailAddress());
+            }
+        }
         if (this.hasFeature(FEATURE.COOKIE_LOGIN_ONLY)) {
             if (account.loadUserCookies() == null) {
                 throw new AccountInvalidException(_GUI.T.accountdialog_LoginValidationErrorCookieLoginMandatoryButNoCookiesGiven());
@@ -3026,6 +3033,17 @@ public abstract class PluginForHost extends Plugin {
             if (!this.looksLikeValidAPIKey(account.getPass())) {
                 throw new AccountInvalidException(_GUI.T.accountdialog_LoginValidationErrorInvalidAPIKey());
             }
+        }
+    }
+
+    public static boolean looksLikeValidEmailAddress(final String str) {
+        // TODO: Move this function to a better place
+        if (str == null) {
+            return false;
+        } else if (str.matches(".+@.+")) {// TODO: Add more sophisticated validation
+            return true;
+        } else {
+            return false;
         }
     }
 
