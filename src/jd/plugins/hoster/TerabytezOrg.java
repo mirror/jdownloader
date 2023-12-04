@@ -43,7 +43,7 @@ public class TerabytezOrg extends XFileSharingProBasic {
      * DEV NOTES XfileSharingProBasic Version SEE SUPER-CLASS<br />
      * mods: See overridden functions<br />
      * limit-info:<br />
-     * captchatype-info: null 4dignum solvemedia reCaptchaV2, hcaptcha<br />
+     * captchatype-info: 2023-12-04: null <br />
      * other:<br />
      */
     public static List<String[]> getPluginDomains() {
@@ -67,7 +67,7 @@ public class TerabytezOrg extends XFileSharingProBasic {
     }
 
     /** Pattern of their old YetiShare links. */
-    final Pattern PATTERN_OLD = Pattern.compile("https?://[^/]+/([a-f0-9]{16})(/([^/]+))?");
+    final Pattern PATTERN_OLD = Pattern.compile("(?i)https?://[^/]+/([a-f0-9]{16})(/([^/]+))?");
 
     @Override
     public boolean isResumeable(final DownloadLink link, final Account account) {
@@ -190,6 +190,15 @@ public class TerabytezOrg extends XFileSharingProBasic {
         } else {
             final URL_TYPE type = getURLType(link);
             return getFUID(link, type);
+        }
+    }
+
+    @Override
+    public boolean isPremiumOnly(final Browser br) {
+        if (br.getURL().matches("(?i).*/login\\?redirect=.*")) {
+            return true;
+        } else {
+            return super.isPremiumOnly(br);
         }
     }
 }

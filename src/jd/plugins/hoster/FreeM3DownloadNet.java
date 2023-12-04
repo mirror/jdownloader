@@ -20,8 +20,10 @@ import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.appwork.storage.JSonStorage;
@@ -182,12 +184,18 @@ public class FreeM3DownloadNet extends PluginForHost {
                 }
             }
         }
-        final String[] formatInfo = getFormatInfo(br);
+        final Map<String, String[]> formatmap = getFormatMap(br);
+        final String[] preferredFormatInfo;
+        if (PluginJsonConfig.get(FreeM3DownloadNetConfig.class).isPreferFLAC()) {
+            preferredFormatInfo = formatmap.get("flac");
+        } else {
+            preferredFormatInfo = formatmap.get("mp3-320");
+        }
         if (StringUtils.isNotEmpty(filename)) {
             filename = Encoding.htmlDecode(filename).trim();
-            link.setFinalFileName(filename + "." + formatInfo[3]);
+            link.setFinalFileName(filename + "." + preferredFormatInfo[3]);
         }
-        final String filesizeStr = formatInfo[2];
+        final String filesizeStr = preferredFormatInfo[2];
         if (filesizeStr != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesizeStr));
         }
@@ -201,12 +209,12 @@ public class FreeM3DownloadNet extends PluginForHost {
     }
 
     /** Returns array with information about preferred format. */
-    private String[] getFormatInfo(final Browser br) throws PluginException {
+    private Map<String, String[]> getFormatMap(final Browser br) throws PluginException {
+        final Map<String, String[]> formats = new HashMap<String, String[]>();
         final String[] formathtmls = br.getRegex("(<input[^<>]*name=\"format-type\".*?</label>)").getColumn(0);
-        final String[] flacInfo = new String[4];
-        flacInfo[3] = "flac";
-        final String[] mp3Info = new String[4];
-        mp3Info[3] = "mp3";
+        if (formathtmls == null || formathtmls.length == 0) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         for (final String formathtml : formathtmls) {
             final String id = new Regex(formathtml, "id=\"([^\"]+)\"").getMatch(0);
             if (id == null) {
@@ -215,22 +223,18 @@ public class FreeM3DownloadNet extends PluginForHost {
             final Regex labelAndFilesize = new Regex(formathtml, "class=\"quality-label\"[^>]*>([^<>]+) \\((\\d+(\\.\\d{1,2})? [^<]*)\\)</label>");
             final String label = labelAndFilesize.getMatch(0);
             final String filesizeStr = labelAndFilesize.getMatch(1);
+            final String[] formatInfo = new String[4];
+            formatInfo[0] = id;
+            formatInfo[1] = label;
+            formatInfo[2] = filesizeStr;
             if (id.equalsIgnoreCase("flac")) {
-                flacInfo[0] = id;
-                flacInfo[1] = label;
-                flacInfo[2] = filesizeStr;
+                formatInfo[3] = "flac";
             } else {
-                /* MP3 can be available in multiple qualities. Last = Best/highest bitrate. */
-                mp3Info[0] = id;
-                mp3Info[1] = label;
-                mp3Info[2] = filesizeStr;
+                formatInfo[3] = "mp3";
             }
+            formats.put(id, formatInfo);
         }
-        if (PluginJsonConfig.get(FreeM3DownloadNetConfig.class).isPreferFLAC()) {
-            return flacInfo;
-        } else {
-            return mp3Info;
-        }
+        return formats;
     }
 
     private void handleDownload(final DownloadLink link) throws Exception, PluginException {
@@ -243,46 +247,87 @@ public class FreeM3DownloadNet extends PluginForHost {
         }
         if (!attemptStoredDownloadurlDownload(link, directlinkproperty, FREE_RESUME, FREE_MAXCHUNKS)) {
             String dllink = null;
-            String formatID = null;
-            String formatLabel = null;
+            String chosenFormatID = null;
             synchronized (antiCaptchaCookies) {
                 requestFileInformation(link);
-                final Map<String, Object> postdata = new HashMap<String, Object>();
-                postdata.put("i", Long.parseLong(this.getFID(link)));
-                /* Random 20 char lowercase string --> We'll just use an UUID */
-                // final String str = UUID.randomUUID().toString();
-                // postdata.put("ch", str);
-                final String[] formatInfo = getFormatInfo(br);
-                formatID = formatInfo[0];
-                formatLabel = formatInfo[1];
-                if (formatID == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                postdata.put("f", Encoding.urlEncode(formatID));
-                boolean captchaRequiredInThisRun;
-                if (br.containsHTML("class=\"g-recaptcha\"")) {
-                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-                    captchaRequiredInThisRun = true;
-                    postdata.put("h", recaptchaV2Response);
+                final Map<String, String[]> formatmap = getFormatMap(br);
+                final List<String> formatIDsToTry = new ArrayList<String>();
+                /* Important! User preference comes first, then all other possible formats will be tried! */
+                if (PluginJsonConfig.get(FreeM3DownloadNetConfig.class).isPreferFLAC()) {
+                    formatIDsToTry.add("flac");
                 } else {
-                    captchaRequiredInThisRun = false;
-                    postdata.put("h", "");
+                    formatIDsToTry.add("mp3-320");
                 }
-                br.postPageRaw("/dl.php?", JSonStorage.serializeToJson(postdata));
-                dllink = br.getRedirectLocation();
-                if (dllink == null || br.getRequest().getHtmlCode().startsWith("http")) {
-                    dllink = br.getRequest().getHtmlCode();
-                }
-                if (StringUtils.isEmpty(dllink)) {
-                    if (br.containsHTML("^https?://free-mp3-download\\.net/?$")) {
-                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    } else {
-                        logger.warning("Failed to find final downloadurl");
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                final Iterator<Entry<String, String[]>> iterator = formatmap.entrySet().iterator();
+                while (iterator.hasNext()) {
+                    final Entry<String, String[]> entry = iterator.next();
+                    final String thisFormatID = entry.getKey();
+                    if (!formatIDsToTry.contains(thisFormatID)) {
+                        formatIDsToTry.add(thisFormatID);
                     }
                 }
-                if (captchaRequiredInThisRun) {
-                    antiCaptchaCookies.put(this.getHost(), br.getCookies(br.getHost()));
+                int unavailableFormats = 0;
+                int formatIndex = -1;
+                for (final String thisFormatID : formatIDsToTry) {
+                    formatIndex++;
+                    if (formatIndex > 0) {
+                        /* Access html page again so we can determine the need to enter a captcha down below. */
+                        requestFileInformation(link);
+                    }
+                    logger.info("Trying to download format " + formatIndex + 1 + "/" + formatIDsToTry.size() + " -> " + thisFormatID + " | Number of unavailable formats so far: " + unavailableFormats);
+                    final String[] formatInfo = formatmap.get(thisFormatID);
+                    chosenFormatID = formatInfo[0];
+                    final String filesizeStr = formatInfo[2];
+                    final String fileExtension = formatInfo[3];
+                    final Map<String, Object> postdata = new HashMap<String, Object>();
+                    postdata.put("i", Long.parseLong(this.getFID(link)));
+                    /* Random 20 char lowercase string --> We'll just use an UUID */
+                    // final String str = UUID.randomUUID().toString();
+                    // postdata.put("ch", str);
+                    postdata.put("f", Encoding.urlEncode(chosenFormatID));
+                    boolean captchaRequiredInThisRun;
+                    if (br.containsHTML("class=\"g-recaptcha\"")) {
+                        final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                        captchaRequiredInThisRun = true;
+                        postdata.put("h", recaptchaV2Response);
+                    } else {
+                        captchaRequiredInThisRun = false;
+                        postdata.put("h", "");
+                    }
+                    br.postPageRaw("/dl.php?", JSonStorage.serializeToJson(postdata));
+                    if (captchaRequiredInThisRun) {
+                        antiCaptchaCookies.put(this.getHost(), br.getCookies(br.getHost()));
+                    }
+                    dllink = br.getRedirectLocation();
+                    if (dllink == null || br.getRequest().getHtmlCode().startsWith("http")) {
+                        dllink = br.getRequest().getHtmlCode();
+                    }
+                    if (StringUtils.isEmpty(dllink)) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    if (this.isAbort()) {
+                        /* Aborted by user */
+                        throw new InterruptedException();
+                    } else if (dllink.matches("(?i)^https?://[^/]+/?$")) {
+                        /* 2023-11-30: This can happen via browser too. */
+                        unavailableFormats++;
+                        continue;
+                    } else {
+                        /* Success! */
+                        /* Correct extension in filename */
+                        final String currentFilename = link.getFinalFileName();
+                        if (currentFilename != null) {
+                            link.setFinalFileName(this.correctOrApplyFileNameExtension(currentFilename, "." + fileExtension));
+                        }
+                        if (filesizeStr != null) {
+                            link.setDownloadSize(SizeFormatter.getSize(filesizeStr));
+                        }
+                        break;
+                    }
+                }
+                if (dllink == null) {
+                    final String textForBrokenOrUnavailableAudioFiles = "Broken audio file? All " + formatIDsToTry.size() + " formats are unavailable.";
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, textForBrokenOrUnavailableAudioFiles);
                 }
                 if (preferFlac) {
                     /*
@@ -293,11 +338,6 @@ public class FreeM3DownloadNet extends PluginForHost {
                 }
                 link.setProperty(directlinkproperty, dllink);
             }
-            final String textForBrokenOrUnavailableAudioFiles = "Broken audio file or chosen format " + formatLabel + " is not available. Select another format in plugin settings and try again.";
-            if (dllink.matches("(?i)^https?://[^/]+/?$")) {
-                /* 2023-11-30: This can happen via browser too. */
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, textForBrokenOrUnavailableAudioFiles);
-            }
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, FREE_RESUME, FREE_MAXCHUNKS);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 br.followConnection(true);
@@ -306,8 +346,7 @@ public class FreeM3DownloadNet extends PluginForHost {
                 } else if (dl.getConnection().getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 5 * 60 * 1000l);
                 } else {
-                    /* 2023-11-30: This can happen via browser too. */
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, textForBrokenOrUnavailableAudioFiles);
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Broken audio file? Chosen formatID: " + chosenFormatID);
                 }
             }
         }
