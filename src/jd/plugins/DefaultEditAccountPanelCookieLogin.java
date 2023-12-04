@@ -105,9 +105,9 @@ public class DefaultEditAccountPanelCookieLogin extends MigPanel implements Acco
             name.setHelpText(_GUI.T.jd_gui_swing_components_AccountDialog_help_username());
         }
         if (cookieLoginOnly) {
-            add(passwordOrCookiesLabel = new JLabel("Exported cookies:"));
+            add(passwordOrCookiesLabel = new JLabel(_GUI.T.jd_gui_swing_components_AccountDialog_cookies()));
         } else if (cookieLoginOptional) {
-            add(passwordOrCookiesLabel = new JLabel(_GUI.T.jd_gui_swing_components_AccountDialog_pass()));
+            add(passwordOrCookiesLabel = new JLabel(_GUI.T.jd_gui_swing_components_AccountDialog_pass_or_cookies()));
         } else {
             /* Normal username & password login */
             add(passwordOrCookiesLabel = new JLabel(_GUI.T.jd_gui_swing_components_AccountDialog_pass()));

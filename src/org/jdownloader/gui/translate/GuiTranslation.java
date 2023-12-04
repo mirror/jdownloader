@@ -297,8 +297,14 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "E-Mail:" })
     String jd_gui_swing_components_AccountDialog_email();
 
+    @Default(lngs = { "en" }, values = { "Cookies:" })
+    String jd_gui_swing_components_AccountDialog_cookies();
+
     @Default(lngs = { "en" }, values = { "Pass:" })
     String jd_gui_swing_components_AccountDialog_pass();
+
+    @Default(lngs = { "en" }, values = { "Pass or cookies:" })
+    String jd_gui_swing_components_AccountDialog_pass_or_cookies();
 
     @Default(lngs = { "en" }, values = { "Add new Account" })
     String jd_gui_swing_components_AccountDialog_title();

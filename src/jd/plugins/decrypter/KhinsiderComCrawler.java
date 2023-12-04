@@ -104,6 +104,9 @@ public class KhinsiderComCrawler extends PluginForDecrypt {
         try {
             /* Check if we got a direct-URL. */
             con = br.openGetConnection(contenturl);
+            if (con.getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             if (this.looksLikeDownloadableContent(con)) {
                 final DownloadLink direct = getCrawler().createDirectHTTPDownloadLink(br.getRequest(), con);
                 ret.add(direct);
@@ -115,9 +118,6 @@ public class KhinsiderComCrawler extends PluginForDecrypt {
                 con.disconnect();
             } catch (final Throwable e) {
             }
-        }
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (albumDownload.patternFind()) {
             if (br.containsHTML(">\\s*Unfortunately, due to large server expenses we are no longer able")) {
@@ -146,7 +146,7 @@ public class KhinsiderComCrawler extends PluginForDecrypt {
                 thumbnail.setAvailable(true);
                 ret.add(thumbnail);
             }
-            String title = br.getRegex("<h2>([^<]+)</h2>").getMatch(0);
+            String title = br.getRegex("<h2>([^<]+)").getMatch(0);
             final FilePackage fp = FilePackage.getInstance();
             if (title != null) {
                 title = Encoding.htmlDecode(title).trim();
