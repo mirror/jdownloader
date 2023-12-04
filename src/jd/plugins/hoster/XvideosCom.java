@@ -53,6 +53,15 @@ public class XvideosCom extends XvideosCore {
     }
 
     @Override
+    public String[] getAvoidDomains() {
+        /*
+         * 2023-12-04: Added haysex.biz because that website looks quite diffent than main xvideos layout so using the main domain fixes
+         * linkcheck and download handling in this case.
+         */
+        return new String[] { "haysex.biz" };
+    };
+
+    @Override
     protected String getFallbackPremiumDomain() {
         return "xvideos.red";
     }

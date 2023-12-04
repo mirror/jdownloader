@@ -509,6 +509,7 @@ public class TbCmV2 extends PluginForDecrypt {
                  */
                 logger.info("Checking for changed username | Currently known username: " + this.userName);
                 helper.getPage(br, cleanedurl);
+                checkBasicErrors(br);
                 helper.parse();
                 final Map<String, Object> root = helper.getYtInitialData();
                 final Map<String, Object> channelMetadataRenderer = (Map<String, Object>) JavaScriptEngineFactory.walkJson(root, "metadata/channelMetadataRenderer");
@@ -535,6 +536,7 @@ public class TbCmV2 extends PluginForDecrypt {
                 if (channelID == null) {
                     logger.info("Trying to find channelID");
                     helper.getPage(br, "https://www.youtube.com/@" + userName + "/featured");
+                    checkBasicErrors(br);
                     helper.parse();
                     // channel title isn't user_name. user_name is /user/ reference. check logic in YoutubeHelper.extractData()!
                     final String channelTitle = extractWebsiteTitle(br);
@@ -559,6 +561,7 @@ public class TbCmV2 extends PluginForDecrypt {
                  */
                 logger.info("Trying to find playlistID for channel-playlist 'Uploads by " + channelID + "'");
                 helper.getPage(br, getBaseURL() + "/channel/" + channelID);
+                checkBasicErrors(br);
                 playlistID = br.getRegex("(?i)list=([A-Za-z0-9\\-_]+)\"[^<>]+play-all-icon-btn").getMatch(0);
                 if (StringUtils.isEmpty(playlistID) && channelID.startsWith("UC")) {
                     /* channel has no play all button. */
@@ -681,7 +684,7 @@ public class TbCmV2 extends PluginForDecrypt {
                     /* Use index inside added URL. */
                     vid.playlistEntryNumber = indexFromAddedURL;
                 }
-            } catch (Exception e) {
+            } catch (final Exception e) {
                 logger.log(e);
                 String emsg = null;
                 try {
@@ -1214,6 +1217,7 @@ public class TbCmV2 extends PluginForDecrypt {
         do {
             run++;
             helper.getPage(br, userOrPlaylistURL);
+            checkBasicErrors(br);
             if (originalURL == null) {
                 originalURL = br._getURL();
             }
@@ -1572,6 +1576,12 @@ public class TbCmV2 extends PluginForDecrypt {
         this.displayBubblenotifyMessage(humanReadableTitle + " items", bubblenotificationText);
         logger.info("parsePlaylist method returns: " + ret.size() + " VideoIDs | Number of possibly missing videos [due to duplicate/private/offline/GEO-block or bug in plugin]: " + missingVideos + " | Skipped duplicates: " + numberofSkippedDuplicates);
         return ret;
+    }
+
+    private void checkBasicErrors(final Browser br) throws PluginException {
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
     }
 
     private void displayBubblenotifyMessage(final String title, final String msg) {

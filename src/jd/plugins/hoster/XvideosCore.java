@@ -91,6 +91,11 @@ public abstract class XvideosCore extends PluginForHost {
         return new String[] {};
     };
 
+    /** Returns domains which might be available but should be avoided */
+    public String[] getAvoidDomains() {
+        return new String[] {};
+    };
+
     protected abstract String[] getAllDomains();
 
     /** Fallback for if premium domain cannot be determined automatically. */
@@ -211,8 +216,20 @@ public abstract class XvideosCore extends PluginForHost {
          * 2020-10-12: In general, we use the user-added domain but some are dead but the content might still be alive --> Use main plugin
          * domain for such cases
          */
-        if (getDeadDomains() != null) {
-            for (final String deadDomain : this.getDeadDomains()) {
+        final String[] deadDomains = getDeadDomains();
+        boolean replacedDeadDomain = false;
+        if (deadDomains != null) {
+            for (final String deadDomain : deadDomains) {
+                if (url.contains(deadDomain)) {
+                    url = url.replaceFirst("(?i)" + Pattern.quote(deadDomain) + "/", this.getHost() + "/");
+                    replacedDeadDomain = true;
+                    break;
+                }
+            }
+        }
+        final String[] avoidDomains = this.getAvoidDomains();
+        if (avoidDomains != null && !replacedDeadDomain) {
+            for (final String deadDomain : avoidDomains) {
                 if (url.contains(deadDomain)) {
                     url = url.replaceFirst("(?i)" + Pattern.quote(deadDomain) + "/", this.getHost() + "/");
                     break;

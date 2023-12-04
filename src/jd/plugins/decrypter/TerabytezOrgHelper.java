@@ -18,32 +18,35 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.Regex;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginDependencies;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
+import jd.plugins.hoster.TerabytezOrg;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class XiaoshenkeNetCrawler extends PluginForDecrypt {
-    public XiaoshenkeNetCrawler(PluginWrapper wrapper) {
+@PluginDependencies(dependencies = { TerabytezOrg.class })
+public class TerabytezOrgHelper extends PluginForDecrypt {
+    public TerabytezOrgHelper(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
-    public LazyPlugin.FEATURE[] getFeatures() {
-        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.setFollowRedirects(false);
+        return br;
     }
 
     public static List<String[]> getPluginDomains() {
-        final List<String[]> ret = new ArrayList<String[]>();
-        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "xiaoshenke.net" });
-        return ret;
+        return TerabytezOrg.getPluginDomains();
     }
 
     public static String[] getAnnotationNames() {
@@ -62,26 +65,33 @@ public class XiaoshenkeNetCrawler extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/video(h|x)/([a-f0-9]+)");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/[a-f0-9]{16}(/([^/]+))?");
         }
         return ret.toArray(new String[0]);
     }
 
+    /**
+     * This plugin exists as a helper as terabytez.org has migrated from YetiShare to XFileSharing in december of 2023. </br>
+     * It takes care about older links in the Yetishare link-format which will usually redirect to the new XFS link-format.
+     */
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final String contenturl = param.getCryptedUrl();
-        final Regex urlinfo = new Regex(contenturl, this.getSupportedLinks());
-        final String urltype = urlinfo.getMatch(0);
-        final String contentID = urlinfo.getMatch(1);
-        if (urltype.equalsIgnoreCase("h")) {
-            ret.add(createDownloadlink("https://mydaddy.cc/video/" + contentID + "/"));
-        } else if (urltype.equalsIgnoreCase("x")) {
-            /* 2023-12-04 */
-            ret.add(createDownloadlink(SxyprnComCrawler.getContentURL("sxyprn.com", contentID)));
-        } else {
-            /* Pass result to hosterplugin */
-            ret.add(this.createDownloadlink(contenturl));
+        final String contenturl = param.getCryptedUrl().replaceFirst("(?i)http://", "https://");
+        br.getPage(contenturl);
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            /* E.g. https://terabytez.org/ffffffffffffffff */
+            /* E.g. error "Oops! No such file" */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        String redirect = br.getRedirectLocation();
+        if (redirect == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final PluginForHost hosterplugin = this.getNewPluginForHostInstance(this.getHost());
+        if (!hosterplugin.canHandle(redirect)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        ret.add(createDownloadlink(redirect));
         return ret;
     }
 }
