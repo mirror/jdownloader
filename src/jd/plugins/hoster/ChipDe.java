@@ -346,6 +346,7 @@ public class ChipDe extends PluginForHost {
                 dllink = applicationDownloadsGetDllink();
                 if (dllink == null) {
                     if (!looksLikeDownloadIsPossible) {
+                        /* 2023-12-04: Example: https://www.chip.de/downloads/Adobe-Flash-Player_13003561.html */
                         throw new PluginException(LinkStatus.ERROR_FATAL, textNoDownloadAvailable);
                     } else {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
