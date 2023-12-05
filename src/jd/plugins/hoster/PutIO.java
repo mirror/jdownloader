@@ -56,6 +56,27 @@ public class PutIO extends PluginForHost {
     }
 
     @Override
+    public String getLinkID(final DownloadLink link) {
+        try {
+            final String fileID = getUniqueFileID(link.getPluginPatternMatcher());
+            return "put_io://file/" + fileID;
+        } catch (final Throwable e) {
+            e.printStackTrace();
+        }
+        return super.getLinkID(link);
+    }
+
+    /* Returns unique fileID. */
+    private String getUniqueFileID(final String url) throws PluginException {
+        final String id = new Regex(url, "(?i)/(files|download)/(\\d+)").getMatch(1);
+        if (id == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else {
+            return id;
+        }
+    }
+
+    @Override
     public boolean canHandle(final DownloadLink link, final Account account) throws Exception {
         if (link != null && this.isZipStreamURL(link.getPluginPatternMatcher())) {
             /* Such links can be checked and downloaded without account. */
@@ -171,16 +192,6 @@ public class PutIO extends PluginForHost {
         } else {
             /* All other URL-types: Account is required to be able to download. */
             return true;
-        }
-    }
-
-    /* Returns unique fileID. */
-    private String getUniqueFileID(final String url) throws PluginException {
-        final String id = new Regex(url, "(?i)/(files|download)/(\\d+)").getMatch(1);
-        if (id == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        } else {
-            return id;
         }
     }
 
