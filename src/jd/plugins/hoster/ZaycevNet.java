@@ -22,6 +22,7 @@ import org.appwork.storage.TypeRef;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -39,6 +40,18 @@ import jd.plugins.PluginForHost;
 public class ZaycevNet extends PluginForHost {
     public ZaycevNet(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.AUDIO_STREAMING };
+    }
+
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.setFollowRedirects(true);
+        return br;
     }
 
     @Override
@@ -67,6 +80,10 @@ public class ZaycevNet extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        final String extDefault = ".mp3";
+        if (!link.isNameSet()) {
+            link.setName(this.getLinkID(link) + extDefault);
+        }
         this.setBrowserExclusive();
         br.getHeaders().put("Accept-Charset", null);
         br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/38.0.2125.101 Safari/537.36");
@@ -78,18 +95,18 @@ public class ZaycevNet extends PluginForHost {
         if (br.getRedirectLocation() != null || htmlRefresh != null || br.containsHTML(">Данная композиция заблокирована, приносим извинения") || responsecode == 404 || responsecode == 410) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String filename = br.getRegex("itemProp=\"availability\"/></span></section><h1[^>]*>([^<>\"]+)</h1>").getMatch(0);
-        final String filesizeStr = br.getRegex("Б<meta content=\"(.*?)\" itemprop=\"contentSize\"/>").getMatch(0);
+        final String filename = br.getRegex("alt=\"([^\"]+)\"[^>]*placeholder=\"/track\\.svg\"").getMatch(0);
+        String filesizeStr = br.getRegex("content=\"([^\"]+)\"[^>]*itemProp=\"contentSize\"").getMatch(0);
         if (filename != null) {
-            link.setFinalFileName(Encoding.htmlDecode(filename).trim() + ".mp3");
+            link.setFinalFileName(Encoding.htmlDecode(filename).trim() + extDefault);
         }
         if (filesizeStr != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesizeStr));
         } else {
-            /* Try to calculate filesize */
-            final String bitrateStr = br.getRegex("(?i)data-qa=\"TrackPage-bitrate\"[^>]*>(\\d+)\\s*kbps\\s*</div>").getMatch(0);
-            final Regex durationRegex = br.getRegex("itemProp=\"duration\"[^>]*>(\\d+):(\\d+)</time>");
-            if (bitrateStr != null && durationRegex.matches()) {
+            /* Try to calculate estimated filesize */
+            final String bitrateStr = br.getRegex("content=\"(\\d+)kbps\"[^>]*itemProp=\"bitrate\"").getMatch(0);
+            final Regex durationRegex = br.getRegex("PT00H0(\\d+)M(\\d+)S");
+            if (bitrateStr != null && durationRegex.patternFind()) {
                 final int durationSeconds = Integer.parseInt(durationRegex.getMatch(0)) * 60 + Integer.parseInt(durationRegex.getMatch(1));
                 link.setDownloadSize((durationSeconds * Integer.parseInt(bitrateStr) * 1024) / 8);
             }

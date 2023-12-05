@@ -19,12 +19,15 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
-import java.util.Random;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -42,11 +45,20 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
+import jd.plugins.hoster.OneDriveLiveCom;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "onedrive.live.com" }, urls = { "https?://([a-zA-Z0-9\\-]+\\.)?(onedrive\\.live\\.com/.+|skydrive\\.live\\.com/.+|(sdrv|1drv)\\.ms/[A-Za-z0-9&!=#\\.,-_]+)" })
 public class OneDriveLiveComCrawler extends PluginForDecrypt {
     public OneDriveLiveComCrawler(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.setFollowRedirects(true);
+        return br;
     }
 
     private static final String TYPE_DRIVE_ALL               = "(?i)https?://(www\\.)?(onedrive\\.live\\.com/(redir)?\\?[A-Za-z0-9\\&\\!=#\\.,]+|skydrive\\.live\\.com/(\\?cid=[a-z0-9]+[A-Za-z0-9&!=#\\.,-_]+|redir\\.aspx\\?cid=[a-z0-9]+[A-Za-z0-9&!=#\\.,-_]+|redir\\?resid=[A-Za-z0-9&!=#\\.,-_]+))";
@@ -57,91 +69,203 @@ public class OneDriveLiveComCrawler extends PluginForDecrypt {
     private static final String TYPE_SKYDRIVE_REDIRECT2      = "(?i)https?://cid-[0-9a-zA-Z]+\\.skydrive\\.live\\.com/(redir|self)\\.aspx.+";
     private static final String TYPE_SKYDRIVE_SHORT          = "(?i)https?://(www\\.)?(1|s)drv\\.ms/[A-Za-z0-9&!=#\\.,-_]+";
     private static final String TYPE_ONEDRIVE_ROOT           = "(?i)https?://onedrive\\.live\\.com/\\?cid=[a-z0-9]+";
-    /* Constants */
-    public static final int     MAX_ENTRIES_PER_REQUEST      = 200;
-    private static final long   ITEM_TYPE_FILE               = 1;
-    private static final long   ITEM_TYPE_PICTURE            = 3;
-    private static final long   ITEM_TYPE_VIDEO              = 5;
-    private static final int    ITEM_TYPE_FOLDER             = 32;
-    private String              original_link                = null;
     private String              cid                          = null;
-    private String              id                           = null;
+    private String              resource_id                  = null;
     private String              authkey                      = null;
+    private PluginForHost       hostPlugin                   = null;
 
-    @SuppressWarnings({ "unchecked", "rawtypes", "deprecation" })
+    private void ensureInitHosterplugin() throws PluginException {
+        if (this.hostPlugin == null) {
+            this.hostPlugin = getNewPluginForHostInstance("onedrive.live.com");
+        }
+    }
+
+    @SuppressWarnings({ "unchecked", "deprecation" })
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        String contenturl = Encoding.urlDecode(param.getCryptedUrl(), true).replaceFirst("(?i)http://", "https://");
-        original_link = contenturl;
-        /*
-         * 2021-06-11: We can now find the absolute path to ther current folder in their json -> No need to store it in crawler folders that
-         * go back into the crawler
-         */
-        // String subFolderBase = getAdoptedCloudFolderStructure();
-        String subFolderBase = null;
-        br.setLoadLimit(Integer.MAX_VALUE);
-        FilePackage fp = null;
+        String contenturl = param.getCryptedUrl().replaceFirst("(?i)http://", "https://");
         if (contenturl.matches(TYPE_SKYDRIVE_REDIRECT2)) {
-            br.getPage(contenturl);
             br.followRedirect(true);
-            cid = new Regex(br.getURL(), "cid=([A-Za-z0-9]*)").getMatch(0);
-            id = getLastID(br.getURL());
-        } else if (contenturl.matches(TYPE_SKYDRIVE_REDIRECT)) {
-            cid = new Regex(contenturl, "cid=([A-Za-z0-9]*)").getMatch(0);
-            id = new Regex(contenturl, "(?:&|\\?)resid=([A-Za-z0-9]+\\!\\d+)").getMatch(0);
-        } else if (contenturl.matches(TYPE_ONEDRIVE_REDIRECT_RESID) || contenturl.matches(TYPE_SKYDRIVE_REDIRECT_RESID) || contenturl.matches(TYPE_ONEDRIVE_VIEW_RESID)) {
-            final Regex fInfo = new Regex(contenturl, "\\?resid=([A-Za-z0-9]+)(\\!\\d+)");
-            cid = fInfo.getMatch(0);
-            id = cid + fInfo.getMatch(1);
-        } else if (contenturl.matches(TYPE_ONEDRIVE_ROOT)) {
-            cid = new Regex(contenturl, "cid=([A-Za-z0-9]*)").getMatch(0);
-        } else if (contenturl.matches(TYPE_DRIVE_ALL)) {
-            cid = new Regex(contenturl, "cid=([A-Za-z0-9]*)").getMatch(0);
-            id = getLastID(contenturl);
-        } else if (contenturl.matches(TYPE_SKYDRIVE_SHORT)) {
             br.getPage(contenturl);
-            String redirect = br.getRedirectLocation();
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else if (redirect == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            redirect = Encoding.htmlDecode(redirect);
-            if (!redirect.contains("live")) {
-                br.getPage(redirect);
-                redirect = br.getRedirectLocation();
-                if (redirect == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
+            contenturl = br.getURL();
+        } else if (contenturl.matches(TYPE_SKYDRIVE_SHORT)) {
+            br.getPage(contenturl);
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            redirect = Encoding.htmlOnlyDecode(redirect);
-            /* Don't set redirect url as original source - we need the correct current url as source! */
-            original_link = redirect;
-            cid = new Regex(redirect, "cid=([A-Za-z0-9]*)").getMatch(0);
-            if (cid == null) {
-                cid = new Regex(redirect, "resid=([A-Z0-9]+)").getMatch(0);
+            final String newURL = br.getURL();
+            if (!this.canHandle(newURL)) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            id = new Regex(redirect, "resid=([A-Za-z0-9]+\\!\\d+)").getMatch(0);
-            if (id == null) {
-                id = getLastID(contenturl);
-            }
-            authkey = new Regex(redirect, "(?:&|\\?)authkey=(\\![A-Za-z0-9\\-_]+)").getMatch(0);
-        } else {
-            cid = new Regex(contenturl, "cid=([A-Za-z0-9]*)").getMatch(0);
-            id = getLastID(contenturl);
+            contenturl = newURL;
         }
-        if (authkey == null) {
-            authkey = new Regex(contenturl, "(?:&|\\?)authkey=(\\![A-Za-z0-9\\-_]+)").getMatch(0);
+        final UrlQuery query = UrlQuery.parse(contenturl);
+        resource_id = query.getDecoded("resid");
+        cid = query.getDecoded("cid");
+        authkey = query.getDecoded("authkey");
+        if (authkey != null) {
+            authkey = Encoding.htmlDecode(authkey);
         }
-        if (!contenturl.matches(TYPE_ONEDRIVE_ROOT) && (cid == null || id == null)) {
+        if (resource_id == null) {
+            resource_id = getLastID(contenturl);
+        }
+        if (cid == null || resource_id == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        cid = cid.toUpperCase();
-        contenturl = "https://onedrive.live.com/?cid=" + cid;
-        if (id != null) {
-            contenturl += "&id=" + id;
+        cid = cid.toUpperCase(Locale.ENGLISH);
+        contenturl = this.generateFolderLink(cid, resource_id, authkey);
+        boolean useNewAPI = DebugMode.TRUE_IN_IDE_ELSE_FALSE;
+        // useNewAPI = false;
+        if (useNewAPI) {
+            final UrlQuery rootquerypost = new UrlQuery();
+            rootquerypost.add("%24select", "*%2CsharepointIds%2CwebDavUrl%2CcontainingDrivePolicyScenarioViewpoint");
+            rootquerypost.add("24expand", "thumbnails");
+            rootquerypost.add("ump", "1");
+            if (authkey != null) {
+                rootquerypost.add("authKey", Encoding.urlEncode(authkey));
+            }
+            br.getHeaders().put("Origin", "https://onedrive.live.com");
+            br.getHeaders().put("Referer", "https://onedrive.live.com/");
+            /* Browser is using POST request, we are using GET to keep things simple. */
+            br.getPage("https://api.onedrive.com/v1.0/drives/" + cid.toLowerCase(Locale.ENGLISH) + "/items/" + resource_id + "?" + rootquerypost);
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            final Map<String, Object> resourceinfo = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+            final Map<String, Object> foldermap = (Map<String, Object>) resourceinfo.get("folder");
+            final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+            if (foldermap != null) {
+                /* Crawl all items of a folder */
+                final long size = ((Number) resourceinfo.get("size")).longValue();
+                if (size == 0) {
+                    throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER);
+                }
+                String path = resourceinfo.get("pathFromRoot").toString();
+                path = Encoding.htmlDecode(path).trim();
+                final FilePackage fp = FilePackage.getInstance();
+                fp.setName(path);
+                fp.setPackageKey("onedrive://folder/" + cid);
+                int page = 1;
+                final HashSet<String> dupes = new HashSet<String>();
+                final int maxItemsPerPage = 100;
+                final UrlQuery querypagination = new UrlQuery();
+                querypagination.add("%24top", Integer.toString(maxItemsPerPage));
+                querypagination.add("%24expand", "");
+                querypagination.add("select", "*%2Cocr%2CwebDavUrl%2CsharepointIds%2CisRestricted%2CcommentSettings%2CspecialFolder%2CcontainingDrivePolicyScenarioViewpoint");
+                querypagination.add("ump", "1");
+                if (authkey != null) {
+                    querypagination.add("authKey", Encoding.urlEncode(authkey));
+                }
+                String nextpageLink = "/v1.0/drives/" + cid.toLowerCase(Locale.ENGLISH) + "/items/" + resource_id + "/children?" + querypagination;
+                do {
+                    br.getPage(nextpageLink);
+                    final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+                    final List<Map<String, Object>> items = (List<Map<String, Object>>) entries.get("value");
+                    int numberofNewItemsThisPage = 0;
+                    for (final Map<String, Object> item : items) {
+                        final String itemID = item.get("id").toString();
+                        if (!dupes.add(itemID)) {
+                            /* Skip duplicates */
+                            continue;
+                        }
+                        numberofNewItemsThisPage++;
+                        final Map<String, Object> file = (Map<String, Object>) item.get("file");
+                        if (file != null) {
+                            /* Single file */
+                            final DownloadLink dlfile = crawlProcessSingleFile(item);
+                            dlfile._setFilePackage(fp);
+                            /* Set additional important properties */
+                            ret.add(dlfile);
+                            distribute(dlfile);
+                        } else {
+                            /* Subfolder */
+                            /* Do not use the URL from field "webUrl" because this will need one extra http request later. */
+                            final String folderlink = this.generateFolderLink(cid, itemID, this.authkey);
+                            // final Map<String, Object> folder = (Map<String, Object>) item.get("folder");
+                            final DownloadLink dlfolder = this.createDownloadlink(folderlink);
+                            ret.add(dlfolder);
+                            distribute(dlfolder);
+                        }
+                    }
+                    final int totalNumberofItems = ((Number) entries.get("@odata.count")).intValue();
+                    nextpageLink = (String) entries.get("@odata.nextLink");
+                    logger.info("Crawled page " + page + " | Found items on this page: " + items.size() + "/" + maxItemsPerPage + " | Found items so far: " + ret.size() + "/" + totalNumberofItems + " | nextpageLink = " + nextpageLink);
+                    if (this.isAbort()) {
+                        logger.info("Stopping because: Aborted by user");
+                        break;
+                    } else if (numberofNewItemsThisPage == 0) {
+                        logger.info("Stopping because: Failed to find any new items on current page");
+                        break;
+                    } else if (StringUtils.isEmpty(nextpageLink)) {
+                        logger.info("Stopping because: Reached last page");
+                        break;
+                    } else {
+                        /* Continue to next page */
+                        page++;
+                    }
+                } while (!this.isAbort());
+            } else {
+                /* Crawl single file */
+                ret.add(crawlProcessSingleFile(resourceinfo));
+            }
+            return ret;
+        } else {
+            return crawlLegacy(contenturl);
         }
-        prepBrAPI(this.br);
+    }
+
+    private DownloadLink crawlProcessSingleFile(final Map<String, Object> item) throws PluginException {
+        ensureInitHosterplugin();
+        final String url = item.get("webUrl").toString();
+        final String filename = item.get("name").toString();
+        final DownloadLink dlfile = this.createDownloadlink(url);
+        dlfile.setFinalFileName(filename);
+        dlfile.setVerifiedFileSize(((Number) item.get("size")).longValue());
+        dlfile.setDefaultPlugin(this.hostPlugin);
+        dlfile.setAvailable(true);
+        {
+            /* Set file-hash */
+            final Map<String, Object> file = (Map<String, Object>) item.get("file");
+            final Map<String, Object> hashes = (Map<String, Object>) file.get("hashes");
+            final String sha256Hash = (String) hashes.get("sha256Hash");
+            final String sha1Hash = (String) hashes.get("sha1Hash");
+            if (!StringUtils.isEmpty(sha256Hash)) {
+                dlfile.setSha256Hash(sha256Hash);
+            } else if (!StringUtils.isEmpty(sha1Hash)) {
+                dlfile.setSha1Hash(sha1Hash);
+            }
+        }
+        String pathFromRoot = item.get("pathFromRoot").toString();
+        pathFromRoot = Encoding.htmlDecode(pathFromRoot).trim();
+        final String pathToFile = pathFromRoot.replaceFirst("/" + Pattern.quote(filename) + "$", "");
+        dlfile.setRelativeDownloadFolderPath(pathToFile);
+        /* Set additional important properties */
+        dlfile.setProperty(OneDriveLiveCom.PROPERTY_FILE_ID, item.get("id"));
+        dlfile.setProperty(OneDriveLiveCom.PROPERTY_CID, cid);
+        dlfile.setProperty(OneDriveLiveCom.PROPERTY_FOLDER_ID, resource_id);
+        dlfile.setProperty(OneDriveLiveCom.PROPERTY_AUTHKEY, authkey);
+        dlfile.setProperty(OneDriveLiveCom.PROPERTY_VIEW_IN_BROWSER_URL, url);
+        dlfile.setProperty(OneDriveLiveCom.PROPERTY_DIRECTURL, item.get("@content.downloadUrl"));
+        {
+            final Map<String, Object> parentReference = (Map<String, Object>) item.get("parentReference");
+            if (parentReference != null) {
+                dlfile.setProperty(OneDriveLiveCom.PROPERTY_PARENT_FOLDER_ID, parentReference.get("id"));
+            }
+        }
+        return dlfile;
+    }
+
+    @Deprecated
+    public static final int MAX_ENTRIES_PER_REQUEST_LEGACY = 200;
+
+    @Deprecated
+    private ArrayList<DownloadLink> crawlLegacy(final String contenturl) throws Exception {
+        /* TODO: Delete this in 2024-05 */
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        prepBrAPILegacy(this.br);
+        String subFolderBase = null;
         final String additional_data;
         if (authkey != null) {
             additional_data = "&authkey=" + Encoding.urlEncode(authkey);
@@ -152,11 +276,15 @@ public class OneDriveLiveComCrawler extends PluginForDecrypt {
         int startIndex = 0;
         int nextStartIndex = 0;
         final Set<String> dups = new HashSet<String>();
+        final long ITEM_TYPE_FILE = 1;
+        final long ITEM_TYPE_PICTURE = 3;
+        final long ITEM_TYPE_VIDEO = 5;
+        final int ITEM_TYPE_FOLDER = 32;
         do {
             startIndex = nextStartIndex;
-            accessItems_API(this.br, original_link, cid, id, additional_data, startIndex, MAX_ENTRIES_PER_REQUEST);
-            nextStartIndex = startIndex + MAX_ENTRIES_PER_REQUEST;
-            Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+            accessItems_API(this.br, contenturl, cid, resource_id, additional_data, startIndex, MAX_ENTRIES_PER_REQUEST_LEGACY);
+            nextStartIndex = startIndex + MAX_ENTRIES_PER_REQUEST_LEGACY;
+            final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
             final Object error = entries.get("error");
             if (error != null) {
                 /*
@@ -185,7 +313,8 @@ public class OneDriveLiveComCrawler extends PluginForDecrypt {
                 }
                 logger.info("Found absolute path: " + subFolderBase);
             }
-            if (fp == null && !StringUtils.isEmpty(subFolderBase)) {
+            FilePackage fp = null;
+            if (!StringUtils.isEmpty(subFolderBase)) {
                 fp = FilePackage.getInstance();
                 fp.setName(subFolderBase);
             }
@@ -193,7 +322,7 @@ public class OneDriveLiveComCrawler extends PluginForDecrypt {
             final long totalItemType = JavaScriptEngineFactory.toLong(firstItem.get("itemType"), -1);
             if (totalItemType == ITEM_TYPE_FILE || totalItemType == ITEM_TYPE_PICTURE || totalItemType == ITEM_TYPE_VIDEO) {
                 /* Single file */
-                final DownloadLink link = parseFile(contenturl, firstItem, startIndex, MAX_ENTRIES_PER_REQUEST);
+                final DownloadLink link = parseFileLegacy(contenturl, firstItem, startIndex, MAX_ENTRIES_PER_REQUEST_LEGACY);
                 if (dups.add(link.getLinkID())) {
                     if (fp != null) {
                         fp.add(link);
@@ -214,7 +343,7 @@ public class OneDriveLiveComCrawler extends PluginForDecrypt {
                 if (fp == null) {
                     /* This should NEVER happen */
                     fp = FilePackage.getInstance();
-                    fp.setName("onedrive.live.com content of user " + cid + " - folder - " + id);
+                    fp.setName("onedrive.live.com content of user " + cid + " - folder - " + resource_id);
                 }
                 /* Folder, maybe with subfolders */
                 final long totalCount;
@@ -230,12 +359,6 @@ public class OneDriveLiveComCrawler extends PluginForDecrypt {
                     /* Empty folder */
                     throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER);
                 }
-                final DownloadLink main = createDownloadlink("http://onedrivedecrypted.live.com/" + System.currentTimeMillis() + new Random().nextInt(100000));
-                main.setProperty("mainlink", contenturl);
-                main.setProperty("original_link", original_link);
-                main.setProperty("plain_cid", cid);
-                main.setProperty("plain_id", id);
-                main.setProperty("plain_authkey", authkey);
                 final int lastSize = ret.size();
                 for (final Map<String, Object> entry : items) {
                     final boolean isPlaceholder = entry.containsKey("isPlaceholder") ? ((Boolean) entry.get("isPlaceholder")).booleanValue() : false;
@@ -252,18 +375,14 @@ public class OneDriveLiveComCrawler extends PluginForDecrypt {
                             /* Fatal failure */
                             return null;
                         }
-                        String folderlink = "https://onedrive.live.com/?cid=" + creatorCid + "&id=" + item_id;
-                        if (authkey != null) {
-                            /* Don't forget to add authKey if needed */
-                            folderlink += "&authkey=" + authkey;
-                        }
+                        final String folderlink = generateFolderLink(creatorCid, item_id, this.authkey);
                         if (dups.add(folderlink)) {
-                            final DownloadLink dl = createDownloadlink(folderlink);
-                            ret.add(dl);
+                            final DownloadLink dlfolder = createDownloadlink(folderlink);
+                            ret.add(dlfolder);
                         }
                     } else {
                         /* File --> Grab information & return to crawler. */
-                        final DownloadLink link = parseFile(contenturl, entry, startIndex, MAX_ENTRIES_PER_REQUEST);
+                        final DownloadLink link = parseFileLegacy(contenturl, entry, startIndex, MAX_ENTRIES_PER_REQUEST_LEGACY);
                         if (dups.add(link.getLinkID())) {
                             if (fp != null) {
                                 fp.add(link);
@@ -291,11 +410,33 @@ public class OneDriveLiveComCrawler extends PluginForDecrypt {
         return ret;
     }
 
-    private DownloadLink parseFile(final String contenturl, final Map<String, Object> entry, final int startIndex, final int maxItems) throws DecrypterException {
+    private String generateFolderLink(final String cid, final String id, final String authkey) {
+        String folderlink = "https://onedrive.live.com/?cid=" + cid + "&id=" + id;
+        if (authkey != null) {
+            /* Don't forget to add authKey if needed */
+            folderlink += "&authkey=" + authkey;
+        }
+        return folderlink;
+    }
+
+    private String getLastID(final String url) {
+        /* Get last ID */
+        int pos = url.lastIndexOf("&id=") + 4;
+        final String parameter_part = url.substring(pos, url.length());
+        final String ret = new Regex(parameter_part, "([A-Z0-9]+(\\!|%21)\\d+)").getMatch(0);
+        if (ret != null) {
+            return ret.replace("%21", "!");
+        } else {
+            return ret;
+        }
+    }
+
+    @Deprecated
+    private DownloadLink parseFileLegacy(final String contenturl, final Map<String, Object> entry, final int startIndex, final int maxItems) throws DecrypterException, PluginException {
         /* File --> Grab information & return to decrypter. All found links are usually ONLINE and downloadable! */
+        ensureInitHosterplugin();
         final Map<String, Object> urls = (Map<String, Object>) entry.get("urls");
         final String name = (String) entry.get("name");
-        final String view_url = (String) urls.get("viewInBrowser");
         final String iconType = (String) entry.get("iconType");
         final String extension = (String) entry.get("extension");
         /* For single pictures, get the highest quality pic */
@@ -314,7 +455,8 @@ public class OneDriveLiveComCrawler extends PluginForDecrypt {
         if (StringUtils.isEmpty(name)) {
             throw new DecrypterException("Decrypter broken");
         }
-        final DownloadLink dl = createDownloadlink("http://onedrivedecrypted.live.com/" + System.currentTimeMillis() + new Random().nextInt(100000));
+        final DownloadLink dlfile = createDownloadlink(contenturl);
+        dlfile.setDefaultPlugin(this.hostPlugin);
         /* Files without extension == possible */
         final String filename;
         if (extension != null) {
@@ -324,31 +466,30 @@ public class OneDriveLiveComCrawler extends PluginForDecrypt {
         }
         final long size = JavaScriptEngineFactory.toLong(entry.get("size"), -1);
         if (size >= 0) {
-            dl.setVerifiedFileSize(size);
+            dlfile.setVerifiedFileSize(size);
         }
-        dl.setFinalFileName(filename);
-        dl.setProperty("mainlink", contenturl);
-        dl.setProperty("original_link", original_link);
-        dl.setProperty("plain_name", filename);
-        dl.setProperty("plain_filesize", size);
-        dl.setContentUrl(view_url);
+        dlfile.setFinalFileName(filename);
+        dlfile.setProperty("mainlink", contenturl);
+        dlfile.setProperty("plain_name", filename);
+        dlfile.setProperty("plain_filesize", size);
         final String download_url = (String) urls.get("download");
         if (download_url != null) {
-            dl.setProperty("plain_download_url", download_url);
+            dlfile.setProperty("plain_download_url", download_url);
         } else {
-            dl.setProperty("account_only", true);
+            dlfile.setProperty(OneDriveLiveCom.PROPERTY_ACCOUNT_ONLY, true);
         }
         final String itemId = (String) entry.get("id");
-        dl.setProperty("plain_item_id", itemId);
-        dl.setProperty("plain_cid", cid);
-        dl.setProperty("plain_id", id);
-        dl.setProperty("plain_authkey", authkey);
-        dl.setProperty("plain_item_si", startIndex);
-        dl.setLinkID(getHost() + "://" + id + "/" + itemId);
-        dl.setAvailable(true);
-        return dl;
+        dlfile.setProperty(OneDriveLiveCom.PROPERTY_FILE_ID, itemId);
+        dlfile.setProperty(OneDriveLiveCom.PROPERTY_CID, cid);
+        dlfile.setProperty(OneDriveLiveCom.PROPERTY_FOLDER_ID, resource_id);
+        dlfile.setProperty(OneDriveLiveCom.PROPERTY_AUTHKEY, authkey);
+        dlfile.setProperty(OneDriveLiveCom.PROPERTY_VIEW_IN_BROWSER_URL, urls.get("viewInBrowser"));
+        dlfile.setProperty("plain_item_si", startIndex);
+        dlfile.setAvailable(true);
+        return dlfile;
     }
 
+    @Deprecated
     public static String getJson(final String parameter, final String source) {
         String result = new Regex(source, "\"" + parameter + "\":([\t\n\r ]+)?([0-9\\.]+)").getMatch(1);
         if (result == null) {
@@ -357,19 +498,8 @@ public class OneDriveLiveComCrawler extends PluginForDecrypt {
         return result;
     }
 
-    private String getLastID(final String parameter) {
-        /* Get last ID */
-        int pos = parameter.lastIndexOf("&id=") + 4;
-        final String parameter_part = parameter.substring(pos, parameter.length());
-        final String ret = new Regex(parameter_part, "([A-Z0-9]+(\\!|%21)\\d+)").getMatch(0);
-        if (ret != null) {
-            return ret.replace("%21", "!");
-        } else {
-            return ret;
-        }
-    }
-
-    public static String getLinktext(final Browser br) {
+    @Deprecated
+    public static String getLinktextLegacy(final Browser br) {
         String linktext = br.getRegex("\"children\":\\[(\\{.*?\\})\\],\"covers\":").getMatch(0);
         if (linktext == null) {
             linktext = br.getRegex("\"children\":\\[(\\{.*?\\})\\],\"defaultSort\":\\d+").getMatch(0);
@@ -384,7 +514,8 @@ public class OneDriveLiveComCrawler extends PluginForDecrypt {
         return linktext;
     }
 
-    public static void prepBrAPI(final Browser br) {
+    @Deprecated
+    public static void prepBrAPILegacy(final Browser br) {
         br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.getHeaders().put("Accept-Language", "en-us;q=0.7,en;q=0.3");
@@ -400,15 +531,15 @@ public class OneDriveLiveComCrawler extends PluginForDecrypt {
         br.setAllowedResponseCodes(500);
     }
 
-    /* TODO: Once it breaks down next time: Simply make a hashMap that contains the needed post data... */
-    public static void accessItems_API(final Browser br, final String original_link, final String cid, final String id, final String additional, final int startIndex, final int maxItems) throws IOException {
+    @Deprecated
+    public static void accessItems_API(final Browser br, final String contenturl, final String cid, final String id, final String additional, final int startIndex, final int maxItems) throws IOException {
         final String v = "0.10707631620552516";
         String data = null;
         final String fromTo = "&si=" + startIndex + "&ps=" + maxItems;
-        if (original_link.contains("ithint=") && id != null) {
+        if (contenturl.contains("ithint=") && id != null) {
             data = "&cid=" + Encoding.urlEncode(cid) + additional;
             br.getPage("https://skyapi.onedrive.live.com/API/2/GetItems?id=" + id + "&group=0&qt=&ft=&sb=1&sd=1&gb=0%2C1%2C2&d=1&iabch=1&caller=&path=1&pi=5&m=de-DE&rset=skyweb&lct=1&v=" + v + data + fromTo);
-        } else if (id == null && original_link.matches(TYPE_ONEDRIVE_ROOT)) {
+        } else if (id == null && contenturl.matches(TYPE_ONEDRIVE_ROOT)) {
             /* Access root-dir */
             data = "&cid=" + Encoding.urlEncode(cid);
             br.getPage("https://skyapi.onedrive.live.com/API/2/GetItems?id=root&group=0&qt=&ft=&sb=0&sd=0&gb=0%2C1%2C2&rif=0&d=1&iabch=1&caller=unauth&path=1&pi=5&m=de-DE&rset=skyweb&lct=1&v=" + v + data + fromTo);
@@ -417,7 +548,7 @@ public class OneDriveLiveComCrawler extends PluginForDecrypt {
             boolean failed = false;
             br.getPage("https://skyapi.onedrive.live.com/API/2/GetItems?group=0&qt=&ft=&sb=0&sd=0&gb=0&d=1&iabch=1&caller=unauth&path=1&pi=5&m=de-DE&rset=skyweb&lct=1&v=" + v + data + fromTo);
             /* Maybe the folder is empty but we can move one up and get its contents... */
-            if (br.getRequest().getHttpConnection().getResponseCode() == 500 || getLinktext(br) == null) {
+            if (br.getRequest().getHttpConnection().getResponseCode() == 500 || getLinktextLegacy(br) == null) {
                 br.getPage("https://skyapi.onedrive.live.com/API/2/GetItems?group=0&qt=&ft=&sb=0&sd=0&gb=0%2C1%2C2&d=1&iabch=1&caller=&path=1&pi=5&m=de-DE&rset=skyweb&lct=1&v=" + v + data + fromTo);
                 final String parentID = getJson("parentId", br.toString());
                 if (parentID != null) {

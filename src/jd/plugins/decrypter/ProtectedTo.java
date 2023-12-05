@@ -23,6 +23,7 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPlu
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -57,50 +58,74 @@ public class ProtectedTo extends PluginForDecrypt {
         return buildAnnotationUrls(getPluginDomains());
     }
 
+    private static final String PATTERN_RELATIVE_FOLDER      = "/f-[a-f0-9]{16}";
+    private static final String PATTERN_RELATIVE_SINGLE_ITEM = "/\\?code=.+";
+
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/f-[a-f0-9]{16}");
+            ret.add("https?://(?:\\w+\\.)?" + buildHostsPatternPart(domains) + "(" + PATTERN_RELATIVE_FOLDER + "|" + PATTERN_RELATIVE_SINGLE_ITEM + ")");
         }
         return ret.toArray(new String[0]);
     }
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        br.setFollowRedirects(true);
-        br.getPage(param.getCryptedUrl());
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (br.containsHTML(">\\s*NotFound")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        Form continueform = null;
-        for (final Form form : br.getForms()) {
-            if (form.containsHTML("Continue to folder")) {
-                continueform = form;
-                break;
+        final String contenturl = param.getCryptedUrl().replaceFirst("(?i)http://", "https://");
+        final String urlpath = new Regex(contenturl, this.getSupportedLinks()).getMatch(0);
+        if (urlpath.matches(PATTERN_RELATIVE_SINGLE_ITEM)) {
+            br.setFollowRedirects(false);
+            // br.setCookie("protected.to", "ASP.NET_SessionId", "3ssf3qnhwp4bqga2u1adykwp");
+            br.getPage(contenturl);
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-        }
-        if (continueform == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        if (CaptchaHelperCrawlerPluginRecaptchaV2.containsRecaptchaV2Class(continueform)) {
-            final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
-            continueform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-        }
-        br.submitForm(continueform);
-        String html = br.getRegex("<div class=\"well Encrypted-box[^\"]+\">(.*?)</div>\\s+</div>").getMatch(0);
-        if (html == null) {
-            /* Fallback */
-            html = br.toString();
-        }
-        final String[] links = br.getRegex("<a href=\\'(https?://[^\\']+)'>").getColumn(0);
-        if (links == null || links.length == 0) {
-            logger.info("Failed to find any results");
-            return ret;
-        }
-        for (final String singleLink : links) {
-            ret.add(createDownloadlink(singleLink));
+            String redirect = br.getRedirectLocation();
+            if (redirect == null) {
+                redirect = br.getRegex("location\\.replace\\(\"(https?://[^\"]+)\"\\)").getMatch(0);
+            }
+            logger.info("Redirect = " + redirect);
+            if (redirect == null) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (this.canHandle(redirect)) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            ret.add(this.createDownloadlink(redirect));
+        } else {
+            br.setFollowRedirects(true);
+            br.getPage(contenturl);
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (br.containsHTML(">\\s*NotFound")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            Form continueform = null;
+            for (final Form form : br.getForms()) {
+                if (form.containsHTML("Continue to folder")) {
+                    continueform = form;
+                    break;
+                }
+            }
+            if (continueform == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            if (CaptchaHelperCrawlerPluginRecaptchaV2.containsRecaptchaV2Class(continueform)) {
+                final String recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
+                continueform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+            }
+            br.submitForm(continueform);
+            String html = br.getRegex("<div class=\"well Encrypted-box[^\"]+\">(.*?)</div>\\s+</div>").getMatch(0);
+            if (html == null) {
+                /* Fallback */
+                html = br.toString();
+            }
+            final String[] links = br.getRegex("<a href=\\'(https?://[^\\']+)'>").getColumn(0);
+            if (links == null || links.length == 0) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            for (final String singleLink : links) {
+                ret.add(createDownloadlink(singleLink));
+            }
         }
         return ret;
     }

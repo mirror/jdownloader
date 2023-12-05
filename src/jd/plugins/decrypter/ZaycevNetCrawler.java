@@ -19,6 +19,7 @@ import java.util.ArrayList;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -29,35 +30,44 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "zaycev.net" }, urls = { "https?://(?:www\\.)?zaycev\\.net/artist/\\d+(\\?page=\\d+)?" })
-public class ZyvNt extends PluginForDecrypt {
-    public ZyvNt(PluginWrapper wrapper) {
+public class ZaycevNetCrawler extends PluginForDecrypt {
+    public ZaycevNetCrawler(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
         br.setFollowRedirects(true);
+        return br;
+    }
+
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.getPage(param.getCryptedUrl());
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         final String artist = br.getRegex("schema.org/MusicGroup\"[^>]+><meta content=\"([^\"]+)\"").getMatch(0);
         final String[] urls = br.getRegex("href=\"(/pages/\\d+/\\d+\\.shtml)\"[^>]*track-link").getColumn(0);
         if (urls == null || urls.length == 0) {
-            if (br.containsHTML(">Нет информации<|>Композиций не найдено<")) {
+            if (br.containsHTML(">\\s*Нет информации\\s*<|>\\s*Композиций не найдено\\s*<")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
         for (String link : urls) {
-            final DownloadLink dl = createDownloadlink("https://" + this.getHost() + link);
-            decryptedLinks.add(dl);
+            final DownloadLink dl = createDownloadlink(br.getURL(link).toExternalForm());
+            ret.add(dl);
         }
+        final FilePackage fp = FilePackage.getInstance();
         if (artist != null) {
-            FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(artist).trim());
-            fp.addLinks(decryptedLinks);
-            fp.setAllowMerge(true);
         }
-        return decryptedLinks;
+        fp.addLinks(ret);
+        fp.setAllowMerge(true);
+        return ret;
     }
 
     public boolean hasCaptcha(final CryptedLink link, final jd.plugins.Account acc) {

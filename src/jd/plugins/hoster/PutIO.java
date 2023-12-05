@@ -51,17 +51,17 @@ public class PutIO extends PluginForHost {
     }
 
     @Override
-    public boolean canHandle(final DownloadLink downloadLink, final Account account) throws Exception {
+    public boolean canHandle(final DownloadLink link, final Account account) throws Exception {
         if (account == null) {
             return false;
         } else {
-            if (downloadLink != null) {
-                final String user = downloadLink.getStringProperty("requires_account", null);
+            if (link != null) {
+                final String user = link.getStringProperty("requires_account", null);
                 if (user != null) {
                     return StringUtils.equalsIgnoreCase(user, account.getUser());
                 }
             }
-            return super.canHandle(downloadLink, account);
+            return super.canHandle(link, account);
         }
     }
 
@@ -117,7 +117,8 @@ public class PutIO extends PluginForHost {
         }
     }
 
-    private boolean isDownload(URLConnectionAdapter con) {
+    @Override
+    protected boolean looksLikeDownloadableContent(final URLConnectionAdapter con) {
         return con.isOK() && (con.isContentDisposition() || !StringUtils.containsIgnoreCase(con.getContentType(), "text"));
     }
 
@@ -128,23 +129,24 @@ public class PutIO extends PluginForHost {
         final Browser brc = br.cloneBrowser();
         brc.getHeaders().put("Authorization", "token " + access_token);
         dl = jd.plugins.BrowserAdapter.openDownload(brc, link, url, true, 0);
-        final int responseCode = dl.getConnection().getResponseCode();
-        if (isDownload(dl.getConnection())) {
-            dl.startDownload();
-        } else if (responseCode == 404) {
-            try {
-                br.followConnection();
-            } catch (final IOException e) {
-                logger.log(e);
+        handleConnectionErrorsAndSetFileInfo(link, br, dl.getConnection());
+        dl.startDownload();
+    }
+
+    private void handleConnectionErrorsAndSetFileInfo(final DownloadLink link, final Browser br, final URLConnectionAdapter con) throws PluginException, IOException {
+        if (!this.looksLikeDownloadableContent(con)) {
+            br.followConnection(true);
+            if (con.getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+            } else if (con.getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File broken?");
             }
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else {
-            try {
-                br.followConnection();
-            } catch (final IOException e) {
-                logger.log(e);
-            }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        link.setVerifiedFileSize(con.getCompleteContentLength());
+        if (con.isContentDisposition()) {
+            link.setFinalFileName(getFileNameFromDispositionHeader(con));
         }
     }
 
@@ -205,9 +207,8 @@ public class PutIO extends PluginForHost {
         }
         if (finalLink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        } else {
-            return finalLink;
         }
+        return finalLink;
     }
 
     @Override
@@ -222,19 +223,10 @@ public class PutIO extends PluginForHost {
                     br.getPage(request);
                     final URLConnectionAdapter connection = br.getHttpConnection();
                     try {
-                        final int responseCode = connection.getResponseCode();
-                        if (isDownload(connection)) {
-                            link.setDownloadSize(connection.getCompleteContentLength());
-                            link.setProperty("requires_account", account.getUser());
-                            if (connection.isContentDisposition()) {
-                                link.setFinalFileName(getFileNameFromDispositionHeader(connection));
-                            }
-                            return AvailableStatus.TRUE;
-                        } else if (responseCode == 404) {
-                            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                        } else {
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                        }
+                        handleConnectionErrorsAndSetFileInfo(link, br, dl.getConnection());
+                        /* No Exception = Success */
+                        link.setProperty("requires_account", account.getUser());
+                        return AvailableStatus.TRUE;
                     } finally {
                         connection.disconnect();
                     }

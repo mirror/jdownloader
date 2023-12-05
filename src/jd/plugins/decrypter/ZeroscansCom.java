@@ -17,11 +17,16 @@ package jd.plugins.decrypter;
 
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -33,47 +38,103 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
+import jd.plugins.hoster.DirectHTTP;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zeroscans.com" }, urls = { "https?://(?:www\\.)?zeroscans\\.com/comics/([a-z0-9\\-]+)/(\\d+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zeroscans.com" }, urls = { "https?://(?:www\\.)?zeroscans\\.com/comics/([a-z0-9\\-]+)(/(\\d+))?" })
 public class ZeroscansCom extends PluginForDecrypt {
     public ZeroscansCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.setFollowRedirects(true);
+        return br;
+    }
+
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        br.getPage(param.getCryptedUrl());
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final String contenturl = param.getCryptedUrl();
+        br.getPage(contenturl);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        br.getRequest().setHtmlCode(PluginJSonUtils.unescape(br.toString()));
-        String fpName = br.getRegex("<title>Zero Scans \\- ([^<>\"]+)</title>").getMatch(0);
-        if (fpName == null) {
-            /* Fallback */
-            fpName = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
-        }
-        final String urlsJson = br.getRegex("good_quality:\\[([^\\]]+)").getMatch(0);
-        final String[] links = PluginJSonUtils.unescape(urlsJson).replace("\"", "").split(",");
-        if (links == null || links.length == 0) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        final int padLength = StringUtils.getPadLength(links.length);
-        int position = 1;
-        for (String singleLink : links) {
-            if (!singleLink.startsWith("http") && !singleLink.startsWith("/")) {
-                singleLink = "https://" + br.getHost() + "/storage/" + singleLink;
+        final Regex urlinfo = new Regex(contenturl, this.getSupportedLinks());
+        final String comicSlug = urlinfo.getMatch(0);
+        final String chapterID = urlinfo.getMatch(2);
+        if (chapterID != null) {
+            /* Crawl all pages of a single comic */
+            br.getRequest().setHtmlCode(PluginJSonUtils.unescape(br.getRequest().getHtmlCode()));
+            String title = br.getRegex("<title>([^<]+)</title>").getMatch(0);
+            if (title != null) {
+                title = Encoding.htmlDecode(title).trim();
+                title = title.replaceFirst("(?i) • Zero Scans$", "");
             }
-            final DownloadLink dl = createDownloadlink("directhttp://" + singleLink);
-            dl.setFinalFileName(StringUtils.formatByPadLength(padLength, position) + "_" + Plugin.getFileNameFromURL(new URL(singleLink)));
-            dl.setAvailable(true);
-            decryptedLinks.add(dl);
-            position++;
-        }
-        if (fpName != null) {
+            final String urlsJson = br.getRegex("good_quality:\\[([^\\]]+)").getMatch(0);
+            final String[] links = PluginJSonUtils.unescape(urlsJson).replace("\"", "").split(",");
+            if (links == null || links.length == 0) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            final int padLength = StringUtils.getPadLength(links.length);
+            int position = 1;
+            for (String singleLink : links) {
+                if (!singleLink.startsWith("http") && !singleLink.startsWith("/")) {
+                    singleLink = "https://" + br.getHost() + "/storage/" + singleLink;
+                }
+                final DownloadLink dl = createDownloadlink(DirectHTTP.createURLForThisPlugin(singleLink));
+                dl.setFinalFileName(StringUtils.formatByPadLength(padLength, position) + "_" + Plugin.getFileNameFromURL(new URL(singleLink)));
+                dl.setAvailable(true);
+                ret.add(dl);
+                position++;
+            }
             final FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName).trim());
-            fp.addLinks(decryptedLinks);
+            if (title != null) {
+                fp.setName(title);
+            }
+            fp.setPackageKey("zeroscanscom://chapter/" + chapterID);
+            fp.addLinks(ret);
+        } else {
+            /* Crawl all chapters of a comic-series */
+            final String comicSeriesID = br.getRegex("id:(\\d+)").getMatch(0);
+            if (comicSeriesID == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            int page = 1;
+            final HashSet<String> dupes = new HashSet<String>();
+            do {
+                br.getPage("/swordflake/comic/" + comicSeriesID + "/chapters?sort=desc&page=" + page);
+                final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+                final Map<String, Object> data = (Map<String, Object>) entries.get("data");
+                final List<Map<String, Object>> ressourcelist = (List<Map<String, Object>>) data.get("data");
+                int numberofNewItems = 0;
+                for (final Map<String, Object> ressource : ressourcelist) {
+                    final String thisChapterID = ressource.get("id").toString();
+                    if (!dupes.add(thisChapterID)) {
+                        continue;
+                    }
+                    numberofNewItems++;
+                    final DownloadLink dlchapter = this.createDownloadlink("https://" + this.getHost() + "/comics/" + comicSlug + "/" + thisChapterID);
+                    ret.add(dlchapter);
+                    distribute(dlchapter);
+                }
+                final String next_page_url = (String) data.get("next_page_url");
+                logger.info("Crawled page " + page + " | Found items: " + ret.size());
+                if (this.isAbort()) {
+                    logger.info("Stopping because: Aborted by user");
+                    break;
+                } else if (StringUtils.isEmpty(next_page_url)) {
+                    logger.info("Stopping because: Reached last page");
+                    break;
+                } else if (numberofNewItems == 0) {
+                    logger.info("Stopping because: Failed to find any new items on current page");
+                    break;
+                } else {
+                    /* Continue to next page */
+                    br.getPage(next_page_url);
+                }
+            } while (!this.isAbort());
         }
-        return decryptedLinks;
+        return ret;
     }
 }
