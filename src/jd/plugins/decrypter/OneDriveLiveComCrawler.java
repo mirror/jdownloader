@@ -16,6 +16,7 @@
 package jd.plugins.decrypter;
 
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -61,18 +62,10 @@ public class OneDriveLiveComCrawler extends PluginForDecrypt {
         return br;
     }
 
-    private static final String TYPE_DRIVE_ALL               = "(?i)https?://(www\\.)?(onedrive\\.live\\.com/(redir)?\\?[A-Za-z0-9\\&\\!=#\\.,]+|skydrive\\.live\\.com/(\\?cid=[a-z0-9]+[A-Za-z0-9&!=#\\.,-_]+|redir\\.aspx\\?cid=[a-z0-9]+[A-Za-z0-9&!=#\\.,-_]+|redir\\?resid=[A-Za-z0-9&!=#\\.,-_]+))";
-    private static final String TYPE_ONEDRIVE_REDIRECT_RESID = "(?i).+/redir\\?resid=[A-Za-z0-9]+\\!\\d+.*?";
-    private static final String TYPE_SKYDRIVE_REDIRECT_RESID = "(?i).+/redir\\?resid=[a-z0-9]+[A-Za-z0-9&!=#\\.,-_]+";
-    private static final String TYPE_ONEDRIVE_VIEW_RESID     = "(?i).+/view\\.aspx\\?resid=.+";
-    private static final String TYPE_SKYDRIVE_REDIRECT       = "(?i)https?://(www\\.)?skydrive\\.live\\.com/redir\\.aspx\\?cid=[a-z0-9]+[A-Za-z0-9&!=#\\.,-_]+";
-    private static final String TYPE_SKYDRIVE_REDIRECT2      = "(?i)https?://cid-[0-9a-zA-Z]+\\.skydrive\\.live\\.com/(redir|self)\\.aspx.+";
-    private static final String TYPE_SKYDRIVE_SHORT          = "(?i)https?://(www\\.)?(1|s)drv\\.ms/[A-Za-z0-9&!=#\\.,-_]+";
-    private static final String TYPE_ONEDRIVE_ROOT           = "(?i)https?://onedrive\\.live\\.com/\\?cid=[a-z0-9]+";
-    private String              cid                          = null;
-    private String              resource_id                  = null;
-    private String              authkey                      = null;
-    private PluginForHost       hostPlugin                   = null;
+    private String        cid         = null;
+    private String        resource_id = null;
+    private String        authkey     = null;
+    private PluginForHost hostPlugin  = null;
 
     private void ensureInitHosterplugin() throws PluginException {
         if (this.hostPlugin == null) {
@@ -83,36 +76,29 @@ public class OneDriveLiveComCrawler extends PluginForDecrypt {
     @SuppressWarnings({ "unchecked", "deprecation" })
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         String contenturl = param.getCryptedUrl().replaceFirst("(?i)http://", "https://");
-        if (contenturl.matches(TYPE_SKYDRIVE_REDIRECT2)) {
-            br.followRedirect(true);
-            br.getPage(contenturl);
-            if (br.getHttpConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            contenturl = br.getURL();
-        } else if (contenturl.matches(TYPE_SKYDRIVE_SHORT)) {
+        setGlobalVars(contenturl);
+        if (cid == null || resource_id == null) {
+            /* Possibly a short-URL which redirects to another URL which should contain the parameters we are looking for. */
             br.getPage(contenturl);
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             final String newURL = br.getURL();
-            if (!this.canHandle(newURL)) {
+            if (newURL.equalsIgnoreCase(contenturl)) {
+                /* URL hasn't changed */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (!this.canHandle(newURL)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
+            setGlobalVars(newURL);
             contenturl = newURL;
         }
-        final UrlQuery query = UrlQuery.parse(contenturl);
-        resource_id = query.getDecoded("resid");
-        cid = query.getDecoded("cid");
-        authkey = query.getDecoded("authkey");
+        if (cid == null || resource_id == null) {
+            /* Invalid URL */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         if (authkey != null) {
             authkey = Encoding.htmlDecode(authkey);
-        }
-        if (resource_id == null) {
-            resource_id = getLastID(contenturl);
-        }
-        if (cid == null || resource_id == null) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         cid = cid.toUpperCase(Locale.ENGLISH);
         contenturl = this.generateFolderLink(cid, resource_id, authkey);
@@ -213,6 +199,16 @@ public class OneDriveLiveComCrawler extends PluginForDecrypt {
             return ret;
         } else {
             return crawlLegacy(contenturl);
+        }
+    }
+
+    private void setGlobalVars(final String url) throws MalformedURLException {
+        final UrlQuery query = UrlQuery.parse(url);
+        resource_id = query.getDecoded("resid");
+        cid = query.getDecoded("cid");
+        authkey = query.getDecoded("authkey");
+        if (resource_id == null) {
+            resource_id = getLastID(url);
         }
     }
 
@@ -539,7 +535,7 @@ public class OneDriveLiveComCrawler extends PluginForDecrypt {
         if (contenturl.contains("ithint=") && id != null) {
             data = "&cid=" + Encoding.urlEncode(cid) + additional;
             br.getPage("https://skyapi.onedrive.live.com/API/2/GetItems?id=" + id + "&group=0&qt=&ft=&sb=1&sd=1&gb=0%2C1%2C2&d=1&iabch=1&caller=&path=1&pi=5&m=de-DE&rset=skyweb&lct=1&v=" + v + data + fromTo);
-        } else if (id == null && contenturl.matches(TYPE_ONEDRIVE_ROOT)) {
+        } else if (id == null && contenturl.matches("(?i)https?://onedrive\\.live\\.com/\\?cid=[a-z0-9]+")) {
             /* Access root-dir */
             data = "&cid=" + Encoding.urlEncode(cid);
             br.getPage("https://skyapi.onedrive.live.com/API/2/GetItems?id=root&group=0&qt=&ft=&sb=0&sd=0&gb=0%2C1%2C2&rif=0&d=1&iabch=1&caller=unauth&path=1&pi=5&m=de-DE&rset=skyweb&lct=1&v=" + v + data + fromTo);

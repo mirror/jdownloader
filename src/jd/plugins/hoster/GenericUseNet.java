@@ -1,21 +1,9 @@
 package jd.plugins.hoster;
 
-import java.awt.Color;
 import java.util.Arrays;
 
 import javax.swing.JLabel;
 import javax.swing.SpinnerNumberModel;
-
-import jd.PluginWrapper;
-import jd.http.Browser;
-import jd.plugins.Account;
-import jd.plugins.AccountInfo;
-import jd.plugins.DefaultEditAccountPanel;
-import jd.plugins.DownloadLink;
-import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginConfigPanelNG;
-import jd.plugins.PluginException;
 
 import org.appwork.swing.components.ExtCheckBox;
 import org.appwork.swing.components.ExtSpinner;
@@ -31,11 +19,28 @@ import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 
+import jd.PluginWrapper;
+import jd.http.Browser;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
+import jd.plugins.DefaultEditAccountPanel;
+import jd.plugins.DownloadLink;
+import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginConfigPanelNG;
+import jd.plugins.PluginException;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "genericusenet" }, urls = { "" })
 public class GenericUseNet extends UseNet {
     public GenericUseNet(PluginWrapper wrapper) {
         super(wrapper);
         enablePremium();
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.GENERIC, LazyPlugin.FEATURE.USENET };
     }
 
     public static interface GenericUsenetAccountConfig extends UsenetAccountConfigInterface {
@@ -107,11 +112,6 @@ public class GenericUseNet extends UseNet {
             private final ExtSpinner   port;
             private final ExtSpinner   connections;
             {
-                JLabel label = null;
-                add(label = new JLabel("This is a generic usenet plugin!"));
-                label.setForeground(Color.RED);
-                add(label = new JLabel("Please contact us via support@jdownloader.org!"));
-                label.setForeground(Color.RED);
                 add(new JLabel(_GUI.T.UsenetConfigPanel_Server()));
                 add(host = new ExtTextField() {
                     @Override
@@ -180,18 +180,13 @@ public class GenericUseNet extends UseNet {
     }
 
     @Override
-    public LazyPlugin.FEATURE[] getFeatures() {
-        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.GENERIC, LazyPlugin.FEATURE.USENET };
-    }
-
-    @Override
     protected UsenetServer getUseNetServer(Account account) throws Exception {
         final GenericUsenetAccountConfig cfg = getAccountJsonConfig(account);
         final boolean ssl = cfg.isSSLEnabled();
         final int port = cfg.getPort();
         final String host = cfg.getHost();
         if (host == null) {
-            throw new PluginException(LinkStatus.ERROR_PREMIUM, "No usenet host set!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            throw new AccountInvalidException("No usenet host set!");
         } else {
             final UsenetServer server = new UsenetServer(host, port, ssl);
             return server;
