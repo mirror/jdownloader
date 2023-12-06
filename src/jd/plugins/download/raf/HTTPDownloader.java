@@ -1139,7 +1139,7 @@ public class HTTPDownloader extends DownloadInterface implements FileBytesCacheF
         }
         if (lastModifiedDate == null && con != null) {
             /* Try to get this date from header */
-            lastModifiedDate = TimeFormatter.parseDateString(con.getHeaderField("Last-Modified"));
+            lastModifiedDate = TimeFormatter.parseDateString(con.getHeaderField(HTTPConstants.HEADER_RESPONSE_LAST_MODFIED));
         }
         return lastModifiedDate;
     }

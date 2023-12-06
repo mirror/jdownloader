@@ -601,9 +601,6 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         int playlistSize = filenameToTrackPositionMapping != null ? filenameToTrackPositionMapping.size() : null;
         for (final Map<String, Object> filemap : filemaps) {
             final String source = filemap.get("source").toString(); // "original" or "derivative"
-            final String md5 = (String) filemap.get("md5");
-            final String crc32 = (String) filemap.get("crc32");
-            final String sha1 = (String) filemap.get("sha1");
             final String audioTrackPositionStr = (String) filemap.get("track");
             String filename = (String) filemap.get("orig");
             final Object sizeO = filemap.get("size");
@@ -655,15 +652,19 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                     file.setVerifiedFileSize(Long.parseLong(sizeO.toString()));
                 }
             }
+            final String crc32 = (String) filemap.get("crc32");
             if (crc32 != null) {
                 file.setHashInfo(HashInfo.parse(crc32));
             }
+            final String md5 = (String) filemap.get("md5");
             if (md5 != null) {
                 file.setMD5Hash(md5);
             }
+            final String sha1 = (String) filemap.get("sha1");
             if (sha1 != null) {
                 file.setSha1Hash(sha1);
             }
+            file.setProperty(ArchiveOrg.PROPERTY_TIMESTAMP_FROM_API_LAST_MODIFIED, filemap.get("mtime"));
             ret.add(file);
         }
         /* Add some properties. */
@@ -984,6 +985,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
             String pathWithFilename = new Regex(item, "name=\"([^\"]+)").getMatch(0);
             final String filesizeBytesStr = new Regex(item, "<size>(\\d+)</size>").getMatch(0);
             final String sha1hash = new Regex(item, "<sha1>([a-f0-9]+)</sha1>").getMatch(0);
+            final String lastModifiedTimestamp = new Regex(item, "<mtime>(\\d+)</mtime>").getMatch(0);
             // final String md5hash = new Regex(item, "<md5>([a-f0-9]+)</md5>").getMatch(0);
             // final String crc32hash = new Regex(item, "<crc32>([a-f0-9]+)</crc32>").getMatch(0);
             if (pathWithFilename == null) {
@@ -1037,25 +1039,28 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                 /* Skip duplicates */
                 continue;
             }
-            final DownloadLink downloadURL = createDownloadlink(url);
-            downloadURL.setVerifiedFileSize(SizeFormatter.getSize(filesizeBytesStr));
-            downloadURL.setAvailable(true);
-            ArchiveOrg.setFinalFilename(downloadURL, filename);
+            final DownloadLink dlitem = createDownloadlink(url);
+            dlitem.setVerifiedFileSize(SizeFormatter.getSize(filesizeBytesStr));
+            dlitem.setAvailable(true);
+            ArchiveOrg.setFinalFilename(dlitem, filename);
             String thisPath = new Regex(url, "download/(.+)/[^/]+$").getMatch(0);
             if (Encoding.isUrlCoded(thisPath)) {
                 thisPath = Encoding.htmlDecode(thisPath);
             }
-            downloadURL.setRelativeDownloadFolderPath(thisPath);
+            dlitem.setRelativeDownloadFolderPath(thisPath);
             if (isAccountRequiredForDownload) {
-                downloadURL.setProperty(ArchiveOrg.PROPERTY_IS_ACCOUNT_REQUIRED, true);
+                dlitem.setProperty(ArchiveOrg.PROPERTY_IS_ACCOUNT_REQUIRED, true);
             }
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(thisPath);
-            downloadURL._setFilePackage(fp);
+            dlitem._setFilePackage(fp);
             if (sha1hash != null) {
-                downloadURL.setSha1Hash(sha1hash);
+                dlitem.setSha1Hash(sha1hash);
             }
-            ret.add(downloadURL);
+            if (lastModifiedTimestamp != null) {
+                dlitem.setProperty(ArchiveOrg.PROPERTY_TIMESTAMP_FROM_API_LAST_MODIFIED, Long.parseLong(lastModifiedTimestamp));
+            }
+            ret.add(dlitem);
             if (crawlArchiveView && isArchiveViewSupported) {
                 final DownloadLink archiveViewURL = createDownloadlink(url + "/");
                 ret.add(archiveViewURL);
