@@ -1,5 +1,5 @@
 //jDownloader - Downloadmanager
-//Copyright (C) 2016  JD-Team support@jdownloader.org
+//Copyright (C) 2013  JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -18,38 +18,32 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
-
-import org.jdownloader.plugins.components.YetiShareCore;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
-public class OneCloudfileCom extends YetiShareCore {
-    public OneCloudfileCom(PluginWrapper wrapper) {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
+public class VeevTo extends XFileSharingProBasic {
+    public VeevTo(final PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium(getPurchasePremiumURL());
+        this.enablePremium(super.getPurchasePremiumURL());
     }
 
     /**
-     * DEV NOTES YetiShare<br />
-     ****************************
+     * DEV NOTES XfileSharingProBasic Version SEE SUPER-CLASS<br />
      * mods: See overridden functions<br />
      * limit-info:<br />
-     * captchatype-info: null solvemedia reCaptchaV2, hcaptcha<br />
-     * other: <br />
+     * captchatype-info: null 4dignum solvemedia reCaptchaV2, hcaptcha<br />
+     * other:<br />
      */
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "1cloudfile.com" });
+        ret.add(new String[] { "veev.to" });
         return ret;
     }
 
@@ -63,15 +57,16 @@ public class OneCloudfileCom extends YetiShareCore {
     }
 
     public static String[] getAnnotationUrls() {
-        return YetiShareCore.buildAnnotationUrls(getPluginDomains());
+        return XFileSharingProBasic.buildAnnotationUrls(getPluginDomains());
     }
 
     @Override
     public boolean isResumeable(final DownloadLink link, final Account account) {
-        if (account != null && account.getType() == AccountType.FREE) {
+        final AccountType type = account != null ? account.getType() : null;
+        if (AccountType.FREE.equals(type)) {
             /* Free Account */
             return true;
-        } else if (account != null && account.getType() == AccountType.PREMIUM) {
+        } else if (AccountType.PREMIUM.equals(type) || AccountType.LIFETIME.equals(type)) {
             /* Premium account */
             return true;
         } else {
@@ -80,11 +75,13 @@ public class OneCloudfileCom extends YetiShareCore {
         }
     }
 
+    @Override
     public int getMaxChunks(final Account account) {
-        if (account != null && account.getType() == AccountType.FREE) {
+        final AccountType type = account != null ? account.getType() : null;
+        if (AccountType.FREE.equals(type)) {
             /* Free Account */
             return 0;
-        } else if (account != null && account.getType() == AccountType.PREMIUM) {
+        } else if (AccountType.PREMIUM.equals(type) || AccountType.LIFETIME.equals(type)) {
             /* Premium account */
             return 0;
         } else {
@@ -94,35 +91,11 @@ public class OneCloudfileCom extends YetiShareCore {
     }
 
     @Override
-    protected String getContinueLink(final Browser br) throws Exception {
-        /* 2023-12-06: Similar for: 1cloudfile.com, bowfile.com */
-        final String jsFunc = br.getRegex("(function getNextDownloadPageLink\\(crl, btnText\\).*?\\s+\\})\\s+").getMatch(0);
-        final String jsCall = br.getRegex("(getNextDownloadPageLink\\(\".*?\\))\n").getMatch(0);
-        if (jsFunc != null && jsCall != null) {
-            /* 2023-12-06: This doesn't work yet */
-            String result = null;
-            final StringBuilder sb = new StringBuilder();
-            sb.append(jsFunc);
-            sb.append("\nvar result = " + jsCall + ";");
-            // System.out.print(sb.toString());
-            final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(this);
-            final ScriptEngine engine = manager.getEngineByName("javascript");
-            try {
-                engine.eval(sb.toString());
-                result = engine.get("result").toString();
-                return result;
-            } catch (final Exception e) {
-                e.printStackTrace();
-            }
-        }
-        return super.getContinueLink(br);
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
+    public int getMaxSimultaneousFreeAnonymousDownloads() {
         return -1;
     }
 
+    @Override
     public int getMaxSimultaneousFreeAccountDownloads() {
         return -1;
     }

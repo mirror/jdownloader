@@ -85,7 +85,7 @@ public class DatoidCzFolder extends PluginForDecrypt {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             final List<String> links = (List<String>) entries.get("file_urls");
-            if (links == null || links.isEmpty()) {
+            if (links == null) {
                 /* This should never happen */
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             } else if (links.isEmpty()) {
