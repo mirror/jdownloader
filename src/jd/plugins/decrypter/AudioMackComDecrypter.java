@@ -93,12 +93,19 @@ public class AudioMackComDecrypter extends PluginForDecrypt {
         final String packageidprefix = "audiomack://";
         final String contenturl = param.getCryptedUrl();
         br.getPage(contenturl);
-        String ogurl = br.getRegex("\"og:url\" content=\"([^\"]+)\"").getMatch(0);
-        final String musicType = new Regex(ogurl, "(?i).*(album|playlist)/.*").getMatch(0);
+        final String ogurl = br.getRegex("\"og:url\" content=\"([^\"]+)\"").getMatch(0);
+        final String[] match = new Regex(ogurl, "(?i).*/([^/]+)/(album|playlist)/([^/]+)").getRow(0);
+        if (match == null || match.length != 3) {
+            /* Unsupported URL and/or plugin failure */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final String musicType = match[1];
         if (musicType == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        br.getPage(AudioMa.getOAuthQueryString(br));
+        final String artistID = match[0];
+        final String musicSlug = match[2];
+        br.getPage(AudioMa.getOAuthQueryString(musicType, artistID, musicSlug));
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }

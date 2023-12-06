@@ -124,8 +124,19 @@ public class AudioMa extends PluginForHost {
         br.getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML(">\\s*This song cannot be found or has been removed")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        br.getPage(getOAuthQueryString(br));
+        final String ogurl = br.getRegex("\"og:url\" content=\"([^\"]+)\"").getMatch(0);
+        final String[] match = new Regex(ogurl, "(?i).*/([^/]+)/(song)/([^/]+)").getRow(0);
+        if (match == null || match.length != 3) {
+            /* Unsupported URL and/or plugin failure */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        // final String musicType = match[1];
+        final String artistID = match[0];
+        final String musicSlug = match[2];
+        br.getPage(getOAuthQueryString("song", artistID, musicSlug));
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -213,29 +224,17 @@ public class AudioMa extends PluginForHost {
         dl.startDownload();
     }
 
-    public static String getOAuthQueryString(final Browser br) throws Exception {
-        /* 2019-01-30: Used hardcoded values as they change js more often and API vars have also changed */
-        String ogurl = br.getRegex("\"og:url\" content=\"([^\"]+)\"").getMatch(0);
-        String[] match = new Regex(ogurl, ".*/([^/]+)/(song|album|playlist)/([^/]+)").getRow(0);
-        if (match == null || match.length != 3) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+    public static String getOAuthQueryString(final String musicType, final String artistID, final String musicSlug) throws Exception {
+        if (musicType == null) {
+            throw new IllegalArgumentException();
         }
-        final String musicType = match[1];
-        final String artistId = match[0];
-        final String musicSlug = match[2];
-        // src='/static/dist/desktop/252.3d3a7d50d9de7c1fefa0.js'
-        // String jsurl = br.getRegex("src='([^']+?/275\\.[0-9a-f]+?\\.chunk\\.js)").getMatch(0);
-        final Browser cbr = br.cloneBrowser();
-        // cbr.getPage(jsurl);
-        String apiUrl = cbr.getRegex("API_URL:\"([^\"]+)\"").getMatch(0);
-        /* Use hardcoded value */
-        apiUrl = "https://api.audiomack.com";
+        final String apiUrl = "https://api.audiomack.com";
         final String apiVersion = "v1";
         final String requestUrl;
         if ("playlist".equals(musicType)) {
-            requestUrl = apiUrl + "/" + apiVersion + "/" + musicType + "/" + artistId + "/" + musicSlug;
+            requestUrl = apiUrl + "/" + apiVersion + "/" + musicType + "/" + artistID + "/" + musicSlug;
         } else {
-            requestUrl = apiUrl + "/" + apiVersion + "/music/" + musicType + "/" + artistId + "/" + musicSlug;
+            requestUrl = apiUrl + "/" + apiVersion + "/music/" + musicType + "/" + artistID + "/" + musicSlug;
         }
         return getSignedURL(requestUrl, new UrlQuery(), false);
     }

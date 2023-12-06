@@ -75,9 +75,9 @@ public class DatoidCzFolder extends PluginForDecrypt {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final ArrayList<String> allPages = new ArrayList<String>();
         allPages.add("1");
-        final String url = param.getCryptedUrl().replaceFirst("(?i)datoid\\.sk/", "datoid.cz/");
+        final String contenturl = param.getCryptedUrl().replaceFirst("(?i)datoid\\.sk/", "datoid.cz/");
         if (USE_API) {
-            br.getPage("http://api.datoid.cz/v1/getfilesoffolder?url=" + Encoding.urlEncode(url));
+            br.getPage("http://api.datoid.cz/v1/getfilesoffolder?url=" + Encoding.urlEncode(contenturl));
             final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
             final String error = (String) entries.get("error");
             if (error != null) {
@@ -94,7 +94,7 @@ public class DatoidCzFolder extends PluginForDecrypt {
                 ret.add(createDownloadlink(link));
             }
         } else {
-            br.getPage(url);
+            br.getPage(contenturl);
             final String[] pages = br.getRegex("class=\"ajax\">(\\d+)</a>").getColumn(0);
             if (pages != null) {
                 for (final String aPage : pages) {
@@ -107,11 +107,11 @@ public class DatoidCzFolder extends PluginForDecrypt {
             for (final String currentPage : allPages) {
                 logger.info("Decrypting page " + currentPage + " / " + allPages.size());
                 if (!currentPage.equals("1")) {
-                    br.getPage(url + "?current-page=" + currentPage);
+                    br.getPage(contenturl + "?current-page=" + currentPage);
                 }
                 final String[] links = br.getRegex("\"(/[^<>\"]*?)\">[\t\n\r ]+<div class=\"thumb").getColumn(0);
                 if (links == null || links.length == 0) {
-                    logger.warning("Decrypter broken for link: " + url);
+                    logger.warning("Decrypter broken for link: " + contenturl);
                     return null;
                 }
                 for (final String singleLink : links) {

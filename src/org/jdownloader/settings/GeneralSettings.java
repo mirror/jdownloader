@@ -391,6 +391,7 @@ public interface GeneralSettings extends ConfigInterface {
     boolean isHashCheckEnabled();
 
     @AboutConfig
+    @DescriptionForConfigEntry("Retry when SFV/SRC check fails?")
     @DefaultBooleanValue(false)
     boolean isHashRetryEnabled();
 
