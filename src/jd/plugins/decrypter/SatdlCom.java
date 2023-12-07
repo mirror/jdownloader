@@ -68,7 +68,7 @@ public class SatdlCom extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:\\w+\\.)?" + buildHostsPatternPart(domains) + "/(decrypt.+|download/\\d+)");
+            ret.add("https?://(?:\\w+\\.)?" + buildHostsPatternPart(domains) + "/decrypt.+");
         }
         return ret.toArray(new String[0]);
     }
@@ -80,6 +80,10 @@ public class SatdlCom extends PluginForDecrypt {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        /*
+         * 2023-12-07: I've removed support for "/download/..." from the pattern since that seems to only redirect to dummy files and no
+         * external downloadurls.
+         */
         final Pattern pattern_download = Pattern.compile("https?://[^/]+/download/(\\d+)");
         String slashDownloadURL = null;
         if (new Regex(contenturl, pattern_download).patternFind()) {

@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
-import java.util.regex.Pattern;
 
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.utils.DebugMode;
@@ -115,7 +114,7 @@ public class RecurbateCom extends PluginForHost {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/play\\.php\\?video=(\\d+)");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:play\\.php\\?video=|video/)(\\d+)");
         }
         return ret.toArray(new String[0]);
     }
@@ -127,7 +126,7 @@ public class RecurbateCom extends PluginForHost {
 
     @Override
     public String getLinkID(final DownloadLink link) {
-        final String linkid = getFID(link);
+        final String linkid = getVideoID(link);
         if (linkid != null) {
             return this.getHost() + "://" + linkid;
         } else {
@@ -135,23 +134,28 @@ public class RecurbateCom extends PluginForHost {
         }
     }
 
-    private String getFID(final DownloadLink link) {
+    private String getVideoID(final DownloadLink link) {
         return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+    }
+
+    @Override
+    public String getPluginContentURL(final DownloadLink link) {
+        return getContentURL(link);
     }
 
     private String getContentURL(final DownloadLink link) {
         /* Get full host with subdomain and correct base domain. */
-        final String pluginHost = this.getHost();
         final List<String> deadDomains = this.getDeadDomains();
-        final String url = link.getPluginPatternMatcher();
-        final String urlHost = Browser.getHost(link.getPluginPatternMatcher());
-        if (deadDomains != null && deadDomains.contains(urlHost)) {
+        final String domainFromURL = Browser.getHost(link.getPluginPatternMatcher());
+        final String domainToUse;
+        if (deadDomains != null && deadDomains.contains(domainFromURL)) {
             /* Fallback to plugin domain */
             /* e.g. down.xx.com -> down.yy.com, keep subdomain(s) */
-            return url.replaceFirst("(?i)" + Pattern.quote(Browser.getHost(url, false)), pluginHost);
+            domainToUse = this.getHost();
         } else {
-            return url;
+            domainToUse = domainFromURL;
         }
+        return "https://" + domainToUse + "/video/" + this.getVideoID(link) + "/play";
     }
 
     @Override
@@ -160,7 +164,7 @@ public class RecurbateCom extends PluginForHost {
     }
 
     public AvailableStatus requestFileInformation(final DownloadLink link, final Account account) throws Exception {
-        final String fid = getFID(link);
+        final String fid = getVideoID(link);
         if (!link.isNameSet()) {
             /* Set fallback filename e.g. for offline items. */
             link.setName(fid + ".mp4");
@@ -259,18 +263,18 @@ public class RecurbateCom extends PluginForHost {
                 brc.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 brc.getHeaders().put("Accept", "*/*");
                 final UrlQuery query = new UrlQuery();
-                query.add("video", Encoding.urlEncode(this.getFID(link)));
                 query.add("token", Encoding.urlEncode(token));
-                brc.getPage("/api/get.php?" + query.toString());
+                brc.getPage("/api/video/" + this.getVideoID(link) + "?" + query.toString());
                 final String streamLink = brc.getRegex("<source\\s*src\\s*=\\s*\"(https?://[^\"]+)\"[^>]*type=\"video/mp4\"\\s*/>").getMatch(0);
                 if (streamLink == null) {
-                    if (StringUtils.containsIgnoreCase(brc.toString(), "shall_signin")) {
+                    final String html = brc.getRequest().getHtmlCode();
+                    if (StringUtils.containsIgnoreCase(html, "shall_signin")) {
                         /**
                          * Free users can watch one video per IP per X time. </br>
                          * This error should only happen in logged-out state.
                          */
                         errorDailyDownloadlimitReached(account);
-                    } else if (StringUtils.containsIgnoreCase(brc.toString(), "shall_subscribe")) {
+                    } else if (StringUtils.containsIgnoreCase(html, "shall_subscribe")) {
                         errorDailyDownloadlimitReached(account);
                     } else {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
