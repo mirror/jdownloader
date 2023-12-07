@@ -188,7 +188,7 @@ public class RecurbateCom extends PluginForHost {
             performer = Encoding.htmlDecode(performer).trim();
             link.setProperty(PROPERTY_USER, performer);
         }
-        setFilename(link, fid);
+        setFilename(link);
         return AvailableStatus.TRUE;
     }
 
@@ -206,16 +206,18 @@ public class RecurbateCom extends PluginForHost {
         }
     }
 
-    public static void setFilename(DownloadLink link, final String fid) {
+    public void setFilename(final DownloadLink link) {
+        final String extDefault = ".mp4";
+        final String videoid = this.getVideoID(link);
         final String performer = link.getStringProperty(PROPERTY_USER);
         final String dateStr = link.getStringProperty(PROPERTY_DATE);
         if (dateStr != null && performer != null) {
-            link.setFinalFileName(dateStr + "_" + performer + "_" + fid + ".mp4");
+            link.setFinalFileName(dateStr + "_" + performer + "_" + videoid + extDefault);
         } else if (performer != null) {
-            link.setFinalFileName(performer + "_" + fid + ".mp4");
+            link.setFinalFileName(performer + "_" + videoid + extDefault);
         } else {
             /* Fallback */
-            link.setFinalFileName(fid + ".mp4");
+            link.setFinalFileName(videoid + extDefault);
         }
     }
 
@@ -265,7 +267,7 @@ public class RecurbateCom extends PluginForHost {
                 final UrlQuery query = new UrlQuery();
                 query.add("token", Encoding.urlEncode(token));
                 brc.getPage("/api/video/" + this.getVideoID(link) + "?" + query.toString());
-                final String streamLink = brc.getRegex("<source\\s*src\\s*=\\s*\"(https?://[^\"]+)\"[^>]*type=\"video/mp4\"\\s*/>").getMatch(0);
+                String streamLink = brc.getRegex("<source\\s*src\\s*=\\s*\"(https?://[^\"]+)\"[^>]*type=\"video/mp4\"\\s*/>").getMatch(0);
                 if (streamLink == null) {
                     final String html = brc.getRequest().getHtmlCode();
                     if (StringUtils.containsIgnoreCase(html, "shall_signin")) {
@@ -279,6 +281,9 @@ public class RecurbateCom extends PluginForHost {
                     } else {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
+                }
+                if (Encoding.isHtmlEntityCoded(streamLink)) {
+                    streamLink = Encoding.htmlOnlyDecode(streamLink);
                 }
                 dl = jd.plugins.BrowserAdapter.openDownload(br, link, streamLink, RESUMABLE, MAXCHUNKS);
             }
