@@ -156,14 +156,18 @@ public class FastShareCz extends PluginForHost {
                 numberofRedirects++;
             }
         } while (!this.isAbort());
-        if (br.containsHTML("(?i)(<title>\\s*FastShare\\.[a-z]+\\s*</title>|>Tento soubor byl smazán na základě požadavku vlastníka autorských)")) {
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("(?i)(<title>\\s*FastShare\\.[a-z]+\\s*</title>|>Tento soubor byl smazán na základě požadavku vlastníka autorských)")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML(">\\s*Soubor byl smazán")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("<h1\\s*title\\s*=\\s*\"(.*?)\\s*\"").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<h2><b><span style=color:black;>([^<>\"]*?)</b></h2>").getMatch(0);
             if (filename == null) {
-                filename = br.getRegex("<title>([^<>\"]*?)\\s*\\|\\s*FastShare\\.[a-z}+\\s*</title>").getMatch(0);
+                filename = br.getRegex("<title>([^<>\"]*?)\\s*\\|\\s*FastShare\\.[a-z]+\\s*</title>").getMatch(0);
             }
         }
         String filesize = br.getRegex("(?i)<tr><td>\\s*(Velikost|Size): </td><td style=font\\-weight:bold>([^<>\"]*?)</td></tr>").getMatch(1);
