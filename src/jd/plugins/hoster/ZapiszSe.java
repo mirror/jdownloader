@@ -18,6 +18,12 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.Arrays;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -36,11 +42,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zapisz.se" }, urls = { "https?://zapisz.se/files/\\d+/([^/]+)?" })
 public class ZapiszSe extends PluginForHost {
@@ -164,6 +165,23 @@ public class ZapiszSe extends PluginForHost {
                     // For unknown reasons zapisz.se sometimes does not add links to the queue
                     // For Rapidgator links, zapisz.se has unknown but noticeable rate limitations
                     // For Nitroflare and k2s.cc this may mean that an additional captcha has to be solved
+                    if (link.getHost().equalsIgnoreCase("nitroflare.com")) {
+                        // Solve Nitroflare captcha to show that we are not robots
+                        // At the time nitroflareCaptchaURL is a constant value:
+                        // https://nitroflare.com/api/v2/solveCaptcha?user=mateusz@qxy.pl
+                        final String nitroflareCaptchaURL = br.getRegex("<a id=\"nitroflareHref\" href=\"([^\"]+)\"").getMatch(0);
+                        br.getPage(nitroflareCaptchaURL);
+                        final String nitroflareRecaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                        final UrlQuery query = new UrlQuery();
+                        query.add("response", Encoding.urlEncode(nitroflareRecaptchaV2Response));
+                        br.postPage(nitroflareCaptchaURL, query);
+                        if (!br.toString().equalsIgnoreCase("passed")) {
+                            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                        } else {
+                            // Looks like captcha was solved successfully
+                            br.getPage(nitroflareCaptchaURL + "&solved=1");
+                        }
+                    }
                     mhm.handleErrorGeneric(account, link, "Failed to generate downloadurl", 10, 5 * 60 * 1000l);
                 }
                 br.getPage("/update.php?ie=0." + System.currentTimeMillis() + "&u=1&lastupdate=0");
