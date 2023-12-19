@@ -175,7 +175,7 @@ public class ZapiszSe extends PluginForHost {
                         final UrlQuery query = new UrlQuery();
                         query.add("response", Encoding.urlEncode(nitroflareRecaptchaV2Response));
                         br.postPage(nitroflareCaptchaURL, query);
-                        if (!br.toString().equalsIgnoreCase("passed")) {
+                        if (!br.getRequest().getHtmlCode().equalsIgnoreCase("passed")) {
                             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                         } else {
                             // Looks like captcha was solved successfully

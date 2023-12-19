@@ -15,7 +15,6 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -27,6 +26,7 @@ import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.components.config.RecurbateComConfig;
 import org.jdownloader.plugins.config.PluginJsonConfig;
@@ -84,7 +84,7 @@ public class RecurbateCom extends PluginForHost {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "recurbate.me", "recurbate.com", "recurbate.xyz", "recurbate.cc" });
+        ret.add(new String[] { "recurbate.me", "recu.me", "recurbate.com", "recurbate.xyz", "recurbate.cc" });
         return ret;
     }
 
@@ -236,7 +236,12 @@ public class RecurbateCom extends PluginForHost {
         } else {
             directurlproperty = "directlink";
         }
-        if (!this.attemptStoredDownloadurlDownload(link, directurlproperty, RESUMABLE, MAXCHUNKS)) {
+        String dllink = null;
+        final String storedDirecturl = link.getStringProperty(directurlproperty);
+        if (storedDirecturl != null) {
+            logger.info("Re-using stored directurl: " + storedDirecturl);
+            dllink = storedDirecturl;
+        } else {
             requestFileInformation(link, account);
             checkErrors(br, link, account);
             if (account != null && !this.isLoggedin(br)) {
@@ -249,9 +254,9 @@ public class RecurbateCom extends PluginForHost {
             String officialHighspeedDownloadlink = br.getRegex("recu-link download\"\\s*href=\"(https?://[^\"]+)").getMatch(0);
             if (officialHighspeedDownloadlink != null) {
                 /* Fix encoding */
-                officialHighspeedDownloadlink = officialHighspeedDownloadlink.replace("&amp;", "&");
+                officialHighspeedDownloadlink = Encoding.htmlOnlyDecode(officialHighspeedDownloadlink);
+                dllink = officialHighspeedDownloadlink;
                 logger.info("Found highspeed downloadurl: " + officialHighspeedDownloadlink);
-                dl = jd.plugins.BrowserAdapter.openDownload(br, link, officialHighspeedDownloadlink, RESUMABLE, MAXCHUNKS);
             } else {
                 logger.info("Failed to find highspeed downloadurl -> Trying to download stream");
                 final String token = br.getRegex("data-token\\s*=\\s*\"([^\"]+)\"\\s*data-video-id").getMatch(0);
@@ -267,8 +272,9 @@ public class RecurbateCom extends PluginForHost {
                 final UrlQuery query = new UrlQuery();
                 query.add("token", Encoding.urlEncode(token));
                 brc.getPage("/api/video/" + this.getVideoID(link) + "?" + query.toString());
-                String streamLink = brc.getRegex("<source\\s*src\\s*=\\s*\"(https?://[^\"]+)\"[^>]*type=\"video/mp4\"\\s*/>").getMatch(0);
-                if (streamLink == null) {
+                final String streamLink = brc.getRegex("<source\\s*src\\s*=\\s*\"(https?://[^\"]+)\"[^>]*type=\"video/mp4\"\\s*/>").getMatch(0);
+                final String hlsURL = brc.getRegex("<source\\s*src\\s*=\\s*\"(https?://[^\"]+)\"[^>]*type=\"application/x-mpegURL\"").getMatch(0);
+                if (streamLink == null && hlsURL == null) {
                     final String html = brc.getRequest().getHtmlCode();
                     if (StringUtils.containsIgnoreCase(html, "shall_signin")) {
                         /**
@@ -282,29 +288,49 @@ public class RecurbateCom extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
                 }
-                if (Encoding.isHtmlEntityCoded(streamLink)) {
-                    streamLink = Encoding.htmlOnlyDecode(streamLink);
-                }
-                dl = jd.plugins.BrowserAdapter.openDownload(br, link, streamLink, RESUMABLE, MAXCHUNKS);
-            }
-            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-                br.followConnection(true);
-                if (dl.getConnection().getResponseCode() == 403) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-                } else if (dl.getConnection().getResponseCode() == 404) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-                } else if (dl.getConnection().getResponseCode() == 429) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 429 too many requests", 60 * 60 * 1000l);
+                if (streamLink != null) {
+                    dllink = streamLink;
                 } else {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
+                    dllink = hlsURL;
                 }
             }
-            /*
-             * 2021-09-01: Save to re-use later. This URL is valid for some minutes only but allows resume + chunkload (up to 3 connections
-             * - we allow max. 2.).
-             */
-            link.setProperty(directurlproperty, dl.getConnection().getURL().toString());
+            if (Encoding.isHtmlEntityCoded(dllink)) {
+                dllink = Encoding.htmlOnlyDecode(dllink);
+            }
         }
+        try {
+            if (dllink.contains(".m3u8")) {
+                /* HLS download (new 2023-12-19) */
+                checkFFmpeg(link, "Download a HLS Stream");
+                dl = new HLSDownloader(link, br, dllink);
+            } else {
+                /* HTTP download / progressive stream */
+                dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, RESUMABLE, MAXCHUNKS);
+                if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                    br.followConnection(true);
+                    if (dl.getConnection().getResponseCode() == 403) {
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+                    } else if (dl.getConnection().getResponseCode() == 404) {
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+                    } else if (dl.getConnection().getResponseCode() == 429) {
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 429 too many requests", 60 * 60 * 1000l);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
+                    }
+                }
+            }
+        } catch (final Exception e) {
+            if (storedDirecturl != null) {
+                link.removeProperty(directurlproperty);
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Stored directurl expired", e);
+            } else {
+                throw e;
+            }
+        }
+        /*
+         * Save direct-url for later.
+         */
+        link.setProperty(directurlproperty, dllink);
         dl.startDownload();
     }
 
@@ -313,31 +339,6 @@ public class RecurbateCom extends PluginForHost {
             throw new AccountUnavailableException("Daily downloadlimit reached", 60 * 60 * 1000l);
         } else {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Daily downloadlimit reached", 10 * 60 * 1000l);
-        }
-    }
-
-    private boolean attemptStoredDownloadurlDownload(final DownloadLink link, final String directlinkproperty, final boolean resumable, final int maxchunks) throws Exception {
-        final String url = link.getStringProperty(directlinkproperty);
-        if (StringUtils.isEmpty(url)) {
-            return false;
-        }
-        try {
-            final Browser brc = br.cloneBrowser();
-            dl = new jd.plugins.BrowserAdapter().openDownload(brc, link, url, resumable, maxchunks);
-            if (this.looksLikeDownloadableContent(dl.getConnection())) {
-                return true;
-            } else {
-                brc.followConnection(true);
-                throw new IOException();
-            }
-        } catch (final Throwable e) {
-            link.removeProperty(directlinkproperty);
-            logger.log(e);
-            try {
-                dl.getConnection().disconnect();
-            } catch (Throwable ignore) {
-            }
-            return false;
         }
     }
 
