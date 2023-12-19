@@ -44,11 +44,11 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPlugin
 import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
 import org.jdownloader.plugins.components.config.RapidGatorConfig;
 import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
 
 import jd.PluginWrapper;
 import jd.config.Property;
+import jd.controlling.AccountController;
 import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -107,7 +107,7 @@ public class RapidGatorNet extends PluginForHost {
 
     @Override
     public Browser createNewBrowserInstance() {
-        final Browser br = new Browser();
+        final Browser br = super.createNewBrowserInstance();
         /* Define custom browser headers and language settings */
         br.getHeaders().put("Accept-Charset", "ISO-8859-1,utf-8;q=0.7,*;q=0.3");
         br.getHeaders().put("Accept-Language", "en-US,en;q=0.8");
@@ -123,23 +123,12 @@ public class RapidGatorNet extends PluginForHost {
         return br;
     }
 
-    /*
-     * 2019-12-14: Rapidgator API has a bug which will return invalid offline status. Do NOT trust this status anymore! Wait and retry
-     * instead. If the file is offline, availableStatus will find that correct status eventually! This may happen in two cases: 1.
-     * Free/Expired premium account tries to download via API.
-     */
-    private final boolean              API_TRUST_404_FILE_OFFLINE                  = false;
-    /* Old V1 endpoint */
-    // private final String API_BASEv1 = "https://rapidgator.net/api/";
-    /* https://rapidgator.net/article/api/index */
-    // private final String API_BASEv2 = "https://rapidgator.net/api/v2/";
-    /* Enforce new session once current one is older than X minutes. 0 or -1 = never refresh session_id unless it is detected as invalid. */
-    private final long                 API_SESSION_ID_REFRESH_TIMEOUT_MINUTES      = 45;
+    private final int                  API_SESSION_ID_REFRESH_TIMEOUT_MINUTES      = 45;
     /*
      * 2020-01-07: Use 120 minutes for the website login for now. Consider disabling this on negative feedback as frequent website logins
      * may lead to login-captchas!
      */
-    private final long                 WEBSITE_SESSION_ID_REFRESH_TIMEOUT_MINUTES  = 120;
+    private final int                  WEBSITE_SESSION_ID_REFRESH_TIMEOUT_MINUTES  = 120;
     private static Map<String, Long>   blockedIPsMap                               = new HashMap<String, Long>();
     private final String               PROPERTY_LAST_BLOCKED_IPS_MAP               = "rapidgatornet__last_blockedIPsMap";
     private final String               PROPERTY_LAST_DOWNLOAD_STARTED_TIMESTAMP    = "rapidgatornet__last_download_started_timestamp";
@@ -255,7 +244,16 @@ public class RapidGatorNet extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        return requestFileInformation(link, null);
+        final Account account = AccountController.getInstance().getValidAccount(this.getHost());
+        return requestFileInformation(link, account);
+    }
+
+    private AvailableStatus requestFileInformation(final DownloadLink link, final Account account) throws Exception {
+        if (account != null) {
+            return requestFileInformationAPI(link, account);
+        } else {
+            return requestFileInformationWebsite(link, null);
+        }
     }
 
     private void prepDownloadHeader(final Browser br) {
@@ -274,7 +272,7 @@ public class RapidGatorNet extends PluginForHost {
         }
     }
 
-    private AvailableStatus requestFileInformation(final DownloadLink link, final Account account) throws Exception {
+    private AvailableStatus requestFileInformationWebsite(final DownloadLink link, final Account account) throws Exception {
         hotlinkDirectURL = null;
         if (!link.isNameSet()) {
             link.setName(getFallbackFilename(link));
@@ -305,33 +303,61 @@ public class RapidGatorNet extends PluginForHost {
         } else {
             /* Not a direct-URL */
             br.followConnection();
-            parseFileInfo(br, link);
+            if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("File not found")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            String filename = br.getRegex("Downloading\\s*:\\s*</strong>\\s*<a href=\"\"[^>]*>([^<>\"]+)<").getMatch(0);
+            if (filename == null) {
+                filename = br.getRegex("<title>\\s*Download file\\s*([^<>\"]+)</title>").getMatch(0);
+            }
+            final String filesize = br.getRegex("File size:\\s*<strong>([^<>\"]+)</strong>").getMatch(0);
+            if (StringUtils.isNotEmpty(filename)) {
+                /* Prevent encoding issues when using Content-disposition filenames. */
+                filename = Encoding.htmlDecode(filename).trim();
+                link.setFinalFileName(filename);
+            }
+            if (filesize != null) {
+                link.setDownloadSize(SizeFormatter.getSize(filesize));
+            }
+            final String md5 = br.getRegex(">\\s*MD5\\s*:\\s*([A-Fa-f0-9]{32})<").getMatch(0);
+            if (md5 != null) {
+                link.setMD5Hash(md5);
+            }
         }
         return AvailableStatus.TRUE;
     }
 
-    private void parseFileInfo(final Browser br, final DownloadLink link) throws PluginException {
-        link.removeProperty(PROPERTY_HOTLINK);
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("File not found")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+    private AvailableStatus requestFileInformationAPI(final DownloadLink link, final Account account) throws Exception {
+        if (account == null) {
+            /* Developer mistake */
+            throw new IllegalArgumentException();
         }
-        final String md5 = br.getRegex(">\\s*MD5\\s*:\\s*([A-Fa-f0-9]{32})<").getMatch(0);
-        String filename = br.getRegex("Downloading\\s*:\\s*</strong>\\s*<a href=\"\"[^>]*>([^<>\"]+)<").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<title>\\s*Download file\\s*([^<>\"]+)</title>").getMatch(0);
+        final String session_id = account.getStringProperty(PROPERTY_sessionid);
+        if (session_id == null) {
+            /* This should never happen! */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final String filesize = br.getRegex("File size:\\s*<strong>([^<>\"]+)</strong>").getMatch(0);
-        if (StringUtils.isNotEmpty(filename)) {
-            /* Prevent encoding issues when using Content-disposition filenames. */
-            filename = Encoding.htmlDecode(filename).trim();
+        if (!link.isNameSet()) {
+            link.setName(getFallbackFilename(link));
+        }
+        br.getPage(getAPIBase() + "file/info?token=" + session_id + "&file_id=" + Encoding.urlEncode(this.getFID(link)));
+        final Map<String, Object> response = this.handleErrors_api(session_id, link, account, br, true);
+        final Map<String, Object> filemap = (Map<String, Object>) response.get("file");
+        /* Error-Response maybe wrong - do not check for errors here! */
+        // handleErrors_api(session_id, true, link, account, br.getHttpConnection());
+        final String filename = filemap.get("name").toString();
+        final Number filesize = (Number) filemap.get("size");
+        final String filehash = (String) filemap.get("hash");
+        if (filename != null) {
             link.setFinalFileName(filename);
         }
         if (filesize != null) {
-            link.setDownloadSize(SizeFormatter.getSize(filesize));
+            link.setVerifiedFileSize(filesize.longValue());
         }
-        if (md5 != null) {
-            link.setMD5Hash(md5);
+        if (filehash != null) {
+            link.setMD5Hash(filehash);
         }
+        return AvailableStatus.TRUE;
     }
 
     public boolean isProxyRotationEnabledForLinkChecker() {
@@ -350,7 +376,7 @@ public class RapidGatorNet extends PluginForHost {
             showFreeDialog(getHost());
         }
         if (account != null) {
-            this.loginWebsite(account, false);
+            this.loginWebsite(account, true);
         }
         final String directlinkproperty = getDirectlinkProperty(account);
         String storedDirecturl = null;
@@ -372,7 +398,7 @@ public class RapidGatorNet extends PluginForHost {
             if (isPremiumAccount && isBuyFile(br, link, account)) {
                 /* 2022-11-07: can be *bypassed* for premium users by using API mode */
                 logger.info("File needs to be bought separately -> Trying to work around this limitation");
-                handlePremium_api(link, account, false);
+                handlePremium_api(link, account);
                 return;
             }
             if (isPremiumAccount) {
@@ -774,14 +800,14 @@ public class RapidGatorNet extends PluginForHost {
         final AccountInfo ai = new AccountInfo();
         synchronized (account) {
             if (PluginJsonConfig.get(RapidGatorConfig.class).isEnableAPIPremium()) {
-                return fetchAccountInfo_api(account, ai);
+                return fetchAccountInfoAPI(account, ai);
             } else {
-                return fetchAccountInfo_web(account, ai);
+                return fetchAccountInfoWebsite(account, ai);
             }
         }
     }
 
-    public AccountInfo fetchAccountInfo_api(final Account account, final AccountInfo ai) throws Exception {
+    public AccountInfo fetchAccountInfoAPI(final Account account, final AccountInfo ai) throws Exception {
         synchronized (account) {
             loginAPI(account);
             final Map<String, Object> responsemap = loginAPI(account);
@@ -791,11 +817,6 @@ public class RapidGatorNet extends PluginForHost {
             }
             final Map<String, Object> usermap = (Map<String, Object>) responsemap.get("user");
             final Number premium_end_time_timestamp = (Number) usermap.get("premium_end_time");
-            boolean is_premium = false;
-            final Object is_premiumO = usermap.get("is_premium");
-            if (is_premiumO != null && is_premiumO instanceof Boolean) {
-                is_premium = ((Boolean) is_premiumO).booleanValue();
-            }
             /*
              * E.g. "traffic":{"total":null,"left":null} --> Free Account
              */
@@ -808,9 +829,10 @@ public class RapidGatorNet extends PluginForHost {
              * 2019-12-17: They might also have an unofficial daily trafficlimit of 50-100GB. After this the user will first get a new
              * password via E-Mail and if he continues to download 'too much', account might get temporarily banned.
              */
-            Object traffic_leftO = JavaScriptEngineFactory.walkJson(usermap, "traffic/left");
-            long traffic_max = JavaScriptEngineFactory.toLong(JavaScriptEngineFactory.walkJson(usermap, "traffic/total"), 0);
-            if (is_premium) {
+            final Map<String, Object> trafficmap = (Map<String, Object>) usermap.get("traffic");
+            final Number traffic_left = (Number) trafficmap.get("left");
+            final Number traffic_max = (Number) trafficmap.get("total");
+            if (Boolean.TRUE.equals(usermap.get("is_premium"))) {
                 if (premium_end_time_timestamp != null) {
                     /*
                      * 2019-12-23: Premium accounts expire too early if we just set the expire-date. Using their Android App even they will
@@ -818,28 +840,12 @@ public class RapidGatorNet extends PluginForHost {
                      */
                     ai.setValidUntil(premium_end_time_timestamp.longValue() * 1000 + (24 * 60 * 60 * 1000l), br);
                 }
-                long traffic_left = 0;
-                if (traffic_leftO != null) {
-                    if (traffic_leftO instanceof Number) {
-                        traffic_left = ((Number) traffic_leftO).longValue();
-                    } else {
-                        traffic_left = Long.parseLong((String) traffic_leftO);
-                    }
+                if (traffic_left != null) {
+                    ai.setTrafficLeft(traffic_left.longValue());
                 }
-                ai.setTrafficLeft(traffic_left);
-                if (traffic_max > 0) {
+                if (traffic_max != null) {
                     /* APIv2 */
-                    ai.setTrafficMax(traffic_max);
-                } else {
-                    /* APIv1/Fallback/Hardcoded */
-                    final long TB = 1024 * 1024 * 1024 * 1024l;
-                    if (traffic_left > 3 * TB) {
-                        ai.setTrafficMax(12 * TB);
-                    } else if (traffic_left <= 3 * TB && traffic_left > TB) {
-                        ai.setTrafficMax(3 * TB);
-                    } else {
-                        ai.setTrafficMax(TB);
-                    }
+                    ai.setTrafficMax(traffic_max.longValue());
                 }
                 account.setType(AccountType.PREMIUM);
                 account.setMaxSimultanDownloads(-1);
@@ -859,7 +865,7 @@ public class RapidGatorNet extends PluginForHost {
         }
     }
 
-    public AccountInfo fetchAccountInfo_web(final Account account, final AccountInfo ai) throws Exception {
+    public AccountInfo fetchAccountInfoWebsite(final Account account, final AccountInfo ai) throws Exception {
         loginWebsite(account, true);
         if (Account.AccountType.FREE.equals(account.getType())) {
             /* Free account: Captcha is required for downloading. */
@@ -1015,7 +1021,7 @@ public class RapidGatorNet extends PluginForHost {
      * Returns whether or not session is allowed to be re-used regardless of whether it is valid or not --> Only based on the max. time we
      * are using a session. Only call this if you have validated the session before and are sure that the current session is valid!!
      */
-    private boolean sessionReUseAllowed(final Account account, final String session_create_property, final long session_refresh_timeoutMinutes) {
+    private boolean sessionReUseAllowed(final Account account, final String session_create_property, final int session_refresh_timeoutMinutes) {
         if (session_refresh_timeoutMinutes > 0) {
             logger.info(String.format("Currently sessions are re-freshed every %d minutes", session_refresh_timeoutMinutes));
         }
@@ -1076,12 +1082,11 @@ public class RapidGatorNet extends PluginForHost {
                 } catch (final PluginException e) {
                     logger.info("Failed to re-use last session_id");
                     logger.log(e);
+                    br.clearCookies(null);
                 }
             }
-            /* Avoid full logins - RG will temp. block accounts on too many full logins in a short time! */
+            /* Avoid full logins - RG will temporarily block accounts on too many full logins in a short time! */
             logger.info("Performing full login");
-            /* Remove cookies from possible previous attempt to re-use old session_id! */
-            br.clearCookies(null);
             br.getPage(getAPIBase() + "user/login?login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
             final Map<String, Object> response = handleErrors_api(null, null, account, br);
             /* 2019-12-14: session_id == PHPSESSID cookie */
@@ -1092,7 +1097,6 @@ public class RapidGatorNet extends PluginForHost {
             }
             if (StringUtils.isEmpty(sessionID)) {
                 /* This should never happen */
-                handleErrors_api(null, null, account, br);
                 throw new AccountUnavailableException("Fatal: Failed to find sessionID", 1 * 60 * 1000l);
             }
             /* Store session_id */
@@ -1112,7 +1116,7 @@ public class RapidGatorNet extends PluginForHost {
             /* Premium account -> API can be used if preferred by the user. */
             if (PluginJsonConfig.get(RapidGatorConfig.class).isEnableAPIPremium()) {
                 /* API */
-                handlePremium_api(link, account, true);
+                handlePremium_api(link, account);
             } else {
                 /* Website */
                 handleDownloadWebsite(link, account);
@@ -1124,13 +1128,17 @@ public class RapidGatorNet extends PluginForHost {
     }
 
     private Map<String, Object> handleErrors_api(final String session_id, final DownloadLink link, final Account account, final Browser br) throws Exception {
+        return handleErrors_api(session_id, link, account, br, false);
+    }
+
+    private Map<String, Object> handleErrors_api(final String session_id, final DownloadLink link, final Account account, final Browser br, final boolean trustError404) throws Exception {
         final URLConnectionAdapter con = br.getHttpConnection();
         /* Handle bare responsecodes first, then API */
         if (con.getResponseCode() == 401) {
             /* Invalid logindata */
             throw new AccountInvalidException();
         } else if (con.getResponseCode() == 404) {
-            handle404API(link, account);
+            handle404API(link, account, trustError404);
         } else if (con.getResponseCode() == 416) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 416", 5 * 60 * 1000l);
         } else if (con.getResponseCode() == 423) {
@@ -1221,7 +1229,7 @@ public class RapidGatorNet extends PluginForHost {
                 }
             }
             if (status == 404) {
-                handle404API(link, account);
+                handle404API(link, account, trustError404);
             } else if (status == 500) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "API error 500", 5 * 60 * 1000l);
             } else if (status == 503) {
@@ -1255,61 +1263,15 @@ public class RapidGatorNet extends PluginForHost {
         return response;
     }
 
-    public void handlePremium_api(final DownloadLink link, final Account account, final boolean allowWebsiteLinkcheck) throws Exception {
-        if (allowWebsiteLinkcheck) {
-            /**
-             * Under some circumstances we need to use the website even in API mode. </br>
-             * Do not login / provide an account at this stage!!
-             */
-            if (link.getBooleanProperty(PROPERTY_HOTLINK, false)) {
-                /* Check availablestatus via website if chances are we have a hotlink */
-                requestFileInformation(link, null);
-            } else if (!API_TRUST_404_FILE_OFFLINE) {
-                /* Check availablestatus via website if API cannot be fully trusted! */
-                requestFileInformation(link, null);
-            }
-        }
+    public void handlePremium_api(final DownloadLink link, final Account account) throws Exception {
         String directurl = null;
         String session_id = null;
         if (hotlinkDirectURL != null) {
             directurl = hotlinkDirectURL;
         } else {
             loginAPI(account);
+            this.requestFileInformationAPI(link, account);
             session_id = account.getStringProperty(PROPERTY_sessionid);
-            /* 2019-12-16: Disabled API availablecheck for now as it is unreliable/returns wrong information! */
-            if (false) {
-                String fileName = link.getFinalFileName();
-                if (fileName == null) {
-                    /* 2019-12-16: TODO: This call seems to be broken as it either returns 404 or 401. */
-                    /* 'old' request: apiURL + "v2/file/info?sid=" + session_id + "&url=" + Encoding.urlEncode(link.getDownloadURL()) */
-                    // br.getPage(API_BASEv2 + "file/info?token=" + session_id + "&url=" +
-                    // Encoding.urlEncode(getContentURL(link);
-                    // br.getPage(API_BASEv2 + "file/info?sid=" + session_id + "&url=" +
-                    // Encoding.urlEncode(link.getPluginPatternMatcher()));
-                    /* No final filename yet? Do linkcheck! */
-                    /* Check via API */
-                    br.getPage(getAPIBase() + "file/info?token=" + session_id + "&file_id=" + Encoding.urlEncode(this.getFID(link)));
-                    /* Error-Response maybe wrong - do not check for errors here! */
-                    // handleErrors_api(session_id, true, link, account, br.getHttpConnection());
-                    fileName = PluginJSonUtils.getJsonValue(br, "filename");
-                    if (StringUtils.isEmpty(fileName)) {
-                        /* 2019-12-14: APIv2 */
-                        fileName = PluginJSonUtils.getJsonValue(br, "name");
-                    }
-                    final String fileSize = PluginJSonUtils.getJsonValue(br, "size");
-                    final String fileHash = PluginJSonUtils.getJsonValue(br, "hash");
-                    if (fileName != null) {
-                        link.setFinalFileName(fileName);
-                    }
-                    if (fileSize != null) {
-                        final long size = Long.parseLong(fileSize);
-                        link.setVerifiedFileSize(size);
-                    }
-                    if (fileHash != null) {
-                        link.setMD5Hash(fileHash);
-                    }
-                }
-            }
             br.getPage(getAPIBase() + "file/download?token=" + session_id + "&file_id=" + Encoding.urlEncode(this.getFID(link)));
             // TODO: Use json parser
             // final Map<String, Object> response = handleErrors_api(session_id, link, account, br);
@@ -1340,6 +1302,7 @@ public class RapidGatorNet extends PluginForHost {
         try {
             dl.startDownload();
         } finally {
+            /* Successful download attempt = Login session is valid! */
             synchronized (INVALIDSESSIONMAP) {
                 final WeakHashMap<Account, String> map = INVALIDSESSIONMAP.get(link);
                 if (map != null) {
@@ -1352,14 +1315,18 @@ public class RapidGatorNet extends PluginForHost {
         }
     }
 
-    /** Workaround for serverside issue that API may returns error 404 instead of the real status if current session_id is invalid. */
-    private void handle404API(final DownloadLink link, final Account account) throws Exception {
+    private void handle404API(final DownloadLink link, final Account account, final boolean trustError404) throws Exception {
         logger.info("Error 404 happened --> Trying to find out whether session is invalid or file is offline");
-        if (API_TRUST_404_FILE_OFFLINE) {
+        if (trustError404) {
             /* File offline */
             logger.info("Error 404 --> Trusted file offline");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else {
+            /*
+             * 2019-12-14: Rapidgator API IN SOME SITUATIONS has a bug which will return invalid offline status. Do NOT trust this status
+             * anymore! Wait and retry instead. If the file is offline, availableStatus will find that correct status eventually! This may
+             * happen in two cases: 1. Free/Expired premium account tries to download via API.
+             */
             /* Either bad session_id or file offline */
             /*
              * 2019-12-18: Seems like our session validity check still does not work which will lead to false positive 'file not found'
@@ -1385,7 +1352,7 @@ public class RapidGatorNet extends PluginForHost {
                  */
                 if (link != null) {
                     try {
-                        requestFileInformation(link, null);
+                        requestFileInformationWebsite(link, null);
                         logger.info("File is online --> Probably expired session");
                     } catch (final InterruptedException e) {
                         throw e;
@@ -1416,6 +1383,7 @@ public class RapidGatorNet extends PluginForHost {
         }
     }
 
+    /** Checks if current login session is valid. */
     private boolean validateSessionAPI(final Account account) throws Exception {
         synchronized (account) {
             final String session_id = account.getStringProperty(PROPERTY_sessionid);
@@ -1429,9 +1397,9 @@ public class RapidGatorNet extends PluginForHost {
              * --> This should return the following for most users: {"response":[],"status":200,"details":null}
              */
             br.getPage(getAPIBase() + "remote/info?token=" + session_id);
+            final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
             // Alternative way: this.getPage(this.API_BASEv2 + "trashcan/content?token=" + session_id);
-            final String status = PluginJSonUtils.getJson(br, "status");
-            if ("200".equals(status)) {
+            if (((Number) entries.get("status")).intValue() == 200) {
                 return true;
             } else {
                 return false;
