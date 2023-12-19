@@ -20,6 +20,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -33,14 +40,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imdb.com" }, urls = { "https?://(?:www\\.)?imdb\\.com/((video|videoplayer)/([\\w\\-]+/)?vi\\d+|[A-Za-z]+/[a-z]{2}\\d+/mediaviewer/rm\\d+)" })
 public class ImDbCom extends PluginForHost {
@@ -142,25 +141,29 @@ public class ImDbCom extends PluginForHost {
             }
             filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
             final String json = br.getRegex("__NEXT_DATA__\"\\s*type\\s*=\\s*\"application/json\"\\s*>\\s*(\\{.*?\\});?\\s*</script").getMatch(0);
-            Map<String, Object> entries = restoreFromString(json, TypeRef.MAP);
+            final Map<String, Object> entries = restoreFromString(json, TypeRef.MAP);
             /* json inside json */
             final List<Map<String, Object>> videoObjects = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entries, "props/pageProps/videoPlaybackData/video/playbackURLs");
             String dllink_http = null;
             String dllink_hls_master = null;
             for (final Map<String, Object> videoO : videoObjects) {
-                final String mimeType = (String) videoO.get("mimeType");
+                String mimeType = (String) videoO.get("mimeType");
+                if (mimeType == null) {
+                    /* 2023-12-19 */
+                    mimeType = (String) videoO.get("videoMimeType");
+                }
                 final String url = (String) videoO.get("url");
                 // final String definition = (String) entries.get("definition"); // E.g. AUTO, 480p, SD
                 if (StringUtils.isEmpty(mimeType) || StringUtils.isEmpty(url)) {
                     /* Skip invalid items */
                     continue;
                 }
-                if (mimeType.equalsIgnoreCase("video/mp4")) {
+                if (mimeType.equalsIgnoreCase("video/mp4") || mimeType.equalsIgnoreCase("MP4")) {
                     if (dllink_http == null) {
                         // TODO: add quality selection support
                         dllink_http = url;
                     }
-                } else if (mimeType.equalsIgnoreCase("application/x-mpegurl")) {
+                } else if (mimeType.equalsIgnoreCase("application/x-mpegurl") || mimeType.equalsIgnoreCase("M3U8")) {
                     if (dllink_hls_master == null) {
                         dllink_hls_master = url;
                     }

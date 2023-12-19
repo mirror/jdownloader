@@ -25,36 +25,35 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imdb.com" }, urls = { "https?://(?:www\\.)?imdb\\.com/((?:name|title)/(?:nm|tt)\\d+/(?:mediaindex|videogallery)|media/index/rg\\d+)" })
-public class ImdbCom extends PluginForDecrypt {
-    public ImdbCom(PluginWrapper wrapper) {
+public class ImdbComCrawler extends PluginForDecrypt {
+    public ImdbComCrawler(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private static final String TYPE_ARTIST = "https?://(www\\.)?imdb\\.com/media/index/rg\\d+";
-    private static final String TYPE_TITLE  = "https?://(www\\.)?imdb\\.com/name|title/tt\\d+/mediaindex";
-    private static final String TYPE_NAME   = "https?://(www\\.)?imdb\\.com/name/nm\\d+/mediaindex";
-    private static final String TYPE_VIDEO  = ".+/videogallery";
+    private static final String TYPE_ARTIST = "(?i)https?://(www\\.)?imdb\\.com/media/index/rg\\d+";
+    private static final String TYPE_TITLE  = "(?i)https?://(www\\.)?imdb\\.com/name|title/tt\\d+/mediaindex";
+    private static final String TYPE_NAME   = "(?i)https?://(www\\.)?imdb\\.com/name/nm\\d+/mediaindex";
+    private static final String TYPE_VIDEO  = "(?i).+/videogallery";
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final String contenturl = param.getCryptedUrl().replaceFirst("(?i)http://", "https://");
         br.setFollowRedirects(true);
-        br.getPage(parameter);
+        br.getPage(contenturl);
         if (br.getRequest().getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (this.br.containsHTML("id=\"no_content\"")) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (this.br.containsHTML("class=\"ilm_notice\"")) {
             /*
              * E.g. <div class="ilm_notice"> <p>We're sorry. We don't have any videos that match your search.</p> </div>
              */
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         int maxpage = 1;
         final String[] pages = br.getRegex("\\?page=(\\d+)\\&ref_=").getColumn(0);
@@ -68,33 +67,33 @@ public class ImdbCom extends PluginForDecrypt {
         }
         String fpName = br.getRegex("itemprop=\\'url\\'>([^<>\"]*?)</a>").getMatch(0);
         if (fpName == null) {
-            fpName = "imdb.com - " + new Regex(parameter, "([a-z]{2}\\d+)").getMatch(0);
+            fpName = "imdb.com - " + new Regex(contenturl, "([a-z]{2}\\d+)").getMatch(0);
         }
         fpName = Encoding.htmlDecode(fpName.trim());
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(fpName);
         for (int i = 1; i <= maxpage; i++) {
             if (this.isAbort()) {
-                logger.info("Decryption aborted by user: " + parameter);
-                return decryptedLinks;
+                logger.info("Decryption aborted by user: " + contenturl);
+                return ret;
             }
             if (i > 1) {
-                br.getPage(parameter + "?page=" + i);
+                br.getPage(contenturl + "?page=" + i);
             }
-            if (parameter.matches(TYPE_VIDEO)) {
+            if (contenturl.matches(TYPE_VIDEO)) {
                 final String[] links = br.getRegex("\"(/(?:video/imdb|videoplayer)/vi\\d+)").getColumn(0);
                 if (links == null || links.length == 0) {
-                    logger.warning("Decrypter broken for link: " + parameter);
+                    logger.warning("Decrypter broken for link: " + contenturl);
                     return null;
                 }
                 for (final String link : links) {
                     final DownloadLink dl = createDownloadlink("http://www.imdb.com" + link);
-                    decryptedLinks.add(dl);
+                    ret.add(dl);
                 }
             } else {
                 final String[][] links = br.getRegex("(/[^<>\"]+mediaviewer/rm\\d+)([^<>\"/]+)?\"([\t\n\r ]*?title=\"([^<>\"]*?)\")?").getMatches();
                 if (links == null || links.length == 0) {
-                    logger.warning("Decrypter broken for link: " + parameter);
+                    logger.warning("Decrypter broken for link: " + contenturl);
                     return null;
                 }
                 for (final String linkinfo[] : links) {
@@ -110,11 +109,11 @@ public class ImdbCom extends PluginForDecrypt {
                     }
                     dl.setAvailable(true);
                     distribute(dl);
-                    decryptedLinks.add(dl);
+                    ret.add(dl);
                 }
             }
         }
-        fp.addLinks(decryptedLinks);
-        return decryptedLinks;
+        fp.addLinks(ret);
+        return ret;
     }
 }

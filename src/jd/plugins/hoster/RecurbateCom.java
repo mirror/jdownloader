@@ -359,7 +359,12 @@ public class RecurbateCom extends PluginForHost {
                     throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_required());
                 }
                 logger.info("Attempting user cookie login");
-                br.setCookies(this.getHost(), userCookies);
+                /* Set cookies on all supported domains */
+                for (final String[] domains : getPluginDomains()) {
+                    for (final String domain : domains) {
+                        br.setCookies(domain, userCookies);
+                    }
+                }
                 if (!force) {
                     /* Do not validate cookies */
                     return false;
