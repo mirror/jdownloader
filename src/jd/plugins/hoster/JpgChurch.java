@@ -96,6 +96,7 @@ public class JpgChurch extends PluginForHost {
         /* 2023-06-20: Main domain changed from jpg.fishing to jpg.pet. */
         /* 2023-07-12: Main domain changed from jpg.pet to jpeg.pet */
         /* 2023-08-14: Main domain changed from jpeg.pet to jpg1.su */
+        /* 2023-12-19: Main domain changed from jpg2.su to jpg3.su */
         return this.rewriteHost(getPluginDomains(), host);
     }
 

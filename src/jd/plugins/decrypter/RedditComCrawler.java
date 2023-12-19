@@ -463,19 +463,19 @@ public class RedditComCrawler extends PluginForDecrypt {
                     }
                 }
                 final Map<String, Object> preview = (Map<String, Object>) data.get("preview");
-                if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && preview != null) {
-                    // TODO: Add setting to grab previews
+                if (preview != null) {
+                    /* TODO: Add setting so user can select the preferred format here */
                     final List<Map<String, Object>> images = (List<Map<String, Object>>) preview.get("images");
                     for (final Map<String, Object> image : images) {
                         final Map<String, Object> variants = (Map<String, Object>) image.get("variants");
                         final String gif = (String) JavaScriptEngineFactory.walkJson(variants, "gif/source/url");
                         final String mp4 = (String) JavaScriptEngineFactory.walkJson(variants, "mp4/source/url");
-                        if (!StringUtils.isEmpty(gif)) {
+                        if (!StringUtils.isEmpty(gif) && !StringUtils.containsIgnoreCase(maybeExternalURL, ".gif")) {
                             final DownloadLink direct = this.createDownloadlink(DirectHTTP.createURLForThisPlugin(Encoding.htmlOnlyDecode(gif)));
                             direct.setAvailable(true);
                             thisCrawledLinks.add(direct);
                         }
-                        if (!StringUtils.isEmpty(mp4)) {
+                        if (!StringUtils.isEmpty(mp4) && !StringUtils.containsIgnoreCase(maybeExternalURL, ".mp4")) {
                             final String url = Encoding.htmlOnlyDecode(mp4);
                             final String filenameFromURL = Plugin.getFileNameFromURL(url);
                             final DownloadLink direct = this.createDownloadlink(DirectHTTP.createURLForThisPlugin(url));

@@ -30,6 +30,10 @@ public interface FreeM3DownloadNetConfig extends PluginConfigInterface {
     boolean isPreferFLAC();
 
     void setPreferFLAC(boolean b);
+    /**
+     * 2023-12-19: The code below was ment to be implemented because sometimes some audio qualities were unavailable but I've added auto
+     * handling for this situation so now the new format selection isn't really required anymore.
+     */
     // public static enum PreferredAudioQuality implements LabelInterface {
     // FLAC {
     // @Override
