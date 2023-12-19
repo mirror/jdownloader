@@ -1847,11 +1847,6 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
         final DownloadMode mode = this.getPreferredDownloadModeFromConfig();
         do {
             logger.info(String.format("Handling download1 loop %d / %d", download1counter + 1, download1max + 1));
-            officialVideoDownloadURL = getDllinkViaOfficialVideoDownload(this.br.cloneBrowser(), link, account, false);
-            if (!StringUtils.isEmpty(officialVideoDownloadURL) && mode == DownloadMode.ORIGINAL) {
-                logger.info("Stepping out of download1 loop because: User wants original download && we found original download");
-                break;
-            }
             /* Check for streaming/direct links on the first page. */
             dllink = getDllink(link, account, br, getCorrectBR(br));
             /* Do they support standard video embedding? */
@@ -1871,6 +1866,14 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
                     logger.info("Failed to get link via embed");
                 }
             }
+            if (!StringUtils.isEmpty(dllink) && mode == DownloadMode.STREAM) {
+                logger.info("User prefers stream download and stream downloadlink has been found");
+                break;
+            } else if (!StringUtils.isEmpty(dllink) && mode == DownloadMode.AUTO && Boolean.TRUE.equals(requiresCaptchaForOfficialVideoDownload())) {
+                logger.info("Prefer stream download via auto handling because official video download would require a captcha");
+                break;
+            }
+            officialVideoDownloadURL = getDllinkViaOfficialVideoDownload(this.br.cloneBrowser(), link, account, false);
             /* Extra handling for imagehosts */
             if (StringUtils.isEmpty(dllink) && this.isImagehoster()) {
                 checkErrors(br, getCorrectBR(br), link, account, false);
@@ -2168,7 +2171,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
             /*
              * 2019-05-30: Test - worked for: xvideosharing.com - not exactly required as getDllink will usually already return a result.
              */
-            dllink = br.getRegex("<a href=\"(https?[^\"]+)\"[^>]*>Direct Download Link</a>").getMatch(0);
+            dllink = br.getRegex("<a href=\"(https?[^\"]+)\"[^>]*>Direct Download Link\\s*</a>").getMatch(0);
         }
         if (StringUtils.isEmpty(dllink)) {
             logger.warning("Failed to find dllink via official video download");
@@ -2186,7 +2189,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
         } else {
             logger.info("[DownloadMode] Trying to find official video downloads");
         }
-        final String[][] videoInfo = br.getRegex("href=\"(/d/[a-z0-9]{12}_[a-z]{1})\".*?<small class=\"text-muted\">\\d+x\\d+ ([^<]+)</small>").getMatches();
+        final String[][] videoInfo = br.getRegex("href=\"(/d/[a-z0-9]{12}_[a-z]{1})\".*?<small class=\"text-muted\">\\s*\\d+x\\d+ ([^<]+)</small>").getMatches();
         if (videoInfo == null || videoInfo.length == 0) {
             logger.info("Failed to find any official video downloads");
             return null;
@@ -2991,7 +2994,10 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
                  */
                 long quality_picked = -1;
                 String dllink_temp = null;
-                final List<Object> ressourcelist = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.LIST);
+                /*
+                 * Important: Do not use "Plugin.restoreFromString" here as the input of this can also be js structure and not only json!!
+                 */
+                final List<Object> ressourcelist = (List<Object>) JavaScriptEngineFactory.jsonToJavaObject(jssource);
                 final boolean onlyOneQualityAvailable = ressourcelist.size() == 1;
                 final int userSelectedQuality = getPreferredStreamQuality();
                 if (userSelectedQuality == -1) {
@@ -3730,14 +3736,14 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
      */
     public void checkServerErrors(final Browser br, final DownloadLink link, final Account account) throws NumberFormatException, PluginException {
         final String html = getCorrectBR(br);
-        if (new Regex(html, "^(No file|error_nofile)$").matches()) {
+        if (new Regex(html, "^(No file|error_nofile)$").patternFind()) {
             /* Possibly dead file but it is supposed to be online so let's wait and retry! */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'No file'", 30 * 60 * 1000l);
-        } else if (new Regex(html, "^Wrong IP$").matches()) {
+        } else if (new Regex(html, "^Wrong IP$").patternFind()) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error: 'Wrong IP'", 2 * 60 * 60 * 1000l);
-        } else if (new Regex(html, "^Expired$").matches()) {
+        } else if (new Regex(html, "^Expired$").patternFind()) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error: 'Expired'", 2 * 60 * 60 * 1000l);
-        } else if (new Regex(html, "(^File Not Found$|<h1>404 Not Found</h1>)").matches()) {
+        } else if (new Regex(html, "(^File Not Found$|<h1>404 Not Found</h1>)").patternFind()) {
             /* most likely result of generated link that has expired -raztoki */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 30 * 60 * 1000l);
         }
@@ -5532,7 +5538,8 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
     protected final DownloadMode getPreferredDownloadModeFromConfig() {
         final Class<? extends XFSConfigVideo> cfgO = getVideoConfigInterface();
         if (cfgO == null) {
-            return DownloadMode.ORIGINAL;
+            /* 2023-12-19: TODO: Return default from default config and not hardcoded */
+            return DownloadMode.AUTO;
         } else {
             return PluginJsonConfig.get(cfgO).getPreferredDownloadMode();
         }
