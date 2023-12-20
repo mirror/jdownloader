@@ -295,6 +295,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
      *
      * @throws Exception
      */
+    @Deprecated
     private ArrayList<DownloadLink> crawlBroadcast(final String broadcastID) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.getPage("https://twitter.com/i/api/1.1/broadcasts/show.json?ids=" + broadcastID + "&include_events=true");
@@ -1088,11 +1089,9 @@ public class TwitterComCrawler extends PluginForDecrypt {
         final List<String> pinned_tweet_ids_str = (List<String>) user.get("pinned_tweet_ids_str");
         final String userID = user.get("id_str").toString();
         /* = number of tweets */
-        final int tweet_count = ((Number) user.get("statuses_count")).intValue();
+        // final int tweet_count = ((Number) user.get("statuses_count")).intValue();
         /* = number of tweets containing media (can be lower [ar also higher?] than "statuses_count") */
         final int media_count = ((Number) user.get("media_count")).intValue();
-        final boolean force_grab_media = true;
-        final boolean grabMedia = force_grab_media;
         /* Grab only content posted by user or grab everything from his timeline e.g. also re-tweets. */
         final String content_type;
         Integer maxCount = null;
@@ -1122,6 +1121,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
         query.add("include_ext_sensitive_media_warning", "true");
         query.add("send_error_codes", "true");
         query.add("simple_quoted_tweet", "true");
+        final boolean allowCrawlTweetsOfOtherUsers;
         final FilePackage fp = FilePackage.getInstance();
         if (crawlUserLikes) {
             /* Crawl all liked items of a user */
@@ -1137,6 +1137,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
             query.append("sorted_by_time", "true", false);
             fp.setName(username + " - likes");
             fp.setPackageKey(TWITTER_PROFILE_LIKES_PACKAGE_KEY_PREFIX + userID);
+            allowCrawlTweetsOfOtherUsers = true;
         } else {
             logger.info("Crawling self posted media only from user: " + username);
             if (media_count == 0) {
@@ -1147,6 +1148,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
             maxCount = media_count;
             fp.setName(username);
             fp.setPackageKey(TWITTER_PROFILE_PACKAGE_KEY_PREFIX + userID);
+            allowCrawlTweetsOfOtherUsers = false;
         }
         query.append("userId", userID, false);
         query.append("count", expected_items_per_page + "", false);
@@ -1184,9 +1186,22 @@ public class TwitterComCrawler extends PluginForDecrypt {
             final List<DownloadLink> allowedResults = new ArrayList<DownloadLink>();
             boolean stopBecauseReachedUserDefinedMaxItemsLimit = false;
             final HashSet<DownloadLink> skippedResultsByMaxDate = new HashSet<DownloadLink>();
+            int skippedTweetsByUsernameMismatch = 0;
             while (iterator.hasNext()) {
                 final Map<String, Object> tweet = (Map<String, Object>) iterator.next().getValue();
-                final Map<String, Object> userWhoPostedThisTweet = (Map<String, Object>) users.get(tweet.get("user_id_str").toString());
+                final String thisTweetUserID = tweet.get("user_id_str").toString();
+                final Map<String, Object> userWhoPostedThisTweet = (Map<String, Object>) users.get(thisTweetUserID);
+                if (!allowCrawlTweetsOfOtherUsers && !thisTweetUserID.equals(userID)) {
+                    /**
+                     * 2023-12-20: Some users got conversations or some strange other posts (ads?) inside their profiles which were not
+                     * posted by them. We want to skip those. </br>
+                     * Reference forum thread: https://board.jdownloader.org/showthread.php?t=94805 </br>
+                     * Example profile where this handling is relevant: https://twitter.com/ArcheWorld_NFT
+                     */
+                    logger.info("Skipping tweet of other user " + thisTweetUserID + " because we are currently only crawling Tweets of userID " + userID);
+                    skippedTweetsByUsernameMismatch++;
+                    continue;
+                }
                 final List<DownloadLink> thisResults = crawlTweetMap(username, tweet, userWhoPostedThisTweet, fp);
                 if (thisResults.isEmpty()) {
                     logger.info("Found nothing for tweet: " + tweet);
@@ -1209,7 +1224,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
                     allowedResults.addAll(thisResults);
                 }
             }
-            logger.info("Crawled page " + page + " | Tweets crawled so far: " + totalCrawledTweetsCount + "/" + maxCount.intValue() + " | last nextCursor = " + nextCursor);
+            logger.info("Crawled page " + page + " | Tweets crawled so far: " + totalCrawledTweetsCount + "/" + maxCount.intValue() + " | Tweets skipped due to username mismatch: " + skippedTweetsByUsernameMismatch + " | last nextCursor = " + nextCursor);
             distribute(allowedResults);
             ret.addAll(allowedResults);
             /* Check abort conditions */

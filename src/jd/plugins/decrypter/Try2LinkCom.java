@@ -29,7 +29,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "try2link.com" }, urls = { "https?://(?:www\\.)?try2link\\.com/([A-Za-z0-9]+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "try2link.com" }, urls = { "https?://(?:www\\.)?try2link\\.com/(full\\?api=[a-f0-9]+\\&url=aHR[a-zA-Z0-9_/\\+\\=\\-%]+|[A-Za-z0-9]+)" })
 public class Try2LinkCom extends MightyScriptAdLinkFly {
     public Try2LinkCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -44,29 +44,36 @@ public class Try2LinkCom extends MightyScriptAdLinkFly {
     @Override
     protected ArrayList<DownloadLink> handlePreCrawlProcess(final CryptedLink param) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        br.setFollowRedirects(false);
-        // /* Pre-set Referer to skip multiple ad pages e.g. try2link.com -> forex-gold.net -> try2link.com */
-        final String contentURL = this.getContentURL(param);
-        getPage(contentURL);
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        String location = br.getRequest().getLocation();
-        final UrlQuery query = UrlQuery.parse(location);
-        final String urlBase64Decoded = Encoding.Base64Decode(query.get("k"));
-        final String timestampBase64 = new Regex(urlBase64Decoded, "d=([^&]+)").getMatch(0);
-        final String timestamp;
-        if (timestampBase64.matches("[0-9]+")) {
-            timestamp = timestampBase64;
+        final UrlQuery query0 = UrlQuery.parse(param.getCryptedUrl());
+        final String urlb64 = query0.get("url");
+        if (urlb64 != null) {
+            final String finallink = Encoding.Base64Decode(urlb64);
+            ret.add(this.createDownloadlink(finallink));
         } else {
-            timestamp = Encoding.Base64Decode(timestampBase64);
+            br.setFollowRedirects(false);
+            // /* Pre-set Referer to skip multiple ad pages e.g. try2link.com -> forex-gold.net -> try2link.com */
+            final String contentURL = this.getContentURL(param);
+            getPage(contentURL);
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            String location = br.getRequest().getLocation();
+            final UrlQuery query = UrlQuery.parse(location);
+            final String urlBase64Decoded = Encoding.Base64Decode(query.get("k"));
+            final String timestampBase64 = new Regex(urlBase64Decoded, "d=([^&]+)").getMatch(0);
+            final String timestamp;
+            if (timestampBase64.matches("[0-9]+")) {
+                timestamp = timestampBase64;
+            } else {
+                timestamp = Encoding.Base64Decode(timestampBase64);
+            }
+            br.setFollowRedirects(true);
+            getPage(contentURL + "/?d=" + timestamp);
+            if (this.regexAppVars(this.br) == null) {
+                logger.warning("Possible crawler failure...");
+            }
+            /* Now continue with parent class code (requires captcha + waittime) */
         }
-        br.setFollowRedirects(true);
-        getPage(contentURL + "/?d=" + timestamp);
-        if (this.regexAppVars(this.br) == null) {
-            logger.warning("Possible crawler failure...");
-        }
-        /* Now continue with parent class code (requires captcha + waittime) */
         return ret;
     }
 
