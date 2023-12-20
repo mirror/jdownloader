@@ -1948,60 +1948,64 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
             }
             download1counter++;
         } while (download1counter <= download1max && StringUtils.isEmpty(dllink));
-        download2: if (StringUtils.isEmpty(dllink) || !allowGrabStreamDownloadOnly) {
-            /* Go further if needed. */
-            logger.info("Jumping into download2 handling");
-            Form download2 = findFormDownload2Free(br);
-            if (download2 == null) {
-                logger.warning("Failed to find download2 Form");
-                break download2;
-            }
-            logger.info("Found download2 Form");
-            checkErrors(br, getCorrectBR(br), link, account, false);
-            /* Define how many forms deep do we want to try? */
-            final int download2start = 0;
-            final int download2max = 2;
-            for (int download2counter = download2start; download2counter <= download2max; download2counter++) {
-                logger.info(String.format("Download2 loop %d / %d", download2counter + 1, download2max + 1));
-                final long timeBefore = Time.systemIndependentCurrentJVMTimeMillis();
-                handlePassword(download2, link);
-                handleCaptcha(link, br, download2);
-                waitTime(link, timeBefore);
-                final URLConnectionAdapter formCon = openAntiDDoSRequestConnection(br, br.createFormRequest(download2));
-                if (looksLikeDownloadableContent(formCon)) {
-                    /* Very rare case - e.g. tiny-files.com */
-                    handleDownload(link, account, null, dllink, formCon.getRequest());
-                    return;
-                } else {
-                    br.followConnection(true);
-                    this.correctBR(br);
-                    try {
-                        formCon.disconnect();
-                    } catch (final Throwable e) {
+        if (!StringUtils.isEmpty(dllink) && allowGrabStreamDownloadOnly) {
+            logger.info("Do not enter download1 loop because: Found stream downloadurl");
+        } else {
+            download2: if (StringUtils.isEmpty(dllink) || !allowGrabStreamDownloadOnly) {
+                /* Go further if needed. */
+                logger.info("Jumping into download2 handling");
+                Form download2 = findFormDownload2Free(br);
+                if (download2 == null) {
+                    logger.warning("Failed to find download2 Form");
+                    break download2;
+                }
+                logger.info("Found download2 Form");
+                checkErrors(br, getCorrectBR(br), link, account, false);
+                /* Define how many forms deep do we want to try? */
+                final int download2start = 0;
+                final int download2max = 2;
+                for (int download2counter = download2start; download2counter <= download2max; download2counter++) {
+                    logger.info(String.format("Download2 loop %d / %d", download2counter + 1, download2max + 1));
+                    final long timeBefore = Time.systemIndependentCurrentJVMTimeMillis();
+                    handlePassword(download2, link);
+                    handleCaptcha(link, br, download2);
+                    waitTime(link, timeBefore);
+                    final URLConnectionAdapter formCon = openAntiDDoSRequestConnection(br, br.createFormRequest(download2));
+                    if (looksLikeDownloadableContent(formCon)) {
+                        /* Very rare case - e.g. tiny-files.com */
+                        handleDownload(link, account, null, dllink, formCon.getRequest());
+                        return;
+                    } else {
+                        br.followConnection(true);
+                        this.correctBR(br);
+                        try {
+                            formCon.disconnect();
+                        } catch (final Throwable e) {
+                        }
                     }
-                }
-                logger.info("Submitted Form download2");
-                checkErrors(br, getCorrectBR(br), link, account, true);
-                /* 2020-03-02: E.g. akvideo.stream */
-                if (StringUtils.isEmpty(officialVideoDownloadURL)) {
-                    officialVideoDownloadURL = getDllinkViaOfficialVideoDownload(this.br.cloneBrowser(), link, account, false);
-                }
-                if (StringUtils.isEmpty(dllink)) {
-                    dllink = getDllink(link, account, br, getCorrectBR(br));
-                }
-                if (!StringUtils.isEmpty(officialVideoDownloadURL) || !StringUtils.isEmpty(dllink)) {
-                    /* Success */
-                    validateLastChallengeResponse();
-                    logger.info("Stepping out of download2 loop because: Found downloadlink");
-                    break;
-                } else if ((download2 = findFormDownload2Free(br)) == null) {
-                    /* Failure */
-                    logger.info("Stepping out of download2 loop because: download2 form is null");
-                    break;
-                } else {
-                    /* Continue to next round / next pre-download page */
-                    invalidateLastChallengeResponse();
-                    continue;
+                    logger.info("Submitted Form download2");
+                    checkErrors(br, getCorrectBR(br), link, account, true);
+                    /* 2020-03-02: E.g. akvideo.stream */
+                    if (StringUtils.isEmpty(officialVideoDownloadURL)) {
+                        officialVideoDownloadURL = getDllinkViaOfficialVideoDownload(this.br.cloneBrowser(), link, account, false);
+                    }
+                    if (StringUtils.isEmpty(dllink)) {
+                        dllink = getDllink(link, account, br, getCorrectBR(br));
+                    }
+                    if (!StringUtils.isEmpty(officialVideoDownloadURL) || !StringUtils.isEmpty(dllink)) {
+                        /* Success */
+                        validateLastChallengeResponse();
+                        logger.info("Stepping out of download2 loop because: Found downloadlink");
+                        break;
+                    } else if ((download2 = findFormDownload2Free(br)) == null) {
+                        /* Failure */
+                        logger.info("Stepping out of download2 loop because: download2 form is null");
+                        break;
+                    } else {
+                        /* Continue to next round / next pre-download page */
+                        invalidateLastChallengeResponse();
+                        continue;
+                    }
                 }
             }
         }

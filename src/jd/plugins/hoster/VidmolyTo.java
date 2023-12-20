@@ -39,7 +39,7 @@ public class VidmolyTo extends XFileSharingProBasic {
 
     @Override
     protected String buildNormalURLPath(DownloadLink link, final String fuid) {
-        return "/dl/" + fuid;
+        return "/" + fuid;
     }
 
     /**

@@ -137,7 +137,7 @@ public class ZapiszSe extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             // Only https URLs are downloaded from zapisz.se, http URLs are forwarded to the normal hoster
-            dlform.put("list", Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this).replaceFirst("http://", "https://")));
+            dlform.put("list", Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this).replaceFirst("(?i)http://", "https://")));
             // k2s.cc Captcha fields do not need to be filled in
             dlform.put("k2s", "");
             dlform.put("k2skey", "");
@@ -168,7 +168,7 @@ public class ZapiszSe extends PluginForHost {
                     if (link.getHost().equalsIgnoreCase("nitroflare.com")) {
                         // Solve Nitroflare captcha to show that we are not robots
                         // At the time nitroflareCaptchaURL is a constant value:
-                        // https://nitroflare.com/api/v2/solveCaptcha?user=mateusz@qxy.pl
+                        // https://nitroflare.com/api/v2/solveCaptcha?user=user@domain.tld
                         final String nitroflareCaptchaURL = br.getRegex("<a id=\"nitroflareHref\" href=\"([^\"]+)\"").getMatch(0);
                         br.getPage(nitroflareCaptchaURL);
                         final String nitroflareRecaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
