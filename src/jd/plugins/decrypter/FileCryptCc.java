@@ -131,6 +131,7 @@ public class FileCryptCc extends PluginForDecrypt {
         final String mirrorIdFromURL = UrlQuery.parse(param.getCryptedUrl()).get("mirror");
         String contenturl = param.getCryptedUrl();
         if (mirrorIdFromURL == null && !StringUtils.endsWithCaseInsensitive(contenturl, ".html")) {
+            /* Fix url */
             contenturl += ".html";
         }
         String logoPW = null;
@@ -201,7 +202,7 @@ public class FileCryptCc extends PluginForDecrypt {
                 }
                 passwordLoop: while (true) {
                     passwordCounter++;
-                    if (passwordCounter >= maxPasswordRetries) {
+                    if (passwordCounter > maxPasswordRetries) {
                         logger.info("Stopping because: Too many wrong password attempts");
                         break passwordLoop;
                     }
@@ -250,6 +251,8 @@ public class FileCryptCc extends PluginForDecrypt {
                         logger.info("Password success: " + passCode);
                         successfullyUsedFolderPassword = passCode;
                         break passwordLoop;
+                    } else {
+                        logger.info("Password failure | Wrong password: " + passCode);
                     }
                 }
                 if (passwordCounter >= maxPasswordRetries && containsPassword()) {

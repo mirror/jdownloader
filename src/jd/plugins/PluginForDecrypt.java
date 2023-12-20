@@ -123,6 +123,7 @@ public abstract class PluginForDecrypt extends Plugin {
         return getHost() + "_" + getLazyC().getClassName();
     }
 
+    /** Returns list of possible download-/folder-/crawl-passwords. */
     protected final List<String> getPreSetPasswords() {
         final List<String> ret = new ArrayList<String>();
         CrawledLink crawledLink = getCurrentLink();
@@ -133,7 +134,7 @@ public abstract class PluginForDecrypt extends Plugin {
             }
         }
         while (crawledLink != null) {
-            final String password = new Regex(crawledLink.getURL(), "#password=(.*?)($|&)").getMatch(0);
+            final String password = new Regex(crawledLink.getURL(), "(?i)#password=(.*?)($|&)").getMatch(0);
             if (StringUtils.isNotEmpty(password) && !ret.contains(password)) {
                 ret.add(password);
             }
