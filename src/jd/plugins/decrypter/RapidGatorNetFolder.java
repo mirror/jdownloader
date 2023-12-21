@@ -128,7 +128,8 @@ public class RapidGatorNetFolder extends PluginForDecrypt {
                 /* This should never happen as we check for offline/empty folder in beforehand. */
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            int numberofNewItems = 0;
+            int numberofNewItemsFiles = 0;
+            int numberofNewItemsSubfolders = 0;
             if (links != null && links.length != 0) {
                 for (String[] dl : links) {
                     final String url = Request.getLocation(dl[0], br.getRequest());
@@ -144,7 +145,7 @@ public class RapidGatorNetFolder extends PluginForDecrypt {
                     }
                     ret.add(link);
                     distribute(link);
-                    numberofNewItems++;
+                    numberofNewItemsFiles++;
                 }
             }
             if (subfolderurls != null && subfolderurls.length != 0) {
@@ -159,17 +160,17 @@ public class RapidGatorNetFolder extends PluginForDecrypt {
                     }
                     ret.add(link);
                     distribute(link);
-                    numberofNewItems++;
+                    numberofNewItemsSubfolders++;
                 }
             }
-            logger.info("Crawled page " + page + "/" + maxPage + " | Found items so far: " + ret.size());
+            logger.info("Crawled page " + page + "/" + maxPage + " | Found items so far: " + ret.size() + " | New items this page: Files: " + numberofNewItemsFiles + " Subfolders: " + numberofNewItemsSubfolders);
             if (this.isAbort()) {
                 logger.info("Stopping because: Aborted by user");
                 break;
             } else if (page == maxPage) {
                 logger.info("Stopping because: Reached last page");
                 break;
-            } else if (numberofNewItems == 0) {
+            } else if (numberofNewItemsFiles == 0 && numberofNewItemsSubfolders == 0) {
                 logger.info("Stopping because: Failed to find any new items on current page");
                 break;
             } else {
@@ -188,6 +189,7 @@ public class RapidGatorNetFolder extends PluginForDecrypt {
         return 1;
     }
 
+    @Override
     public boolean hasCaptcha(final CryptedLink link, final jd.plugins.Account acc) {
         return false;
     }

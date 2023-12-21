@@ -48,6 +48,12 @@ public class LibGenInfo extends PluginForHost {
     }
 
     @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        return LibGenCrawler.prepBR(br, this.getHost());
+    }
+
+    @Override
     public String rewriteHost(final String host) {
         /* Main domain may change frequently. */
         return this.rewriteHost(getPluginDomains(), host);
@@ -78,14 +84,15 @@ public class LibGenInfo extends PluginForHost {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/((ads\\.php|comics/get\\.php|get\\.php)\\?md5=|ads)([A-Fa-f0-9]{32})");
+            /* Links get pushed in via crawler plugin. */
+            ret.add("");
         }
         return ret.toArray(new String[0]);
     }
 
     @Override
     public String getLinkID(final DownloadLink link) {
-        final String fid = getFID(link);
+        final String fid = getUniqueFileID(link);
         if (fid != null) {
             return this.getHost() + "://" + fid;
         } else {
@@ -93,22 +100,16 @@ public class LibGenInfo extends PluginForHost {
         }
     }
 
-    private String getFID(final DownloadLink link) {
-        if (link == null || link.getPluginPatternMatcher() == null) {
+    private String getUniqueFileID(final DownloadLink link) {
+        return getMd5Hash(link);
+    }
+
+    private String getMd5Hash(final DownloadLink link) {
+        if (link == null) {
             return null;
+        } else {
+            return LibGenCrawler.findMd5hashInURL(link.getPluginPatternMatcher());
         }
-        final String md5 = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(2);
-        // try {
-        // final String fid = UrlQuery.parse(link.getPluginPatternMatcher()).get("md5");
-        // if (fid != null) {
-        // return fid.toUpperCase(Locale.ENGLISH);
-        // } else {
-        // return null;
-        // }
-        // } catch (final Throwable e) {
-        // return null;
-        // }
-        return md5;
     }
 
     private static final boolean FREE_RESUME       = false;
@@ -130,94 +131,111 @@ public class LibGenInfo extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.setCustomCharset("utf-8");
-        final String md5 = getFID(link);
+        final boolean useAPI = true;
+        if (useAPI) {
+            /* 2023-11-17 */
+            return requestFileInformationAPI(link);
+        } else {
+            requestFileInformationWebsite(link);
+        }
+        return AvailableStatus.TRUE;
+    }
+
+    private AvailableStatus requestFileInformationAPI(final DownloadLink link) throws Exception {
+        final String md5 = getMd5Hash(link);
         link.setMD5Hash(md5);
         final String contenturl = getContentURL(link);
-        final boolean useJsonHandling = true;
-        if (useJsonHandling) {
-            /* 2023-11-17 */
-            br.getPage("https://" + Browser.getHost(contenturl, true) + "/json.php?object=f&addkeys=*&md5=" + md5);
+        br.getPage("https://" + Browser.getHost(contenturl, true) + "/json.php?object=f&addkeys=*&md5=" + md5);
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final Object responseO = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.OBJECT);
+        if (!(responseO instanceof Map)) {
+            /* E.g. response is empty array -> Item offline */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+        /* First and only item in this map is the one we want. */
+        final Map<String, Object> book = (Map<String, Object>) entries.entrySet().iterator().next().getValue();
+        parseFileInfoAPI(link, book);
+        return AvailableStatus.TRUE;
+    }
+
+    public void parseFileInfoAPI(final DownloadLink link, final Map<String, Object> book) {
+        final String md5 = book.get("md5").toString();
+        final String extension = (String) book.get("extension");
+        final String filesizeBytesStr = book.get("filesize").toString();
+        final String internalPath = book.get("locator").toString();
+        final String filename;
+        if (internalPath.contains("\\")) {
+            filename = new Regex(internalPath, "\\\\([^\\\\]+)$").getMatch(0);
+        } else {
+            filename = internalPath;
+        }
+        if (!StringUtils.isEmpty(filename)) {
+            if (extension != null) {
+                link.setFinalFileName(this.applyFilenameExtension(filename, "." + extension));
+            } else {
+                link.setFinalFileName(filename);
+            }
+        } else {
+            /* Fallback */
+            if (extension != null) {
+                link.setName(md5 + "." + extension);
+            } else {
+                /* Final fallback */
+                link.setName(md5 + ".pdf");
+            }
+        }
+        if (filesizeBytesStr != null && filesizeBytesStr.matches("\\d+")) {
+            link.setVerifiedFileSize(Long.parseLong(filesizeBytesStr));
+        }
+    }
+
+    @Deprecated
+    private AvailableStatus requestFileInformationWebsite(final DownloadLink link) throws Exception {
+        final String md5 = getMd5Hash(link);
+        link.setMD5Hash(md5);
+        final String contenturl = getContentURL(link);
+        /* Old/Website handling */
+        if (contenturl.matches(TYPE_DIRECT)) {
+            URLConnectionAdapter con = null;
+            try {
+                con = br.openGetConnection(contenturl);
+                if (this.looksLikeDownloadableContent(con)) {
+                    /* File is direct-downloadable */
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
+                    link.setFinalFileName(Plugin.getFileNameFromDispositionHeader(con));
+                    return AvailableStatus.TRUE;
+                } else {
+                    br.followConnection();
+                    /* Either redirect to supported pattern such as "/ads.php..." or offline. */
+                    if (!this.canHandle(br.getURL())) {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    } else {
+                        parseFileInfoWebsite(link, this.br);
+                    }
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
+            }
+        } else if (contenturl.matches(TYPE_ADS)) {
+            br.getPage(contenturl);
+            if (br.containsHTML("(?i)>\\s*File not found in DB")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            parseFileInfoWebsite(link, this.br);
+        } else {
+            br.getPage("http://" + this.getHost() + "/item/index.php?md5=" + md5);
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            final Object responseO = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.OBJECT);
-            if (!(responseO instanceof Map)) {
-                /* E.g. response is empty array -> Item offline */
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
-            /* First and only item in this map is the one we want. */
-            final Map<String, Object> book = (Map<String, Object>) entries.entrySet().iterator().next().getValue();
-            final String extension = (String) book.get("extension");
-            final String filesizeBytesStr = book.get("filesize").toString();
-            final String internalPath = book.get("locator").toString();
-            final String filename;
-            if (internalPath.contains("\\")) {
-                filename = new Regex(internalPath, "\\\\([^\\\\]+)$").getMatch(0);
-            } else {
-                filename = internalPath;
-            }
-            if (!StringUtils.isEmpty(filename)) {
-                if (extension != null) {
-                    link.setFinalFileName(this.applyFilenameExtension(filename, "." + extension));
-                } else {
-                    link.setFinalFileName(filename);
-                }
-            } else {
-                /* Fallback */
-                if (extension != null) {
-                    link.setName(md5 + "." + extension);
-                } else {
-                    /* Final fallback */
-                    link.setName(md5 + ".pdf");
-                }
-            }
-            if (filesizeBytesStr != null && filesizeBytesStr.matches("\\d+")) {
-                link.setVerifiedFileSize(Long.parseLong(filesizeBytesStr));
-            }
-        } else {
-            /* Old/Website handling */
-            if (contenturl.matches(TYPE_DIRECT)) {
-                URLConnectionAdapter con = null;
-                try {
-                    con = br.openGetConnection(contenturl);
-                    if (this.looksLikeDownloadableContent(con)) {
-                        /* File is direct-downloadable */
-                        if (con.getCompleteContentLength() > 0) {
-                            link.setVerifiedFileSize(con.getCompleteContentLength());
-                        }
-                        link.setFinalFileName(Plugin.getFileNameFromDispositionHeader(con));
-                        return AvailableStatus.TRUE;
-                    } else {
-                        br.followConnection();
-                        /* Either redirect to supported pattern such as "/ads.php..." or offline. */
-                        if (!this.canHandle(br.getURL())) {
-                            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                        } else {
-                            parseFileInfoWebsite(link, this.br);
-                        }
-                    }
-                } finally {
-                    try {
-                        con.disconnect();
-                    } catch (final Throwable e) {
-                    }
-                }
-            } else if (contenturl.matches(TYPE_ADS)) {
-                br.getPage(contenturl);
-                if (br.containsHTML("(?i)>\\s*File not found in DB")) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
-                parseFileInfoWebsite(link, this.br);
-            } else {
-                br.getPage("http://" + this.getHost() + "/item/index.php?md5=" + md5);
-                if (br.getHttpConnection().getResponseCode() == 404) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
-                parseFileInfoWebsite(link, this.br);
-            }
+            parseFileInfoWebsite(link, this.br);
         }
         return AvailableStatus.TRUE;
     }
@@ -273,7 +291,7 @@ public class LibGenInfo extends PluginForHost {
         } else {
             /* Access TYPE_ADS URL if that hasn't already happened. */
             if (br.getURL() == null || !br.getURL().matches(TYPE_ADS)) {
-                br.getPage("/ads.php?md5=" + this.getFID(link));
+                br.getPage("/ads.php?md5=" + this.getMd5Hash(link));
             }
             /** 2023-12-19: They've crippled the direct-URLs on purpose so we'll first fix the html source and then regex that link. */
             final String correctedHTML = br.getRequest().getHtmlCode().replace("\\", "/");

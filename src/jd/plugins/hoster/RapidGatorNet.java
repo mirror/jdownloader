@@ -440,15 +440,11 @@ public class RapidGatorNet extends PluginForHost {
                 if (fid == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                long waitMillis;
                 final String waitSecondsStr = br.getRegex("var secs = (\\d+);").getMatch(0);
-                if (waitSecondsStr != null) {
-                    waitMillis = Long.parseLong(waitSecondsStr) * 1000;
-                } else {
-                    /* Falback */
-                    logger.warning("Failed to find pre download wait time in html");
-                    waitMillis = 30 * 1000;
+                if (waitSecondsStr == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
+                long waitMillis = Long.parseLong(waitSecondsStr) * 1000;
                 final Browser br2 = br.cloneBrowser();
                 br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                 br2.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
@@ -484,14 +480,14 @@ public class RapidGatorNet extends PluginForHost {
                     final long millisecondsPassedDuringCaptcha = Time.systemIndependentCurrentJVMTimeMillis() - timeBeforeCaptchaInput;
                     waitMillis -= millisecondsPassedDuringCaptcha;
                 }
-                if (waitMillis > 0) {
-                    sleep(waitMillis + 1000, link);
-                }
+                final long finalWaittimeMillis = waitMillis + 1000;
+                logger.info("Waiting pre-download seconds: " + finalWaittimeMillis / 1000);
+                sleep(finalWaittimeMillis, link);
                 br2.getPage("/download/AjaxGetDownloadLink?sid=" + sid);
                 entries = restoreFromString(br2.getRequest().getHtmlCode(), TypeRef.MAP);
                 state = (String) entries.get("state");
                 if (!"done".equalsIgnoreCase(state)) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Error in pre download step #2 | state: " + state);
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Error in pre download step #2 | state: " + state + " | code: " + entries.get("code"));
                 }
                 /*
                  * Work with URLConnection adapter so we can easily access this URL without Exception on non-allowed http response-code.

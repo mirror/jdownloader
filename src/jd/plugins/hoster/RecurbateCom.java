@@ -241,6 +241,8 @@ public class RecurbateCom extends PluginForHost {
         if (storedDirecturl != null) {
             logger.info("Re-using stored directurl: " + storedDirecturl);
             dllink = storedDirecturl;
+            /* 2023-12-21: Not mandatory but we're setting this header anyways. */
+            br.getHeaders().put("Referer", this.getContentURL(link));
         } else {
             requestFileInformation(link, account);
             checkErrors(br, link, account);
@@ -251,10 +253,8 @@ public class RecurbateCom extends PluginForHost {
              * Official downloadlinks are only available for "Ultimate" users. Those can download much faster and with an "unlimited"
              * amount.
              */
-            String officialHighspeedDownloadlink = br.getRegex("recu-link download\"\\s*href=\"(https?://[^\"]+)").getMatch(0);
+            String officialHighspeedDownloadlink = br.getRegex("recu-link download\"[^>]*href=\"(https?://[^\"]+)").getMatch(0);
             if (officialHighspeedDownloadlink != null) {
-                /* Fix encoding */
-                officialHighspeedDownloadlink = Encoding.htmlOnlyDecode(officialHighspeedDownloadlink);
                 dllink = officialHighspeedDownloadlink;
                 logger.info("Found highspeed downloadurl: " + officialHighspeedDownloadlink);
             } else {
@@ -295,6 +295,7 @@ public class RecurbateCom extends PluginForHost {
                 }
             }
             if (Encoding.isHtmlEntityCoded(dllink)) {
+                /* Fix encoding */
                 dllink = Encoding.htmlOnlyDecode(dllink);
             }
         }
@@ -404,10 +405,13 @@ public class RecurbateCom extends PluginForHost {
         final AccountInfo ai = new AccountInfo();
         login(account, "https://" + this.getHost() + "/account.php", true);
         ai.setUnlimitedTraffic();
-        final String nickname = br.getRegex("(?i)Nickname\\s*</div>\\s*<div class=\"col-sm-8\">\\s*([^<>\"]+)").getMatch(0);
-        if (nickname != null) {
+        String username = br.getRegex("(?i)Nickname\\s*</div>\\s*<div class=\"col-sm-8\">\\s*([^<>\"]+)").getMatch(0);
+        if (username == null) {
+            username = br.getRegex("class='fas fa-user-circle'></i>\\s*<span class=\"crop-ellipsis\"[^>]*title=\"([^\"]+)").getMatch(0);
+        }
+        if (username != null) {
             /* User can theoretically enter whatever he wants in username field when doing cookie login --> We prefer unique usernames. */
-            account.setUser(nickname);
+            account.setUser(username);
         } else {
             logger.warning("Failed to find nickname in HTML");
         }
@@ -430,11 +434,11 @@ public class RecurbateCom extends PluginForHost {
                 account.setMaxSimultanDownloads(PluginJsonConfig.get(RecurbateComConfig.class).getMaxSimultanPaidAccountDownloads());
                 ai.setStatus(plan);
             }
-            ai.setStatus("Plan: " + plan);
         } else {
             /* This should never happen */
             account.setType(AccountType.UNKNOWN);
         }
+        ai.setStatus("Plan: " + plan);
         /* 2023-04-06: Some debug stuff down below. */
         final boolean devSetCookieExpiredateAsAccountExpiredate = false;
         final Cookie loginCookie = br.getCookies(br.getHost()).get("akey");
