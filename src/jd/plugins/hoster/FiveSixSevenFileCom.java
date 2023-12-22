@@ -181,7 +181,9 @@ public class FiveSixSevenFileCom extends PluginForHost {
             }
             if (dllink == null) {
                 if (br.containsHTML("vip\\.php")) {
-                    throw new AccountRequiredException();
+                    // throw new AccountRequiredException();
+                    /* 2023-12-22: New */
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Free download is not possible at this moment", 30 * 60 * 1000l);
                 } else {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
