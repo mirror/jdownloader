@@ -444,6 +444,7 @@ public class RapidGatorNet extends PluginForHost {
                 if (waitSecondsStr == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
+                logger.info("Pre download wait in seconds according to website: " + waitSecondsStr);
                 long waitMillis = Long.parseLong(waitSecondsStr) * 1000;
                 final Browser br2 = br.cloneBrowser();
                 br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");

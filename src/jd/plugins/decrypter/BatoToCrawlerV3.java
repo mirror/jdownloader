@@ -45,8 +45,9 @@ import jd.plugins.hoster.DirectHTTP;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 @PluginDependencies(dependencies = { BatoTo.class })
-public class BatoToCrawler extends PluginForDecrypt {
-    public BatoToCrawler(PluginWrapper wrapper) {
+/** This crawler is for bato.to website version v3. */
+public class BatoToCrawlerV3 extends PluginForDecrypt {
+    public BatoToCrawlerV3(PluginWrapper wrapper) {
         super(wrapper);
         /* Prevent server response 503! */
         BatoTo.setRequestLimits();

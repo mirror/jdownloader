@@ -26,6 +26,8 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.challenge.hcaptcha.AbstractHCaptcha;
+import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperHostPluginHCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
@@ -205,26 +207,28 @@ public class RosefileNet extends PluginForHost {
                 }
                 this.sleep(waitSeconds * 1001l, link);
                 br.getPage("/d/" + this.getFID(link) + "/" + Encoding.urlEncode(link.getName()) + ".html");
+                final UrlQuery query = new UrlQuery();
+                query.add("file_id", internalFileID);
                 if (AbstractRecaptchaV2.containsRecaptchaV2Class(br)) {
                     /* New 2023-11-15 */
-                    final UrlQuery query = new UrlQuery();
                     query.add("action", "check_recaptcha");
-                    query.add("file_id", internalFileID);
                     final String reCaptchav2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
                     query.add("token", Encoding.urlEncode(reCaptchav2Response));
-                    ajax.postPage("/ajax.php", query);
-                    if (ajax.getRequest().getHtmlCode().equalsIgnoreCase("false")) {
-                        /* This should never happen! */
-                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                    }
+                } else if (AbstractHCaptcha.containsHCaptcha(br)) {
+                    query.add("action", "check_hcaptcha");
+                    final CaptchaHelperHostPluginHCaptcha hCaptcha = new CaptchaHelperHostPluginHCaptcha(this, br);
+                    final String token = hCaptcha.getToken();
+                    query.add("token", Encoding.urlEncode(token));
                 } else {
                     /* Old handling */
+                    query.add("action", "check_code");
                     final String code = getCaptchaCode("/imagecode.php?t=" + System.currentTimeMillis(), link);
-                    ajax.postPage("/ajax.php", "action=check_code&code=" + Encoding.urlEncode(code));
-                    if (ajax.getRequest().getHtmlCode().equalsIgnoreCase("false")) {
-                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                    }
-                    ajax.postPage("/ajax.php", "action=load_down_addr1&file_id=" + internalFileID);
+                    query.add("code", Encoding.urlEncode(code));
+                }
+                ajax.postPage("/ajax.php", query);
+                if (ajax.getRequest().getHtmlCode().equalsIgnoreCase("false")) {
+                    /* This should never happen! */
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
                 }
             }
             String dllink = ajax.getRegex("true\\|<a href=\"([^<>\"]+)").getMatch(0);

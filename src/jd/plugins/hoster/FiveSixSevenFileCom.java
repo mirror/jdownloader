@@ -52,7 +52,7 @@ public class FiveSixSevenFileCom extends PluginForHost {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "567yun.cn", "567file.com" });
+        ret.add(new String[] { "567yun.cn", "567file.com", "567pan.cn" });
         return ret;
     }
 

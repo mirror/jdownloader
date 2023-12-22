@@ -43,7 +43,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zapisz.se" }, urls = { "https?://zapisz\\.se/files/(\\d+)/([^/]+)?" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zapisz.se" }, urls = { "https?://zapisz\\.se/files/(\\d+)/([^/]+)?/?" })
 public class ZapiszSe extends PluginForHost {
     private static final String          WEBSITE_BASE = "https://zapisz.se";
     private static MultiHosterManagement mhm          = new MultiHosterManagement("zapisz.se");
@@ -150,19 +150,9 @@ public class ZapiszSe extends PluginForHost {
             // Because the next part is blocking, it could happen that the captcha becomes invalid, since it has a one minute timeout
             // However, this way several captchas can be solved at once.
             final CaptchaHelperHostPluginRecaptchaV2 rc2 = new CaptchaHelperHostPluginRecaptchaV2(this, br);
-            final int reCaptchaV2Timeout = rc2.getSolutionTimeout();
-            final long timestampBeforeCaptchaSolving = System.currentTimeMillis();
             final String recaptchaV2Response = rc2.getToken();
             dlform.put("recaptcha_response", Encoding.urlEncode(recaptchaV2Response));
             synchronized (account) {
-                if (isAbort()) {
-                    throw new InterruptedException();
-                }
-                final long passedTime = System.currentTimeMillis() - timestampBeforeCaptchaSolving;
-                if (passedTime >= reCaptchaV2Timeout) {
-                    /* 2023-01-09: @c0d3d3v this should never happen as the obtained token is used immediately here... */
-                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                }
                 br.submitForm(dlform);
                 // Check if success message can be found: "1 link has been processed. To download files, go to the Your Files tab."
                 final Boolean successNoteFound = br.getRegex("<div class=\"note-info note-success\">([^<]+)</div>").count() >= 1;
@@ -193,6 +183,7 @@ public class ZapiszSe extends PluginForHost {
             }
             final String[] urls = HTMLParser.getHttpLinks(br.getRequest().getHtmlCode(), br.getURL());
             if (urls == null || urls.length == 0) {
+                /* This should never happen. */
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dllink = urls[0];

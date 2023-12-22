@@ -190,6 +190,7 @@ public class LibGenInfo extends PluginForHost {
         if (filesizeBytesStr != null && filesizeBytesStr.matches("\\d+")) {
             link.setVerifiedFileSize(Long.parseLong(filesizeBytesStr));
         }
+        link.setMD5Hash(md5);
     }
 
     @Deprecated
