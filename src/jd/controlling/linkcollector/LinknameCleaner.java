@@ -147,6 +147,42 @@ public class LinknameCleaner {
         return newfinalFileName;
     }
 
+    public static String cleanPackagenameNew(String name, boolean allowCleanup) {
+        name = replaceCharactersByMap(name, PACKAGENAME_REPLACEMAP);
+        name = replaceCharactersByMap(name, PACKAGENAME_REPLACEMAP_DEFAULT);
+        /* if enabled, replace dots and _ with spaces and do further clean ups */
+        final boolean splitUpperLowerCase = false;
+        if (allowCleanup && org.jdownloader.settings.staticreferences.CFG_GENERAL.CLEAN_UP_PACKAGENAMES.isEnabled()) {
+            StringBuilder sb = new StringBuilder();
+            char[] cs = name.toCharArray();
+            char lastChar = 'a';
+            for (int i = 0; i < cs.length; i++) {
+                // splitFileNamesLikeThis to "split File Names Like This"
+                if (splitUpperLowerCase && i > 0 && Character.isUpperCase(cs[i]) && Character.isLowerCase(cs[i - 1])) {
+                    if (lastChar != ' ') {
+                        sb.append(' ');
+                    }
+                    lastChar = ' ';
+                }
+                switch (cs[i]) {
+                case '_':
+                case '.':
+                    if (lastChar != ' ') {
+                        sb.append(' ');
+                    }
+                    lastChar = ' ';
+                    break;
+                default:
+                    lastChar = cs[i];
+                    sb.append(cs[i]);
+                }
+            }
+            name = sb.toString();
+        }
+        return name.trim();
+    }
+
+    @Deprecated
     public static String cleanPackagename(String name, boolean splitUpperLowerCase, boolean removeArchiveExtensions, final EXTENSION_SETTINGS extensionSettings, boolean allowCleanup) {
         if (name == null) {
             return null;
@@ -294,13 +330,13 @@ public class LinknameCleaner {
 
     /** Derives package name out of given filename. */
     public static String derivePackagenameFromFilename(String name) {
-        // TODO: Add functionality
         /*
          * Basic cleanup: Remove typical invalid characters because in many cases the package name will be used as part of our download
          * path.
          */
-        name = replaceCharactersByMap(name, PACKAGENAME_REPLACEMAP);
-        name = replaceCharactersByMap(name, PACKAGENAME_REPLACEMAP_DEFAULT);
+        /* TODO: The two lines down below have been moved into cleanPackagenameNew. Check if this makes sense. */
+        // name = replaceCharactersByMap(name, PACKAGENAME_REPLACEMAP);
+        // name = replaceCharactersByMap(name, PACKAGENAME_REPLACEMAP_DEFAULT);
         boolean extensionStilExists = true;
         String before = name;
         {
@@ -407,7 +443,9 @@ public class LinknameCleaner {
         if (removeIndex > 0) {
             name = name.substring(0, removeIndex);
         }
-        return cleanPackagename(name, true, true, EXTENSION_SETTINGS.REMOVE_ALL, true);
+        // TODO: Check if we want to include cleanup here!
+        // return cleanPackagenameNew(name, true);
+        return name;
     }
 
     private static String getNameMatch(String name, Pattern pattern) {

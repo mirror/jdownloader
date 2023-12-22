@@ -1108,6 +1108,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                                 downloadFolder = null;
                             }
                             if (crawledPackageName == null) {
+                                /* Try to derive package name from filename */
                                 final DownloadLink dlLink = link.getDownloadLink();
                                 final String fileName;
                                 if (link.isNameSet() || dlLink.isNameSet()) {
@@ -1115,54 +1116,53 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                                 } else {
                                     fileName = LinkCrawler.getUnsafeName(link.getName(), null);
                                 }
+                                String filenameForPackagenameDerivation = null;
                                 if (fileName != null) {
                                     if (AvailableLinkState.ONLINE.equals(link.getLinkState())) {
-                                        crawledPackageName = fileName;
+                                        filenameForPackagenameDerivation = fileName;
                                     } else {
                                         final ExtensionsFilterInterface extension = link.getLinkInfo().getExtension();
                                         if (!"".equalsIgnoreCase(extension.name())) {
                                             if (!DocumentExtensions.HTML.equals(extension.getSource()) && !DocumentExtensions.PHP.equals(extension.getSource())) {
-                                                crawledPackageName = fileName;
+                                                filenameForPackagenameDerivation = fileName;
                                             } else {
                                                 final String tmpFileName = fileName.replaceFirst("\\.(html?|php)$", "");
                                                 final ExtensionsFilterInterface tmpExtension = CompiledFiletypeFilter.getExtensionsFilterInterface(Files.getExtension(tmpFileName));
                                                 if (tmpExtension != null) {
-                                                    crawledPackageName = tmpFileName;
+                                                    filenameForPackagenameDerivation = tmpFileName;
                                                 }
                                             }
                                         }
                                     }
                                 }
-                                if (crawledPackageName != null) {
-                                    crawledPackageName = LinknameCleaner.cleanPackagename(crawledPackageName, false, true, LinknameCleaner.EXTENSION_SETTINGS.REMOVE_ALL, true);
+                                if (filenameForPackagenameDerivation == null && link.getLinkInfo().getExtension() instanceof ArchiveExtensions) {
+                                    /* Create package name out of archive filename */
+                                    final ExtractionExtension lArchiver = archiver;
+                                    if (lArchiver != null && org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.ARCHIVE_PACKAGIZER_ENABLED.isEnabled()) {
+                                        final CrawledLinkFactory clf = new CrawledLinkFactory(link);
+                                        final Archive archive = lArchiver.buildArchive(clf);
+                                        if (archive != null && archive.getArchiveFiles().size() > 1) {
+                                            if (crawledPackageID == null) {
+                                                crawledPackageID = archive.getArchiveID();
+                                            }
+                                            filenameForPackagenameDerivation = _JDT.T.LinkCollector_archiv(LinknameCleaner.cleanPackagename(archive.getName(), false, true, LinknameCleaner.EXTENSION_SETTINGS.REMOVE_KNOWN, true));
+                                        }
+                                    }
                                 }
-                            }
-                            if (crawledPackageName == null && link.getLinkInfo().getExtension() instanceof ArchiveExtensions) {
-                                final ExtractionExtension lArchiver = archiver;
-                                if (lArchiver != null && org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.ARCHIVE_PACKAGIZER_ENABLED.isEnabled()) {
-                                    final CrawledLinkFactory clf = new CrawledLinkFactory(link);
-                                    final Archive archive = lArchiver.buildArchive(clf);
-                                    if (archive != null && archive.getArchiveFiles().size() > 1) {
-                                        if (crawledPackageID == null) {
-                                            crawledPackageID = archive.getArchiveID();
-                                        }
-                                        if (crawledPackageName == null) {
-                                            crawledPackageName = _JDT.T.LinkCollector_archiv(LinknameCleaner.cleanPackagename(archive.getName(), false, true, LinknameCleaner.EXTENSION_SETTINGS.REMOVE_KNOWN, true));
-                                        }
+                                if (filenameForPackagenameDerivation == null) {
+                                    /* Create package name out of non-archive filename */
+                                    filenameForPackagenameDerivation = link.getName();
+                                }
+                                if (filenameForPackagenameDerivation != null) {
+                                    crawledPackageName = LinknameCleaner.derivePackagenameFromFilename(filenameForPackagenameDerivation);
+                                    crawledPackageName = LinknameCleaner.cleanPackagenameNew(filenameForPackagenameDerivation, true);
+                                    if (StringUtils.isEmpty(crawledPackageName)) {
+                                        // TODO: Review this
+                                        crawledPackageName = _JDT.T.LinkCollector_addCrawledLink_offlinepackage();
                                     }
                                 }
                             }
                             final CrawledPackageMappingID crawledPackageMapID = new CrawledPackageMappingID(crawledPackageID, crawledPackageName, downloadFolder);
-                            String newPackageName = crawledPackageName;
-                            if (newPackageName == null) {
-                                newPackageName = link.getName();
-                                if (newPackageName != null) {
-                                    newPackageName = LinknameCleaner.cleanPackagename(newPackageName, false, true, LinknameCleaner.EXTENSION_SETTINGS.REMOVE_ALL, true);
-                                }
-                                if (StringUtils.isEmpty(newPackageName)) {
-                                    newPackageName = _JDT.T.LinkCollector_addCrawledLink_offlinepackage();
-                                }
-                            }
                             final CrawledPackage pkg = getCrawledPackage(crawledPackageMapID, link);
                             if (pkg == null) {
                                 if (!ignoreSpecialPackages && LinkCrawler.PERMANENT_OFFLINE_ID == uID) {
@@ -1183,7 +1183,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                                         list = null;
                                     }
                                     if (list != null && list.size() > org.jdownloader.settings.staticreferences.CFG_LINKGRABBER.VARIOUS_PACKAGE_LIMIT.getValue()) {
-                                        final CrawledPackage newPkg = addToNewPackage(list, newPackageName, crawledPackageMapID);
+                                        final CrawledPackage newPkg = addToNewPackage(list, crawledPackageName, crawledPackageMapID);
                                         if (dpi != null) {
                                             newPkg.setComment(dpi.getComment());
                                         }
@@ -1195,7 +1195,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                                 } else {
                                     final List<CrawledLink> add = new ArrayList<CrawledLink>(1);
                                     add.add(link);
-                                    final CrawledPackage newPkg = addToNewPackage(add, newPackageName, crawledPackageMapID);
+                                    final CrawledPackage newPkg = addToNewPackage(add, crawledPackageName, crawledPackageMapID);
                                     if (dpi != null) {
                                         newPkg.setComment(dpi.getComment());
                                     }
