@@ -33,6 +33,8 @@ import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
@@ -76,7 +78,7 @@ public class MultiupOrgCrawler extends antiDDoSForDecrypt {
         return ret.toArray(new String[0]);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
         String contenturl = param.getCryptedUrl();
@@ -111,7 +113,10 @@ public class MultiupOrgCrawler extends antiDDoSForDecrypt {
         if (br.containsHTML("The file does not exist any more\\.<|<h1>The server returned a \"404 Not Found\"\\.</h2>|<h1>Oops! An Error Occurred</h1>|>File not found|>No link currently available")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (AbstractHCaptcha.containsHCaptcha(br)) {
+        if (br.containsHTML("cloudflare\\.com/turnstile/")) {
+            /* https://svn.jdownloader.org/issues/90281 */
+            throw new DecrypterRetryException(RetryReason.BLOCKED_BY, "Cloudflare Turnstile captcha is not supported");
+        } else if (AbstractHCaptcha.containsHCaptcha(br)) {
             final Form form = br.getFormbyActionRegex("/mirror/");
             final String response = new CaptchaHelperCrawlerPluginHCaptcha(this, br).getToken();
             form.put("h-captcha-response", Encoding.urlEncode(response));

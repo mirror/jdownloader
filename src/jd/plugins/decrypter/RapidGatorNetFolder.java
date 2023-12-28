@@ -20,6 +20,8 @@ import java.util.HashSet;
 import java.util.List;
 
 import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.net.URLHelper;
+import org.appwork.utils.parser.UrlQuery;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -112,14 +114,15 @@ public class RapidGatorNetFolder extends PluginForDecrypt {
         fp.addLinks(ret);
         int page = 1;
         int maxPage = 1;
-        final String[] pagenumbers = br.getRegex("/folder/" + folderID + "/[^>]*\\?page=(\\d+)").getColumn(0);
+        final String[] pagenumbers = br.getRegex("/folder/" + folderID + "/[^>]*page=(\\d+)").getColumn(0);
         for (final String pagenumberStr : pagenumbers) {
             final int pagenumberTmp = Integer.parseInt(pagenumberStr);
             if (pagenumberTmp > maxPage) {
                 maxPage = pagenumberTmp;
             }
         }
-        final String baseurl = br.getURL();
+        final String baseurl = URLHelper.getUrlWithoutParams(br.getURL());
+        final UrlQuery query = UrlQuery.parse(baseurl);
         final HashSet<String> dupes = new HashSet<String>();
         do {
             final String[] subfolderurls = br.getRegex("<td><a href=\"(/folder/\\d+/[^<>\"/]+\\.html)\">").getColumn(0);
@@ -178,7 +181,8 @@ public class RapidGatorNetFolder extends PluginForDecrypt {
                 /* Small delay between requests */
                 sleep(500, param);
                 page++;
-                br.getPage(baseurl + "?page=" + page);
+                query.addAndReplace("page", Integer.toString(page));
+                br.getPage(baseurl + "?" + query.toString());
             }
         } while (true);
         return ret;
