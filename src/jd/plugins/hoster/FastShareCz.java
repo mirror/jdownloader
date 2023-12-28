@@ -90,7 +90,7 @@ public class FastShareCz extends PluginForHost {
 
     @Override
     public Browser createNewBrowserInstance() {
-        final Browser br = new Browser();
+        final Browser br = super.createNewBrowserInstance();
         br.setCookie(this.getHost(), "lang", "cs");
         return br;
     }
@@ -218,7 +218,7 @@ public class FastShareCz extends PluginForHost {
         }
         String dllink = br.getRedirectLocation();
         if (dllink != null && canHandle(dllink)) {
-            // eg redirect http->https or cut of ref parameter
+            // eg redirect http->https or cut-off ref parameter
             br.getPage(dllink);
             dllink = br.getRedirectLocation();
         }
@@ -233,6 +233,14 @@ public class FastShareCz extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error #1", 30 * 60 * 1000l);
             } else if (br.containsHTML("No htmlCode read")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error #2", 30 * 60 * 1000l);
+            } else if (br.containsHTML("/free-stahovani")) {
+                /* Free downloadlimit reached or message "As a free user you can download max 1 file at a time" */
+                final String errortext = "Reached max concurrent downloads limit";
+                if (account != null) {
+                    throw new AccountUnavailableException(errortext, 1 * 60 * 1000l);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, errortext, 1 * 60 * 1000l);
+                }
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }

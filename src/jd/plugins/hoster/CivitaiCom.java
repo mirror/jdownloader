@@ -115,6 +115,10 @@ public class CivitaiCom extends PluginForHost {
         final String json = br.getRegex("type=\"application/json\"[^>]*>(\\{\"props.*?)</script>").getMatch(0);
         final Map<String, Object> entries = restoreFromString(json, TypeRef.MAP);
         final Map<String, Object> imagemap = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "props/pageProps/trpcState/json/queries/{0}/state/data");
+        if (imagemap == null) {
+            /* Invalid link e.g. https://civitai.com/images/1234567 */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         final Map<String, Object> metadata = (Map<String, Object>) imagemap.get("metadata");
         String filename = (String) imagemap.get("name");
         final Number filesize = (Number) metadata.get("size");

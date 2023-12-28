@@ -107,7 +107,6 @@ public class PorndoeCom extends PluginForHost {
         if (!StringUtils.isEmpty(videoid)) {
             final Browser brc = br.cloneBrowser();
             brc.getHeaders().put("Accept", "application/json, text/plain, */*");
-            brc.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
             brc.getHeaders().put("Referer", br.getURL());
             brc.getPage("/service/index?device=desktop&page=video&id=" + videoid);
             /* Find highest quality */

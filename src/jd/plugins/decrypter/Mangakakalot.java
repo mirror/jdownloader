@@ -52,7 +52,7 @@ public class Mangakakalot extends PluginForDecrypt {
     private static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "mangakakalot.com", "manganelo.com", "manganato.com", "manganelo.com", "chapmanganato.com", "readmanganato.com" });
+        ret.add(new String[] { "mangakakalot.com", "manganelo.com", "manganato.com", "manganelo.com", "chapmanganato.com", "chapmanganato.to", "readmanganato.com" });
         return ret;
     }
 
@@ -75,7 +75,8 @@ public class Mangakakalot extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         br.setFollowRedirects(true);
-        br.getPage(param.getCryptedUrl());
+        final String contenturl = param.getCryptedUrl().replaceFirst("(?i)http://", "https://");
+        br.getPage(contenturl);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML("class=\"panel-not-found\"")) {
