@@ -254,6 +254,10 @@ public class DarkiboxCom extends XFileSharingProBasic {
             if (dllink == null) {
                 /* 2023-10-19 */
                 dllink = br.getRegex("href=\"(https?://[^\"]+)\"[^>]*><span[^>]*\"lng_download_direct_download_link").getMatch(0);
+                if (dllink == null) {
+                    /* 2023-12-28 */
+                    dllink = br.getRegex("<a href=\"(https?://[^\"]+)\"[^>]*>\\s*<[^>]*tabler-download").getMatch(0);
+                }
             }
         }
         if (StringUtils.isEmpty(dllink)) {

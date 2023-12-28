@@ -16,11 +16,9 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 
-import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.URLEncode;
@@ -66,7 +64,6 @@ public class PorndoeCom extends PluginForHost {
     private static final int     free_maxchunks    = 0;
     private static final int     free_maxdownloads = -1;
     private String               dllink            = null;
-    private boolean              server_issues     = false;
 
     @Override
     public String getAGBLink() {
@@ -79,9 +76,12 @@ public class PorndoeCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        return requestFileInformation(link, false);
+    }
+
+    private AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws IOException, PluginException {
         link.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
         dllink = null;
-        server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setAllowedResponseCodes(410);
@@ -105,39 +105,38 @@ public class PorndoeCom extends PluginForHost {
         }
         final String videoid = PluginJSonUtils.getJson(br, "id");
         if (!StringUtils.isEmpty(videoid)) {
-            br.getPage("https://porndoe.com/service/index?device=desktop&page=video&id=" + videoid);
+            final Browser brc = br.cloneBrowser();
+            brc.getHeaders().put("Accept", "application/json, text/plain, */*");
+            brc.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
+            brc.getHeaders().put("Referer", br.getURL());
+            brc.getPage("/service/index?device=desktop&page=video&id=" + videoid);
             /* Find highest quality */
-            int quality_max = 0;
-            int quality_temp = 0;
-            Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
-            entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "payload/video/player/sources");
-            final Iterator<Entry<String, Object>> iterator = entries.entrySet().iterator();
-            Map<String, Object> qualityInfo = restoreFromString(br.toString(), TypeRef.MAP);
-            final String preferredQualityStr = getPreferredStreamQuality();
-            while (iterator.hasNext()) {
-                final Entry<String, Object> entry = iterator.next();
-                qualityInfo = (Map<String, Object>) entry.getValue();
-                final String qualityStr = entry.getKey();
-                final String dllinkTmp = (String) qualityInfo.get("url");
-                if (StringUtils.isEmpty(dllinkTmp) || !dllinkTmp.contains(".mp4")) {
-                    /* E.g. skip ad-URLs like: "/signup?utm_campaign=porndoe&utm_medium=desktop&utm_source=player_1080p" */
-                    continue;
-                } else if (!qualityStr.matches("\\d+")) {
-                    /* This should never happen */
-                    logger.info("Found abnormal stream quality identifier: " + qualityStr);
-                    this.dllink = dllinkTmp;
-                    break;
-                } else if (qualityStr.matches(preferredQualityStr)) {
-                    logger.info("Found preferred quality: " + preferredQualityStr);
-                    this.dllink = dllinkTmp;
-                    break;
-                } else {
-                    quality_temp = Integer.parseInt(qualityStr);
-                    if (quality_temp > quality_max) {
-                        quality_max = quality_temp;
+            int quality_height_max = 0;
+            final Map<String, Object> entries = restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.MAP);
+            final Map<String, Object> sources = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "payload/player/sources");
+            if (sources != null) {
+                final List<Map<String, Object>> mp4Sources = (List<Map<String, Object>>) sources.get("mp4");
+                final String preferredQualityHeightStr = getPreferredStreamQuality();
+                final Integer preferredQualityHeight = preferredQualityHeightStr != null ? Integer.parseInt(preferredQualityHeightStr) : null;
+                for (final Map<String, Object> mp4Source : mp4Sources) {
+                    final int qualityHeight = ((Number) mp4Source.get("height")).intValue();
+                    final String dllinkTmp = (String) mp4Source.get("link");
+                    if (StringUtils.isEmpty(dllinkTmp) || !dllinkTmp.contains(".mp4")) {
+                        /* E.g. skip ad-URLs like: "/signup?utm_campaign=porndoe&utm_medium=desktop&utm_source=player_1080p" */
+                        continue;
+                    } else if (preferredQualityHeight != null && preferredQualityHeight == qualityHeight) {
+                        logger.info("Found preferred quality: " + preferredQualityHeightStr);
                         this.dllink = dllinkTmp;
+                        break;
+                    } else {
+                        if (qualityHeight > quality_height_max) {
+                            quality_height_max = qualityHeight;
+                            this.dllink = dllinkTmp;
+                        }
                     }
                 }
+            } else {
+                logger.warning("Failed to find video sources");
             }
         }
         if (filename == null) {
@@ -153,22 +152,17 @@ public class PorndoeCom extends PluginForHost {
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
-        if (!StringUtils.isEmpty(dllink)) {
-            dllink = Encoding.htmlDecode(dllink);
-            link.setFinalFileName(filename);
+        link.setFinalFileName(filename);
+        if (!StringUtils.isEmpty(dllink) && !isDownload) {
+            dllink = Encoding.htmlOnlyDecode(dllink);
             URLConnectionAdapter con = null;
             try {
                 final Browser brc = br.cloneBrowser();
                 brc.setFollowRedirects(true);
                 con = brc.openHeadConnection(dllink);
-                if (this.looksLikeDownloadableContent(con)) {
-                    if (con.getCompleteContentLength() > 0) {
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
-                    }
-                    link.setProperty("directlink", dllink);
-                } else {
-                    brc.followConnection(true);
-                    server_issues = true;
+                handleConnectionErrors(br, con);
+                if (con.getCompleteContentLength() > 0) {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
                 }
             } finally {
                 try {
@@ -176,33 +170,32 @@ public class PorndoeCom extends PluginForHost {
                 } catch (final Throwable e) {
                 }
             }
-        } else {
-            /* We cannot be sure whether we have the correct extension or not! */
-            link.setName(filename);
         }
         return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
-        requestFileInformation(link);
-        if (server_issues) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
-        } else if (StringUtils.isEmpty(dllink)) {
+        requestFileInformation(link, true);
+        if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
-        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+        handleConnectionErrors(br, dl.getConnection());
+        dl.startDownload();
+    }
+
+    private void handleConnectionErrors(final Browser br, final URLConnectionAdapter con) throws PluginException, IOException {
+        if (!this.looksLikeDownloadableContent(con)) {
             br.followConnection(true);
-            if (dl.getConnection().getResponseCode() == 403) {
+            if (con.getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
+            } else if (con.getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             } else {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Video broken?");
             }
         }
-        dl.startDownload();
     }
 
     private String getPreferredStreamQuality() {
@@ -211,7 +204,7 @@ public class PorndoeCom extends PluginForHost {
         switch (quality) {
         case BEST:
         default:
-            return "default";
+            return null;
         case Q1080P:
             return "1080";
         case Q720P:
