@@ -652,7 +652,7 @@ public class D extends PluginsC {
             // TODO: 2023-11-23: Why is this check for "n.A." here?
             if (packagename != null && !"n.A.".equals(packagename)) {
                 // n.A. is no good default packageName
-                dpi.setName(LinknameCleaner.cleanPackagename(packagename, false, false, LinknameCleaner.EXTENSION_SETTINGS.KEEP, false));
+                dpi.setName(LinknameCleaner.cleanPackagenameNew(packagename, false));
             }
             if (ca3 != null && ca3.trim().length() > 0) {
                 // dpi.setComment("[" + ca3 + "] " + cs2);
