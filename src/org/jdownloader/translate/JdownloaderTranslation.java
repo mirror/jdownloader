@@ -353,9 +353,6 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Various Files" })
     String LinkCollector_addCrawledLink_variouspackage();
 
-    @Default(lngs = { "en" }, values = { "%s1" })
-    String LinkCollector_archiv(String cleanFileName);
-
     @Default(lngs = { "en" }, values = { "Split Package %s1" })
     String SetDownloadFolderAction_actionPerformed_(String pkg);
 

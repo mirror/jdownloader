@@ -1145,7 +1145,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                                             if (crawledPackageID == null) {
                                                 crawledPackageID = archive.getArchiveID();
                                             }
-                                            filenameForPackagenameDerivation = _JDT.T.LinkCollector_archiv(LinknameCleaner.cleanPackagename(archive.getName(), false, true, LinknameCleaner.EXTENSION_SETTINGS.REMOVE_KNOWN, true));
+                                            filenameForPackagenameDerivation = archive.getName();
                                         }
                                     }
                                 }
