@@ -41,6 +41,13 @@ public class GelbooruCom extends PluginForHost {
     }
 
     @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.setFollowRedirects(true);
+        return br;
+    }
+
+    @Override
     public LazyPlugin.FEATURE[] getFeatures() {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.IMAGE_GALLERY, LazyPlugin.FEATURE.IMAGE_HOST };
     }
@@ -82,7 +89,6 @@ public class GelbooruCom extends PluginForHost {
     private AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws IOException, PluginException {
         dllink = null;
         this.setBrowserExclusive();
-        br.setFollowRedirects(true);
         br.setCookie(getHost(), "fringeBenefits", "yup");
         final String extDefault = ".jpg";
         final String fid = this.getFID(link);
@@ -134,8 +140,6 @@ public class GelbooruCom extends PluginForHost {
         link.setFinalFileName(this.correctOrApplyFileNameExtension(title, extFromURL));
         if (!StringUtils.isEmpty(dllink)) {
             final Browser br2 = br.cloneBrowser();
-            // In case the link redirects to the finallink
-            br2.setFollowRedirects(true);
             URLConnectionAdapter con = null;
             try {
                 con = br2.openHeadConnection(this.dllink);

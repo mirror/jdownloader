@@ -17,54 +17,62 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.appwork.utils.parser.UrlQuery;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "gelbooru.com" }, urls = { "https?://(?:www\\.)?gelbooru\\.com/index\\.php\\?page=post\\&s=list\\&tags=[A-Za-z0-9_\\-%\\+]+" })
-public class GelbooruCom extends PluginForDecrypt {
-    public GelbooruCom(PluginWrapper wrapper) {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "gelbooru.com" }, urls = { "https?://(?:www\\.)?gelbooru\\.com/index\\.php\\?page=post\\&s=list\\&tags=.+" })
+public class GelbooruComCrawler extends PluginForDecrypt {
+    public GelbooruComCrawler(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String parameter = param.toString();
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
         br.setFollowRedirects(true);
+        return br;
+    }
+
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final String contenturl = param.getCryptedUrl().replaceFirst("http://", "https://");
         br.setCookie(getHost(), "fringeBenefits", "yup");
-        br.getPage(parameter);
+        br.getPage(contenturl);
         if (br.getHttpConnection().getResponseCode() == 404) {
-            decryptedLinks.add(this.createOfflinelink(parameter));
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String fpName = new Regex(parameter, "tags=([A-Za-z0-9_\\-%\\+]+)").getMatch(0);
+        final UrlQuery query = UrlQuery.parse(contenturl);
+        final String tags = query.get("tags");
         final FilePackage fp = FilePackage.getInstance();
-        fp.setName(Encoding.htmlDecode(fpName.trim()));
-        final String url_part = parameter;
-        int page_counter = 1;
+        fp.setName(Encoding.htmlDecode(tags).trim());
+        final String url_part = contenturl;
+        int pageCounter = 1;
         int offset = 0;
         final int max_entries_per_page = 42;
         int entries_per_page_current = 0;
+        int adPagesSkipped = 0;
         final ArrayList<String> dupes = new ArrayList<String>();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         do {
-            logger.info("Crawling page: " + page_counter);
-            logger.info("Crawling URL: " + this.br.getURL());
-            boolean addedAtLeastOneNewItem = false;
+            int numberofNewItemsOnThisPage = 0;
             String[] contentIDs = br.getRegex("id=\"(?:s|p)(\\d+)\"").getColumn(0);
             if (contentIDs.length == 0) {
                 /* Fallback */
                 contentIDs = br.getRegex("page=post&[^\"]*id=(\\d+)\\&tags=").getColumn(0);
             }
-            if (contentIDs.length == 0) {
-                logger.warning("Decrypter might be broken for link: " + parameter);
-                break;
+            if (contentIDs == null || contentIDs.length == 0) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             entries_per_page_current = contentIDs.length;
             for (final String contentID : contentIDs) {
@@ -72,24 +80,25 @@ public class GelbooruCom extends PluginForDecrypt {
                     continue;
                 }
                 dupes.add(contentID);
-                addedAtLeastOneNewItem = true;
+                numberofNewItemsOnThisPage++;
                 final String link = "https://" + this.getHost() + "/index.php?page=post&s=view&id=" + contentID;
                 final DownloadLink dl = createDownloadlink(link);
                 dl.setLinkID(contentID);
                 dl.setAvailable(true);
                 dl.setName(contentID + ".jpeg");
                 dl._setFilePackage(fp);
-                decryptedLinks.add(dl);
+                ret.add(dl);
                 distribute(dl);
                 offset++;
             }
-            page_counter++;
-            if (br.containsHTML(">Unable to go this deep in pagination")) {
+            logger.info("Crawled page " + pageCounter + " | Found items on this page: " + numberofNewItemsOnThisPage + " | Total: " + ret.size());
+            pageCounter++;
+            if (br.containsHTML(">\\s*Unable to go this deep in pagination")) {
                 logger.info("Stopping because: Account required to continue pagination");
                 break;
-            } else if (!addedAtLeastOneNewItem) {
+            } else if (numberofNewItemsOnThisPage == 0) {
                 /* Fail-safe */
-                logger.info("Stoping because: Failed rto find any more items on current page");
+                logger.info("Stoping because: Failed to find any items on current page");
                 break;
             } else if (entries_per_page_current < max_entries_per_page) {
                 logger.info("Stopping because: Reached end");
@@ -97,11 +106,13 @@ public class GelbooruCom extends PluginForDecrypt {
             } else {
                 this.br.getPage(url_part + "&pid=" + offset);
                 if (this.br.containsHTML("You are viewing an advertisement")) {
+                    logger.info("Skipping ad " + adPagesSkipped);
                     this.br.getPage(url_part + "&pid=" + offset);
+                    adPagesSkipped++;
                 }
             }
         } while (!this.isAbort());
-        return decryptedLinks;
+        return ret;
     }
 
     @Override
