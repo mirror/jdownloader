@@ -139,7 +139,7 @@ public class FastShareCz extends PluginForHost {
             /* Premium account */
             return 0;
         } else {
-            /* Free(anonymous) and unknown account type */
+            /* Free(anonymous) or unknown account type */
             return 1;
         }
     }

@@ -424,7 +424,7 @@ public class GoogleDriveCrawler extends PluginForDecrypt {
             key = br.getRegex("\"([^\"]+)\",\"https://blobcomments-pa\\.clients6\\.google\\.com\"").getMatch(0);
         } else {
             final String keys[] = br.getRegex("\"([A-Za-z0-9\\-_]{6})([A-Za-z0-9\\-_]+)\"\\s*,\\s*\"\\1[A-Za-z0-9\\-_]+\"\\s*,\\s*null").getRow(0);
-            logger.info("Keys:" + Arrays.asList(keys));
+            logger.info("Keys: " + Arrays.asList(keys));
             if (keys == null || keys.length != 2) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -435,11 +435,7 @@ public class GoogleDriveCrawler extends PluginForDecrypt {
         }
         logger.info("Using key: " + key);
         final int maxItemsPerRequest = 50;
-        String teamDriveID = new Regex(json_src, ",null,\\d{10,},\\d+,\"([A-Za-z0-9_\\-]{10,30})\",null,null").getMatch(0);
-        if (account != null && teamDriveID == null) {
-            /* 2023-02-28: Very ugly RegEx */
-            teamDriveID = br.getRegex("null,null,null,null,null,null,null,null,null,null,\"([A-Za-z0-9_\\-]{10,30})\",null,null").getMatch(0);
-        }
+        final String teamDriveID = new Regex(json_src, ",null,\\d{10,},\\d+,\"([A-Za-z0-9_\\-]{10,30})\",null,null").getMatch(0);
         final UrlQuery query = new UrlQuery();
         query.add("openDrive", "false");
         query.add("reason", "102");

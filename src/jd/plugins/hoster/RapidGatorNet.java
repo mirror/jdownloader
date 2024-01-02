@@ -340,6 +340,7 @@ public class RapidGatorNet extends PluginForHost {
         if (!link.isNameSet()) {
             link.setName(getFallbackFilename(link));
         }
+        /* Docs: https://rapidgator.net/article/api/file#info */
         br.getPage(getAPIBase() + "file/info?token=" + session_id + "&file_id=" + Encoding.urlEncode(this.getFID(link)));
         final Map<String, Object> response = this.handleErrors_api(session_id, link, account, br, true);
         final Map<String, Object> filemap = (Map<String, Object>) response.get("file");
@@ -1084,6 +1085,7 @@ public class RapidGatorNet extends PluginForHost {
             }
             /* Avoid full logins - RG will temporarily block accounts on too many full logins in a short time! */
             logger.info("Performing full login");
+            /* Docs: https://rapidgator.net/article/api/user#login */
             br.getPage(getAPIBase() + "user/login?login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
             final Map<String, Object> response = handleErrors_api(null, null, account, br);
             /* 2019-12-14: session_id == PHPSESSID cookie */
@@ -1202,23 +1204,23 @@ public class RapidGatorNet extends PluginForHost {
                 } else if (errorMessage.contains("User is not PREMIUM") || errorMessage.contains("This file can be downloaded by premium only") || errorMessage.contains("You can download files up to")) {
                     throw new AccountRequiredException();
                 } else if (errorMessage.contains("Login or password is wrong") || errorMessage.contains("Error: Error e-mail or password")) {
-                    throw new AccountInvalidException();
+                    throw new AccountInvalidException(errorMessage);
                 } else if (errorMessage.contains("Password cannot be blank")) {
-                    throw new AccountInvalidException();
+                    throw new AccountInvalidException(errorMessage);
                 } else if (errorMessage.contains("User is FROZEN")) {
-                    throw new AccountInvalidException("Account is banned");
+                    throw new AccountInvalidException(errorMessage);
                 } else if (StringUtils.containsIgnoreCase(errorMessage, "Error: ACCOUNT LOCKED FOR VIOLATION OF OUR TERMS. PLEASE CONTACT SUPPORT.")) {
                     // most likely account sharing as result of shared account dbs.
-                    throw new AccountInvalidException("Account Locked! Violation of ToS!");
+                    throw new AccountInvalidException(errorMessage);
                 } else if (errorMessage.contains("Parameter login or password is missing")) {
                     /*
                      * Unusual case but this may also happen frequently if users use strange chars as username/password so simply treat this
                      * as "login/password wrong"!
                      */
-                    throw new AccountInvalidException();
+                    throw new AccountInvalidException(errorMessage);
                 } else if (status == 401 && StringUtils.containsIgnoreCase(errorMessage, "Wrong e-mail or password")) {
                     /* 2019-12-14: {"response":null,"response_status":401,"response_details":"Error: Wrong e-mail or password."} */
-                    throw new AccountInvalidException();
+                    throw new AccountInvalidException(errorMessage);
                 } else if (status == 401 || StringUtils.containsIgnoreCase(errorMessage, "Session not exist") || StringUtils.containsIgnoreCase(errorMessage, "Session doesn't exist")) {
                     // {"response":null,"status":401,"details":"Error. Session doesn't exist"}
                     // {"response":null,"status":401,"details":"Error. Session not exist"}
@@ -1269,21 +1271,17 @@ public class RapidGatorNet extends PluginForHost {
             loginAPI(account);
             this.requestFileInformationAPI(link, account);
             session_id = account.getStringProperty(PROPERTY_sessionid);
+            /* Docs: https://rapidgator.net/article/api/file#download */
             br.getPage(getAPIBase() + "file/download?token=" + session_id + "&file_id=" + Encoding.urlEncode(this.getFID(link)));
-            // TODO: Use json parser
-            // final Map<String, Object> response = handleErrors_api(session_id, link, account, br);
-            directurl = PluginJSonUtils.getJsonValue(br, "url");
+            final Map<String, Object> response = handleErrors_api(session_id, link, account, br, false);
+            directurl = (String) response.get("download_url");
             if (StringUtils.isEmpty(directurl)) {
-                /* 2019-12-14: APIv2 */
-                directurl = PluginJSonUtils.getJsonValue(br, "download_url");
-            }
-            if (StringUtils.isEmpty(directurl)) {
-                logger.warning("Failed to find final downloadurl");
+                /* This should never happen! */
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
         if (PluginJsonConfig.get(RapidGatorConfig.class).isExperimentalEnforceSSL()) {
-            directurl = directurl.replaceFirst("^http://", "https://");
+            directurl = directurl.replaceFirst("(?i)^http://", "https://");
         }
         dl = new jd.plugins.BrowserAdapter().openDownload(br, link, directurl, isResumeable(link, account), getMaxChunks(link, account));
         dl.setFilenameFix(true);
