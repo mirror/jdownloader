@@ -79,7 +79,7 @@ public class FilesFm extends PluginForHost {
         dllink = null;
         this.setBrowserExclusive();
         this.br.setFollowRedirects(true);
-        final String mainlink = link.getStringProperty("mainlink", null);
+        final String mainlink = link.getStringProperty("mainlink");
         if (mainlink != null) {
             /* Referer needed to download. Not always given as users can also add directlinks without going over the decrypter. */
             this.br.getPage(mainlink);
@@ -91,7 +91,7 @@ public class FilesFm extends PluginForHost {
             }
         }
         final String linkid = this.getLinkID(link);
-        final String linkpart = new Regex(link.getDownloadURL(), "(\\?i=.+)").getMatch(0);
+        final String linkpart = new Regex(link.getPluginPatternMatcher(), "(\\?i=.+)").getMatch(0);
         final String filename_url = new Regex(linkpart, "\\&n=(.+)").getMatch(0);
         String filename_header = null;
         URLConnectionAdapter con = null;
@@ -152,7 +152,7 @@ public class FilesFm extends PluginForHost {
                 } else if (filename_url != null) {
                     link.setFinalFileName(filename_url);
                 }
-                link.setDownloadSize(con.getLongContentLength());
+                link.setVerifiedFileSize(con.getCompleteContentLength());
             }
         } finally {
             try {

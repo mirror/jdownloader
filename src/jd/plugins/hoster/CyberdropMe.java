@@ -3,7 +3,11 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
+
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -20,8 +24,6 @@ import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.CyberdropMeAlbum;
-
-import org.appwork.utils.StringUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 @PluginDependencies(dependencies = { CyberdropMeAlbum.class })
@@ -103,6 +105,8 @@ public class CyberdropMe extends PluginForHost {
         }
     }
 
+    private final String PROPERTY_LAST_GRABBED_DIRECTURL = "last_grabbed_directurl";
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         return requestFileInformation(link, false);
@@ -111,14 +115,46 @@ public class CyberdropMe extends PluginForHost {
     private AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        final String directurl = this.getContentURL(link);
+        final String contenturl = this.getContentURL(link);
         final String filenameFromURL = getFID(link);
         if (!link.isNameSet() && filenameFromURL != null) {
             link.setName(filenameFromURL);
         }
-        final String containerURL = link.getContainerUrl();
-        if (containerURL != null) {
-            br.getHeaders().put("Referer", containerURL);
+        String directurl;
+        final Regex singlefle = new Regex(contenturl, CyberdropMeAlbum.TYPE_SINGLE_FILE);
+        if (singlefle.patternFind()) {
+            final String fileID = singlefle.getMatch(0);
+            final Browser brc = br.cloneBrowser();
+            brc.getHeaders().put("Referer", contenturl);
+            brc.getPage("https://" + this.getHost() + "/api/f/" + fileID);
+            if (brc.getHttpConnection().getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Invalid API response: Error 403 too many connections?", 1 * 60 * 1000l);
+            } else if (brc.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            if (!brc.getRequest().getHtmlCode().startsWith("{")) {
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Invalid API response: No json response", 1 * 60 * 1000l);
+            }
+            final Map<String, Object> entries = restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.MAP);
+            link.setFinalFileName(entries.get("name").toString());
+            link.setVerifiedFileSize(((Number) entries.get("size")).longValue());
+            directurl = entries.get("url").toString();
+            if (!StringUtils.isEmpty(directurl)) {
+                link.setProperty(PROPERTY_LAST_GRABBED_DIRECTURL, directurl);
+            }
+            if (!isDownload) {
+                return AvailableStatus.TRUE;
+            }
+        } else {
+            final String containerURL = link.getContainerUrl();
+            if (containerURL != null) {
+                br.getHeaders().put("Referer", containerURL);
+            }
+            /* Assume that contenturl == directurl */
+            directurl = contenturl;
+        }
+        if (directurl == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         URLConnectionAdapter con = null;
         try {

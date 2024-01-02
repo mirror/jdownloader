@@ -124,6 +124,35 @@ public class FastShareCz extends PluginForHost {
     }
 
     @Override
+    public boolean isResumeable(final DownloadLink link, final Account account) {
+        if (isPremiumAccount(account)) {
+            /* Premium account */
+            return true;
+        } else {
+            /* Free(anonymous) and unknown account type */
+            return false;
+        }
+    }
+
+    public int getMaxChunks(final Account account) {
+        if (isPremiumAccount(account)) {
+            /* Premium account */
+            return 0;
+        } else {
+            /* Free(anonymous) and unknown account type */
+            return 1;
+        }
+    }
+
+    private boolean isPremiumAccount(final Account account) {
+        if (account != null && AccountType.PREMIUM.equals(account.getType())) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         /*
          * 2023-09-18: Only registered users can see/download files. For non-logged-in-users it seems like all files are displayed as
@@ -202,10 +231,10 @@ public class FastShareCz extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        handleFreeAndFreeAccountDownload(link, null);
+        handleDownload(link, null);
     }
 
-    public void handleFreeAndFreeAccountDownload(final DownloadLink link, final Account account) throws Exception, PluginException {
+    public void handleDownload(final DownloadLink link, final Account account) throws Exception, PluginException {
         final String directurlproperty = getDirecturlProperty(account);
         final String storedDirecturl = link.getStringProperty(directurlproperty);
         String dllink = null;
@@ -217,59 +246,45 @@ public class FastShareCz extends PluginForHost {
             /* First check if linkcheck found a direct-url */
             dllink = link.getStringProperty(directurlproperty);
             if (dllink == null) {
-                if (br.containsHTML("(?i)(>100% FREE slotů je plných|>Využijte PROFI nebo zkuste později)")) {
-                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free slots available", 10 * 60 * 1000l);
-                }
-                br.setFollowRedirects(false);
-                final String captchaLink = br.getRegex("\"(/securimage_show\\.php\\?sid=[a-z0-9]+)\"").getMatch(0);
-                String action = br.getRegex("=\\s*\"(/free/[^<>\"]*?)\"").getMatch(0);
-                if (action == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                if (captchaLink != null) {
-                    final String captcha = getCaptchaCode(captchaLink, link);
-                    br.postPage(action, "code=" + Encoding.urlEncode(captcha));
+                this.checkErrors(br, link, account);
+                if (this.isPremiumAccount(account)) {
+                    dllink = br.getRegex("\"(https?://[a-z0-9]+\\." + Pattern.quote(br.getHost()) + "/download\\.php[^<>\"]*?)\"").getMatch(0);
+                    if (dllink == null) {
+                        dllink = br.getRegex("class=\"speed\">\\s*<a href=\"(https?://[^/]*" + Pattern.quote(br.getHost()) + "/[^<>\"]*?)\"").getMatch(0);
+                    }
                 } else {
-                    br.postPage(action, "");
+                    br.setFollowRedirects(false);
+                    final String captchaLink = br.getRegex("\"(/securimage_show\\.php\\?sid=[a-z0-9]+)\"").getMatch(0);
+                    String action = br.getRegex("=\\s*\"(/free/[^<>\"]*?)\"").getMatch(0);
+                    if (action == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    if (captchaLink != null) {
+                        final String captcha = getCaptchaCode(captchaLink, link);
+                        br.postPage(action, "code=" + Encoding.urlEncode(captcha));
+                    } else {
+                        br.postPage(action, "");
+                    }
+                    if (br.containsHTML("Špatně zadaný kód\\. Zkuste to znovu")) {
+                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                    }
+                    dllink = br.getRedirectLocation();
                 }
-                if (br.containsHTML("Pres FREE muzete stahovat jen jeden soubor najednou")) {
-                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Too many simultan downloads", 60 * 1000l);
-                } else if (br.containsHTML("Špatně zadaný kód. Zkuste to znovu")) {
-                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                }
-                dllink = br.getRedirectLocation();
                 if (dllink != null && canHandle(dllink)) {
+                    // TODO: Check if this is still needed
                     // eg redirect http->https or cut-off ref parameter
                     br.getPage(dllink);
                     dllink = br.getRedirectLocation();
                 }
                 if (dllink == null) {
-                    /*
-                     * E.g.
-                     * "<script>alert('Přes FREE můžete stahovat jen jeden soubor současně.');top.location.href='http://www.fastshare.cz/123456789/blabla.bla';</script>"
-                     */
-                    if (br.containsHTML("Přes FREE můžete stahovat jen jeden soubor současně")) {
-                        throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait before starting more free downloads", 3 * 60 * 1000l);
-                    } else if (br.containsHTML("<script>alert\\(")) {
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error #1", 30 * 60 * 1000l);
-                    } else if (br.containsHTML("No htmlCode read")) {
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error #2", 30 * 60 * 1000l);
-                    } else if (br.containsHTML("/free-stahovani")) {
-                        /* Free downloadlimit reached or message "As a free user you can download max 1 file at a time" */
-                        final String errortext = "Reached max concurrent downloads limit";
-                        if (account != null) {
-                            throw new AccountUnavailableException(errortext, 1 * 60 * 1000l);
-                        } else {
-                            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, errortext, 1 * 60 * 1000l);
-                        }
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
+                    this.checkErrors(br, link, account);
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
         }
+        br.setFollowRedirects(true);
         try {
-            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, false, 1);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, this.isResumeable(link, account), this.getMaxChunks(account));
         } catch (final Exception e) {
             if (storedDirecturl != null) {
                 link.removeProperty(directurlproperty);
@@ -284,13 +299,14 @@ public class FastShareCz extends PluginForHost {
         }
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             br.followConnection(true);
+            checkErrors(br, link, account);
             if (br.getRequest().getHtmlCode().length() <= 100) {
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Server error");
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        dl.setFilenameFix(true);
+        dl.setFilenameFix(isContentDispositionFixRequired(dl, dl.getConnection(), link));
         dl.startDownload();
     }
 
@@ -403,51 +419,32 @@ public class FastShareCz extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        if (account.getType() == AccountType.FREE) {
-            this.handleFreeAndFreeAccountDownload(link, account);
-        } else {
-            // TODO: Merge this handling with free handling to remove duplicated code
-            requestFileInformation(link);
-            login(account, false);
-            br.setFollowRedirects(false);
-            br.getPage(getContentURL(link));
-            checkErrors(br, link, account);
-            /* Maybe user has direct downloads active */
-            String dllink = br.getRedirectLocation();
-            if (dllink != null && canHandle(dllink)) {
-                // eg redirect http->https or cut of ref parameter
-                br.getPage(dllink);
-                dllink = br.getRedirectLocation();
-            }
-            if (dllink == null) {
-                logger.info("Direct downloads inactive --> We have to find the final downloadlink");
-                /*
-                 * 2023-05-05: Very important: Include current domain in RegEx. They still got some old/dummy URLs with older domains in
-                 * html code -> Accessing these will result in an empty page instead of the file we want.
-                 */
-                dllink = br.getRegex("\"(https?://[a-z0-9]+\\." + Pattern.quote(br.getHost()) + "/download\\.php[^<>\"]*?)\"").getMatch(0);
-                if (dllink == null) {
-                    dllink = br.getRegex("class=\"speed\">\\s*<a href=\"(https?://[^/]*" + Pattern.quote(br.getHost()) + "/[^<>\"]*?)\"").getMatch(0);
-                }
-            }
-            if (dllink == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, Encoding.htmlDecode(dllink), true, 0);
-            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-                br.followConnection(true);
-                checkErrors(br, link, account);
-                logger.warning("The final dllink seems not to be a file!");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            dl.setFilenameFix(isContentDispositionFixRequired(dl, dl.getConnection(), link));
-            dl.startDownload();
-        }
+        this.handleDownload(link, account);
     }
 
-    private void checkErrors(final Browser br, final DownloadLink link, final Account account) throws AccountUnavailableException {
-        if (br.containsHTML("(?i)máte dostatečný kredit pro stažení tohoto souboru")) {
-            throw new AccountUnavailableException("Trafficlimit reached!", 5 * 60 * 1000l);
+    private void checkErrors(final Browser br, final DownloadLink link, final Account account) throws PluginException {
+        {
+            /* [Premium-] account related error messages */
+            if (br.containsHTML("(?i)máte dostatečný kredit pro stažení tohoto souboru")) {
+                throw new AccountUnavailableException("Traffic limit reached", 5 * 60 * 1000l);
+            }
+        }
+        final String errortextMaxConcurrentDownloadsLimit = "Reached max concurrent downloads limit";
+        if (br.containsHTML("(?i)(>100% FREE slotů je plných|>Využijte PROFI nebo zkuste později)")) {
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free slots available", 10 * 60 * 1000l);
+        } else if (br.containsHTML("Přes FREE můžete stahovat jen jeden soubor současně|Pres FREE muzete stahovat jen jeden soubor najednou")) {
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, errortextMaxConcurrentDownloadsLimit, 3 * 60 * 1000l);
+        } else if (br.containsHTML("<script>alert\\(")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error #1", 30 * 60 * 1000l);
+        } else if (br.getRequest().getHtmlCode().length() <= 100) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error #2 (blank page)", 30 * 60 * 1000l);
+        } else if (br.containsHTML("/free-stahovani")) {
+            /* Free downloadlimit reached or message "As a free user you can download max 1 file at a time" */
+            if (account != null) {
+                throw new AccountUnavailableException(errortextMaxConcurrentDownloadsLimit, 1 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, errortextMaxConcurrentDownloadsLimit, 1 * 60 * 1000l);
+            }
         }
     }
 

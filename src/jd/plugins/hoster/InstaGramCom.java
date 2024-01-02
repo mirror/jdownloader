@@ -132,46 +132,50 @@ public class InstaGramCom extends PluginForHost {
         return MAINPAGE + "/about/legal/terms/";
     }
 
-    private static final boolean allowCookieLoginOnly                     = true;
-    private String               dllink                                   = null;
+    private static final boolean allowCookieLoginOnly                        = true;
+    private String               dllink                                      = null;
     /**
      * https://instagram.api-docs.io/1.0 </br>
      */
-    public static final String   ALT_API_BASE                             = "https://i.instagram.com/api/v1";
+    public static final String   ALT_API_BASE                                = "https://i.instagram.com/api/v1";
     /* Connection stuff */
-    private final boolean        RESUME                                   = true;
+    private final boolean        RESUME                                      = true;
     /* Chunkload makes no sense for pictures/small files */
-    private final int            MAXCHUNKS_pictures                       = 1;
+    private final int            MAXCHUNKS_pictures                          = 1;
     /* 2020-01-21: Multi chunks are possible but it's better not to do this to avoid getting blocked! */
-    private final int            MAXCHUNKS_videos                         = 1;
-    private final int            MAXDOWNLOADS                             = -1;
-    private static final String  MAINPAGE                                 = "https://www.instagram.com";
+    private final int            MAXCHUNKS_videos                            = 1;
+    private final int            MAXDOWNLOADS                                = -1;
+    private static final String  MAINPAGE                                    = "https://www.instagram.com";
     /* DownloadLink/Packagizer properties */
-    public static final String   PROPERTY_has_tried_to_crawl_original_url = "has_tried_to_crawl_original_url";
-    public static final String   PROPERTY_is_part_of_story                = "is_part_of_story";
-    public static final String   PROPERTY_DIRECTURL                       = "directurl";
-    public static final String   PROPERTY_private_url                     = "private_url";
-    public static final String   PROPERTY_internal_media_id               = "internal_media_id";
-    public static final String   PROPERTY_orderid                         = "orderid";
-    public static final String   PROPERTY_orderid_raw                     = "orderid_raw";
-    public static final String   PROPERTY_orderid_max_raw                 = "orderid_max_raw";                // number of items inside
+    public static final String   PROPERTY_has_tried_to_crawl_original_url    = "has_tried_to_crawl_original_url";
+    public static final String   PROPERTY_is_part_of_story                   = "is_part_of_story";
+    public static final String   PROPERTY_DIRECTURL                          = "directurl";
+    public static final String   PROPERTY_private_url                        = "private_url";
+    public static final String   PROPERTY_internal_media_id                  = "internal_media_id";
+    public static final String   PROPERTY_orderid                            = "orderid";
+    public static final String   PROPERTY_orderid_raw                        = "orderid_raw";
+    public static final String   PROPERTY_orderid_max_raw                    = "orderid_max_raw";                    // number of items
+                                                                                                                     // inside
     // post/story
-    public static final String   PROPERTY_shortcode                       = "shortcode";
-    public static final String   PROPERTY_description                     = "description";
-    public static final String   PROPERTY_uploader                        = "uploader";
-    public static final String   PROPERTY_type                            = "type";
-    public static final String   PROPERTY_date                            = "date";
-    public static final String   PROPERTY_hashtag                         = "hashtag";
+    public static final String   PROPERTY_shortcode                          = "shortcode";
+    public static final String   PROPERTY_description                        = "description";
+    public static final String   PROPERTY_uploader                           = "uploader";
+    public static final String   PROPERTY_type                               = "type";
+    public static final String   PROPERTY_date                               = "date";
+    public static final String   PROPERTY_hashtag                            = "hashtag";
+    public static final String   PROPERTY_coauthor_producers_comma_separated = "coauthor_producers_comma_separated"; // if a post has
+                                                                                                                     // multiple authors
     @Deprecated
-    public static final String   PROPERTY_filename_from_crawler           = "decypter_filename";              // used until crawler rev
+    public static final String   PROPERTY_filename_from_crawler              = "decypter_filename";                  // used until crawler
+                                                                                                                     // rev
     // 45795
-    public static final String   PROPERTY_main_content_id                 = "main_content_id";                // e.g.
+    public static final String   PROPERTY_main_content_id                    = "main_content_id";                    // e.g.
     // instagram.com/p/<main_content_id>/
-    public static final String   PROPERTY_forced_packagename              = "forced_packagename";
-    public static final String   PROPERTY_is_private                      = "is_private";
-    private final String         ACCOUNT_USERNAME                         = "username";
-    private final String         ACCOUNT_DISPLAED_COOKIE_LOGIN_HINT       = "displayed_cookie_login_hint";
-    private boolean              hasJustRefreshedDirecturl                = false;
+    public static final String   PROPERTY_forced_packagename                 = "forced_packagename";
+    public static final String   PROPERTY_is_private                         = "is_private";
+    private final String         ACCOUNT_USERNAME                            = "username";
+    private final String         ACCOUNT_DISPLAED_COOKIE_LOGIN_HINT          = "displayed_cookie_login_hint";
+    private boolean              hasJustRefreshedDirecturl                   = false;
 
     public static void setRequestLimit() {
         Browser.setRequestIntervalLimitGlobal("instagram.com", true, 8000);

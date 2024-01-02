@@ -557,38 +557,53 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
          * https://www.instagram.com/p/<postID>/?__a=1&__d=dis
          */
         getPageAutoLogin(account, loggedIN, galleryID, param, br, param.getCryptedUrl(), null, null);
-        final String json = websiteGetJson();
-        Map<String, Object> entries = restoreFromString(json, TypeRef.MAP);
-        final List<Map<String, Object>> resource_data_list;
-        if (loggedIN.get()) {
-            final String graphql = br.getRegex(">\\s*window\\.__additionalDataLoaded\\('/(?:(?:[^/]+/)?p|tv|reel)/[^/]+/'\\s*?,\\s*?(\\{.*?)\\);\\s*</script>").getMatch(0);
-            if (graphql != null) {
-                logger.info("Found expected __additionalDataLoaded json");
-                final Map<String, Object> entriesO = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(graphql);
-                // entries = (Map<String, Object>) entriesO;
-                resource_data_list = new ArrayList<Map<String, Object>>();
-                resource_data_list.add(entriesO);
+        final List<Map<String, Object>> postsFromWebsite = new ArrayList<Map<String, Object>>(0);
+        try {
+            final String json = websiteGetJson();
+            Map<String, Object> entries = restoreFromString(json, TypeRef.MAP);
+            List<Map<String, Object>> resource_data_list = null;
+            if (loggedIN.get()) {
+                final String[] bboxJsons = br.getRegex("data-sjs>(\\{\"require\".*?\\})</script>").getColumn(0);
+                if (bboxJsons != null && bboxJsons.length > 0) {
+                    for (final String bboxJson : bboxJsons) {
+                        final Map<String, Object> bboxJsonParsed = restoreFromString(bboxJson, TypeRef.MAP);
+                        final Map<String, Object> result = (Map<String, Object>) findPostsListRecursive(bboxJsonParsed);
+                        if (result != null) {
+                            final List<Map<String, Object>> postitems = (List<Map<String, Object>>) result.get("items");
+                            for (final Map<String, Object> postitem : postitems) {
+                                postsFromWebsite.add(postitem);
+                            }
+                            break;
+                        }
+                    }
+                }
             } else {
                 resource_data_list = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entries, "entry_data/PostPage");
-                logger.info("Failed to find expected __additionalDataLoaded json --> Trying fallback:" + (resource_data_list != null));
             }
-        } else {
-            resource_data_list = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entries, "entry_data/PostPage");
+            if (resource_data_list != null) {
+                /**
+                 * Old code </br>
+                 * TODO: Delete this
+                 */
+                for (final Map<String, Object> entry : resource_data_list) {
+                    final Map<String, Object> mediaSource = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entry, "graphql/shortcode_media");
+                    if (mediaSource != null) {
+                        postsFromWebsite.add(mediaSource);
+                        continue;
+                    }
+                    final List<Map<String, Object>> items = (List<Map<String, Object>>) entry.get("items");
+                    if (items == null) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    postsFromWebsite.addAll(items);
+                }
+            }
+        } catch (final Throwable e) {
+            logger.log(e);
+            logger.warning("Website mode failed with exception");
+            /* Allow fallback to API down below. */
         }
-        if (resource_data_list != null) {
-            final List<Map<String, Object>> posts = new ArrayList<Map<String, Object>>(0);
-            for (final Map<String, Object> entry : resource_data_list) {
-                final Map<String, Object> mediaSource = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entry, "graphql/shortcode_media");
-                if (mediaSource != null) {
-                    posts.add(mediaSource);
-                    continue;
-                }
-                final List<Map<String, Object>> items = (List<Map<String, Object>>) entry.get("items");
-                if (items == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                posts.addAll(items);
-            }
+        if (postsFromWebsite.size() > 0) {
             final InstagramMetadata metadata = new InstagramMetadata();
             if (param.getDownloadLink() != null) {
                 /*
@@ -605,11 +620,11 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                     metadata.setPackageName(forcedPackagename);
                 }
             }
-            final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-            for (final Map<String, Object> post : posts) {
-                decryptedLinks.addAll(crawlPost(param, metadata, post));
+            final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+            for (final Map<String, Object> post : postsFromWebsite) {
+                ret.addAll(crawlPost(param, metadata, post));
             }
-            return decryptedLinks;
+            return ret;
         } else {
             /* API mode. Required when we're logged in. */
             logger.info("Auto fallback to API crawler");
@@ -637,6 +652,42 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             return this.crawlGalleryAltAPI(param, account, loggedIN, internalMediaID);
+        }
+    }
+
+    /* Finds object containing single Instagram posts inside given parsed website-json object. */
+    private Object findPostsListRecursive(final Object o) {
+        if (o instanceof Map) {
+            final Map<String, Object> entrymap = (Map<String, Object>) o;
+            final Object targetO = entrymap.get("xdt_api__v1__media__shortcode__web_info");
+            if (targetO != null) {
+                return targetO;
+            } else {
+                for (final Map.Entry<String, Object> entry : entrymap.entrySet()) {
+                    // final String key = entry.getKey();
+                    final Object value = entry.getValue();
+                    if (value instanceof List || value instanceof Map) {
+                        final Object ret = findPostsListRecursive(value);
+                        if (ret != null) {
+                            return ret;
+                        }
+                    }
+                }
+                return null;
+            }
+        } else if (o instanceof List) {
+            final List<Object> array = (List) o;
+            for (final Object arrayo : array) {
+                if (arrayo instanceof List || arrayo instanceof Map) {
+                    final Object res = findPostsListRecursive(arrayo);
+                    if (res != null) {
+                        return res;
+                    }
+                }
+            }
+            return null;
+        } else {
+            return null;
         }
     }
 
@@ -1449,6 +1500,14 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         } else {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unsupported media type: " + typename);
         }
+        String coauthor_producers_comma_separated = "";
+        final List<Map<String, Object>> coauthor_producers = (List<Map<String, Object>>) post.get("coauthor_producers");
+        for (final Map<String, Object> coauthor_producer : coauthor_producers) {
+            if (coauthor_producers_comma_separated.length() > 0) {
+                coauthor_producers_comma_separated += ",";
+            }
+            coauthor_producers_comma_separated += coauthor_producer.get("username");
+        }
         /* Create FilePackage if packagename is available */
         final FilePackage fp = getFilePackageForGallery(metadata);
         final String postURL = this.generateURLPost(mainContentID);
@@ -1526,6 +1585,9 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
             if (!StringUtils.isEmpty(metadata.getUsername())) {
                 /* Packagizer Property */
                 dl.setProperty(InstaGramCom.PROPERTY_uploader, metadata.getUsername());
+            }
+            if (!StringUtils.isEmpty(coauthor_producers_comma_separated)) {
+                dl.setProperty(InstaGramCom.PROPERTY_coauthor_producers_comma_separated, coauthor_producers_comma_separated);
             }
             if (isPartOfStory) {
                 dl.setProperty(InstaGramCom.PROPERTY_is_part_of_story, true);
