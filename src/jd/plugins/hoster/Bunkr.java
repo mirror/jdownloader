@@ -77,6 +77,7 @@ public class Bunkr extends PluginForHost {
     @Override
     public String rewriteHost(final String host) {
         /* This host is frequently changing its' main domain. */
+        /* 2023-01-03: Main domain changed from bunkr.la to bunkrr.su */
         return this.rewriteHost(getPluginDomains(), host);
     }
 

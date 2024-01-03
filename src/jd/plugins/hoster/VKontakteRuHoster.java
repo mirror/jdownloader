@@ -39,7 +39,6 @@ import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.SkipReasonException;
-import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
@@ -124,8 +123,6 @@ public class VKontakteRuHoster extends PluginForHost {
     public static final String  VKADVANCED_USER_AGENT                                                       = "VKADVANCED_USER_AGENT_NEW_06_2023";
     public static final String  default_user_agent                                                          = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36";
     public static Object        LOCK                                                                        = new Object();
-    private String              finalUrl                                                                    = null;
-    private final String        ALPHANUMERIC                                                                = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMN0PQRSTUVWXYZO123456789+/=";
     /* Properties */
     /* General */
     public static final String  PROPERTY_GENERAL_owner_id                                                   = "owner_id";
@@ -138,7 +135,6 @@ public class VKontakteRuHoster extends PluginForHost {
     /* Can be given for any content if it is part of a wall post */
     public static String        PROPERTY_GENERAL_wall_post_id                                               = "wall_post_id";
     /* For single photos */
-    public static final String  PROPERTY_PHOTOS_picturedirectlink                                           = "picturedirectlink";
     public static final String  PROPERTY_PHOTOS_directurls_fallback                                         = "directurls_fallback";
     public static final String  PROPERTY_PHOTOS_photo_list_id                                               = "photo_list_id";
     public static final String  PROPERTY_PHOTOS_photo_module                                                = "photo_module";
@@ -170,6 +166,7 @@ public class VKontakteRuHoster extends PluginForHost {
         Browser.setBurstRequestIntervalLimitGlobal("vk.com", 500, 15, 30000);
     }
 
+    @Override
     public boolean allowHandle(final DownloadLink link, final PluginForHost plugin) {
         /* 2019-08-06: Do not allow multihost plugins to handle URLs handled by this plugin! */
         return link.getHost().equalsIgnoreCase(plugin.getHost());
@@ -185,16 +182,9 @@ public class VKontakteRuHoster extends PluginForHost {
         return ret;
     }
 
-    private String setAndGetFileNameFromDirectURL(DownloadLink link, final String url) {
-        String filename = extractFileNameFromURL(url);
+    private String setAndGetFileNameFromDirectURL(final DownloadLink link, final String url) {
+        String filename = Plugin.extractFileNameFromURL(url);
         if (filename != null) {
-            final String extension = Plugin.getFileNameExtensionFromString(filename);
-            if (StringUtils.endsWithCaseInsensitive(filename, "." + extension)) {
-                final String urlName = new Regex(url, ".+/([^/].+\\." + Pattern.quote(extension) + ")$").getMatch(0);
-                if (urlName != null) {
-                    filename = urlName;
-                }
-            }
             try {
                 final String urlDecoded = SimpleFTP.BestEncodingGuessingURLDecode(filename);
                 if (link != null) {
@@ -219,21 +209,19 @@ public class VKontakteRuHoster extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     public AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
-        // nullify previous
-        br = this.createNewBrowserInstance();
-        dl = null;
-        finalUrl = null;
+        String finalurl = null;
         prepBrowser(br);
         if (link.getPluginPatternMatcher().matches(TYPE_DIRECT)) {
-            finalUrl = link.getPluginPatternMatcher();
+            finalurl = link.getPluginPatternMatcher();
             /* Prefer filename inside url */
-            final String filename = extractFileNameFromURL(finalUrl);
+            final String filename = extractFileNameFromURL(finalurl);
             if (filename != null) {
                 link.setFinalFileName(filename);
             }
-            if (linkOk(link, isDownload) != 1) {
+            if (linkOk(link, finalurl, isDownload) != 1) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
+            return AvailableStatus.TRUE;
         } else {
             if (account != null) {
                 /* Always login if possible (except for downloading directurls) */
@@ -255,65 +243,57 @@ public class VKontakteRuHoster extends PluginForHost {
                 final String redirect = br.getRedirectLocation();
                 if (redirect != null && redirect.matches(TYPE_DIRECT)) {
                     /* Check if we got a directURL. */
-                    finalUrl = redirect;
-                    setAndGetFileNameFromDirectURL(link, finalUrl);
-                    return AvailableStatus.TRUE;
-                }
-                if (br.containsHTML("(?i)This document is available only to its owner\\.")) {
-                    throw new AccountRequiredException("This document is available only to its owner");
-                }
-                final String json = br.getRegex("Docs\\.initDoc\\((\\{.*?\\})(\\);|\\)\\}\\)\\.catch)").getMatch(0);
-                if (json == null) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
-                final Map<String, Object> doc = restoreFromString(json, TypeRef.MAP);
-                finalUrl = (String) doc.get("docUrl");
-                if (StringUtils.isEmpty(finalUrl)) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
-                if (link.getPluginPatternMatcher().matches(TYPE_DOCLINK_2)) {
-                    /* Het IDs from json as they're not provided inside given URL. */
-                    ownerID = doc.get("docOwnerId").toString();
-                    contentID = doc.get("docId").toString();
-                    link.setProperty(PROPERTY_GENERAL_owner_id, ownerID);
-                    link.setProperty(PROPERTY_GENERAL_content_id, contentID);
-                }
-                final String filenameFromHTML = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
-                /* Sometimes filenames on site are cut - finallink usually contains the full filenames */
-                final String betterFilename = new Regex(finalUrl, "/([^<>\"/]+)\\?extra=.+$").getMatch(0);
-                String title = null;
-                if (betterFilename != null) {
-                    title = Encoding.htmlDecode(betterFilename).trim();
-                } else if (filenameFromHTML != null) {
-                    title = Encoding.htmlDecode(filenameFromHTML).trim();
-                }
-                if (title != null) {
-                    final String fileExtension = (String) doc.get("docExt");
-                    title = this.correctOrApplyFileNameExtension(title, "." + fileExtension);
-                    if (this.getPluginConfig().getBooleanProperty(VKDOCS_ADD_UNIQUE_ID, default_VKDOCS_ADD_UNIQUE_ID)) {
-                        link.setFinalFileName("doc" + ownerID + "_" + contentID + "_" + title);
-                    } else {
-                        link.setFinalFileName(title);
+                    finalurl = redirect;
+                    setAndGetFileNameFromDirectURL(link, finalurl);
+                } else {
+                    if (br.containsHTML("(?i)This document is available only to its owner\\.")) {
+                        throw new AccountRequiredException("This document is available only to its owner");
                     }
-                }
-                if (linkOk(link, isDownload) != 1) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    final String json = br.getRegex("Docs\\.initDoc\\((\\{.*?\\})(\\);|\\)\\}\\)\\.catch)").getMatch(0);
+                    if (json == null) {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    }
+                    final Map<String, Object> doc = restoreFromString(json, TypeRef.MAP);
+                    finalurl = (String) doc.get("docUrl");
+                    if (StringUtils.isEmpty(finalurl)) {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    }
+                    if (link.getPluginPatternMatcher().matches(TYPE_DOCLINK_2)) {
+                        /* Het IDs from json as they're not provided inside given URL. */
+                        ownerID = doc.get("docOwnerId").toString();
+                        contentID = doc.get("docId").toString();
+                        link.setProperty(PROPERTY_GENERAL_owner_id, ownerID);
+                        link.setProperty(PROPERTY_GENERAL_content_id, contentID);
+                    }
+                    final String filenameFromHTML = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
+                    /* Sometimes filenames on site are cut - finallink usually contains the full filenames */
+                    final String betterFilename = new Regex(finalurl, "/([^<>\"/]+)\\?extra=.+$").getMatch(0);
+                    String title = null;
+                    if (betterFilename != null) {
+                        title = Encoding.htmlDecode(betterFilename).trim();
+                    } else if (filenameFromHTML != null) {
+                        title = Encoding.htmlDecode(filenameFromHTML).trim();
+                    }
+                    if (title != null) {
+                        final String fileExtension = (String) doc.get("docExt");
+                        title = this.correctOrApplyFileNameExtension(title, "." + fileExtension);
+                        if (this.getPluginConfig().getBooleanProperty(VKDOCS_ADD_UNIQUE_ID, default_VKDOCS_ADD_UNIQUE_ID)) {
+                            link.setFinalFileName("doc" + ownerID + "_" + contentID + "_" + title);
+                        } else {
+                            link.setFinalFileName(title);
+                        }
+                    }
+                    if (linkOk(link, finalurl, isDownload) != 1) {
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    }
                 }
             } else if (link.getPluginPatternMatcher().matches(TYPE_AUDIOLINK)) {
-                finalUrl = link.getStringProperty(PROPERTY_GENERAL_directlink);
-                int checkstatus;
-                if (audioIsValidDirecturl(finalUrl)) {
-                    checkstatus = linkOk(link, isDownload);
+                final String storedDirecturl = this.getStoredDirecturl(link);
+                if (audioIsValidDirecturl(finalurl) && linkOk(link, storedDirecturl, isDownload) != 1) {
+                    finalurl = storedDirecturl;
                 } else {
-                    checkstatus = 0;
-                }
-                if (checkstatus != 1) {
-                    if (this.isDRMProtected(link)) {
-                        return AvailableStatus.UNCHECKABLE;
-                    }
-                    String url = null;
-                    final Browser br = this.br.cloneBrowser();
-                    br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                    final Browser brc = br.cloneBrowser();
+                    brc.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                     /*
                      * If these two values are present, we know that the content initially came from a 'wall' which requires us to use a
                      * different method to grab it as without that, permissions to play the track might be missing as it can only be
@@ -324,14 +304,14 @@ public class VKontakteRuHoster extends PluginForHost {
                     if (postID != null && fromId != null) {
                         logger.info("Trying to refresh audiolink directlink via wall-handling");
                         final String post = "act=get_wall_playlist&al=1&local_id=" + postID + "&oid=" + fromId + "&wall_type=own";
-                        br.postPage(getBaseURL() + "/audio", post);
-                        url = br.getRegex("\"0\":\"" + Pattern.quote(ownerID) + "\",\"1\":\"" + Pattern.quote(contentID) + "\",\"2\":(\"[^\"]+\")").getMatch(0);
-                        if (url != null) {
+                        brc.postPage(getBaseURL() + "/audio", post);
+                        finalurl = brc.getRegex("\"0\":\"" + Pattern.quote(ownerID) + "\",\"1\":\"" + Pattern.quote(contentID) + "\",\"2\":(\"[^\"]+\")").getMatch(0);
+                        if (finalurl != null) {
                             /* Decode the json string */
-                            url = (String) JavaScriptEngineFactory.jsonToJavaObject(url);
+                            finalurl = (String) JavaScriptEngineFactory.jsonToJavaObject(finalurl);
                         }
                     }
-                    if (url == null) {
+                    if (finalurl == null) {
                         logger.info("refreshing audiolink directlink via album-handling");
                         /*
                          * No way to easily get the needed info directly --> Load the complete audio album and find a fresh directlink for
@@ -344,42 +324,39 @@ public class VKontakteRuHoster extends PluginForHost {
                          * both variants.
                          */
                         postPageSafe(account, link, getBaseURL() + "/al_audio.php", "act=reload_audio&al=1&ids=" + ownerID + "_" + contentID);
-                        url = audioGetDirectURL(br, account);
-                        if (url == null) {
+                        finalurl = audioGetDirectURL(brc, account);
+                        if (finalurl == null) {
                             postPageSafe(account, link, getBaseURL() + "/al_audio.php", "act=reload_audio&al=1&ids=" + contentID + "_" + ownerID);
-                            url = audioGetDirectURL(br, account);
-                            if (url == null) {
+                            finalurl = audioGetDirectURL(brc, account);
+                            if (finalurl == null) {
                                 postPageSafe(account, link, getBaseURL() + "/al_audio.php", "act=reload_audio&al=1&ids=" + ownerID + "_" + contentID);
-                                url = audioGetDirectURL(br, account);
+                                finalurl = audioGetDirectURL(brc, account);
                             }
                         }
                     }
-                    if (url == null) {
+                    if (finalurl == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                    this.finalUrl = url;
-                    checkstatus = linkOk(link, isDownload);
-                    if (checkstatus != 1) {
+                    if (linkOk(link, finalurl, isDownload) != 1) {
                         logger.info("Refreshed audiolink directlink seems not to work --> Link is probably offline");
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    } else {
-                        link.setProperty(PROPERTY_GENERAL_directlink, finalUrl);
                     }
                 }
             } else if (this.isTypeVideo(link.getPluginPatternMatcher())) {
-                finalUrl = link.getStringProperty(PROPERTY_GENERAL_directlink);
+                final String storedDirecturl = this.getStoredDirecturl(link);
                 /* Don't lose filenames if e.g. user resets DownloadLink. */
                 final String chosenQuality = link.getStringProperty(PROPERTY_VIDEO_SELECTED_QUALITY);
                 if (chosenQuality != null) {
                     link.setFinalFileName(link.getStringProperty(PROPERTY_GENERAL_TITLE_PLAIN) + "_" + this.getOwnerID(link) + "_" + this.getContentID(link) + "_" + chosenQuality + ".mp4");
                 }
                 /* Check if stored directlink is expired */
-                int checkstatus = linkOk(link, isDownload);
-                if (checkstatus != 1) {
+                if (storedDirecturl != null && linkOk(link, storedDirecturl, isDownload) == 1) {
+                    logger.info("Re-using stored directurl: " + storedDirecturl);
+                    finalurl = storedDirecturl;
+                } else {
                     /* Refresh directlink */
-                    this.finalUrl = null;
                     final VKontakteRu crawler = (VKontakteRu) this.getNewPluginForDecryptInstance(this.getHost());
-                    if (this.isHLS(link, this.finalUrl)) {
+                    if (this.isHLS(link, storedDirecturl)) {
                         crawler.setPreferHLS(Boolean.TRUE);
                     }
                     if (!StringUtils.isEmpty(chosenQuality)) {
@@ -393,11 +370,11 @@ public class VKontakteRuHoster extends PluginForHost {
                                 continue;
                             }
                             if (quality.equalsIgnoreCase(chosenQuality)) {
-                                this.finalUrl = result.getStringProperty(PROPERTY_GENERAL_directlink);
+                                finalurl = result.getStringProperty(PROPERTY_GENERAL_directlink);
                                 break;
                             }
                         }
-                        if (this.finalUrl == null) {
+                        if (finalurl == null) {
                             throw new PluginException(LinkStatus.ERROR_FATAL, "Failed to refresh directurl" + chosenQuality);
                         }
                     } else {
@@ -412,16 +389,17 @@ public class VKontakteRuHoster extends PluginForHost {
                         link.setProperties(result.getProperties());
                         /* Correct filename which did not contain any quality modifier before. */
                         link.setFinalFileName(result.getFinalFileName());
-                        this.finalUrl = link.getStringProperty(PROPERTY_GENERAL_directlink);
+                        finalurl = this.getStoredDirecturl(link);
                     }
                 }
             } else {
                 /* Single photo --> Complex handling */
-                this.finalUrl = link.getStringProperty(PROPERTY_PHOTOS_picturedirectlink);
-                if (this.finalUrl == null && this.getPluginConfig().getBooleanProperty(VKWALL_STORE_PICTURE_DIRECTURLS, default_VKWALL_STORE_PICTURE_DIRECTURLS)) {
-                    this.finalUrl = getHighestQualityPicFromSavedJson(link, link.getStringProperty(PROPERTY_PHOTOS_directurls_fallback, null), isDownload);
+                finalurl = this.getStoredDirecturl(link);
+                if (finalurl == null && this.getPluginConfig().getBooleanProperty(VKWALL_STORE_PICTURE_DIRECTURLS, default_VKWALL_STORE_PICTURE_DIRECTURLS)) {
+                    finalurl = getHighestQualityPicFromSavedJson(link, link.getStringProperty(PROPERTY_PHOTOS_directurls_fallback, null), isDownload);
                 }
-                if (this.finalUrl == null) {
+                if (finalurl == null) {
+                    /* Try to obtain fresh directurl */
                     String photo_list_id = this.getPhotoListID(link);
                     final String module = link.getStringProperty(PROPERTY_PHOTOS_photo_module);
                     final String photoID = getPhotoID(link);
@@ -499,49 +477,57 @@ public class VKontakteRuHoster extends PluginForHost {
                         if (bestDirecturl == null) {
                             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
-                        this.finalUrl = bestDirecturl;
-                        link.setProperty(PROPERTY_PHOTOS_picturedirectlink, bestDirecturl);
-                        return AvailableStatus.TRUE;
+                        finalurl = bestDirecturl;
                     } else {
                         logger.warning("Failed to find json containing 'zFields'");
-                    }
-                    this.finalUrl = getHighestQualityPictureDownloadurl(br, link, isDownload);
-                    if (this.finalUrl == null) {
-                        // TODO: Check this handling
-                        /* Only go the json-way if we have to! */
-                        if (albumID != null) {
-                            postPageSafe(br, account, link, getBaseURL() + "/al_photos.php", "act=show&al=1&module=photos&list=album" + albumID + "&photo=" + photoID);
-                        } else {
-                            if (photo_list_id == null || module == null) {
-                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        finalurl = getHighestQualityPictureDownloadurl(br, link, isDownload);
+                        if (finalurl == null) {
+                            // TODO: Check this handling
+                            /* Only go the json-way if we have to! */
+                            if (albumID != null) {
+                                postPageSafe(br, account, link, getBaseURL() + "/al_photos.php", "act=show&al=1&module=photos&list=album" + albumID + "&photo=" + photoID);
+                            } else {
+                                if (photo_list_id == null || module == null) {
+                                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                                }
+                                final UrlQuery query = new UrlQuery();
+                                query.add("act", "show");
+                                query.add("al", "1");
+                                query.add("al_ad", "0");
+                                query.add("dmcah", "");
+                                query.add("list", Encoding.urlEncode(photo_list_id));
+                                query.add("module", module);
+                                query.add("photo", photoID);
+                                postPageSafe(br, account, link, getBaseURL() + "/al_photos.php?act=show", query);
                             }
-                            final UrlQuery query = new UrlQuery();
-                            query.add("act", "show");
-                            query.add("al", "1");
-                            query.add("al_ad", "0");
-                            query.add("dmcah", "");
-                            query.add("list", Encoding.urlEncode(photo_list_id));
-                            query.add("module", module);
-                            query.add("photo", photoID);
-                            postPageSafe(br, account, link, getBaseURL() + "/al_photos.php?act=show", query);
+                            checkErrorsPhoto(br);
+                            finalurl = getHighestQualityPictureDownloadurl(br, link, isDownload);
                         }
-                        checkErrorsPhoto(br);
-                        this.finalUrl = getHighestQualityPictureDownloadurl(br, link, isDownload);
-                    }
-                    if (StringUtils.isEmpty(this.finalUrl)) {
-                        /* Fallback but this will only work if the user enabled a specified plugin setting. */
-                        this.finalUrl = getHighestQualityPicFromSavedJson(link, link.getStringProperty(PROPERTY_PHOTOS_directurls_fallback, null), isDownload);
+                        if (StringUtils.isEmpty(finalurl)) {
+                            /* Fallback but this will only work if the user enabled a specified plugin setting. */
+                            finalurl = getHighestQualityPicFromSavedJson(link, link.getStringProperty(PROPERTY_PHOTOS_directurls_fallback, null), isDownload);
+                        }
                     }
                 }
                 /* 2016-10-07: Implemented to avoid host-side block although results tell me that this does not improve anything. */
                 setHeaderRefererPhoto(this.br);
-                final String filename = photoGetFinalFilename(getPhotoID(link), null, this.finalUrl);
+                final String filename = photoGetFinalFilename(getPhotoID(link), null, finalurl);
                 if (filename != null) {
                     link.setFinalFileName(filename);
                 }
             }
+            link.setProperty(PROPERTY_GENERAL_directlink, finalurl);
+            return AvailableStatus.TRUE;
         }
-        return AvailableStatus.TRUE;
+    }
+
+    private String getStoredDirecturl(final DownloadLink link) {
+        String url = link.getStringProperty(PROPERTY_GENERAL_directlink);
+        if (url == null) {
+            /* Legacy compatibility for images added up until including revision 48531. */
+            url = link.getStringProperty("picturedirectlink");
+        }
+        return url;
     }
 
     private String getPhotoListID(final DownloadLink link) {
@@ -584,24 +570,20 @@ public class VKontakteRuHoster extends PluginForHost {
         if (this.isDRMProtected(link)) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "DRM protected");
         }
-        if (this.isHLS(link, this.finalUrl)) {
+        final String finalurl;
+        if (link.getPluginPatternMatcher().matches(TYPE_DIRECT)) {
+            finalurl = link.getPluginPatternMatcher();
+        } else {
+            finalurl = getStoredDirecturl(link);
+        }
+        if (this.isHLS(link, finalurl)) {
             /* HLS download */
-            final String hlsURL;
-            if (this.finalUrl.contains(".m3u8")) {
-                /* Legacy handling: Remove this after 2023-01 */
-                br.getPage(this.finalUrl);
-                handleTooManyRequests(this, br);
-                final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
-                hlsURL = hlsbest.getDownloadurl();
-            } else {
-                hlsURL = this.finalUrl;
-            }
             checkFFmpeg(link, "Download a HLS Stream");
-            dl = new HLSDownloader(link, br, hlsURL);
+            dl = new HLSDownloader(link, br, finalurl);
             dl.startDownload();
         } else {
             if (dl == null) {
-                if (StringUtils.isEmpty(this.finalUrl)) {
+                if (StringUtils.isEmpty(finalurl)) {
                     logger.warning("Failed to find final downloadurl");
                     /* 2020-05-05: It is sometimes tricky to determine the exact error */
                     final String response_content_type = br.getHttpConnection().getContentType();
@@ -615,7 +597,7 @@ public class VKontakteRuHoster extends PluginForHost {
                 }
                 // most if not all components already opened connection via either linkOk or photolinkOk
                 br.getHeaders().put("Accept-Encoding", "identity");
-                dl = new jd.plugins.BrowserAdapter().openDownload(br, link, this.finalUrl, isResumeSupported(link, this.finalUrl), getMaxChunks(link, this.finalUrl));
+                dl = new jd.plugins.BrowserAdapter().openDownload(br, link, finalurl, isResumeSupported(link, finalurl), getMaxChunks(link, finalurl));
             }
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 if (dl.getConnection().getResponseCode() == 404) {
@@ -634,6 +616,9 @@ public class VKontakteRuHoster extends PluginForHost {
             dl.startDownload();
         }
     }
+
+    @Deprecated
+    private final String ALPHANUMERIC = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMN0PQRSTUVWXYZO123456789+/=";
 
     @Deprecated
     private String decryptURLSubL(final String decryptType, String t, String e, final String vkID) throws PluginException {
@@ -781,13 +766,16 @@ public class VKontakteRuHoster extends PluginForHost {
             if (!audioIsValidDirecturl(url)) {
                 return null;
             }
+            return url;
         }
-        return url;
+        return null;
     }
 
     /* 2016-01-05: Check for invalid audioURL (e.g. decryption fails)! */
     public static boolean audioIsValidDirecturl(final String url) {
-        if (url == null || (url != null && url.matches("(?i).+audio_api_unavailable\\.mp3.*?"))) {
+        if (url == null) {
+            return false;
+        } else if (url.matches("(?i).+audio_api_unavailable\\.mp3.*?")) {
             return false;
         } else {
             return true;
@@ -921,7 +909,7 @@ public class VKontakteRuHoster extends PluginForHost {
      * @return <b>1</b>: Link is valid and can be downloaded, <b>0</b>: Link leads to HTML, times out or other problems occured, <b>404</b>:
      *         Server 404 response
      */
-    private int linkOk(final DownloadLink link, final boolean isDownload) throws Exception {
+    private int linkOk(final DownloadLink link, final String finalUrl, final boolean isDownload) throws Exception {
         if (StringUtils.isEmpty(finalUrl)) {
             return 0;
         }
@@ -1039,10 +1027,14 @@ public class VKontakteRuHoster extends PluginForHost {
             finalfilename = photoGetFinalFilename(this.getPhotoID(link), finalfilename, directurl);
             if (finalfilename == null) {
                 /* This should actually never happen. */
-                finalfilename = Encoding.htmlDecode(getFileNameFromHeader(con));
+                final String filenameFromHeaderOrURL = getFileNameFromHeader(con);
+                if (filenameFromHeaderOrURL != null) {
+                    finalfilename = Encoding.htmlDecode(filenameFromHeaderOrURL);
+                }
             }
-            link.setFinalFileName(finalfilename);
-            link.setProperty(PROPERTY_PHOTOS_picturedirectlink, directurl);
+            if (finalfilename != null) {
+                link.setFinalFileName(finalfilename);
+            }
             if (isDownload) {
                 closeConnection = false;
             }
@@ -1477,7 +1469,7 @@ public class VKontakteRuHoster extends PluginForHost {
             return null;
         }
         /* 2019-08-06: Extension is sometimes missing but required! */
-        if (!dllink.endsWith(".jpg")) {
+        if (!StringUtils.endsWithCaseInsensitive(dllink, ".jpg")) {
             dllink += ".jpg";
         }
         if (checkDownloadability) {
@@ -1494,7 +1486,7 @@ public class VKontakteRuHoster extends PluginForHost {
     public static String getHighestQualityPicFromSavedJson(String picture_preview_json) {
         String dllink = null;
         if (Encoding.isHtmlEntityCoded(picture_preview_json)) {
-            picture_preview_json = Encoding.htmlDecode(picture_preview_json);
+            picture_preview_json = Encoding.htmlOnlyDecode(picture_preview_json);
         }
         if (picture_preview_json != null) {
             try {
@@ -1572,14 +1564,15 @@ public class VKontakteRuHoster extends PluginForHost {
         if (link.getPluginPatternMatcher() == null) {
             return super.getLinkID(link);
         } else {
+            final String vkprefix = "vkontakte://";
             final String ownerID = getOwnerID(link);
             final String contentID = getContentID(link);
             if (this.isTypeVideo(link.getPluginPatternMatcher())) {
-                return "vkontakte://" + ownerID + "_" + contentID + "_" + link.getStringProperty(PROPERTY_VIDEO_SELECTED_QUALITY, "noneYet");
+                return vkprefix + ownerID + "_" + contentID + "_" + link.getStringProperty(PROPERTY_VIDEO_SELECTED_QUALITY, "noneYet");
             } else {
                 if (ownerID != null && contentID != null) {
                     /* Non-video items */
-                    return "vkontakte://" + ownerID + "_" + contentID;
+                    return vkprefix + ownerID + "_" + contentID;
                 } else {
                     /* Fallback */
                     return super.getLinkID(link);
@@ -1589,6 +1582,7 @@ public class VKontakteRuHoster extends PluginForHost {
     }
 
     /** Returns ArrayList of audio Objects for Playlists/Albums after '/al_audio.php' request. */
+    @Deprecated
     public static List<Object> getAudioDataArray(final Browser br) throws Exception {
         final String json = VKontakteRu.regexJsonInsideHTML(br);
         if (json == null) {
@@ -1600,7 +1594,7 @@ public class VKontakteRuHoster extends PluginForHost {
     }
 
     private String getOwnerID(final DownloadLink dl) {
-        String ownerID = dl.getStringProperty("owner_id", null);
+        String ownerID = dl.getStringProperty("owner_id", null); // Legacy
         if (ownerID == null && dl.getPluginPatternMatcher().matches(TYPE_AUDIOLINK)) {
             /* E.g. Single audios which get added via wall single post crawler from inside comments of a post. */
             ownerID = new Regex(dl.getPluginPatternMatcher(), TYPE_AUDIOLINK).getMatch(0);
@@ -1613,6 +1607,7 @@ public class VKontakteRuHoster extends PluginForHost {
         } else if (ownerID == null && dl.getPluginPatternMatcher().matches(TYPE_VIDEOLINK_LEGACY)) {
             ownerID = new Regex(dl.getContentUrl(), TYPE_VIDEOLINK).getMatch(0);
             if (ownerID == null) {
+                /* Legacy */
                 ownerID = dl.getStringProperty("userid", null);
             }
         }
@@ -1633,6 +1628,7 @@ public class VKontakteRuHoster extends PluginForHost {
         } else if (contentID == null && dl.getPluginPatternMatcher().matches(TYPE_VIDEOLINK_LEGACY)) {
             contentID = new Regex(dl.getContentUrl(), TYPE_VIDEOLINK).getMatch(1);
             if (contentID == null) {
+                /* Legacy */
                 contentID = dl.getStringProperty("videoid", null);
             }
         }

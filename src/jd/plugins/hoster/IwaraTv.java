@@ -103,20 +103,22 @@ public class IwaraTv extends PluginForHost {
     // protocol: no https
     // other:
     /* Connection stuff */
-    private static final boolean free_resume                   = true;
-    private static final int     free_maxchunks                = 0;
-    private static final int     free_maxdownloads             = -1;
-    private static final String  PROPERTY_DATE                 = "date";
-    public static final String   PROPERTY_USER                 = "user";
-    public static final String   PROPERTY_TITLE                = "title";
-    public static final String   PROPERTY_VIDEOID              = "videoid";
-    public static final String   PROPERTY_DIRECTURL            = "directurl";
-    public static final String   PROPERTY_IS_PRIVATE           = "is_private";
-    public static final String   PROPERTY_EMBED_URL            = "embed_url";
-    public static final String   PROPERTY_DESCRIPTION          = "description";
-    public static final String   PROPERTY_EXPECTED_FILESIZE    = "expected_filesize";
-    private final String         PROPERTY_ACCOUNT_ACCESS_TOKEN = "access_token";
-    public static final String   WEBAPI_BASE                   = "https://api.iwara.tv";
+    private static final boolean free_resume                      = true;
+    private static final int     free_maxchunks                   = 0;
+    private static final int     free_maxdownloads                = -1;
+    private static final String  PROPERTY_DATE                    = "date";
+    public static final String   PROPERTY_USER                    = "user";
+    public static final String   PROPERTY_TITLE                   = "title";
+    public static final String   PROPERTY_VIDEOID                 = "videoid";
+    public static final String   PROPERTY_DIRECTURL               = "directurl";
+    public static final String   PROPERTY_IS_PRIVATE              = "is_private";
+    public static final String   PROPERTY_EMBED_URL               = "embed_url";
+    public static final String   PROPERTY_DESCRIPTION             = "description";
+    public static final String   PROPERTY_VIDEO_RESOLUTION_HEIGHT = "video_resolution_height";
+    public static final String   PROPERTY_VIDEO_LABEL             = "video_label";
+    public static final String   PROPERTY_EXPECTED_FILESIZE       = "expected_filesize";
+    private final String         PROPERTY_ACCOUNT_ACCESS_TOKEN    = "access_token";
+    public static final String   WEBAPI_BASE                      = "https://api.iwara.tv";
 
     @Override
     public String getAGBLink() {
@@ -126,8 +128,8 @@ public class IwaraTv extends PluginForHost {
     private Browser prepBR(final Browser br) {
         br.setFollowRedirects(true);
         br.setCustomCharset("UTF-8");
-        br.setCookie(this.getHost(), "show_adult", "1");
-        br.setCookie(br.getHost(), "has_js", "1");
+        br.setCookie(getHost(), "show_adult", "1");
+        br.setCookie(getHost(), "has_js", "1");
         return br;
     }
 
@@ -135,7 +137,7 @@ public class IwaraTv extends PluginForHost {
     public String getLinkID(final DownloadLink link) {
         final String fid = getFID(link);
         if (fid != null) {
-            return this.getHost() + "://" + fid;
+            return getHost() + "://" + fid;
         } else {
             return super.getLinkID(link);
         }
@@ -199,7 +201,8 @@ public class IwaraTv extends PluginForHost {
         String directurl = null;
         if (isVideo) {
             final String continueURL = (String) entries.get("fileUrl");
-            if (!StringUtils.isEmpty(continueURL) && isDownload) {
+            final IwaraTvConfig cfg = PluginJsonConfig.get(IwaraTvConfig.class);
+            if (!StringUtils.isEmpty(continueURL) && (isDownload || cfg.isFindFilesizeDuringAvailablecheck())) {
                 final UrlQuery query = UrlQuery.parse(continueURL);
                 final String expires = query.get("expires");
                 final String partOfPath = new Regex(continueURL, "/([^/]+)\\?.*$").getMatch(0);
@@ -221,31 +224,33 @@ public class IwaraTv extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Broken video, please check back in a while");
                 }
                 final List<Map<String, Object>> ressourcelist = (List<Map<String, Object>>) jsonroot;
-                int maxQuality = -1;
-                String maxQualityStr = null;
+                String maxQualityLabel = null;
+                int maxQualityHeight = -1;
                 String bestQualityDownloadurl = null;
                 for (final Map<String, Object> quality : ressourcelist) {
                     final Map<String, Object> src = (Map<String, Object>) quality.get("src");
                     String url = src.get("view").toString();
                     // String url = src.get("download").toString();
                     final String qualityStr = quality.get("name").toString();
-                    final Integer qualityTmp = qualityModifierToHeight(qualityStr);
-                    if (qualityTmp == null || url == null) {
+                    final Integer qualityHeightTmp = qualityModifierToHeight(qualityStr);
+                    if (qualityHeightTmp == null || url == null) {
                         /* Akip invalid items */
                         continue;
                     }
                     /* Fix url as protocol might be missing */
                     url = br.getURL(url).toString();
-                    if (qualityTmp.intValue() > maxQuality) {
-                        maxQuality = qualityTmp.intValue();
-                        maxQualityStr = qualityStr;
+                    if (bestQualityDownloadurl == null || qualityHeightTmp.intValue() > maxQualityHeight) {
+                        maxQualityHeight = qualityHeightTmp.intValue();
+                        maxQualityLabel = qualityStr;
                         bestQualityDownloadurl = url;
                     }
                 }
                 if (bestQualityDownloadurl != null) {
-                    logger.info("Found download/stream downloadurl - quality: " + maxQualityStr);
+                    logger.info("Found download/stream downloadurl - quality: " + maxQualityLabel);
                     directurl = bestQualityDownloadurl;
                     link.setProperty(PROPERTY_DIRECTURL, directurl);
+                    link.setProperty(PROPERTY_VIDEO_RESOLUTION_HEIGHT, maxQualityHeight);
+                    link.setProperty(PROPERTY_VIDEO_LABEL, maxQualityLabel);
                 } else {
                     logger.warning("Failed to find any download/stream");
                 }

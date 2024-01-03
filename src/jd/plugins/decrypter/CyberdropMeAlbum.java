@@ -154,6 +154,10 @@ public class CyberdropMeAlbum extends PluginForDecrypt {
                 albumTitle = new Regex(albumjs, "name\\s*:\\s*'([^\\']+)'").getMatch(0);
                 albumDescription = new Regex(albumjs, "description\\s*:\\s*(?:'|`)([^\\'`]+)").getMatch(0);
             }
+            if (albumTitle == null) {
+                /* 2023-01-03 */
+                albumTitle = br.getRegex("<h1 id=\"title\"[^>]*>([^<]+)</h1>").getMatch(0);
+            }
             if (albumDescription == null) {
                 albumDescription = br.getRegex("<span id=\"description-box\"[^>]*>([^<]+)</span>").getMatch(0);
             }
