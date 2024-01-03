@@ -57,6 +57,7 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.YoutubeDashV2;
 import jd.plugins.hoster.ZdfDeMediathek;
 import jd.plugins.hoster.ZdfDeMediathek.ZdfmediathekConfigInterface;
+import jd.plugins.hoster.ZdfDeMediathek.ZdfmediathekConfigInterface.SubtitleType;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zdf.de", "3sat.de", "phoenix.de" }, urls = { "https?://(?:www\\.)?zdf\\.de/(?:.+/)?[A-Za-z0-9_\\-]+\\.html|https?://(?:www\\.)?zdf\\.de/uri/(?:syncvideoimport_beitrag_\\d+|transfer_SCMS_[a-f0-9\\-]+|[a-z0-9\\-]+)", "https?://(?:www\\.)?3sat\\.de/.+/[A-Za-z0-9_\\-]+\\.html|https?://(?:www\\.)?3sat\\.de/uri/(?:syncvideoimport_beitrag_\\d+|transfer_SCMS_[a-f0-9\\-]+|[a-z0-9\\-]+)", "https?://(?:www\\.)?phoenix\\.de/(?:.*?-\\d+\\.html.*|podcast/[A-Za-z0-9]+/video/rss\\.xml)" })
 public class ZDFMediathekDecrypter extends PluginForDecrypt {
@@ -465,7 +466,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
         final ArrayList<DownloadLink> allSelectedDownloadlinks = new ArrayList<DownloadLink>();
         final List<String> selectedQualityStringsTmp = new ArrayList<String>();
         final HashMap<String, DownloadLink> all_found_downloadlinks = new HashMap<String, DownloadLink>();
-        final ZdfmediathekConfigInterface cfg = PluginJsonConfig.get(jd.plugins.hoster.ZdfDeMediathek.ZdfmediathekConfigInterface.class);
+        final ZdfmediathekConfigInterface cfg = PluginJsonConfig.get(ZdfmediathekConfigInterface.class);
         final ArrayList<String> selectedAudioVideoVersions = new ArrayList<String>();
         /* Every video should have this version available */
         selectedAudioVideoVersions.add("main");
@@ -1012,18 +1013,24 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
 
     private void addDownloadLinkAndGenerateSubtitleDownloadLink(final ArrayList<DownloadLink> ret, final DownloadLink dl) {
         ret.add(dl);
-        final boolean preferVTT = false;
+        final ZdfmediathekConfigInterface cfg = PluginJsonConfig.get(ZdfmediathekConfigInterface.class);
+        final SubtitleType subtitleType = cfg.getPreferredSubtitleType();
         final Map<String, String> subtitleSource;
         final String ext;
         boolean convertSubtitle = false;
-        if (preferVTT) {
+        if (subtitleType == SubtitleType.WEBVTT) {
             subtitleSource = this.subtitlesVTT;
             ext = ".vtt";
-        } else {
+        } else if (subtitleType == SubtitleType.SRT) {
             subtitleSource = this.subtitlesXML;
             ext = ".xml";
             /* xml -> srt */
             convertSubtitle = true;
+        } else {
+            subtitleSource = this.subtitlesXML;
+            ext = ".xml";
+            /* xml -> srt */
+            convertSubtitle = false;
         }
         for (final String selectedSubtitleType : this.userSelectedSubtitleTypes) {
             if (subtitleSource.containsKey(selectedSubtitleType)) {

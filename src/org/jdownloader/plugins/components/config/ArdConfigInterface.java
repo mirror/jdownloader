@@ -13,7 +13,7 @@ import org.jdownloader.translate._JDT;
 
 @PluginHost(host = "ardmediathek.de", type = Type.CRAWLER)
 public interface ArdConfigInterface extends PluginConfigInterface {
-    final String text_PreferredSubtitleType = "Select your preferred subtitle type";
+    final String text_PreferredSubtitleType = "Preferred subtitle type";
 
     public static class TRANSLATION {
         public String getFastLinkcheckEnabled_label() {

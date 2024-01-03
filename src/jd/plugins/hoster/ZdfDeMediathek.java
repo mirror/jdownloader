@@ -27,7 +27,9 @@ import java.util.Scanner;
 
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.storage.config.annotations.DefaultEnumValue;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
+import org.appwork.storage.config.annotations.LabelInterface;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.downloader.hls.M3U8Playlist;
@@ -213,7 +215,7 @@ public class ZdfDeMediathek extends PluginForHost {
     private void postprocess(final DownloadLink link) {
         final boolean allowConvertSubtitle;
         if ("subtitle".equalsIgnoreCase(link.getStringProperty(PROPERTY_streamingType))) {
-            /* Legacy handling for items added up to revision 4815 */
+            /* Legacy handling for items added up to revision 48153 as all of them need to be converted from .xml to .srt. */
             allowConvertSubtitle = true;
         } else {
             allowConvertSubtitle = link.getBooleanProperty(PROPERTY_convert_subtitle, false);
@@ -432,6 +434,10 @@ public class ZdfDeMediathek extends PluginForHost {
                 return text_GrabSubtitleForDisabledPeopleEnabled;
             }
 
+            public String getPreferredSubtitleType_label() {
+                return "Preferred subtitle type";
+            }
+
             public String getGrabAudio_label() {
                 return _JDT.T.lit_add_audio();
             }
@@ -482,10 +488,39 @@ public class ZdfDeMediathek extends PluginForHost {
 
         @DefaultBooleanValue(false)
         @DescriptionForConfigEntry(text_GrabSubtitleForDisabledPeopleEnabled)
-        @Order(10)
+        @Order(11)
         boolean isGrabSubtitleForDisabledPeopleEnabled();
 
         void setGrabSubtitleForDisabledPeopleEnabled(boolean b);
+
+        public static enum SubtitleType implements LabelInterface {
+            WEBVTT {
+                @Override
+                public String getLabel() {
+                    return "WEBVTT (.vtt)";
+                }
+            },
+            XML {
+                @Override
+                public String getLabel() {
+                    return "EBU-TT XML (.xml)";
+                }
+            },
+            SRT {
+                @Override
+                public String getLabel() {
+                    return "SRT [EBU-TT XML converted to srt (.srt)]";
+                }
+            };
+        }
+
+        @AboutConfig
+        @DefaultEnumValue("WEBVTT")
+        @Order(12)
+        @DescriptionForConfigEntry("Preferred subtitle type (only has an effect if grab subtitles is enabled and a subtitle of the selected type is available).")
+        SubtitleType getPreferredSubtitleType();
+
+        void setPreferredSubtitleType(final SubtitleType type);
 
         @DefaultBooleanValue(false)
         @DescriptionForConfigEntry("Grab audio only version if available?")

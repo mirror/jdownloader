@@ -429,12 +429,15 @@ public class PornHubComVideoCrawler extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         /* 2021-08-24: E.g. given for "users/username/videos(/favorites)?" */
-        final String totalNumberofItems = br.getRegex("class=\"totalSpan\">(\\d+)</span>").getMatch(0);
+        final String totalNumberofItemsStr = br.getRegex("class=\"totalSpan\">(\\d+)</span>").getMatch(0);
+        final int totalNumberofItems;
         final String totalNumberofItemsText;
-        if (totalNumberofItems != null) {
-            totalNumberofItemsText = totalNumberofItems;
+        if (totalNumberofItemsStr != null) {
+            totalNumberofItemsText = totalNumberofItemsStr;
+            totalNumberofItems = Integer.parseInt(totalNumberofItemsStr);
         } else {
             totalNumberofItemsText = "Unknown";
+            totalNumberofItems = -1;
         }
         final String seeAllURL = br.getRegex("(" + Regex.escape(br._getURL().getPath()) + "/[^\"]+)\" class=\"seeAllButton greyButton float-right\">").getMatch(0);
         if (seeAllURL != null) {
@@ -463,49 +466,9 @@ public class PornHubComVideoCrawler extends PluginForDecrypt {
         int max_entries_per_page = 40;
         final Set<String> dupes = new HashSet<String>();
         String publicVideosHTMLSnippet = null;
-        String base_url = null;
+        final String base_url = br.getURL();
+        boolean htmlSourceNeedsFiltering = true;
         do {
-            boolean htmlSourceNeedsFiltering = true;
-            if (page > 1) {
-                // PornHubCom.getPage(br, "/users/" + username + "/videos/public/ajax?o=mr&page=" + page);
-                // br.postPage(parameter + "/ajax?o=mr&page=" + page, "");
-                /* e.g. different handling for '/model/' URLs */
-                final String nextpage_url_old = br.getRegex("class=\"page_next\"[^>]*>\\s*<a href=\"(/[^\"]+\\?page=\\d+)\"").getMatch(0);
-                final Regex nextpageAjaxRegEx = br.getRegex("onclick=\"loadMoreData\\(\\'(/users/[^<>\"\\']+)',\\s*'(\\d+)',\\s*'\\d+'\\)");
-                final String nextpage_url;
-                if (nextpage_url_old != null) {
-                    /* Old handling */
-                    nextpage_url = nextpage_url_old;
-                    logger.info("Auto-found nextpage_url via old handling: " + nextpage_url);
-                } else if (nextpageAjaxRegEx.matches()) {
-                    /* New ajax handling */
-                    /* Additional fail-safe */
-                    final String nextPageStr = nextpageAjaxRegEx.getMatch(1);
-                    if (!nextPageStr.equalsIgnoreCase(Integer.toString(page))) {
-                        logger.warning("Expected nextPage: " + page + " | Found nextPage: " + nextPageStr);
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    final UrlQuery nextpageAjaxQuery = UrlQuery.parse(nextpageAjaxRegEx.getMatch(0));
-                    nextpageAjaxQuery.addAndReplace("page", nextPageStr);
-                    nextpage_url = nextpageAjaxQuery.toString();
-                    htmlSourceNeedsFiltering = false;
-                    logger.info("Auto-found nextpage_url via ajax handling: " + nextpage_url);
-                } else {
-                    /* Ajax fallback handling */
-                    nextpage_url = base_url + "/ajax?o=mr&page=" + page;
-                    logger.info("Custom build nextpage_url: " + nextpage_url);
-                    br.getHeaders().put("Accept", "*/*");
-                    br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                    htmlSourceNeedsFiltering = false;
-                }
-                PornHubCom.getPage(br, br.createPostRequest(nextpage_url, ""));
-                if (br.getHttpConnection().getResponseCode() == 404) {
-                    break;
-                }
-            } else {
-                /* Set this on first loop */
-                base_url = br.getURL();
-            }
             if (htmlSourceNeedsFiltering) {
                 /* only parse videos of the user/pornstar/channel, avoid catching unrelated content e.g. 'related' videos */
                 if (contenturl.contains("/pornstar/") || contenturl.contains("/model/")) {
@@ -522,15 +485,17 @@ public class PornHubComVideoCrawler extends PluginForDecrypt {
                 }
             } else {
                 /* Pagination result --> Ideal as a source as it only contains the content we need */
-                publicVideosHTMLSnippet = br.toString();
+                publicVideosHTMLSnippet = br.getRequest().getHtmlCode();
             }
             if (publicVideosHTMLSnippet == null) {
                 throw new DecrypterException("Decrypter broken for link: " + param.getCryptedUrl());
             }
             final String[] viewkeys = new Regex(publicVideosHTMLSnippet, "(?:_|-)vkey\\s*=\\s*\"([a-z0-9]+)\"").getColumn(0);
             if (viewkeys == null || viewkeys.length == 0) {
+                logger.info("Stopping because: Failed to find any items on current page");
                 break;
             }
+            int numberofNewItemsThisPage = 0;
             for (final String viewkey : viewkeys) {
                 if (dupes.add(viewkey)) {
                     // logger.info("http://www." + this.getHost() + "/view_video.php?viewkey=" + viewkey); // For debugging
@@ -542,17 +507,72 @@ public class PornHubComVideoCrawler extends PluginForDecrypt {
                     if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
                         distribute(dl);
                     }
+                    numberofNewItemsThisPage++;
                 }
             }
-            logger.info("Links found on current page " + page + ": " + viewkeys.length + " | Found: " + ret.size() + " of " + totalNumberofItemsText);
+            logger.info("New links found on current page " + page + ": " + numberofNewItemsThisPage + " | Total: " + ret.size() + "/" + totalNumberofItemsText);
             if (this.isAbort()) {
                 logger.info("Stopping because: Aborted by user");
                 break;
-            } else if (viewkeys.length < max_entries_per_page) {
-                logger.info("Stopping because: Current page contains less items than: " + max_entries_per_page);
+            } else if (totalNumberofItems != -1 && ret.size() >= totalNumberofItems) {
+                logger.info("Stopping because: Found all items: " + ret.size() + "/" + totalNumberofItems);
+                break;
+            } else if (numberofNewItemsThisPage < max_entries_per_page) {
+                logger.info("Stopping because: Current page contains less new items than max per page: " + numberofNewItemsThisPage + "/" + max_entries_per_page);
                 break;
             } else {
+                /* Continue to next page */
                 page++;
+                // PornHubCom.getPage(br, "/users/" + username + "/videos/public/ajax?o=mr&page=" + page);
+                // br.postPage(parameter + "/ajax?o=mr&page=" + page, "");
+                /* e.g. different handling for '/model/' URLs */
+                final Regex nextpageAjaxRegEx = br.getRegex("onclick=\"loadMoreData\\(\\'(/users/[^<>\"\\']+)',\\s*'(\\d+)',\\s*'\\d+'\\)");
+                String nextpage_url = null;
+                String sortValue = null;
+                if (nextpageAjaxRegEx.patternFind()) {
+                    /* New ajax handling */
+                    /* Additional fail-safe */
+                    final String nextPageStr = nextpageAjaxRegEx.getMatch(1);
+                    final UrlQuery nextpageAjaxQuery = UrlQuery.parse(nextpageAjaxRegEx.getMatch(0));
+                    sortValue = nextpageAjaxQuery.get("o");
+                    if (nextPageStr.equalsIgnoreCase(Integer.toString(page))) {
+                        nextpageAjaxQuery.addAndReplace("page", nextPageStr);
+                        nextpage_url = nextpageAjaxQuery.toString();
+                        htmlSourceNeedsFiltering = false;
+                        logger.info("Found nextpage_url via ajax handling: " + nextpage_url);
+                    } else {
+                        logger.warning("Expected nextPage: " + page + " | nextPage according to js: " + nextPageStr + " --> Will use fallback");
+                    }
+                }
+                if (nextpage_url == null) {
+                    final String nextpage_url_old = br.getRegex("class=\"page_next\"[^>]*>\\s*<a href=\"(/[^\"]+\\?page=\\d+)\"").getMatch(0);
+                    if (nextpage_url_old != null) {
+                        /* Old handling */
+                        nextpage_url = nextpage_url_old;
+                        logger.info("Auto-found nextpage_url via old handling: " + nextpage_url);
+                        htmlSourceNeedsFiltering = true;
+                    } else {
+                        /* Ajax fallback handling */
+                        if (sortValue == null) {
+                            /* No value given via html -> Use our own internal default */
+                            sortValue = "mr";
+                        }
+                        final UrlQuery query = new UrlQuery();
+                        query.add("o", Encoding.urlEncode(sortValue));
+                        query.add("page", Integer.toString(page));
+                        nextpage_url = base_url + "/ajax?" + query.toString();
+                        logger.info("Custom built nextpage_url: " + nextpage_url);
+                        br.getHeaders().put("Accept", "*/*");
+                        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                        htmlSourceNeedsFiltering = false;
+                    }
+                }
+                PornHubCom.getPage(br, br.createPostRequest(nextpage_url, ""));
+                if (br.getHttpConnection().getResponseCode() == 404) {
+                    /* This should be a super rare case */
+                    logger.info("Stopping because: Nextpage returned http statuscode 404");
+                    break;
+                }
             }
         } while (!this.isAbort());
         return ret;
