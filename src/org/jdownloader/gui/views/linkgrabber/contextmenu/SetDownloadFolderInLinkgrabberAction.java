@@ -3,6 +3,7 @@ package org.jdownloader.gui.views.linkgrabber.contextmenu;
 import java.io.File;
 import java.util.List;
 
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.event.queue.Queue;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
@@ -62,7 +63,12 @@ public class SetDownloadFolderInLinkgrabberAction extends SetDownloadFolderActio
         final CrawledPackage pkg = new CrawledPackage();
         pkg.setExpanded(CFG_LINKCOLLECTOR.CFG.isPackageAutoExpanded());
         if (TYPE.NORMAL != entry.getType()) {
-            final String pkgName = LinknameCleaner.cleanPackagename(getSelection().getPackageView(entry).getChildren().get(0).getName(), false, false, LinknameCleaner.EXTENSION_SETTINGS.REMOVE_ALL, true);
+            final String pkgName;
+            if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                pkgName = LinknameCleaner.cleanPackagenameNew(getSelection().getPackageView(entry).getChildren().get(0).getName(), true);
+            } else {
+                pkgName = LinknameCleaner.cleanPackagename(getSelection().getPackageView(entry).getChildren().get(0).getName(), false, false, LinknameCleaner.EXTENSION_SETTINGS.REMOVE_ALL, true);
+            }
             pkg.setName(pkgName);
         } else {
             pkg.setName(entry.getName());
