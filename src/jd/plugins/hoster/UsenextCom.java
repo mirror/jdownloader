@@ -45,12 +45,6 @@ public class UsenextCom extends UseNet {
     public String getAGBLink() {
         return "https://www.usenext.com/terms";
     }
-    // private final String USENET_USERNAME = "USENET_USERNAME";
-    //
-    // @Override
-    // protected String getUseNetUsername(Account account) {
-    // return account.getStringProperty(USENET_USERNAME, account.getUser());
-    // }
 
     public static interface UsenextConfigInterface extends UsenetAccountConfigInterface {
     };
