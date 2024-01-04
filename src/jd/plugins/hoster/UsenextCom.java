@@ -16,17 +16,19 @@ import org.appwork.utils.net.URLHelper;
 import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
 import org.jdownloader.plugins.components.usenet.UsenetServer;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings.SIZEUNIT;
+import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 import jd.PluginWrapper;
 import jd.controlling.proxy.AbstractProxySelectorImpl;
 import jd.http.Browser;
 import jd.http.Cookies;
-import jd.http.requests.GetRequest;
 import jd.http.requests.PostRequest;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -43,13 +45,12 @@ public class UsenextCom extends UseNet {
     public String getAGBLink() {
         return "https://www.usenext.com/terms";
     }
-
-    private final String USENET_USERNAME = "USENET_USERNAME";
-
-    @Override
-    protected String getUseNetUsername(Account account) {
-        return account.getStringProperty(USENET_USERNAME, account.getUser());
-    }
+    // private final String USENET_USERNAME = "USENET_USERNAME";
+    //
+    // @Override
+    // protected String getUseNetUsername(Account account) {
+    // return account.getStringProperty(USENET_USERNAME, account.getUser());
+    // }
 
     public static interface UsenextConfigInterface extends UsenetAccountConfigInterface {
     };
@@ -102,124 +103,112 @@ public class UsenextCom extends UseNet {
         setBrowserExclusive();
         final AccountInfo ai = new AccountInfo();
         br.setFollowRedirects(true);
-        final Cookies cookies = account.loadCookies("com");
-        try {
-            boolean freshLogin = true;
-            String UNX_API_KEY = null;
-            String API_URL = null;
-            if (cookies != null) {
-                br.setCookies("usenext.com", cookies);
-                final Cookies de = account.loadCookies("de");
-                if (de != null) {
-                    br.setCookies("usenext.de", de);
-                }
-                getPage(br, "https://www.usenext.com/en-US/ma/dashboard");
-                if (br.getHostCookie("UseNeXT.AuthorizationServerApp_Auth", Cookies.NOTDELETEDPATTERN) == null) {
-                    freshLogin = true;
-                } else if (br.getHostCookie("UseNeXT.AuthorizationServerApp_Session", Cookies.NOTDELETEDPATTERN) == null) {
-                    freshLogin = true;
-                } else {
-                    UNX_API_KEY = br.getRegex("UNX_API_KEY\\s*:\\s*\"(.*?)\"").getMatch(0);
-                    API_URL = br.getRegex("API_URL\\s*:\\s*\"(https?://.*?)\"").getMatch(0);
-                    if (!StringUtils.isAllNotEmpty(UNX_API_KEY, API_URL)) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    } else {
-                        freshLogin = false;
-                    }
-                }
-            }
-            if (freshLogin) {
-                br.getCookies("usenext.com").clear();
-                br.getCookies("usenext.de").clear();
-                account.clearCookies("");
-                getPage(br, "https://www.usenext.com/");
-                String clientID = br.getRegex("src\\s*=\\s*\"(/App[^\"]*\\.js)\"").getMatch(0);
-                if (clientID != null) {
-                    final Browser brc = br.cloneBrowser();
-                    brc.getPage(clientID);
-                    clientID = brc.getRegex("client_id\\s*:\\s*\"(.*?)\"").getMatch(0);
-                }
-                if (clientID == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                getPage(br, "https://auth.usenext.com/login?ReturnUrl=%2Fauth%3Fredirect_uri%3Dhttps%253A%252F%252Fwww.usenext.com%252Fma%252Fsignin-usenext%26client_id%3D" + URLEncode.encodeURIComponent(clientID) + "%26scope%3Duser%252Cradius%252Cshop%26response_type%3Dcode");
-                final Form login = br.getFormbyKey("username");
-                if (login == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                login.put("username", Encoding.urlEncode(account.getUser()));
-                login.put("password", Encoding.urlEncode(account.getPass()));
-                submitForm(br, login);
-                if (br.getHostCookie("UseNeXT.AuthorizationServerApp_Auth", Cookies.NOTDELETEDPATTERN) == null) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                } else if (br.getHostCookie("UseNeXT.AuthorizationServerApp_Session", Cookies.NOTDELETEDPATTERN) == null) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-                getPage(br, "https://www.usenext.com/en-US/ma/dashboard");
-                UNX_API_KEY = br.getRegex("UNX_API_KEY\\s*:\\s*\"(.*?)\"").getMatch(0);
-                API_URL = br.getRegex("API_URL\\s*:\\s*\"(https?://.*?)\"").getMatch(0);
-                if (!StringUtils.isAllNotEmpty(UNX_API_KEY, API_URL)) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-            }
-            account.saveCookies(br.getCookies("usenext.com"), "com");
-            account.saveCookies(br.getCookies("usenext.de"), "de");
-            if (false) {
-                final GetRequest getRequest = br.createGetRequest(URLHelper.parseLocation(new URL(API_URL), "/session?ref="));
-                getRequest.getHeaders().put("Origin", "https://www.usenext.com");
-                br.setCurrentURL("https://www.usenext.com/");
-                sendRequest(getRequest);
-            }
-            final PostRequest postRequest = br.createJSonPostRequest(URLHelper.parseLocation(new URL(API_URL), "/graphql"),
-                    "{\"operationName\":\"DashboardInformation\",\"variables\":{},\"query\":\"query DashboardInformation {\\n  radiusData {\\n    volume {\\n      remaining\\n      total\\n      unitResourceStringKey\\n    }\\n    extraBoost {\\n      remaining\\n      total\\n      unitResourceStringKey\\n    }\\n  }\\n  cancellationInformation {\\n    isContractLocked\\n    hasWithdrawableCancellation\\n    isServiceDenied\\n    isInCancellationPeriod\\n    cancellationProcess {\\n      createDate\\n    }\\n  }\\n  currentServiceRoundUpgradeData {\\n    hasPendingUpgrade\\n    isLastUpgrade\\n    accountingPeriod {\\n      remaining\\n      total\\n      unitResourceStringKey\\n    }\\n  }\\n  serviceInformation {\\n    currentServiceRound {\\n      currEndDate\\n      startDate\\n      article {\\n        id\\n        name\\n        articleTypeId\\n        priceNet\\n        priceGross\\n        volumeGb\\n        runtime\\n        runtimeUnit\\n      }\\n      invoice {\\n        id\\n        createDate\\n        uuid\\n        invoiceStatePaths {\\n          invoiceStateId\\n          isCurrent\\n        }\\n      }\\n    }\\n    nextServiceRoundBeginDate\\n    nextArticle {\\n      id\\n      name\\n      articleTypeId\\n      priceNet\\n      priceGross\\n      volumeGb\\n      runtime\\n      runtimeUnit\\n    }\\n  }\\n}\\n\"}");
-            postRequest.getHeaders().put("X-UNX-API-KEY", UNX_API_KEY);
-            postRequest.getHeaders().put("x-ui-language", "en-US");
-            postRequest.getHeaders().put("Origin", "https://www.usenext.com");
-            br.setCurrentURL("https://www.usenext.com/");
-            sendRequest(postRequest);
-            final Map<String, Object> json = restoreFromString(br.toString(), TypeRef.MAP);
-            final Map<String, Object> volume = (Map<String, Object>) JavaScriptEngineFactory.walkJson(json, "data/radiusData/volume");
-            final long trafficTotal = parseNumber(volume, "total", -1);
-            final long trafficRemaining = parseNumber(volume, "remaining", -1);
-            final Map<String, Object> extraBoost = (Map<String, Object>) JavaScriptEngineFactory.walkJson(json, "data/radiusData/extraBoost");
-            if (extraBoost != null) {
-                final long boostTotal = parseNumber(extraBoost, "total", -1);
-                final long boostRemaining = parseNumber(extraBoost, "remaining", -1);
-                ai.setTrafficMax(trafficTotal + boostTotal);
-                ai.setTrafficLeft(trafficRemaining + boostRemaining);
+        final Cookies cookies = account.loadCookies("");
+        boolean freshLoginNeeded = true;
+        final String dashboardUrlRelative = "/ma";
+        if (cookies != null) {
+            br.setCookies(cookies);
+            getPage(br, "https://www." + getHost() + dashboardUrlRelative);
+            if (this.isLoggedinHTML(br)) {
+                logger.info("Cookie login successful");
+                freshLoginNeeded = false;
             } else {
-                ai.setTrafficMax(trafficTotal);
-                ai.setTrafficLeft(trafficRemaining);
+                logger.info("Cookie login failed");
+                br.clearCookies(null);
+                account.clearCookies("");
             }
-            final Map<String, Object> currentServiceRound = (Map<String, Object>) JavaScriptEngineFactory.walkJson(json, "data/serviceInformation/currentServiceRound");
-            final String currEndDate = (String) currentServiceRound.get("currEndDate");
-            final Date expireDate = TimeFormatter.parseDateString(currEndDate);
-            if (expireDate != null) {
-                ai.setValidUntil(expireDate.getTime());
-                ai.setStatus((String) JavaScriptEngineFactory.walkJson(currentServiceRound, "article/name"));
-            }
-            account.setMaxSimultanDownloads(30);
-        } catch (final PluginException e) {
-            if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
-                account.clearCookies("com");
-                account.clearCookies("de");
-            }
-            throw e;
         }
+        if (freshLoginNeeded) {
+            logger.info("Performing full login");
+            getPage(br, "https://www." + getHost() + "/");
+            String clientID = br.getRegex("src\\s*=\\s*\"(/App[^\"]*\\.js)\"").getMatch(0);
+            if (clientID != null) {
+                final Browser brc = br.cloneBrowser();
+                brc.getPage(clientID);
+                clientID = brc.getRegex("client_id\\s*:\\s*\"(.*?)\"").getMatch(0);
+            }
+            if (clientID == null) {
+                logger.warning("Fallback to static clientID value");
+                clientID = "852f41f8997141c5b9b59e6d15e03f33"; // 2023-01-04
+            }
+            getPage(br, "https://auth." + getHost() + "/login?culture=de-DE&client_id=" + URLEncode.encodeURIComponent(clientID) + "&CustomCSS=https%3A%2F%2Fwww.usenext.com%2Fauth-css%2Fauth.override.css&returnUrl=https%3A%2F%2Fwww.usenext.com%2F%3Fclient_id%3D" + URLEncode.encodeURIComponent(clientID));
+            final Form login = br.getFormbyKey("username");
+            if (login == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            login.put("username", Encoding.urlEncode(account.getUser()));
+            login.put("password", Encoding.urlEncode(account.getPass()));
+            submitForm(br, login);
+            getPage(br, "https://www." + getHost() + dashboardUrlRelative);
+            if (!isLoggedinHTML(br)) {
+                throw new AccountInvalidException();
+            }
+        }
+        /* At this point login was successful and all that's left to do is to obtain account information. */
+        final String api_url = "https://janus.usenext.com";
+        account.saveCookies(br.getCookies(br.getHost()), "");
+        final PostRequest postRequest = br.createJSonPostRequest(URLHelper.parseLocation(new URL(api_url), "/graphql"),
+                "{\"operationName\":\"DashboardInformation\",\"variables\":{},\"query\":\"query DashboardInformation {\\n  radiusData {\\n    volume {\\n      remaining\\n      total\\n      unitResourceStringKey\\n    }\\n    extraBoost {\\n      remaining\\n      total\\n      unitResourceStringKey\\n    }\\n  }\\n  cancellationInformation {\\n    isContractLocked\\n    hasWithdrawableCancellation\\n    isServiceDenied\\n    isInCancellationPeriod\\n    cancellationProcess {\\n      createDate\\n    }\\n  }\\n  currentServiceRoundUpgradeData {\\n    hasPendingUpgrade\\n    isLastUpgrade\\n    accountingPeriod {\\n      remaining\\n      total\\n      unitResourceStringKey\\n    }\\n  }\\n  serviceInformation {\\n    currentServiceRound {\\n      currEndDate\\n      startDate\\n      article {\\n        id\\n        name\\n        articleTypeId\\n        priceNet\\n        priceGross\\n        volumeGb\\n        runtime\\n        runtimeUnit\\n      }\\n      invoice {\\n        id\\n        createDate\\n        uuid\\n        invoiceStatePaths {\\n          invoiceStateId\\n          isCurrent\\n        }\\n      }\\n    }\\n    nextServiceRoundBeginDate\\n    nextArticle {\\n      id\\n      name\\n      articleTypeId\\n      priceNet\\n      priceGross\\n      volumeGb\\n      runtime\\n      runtimeUnit\\n    }\\n  }\\n}\\n\"}");
+        postRequest.getHeaders().put("x-ui-language", "en-US");
+        postRequest.getHeaders().put("Origin", "https://www." + br.getHost());
+        br.setCurrentURL("https://www." + br.getHost() + "/");
+        sendRequest(postRequest);
+        final Map<String, Object> json = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+        final Map<String, Object> volume = (Map<String, Object>) JavaScriptEngineFactory.walkJson(json, "data/radiusData/volume");
+        final long trafficTotal = parseNumber(volume, "total", -1);
+        final long trafficRemaining = parseNumber(volume, "remaining", -1);
+        final Map<String, Object> extraBoost = (Map<String, Object>) JavaScriptEngineFactory.walkJson(json, "data/radiusData/extraBoost");
+        String accountStatusAdditionalText = null;
+        if (extraBoost != null) {
+            final long boostTotal = parseNumber(extraBoost, "total", -1);
+            final long boostRemaining = parseNumber(extraBoost, "remaining", -1);
+            ai.setTrafficMax(trafficTotal + boostTotal);
+            ai.setTrafficLeft(trafficRemaining + boostRemaining);
+            final SIZEUNIT maxSizeUnit = (SIZEUNIT) CFG_GUI.MAX_SIZE_UNIT.getValue();
+            accountStatusAdditionalText = "Boost remaining: " + SIZEUNIT.formatValue(maxSizeUnit, boostRemaining) + "/" + SIZEUNIT.formatValue(maxSizeUnit, boostTotal);
+        } else {
+            ai.setTrafficMax(trafficTotal);
+            ai.setTrafficLeft(trafficRemaining);
+        }
+        final Map<String, Object> currentServiceRound = (Map<String, Object>) JavaScriptEngineFactory.walkJson(json, "data/serviceInformation/currentServiceRound");
+        final String currEndDate = (String) currentServiceRound.get("currEndDate");
+        final Date expireDate = TimeFormatter.parseDateString(currEndDate);
+        String accountStatusPackageText = null;
+        if (expireDate != null) {
+            ai.setValidUntil(expireDate.getTime());
+            accountStatusPackageText = (String) JavaScriptEngineFactory.walkJson(currentServiceRound, "article/name");
+        }
+        if (accountStatusPackageText == null) {
+            accountStatusPackageText = account.getType().getLabel();
+        }
+        account.setMaxSimultanDownloads(30);
         account.setRefreshTimeout(2 * 60 * 60 * 1000l);
         ai.setProperty("multiHostSupport", Arrays.asList(new String[] { "usenet" }));
+        if (accountStatusAdditionalText != null) {
+            ai.setStatus(accountStatusPackageText + " | " + accountStatusAdditionalText);
+        } else {
+            ai.setStatus(accountStatusPackageText);
+        }
         return ai;
+    }
+
+    private boolean isLoggedinHTML(final Browser br) {
+        return br.containsHTML("https?://[^/]+/signout\"");
     }
 
     @Override
     public List<UsenetServer> getAvailableUsenetServer() {
+        /* Current list of servers can be found here: https://www.usenext.com/en-US/support -> See "How do I set up my newsreader" */
         final List<UsenetServer> ret = new ArrayList<UsenetServer>();
-        ret.addAll(UsenetServer.createServerList("news.usenext.de", false, 119, 443));
-        ret.addAll(UsenetServer.createServerList("news.usenext.de", true, 563));
         ret.addAll(UsenetServer.createServerList("flat.usenext.de", false, 119, 443));
         ret.addAll(UsenetServer.createServerList("flat.usenext.de", true, 563));
         ret.addAll(UsenetServer.createServerList("high.usenext.de", false, 119, 443));
         ret.addAll(UsenetServer.createServerList("high.usenext.de", true, 563));
+        /*
+         * 2023-01-04: Moved entries for news.usenext.de to bottom as their FAQ does not list this entry anymore but it still seems to work.
+         */
+        ret.addAll(UsenetServer.createServerList("news.usenext.de", false, 119, 443));
+        ret.addAll(UsenetServer.createServerList("news.usenext.de", true, 563));
         return ret;
     }
 }

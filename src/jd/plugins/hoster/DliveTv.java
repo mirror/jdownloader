@@ -22,7 +22,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.downloader.hls.HLSDownloader;
@@ -102,7 +101,12 @@ public class DliveTv extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final Map<String, Object> root = restoreFromString(br.toString(), TypeRef.MAP);
+        final Map<String, Object> root = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+        final Object errorsO = root.get("errors");
+        if (errorsO != null) {
+            /* E.g. {"errors":[{"message":"PersistedQueryNotFound"}],"data":null} */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         final Map<String, Object> data = (Map<String, Object>) root.get("data");
         final Map<String, Object> video = (Map<String, Object>) data.get("pastBroadcast");
         if (video == null) {
