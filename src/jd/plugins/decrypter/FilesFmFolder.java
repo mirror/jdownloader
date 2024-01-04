@@ -29,7 +29,6 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DecrypterRetryException;
 import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
@@ -60,7 +59,6 @@ public class FilesFmFolder extends PluginForDecrypt {
             logger.info("Password protected urls are not yet supported");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String fpName = null;
         String[] folders = br.getRegex("files\\.fm/u/([a-z0-9]+)").getColumn(0);
         for (String folderIDTmp : folders) {
             /* Do not re-add current folder */
@@ -81,8 +79,9 @@ public class FilesFmFolder extends PluginForDecrypt {
                 /* Folder redirected to single file-link */
                 ret.add(this.createDownloadlink(br.getURL()));
                 return ret;
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            return null;
         }
         for (final String singleLink : links) {
             String filename = new Regex(singleLink, "class=\"full-file-name\">([^<>\"]+)<").getMatch(0);
@@ -110,11 +109,6 @@ public class FilesFmFolder extends PluginForDecrypt {
             dl.setDownloadSize(SizeFormatter.getSize(Encoding.htmlDecode(filesize)));
             dl.setProperty("originalname", filename);
             ret.add(dl);
-        }
-        if (fpName != null) {
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName.trim()));
-            fp.addLinks(ret);
         }
         return ret;
     }

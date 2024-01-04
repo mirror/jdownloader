@@ -33,6 +33,7 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.components.SiteType.SiteTemplate;
+import jd.plugins.hoster.DirectHTTP;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "hoerbuch.in", "hi10anime.com", "scene-rls.com", "cgpersia.com" }, urls = { "https?://(www\\.)?hoerbuch\\.in/blog\\.php\\?id=[\\d]+", "https?://(www\\.)?hi10anime\\.com/\\?page_id=.+", "https?://((www|nfo)\\.)?scene-rls\\.(com|net)/[\\w-/]+/?$", "https?://(?:www\\.)?cgpersia\\.com/\\d+/\\d+/[^/$]+\\.html?" })
 public class Wrdprss extends antiDDoSForDecrypt {
@@ -129,7 +130,7 @@ public class Wrdprss extends antiDDoSForDecrypt {
                     dLink.setSourcePluginPasswordList(link_passwds);
                 }
                 if (!customHeaders.isEmpty()) {
-                    dLink.setProperty("customHeader", customHeaders);
+                    dLink.setProperty(DirectHTTP.PROPERTY_HEADERS, customHeaders);
                 }
                 decryptedLinks.add(dLink);
             }

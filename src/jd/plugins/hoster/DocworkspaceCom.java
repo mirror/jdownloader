@@ -20,6 +20,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -31,10 +35,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class DocworkspaceCom extends PluginForHost {
@@ -98,6 +98,8 @@ public class DocworkspaceCom extends PluginForHost {
         return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
+    private Map<String, Object> filemap = null;
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         if (!link.isNameSet()) {
@@ -110,21 +112,21 @@ public class DocworkspaceCom extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String json = br.getRegex("(\\{\"file\".*?\\});window").getMatch(0);
+        final String json = br.getRegex("(\\{\"file_info\".*?\\});\\s+").getMatch(0);
         if (json == null) {
             /* Assume that content is offline */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final Map<String, Object> root = restoreFromString(json, TypeRef.MAP);
-        final Map<String, Object> file = (Map<String, Object>) root.get("file");
+        filemap = (Map<String, Object>) JavaScriptEngineFactory.walkJson(root, "file_info/file");
         // final boolean accountRequired = ((Boolean) root.get("needLogin")).booleanValue();
         // if (accountRequired) {
         // link.setProperty(PROPERTY_ACCOUNT_REQUIRED, true);
         // } else {
         // link.removeProperty(PROPERTY_ACCOUNT_REQUIRED);
         // }
-        final long filesize = ((Number) file.get("size")).longValue();
-        String filename = (String) file.get("name");
+        final long filesize = ((Number) filemap.get("size")).longValue();
+        String filename = (String) filemap.get("name");
         if (!StringUtils.isEmpty(filename)) {
             filename = Encoding.htmlDecode(filename).trim();
             link.setName(filename);
@@ -148,14 +150,22 @@ public class DocworkspaceCom extends PluginForHost {
             }
             final Browser brc = br.cloneBrowser();
             brc.getHeaders().put("Accept", "application/json, text/plain, */*");
-            brc.getPage("https://ru-drive.wps.com/api/v3/links/" + this.getFID(link) + "/download?isblocks=false");
-            final Map<String, Object> entries = restoreFromString(brc.toString(), TypeRef.MAP);
+            /* Old request */
+            // brc.getPage("https://ru-drive.wps.com/api/v3/links/" + this.getFID(link) + "/download?isblocks=false");
+            brc.getPage("https://eu-drive.wps.com/api/v3/groups/" + filemap.get("group_id") + "/files/" + filemap.get("id") + "/download?isblocks=false");
+            final Map<String, Object> entries = restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.MAP);
             final Map<String, Object> fileInfo = (Map<String, Object>) entries.get("fileinfo");
             if (fileInfo == null) {
+                final String result = (String) entries.get("result");
                 final String errorMsg = (String) entries.get("msg");
-                if (errorMsg != null) {
+                if (result != null && errorMsg != null) {
                     /* E.g. {"result":"lightLinkNotExist","msg":"The link does not exist."} */
-                    throw new PluginException(LinkStatus.ERROR_FATAL, errorMsg);
+                    if (result.equalsIgnoreCase("userNotLogin")) {
+                        /* 2023-01-04: Account is always required to download any file(?) */
+                        throw new AccountRequiredException();
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_FATAL, errorMsg);
+                    }
                 } else {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }

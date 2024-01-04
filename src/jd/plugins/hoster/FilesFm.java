@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.Map;
 
+import org.appwork.storage.TypeRef;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -73,7 +74,6 @@ public class FilesFm extends PluginForHost {
 
     private String dllink = null;
 
-    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         dllink = null;
@@ -85,7 +85,7 @@ public class FilesFm extends PluginForHost {
             this.br.getPage(mainlink);
             // this.br.getHeaders().put("Referer", mainlink);
         } else {
-            br.getPage(link.getDownloadURL());
+            br.getPage(link.getPluginPatternMatcher());
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -99,13 +99,17 @@ public class FilesFm extends PluginForHost {
         try {
             dllink = "https://files.fm/down.php?i=" + getLinkID(link);
             con = brc.openHeadConnection(dllink);
-            if (con.getURL().toString().contains("/private")) {
+            if (con.getURL().toExternalForm().contains("/private")) {
                 // https://files.fm/thumb_show.php?i=wfslpuh&n=20140908_073035.jpg&refresh1
                 /* Maybe we have a picture without official "Download" button ... */
                 dllink = "https://files.fm/thumb_show.php" + linkpart + "&refresh1";
                 con = brc.openHeadConnection(dllink);
             }
             if (!this.looksLikeDownloadableContent(con)) {
+                /*
+                 * Browser will download file via built in torrent downloader. We can't do that. Instead we will deliver the .torrent file
+                 * to the user so the user can download the file behind it using a torrent downloader.
+                 */
                 final String webdlTorrentID = br.getRegex("new WebTorrentDownloadForm\\( \\'([a-z0-9]+)\\' \\)").getMatch(0);
                 if (webdlTorrentID == null) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -123,7 +127,7 @@ public class FilesFm extends PluginForHost {
                 String filename = null;
                 try {
                     final String jsonFileInfo = br.getRegex("objMainShareParams = (\\{.*?\\});").getMatch(0);
-                    Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(jsonFileInfo);
+                    Map<String, Object> entries = restoreFromString(jsonFileInfo, TypeRef.MAP);
                     entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "one_file/item_info");
                     filename = (String) entries.get("file_name");
                 } catch (final Throwable e) {
@@ -133,15 +137,17 @@ public class FilesFm extends PluginForHost {
                  * .torrent extension.
                  */
                 final String originalFilename = link.getStringProperty("originalname");
+                String torrentFilename;
                 if (originalFilename != null) {
-                    link.setFinalFileName(applyFilenameExtension(originalFilename, ".torrent"));
+                    torrentFilename = originalFilename;
+                } else if (filename != null) {
+                    torrentFilename = filename;
                 } else {
-                    if (filename == null) {
-                        /* Fallback */
-                        filename = linkid + ".torrent";
-                    }
-                    link.setFinalFileName(filename);
+                    /* Fallback */
+                    torrentFilename = linkid;
                 }
+                torrentFilename = applyFilenameExtension(torrentFilename, ".torrent");
+                link.setFinalFileName(torrentFilename);
                 // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else {
                 filename_header = Encoding.htmlDecode(getFileNameFromHeader(con));

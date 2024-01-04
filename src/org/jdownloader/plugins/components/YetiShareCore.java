@@ -968,6 +968,7 @@ public abstract class YetiShareCore extends antiDDoSForHost {
     protected void handlePasswordProtection(final DownloadLink link, final Account account, final Browser br) throws Exception {
         if (getPasswordProtectedForm(this.br) != null) {
             /* Old layout additionally redirects to "/file_password.html?file=<fuid>" */
+            link.setPasswordProtected(true);
             String passCode = link.getDownloadPassword();
             if (passCode == null) {
                 passCode = getUserInput("Password?", link);
@@ -994,6 +995,8 @@ public abstract class YetiShareCore extends antiDDoSForHost {
                     link.setDownloadPassword(passCode);
                 }
             }
+        } else {
+            link.setPasswordProtected(false);
         }
     }
 

@@ -36,6 +36,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.hoster.DirectHTTP;
 
 /**
  * Please do not mess with the following Regex! <br />
@@ -311,7 +312,7 @@ public class ProDjCm extends PluginForDecrypt {
             if (filter.add(link) == true) {
                 final DownloadLink dl = createDownloadlink(link);
                 if (customHeaders.size() != 0) {
-                    dl.setProperty("customHeader", customHeaders);
+                    dl.setProperty(DirectHTTP.PROPERTY_HEADERS, customHeaders);
                 }
                 dl.setContentUrl(grabThis);
                 ret.add(dl);

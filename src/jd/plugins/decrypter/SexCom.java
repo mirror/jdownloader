@@ -15,14 +15,12 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.Files;
 import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
@@ -37,6 +35,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.hoster.DirectHTTP;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class SexCom extends PornEmbedParser {
@@ -86,17 +85,15 @@ public class SexCom extends PornEmbedParser {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         String externID;
-        String filename;
+        String title;
         br.setAllowedResponseCodes(502);
         final String contenturl = param.getCryptedUrl().replaceFirst("(?i)http://", "https://");
         String redirect = null;
         if (contenturl.matches(PATTERN_RELATIVE_EXTERN_REDIRECT)) {
+            /* Single link which redirects to another website */
             br.setFollowRedirects(false);
             br.getPage(contenturl);
             redirect = this.br.getRedirectLocation();
-            if (this.canHandle(redirect)) {
-                return null;
-            }
             ret.add(this.createDownloadlink(redirect));
             return ret;
         }
@@ -149,25 +146,25 @@ public class SexCom extends PornEmbedParser {
             ret.addAll(this.findLink());
         } else {
             /* "PIN" item */
-            filename = br.getRegex("<title>\\s*([^<>\"]*?)\\s*(?:\\|\\s*Sex Videos and Pictures\\s*\\|\\s*Sex\\.com)?\\s*</title>").getMatch(0);
-            if (filename == null || filename.length() <= 2) {
-                filename = br.getRegex("addthis:title=\"([^<>\"]*?)\"").getMatch(0);
+            title = br.getRegex("<title>\\s*([^<>\"]*?)\\s*(?:\\|\\s*Sex Videos and Pictures\\s*\\|\\s*Sex\\.com)?\\s*</title>").getMatch(0);
+            if (title == null || title.length() <= 2) {
+                title = br.getRegex("addthis:title=\"([^<>\"]*?)\"").getMatch(0);
             }
-            if (filename == null || filename.length() <= 2) {
-                filename = br.getRegex("property=\"og:title\" content=\"([^<>]*?)\\-  Pin #\\d+ \\| Sex\\.com\"").getMatch(0);
+            if (title == null || title.length() <= 2) {
+                title = br.getRegex("property=\"og:title\" content=\"([^<>]*?)\\-  Pin #\\d+ \\| Sex\\.com\"").getMatch(0);
             }
-            if (filename == null || filename.length() <= 2) {
-                filename = br.getRegex("<div class=\"pin\\-header navbar navbar\\-static\\-top\">[\t\n\r ]+<div class=\"navbar\\-inner\">[\t\n\r ]+<h1>([^<>]*?)</h1>").getMatch(0);
+            if (title == null || title.length() <= 2) {
+                title = br.getRegex("<div class=\"pin\\-header navbar navbar\\-static\\-top\">[\t\n\r ]+<div class=\"navbar\\-inner\">[\t\n\r ]+<h1>([^<>]*?)</h1>").getMatch(0);
             }
-            if (filename == null || filename.length() <= 2) {
-                filename = new Regex(param.getCryptedUrl(), "(\\d+)/?$").getMatch(0);
+            if (title == null || title.length() <= 2) {
+                title = new Regex(param.getCryptedUrl(), "(\\d+)/?$").getMatch(0);
             }
             final String name = br.getRegex("(?:Picture|Video|Gif)\\s*-\\s*<span itemprop\\s*=\\s*\"name\"\\s*>\\s*(.*?)\\s*</span>").getMatch(0);
             if (name != null) {
-                filename = name;
+                title = name;
             }
-            filename = Encoding.htmlDecode(filename.trim());
-            filename = filename.replace("#", "");
+            title = Encoding.htmlDecode(title).trim();
+            title = title.replace("#", "");
             externID = br.getRegex("<div class=\"from\">From <a rel=\"nofollow\" href=\"(https?://[^<>\"]*?)\"").getMatch(0);
             if (externID != null) {
                 ret.add(createDownloadlink(externID));
@@ -180,17 +177,20 @@ public class SexCom extends PornEmbedParser {
             }
             if (externID != null) {
                 /* Fix encoding */
-                externID = externID.replace("&amp;", "&");
-                final DownloadLink dl = createDownloadlink("directhttp://" + externID);
-                final String filePath = new URL(externID).getPath();
+                externID = Encoding.htmlOnlyDecode(externID);
+                final DownloadLink dl = createDownloadlink(DirectHTTP.createURLForThisPlugin(externID));
+                // final String filePath = new URL(externID).getPath();
                 dl.setContentUrl(contenturl);
-                dl.setFinalFileName(filename + "." + Files.getExtension(filePath));
+                dl.setFinalFileName(this.applyFilenameExtension(title, ".webp"));
+                /* 2023-01-04: Add custom header to prefer .webp image (same way browser is doing it). */
+                final ArrayList<String[]> customHeaders = new ArrayList<String[]>();
+                customHeaders.add(new String[] { "Accept", "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8" });
+                dl.setProperty(DirectHTTP.PROPERTY_HEADERS, customHeaders);
+                dl.setAvailable(true);
                 ret.add(dl);
                 return ret;
             }
-            if (externID == null) {
-                throw new DecrypterException("Decrypter broken for link: " + param.getCryptedUrl());
-            }
+            throw new DecrypterException("Decrypter broken for link: " + param.getCryptedUrl());
         }
         return ret;
     }
