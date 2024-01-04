@@ -34,7 +34,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "cloudbate.com" }, urls = { "https?://(?:www\\.)?cloudbate\\.com/([a-z0-9\\-_]+)/([a-z0-9\\-_]+)/" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "cloudbate.com" }, urls = { "https?://(?:www\\.)?cloudbate\\.com/(?!page/)([a-z0-9\\-_]+)/([a-z0-9\\-_]+)/" })
 public class CloudbateCom extends antiDDoSForHost {
     public CloudbateCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -83,7 +83,9 @@ public class CloudbateCom extends antiDDoSForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         getPage(link.getPluginPatternMatcher());
-        if (br.getHttpConnection().getResponseCode() == 404 || !br.getURL().contains(urlName)) {
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (!br.getURL().contains(urlName)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String dataXV = br.getRegex("data-xv=\"([^\"]+)\"").getMatch(0);
@@ -94,7 +96,7 @@ public class CloudbateCom extends antiDDoSForHost {
         }
         br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
         this.postPage("/wp-admin/admin-ajax.php", "action=my_xv_mo&post_type=POST&xv=" + Encoding.urlEncode(dataXV) + "&mo=" + Encoding.urlEncode(dataMO));
-        final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
+        final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         br.getRequest().setHtmlCode((String) entries.get("video"));
         this.dllink = br.getRegex("<source src=(?:\"|\\')(https?://[^<>\"\\']*?)(?:\"|\\')[^>]*?type=(?:\"|\\')(?:video/)?(?:mp4|flv)(?:\"|\\')").getMatch(0);
         if (!StringUtils.isEmpty(dllink)) {
