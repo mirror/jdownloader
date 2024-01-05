@@ -71,6 +71,10 @@ public class DefinebabeComDecrypter extends PornEmbedParser {
         if (title == null) {
             /* 2022-08-23 */
             title = br.getRegex("property=\"og:title\" content=\"([^\"]+)").getMatch(0);
+            if (title == null) {
+                /* 2023-01-05 */
+                title = br.getRegex("<title>([^<]+)</title>").getMatch(0);
+            }
         }
         if (title == null) {
             /* Fallback */

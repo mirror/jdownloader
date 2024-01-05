@@ -17,10 +17,13 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.config.NaughtyamericaConfig;
 import org.jdownloader.plugins.components.config.NaughtyamericaConfig.VideoImageGalleryCrawlMode;
 import org.jdownloader.plugins.config.PluginJsonConfig;
@@ -29,6 +32,7 @@ import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountError;
@@ -50,6 +54,13 @@ public class NaughtyamericaComCrawler extends PluginForDecrypt {
         super(wrapper);
     }
 
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.setFollowRedirects(true);
+        return br;
+    }
+
     public static String DOMAIN_BASE           = "naughtyamerica.com";
     public static String DOMAIN_PREFIX_PREMIUM = "members.";
 
@@ -64,7 +75,6 @@ public class NaughtyamericaComCrawler extends PluginForDecrypt {
         final String contenturl = param.getCryptedUrl().replaceFirst("(?i)beta\\.", "");
         final String urlSlug = new Regex(contenturl, "/([a-z0-9\\-]+)$").getMatch(0);
         final String contentID = new Regex(contenturl, "(\\d+)$").getMatch(0);
-        br.setFollowRedirects(true);
         final Account acc = AccountController.getInstance().getValidAccount(this.getHost());
         if (acc != null) {
             final PluginForHost hostPlugin = this.getNewPluginForHostInstance(this.getHost());
@@ -84,13 +94,18 @@ public class NaughtyamericaComCrawler extends PluginForDecrypt {
         if (acc != null) {
             if (!NaughtyamericaCom.isLoggedIN(this.br)) {
                 acc.setError(AccountError.TEMP_DISABLED, 30 * 1000l, "Session expired?");
-                throw new DecrypterRetryException(RetryReason.PLUGIN_SETTINGS, "ACCOUNT_LOGIN_EXPIRED_" + urlSlug, "CRefresh your account in settings and try again.");
+                throw new DecrypterRetryException(RetryReason.PLUGIN_SETTINGS, "ACCOUNT_LOGIN_EXPIRED_" + urlSlug, "Refresh your account in settings and try again.");
             }
             final ArrayList<Integer> selectedQualities = this.getSelectedQualities();
+            /* TODO: Remove those hardcoded values once 8k and 6k have been added to plugin settings. */
+            selectedQualities.add(4320);
+            selectedQualities.add(3466);
+            selectedQualities.add(3465);
+            selectedQualities.add(2048);
             if (selectedQualities.isEmpty() && !ignoreQualitySelection) {
                 throw new DecrypterRetryException(RetryReason.PLUGIN_SETTINGS, "USER_DESELECTED_ALL_QUALITIES_" + urlSlug, "You've deselected all qualities in the settings of this plugin.");
             }
-            final Map<Integer, DownloadLink> foundQualities = new HashMap<Integer, DownloadLink>();
+            final HashSet<String> alldirecturls = new HashSet<String>();
             String[] directurls = br.getRegex("playVideoStream\\([^\\)]*'(https?://[^<>\"\\']+)").getColumn(0);
             if (directurls.length == 0) {
                 /*
@@ -100,19 +115,35 @@ public class NaughtyamericaComCrawler extends PluginForDecrypt {
                 // directurls = br.getRegex("<source src=\"(https?://[^\"]+)\"[^>]*type=\"video/mp4\"").getColumn(0);
                 directurls = br.getRegex("var video_file = \"(https?://[^\"]+)\"").getColumn(0);
             }
-            if (directurls.length == 0) {
+            if (directurls != null && directurls.length > 0) {
+                for (String directlink : directurls) {
+                    directlink = Encoding.htmlOnlyDecode(directlink);
+                    alldirecturls.add(directlink);
+                }
+            }
+            /* 2023-01-05 */
+            final String[] directurls2 = br.getRegex("<source[^<]*src=\"(https?://[^\"]+)\"[^<*]type=\"video/mp4\"").getColumn(0);
+            if (directurls2 != null && directurls2.length > 0) {
+                for (String directlink : directurls2) {
+                    directlink = Encoding.htmlOnlyDecode(directlink);
+                    alldirecturls.add(directlink);
+                }
+            }
+            if (alldirecturls.isEmpty()) {
+                /* This should never happen */
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Failed to find any directurls");
             }
+            final List<DownloadLink> unknownQualities = new ArrayList<DownloadLink>();
+            final Map<Integer, DownloadLink> foundQualities = new HashMap<Integer, DownloadLink>();
             int qualityHeightMax = -1;
             DownloadLink best = null;
-            for (String directlink : directurls) {
-                /* Fix encoding */
-                directlink = directlink.replace("&amp;", "&");
+            for (final String directlink : alldirecturls) {
                 /* Skip trailers */
-                if (directlink.contains("/trailers/")) {
+                if (StringUtils.containsIgnoreCase(directlink, "/trailers/")) {
+                    logger.info("Skipping trailer URL: " + directlink);
                     continue;
                 }
-                final String qualityStr = directlink != null ? new Regex(directlink, "_([a-z0-9]+)\\.(?:wmv|mp4)").getMatch(0) : null;
+                final String qualityStr = new Regex(directlink, "(?i)_([a-z0-9]+)\\.(?:wmv|mp4)").getMatch(0);
                 if (qualityStr == null) {
                     logger.warning("Failed to find quality modifier for URL: " + directlink);
                     continue;
@@ -136,34 +167,49 @@ public class NaughtyamericaComCrawler extends PluginForDecrypt {
                 dl.setProperty(NaughtyamericaCom.PROPERTY_VIDEO_QUALITY, Integer.toString(qualityHeight));
                 dl.setProperty(NaughtyamericaCom.PROPERTY_URL_SLUG, urlSlug);
                 dl.setProperty(NaughtyamericaCom.PROPERTY_MAINLINK, contenturl);
-                foundQualities.put(qualityHeight, dl);
-                if (qualityHeight > qualityHeightMax) {
+                if (qualityHeight == -1) {
+                    unknownQualities.add(dl);
+                } else {
+                    foundQualities.put(qualityHeight, dl);
+                }
+                if (qualityHeight > qualityHeightMax || best == null) {
                     qualityHeightMax = qualityHeight;
                     best = dl;
                 }
             }
-            if (foundQualities.isEmpty()) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Failed to find any video-qualities");
-            }
+            logger.info("Found qualities: Total: " + alldirecturls.size() + " | Known: " + foundQualities.size() + " | Unknown: " + unknownQualities.size());
             final NaughtyamericaConfig cfg = PluginJsonConfig.get(NaughtyamericaConfig.class);
-            if (ignoreQualitySelection) {
-                if (cfg.isGrabBestVideoQualityOnly()) {
-                    ret.add(best);
+            if (foundQualities.size() > 0) {
+                /* Add user selected qualities */
+                if (ignoreQualitySelection) {
+                    if (cfg.isGrabBestVideoQualityOnly()) {
+                        ret.add(best);
+                    } else {
+                        ret.addAll(foundQualities.values());
+                    }
                 } else {
-                    ret.addAll(foundQualities.values());
-                }
-            } else {
-                final Iterator<Entry<Integer, DownloadLink>> iterator = foundQualities.entrySet().iterator();
-                while (iterator.hasNext()) {
-                    final Entry<Integer, DownloadLink> entry = iterator.next();
-                    final int quality = entry.getKey();
-                    if (selectedQualities.contains(quality)) {
-                        ret.add(entry.getValue());
+                    /* TODO: Add plugin setting for this */
+                    final boolean addUnknownQualities = true;
+                    final Iterator<Entry<Integer, DownloadLink>> iterator = foundQualities.entrySet().iterator();
+                    while (iterator.hasNext()) {
+                        final Entry<Integer, DownloadLink> entry = iterator.next();
+                        final int quality = entry.getKey();
+                        if (selectedQualities.contains(quality)) {
+                            ret.add(entry.getValue());
+                        }
+                    }
+                    if (addUnknownQualities) {
+                        ret.addAll(unknownQualities);
+                    }
+                    if (ret.isEmpty()) {
+                        throw new DecrypterRetryException(RetryReason.PLUGIN_SETTINGS, "FAILED_TO_FIND_ANY_SELECTED_QUALITY_" + urlSlug, "None of your selected qualities have been found. Select all to get results.");
                     }
                 }
-                if (ret.isEmpty()) {
-                    throw new DecrypterRetryException(RetryReason.PLUGIN_SETTINGS, "FAILED_TO_FIND_ANY_SELECTED_QUALITY_" + urlSlug, "None of your selected qualities have been found. Select all to get results.");
-                }
+            } else {
+                /* Fallback: Add all unknown qualities */
+                /* Developer should update plugin-settings */
+                logger.warning("Failed to find any known video-qualities -> Adding all found unknown qualities as fallback");
+                ret.addAll(unknownQualities);
             }
             final VideoImageGalleryCrawlMode mode = cfg.getVideoImageGalleryCrawlMode();
             if (mode == VideoImageGalleryCrawlMode.AS_SINGLE_IMAGES || ignoreQualitySelection) {
@@ -235,17 +281,35 @@ public class NaughtyamericaComCrawler extends PluginForDecrypt {
     private int getQualityHeight(final String qualityStr) {
         if (qualityStr.matches("\\d+")) {
             return Integer.parseInt(qualityStr);
+        } else if (qualityStr.equalsIgnoreCase("8k") || StringUtils.startsWithCaseInsensitive(qualityStr, "8k")) {
+            return 4320;
+        } else if (StringUtils.containsIgnoreCase(qualityStr, "") && (qualityStr.equalsIgnoreCase("6k") || StringUtils.startsWithCaseInsensitive(qualityStr, "6k"))) {
+            /* Quest2/Quest Pro 6K H265 */
+            return 3466;
+        } else if (qualityStr.equalsIgnoreCase("6k") || StringUtils.startsWithCaseInsensitive(qualityStr, "6k")) {
+            /* Quest2/Quest Pro 6K H264 */
+            return 3465;
         } else if (qualityStr.equalsIgnoreCase("4k")) {
             return 2160;
+        } else if (qualityStr.equalsIgnoreCase("vrdesktophd")) {
+            /* Quest1/Oculus Rift 4K */
+            return 2048;
         } else if (qualityStr.equalsIgnoreCase("3dh")) {
             return 1440;
         } else if (qualityStr.equalsIgnoreCase("1080p")) {
             return 1080;
+        } else if (qualityStr.equalsIgnoreCase("sbs")) {
+            /* Playstation VR -> Also 1080p */
+            return 1080;
+        } else if (qualityStr.equalsIgnoreCase("smartphonevr00")) {
+            /* Smartphone (Legacy) */
+            return 1024;
         } else if (qualityStr.equalsIgnoreCase("720p")) {
             return 720;
         } else if (qualityStr.equalsIgnoreCase("qt") || qualityStr.equalsIgnoreCase("480p")) {
             return 480;
         } else {
+            /* Unknown quality */
             return -1;
         }
     }

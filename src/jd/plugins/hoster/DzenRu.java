@@ -117,16 +117,24 @@ public class DzenRu extends PluginForHost {
         }
         final String[] jsons = br.getRegex("(\\{\"data\".*?)\\)\\}\\(\\);</script>").getColumn(0);
         Map<String, Object> videomap = null;
+        Map<String, Object> videoinfomap = null;
         for (final String json : jsons) {
             final Object entries = restoreFromString(json, TypeRef.OBJECT);
             videomap = (Map<String, Object>) findVideoMapRecursive(entries, videoid);
-            if (videomap != null) {
+            videoinfomap = (Map<String, Object>) findVideoInformationMapRecursive(entries, videoid);
+            if (videomap != null && videoinfomap != null) {
                 break;
             }
         }
         String dateFormatted = null;
         String title = (String) JavaScriptEngineFactory.walkJson(videomap, "rawStreams/SingleStream/{0}/Title");
+        if (title == null && videoinfomap != null) {
+            title = (String) videoinfomap.get("title");
+        }
         String description = (String) videomap.get("description");
+        if (description == null && videoinfomap != null) {
+            description = (String) videoinfomap.get("description");
+        }
         String hlsMaster = null;
         final List<String> streams = (List<String>) videomap.get("streams");
         for (final String stream : streams) {
@@ -208,6 +216,41 @@ public class DzenRu extends PluginForHost {
             for (final Object arrayo : array) {
                 if (arrayo instanceof List || arrayo instanceof Map) {
                     final Object res = findVideoMapRecursive(arrayo, videoid);
+                    if (res != null) {
+                        return res;
+                    }
+                }
+            }
+            return null;
+        } else {
+            return null;
+        }
+    }
+
+    private Object findVideoInformationMapRecursive(final Object o, final String videoid) {
+        if (videoid == null) {
+            return null;
+        }
+        if (o instanceof Map) {
+            final Map<String, Object> entrymap = (Map<String, Object>) o;
+            for (final Map.Entry<String, Object> entry : entrymap.entrySet()) {
+                // final String key = entry.getKey();
+                final Object value = entry.getValue();
+                if (entrymap.containsKey("channelOwnerUid") && entrymap.containsKey("video")) {
+                    return entrymap;
+                } else if (value instanceof List || value instanceof Map) {
+                    final Object ret = findVideoInformationMapRecursive(value, videoid);
+                    if (ret != null) {
+                        return ret;
+                    }
+                }
+            }
+            return null;
+        } else if (o instanceof List) {
+            final List<Object> array = (List) o;
+            for (final Object arrayo : array) {
+                if (arrayo instanceof List || arrayo instanceof Map) {
+                    final Object res = findVideoInformationMapRecursive(arrayo, videoid);
                     if (res != null) {
                         return res;
                     }

@@ -34,6 +34,7 @@ import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
+import jd.parser.html.InputField;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -57,6 +58,14 @@ public class NaughtyamericaCom extends PluginForHost {
     }
 
     @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        // br.addAllowedResponseCodes(new int[] { 456 });
+        br.setFollowRedirects(true);
+        return br;
+    }
+
+    @Override
     public LazyPlugin.FEATURE[] getFeatures() {
         if (allowCookieLoginOnly) {
             return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX, LazyPlugin.FEATURE.COOKIE_LOGIN_ONLY };
@@ -72,10 +81,8 @@ public class NaughtyamericaCom extends PluginForHost {
 
     /* Connection stuff */
     private static final boolean allowCookieLoginOnly         = false;
-    private static final boolean FREE_RESUME                  = false;
     private static final int     FREE_MAXCHUNKS               = 1;
     private static final int     FREE_MAXDOWNLOADS            = 1;
-    private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
     /*
      * 2017-01-23: Max 100 connections tital seems to be a stable value - I'd not recommend allowing more as this will most likely cause
      * failing downloads which start over and over.
@@ -91,17 +98,22 @@ public class NaughtyamericaCom extends PluginForHost {
     public static final String   PROPERTY_CRAWLER_FILENAME    = "crawler_filename";
     public static final String   PROPERTY_MAINLINK            = "mainlink";
 
-    public static Browser prepBR(final Browser br) {
-        // br.addAllowedResponseCodes(new int[] { 456 });
-        br.setFollowRedirects(true);
-        return br;
-    }
-
     public void correctDownloadLink(final DownloadLink link) {
-        link.setPluginPatternMatcher(link.getPluginPatternMatcher().replaceAll("http://naughtyamericadecrypted", "https://"));
+        link.setPluginPatternMatcher(link.getPluginPatternMatcher().replaceAll("(?i)https?://naughtyamericadecrypted", "https://"));
     }
 
-    @SuppressWarnings("deprecation")
+    @Override
+    public boolean isResumeable(final DownloadLink link, final Account account) {
+        final AccountType type = account != null ? account.getType() : null;
+        if (AccountType.PREMIUM.equals(type)) {
+            /* Premium account */
+            return true;
+        } else {
+            /* Free(anonymous) and unknown account type */
+            return false;
+        }
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
@@ -130,8 +142,8 @@ public class NaughtyamericaCom extends PluginForHost {
             /* 2019-01-18: Trailer is only available in a single quality */
             dllink = br.getRegex("file\\s*?:\\s*?\"(https?[^<>\"]+)\"").getMatch(0);
             if (StringUtils.isEmpty(dllink)) {
-                link.getLinkStatus().setStatusText("Trailer not fond: Cannot check/download links without valid premium account");
-                return AvailableStatus.UNCHECKABLE;
+                link.getLinkStatus().setStatusText("Trailer not found: Cannot find download filesize without valid premium account");
+                return AvailableStatus.TRUE;
             }
         }
         URLConnectionAdapter con = null;
@@ -156,8 +168,8 @@ public class NaughtyamericaCom extends PluginForHost {
                 link.setPluginPatternMatcher(directURL);
                 dllink = directURL;
             }
-            if (con.getLongContentLength() > 0) {
-                link.setVerifiedFileSize(con.getLongContentLength());
+            if (con.getCompleteContentLength() > 0) {
+                link.setVerifiedFileSize(con.getCompleteContentLength());
             }
             final String filenameFromHeader = getFileNameFromHeader(con);
             if (link.getFinalFileName() == null && filenameFromHeader != null) {
@@ -195,7 +207,7 @@ public class NaughtyamericaCom extends PluginForHost {
         } else {
             /* Video */
             for (final DownloadLink tmp : results) {
-                if (StringUtils.equals(tmp.getStringProperty(PROPERTY_VIDEO_QUALITY), link.getStringProperty(PROPERTY_VIDEO_QUALITY))) {
+                if (StringUtils.equals(this.getLinkID(tmp), this.getLinkID(link))) {
                     result = tmp;
                     break;
                 }
@@ -232,7 +244,6 @@ public class NaughtyamericaCom extends PluginForHost {
         synchronized (account) {
             try {
                 br.setCookiesExclusive(true);
-                prepBR(br);
                 /* For developers: Disable this Boolean if normal login process breaks down and you're unable or too lazy to fix it! */
                 final Cookies userCookies = account.loadUserCookies();
                 final Cookies cookies = account.loadCookies("");
@@ -264,7 +275,6 @@ public class NaughtyamericaCom extends PluginForHost {
                         } else {
                             /* Full login required */
                             br.clearAll();
-                            prepBR(br);
                         }
                     }
                 }
@@ -324,7 +334,7 @@ public class NaughtyamericaCom extends PluginForHost {
                 if (!isLoggedIN(br) && loginCookie == null) {
                     throw new AccountInvalidException();
                 }
-                account.saveCookies(br.getCookies(account.getHoster()), "");
+                account.saveCookies(br.getCookies(br.getHost()), "");
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
                     account.clearCookies("");
@@ -357,6 +367,25 @@ public class NaughtyamericaCom extends PluginForHost {
         account.setConcurrentUsePossible(true);
         /* 2022-03-17: Their cookies are not valid for a long time -> Be sure to keep them active */
         account.setRefreshTimeout(5 * 60 * 1000l);
+        br.getPage("/account/profile");
+        String username = null;
+        final Form profileform = br.getFormbyActionRegex(".*/account/profile");
+        if (profileform != null) {
+            final InputField ifield = profileform.getInputField("display_name");
+            if (ifield != null) {
+                username = ifield.getValue();
+            }
+        }
+        if (username == null) {
+            logger.warning("Failed to find real username inside html code");
+        }
+        if (account.loadUserCookies() != null && username != null) {
+            /*
+             * Try to use unique usernames even if user did use cookie login as in theory he can enter whatever he wants into that username
+             * field when using cookie login.
+             */
+            account.setUser(username);
+        }
         return ai;
     }
 
@@ -366,9 +395,9 @@ public class NaughtyamericaCom extends PluginForHost {
             throw new AccountRequiredException();
         }
         if (account != null && AccountType.PREMIUM.equals(account.getType())) {
-            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, this.isResumeable(link, account), ACCOUNT_PREMIUM_MAXCHUNKS);
         } else {
-            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, FREE_RESUME, FREE_MAXCHUNKS);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, this.isResumeable(link, account), FREE_MAXCHUNKS);
         }
         if (!looksLikeDownloadableContent(dl.getConnection())) {
             logger.warning("The final dllink seems not to be a file!");
