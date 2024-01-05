@@ -20,6 +20,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.parser.UrlQuery;
@@ -107,7 +110,7 @@ public class EasyuploadIo extends PluginForHost {
     }
 
     public static void parseFileInfo(final Browser br, final DownloadLink link) throws PluginException {
-        String filename = br.getRegex("<h4>([^<>\"]+)</h4>").getMatch(0);
+        String filename = br.getRegex("<h4[^>]*>([^<>\"]+)</h4>").getMatch(0);
         String filesize = br.getRegex("(?i)\\s*Size:\\s*(\\d+(\\.\\d+)? [^ \"\\|]+)").getMatch(0);
         if (filename != null) {
             filename = Encoding.htmlDecode(filename).trim();
@@ -155,8 +158,24 @@ public class EasyuploadIo extends PluginForHost {
             query.add("method", "regular");
             final boolean captchaIsAlwaysNeeded = true; // 2023-05-30
             if (CaptchaHelperHostPluginRecaptchaV2.containsRecaptchaV2Class(br) || captchaIsAlwaysNeeded) {
-                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-                query.add("captchatoken", Encoding.urlEncode(recaptchaV2Response));
+                final CaptchaHelperHostPluginRecaptchaV2 rc2 = new CaptchaHelperHostPluginRecaptchaV2(this, br);
+                final String rckey = rc2.getSiteKey();
+                final String captchatoken;
+                if (rckey != null) {
+                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, rckey).getToken();
+                    captchatoken = recaptchaV2Response;
+                } else {
+                    /* 2023-01-05: No recaptcha but custom generated value */
+                    final StringBuilder sb = new StringBuilder();
+                    final String plainjs = "function generateCaptcha(length) {    let result = '';    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';    const charactersLength = characters.length;    let counter = 0;    while (counter < length) {      result += characters.charAt(Math.floor(Math.random() * charactersLength));      counter += 1;    }    return result;}";
+                    sb.append(plainjs.replace("let ", "var "));
+                    sb.append("var res = generateCaptcha(32);");
+                    final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(this);
+                    final ScriptEngine engine = manager.getEngineByName("javascript");
+                    engine.eval(sb.toString());
+                    captchatoken = engine.get("res").toString();
+                }
+                query.add("captchatoken", Encoding.urlEncode(captchatoken));
             }
             br.postPage(action, query);
             if (br.containsHTML("(?i)Invalid file password")) {

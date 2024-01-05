@@ -179,36 +179,35 @@ public class NaughtyamericaComCrawler extends PluginForDecrypt {
             }
             logger.info("Found qualities: Total: " + alldirecturls.size() + " | Known: " + foundQualities.size() + " | Unknown: " + unknownQualities.size());
             final NaughtyamericaConfig cfg = PluginJsonConfig.get(NaughtyamericaConfig.class);
-            if (foundQualities.size() > 0) {
+            if (cfg.isGrabBestVideoQualityOnly()) {
+                ret.add(best);
+            } else if (foundQualities.size() > 0) {
                 /* Add user selected qualities */
-                if (ignoreQualitySelection) {
-                    if (cfg.isGrabBestVideoQualityOnly()) {
-                        ret.add(best);
-                    } else {
-                        ret.addAll(foundQualities.values());
+                /* TODO: Add plugin setting for this */
+                final boolean addUnknownQualitiesAsFallback = true;
+                final Iterator<Entry<Integer, DownloadLink>> iterator = foundQualities.entrySet().iterator();
+                while (iterator.hasNext()) {
+                    final Entry<Integer, DownloadLink> entry = iterator.next();
+                    final int quality = entry.getKey();
+                    if (selectedQualities.contains(quality)) {
+                        ret.add(entry.getValue());
                     }
-                } else {
-                    /* TODO: Add plugin setting for this */
-                    final boolean addUnknownQualities = true;
-                    final Iterator<Entry<Integer, DownloadLink>> iterator = foundQualities.entrySet().iterator();
-                    while (iterator.hasNext()) {
-                        final Entry<Integer, DownloadLink> entry = iterator.next();
-                        final int quality = entry.getKey();
-                        if (selectedQualities.contains(quality)) {
-                            ret.add(entry.getValue());
-                        }
-                    }
-                    if (addUnknownQualities) {
-                        ret.addAll(unknownQualities);
-                    }
-                    if (ret.isEmpty()) {
-                        throw new DecrypterRetryException(RetryReason.PLUGIN_SETTINGS, "FAILED_TO_FIND_ANY_SELECTED_QUALITY_" + urlSlug, "None of your selected qualities have been found. Select all to get results.");
-                    }
+                }
+                if (ret.isEmpty() && addUnknownQualitiesAsFallback) {
+                    ret.addAll(unknownQualities);
+                }
+                if (ret.isEmpty()) {
+                    throw new DecrypterRetryException(RetryReason.PLUGIN_SETTINGS, "FAILED_TO_FIND_ANY_SELECTED_QUALITY_" + urlSlug, "None of your selected qualities have been found. Select all to get results.");
                 }
             } else {
                 /* Fallback: Add all unknown qualities */
                 /* Developer should update plugin-settings */
                 logger.warning("Failed to find any known video-qualities -> Adding all found unknown qualities as fallback");
+                ret.addAll(unknownQualities);
+            }
+            if (ignoreQualitySelection) {
+                ret.clear();
+                ret.addAll(foundQualities.values());
                 ret.addAll(unknownQualities);
             }
             final VideoImageGalleryCrawlMode mode = cfg.getVideoImageGalleryCrawlMode();

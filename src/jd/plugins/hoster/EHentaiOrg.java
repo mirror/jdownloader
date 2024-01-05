@@ -446,11 +446,11 @@ public class EHentaiOrg extends PluginForHost {
             dllink = new Regex(html, "(?i)<img [^>]*src=(\"|')([^\"\\'<>]{30,}(?:\\.jpe?g|png|gif))\\1").getMatch(1);
         }
         if (dllink == null) {
-            logger.info("Failed to find final downloadurl");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Failed to find final downloadurl");
         }
-        if (StringUtils.containsIgnoreCase(dllink, "509.gif")) {
+        if (StringUtils.endsWithCaseInsensitive(dllink, "/img/509.gif") || StringUtils.endsWithCaseInsensitive(dllink, "/g/509.gif")) {
             /* E.g. https://ehgt.org/g/509.gif or https://exhentai.org/img/509.gif */
+            /* 2023-01-05: Beware of items that are actually called "509.gif"! Example: https://e-hentai.org/s/69655771ba/726894-510 */
             exceptionLimitReached(br.getURL(), account, LIMIT_TYPE.IMAGE_VIEW, "Error 509: Image view limit reached");
         }
         return dllink;
