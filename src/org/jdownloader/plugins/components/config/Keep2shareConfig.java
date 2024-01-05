@@ -2,8 +2,10 @@ package org.jdownloader.plugins.components.config;
 
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.storage.config.annotations.DefaultEnumValue;
 import org.appwork.storage.config.annotations.DefaultIntValue;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
+import org.appwork.storage.config.annotations.LabelInterface;
 import org.appwork.storage.config.annotations.SpinnerValidator;
 import org.jdownloader.plugins.config.Order;
 import org.jdownloader.plugins.config.PluginConfigInterface;
@@ -36,6 +38,10 @@ public interface Keep2shareConfig extends PluginConfigInterface {
 
         public String getEnableFolderWorkaround_label() {
             return "Enable folder workaround?";
+        }
+
+        public String getCaptchaTimeoutBehavior_label() {
+            return "What to do on captcha timeout?";
         }
     }
 
@@ -81,4 +87,27 @@ public interface Keep2shareConfig extends PluginConfigInterface {
     boolean isEnableFolderWorkaround();
 
     void setEnableFolderWorkaround(boolean b);
+
+    public static enum CaptchaTimeoutBehavior implements LabelInterface {
+        GLOBAL_SETTING {
+            @Override
+            public String getLabel() {
+                return "Use global (default) behavior";
+            }
+        },
+        SKIP_HOSTER {
+            @Override
+            public String getLabel() {
+                return "Skip all items of this hoster";
+            }
+        };
+    }
+
+    @AboutConfig
+    @DefaultEnumValue("GLOBAL_SETTING")
+    @Order(60)
+    @DescriptionForConfigEntry("Define what should happen when a captcha of this hoster runs into a timeout.")
+    CaptchaTimeoutBehavior getCaptchaTimeoutBehavior();
+
+    void setCaptchaTimeoutBehavior(CaptchaTimeoutBehavior behavior);
 }

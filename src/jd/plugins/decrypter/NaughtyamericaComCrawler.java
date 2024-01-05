@@ -250,7 +250,7 @@ public class NaughtyamericaComCrawler extends PluginForDecrypt {
                 ret.add(zip);
             }
         } else {
-            /* We're not logged in but maybe the user has an account to download later or an MOCH account --> Add one dummy url. */
+            /* We're not logged in but maybe the user has an account to download later or a multihoster account --> Add one dummy url. */
             final String quality_dummy = "1080";
             final String type_dummy = "full";
             final String linkid = title + type_dummy + quality_dummy;
