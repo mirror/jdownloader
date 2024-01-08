@@ -3,7 +3,9 @@ package jd.plugins.hoster;
 import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -11,54 +13,83 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "simfileshare.net" }, urls = { "https?://(?:www\\.)?(simfileshare\\.net/download/|simfil\\.es/)\\d+/?" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "simfileshare.net" }, urls = { "https?://(?:www\\.)?(simfileshare\\.net/download/|simfil\\.es/)(\\d+)/?" })
 public class SimFileShareNet extends PluginForHost {
     public SimFileShareNet(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
-    public String getAGBLink() {
-        return null;
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.setFollowRedirects(true);
+        return br;
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
+    public String getAGBLink() {
+        return "https://simfileshare.net/";
+    }
+
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(1);
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         br.setCookiesExclusive(true);
-        br.setFollowRedirects(true);
-        final URLConnectionAdapter con = br.openGetConnection(parameter.getDownloadURL());
+        final URLConnectionAdapter con = br.openGetConnection(link.getPluginPatternMatcher());
         if (con.getResponseCode() == 404) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (con.isContentDisposition()) {
-            parameter.setVerifiedFileSize(con.getLongContentLength());
-            parameter.setFinalFileName(getFileNameFromDispositionHeader(con));
+            link.setVerifiedFileSize(con.getLongContentLength());
+            link.setFinalFileName(getFileNameFromDispositionHeader(con));
             con.disconnect();
             return AvailableStatus.TRUE;
         } else {
-            br.followConnection();
+            br.followConnection(true);
         }
-        if (br.getRequest().getHttpConnection().getResponseCode() == 404 || br.containsHTML("couldn't find that file")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
+        checkErrors(br);
         final String fileInfos[] = br.getRegex("<h3.*?>\\s*(.*?)\\s*\\((.*?)\\)\\s*<").getRow(0);
         if (fileInfos == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        parameter.setDownloadSize(SizeFormatter.getSize(fileInfos[1]));
-        parameter.setName(fileInfos[0]);
+        link.setDownloadSize(SizeFormatter.getSize(fileInfos[1]));
+        link.setName(fileInfos[0]);
         return AvailableStatus.TRUE;
     }
 
     @Override
-    public void handleFree(DownloadLink link) throws Exception {
+    public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getDownloadURL(), true, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher(), true, 1);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            br.followConnection(true);
+            checkErrors(br);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private void checkErrors(final Browser br) throws PluginException {
+        if (br.getRequest().getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("couldn't find that file")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.getHttpConnection().getResponseCode() == 503) {
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Error 503 too many connections", 30 * 60 * 1000l);
+        }
     }
 
     @Override

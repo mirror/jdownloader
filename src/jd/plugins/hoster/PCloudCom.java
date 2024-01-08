@@ -21,17 +21,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
+import org.appwork.utils.parser.UrlQuery;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.http.Browser;
 import jd.http.Cookies;
-import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -58,7 +57,7 @@ public class PCloudCom extends PluginForHost {
 
     @Override
     public Browser createNewBrowserInstance() {
-        final Browser br = new Browser();
+        final Browser br = super.createNewBrowserInstance();
         PCloudComFolder.prepBR(br);
         return br;
     }
@@ -101,25 +100,21 @@ public class PCloudCom extends PluginForHost {
         return "https://my.pcloud.com/#page=policies&tab=terms-of-service";
     }
 
-    private static final String  NICE_HOST                                       = "pcloud.com";
+    private static final String NICE_HOST                                       = "pcloud.com";
     /* Plugin Settings */
-    private static final String  DOWNLOAD_ZIP                                    = "DOWNLOAD_ZIP_2";
-    private static final String  MOVE_FILES_TO_ACCOUNT                           = "MOVE_FILES_TO_ACCOUNT";
-    private static final String  DELETE_FILE_AFTER_DOWNLOADLINK_CREATION         = "DELETE_FILE_AFTER_DOWNLOADLINK_CREATION";
-    private static final String  DELETE_FILE_FOREVER_AFTER_DOWNLOADLINK_CREATION = "DELETE_FILE_FOREVER_AFTER_DOWNLOADLINK_CREATION";
-    private static final String  EMPTY_TRASH_AFTER_DOWNLOADLINK_CREATION         = "EMPTY_TRASH_AFTER_DOWNLOADLINK_CREATION";
+    private static final String DOWNLOAD_ZIP                                    = "DOWNLOAD_ZIP_2";
+    private static final String MOVE_FILES_TO_ACCOUNT                           = "MOVE_FILES_TO_ACCOUNT";
+    private static final String DELETE_FILE_AFTER_DOWNLOADLINK_CREATION         = "DELETE_FILE_AFTER_DOWNLOADLINK_CREATION";
+    private static final String DELETE_FILE_FOREVER_AFTER_DOWNLOADLINK_CREATION = "DELETE_FILE_FOREVER_AFTER_DOWNLOADLINK_CREATION";
+    private static final String EMPTY_TRASH_AFTER_DOWNLOADLINK_CREATION         = "EMPTY_TRASH_AFTER_DOWNLOADLINK_CREATION";
     /* Errorcodes */
-    private static final int     STATUS_CODE_OKAY                                = 0;
-    private static final int     STATUS_CODE_PREMIUMONLY                         = 7005;
-    private static final int     STATUS_CODE_MAYBE_OWNER_ONLY                    = 2003;
-    private static final int     STATUS_CODE_WRONG_LOCATION                      = 2321;
-    private static final int     STATUS_CODE_INVALID_LOGIN                       = 2000;
-    /* Connection stuff */
-    private static final boolean FREE_RESUME                                     = true;
-    private static final int     FREE_MAXCHUNKS                                  = 0;
-    private static final int     FREE_MAXDOWNLOADS                               = -1;
-    private int                  statusCode                                      = 0;
-    private String               downloadURL                                     = null;
+    private static final int    STATUS_CODE_OKAY                                = 0;
+    public static final int     STATUS_CODE_DOWNLOAD_PASSWORD_INVALID           = 1125;
+    private static final int    STATUS_CODE_INVALID_LOGIN                       = 2000;
+    private static final int    STATUS_CODE_MAYBE_OWNER_ONLY                    = 2003;
+    public static final int     STATUS_CODE_DOWNLOAD_PASSWORD_REQUIRED          = 2258;
+    private static final int    STATUS_CODE_WRONG_LOCATION                      = 2321;
+    private static final int    STATUS_CODE_PREMIUMONLY                         = 7005;
 
     public static String getAPIDomain(final String linkDomain) {
         if (linkDomain.matches("(?i).*e\\d*\\.pcloud\\.(com|link)")) {
@@ -141,61 +136,95 @@ public class PCloudCom extends PluginForHost {
     }
 
     @Override
+    public boolean isResumeable(final DownloadLink link, final Account account) {
+        if (this.isCompleteFolder(link)) {
+            return false;
+        } else {
+            return true;
+        }
+    }
+
+    private int getMaxChunks(final DownloadLink link, final Account account) {
+        if (this.isCompleteFolder(link)) {
+            return 1;
+        } else {
+            return 0;
+        }
+    }
+
+    @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, Exception {
+        return requestFileInformation(link, null);
+    }
+
+    private AvailableStatus requestFileInformation(final DownloadLink link, final Account account) throws IOException, Exception {
         this.setBrowserExclusive();
         final String filename = link.getStringProperty("plain_name");
         final String filesize = link.getStringProperty("plain_size");
         if (filename == null || filesize == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        } else {
-            link.setFinalFileName(filename);
-            link.setDownloadSize(Long.parseLong(filesize));
-            downloadURL = getDownloadURL(link, null, null, true);
-            return AvailableStatus.TRUE;
         }
+        link.setFinalFileName(filename);
+        link.setDownloadSize(Long.parseLong(filesize));
+        getDownloadURL(link, account);
+        return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        requestFileInformation(link);
-        doDownloadURL(link, null, null, true);
+        handleDownload(link, null);
     }
 
-    public void doDownloadURL(final DownloadLink link, final Account account, final String account_auth, final boolean publicDownload) throws Exception, PluginException {
-        final String directLinkID = account != null ? "account_dllink" : "free_dllink";
-        if (downloadURL == null) {
-            downloadURL = checkDirectLink(link, directLinkID);
+    public void handleDownload(final DownloadLink link, final Account account) throws Exception, PluginException {
+        final String directLinkProperty = account != null ? "account_dllink" : "free_dllink";
+        final String storedDirectlink = link.getStringProperty(directLinkProperty);
+        String downloadURL = null;
+        if (storedDirectlink != null) {
+            logger.info("Attempting to re-use stored directurl: " + storedDirectlink);
+            downloadURL = storedDirectlink;
+        } else {
+            downloadURL = getDownloadURL(link, account);
             if (downloadURL == null) {
-                downloadURL = getDownloadURL(link, account, account_auth, publicDownload);
-                if (downloadURL == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+        }
+        try {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, downloadURL, this.isResumeable(link, account), this.getMaxChunks(link, account));
+            if (!looksLikeDownloadableContent(dl.getConnection())) {
+                br.followConnection(true);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            link.setProperty(directLinkProperty, dl.getConnection().getURL().toExternalForm());
+        } catch (final Exception e) {
+            if (storedDirectlink != null) {
+                link.removeProperty(directLinkProperty);
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Stored directurl expired", e);
+            } else {
+                throw e;
+            }
+        }
+        dl.startDownload();
+    }
+
+    private String getDownloadURL(final DownloadLink link, final Account account) throws Exception {
+        final String folderID = getFolderID(link);
+        String account_auth = null;
+        String account_api = null;
+        if (account != null) {
+            synchronized (account) {
+                account_auth = login(account, false);
+                account_api = account.getStringProperty("account_api");
+                if (account_api == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
         }
-        boolean resume = FREE_RESUME;
-        int maxchunks = FREE_MAXCHUNKS;
-        if (isCompleteFolder(link)) {
-            resume = false;
-            maxchunks = 1;
-        }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, downloadURL, resume, maxchunks);
-        if (!looksLikeDownloadableContent(dl.getConnection())) {
-            br.followConnection(true);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        link.setProperty(directLinkID, downloadURL);
-        dl.startDownload();
-    }
-
-    private String getDownloadURL(final DownloadLink link, final Account account, final String account_auth, final boolean publicDownload) throws Exception {
-        final String code = getFolderID(link);
         if (isCompleteFolder(link)) {
             if (account_auth != null) {
-                br.getPage("https://" + getAPIDomain(link) + "/showpublink?code=" + code + "&auth=" + account_auth);
+                br.getPage("https://" + getAPIDomain(link) + "/showpublink?code=" + folderID + "&auth=" + account_auth);
             } else {
-                br.getPage("https://" + getAPIDomain(link) + "/showpublink?code=" + code);
+                br.getPage("https://" + getAPIDomain(link) + "/showpublink?code=" + folderID);
             }
-            this.updatestatuscode();
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -214,203 +243,22 @@ public class PCloudCom extends PluginForHost {
                     dllink += currentID + "%2C";
                 }
             }
-            dllink += "&filename=" + link.getStringProperty("plain_name", null) + "&code=" + code;
+            dllink += "&filename=" + link.getStringProperty("plain_name", null) + "&code=" + folderID;
             if (account_auth != null) {
                 dllink += "&auth=" + account_auth;
             }
             return dllink;
         } else {
-            final String fileid = getFID(link);
-            if (account_auth != null) {
-                if (publicDownload) {
-                    br.getPage("https://" + getAPIDomain(link) + "/getpublinkdownload?code=" + code + "&forcedownload=1&fileid=" + fileid + "&auth=" + account_auth);
-                    this.updatestatuscode();
-                    if (statusCode == STATUS_CODE_MAYBE_OWNER_ONLY) {
-                        br.getPage("https://" + getAPIDomain(link) + "/getfilelink?code=" + code + "&forcedownload=1&fileid=" + fileid + "&auth=" + account_auth);
-                    }
-                } else {
-                    br.getPage("https://" + getAPIDomain(link) + "/getfilelink?code=" + code + "&forcedownload=1&fileid=" + fileid + "&auth=" + account_auth);
-                }
-            } else {
-                br.getPage("https://" + getAPIDomain(link) + "/getpublinkdownload?code=" + code + "&forcedownload=1&fileid=" + fileid);
-            }
-            this.updatestatuscode();
-            if (br.getHttpConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            handleAPIErrors(br);
-            final String hoststext = br.getRegex("\"hosts\": \\[(.*?)\\]").getMatch(0);
-            if (hoststext == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            final String[] hosts = new Regex(hoststext, "\"([^<>\"]*?)\"").getColumn(0);
-            String dllink = PluginJSonUtils.getJsonValue(br, "path");
-            if (dllink == null || hosts == null || hosts.length == 0) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            dllink = dllink.replace("\\", "");
-            dllink = "https://" + hosts[new Random().nextInt(hosts.length - 1)] + dllink;
-            return dllink;
-        }
-    }
-
-    private boolean isCompleteFolder(final DownloadLink dl) {
-        return dl.getBooleanProperty("complete_folder", false);
-    }
-
-    @Override
-    public int getMaxSimultanFreeDownloadNum() {
-        return FREE_MAXDOWNLOADS;
-    }
-
-    private String login(final Account account, final boolean force) throws Exception {
-        synchronized (account) {
-            try {
-                br.setCookiesExclusive(true);
-                final Cookies cookies = account.loadCookies("");
-                String account_auth = account.getStringProperty("account_auth", null);
-                String account_api = account.getStringProperty("account_api", null);
-                if (cookies != null && StringUtils.isAllNotEmpty(account_auth, account_api)) {
-                    br.setCookies(cookies);
-                    if (!force) {
-                        logger.info("Trust token without checking");
-                        return account_auth;
-                    }
-                    br.getPage("https://" + account_api + "/userinfo?auth=" + Encoding.urlEncode(account_auth) + "&getlastsubscription=1");
-                    try {
-                        updatestatuscode();
-                        this.handleAPIErrors(br);
-                        logger.info("Token login successful");
-                        updateAccountInfo(account, br);
-                        return account_auth;
-                    } catch (final PluginException e) {
-                        /* Wrong token = Will typically fail with errorcode 2000 */
-                        logger.info("Token login failed");
-                        logger.log(e);
-                        br.clearAll();
-                    }
-                }
-                logger.info("Performing full login");
-                /* Depending on which selection the user met when he registered his account, a different endpoint is required for login. */
-                try {
-                    logger.info("Trying to login via US-API endpoint");
-                    postAPISafe("https://api.pcloud.com/login", "logout=1&getauth=1&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&_t=" + System.currentTimeMillis());
-                } catch (PluginException e) {
-                    if (statusCode == STATUS_CODE_WRONG_LOCATION || statusCode == STATUS_CODE_INVALID_LOGIN) {
-                        logger.info("Trying to login via EU-API endpoint");
-                        postAPISafe("https://eapi.pcloud.com/login", "logout=1&getauth=1&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&_t=" + System.currentTimeMillis());
-                    } else {
-                        throw e;
-                    }
-                }
-                final String emailverified = PluginJSonUtils.getJson(br, "emailverified");
-                if (emailverified != null && !emailverified.equals("true")) {
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nDein Account ist noch nicht verifiziert!\r\nPrüfe deine E-Mails und verifiziere deinen Account!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nYour account is not yet verified!\r\nCheck your mails and verify it!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
-                }
-                account_auth = PluginJSonUtils.getJsonValue(br, "auth");
-                if (StringUtils.isEmpty(account_auth)) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                } else {
-                    account_api = br.getHost(true);
-                    getAPISafe("https://" + account_api + "/userinfo?auth=" + Encoding.urlEncode(account_auth) + "&getlastsubscription=1");
-                    account.setProperty("account_api", account_api);
-                    account.setProperty("account_auth", account_auth);
-                    account.saveCookies(br.getCookies(br.getURL()), "");
-                    updateAccountInfo(account, br);
-                    return account_auth;
-                }
-            } catch (final PluginException e) {
-                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
-                    account.clearCookies("");
-                    account.removeProperty("account_auth");
-                    account.removeProperty("account_api");
-                }
-                throw e;
-            }
-        }
-    }
-
-    private void updateAccountInfo(Account account, Browser br) {
-        synchronized (account) {
-            final String premium = PluginJSonUtils.getJsonValue(br, "premium");
-            if ("true".equals(premium)) {
-                account.setType(AccountType.PREMIUM);
-                account.setMaxSimultanDownloads(20);
-                account.setConcurrentUsePossible(true);
-            } else {
-                account.setType(AccountType.FREE);
-                /* Last checked: 2020-10-06 */
-                account.setMaxSimultanDownloads(20);
-                account.setConcurrentUsePossible(true);
-            }
-        }
-    }
-
-    @Override
-    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        final AccountInfo ai = new AccountInfo();
-        if (!account.getUser().matches(".+@.+\\..+")) {
-            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nBitte gib deine E-Mail Adresse ins Benutzername Feld ein!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nPlease enter your e-mail address in the username field!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
-        }
-        login(account, true);
-        return ai;
-    }
-
-    @Override
-    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        PluginException cause = null;
-        try {
-            requestFileInformation(link);
-        } catch (final PluginException e) {
-            switch (statusCode) {
-            case STATUS_CODE_PREMIUMONLY:
-            case STATUS_CODE_MAYBE_OWNER_ONLY:
-                cause = e;
-                break;
-            default:
-                throw e;
-            }
-        }
-        final String account_auth;
-        final String account_api;
-        synchronized (account) {
-            account_auth = login(account, false);
-            account_api = account.getStringProperty("account_api", null);
-            if (account_api == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-        }
-        boolean publicDownload = true;
-        if (STATUS_CODE_MAYBE_OWNER_ONLY == statusCode) {
-            final String code = getFolderID(link);
-            getAPISafe("https://" + getAPIDomain(link) + "/showpublink?code=" + code + "&auth=" + account_auth);
-            final String ownerisme = PluginJSonUtils.getJson(br, "ownerisme");
-            if (StringUtils.equals(ownerisme, "true")) {
-                // TODO: store Account.getId() or "userid"(userinfo) to DownloadLink, to avoid same handling on next download try
-                publicDownload = false;
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, null, PluginException.VALUE_ID_PREMIUM_ONLY, cause);
-            }
-        }
-        if (STATUS_CODE_PREMIUMONLY == statusCode) {
-            if (!isCompleteFolder(link) && StringUtils.equals(account_api, getAPIDomain(link)) && this.getPluginConfig().getBooleanProperty(MOVE_FILES_TO_ACCOUNT, defaultMOVE_FILES_TO_ACCOUNT)) {
+            final String fileID = getFID(link);
+            if (StringUtils.equals(account_api, getAPIDomain(link)) && this.getPluginConfig().getBooleanProperty(MOVE_FILES_TO_ACCOUNT, defaultMOVE_FILES_TO_ACCOUNT)) {
                 /*
-                 * only possible to copy files on same data center region!
+                 * Only possible to copy files on same data center region!
                  *
                  * not yet implemented for complete folder(zip)
                  */
                 /* tofolderid --> 0 = root */
-                final String code = getFolderID(link);
                 final String fileid = getFID(link);
-                getAPISafe("https://" + getAPIDomain(link) + "/copypubfile?fileid=" + fileid + "&tofolderid=0&code=" + code + "&auth=" + account_auth);
+                getAPISafe("https://" + getAPIDomain(link) + "/copypubfile?fileid=" + fileid + "&tofolderid=0&code=" + folderID + "&auth=" + account_auth);
                 final String new_fileid = PluginJSonUtils.getJsonValue(br, "fileid");
                 final String new_hash = PluginJSonUtils.getJsonValue(br, "hash");
                 final String api_filename = PluginJSonUtils.getJsonValue(br, "name");
@@ -418,14 +266,14 @@ public class PCloudCom extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 getAPISafe("/getfilelink?fileid=" + new_fileid + "&hashCache=" + new_hash + "&forcedownload=1&auth=" + account_auth);
-                final Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.toString());
+                final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
                 final List<Object> ressourcelist = (List) entries.get("hosts");
                 final String path = PluginJSonUtils.getJsonValue(br, "path");
                 if (ressourcelist == null || path == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 final String download_host = (String) ressourcelist.get(new Random().nextInt(ressourcelist.size() - 1));
-                downloadURL = "https://" + download_host + path;
+                final String directurl = "https://" + download_host + path;
                 if (this.getPluginConfig().getBooleanProperty(DELETE_FILE_AFTER_DOWNLOADLINK_CREATION, defaultDELETE_DELETE_FILE_AFTER_DOWNLOADLINK_CREATION)) {
                     /*
                      * It sounds crazy but we'll actually delete the file before we download it as the directlink will still be valid and
@@ -441,43 +289,163 @@ public class PCloudCom extends PluginForHost {
                     /* Let's empty the trash in case the user wants this. */
                     getAPISafe("/trash_clear?folderid=0&auth=" + account_auth);
                 }
-            } else if (!Account.AccountType.PREMIUM.equals(account.getType())) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+                return directurl;
             }
-        } else {
-            // use cached Link or generate fresh one with account
-            downloadURL = null;
+            final UrlQuery query = new UrlQuery();
+            query.add("code", folderID);
+            query.add("forcedownload", "1");
+            query.add("fileid", fileID);
+            if (account_auth != null) {
+                query.add("auth", account_auth);
+            }
+            String passCode = link.getDownloadPassword();
+            Map<String, Object> resp = null;
+            int passwordAttempts = 0;
+            do {
+                if (passCode != null) {
+                    query.addAndReplace("linkpassword", Encoding.urlEncode(passCode));
+                }
+                br.getPage("https://" + getAPIDomain(link) + "/getpublinkdownload?" + query.toString());
+                resp = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+                final int errorcode = ((Number) resp.get("result")).intValue();
+                if (errorcode == STATUS_CODE_MAYBE_OWNER_ONLY && account_auth != null) {
+                    br.getPage("/getfilelink?" + query.toString());
+                    resp = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+                }
+                if (br.getHttpConnection().getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                final int statusCode = ((Number) resp.get("result")).intValue();
+                if (statusCode == STATUS_CODE_DOWNLOAD_PASSWORD_REQUIRED || statusCode == STATUS_CODE_DOWNLOAD_PASSWORD_INVALID) {
+                    logger.info("Password invalid/required | password = " + passCode);
+                    if (passwordAttempts >= 3) {
+                        link.setDownloadPassword(null);
+                        throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
+                    }
+                    link.setPasswordProtected(true);
+                    passCode = getUserInput("Password?", link);
+                    passwordAttempts++;
+                    continue;
+                } else {
+                    if (passCode == null) {
+                        link.setPasswordProtected(false);
+                    }
+                    break;
+                }
+            } while (!this.isAbort());
+            if (passCode != null) {
+                /* Save for later */
+                link.setDownloadPassword(passCode);
+            }
+            final List<String> hosts = (List<String>) resp.get("hosts");
+            String dllink = resp.get("path").toString();
+            if (dllink == null || hosts == null || hosts == null || hosts.isEmpty()) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            dllink = "https://" + hosts.get(new Random().nextInt(hosts.size() - 1)) + dllink;
+            return dllink;
         }
-        doDownloadURL(link, account, account_auth, publicDownload);
     }
 
-    private String checkDirectLink(final DownloadLink link, final String property) {
-        String dllink = link.getStringProperty(property);
-        if (dllink != null) {
-            URLConnectionAdapter con = null;
-            try {
-                final Browser br2 = br.cloneBrowser();
-                br2.setFollowRedirects(true);
-                con = br2.openHeadConnection(dllink);
-                if (this.looksLikeDownloadableContent(con)) {
-                    if (con.getCompleteContentLength() > 0) {
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
-                    }
-                    return dllink;
+    private boolean isCompleteFolder(final DownloadLink link) {
+        return link.getBooleanProperty("complete_folder", false);
+    }
+
+    @Override
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
+    }
+
+    private String login(final Account account, final boolean force) throws Exception {
+        synchronized (account) {
+            br.setCookiesExclusive(true);
+            if (!account.getUser().matches(".+@.+\\..+")) {
+                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                    throw new AccountInvalidException("\r\nBitte gib deine E-Mail Adresse ins Benutzername Feld ein!");
                 } else {
-                    throw new IOException();
-                }
-            } catch (final Exception e) {
-                link.removeProperty(property);
-                logger.log(e);
-                return null;
-            } finally {
-                if (con != null) {
-                    con.disconnect();
+                    throw new AccountInvalidException("\r\nPlease enter your e-mail address in the username field!");
                 }
             }
+            final Cookies cookies = account.loadCookies("");
+            String account_auth = account.getStringProperty("account_auth");
+            String account_api = account.getStringProperty("account_api");
+            if (cookies != null && StringUtils.isAllNotEmpty(account_auth, account_api)) {
+                br.setCookies(cookies);
+                if (!force) {
+                    logger.info("Trust token without checking");
+                    return account_auth;
+                }
+                br.getPage("https://" + account_api + "/userinfo?auth=" + Encoding.urlEncode(account_auth) + "&getlastsubscription=1");
+                try {
+                    final Map<String, Object> resp = this.handleAPIErrors(br);
+                    logger.info("Token login successful");
+                    updateAccountInfo(account, resp);
+                    return account_auth;
+                } catch (final PluginException e) {
+                    /* Wrong token = Will typically fail with errorcode 2000 */
+                    logger.info("Token login failed");
+                    logger.log(e);
+                    br.clearCookies(null);
+                }
+            }
+            logger.info("Performing full login");
+            /* Depending on which selection the user met when he registered his account, a different endpoint is required for login. */
+            logger.info("Trying to login via US-API endpoint");
+            br.postPage("https://api.pcloud.com/login", "logout=1&getauth=1&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&_t=" + System.currentTimeMillis());
+            Map<String, Object> resp = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+            final int statusCode = ((Number) resp.get("result")).intValue();
+            if (statusCode == STATUS_CODE_WRONG_LOCATION || statusCode == STATUS_CODE_INVALID_LOGIN) {
+                logger.info("Trying to login via EU-API endpoint");
+                br.postPage("https://eapi.pcloud.com/login", "logout=1&getauth=1&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&_t=" + System.currentTimeMillis());
+                resp = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+                this.handleAPIErrors(resp);
+            }
+            updateAccountInfo(account, resp);
+            account_auth = resp.get("auth").toString();
+            if (StringUtils.isEmpty(account_auth)) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            account_api = br.getHost(true);
+            getAPISafe("https://" + account_api + "/userinfo?auth=" + Encoding.urlEncode(account_auth) + "&getlastsubscription=1");
+            account.setProperty("account_api", account_api);
+            account.setProperty("account_auth", account_auth);
+            account.saveCookies(br.getCookies(br.getURL()), "");
+            return account_auth;
         }
-        return null;
+    }
+
+    private void updateAccountInfo(final Account account, final Map<String, Object> resp) throws PluginException {
+        if (Boolean.FALSE.equals(resp.get("emailverified"))) {
+            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                throw new AccountInvalidException("\r\nDein Account ist noch nicht verifiziert!\r\nPrüfe deine E-Mails und verifiziere deinen Account!");
+            } else {
+                throw new AccountInvalidException("\r\nYour account is not yet verified!\r\nCheck your mails and verify it!");
+            }
+        }
+        if (Boolean.TRUE.equals(resp.get("premiumlifetime"))) {
+            account.setType(AccountType.LIFETIME);
+            account.setMaxSimultanDownloads(20);
+        } else if (Boolean.TRUE.equals(resp.get("premium"))) {
+            account.setType(AccountType.PREMIUM);
+            account.setMaxSimultanDownloads(20);
+        } else {
+            account.setType(AccountType.FREE);
+            /* Last checked: 2020-10-06 */
+            account.setMaxSimultanDownloads(20);
+        }
+        account.setConcurrentUsePossible(true);
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        final AccountInfo ai = new AccountInfo();
+        login(account, true);
+        return ai;
+    }
+
+    @Override
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        handleDownload(link, account);
     }
 
     private String getFolderID(final DownloadLink dl) throws PluginException {
@@ -498,22 +466,24 @@ public class PCloudCom extends PluginForHost {
         }
     }
 
-    private String getAPISafe(final String accesslink) throws IOException, PluginException {
+    private Map<String, Object> getAPISafe(final String accesslink) throws IOException, PluginException {
         br.getPage(accesslink);
-        updatestatuscode();
-        handleAPIErrors(this.br);
-        return this.br.toString();
+        return handleAPIErrors(this.br);
     }
 
-    private String postAPISafe(final String accesslink, final String postdata) throws IOException, PluginException {
+    private Map<String, Object> postAPISafe(final String accesslink, final String postdata) throws IOException, PluginException {
         br.postPage(accesslink, postdata);
-        updatestatuscode();
-        handleAPIErrors(this.br);
-        return this.br.toString();
+        return handleAPIErrors(this.br);
     }
 
-    private void handleAPIErrors(final Browser br) throws PluginException {
-        String statusMessage = null;
+    private Map<String, Object> handleAPIErrors(final Browser br) throws PluginException {
+        final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+        return handleAPIErrors(entries);
+    }
+
+    private Map<String, Object> handleAPIErrors(final Map<String, Object> entries) throws PluginException {
+        final int statusCode = ((Number) entries.get("result")).intValue();
+        final String errormessage = (String) entries.get("error");
         try {
             switch (statusCode) {
             case STATUS_CODE_OKAY:
@@ -521,23 +491,18 @@ public class PCloudCom extends PluginForHost {
                 break;
             case 1029:
                 throw new AccountRequiredException();
+            case STATUS_CODE_DOWNLOAD_PASSWORD_INVALID:
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Download password invalid");
             case STATUS_CODE_INVALID_LOGIN:
-                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                    statusMessage = "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.";
-                } else {
-                    statusMessage = "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.";
-                }
-                throw new AccountInvalidException(statusMessage);
+                throw new AccountInvalidException(errormessage);
             case 2008:
-                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                    statusMessage = "\r\nDein Account hat keinen freien Speicherplatz mehr!";
-                } else {
-                    statusMessage = "\r\nYour account has no free space anymore!";
-                }
-                throw new AccountInvalidException(statusMessage);
+                /* Account is out of storage space */
+                throw new AccountInvalidException(errormessage);
             case 2009:
                 /* { "result": 2009, "error": "File not found."} */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            case STATUS_CODE_DOWNLOAD_PASSWORD_REQUIRED:
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Download password required");
             case STATUS_CODE_WRONG_LOCATION:
                 // wrong location
                 /*
@@ -563,29 +528,13 @@ public class PCloudCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
             default:
                 /* Unknown error */
-                statusMessage = "This file can only be downloaded by registered/premium users";
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "This file can only be downloaded by registered/premium users");
+                throw new PluginException(LinkStatus.ERROR_FATAL, errormessage);
             }
         } catch (final PluginException e) {
-            logger.info(NICE_HOST + ": Exception: statusCode: " + statusCode + " statusMessage: " + statusMessage);
+            logger.info(NICE_HOST + ": Exception: statusCode: " + statusCode + " statusMessage: " + errormessage);
             throw e;
         }
-    }
-
-    // private String postRawAPISafe(final String accesslink, final String postdata) throws IOException, PluginException {
-    // br.postPageRaw(accesslink, postdata);
-    // updatestatuscode();
-    // handleAPIErrors(this.br);
-    // return this.br.toString();
-    // }
-    /**
-     * 0 = everything ok, 2000-??? = Normal "result" API errorcodes, 666 = hell
-     */
-    private void updatestatuscode() {
-        final String error = PluginJSonUtils.getJsonValue(br, "result");
-        if (error != null) {
-            statusCode = Integer.parseInt(error);
-        }
+        return entries;
     }
 
     private static final boolean defaultDOWNLOAD_ZIP                                    = false;

@@ -53,7 +53,7 @@ public class PCloudComFolder extends PluginForDecrypt {
 
     @Override
     public Browser createNewBrowserInstance() {
-        final Browser br = new Browser();
+        final Browser br = super.createNewBrowserInstance();
         prepBR(br);
         return br;
     }
@@ -87,8 +87,6 @@ public class PCloudComFolder extends PluginForDecrypt {
         int attempt = 0;
         Map<String, Object> entries = null;
         boolean passwordSuccess = false;
-        final int errorcodeInvalidPasswordProvided = 1125;
-        final int errorcodePasswordProtected = 2258;
         int result = 0;
         do {
             attempt++;
@@ -103,7 +101,7 @@ public class PCloudComFolder extends PluginForDecrypt {
             br.getPage("https://" + PCloudCom.getAPIDomain(new URL(parameter).getHost()) + "/showpublink?" + query);
             entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.getRequest().getHtmlCode());
             result = ((Number) entries.get("result")).intValue();
-            if (result == errorcodePasswordProtected || result == errorcodeInvalidPasswordProvided) {
+            if (result == PCloudCom.STATUS_CODE_DOWNLOAD_PASSWORD_REQUIRED || result == PCloudCom.STATUS_CODE_DOWNLOAD_PASSWORD_INVALID) {
                 if (passCode != null) {
                     logger.info("User entered invalid password: " + passCode);
                 } else {

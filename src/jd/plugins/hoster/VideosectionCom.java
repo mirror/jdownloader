@@ -94,12 +94,13 @@ public class VideosectionCom extends antiDDoSForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         /* Set fallback filename */
+        final String videoID = this.getFID(link);
         if (!link.isNameSet()) {
-            link.setName(this.getFID(link) + ".mp4");
+            link.setName(videoID + ".mp4");
         }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        getPage("https://" + this.getHost() + "/video/" + this.getFID(link));
+        getPage("https://" + this.getHost() + "/video/" + videoID);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -118,7 +119,7 @@ public class VideosectionCom extends antiDDoSForHost {
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        dllink = Encoding.htmlDecode(dllink);
+        dllink = Encoding.htmlOnlyDecode(dllink);
         checkFFmpeg(link, "Download a HLS Stream");
         dl = new HLSDownloader(link, br, dllink);
         dl.startDownload();

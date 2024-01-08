@@ -146,8 +146,8 @@ public class VKontakteRu extends PluginForDecrypt {
     private static final String PATTERN_WALL_POST_LINK                    = ".+wall(?:\\-)?\\d+_\\d+.*?";
     private static final String PATTERN_WALL_CLIPS                        = "(?)https?://[^/]+/clips/([^/]+)";
     private static final String PATTERN_PUBLIC_LINK                       = "(?i)https?://[^/]+/public(\\d+)";
-    private static final String PATTERN_CLUB_LINK                         = "(?i)https?://[^/]+/club\\d+.*?";
-    private static final String PATTERN_EVENT_LINK                        = "(?i)https?://[^/]+/event\\d+";
+    private static final String PATTERN_CLUB_LINK                         = "(?i)https?://[^/]+/club(\\d+).*?";
+    private static final String PATTERN_EVENT_LINK                        = "(?i)https?://[^/]+/event(\\d+)";
     private static final String PATTERN_ID_LINK                           = "(?i)https?://[^/]+/id(-?\\d+).*";
     private static final String PATTERN_DOCS                              = "(?i)https?://[^/]+/docs\\?oid=\\-\\d+";
     /* Possible/Known types of single vk-wall-posts */
@@ -240,12 +240,18 @@ public class VKontakteRu extends PluginForDecrypt {
         vkwall_comments_grab_comments = vkwall_comment_grabphotos || vkwall_comment_grabaudio || vkwall_comment_grabvideo || vkwall_comment_grablink;
         photos_store_picture_directurls = cfg.getBooleanProperty(VKontakteRuHoster.VKWALL_STORE_PICTURE_DIRECTURLS, VKontakteRuHoster.default_VKWALL_STORE_PICTURE_DIRECTURLS);
         prepBrowser(br);
-        prepCryptedLink(param);
         /* First handle URLs that can be processed without requiring any http request */
         final String ownerIDFromSlashPublicLink = new Regex(param.getCryptedUrl(), PATTERN_PUBLIC_LINK).getMatch(0);
+        final String ownerIDFromSlashEventLink = new Regex(param.getCryptedUrl(), PATTERN_EVENT_LINK).getMatch(0);
         if (ownerIDFromSlashPublicLink != null) {
             /* Change URL and let it run back through this crawler plugin again. */
             ret.add(this.createDownloadlink("https://" + this.getHost() + "/wall" + ownerIDFromSlashPublicLink));
+            return ret;
+        } else if (ownerIDFromSlashEventLink != null) {
+            ret.add(this.createDownloadlink("https://" + this.getHost() + "/wall-" + ownerIDFromSlashEventLink));
+            return ret;
+        } else if (this.isClubUrl(param.getCryptedUrl())) {
+            ret.add(this.createDownloadlink("https://" + this.getHost() + "/wall-" + new Regex(param.getCryptedUrl(), PATTERN_CLUB_LINK).getMatch(0)));
             return ret;
         } else if (param.getCryptedUrl().matches(PATTERN_URL_EXTERN)) {
             /*  */
@@ -590,9 +596,9 @@ public class VKontakteRu extends PluginForDecrypt {
         }
         String fpName = br.getRegex("<title>([^<>\"]*?)</title>").getMatch(0);
         if (param.getCryptedUrl().matches(PATTERN_AUDIO_PAGE_oid) && fpName == null) {
-            fpName = Encoding.htmlDecode(new Regex(param.getCryptedUrl(), "\\&p=(.+)").getMatch(0));
+            fpName = Encoding.htmlDecode(new Regex(param.getCryptedUrl(), "(?i)\\&p=(.+)").getMatch(0));
         } else if (fpName == null) {
-            final String pageID = get_ID_PAGE(param.getCryptedUrl());
+            final String pageID = new Regex(param.getCryptedUrl(), "(?i)/page-(\\d+_\\d+)").getMatch(0);
             fpName = "vk.com page " + pageID;
         }
         final FilePackage fp = FilePackage.getInstance();
@@ -1697,13 +1703,20 @@ public class VKontakteRu extends PluginForDecrypt {
     }
 
     private ArrayList<DownloadLink> crawlWallPostWebsite(final CryptedLink param) throws Exception {
-        final String owner_id = new Regex(param.getCryptedUrl(), "/wall(-?\\d+)").getMatch(0);
-        final String wall_post_ID = new Regex(param.getCryptedUrl(), "/wall(-?\\d+_\\d+)").getMatch(0);
+        final String contenturl;
+        final String wValue = UrlQuery.parse(param.getCryptedUrl()).get("w");
+        if (wValue != null && wValue.matches("(?i)wall-?\\d+_\\d+")) {
+            contenturl = "https://vk.com/" + wValue;
+        } else {
+            contenturl = param.getCryptedUrl();
+        }
+        final String owner_id = new Regex(contenturl, "/wall(-?\\d+)").getMatch(0);
+        final String wall_post_ID = new Regex(contenturl, "/wall(-?\\d+_\\d+)").getMatch(0);
         if (owner_id == null || wall_post_ID == null) {
             /* Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        this.getPage(param.getCryptedUrl());
+        getPage(contenturl);
         final FilePackage fp = FilePackage.getInstance();
         /* Set ID of current wall-post as packagename. */
         fp.setName(wall_post_ID);
@@ -1722,12 +1735,12 @@ public class VKontakteRu extends PluginForDecrypt {
                 htmlBeforeReplies = br.getRequest().getHtmlCode();
             }
             /* Grab media inside users' post */
-            ret.addAll(websiteCrawlContent(param.getCryptedUrl(), htmlBeforeReplies, fp, this.vkwall_grabaudio, this.vkwall_grabvideo, this.vkwall_grabphotos, this.vkwall_grabdocs, this.vkwall_graburlsinsideposts, this.photos_store_picture_directurls));
+            ret.addAll(websiteCrawlContent(contenturl, htmlBeforeReplies, fp, this.vkwall_grabaudio, this.vkwall_grabvideo, this.vkwall_grabphotos, this.vkwall_grabdocs, this.vkwall_graburlsinsideposts, this.photos_store_picture_directurls));
             /* Open RegEx: Just grab all html starting from comments section until end */
             final String htmlReplies = br.getRegex("<div class=\"replies\"(.+)").getMatch(0);
             if (htmlReplies != null && this.vkwall_comments_grab_comments) {
                 /* Grab media inside replies/comments to users' post if wished by user. */
-                ret.addAll(websiteCrawlContent(param.getCryptedUrl(), br.getRequest().getHtmlCode(), fp, this.vkwall_comment_grabaudio, this.vkwall_comment_grabvideo, this.vkwall_comment_grabphotos, false, this.vkwall_comment_grablink, this.photos_store_picture_directurls));
+                ret.addAll(websiteCrawlContent(contenturl, br.getRequest().getHtmlCode(), fp, this.vkwall_comment_grabaudio, this.vkwall_comment_grabvideo, this.vkwall_comment_grabphotos, false, this.vkwall_comment_grablink, this.photos_store_picture_directurls));
             }
             final int numberofItemsAddedThisLoop = ret.size() - numberofFoundItemsOld;
             logger.info("Offset " + offset + " contained " + numberofItemsAddedThisLoop + " items in total so far (including inside replies)");
@@ -3042,47 +3055,6 @@ public class VKontakteRu extends PluginForDecrypt {
     /** Sets basic values/cookies */
     private void prepBrowser(final Browser br) {
         VKontakteRuHoster.prepBrowser(br);
-    }
-
-    /**
-     * Basic preparations on user-added links.</br>
-     * Make sure to remove unneeded things so that in the end, our links match the desired linktypes.</br>
-     * This is especially important because we get required IDs out of these urls or even access them directly without API.
-     *
-     * @param a
-     *
-     * @throws IOException
-     */
-    private void prepCryptedLink(final CryptedLink param) throws IOException {
-        /* Correct encoding, domain and protocol. */
-        String url = param.getCryptedUrl().replaceAll("(?i)(m\\.|new\\.)?(vkontakte|vk)\\.(ru|com)/", "vk.com/");
-        final String wall_id = new Regex(param.getCryptedUrl(), "\\?w=(wall(\\-)?\\d+_\\d+)").getMatch(0);
-        if (wall_id != null && !isSinglePicture(param.getCryptedUrl())) {
-            url = "https://" + this.getHost() + "/" + wall_id;
-        } else if (isClubUrl(url) || url.matches(PATTERN_EVENT_LINK)) {
-            /* group and club links --> wall links */
-            url = "https://" + this.getHost() + "/wall-" + new Regex(param.getCryptedUrl(), "https?://[^/]+/[a-z]+((\\-)?\\d+)").getMatch(0);
-        } else if (url.matches(PATTERN_AUDIO_PAGE)) {
-            /* PATTERN_AUDIO_PAGE RegEx is wide open --> Make sure that our URL is correct! */
-            final String pageID = get_ID_PAGE(url);
-            url = getBaseURL() + "/page-" + pageID;
-        } else if (isKnownType(param.getCryptedUrl())) {
-            /* Don't change anything */
-        } else {
-            /* We either have a public community or profile --> Do not change URL */
-        }
-        /* Replace section end */
-        if (!url.equals(param.getCryptedUrl())) {
-            logger.info("Added link was changed!\r\nOld:");
-            logger.info(param.getCryptedUrl());
-            logger.info("New:");
-            logger.info(url);
-            param.setCryptedUrl(url);
-        }
-    }
-
-    private String get_ID_PAGE(final String url) {
-        return new Regex(url, "/page\\-(\\d+_\\d+)").getMatch(0);
     }
 
     public static String generateContentURLVideo(final String oid, final String id) {

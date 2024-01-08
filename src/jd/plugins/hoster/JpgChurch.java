@@ -69,7 +69,7 @@ public class JpgChurch extends PluginForHost {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "jpg3.su", "jpg2.su", "jpg1.su", "jpeg.pet", "jpg.pet", "jpg.fishing", "jpg.fish", "jpg.church" });
+        ret.add(new String[] { "jpg4.su", "jpg3.su", "jpg2.su", "jpg1.su", "jpeg.pet", "jpg.pet", "jpg.fishing", "jpg.fish", "jpg.church" });
         return ret;
     }
 

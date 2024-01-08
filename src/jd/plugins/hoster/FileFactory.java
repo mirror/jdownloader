@@ -93,6 +93,7 @@ public class FileFactory extends PluginForHost {
         final Browser br = super.createNewBrowserInstance();
         br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
         br.getHeaders().put("Accept-Charset", "ISO-8859-1,utf-8;q=0.7,*;q=0.7");
+        /** 2024-01-08: When user is logged in, Filefactory prefers the language the user has configured in his account over this header. */
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
         br.getHeaders().put("Cache-Control", null);
         br.getHeaders().put("Pragma", null);
@@ -597,7 +598,7 @@ public class FileFactory extends PluginForHost {
         }
         if (!isPremium && !isPremiumLifetime) {
             /* Fallback/Old handling */
-            isPremiumLifetime = br.containsHTML("(?i)<strong>\\s*Lifetime\\s*</strong>") || br.containsHTML("(?i)>\\s*Lifetime Member\\s*<");
+            isPremiumLifetime = br.containsHTML("(?i)<strong>\\s*(Lebenszeit|Lifetime|Livstid|Levenslang|À vie|生涯|Vitalício|De por vida)\\s*</strong>") || br.containsHTML("(?i)>\\s*Lifetime Member\\s*<");
             isPremium = br.containsHTML("(?i)>\\s*Premium valid until\\s*<");
         }
         long expireTimestamp = 0;
