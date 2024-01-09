@@ -2,6 +2,10 @@ package jd.plugins.hoster;
 
 import java.util.Map;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -22,24 +26,17 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "discuss.eroscripts.com" }, urls = { "https?://discuss\\.eroscripts\\.com/uploads/([\\w\\-/]+)" })
 public class EroScriptsCom extends antiDDoSForHost {
-    private static final String COOKIE_ID        = "_forum_session";
-    public static final long    trust_cookie_age = 5 * 60 * 1000l;
-    public static final String  FETCH_IMAGES     = "FETCH_IMAGES";
-    public static final String  SMART_FILENAMES  = "SMART_FILENAMES";
+    private static final String COOKIE_ID       = "_forum_session";
+    public static final String  FETCH_IMAGES    = "FETCH_IMAGES";
+    public static final String  SMART_FILENAMES = "SMART_FILENAMES";
 
     @Override
     public String[] siteSupportedNames() {
         return new String[] { "discuss.eroscripts.com" };
     }
 
-    @SuppressWarnings("deprecation")
     public EroScriptsCom(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://discuss.eroscripts.com/signup");
@@ -51,7 +48,7 @@ public class EroScriptsCom extends antiDDoSForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SMART_FILENAMES, "Attempt to link script and video filenames?").setDefaultValue(true));
     }
 
-    public void login(final Browser br, final Account account, boolean alwaysLogin) throws Exception {
+    public void login(final Browser br, final Account account, boolean validateCookies) throws Exception {
         synchronized (account) {
             try {
                 account.setType(AccountType.FREE);
@@ -59,8 +56,8 @@ public class EroScriptsCom extends antiDDoSForHost {
                 Cookies cookies = account.loadCookies(COOKIE_ID);
                 if (cookies != null && !cookies.isEmpty()) {
                     br.setCookies("https://discuss.eroscripts.com", cookies);
-                    if (!alwaysLogin && System.currentTimeMillis() - account.getCookiesTimeStamp(COOKIE_ID) <= trust_cookie_age) {
-                        getLogger().info("Trust login cookies:" + account.getType());
+                    if (!validateCookies) {
+                        /* Do not validate cookies */
                         return;
                     }
                     br.getPage("https://discuss.eroscripts.com/login");
@@ -123,7 +120,7 @@ public class EroScriptsCom extends antiDDoSForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink parameter) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink parameter) throws Exception {
         if (parameter.getBooleanProperty("has_file_info")) {
             return AvailableStatus.TRUE;
         }

@@ -1502,11 +1502,13 @@ public class InstaGramComDecrypter extends PluginForDecrypt {
         }
         String coauthor_producers_comma_separated = "";
         final List<Map<String, Object>> coauthor_producers = (List<Map<String, Object>>) post.get("coauthor_producers");
-        for (final Map<String, Object> coauthor_producer : coauthor_producers) {
-            if (coauthor_producers_comma_separated.length() > 0) {
-                coauthor_producers_comma_separated += ",";
+        if (coauthor_producers != null) {
+            for (final Map<String, Object> coauthor_producer : coauthor_producers) {
+                if (coauthor_producers_comma_separated.length() > 0) {
+                    coauthor_producers_comma_separated += ",";
+                }
+                coauthor_producers_comma_separated += coauthor_producer.get("username");
             }
-            coauthor_producers_comma_separated += coauthor_producer.get("username");
         }
         /* Create FilePackage if packagename is available */
         final FilePackage fp = getFilePackageForGallery(metadata);

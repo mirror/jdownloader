@@ -20,7 +20,9 @@ import java.util.List;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -36,6 +38,13 @@ import jd.plugins.hoster.AnimeUltimeNet;
 public class AnimeUltimeNetCrawler extends PluginForDecrypt {
     public AnimeUltimeNetCrawler(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.setFollowRedirects(true);
+        return br;
     }
 
     public static List<String[]> getPluginDomains() {
@@ -69,17 +78,19 @@ public class AnimeUltimeNetCrawler extends PluginForDecrypt {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        final String folderID = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(1);
         final String title = br.getRegex("<title>(.*?)</title>").getMatch(0);
         final String[] urls = br.getRegex("(info\\-0\\-1/((\\d+)(/([^/]+))?))").getColumn(0);
         for (String url : urls) {
             url = "/" + url;
             ret.add(createDownloadlink(br.getURL(url).toString()));
         }
+        final FilePackage fp = FilePackage.getInstance();
         if (title != null) {
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(title));
-            fp.addLinks(ret);
+            fp.setName(Encoding.htmlDecode(title).trim());
         }
+        fp.setPackageKey("animeultimenet://folder/" + folderID);
+        fp.addLinks(ret);
         return ret;
     }
 }

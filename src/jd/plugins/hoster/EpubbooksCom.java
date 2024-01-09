@@ -16,14 +16,20 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.Map;
+
+import org.appwork.storage.TypeRef;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountRequiredException;
+import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -31,11 +37,18 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "epubbooks.com" }, urls = { "httpss?://(?:www\\.)?epubbooks\\.com/downloads/\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "epubbooks.com" }, urls = { "https?://(?:www\\.)?epubbooks\\.com/downloads/(\\d+)" })
 public class EpubbooksCom extends PluginForHost {
     public EpubbooksCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.epubbooks.com/sign_up");
+    }
+
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.setFollowRedirects(true);
+        return br;
     }
 
     @Override
@@ -44,37 +57,63 @@ public class EpubbooksCom extends PluginForHost {
     }
 
     /* Connection stuff */
-    private final boolean FREE_RESUME                  = false;
-    private final int     FREE_MAXCHUNKS               = 1;
-    private final int     FREE_MAXDOWNLOADS            = 20;
-    private final boolean ACCOUNT_FREE_RESUME          = false;
-    private final int     ACCOUNT_FREE_MAXCHUNKS       = 1;
-    private final int     ACCOUNT_FREE_MAXDOWNLOADS    = 20;
-    // private final boolean ACCOUNT_PREMIUM_RESUME = true;
-    // private final int ACCOUNT_PREMIUM_MAXCHUNKS = 0;
-    private final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
+    private final int    FREE_MAXDOWNLOADS            = 20;
+    private final int    ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
+    public static String ACCOUNT_REQUIRED             = "accountrequired";
+
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+    }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        final String mainlink = link.getStringProperty("mainlink", null);
-        if (mainlink != null) {
-            br.getPage(mainlink);
-            if (isOffline(this.br)) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
+        final String mainlink = link.getStringProperty("mainlink");
+        if (mainlink == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        br.getPage(mainlink);
+        if (isOffline(this.br)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         return AvailableStatus.TRUE;
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        handleDownload(link, null);
     }
 
-    private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, downloadLink.getDownloadURL(), resumable, maxchunks);
+    private void handleDownload(final DownloadLink link, final Account account) throws Exception, PluginException {
+        if (requiresAccount(link) && account == null) {
+            throw new AccountRequiredException();
+        }
+        if (account != null) {
+            /* Premium download */
+            login(br, account, false);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher(), false, 1);
+        } else {
+            /* Free download */
+            br.getHeaders().put("Referer", link.getStringProperty("mainlink"));
+            final String fileID = this.getFID(link);
+            final Browser brc = br.cloneBrowser();
+            brc.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            brc.postPageRaw("https://www." + this.getHost() + "/downloads", "{\"id\": " + fileID + "}");
+            final Map<String, Object> entries = restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.MAP);
+            final String downloadID = entries.get("id").toString();
+            final String dllink = brc.getURL("/downloads/" + downloadID + "/file").toExternalForm();
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
+        }
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             br.followConnection(true);
             if (dl.getConnection().getResponseCode() == 403) {
@@ -84,12 +123,22 @@ public class EpubbooksCom extends PluginForHost {
             } else if (this.br.containsHTML("You have reached your \\d+\\-hour download limit")) {
                 /* Usually 24-H downloadlimit. */
                 /* 2017-01-23: Limit seems to be 4-10 files per day - there are currently no premium accounts at all. */
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "Downloadlimit reached", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                final String msg = " Downloadlimit reached";
+                final long time = 5 * 60 * 1000;
+                if (account != null) {
+                    throw new AccountUnavailableException(msg, time);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, msg, time);
+                }
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
         dl.startDownload();
+    }
+
+    private boolean requiresAccount(final DownloadLink link) {
+        return link.getBooleanProperty(ACCOUNT_REQUIRED, false);
     }
 
     @Override
@@ -125,7 +174,7 @@ public class EpubbooksCom extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
                     }
                 }
-                account.saveCookies(br.getCookies(account.getHoster()), "");
+                account.saveCookies(br.getCookies(br.getHost()), "");
             } catch (final PluginException e) {
                 account.clearCookies("");
                 throw e;
@@ -153,15 +202,12 @@ public class EpubbooksCom extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        requestFileInformation(link);
-        login(this.br, account, false);
-        doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
+        this.handleDownload(link, account);
     }
 
     @Override
     public boolean canHandle(final DownloadLink link, final Account account) throws Exception {
-        if (account == null) {
-            /* Without account its not possible to download anything from this website. */
+        if (link != null && requiresAccount(link) && account == null) {
             return false;
         } else {
             return true;

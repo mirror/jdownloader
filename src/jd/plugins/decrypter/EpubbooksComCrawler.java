@@ -42,33 +42,36 @@ public class EpubbooksComCrawler extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        final Account aa = AccountController.getInstance().getValidAccount(this.getHost());
-        if (aa == null) {
-            throw new AccountRequiredException();
-        }
+        final Account account = AccountController.getInstance().getValidAccount(this.getHost());
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final String parameter = param.getCryptedUrl();
+        final String contenturl = param.getCryptedUrl();
         // final PluginForHost hostplugin = this.getNewPluginForHostInstance(this.getHost());
-        EpubbooksCom.login(this.br, aa, false);
-        br.getPage(parameter);
+        if (account != null) {
+            EpubbooksCom.login(this.br, account, false);
+        }
+        br.getPage(contenturl);
         if (jd.plugins.hoster.EpubbooksCom.isOffline(this.br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String url_title = new Regex(parameter, "/\\d+\\-([^/]+)$").getMatch(0);
+        final String url_title = new Regex(contenturl, "/\\d+\\-([^/]+)$").getMatch(0);
         String fpName = br.getRegex("<title>([^<>]+)</title>").getMatch(0);
         if (fpName == null) {
             fpName = url_title;
         }
         final String[] htmls = br.getRegex("<li class=\"list\\-group\\-item clearfix\".*?</li>").getColumn(-1);
         if (htmls == null || htmls.length == 0) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            if (account == null) {
+                /* Assume that an account is required to crawl this content. */
+                throw new AccountRequiredException();
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         for (final String html : htmls) {
             final String type = new Regex(html, "(EPUB|Kindle)").getMatch(0);
-            String downloadlink = new Regex(html, "/downloads/\\d+").getMatch(-1);
+            String url = new Regex(html, "/downloads/\\d+").getMatch(-1);
             final String filesize = new Regex(html, "(\\d+ (?:KB|MB|GB))").getMatch(0);
-            if (type == null || downloadlink == null || filesize == null) {
+            if (type == null || url == null || filesize == null) {
                 return null;
             }
             /* 2017-01-23: At the moment they only have 2 formats available, EPUB (.epub) and Kindle (.mobi). */
@@ -78,12 +81,17 @@ public class EpubbooksComCrawler extends PluginForDecrypt {
             } else {
                 ext = "." + type.toLowerCase();
             }
-            downloadlink = "https://www." + this.getHost() + downloadlink;
-            final DownloadLink dl = createDownloadlink(downloadlink);
+            url = br.getURL(url).toExternalForm();
+            final DownloadLink dl = createDownloadlink(url);
             dl.setDownloadSize(SizeFormatter.getSize(filesize));
             dl.setName(url_title + ext);
             dl.setAvailable(true);
-            dl.setProperty("mainlink", parameter);
+            dl.setProperty("mainlink", contenturl);
+            if (account != null) {
+                dl.setProperty(EpubbooksCom.ACCOUNT_REQUIRED, true);
+            } else {
+                dl.setProperty(EpubbooksCom.ACCOUNT_REQUIRED, false);
+            }
             ret.add(dl);
         }
         final FilePackage fp = FilePackage.getInstance();

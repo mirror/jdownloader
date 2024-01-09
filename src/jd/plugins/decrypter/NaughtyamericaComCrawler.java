@@ -133,6 +133,8 @@ public class NaughtyamericaComCrawler extends PluginForDecrypt {
                 /* This should never happen */
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Failed to find any directurls");
             }
+            // final String[] captchaDownloadurls =
+            // br.getRegex("\"(https?://members\\.naughtyamerica\\.com/scene/\\d+/captcha\\?file_name=[^\"]+)").getColumn(0);
             final List<DownloadLink> unknownQualities = new ArrayList<DownloadLink>();
             final Map<Integer, DownloadLink> foundQualities = new HashMap<Integer, DownloadLink>();
             int qualityHeightMax = -1;

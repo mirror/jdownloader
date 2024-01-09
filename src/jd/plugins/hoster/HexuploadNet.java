@@ -75,7 +75,9 @@ public class HexuploadNet extends XFileSharingProBasic {
         String ret = super.getDllink(link, account, br, src);
         if (ret == null) {
             final String base64 = br.getRegex("ldl\\.ld\\('(aHR0c.*?)'").getMatch(0);
-            ret = Encoding.Base64Decode(base64);
+            if (base64 != null) {
+                ret = Encoding.Base64Decode(base64);
+            }
         }
         return ret;
     }

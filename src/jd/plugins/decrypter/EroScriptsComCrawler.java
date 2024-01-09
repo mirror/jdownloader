@@ -11,8 +11,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.Storage;
 import org.appwork.utils.Files;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
@@ -22,10 +20,9 @@ import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.LinkCrawler;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
-import jd.plugins.AccountRequiredException;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -34,9 +31,16 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "discuss.eroscripts.com" }, urls = { "https?://discuss\\.eroscripts\\.com/t/([\\w\\-/]+)" })
-public class EroScriptsCom extends antiDDoSForDecrypt {
+public class EroScriptsComCrawler extends antiDDoSForDecrypt {
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.setFollowRedirects(true);
+        return br;
+    }
+
     class SmartGroup {
-        EroScriptsCom                     plugin;
+        EroScriptsComCrawler              plugin;
         protected String                  title;
         protected ArrayList<DownloadLink> links;
         protected ArrayList<DownloadLink> scripts;
@@ -46,7 +50,7 @@ public class EroScriptsCom extends antiDDoSForDecrypt {
         protected FilePackage             myfp;
         protected int                     foundPackages = 0;
 
-        public SmartGroup(EroScriptsCom plugin, String title, ArrayList<DownloadLink> links) throws MalformedURLException {
+        public SmartGroup(EroScriptsComCrawler plugin, String title, ArrayList<DownloadLink> links) throws MalformedURLException {
             this.plugin = plugin;
             this.title = title;
             this.links = links;
@@ -301,7 +305,7 @@ public class EroScriptsCom extends antiDDoSForDecrypt {
         }
     }
 
-    public EroScriptsCom(PluginWrapper wrapper) {
+    public EroScriptsComCrawler(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -361,40 +365,40 @@ public class EroScriptsCom extends antiDDoSForDecrypt {
     }
 
     @Override
-    public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
-        Account account = AccountController.getInstance().getValidAccount(getHost());
-        if (account == null) {
-            throw new AccountRequiredException();
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink parameter, ProgressController progress) throws Exception {
+        final Account account = AccountController.getInstance().getValidAccount(getHost());
+        if (account != null) {
+            jd.plugins.hoster.EroScriptsCom hoster = (jd.plugins.hoster.EroScriptsCom) this.getNewPluginForHostInstance("discuss.eroscripts.com");
+            hoster.login(br, account, false);
         }
-        jd.plugins.hoster.EroScriptsCom hoster = (jd.plugins.hoster.EroScriptsCom) this.getNewPluginForHostInstance("discuss.eroscripts.com");
-        hoster.login(br, account, false);
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        br.getPage(parameter.getCryptedUrl());
-        final Storage CFG = JSonStorage.getPlainStorage("quickfilters");
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final String contenturl = parameter.getCryptedUrl().replaceFirst("(?i)http://", "https://");
+        br.getPage(contenturl);
+        // final Storage CFG = JSonStorage.getPlainStorage("quickfilters");
         String[][] linkMatches = br.getRegex("<a[^<>]*\\shref\\s*=\\s*(?:\"|')([^#][^\\s]+)(?:\"|')([^<>]+title\\s*=\\s*(?:\\\"|')([^\\'\\\"]*)(?:\\\"|'))?").getMatches();
-        handleMatches(linkMatches, decryptedLinks);
+        handleMatches(linkMatches, ret);
         if (getPluginConfig().getBooleanProperty(jd.plugins.hoster.EroScriptsCom.FETCH_IMAGES, true)) {
             String[][] imgMatches = br.getRegex("<img[^<>]*\\ssrc\\s*=\\s*(?:\"|')([^#][^\\s]+)(?:\"|')([^<>]+alt\\s*=\\s*(?:\\\"|')([^\\'\\\"]*)(?:\\\"|'))?").getMatches();
-            handleMatches(imgMatches, decryptedLinks);
+            handleMatches(imgMatches, ret);
         }
-        if (decryptedLinks.size() == 0) {
-            return decryptedLinks;
+        if (ret.size() == 0) {
+            return ret;
         }
         String[][] titleMatches = br.getRegex("<meta property=\"og:title\" content=\"([^\"]+)\"").getMatches();
         if (titleMatches == null || titleMatches.length == 0) {
-            return decryptedLinks;
+            return ret;
         }
         String title = Encoding.htmlDecode(titleMatches[0][0]);
         if (getPluginConfig().getBooleanProperty(jd.plugins.hoster.EroScriptsCom.SMART_FILENAMES, true)) {
             // runSmartFileNames(title, decryptedLinks);
-            SmartGroup sg = new SmartGroup(this, title, decryptedLinks);
+            SmartGroup sg = new SmartGroup(this, title, ret);
         } else {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(title);
             fp.setAllowMerge(true);
             fp.setAllowInheritance(true);
-            fp.addLinks(decryptedLinks);
+            fp.addLinks(ret);
         }
-        return decryptedLinks;
+        return ret;
     }
 }

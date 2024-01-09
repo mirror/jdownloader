@@ -20,11 +20,20 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -32,15 +41,18 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class AnimeUltimeNet extends PluginForHost {
     public AnimeUltimeNet(PluginWrapper wrapper) {
         super(wrapper);
+        // this.enablePremium("https://www.anime-ultime.net/premium-0-1");
+    }
+
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.setFollowRedirects(true);
+        return br;
     }
 
     public static List<String[]> getPluginDomains() {
@@ -73,14 +85,14 @@ public class AnimeUltimeNet extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.anime-ultime.net/index-0-1#principal";
+        return "https://www.anime-ultime.net/index-0-1#principal";
     }
 
     @Override
     public String getLinkID(final DownloadLink link) {
         final String linkid = getFID(link);
         if (linkid != null) {
-            return this.getHost() + "://" + linkid;
+            return "alimeultimenet://file/" + linkid;
         } else {
             return super.getLinkID(link);
         }
@@ -90,8 +102,12 @@ public class AnimeUltimeNet extends PluginForHost {
         return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(1);
     }
 
-    private String getDirecturlProperty() {
-        return "directlink";
+    private String getDirecturlProperty(final Account account) {
+        if (account == null) {
+            return "directlink";
+        } else {
+            return "directlink_account_ " + account.getType().getLabel();
+        }
     }
 
     @Override
@@ -107,12 +123,11 @@ public class AnimeUltimeNet extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.getPage("http://www." + this.getHost() + "/info-0-1/" + new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0));
+        br.getPage("https://www." + this.getHost() + "/info-0-1/" + new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0));
         // br.getPage(link.getPluginPatternMatcher());
         if (this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (br.containsHTML("(?i)>\\s*0 vostfr streaming<")) {
+        } else if (br.containsHTML("(?i)>\\s*0 vostfr streaming\\s*<")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String fid = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
@@ -142,71 +157,151 @@ public class AnimeUltimeNet extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        if (!this.attemptStoredDownloadurlDownload(link)) {
+        handleDownload(link, null);
+    }
+
+    private void handleDownload(final DownloadLink link, final Account account) throws Exception, PluginException {
+        final String directlinkproperty = getDirecturlProperty(account);
+        final String storedDirectlink = link.getStringProperty(directlinkproperty);
+        String dllink = null;
+        if (storedDirectlink != null) {
+            logger.info("Re-using stored directlink: " + storedDirectlink);
+            dllink = storedDirectlink;
+        } else {
             requestFileInformation(link);
+            if (account != null) {
+                this.login(account, false);
+            }
             final String fid = getFID(link);
-            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            br.postPage("/ddl/authorized_download.php", "idfile=" + fid + "&type=orig");
-            final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
-            final boolean skipPreDownloadWaittime = false;
-            if (!skipPreDownloadWaittime) {
-                final int waittime = ((Number) entries.get("wait")).intValue();
-                this.sleep(waittime * 1001l, link);
+            /*
+             * 2023-01-09: It is possible to download as premium user in free mode but let's not be evil and hope that they will patch this
+             * possibility soon!
+             */
+            final boolean enforcePremiumLinkAlsoInFreeMode = false;
+            if ((account != null && account.getType() == AccountType.PREMIUM) || enforcePremiumLinkAlsoInFreeMode) {
+                dllink = "https://www." + this.getHost() + "/ddl/" + fid + "/orig/";
+            } else {
+                final Browser brc = br.cloneBrowser();
+                brc.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                brc.postPage("/ddl/authorized_download.php", "idfile=" + fid + "&type=orig");
+                final Map<String, Object> entries = restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.MAP);
+                final boolean skipPreDownloadWaittime = false;
+                if (!skipPreDownloadWaittime) {
+                    final int waittime = ((Number) entries.get("wait")).intValue();
+                    this.sleep(waittime * 1000l, link);
+                }
+                brc.postPage("/ddl/authorized_download.php", "idfile=" + fid + "&type=orig");
+                final Map<String, Object> entries2 = restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.MAP);
+                dllink = entries2.get("link").toString();
+                if (StringUtils.isEmpty(dllink)) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
-            br.postPage("/ddl/authorized_download.php", "idfile=" + fid + "&type=orig");
-            final Map<String, Object> entries2 = restoreFromString(br.toString(), TypeRef.MAP);
-            final String dllink = (String) entries2.get("link");
-            if (StringUtils.isEmpty(dllink)) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, isResumeable(link, null), this.getMaxChunks(null));
+        }
+        try {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, isResumeable(link, account), this.getMaxChunks(account));
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 br.followConnection(true);
                 if (dl.getConnection().getResponseCode() == 403) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
                 } else if (dl.getConnection().getResponseCode() == 404) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404 - file eventually offline", 60 * 60 * 1000l);
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404 - file offline?", 60 * 60 * 1000l);
                 } else {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
-            link.setProperty(getDirecturlProperty(), dl.getConnection().getURL().toString());
+            link.setProperty(directlinkproperty, dl.getConnection().getURL().toExternalForm());
+        } catch (final Exception e) {
+            if (storedDirectlink != null) {
+                link.removeProperty(directlinkproperty);
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Stored directurl expired", e);
+            } else {
+                throw e;
+            }
         }
+        link.setProperty(directlinkproperty, dl.getConnection().getURL().toExternalForm());
         dl.startDownload();
     }
 
-    private boolean attemptStoredDownloadurlDownload(final DownloadLink link) throws Exception {
-        final String url = link.getStringProperty(getDirecturlProperty());
-        if (StringUtils.isEmpty(url)) {
-            return false;
-        }
-        boolean valid = false;
-        try {
-            final Browser brc = br.cloneBrowser();
-            dl = new jd.plugins.BrowserAdapter().openDownload(brc, link, url, isResumeable(link, null), this.getMaxChunks(null));
-            if (this.looksLikeDownloadableContent(dl.getConnection())) {
-                valid = true;
-                return true;
-            } else {
-                link.removeProperty(getDirecturlProperty());
-                brc.followConnection(true);
-                throw new IOException();
-            }
-        } catch (final Throwable e) {
-            logger.log(e);
-            return false;
-        } finally {
-            if (!valid) {
-                try {
-                    dl.getConnection().disconnect();
-                } catch (Throwable ignore) {
+    private boolean login(final Account account, final boolean force) throws Exception {
+        synchronized (account) {
+            br.setFollowRedirects(true);
+            br.setCookiesExclusive(true);
+            final Cookies cookies = account.loadCookies("");
+            if (cookies != null) {
+                logger.info("Attempting cookie login");
+                this.br.setCookies(this.getHost(), cookies);
+                if (!force) {
+                    /* Don't validate cookies */
+                    return false;
                 }
-                this.dl = null;
+                br.getPage("https://www." + this.getHost() + "/");
+                if (this.isLoggedin(br)) {
+                    logger.info("Cookie login successful");
+                    /* Refresh cookie timestamp */
+                    account.saveCookies(br.getCookies(getHost()), "");
+                    return true;
+                } else {
+                    logger.info("Cookie login failed");
+                    br.clearCookies(null);
+                }
             }
+            logger.info("Performing full login");
+            br.getPage("https://www." + this.getHost() + "/");
+            final Form loginform = br.getFormbyProperty("name", "identification");
+            if (loginform == null) {
+                logger.warning("Failed to find loginform");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            loginform.put("Indexlogin", Encoding.urlEncode(account.getUser()));
+            loginform.put("Indexpassword", Encoding.urlEncode(account.getPass()));
+            br.submitForm(loginform);
+            if (!isLoggedin(br)) {
+                throw new AccountInvalidException();
+            }
+            account.saveCookies(br.getCookies(br.getHost()), "");
+            return true;
         }
+    }
+
+    private boolean isLoggedin(final Browser br) {
+        return br.containsHTML("/disconnect");
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        final AccountInfo ai = new AccountInfo();
+        login(account, true);
+        ai.setUnlimitedTraffic();
+        // if (br.containsHTML("")) {
+        // account.setType(AccountType.FREE);
+        // /* free accounts can still have captcha */
+        // account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
+        // account.setConcurrentUsePossible(false);
+        // } else {
+        // final String expire = br.getRegex("").getMatch(0);
+        // if (expire == null) {
+        // throw new AccountInvalidException();
+        // } else {
+        // ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH));
+        // }
+        // account.setType(AccountType.PREMIUM);
+        // account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+        // account.setConcurrentUsePossible(true);
+        // }
+        return ai;
+    }
+
+    @Override
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        this.handleDownload(link, account);
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return -1;
     }
 
     @Override
