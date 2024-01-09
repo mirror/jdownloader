@@ -285,7 +285,7 @@ public interface ExtractionTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Extract after Download" })
     String contextmenu_disable_auto_extract2();
 
-    @Default(lngs = { "en" }, values = { "Extract Archives after Download (Defaultvalue)" })
+    @Default(lngs = { "en" }, values = { "Extract archives after download" })
     String settings_auto_extract_default();
 
     @Default(lngs = { "en" }, values = { "JDownloader crashed!" })
