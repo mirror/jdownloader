@@ -390,12 +390,12 @@ public class PornportalCom extends PluginForHost {
                 br.followConnection(true);
                 /* Directurl needs to be refreshed */
                 logger.info("Directurl needs to be refreshed");
-                if (account == null) {
-                    /* We need an account! */
-                    return AvailableStatus.UNCHECKABLE;
-                } else if (!isDownload) {
+                if (!isDownload) {
                     /* Only refresh directurls in download mode - account will only be available in download mode anyways! */
                     return AvailableStatus.UNCHECKABLE;
+                } else if (account == null) {
+                    /* We need an account! */
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Account required to refresh expired directurl", 5 * 60 * 1000l);
                 }
                 logger.info("Trying to refresh directurl");
                 final String contentID = getContentID(link);
@@ -609,7 +609,14 @@ public class PornportalCom extends PluginForHost {
                     } else if (brlogin.getHttpConnection().getResponseCode() == 403) {
                         throw new AccountInvalidException();
                     }
-                    final Map<String, Object> authinfo = restoreFromString(brlogin.getRequest().getHtmlCode(), TypeRef.MAP);
+                    final Object resp = restoreFromString(brlogin.getRequest().getHtmlCode(), TypeRef.OBJECT);
+                    if (resp instanceof List) {
+                        /* Assume we got an error e.g. [{"code":3004,"message":"Invalid Captcha."}] */
+                        final List<Map<String, Object>> errorlist = (List<Map<String, Object>>) resp;
+                        final Map<String, Object> error0 = errorlist.get(0);
+                        throw new AccountInvalidException("Code " + error0.get("code") + " | " + error0.get("message"));
+                    }
+                    final Map<String, Object> authinfo = (Map<String, Object>) resp;
                     final String accessToken = (String) authinfo.get("access_token");
                     if (StringUtils.isEmpty(accessToken)) {
                         throw new AccountInvalidException();
