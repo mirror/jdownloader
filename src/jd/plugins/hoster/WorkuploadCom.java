@@ -276,6 +276,7 @@ public class WorkuploadCom extends PluginForHost {
                         break;
                     }
                 }
+                logger.info("Captcha result = " + captcha);
                 if (captcha.length() == 0) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "WTF! Captcha result is empty!");
                 }
