@@ -16,26 +16,57 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.List;
+import java.util.Map;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.parser.UrlQuery;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.http.Request;
+import jd.http.requests.GetRequest;
+import jd.http.requests.PostRequest;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "workupload.com" }, urls = { "https?://(?:www\\.|en\\.)?workupload\\.com/(?:file|start)/([A-Za-z0-9]+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "workupload.com" }, urls = { "https?://(?:www\\.|en\\.)?workupload\\.com/(?:file|start|report)/([A-Za-z0-9]+)" })
 public class WorkuploadCom extends PluginForHost {
     public WorkuploadCom(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        prepBR(br);
+        return br;
+    }
+
+    @Override
+    public boolean isResumeable(final DownloadLink link, final Account account) {
+        return false;
+    }
+
+    public static Browser prepBR(final Browser br) {
+        br.setFollowRedirects(true);
+        br.setAllowedResponseCodes(new int[] { 410 });
+        /* 2023-01-10: This looks to be enough to get around their anti bot stuff */
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
+        return br;
     }
 
     @Override
@@ -62,18 +93,17 @@ public class WorkuploadCom extends PluginForHost {
         return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
+    private String generateFileURL(final DownloadLink link) {
+        return "https://" + this.getHost() + "/file/" + getFID(link);
+    }
+
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.setAllowedResponseCodes(new int[] { 410 });
         final String fileID = this.getFID(link);
-        br.getPage("https://" + this.getHost() + "/file/" + fileID);
+        getPage(br, new GetRequest(generateFileURL(link)));
         if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 410 || this.br.containsHTML("img/404\\.jpg\"|>Whoops\\! 404|> Datei gesperrt")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (isAntiBotCaptchaBlocked(br)) {
-            /* 2023-03-20: Added detection for this but captcha handling is still missing. */
-            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Anti bot block");
         }
         final String sha256 = br.getRegex("(?i)([A-Fa-f0-9]{64})\\s*\\(SHA256\\)").getMatch(0);
         if (sha256 != null) {
@@ -83,7 +113,7 @@ public class WorkuploadCom extends PluginForHost {
             link.setPasswordProtected(true);
             /* Small trick to obtain filename for password protected files */
             final Browser brc = br.cloneBrowser();
-            brc.getPage(br.getURL("/report/" + fileID));
+            getPage(brc, new GetRequest(br.getURL("/report/" + fileID)));
             final String filename = brc.getRegex("<b>\\s*Datei\\s*: ([^<]+)</b>").getMatch(0);
             if (filename != null) {
                 link.setName(Encoding.htmlDecode(filename).trim());
@@ -96,7 +126,7 @@ public class WorkuploadCom extends PluginForHost {
             if (filename == null) {
                 filename = br.getRegex("class=\"intro\">[\n\t\r ]*?<b>([^<>\"]+)</b>").getMatch(0);
             }
-            String filesize = br.getRegex("<td>Dateigröße:</td><td>([^<>\"]*?)<").getMatch(0);
+            String filesize = br.getRegex("<td>\\s*Dateigröße:\\s*</td><td>([^<>\"]*?)<").getMatch(0);
             if (filename == null || filesize == null) {
                 Regex filenameSize = br.getRegex("<p class=\"intro\">[\n\t\r ]*?<b>(.*?)</b>[^\n\t\r <>\"]*?(\\d+(?:\\.\\d+)? ?(KB|MB|GB))[^\n\t\r <>\"]*?");
                 if (filename == null) {
@@ -135,21 +165,32 @@ public class WorkuploadCom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        requestFileInformation(link);
-        doFree(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+        handleDownload(link);
     }
 
-    private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        final String first_url = this.br.getURL();
-        // String dllink = checkDirectLink(downloadLink, directlinkproperty);
+    private void handleDownload(final DownloadLink link) throws Exception, PluginException {
+        final String directlinkproperty = "free_directlink";
+        final String storedDirectlink = link.getStringProperty(directlinkproperty);
         String dllink = null;
-        if (dllink == null) {
+        String referer = null;
+        if (storedDirectlink != null) {
+            logger.info("Re-using stored directurl: " + storedDirectlink);
+            dllink = storedDirectlink;
+            referer = generateFileURL(link);
+        } else {
+            requestFileInformation(link);
+            referer = br.getURL();
+            final String fileID = this.getFID(link);
             if (isPasswordProtected(br)) {
                 String passCode = link.getDownloadPassword();
                 if (passCode == null) {
                     passCode = getUserInput("Password?", link);
                 }
-                br.postPage(this.br.getURL(), "passwordprotected_file%5Bpassword%5D=" + Encoding.urlEncode(passCode) + "&passwordprotected_file%5Bsubmit%5D=&passwordprotected_file%5Bkey%5D=" + this.getFID(link));
+                final PostRequest req = new PostRequest(br._getURL());
+                req.addVariable("passwordprotected_file%5Bpassword%5D", Encoding.urlEncode(passCode));
+                req.addVariable("passwordprotected_file%5Bsubmit%5D", "");
+                req.addVariable("passwordprotected_file%5Bkey%5D", fileID);
+                getPage(br, req);
                 if (isPasswordProtected(br)) {
                     link.setDownloadPassword(null);
                     throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
@@ -158,70 +199,127 @@ public class WorkuploadCom extends PluginForHost {
                     link.setDownloadPassword(passCode);
                 }
             }
-            br.getPage("/start/" + this.getFID(link));
-            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-            br.getPage("/api/file/getDownloadServer/" + this.getFID(link));
-            dllink = PluginJSonUtils.getJsonValue(this.br, "url");
+            getPage(br, new GetRequest(br.getURL("/start/" + fileID).toExternalForm()));
+            final Browser brc = br.cloneBrowser();
+            brc.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            brc.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+            getPage(brc, new GetRequest(brc.getURL("/api/file/getDownloadServer/" + fileID).toExternalForm()));
+            final Map<String, Object> entries = restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.MAP);
+            final Map<String, Object> data = (Map<String, Object>) entries.get("data");
+            dllink = data.get("url").toString();
             if (StringUtils.isEmpty(dllink)) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
             }
         }
-        this.br.getHeaders().put("Referer", first_url);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
-        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            br.followConnection(true);
-            if (br.getURL().contains("/file/")) {
-                logger.info("Final downloadurl redirected to main url");
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
+        br.getHeaders().put("Referer", referer);
+        try {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, this.isResumeable(link, null), 1);
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                br.followConnection(true);
+                if (br.getURL().contains("/file/")) {
+                    logger.info("Final downloadurl redirected to main url");
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+            }
+        } catch (final Exception e) {
+            if (storedDirectlink != null) {
+                link.removeProperty(directlinkproperty);
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Stored directurl expired", e);
             } else {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                throw e;
             }
         }
         dl.setFilenameFix(true);
-        link.setProperty(directlinkproperty, dllink);
+        link.setProperty(directlinkproperty, dl.getConnection().getURL().toExternalForm());
         dl.startDownload();
+    }
+
+    public void getPage(final Browser br, final Request req) throws PluginException, IOException {
+        br.getPage(req);
+        handleAntiBot(br, req);
     }
 
     private boolean isAntiBotCaptchaBlocked(final Browser br) {
         return br.containsHTML("class=\"fa fa-shield-check\"");
     }
-    // public void handleAntiBot(final Browser br) throws PluginException {
-    // if (isAntiBotCaptchaBlocked(br)) {
-    // /* 2023-03-20: Added detection for this but captcha handling is still missing. */
-    // final String result = getAntibotResult(this);
-    // throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Anti bot block");
-    // }
-    // }
-    //
-    // public static String getAntibotResult(final Plugin plugin) {
-    // final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(plugin);
-    // final ScriptEngine engine = manager.getEngineByName("javascript");
-    // final StringBuilder sb = new StringBuilder();
-    // sb.append("async function sha256(message, find, i) { const msgBuffer = new TextEncoder().encode(message); const hashBuffer = await
-    // crypto.subtle.digest('SHA-256', msgBuffer); const hashArray = Array.from(new Uint8Array(hashBuffer)); const hashHex = hashArray.map(b
-    // => b.toString(16).padStart(2, '0')).join(''); if(find.includes(hashHex)){ return i; } }");
-    // sb.append("function getresult(res) { let found = 0; let i = 0; var captcharesult = ''; while (i < res.data.range) {
-    // sha256(res.data.puzzle + i, res.data.find, i).then(function(s){ if(typeof s !== \"undefined\"){ captcharesult = captcharesult + s + '
-    // '); found++; if(found == res.data.find.length){ break; } } }); i++; } return captcharesult; }");
-    // sb.append("var finalresult = getresult();");
-    // try {
-    // final String jsCorrected = sb.toString().replace("async ", " ").replace("await ", "").replace("let ", "var ").replace("const ", "var
-    // ");
-    // System.out.print(jsCorrected);
-    // engine.eval(jsCorrected);
-    // return engine.get("finalresult").toString();
-    // } catch (final Exception e) {
-    // if (plugin != null) {
-    // plugin.getLogger().info(e.toString());
-    // }
-    // e.printStackTrace();
-    // return null;
-    // }
-    // }
-    // public static void main(String[] args) throws InterruptedException, MalformedURLException {
-    // System.out.print("Captcharesult = " + getAntibotResult(null));
-    // }
+
+    public void handleAntiBot(final Browser br, final Request req) throws PluginException {
+        if (isAntiBotCaptchaBlocked(br)) {
+            /* 2023-03-20: Added detection for this but captcha handling is still missing. */
+            if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Anti bot block");
+            }
+            logger.info("Entered anti bot handling");
+            // final String urlbefore = br.getURL();
+            final Browser brc = br.cloneBrowser();
+            brc.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+            brc.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            boolean success = false;
+            try {
+                brc.getPage("/puzzle");
+                final Map<String, Object> entries = restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.MAP);
+                final Map<String, Object> data = (Map<String, Object>) entries.get("data");
+                final String puzzle = data.get("puzzle").toString();
+                String captcha = "";
+                final int range = ((Number) data.get("range")).intValue();
+                final List<String> find = (List<String>) data.get("find");
+                int found = 0;
+                for (int i = 0; i < range; i++) {
+                    final int res = sha256(puzzle + i, find, i);
+                    if (res == -1) {
+                        continue;
+                    }
+                    captcha += res + " ";
+                    if (found == find.size()) {
+                        break;
+                    }
+                }
+                if (captcha.length() == 0) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "WTF! Captcha result is empty!");
+                }
+                brc.postPage("/captcha", new UrlQuery().add("captcha", Encoding.urlEncode(captcha)));
+                final String captchaCookie = brc.getCookie(brc.getHost(), "captcha");
+                if (captchaCookie != null) {
+                    logger.info("Captcha success: captchaCookie = " + captchaCookie);
+                    br.getPage(req);
+                    if (isAntiBotCaptchaBlocked(br)) {
+                        logger.warning("WTF we are still/again bot blocked");
+                        success = false;
+                    } else {
+                        success = true;
+                    }
+                } else {
+                    logger.warning("WTF captcha failed");
+                }
+            } catch (final Exception e) {
+                logger.log(e);
+            }
+            if (!success) {
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Anti bot block");
+            }
+        }
+    }
+
+    public static int sha256(final String puzzlevalue, final List<String> find, int i) throws NoSuchAlgorithmException {
+        final MessageDigest md = MessageDigest.getInstance("SHA-256");
+        final byte[] hash = md.digest(puzzlevalue.getBytes(StandardCharsets.UTF_8));
+        final StringBuilder sb = new StringBuilder();
+        for (byte b : hash) {
+            String hex = Integer.toHexString(0xff & b);
+            if (hex.length() == 1) {
+                sb.append('0');
+            }
+            sb.append(hex);
+        }
+        final String hashHex = sb.toString();
+        if (find.contains(hashHex)) {
+            return i;
+        } else {
+            return -1;
+        }
+    }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {

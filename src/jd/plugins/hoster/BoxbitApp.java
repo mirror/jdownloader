@@ -166,7 +166,7 @@ public class BoxbitApp extends PluginForHost {
         } else {
             logger.info("Re-using stored directurl");
         }
-        this.dl.startDownload();
+        dl.startDownload();
     }
 
     private boolean attemptStoredDownloadurlDownload(final DownloadLink link, final String directlinkproperty) throws Exception {

@@ -22,6 +22,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.http.requests.GetRequest;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -33,6 +34,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.hoster.WorkuploadCom;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "workupload.com" }, urls = { "https?://(?:www\\.)?workupload\\.com/archive/([A-Za-z0-9]+)" })
 public class WorkuploadComFolder extends PluginForDecrypt {
@@ -43,7 +45,7 @@ public class WorkuploadComFolder extends PluginForDecrypt {
     @Override
     public Browser createNewBrowserInstance() {
         final Browser br = super.createNewBrowserInstance();
-        br.setFollowRedirects(true);
+        WorkuploadCom.prepBR(br);
         return br;
     }
 
@@ -51,7 +53,8 @@ public class WorkuploadComFolder extends PluginForDecrypt {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String contenturl = param.getCryptedUrl().replaceFirst("(?i)http://", "https://");
         final String folderID = new Regex(contenturl, this.getSupportedLinks()).getMatch(0);
-        br.getPage(contenturl);
+        final WorkuploadCom hosterplugin = (WorkuploadCom) this.getNewPluginForHostInstance(this.getHost());
+        hosterplugin.getPage(br, new GetRequest(contenturl));
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }

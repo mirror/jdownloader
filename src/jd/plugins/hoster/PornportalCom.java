@@ -93,7 +93,7 @@ public class PornportalCom extends PluginForHost {
         ret.add(new String[] { "babes.com", "blackisbetter.com" });
         ret.add(new String[] { "bellesafilms.com" });
         ret.add(new String[] { "biempire.com" });
-        ret.add(new String[] { "brazzers.com" });
+        ret.add(new String[] { "brazzers.com", "brazzer.com" });
         ret.add(new String[] { "digitalplayground.com" });
         ret.add(new String[] { "erito.com", "eritos.com" });
         ret.add(new String[] { "fakehub.com", "femalefaketaxi.com", "fakedrivingschool.com", "fakehostel.com" });
@@ -863,41 +863,54 @@ public class PornportalCom extends PluginForHost {
                 final Boolean isExpired = (Boolean) user.get("isExpired");
                 final Boolean isTrial = (Boolean) user.get("isTrial");
                 final Boolean isCanceled = (Boolean) user.get("isCanceled");
+                final Boolean hasAccess = (Boolean) user.get("hasAccess");
                 final Number initialAmount = (Number) user.get("initialAmount");
-                boolean foundValidExpireDate = false;
+                long expireTimestamp = -1;
+                final String expiryDate = (String) user.get("expiryDate");
+                if (!StringUtils.isEmpty(expiryDate)) {
+                    expireTimestamp = TimeFormatter.getMilliSeconds(expiryDate, "yyyy'-'MM'-'dd'T'HH':'mm':'ss", null);
+                }
+                final ArrayList<String> packageFeatures = new ArrayList<String>();
                 if (Boolean.TRUE.equals(isExpired)) {
                     account.setType(AccountType.FREE);
                     /* Free accounts can be used to download trailers */
-                    ai.setStatus("Free Account (expired premium)");
+                    packageFeatures.add("expired premium");
                 } else if (Boolean.TRUE.equals(isTrial)) {
                     /* Free trial -> Free Account with premium capability */
                     account.setType(AccountType.PREMIUM);
-                    ai.setStatus("Free Account (Trial)");
+                    packageFeatures.add("Trial");
+                } else if (expireTimestamp > System.currentTimeMillis()) {
+                    /* Premium user with running contract */
+                    ai.setValidUntil(expireTimestamp, br);
+                    account.setType(AccountType.PREMIUM);
+                } else if (Boolean.TRUE.equals(hasAccess)) {
+                    /* Premium account without expire-date */
+                    account.setType(AccountType.PREMIUM);
                 } else if (initialAmount == null || initialAmount.longValue() <= 0) {
                     /* Free user who never (?) had a premium subscription. */
                     account.setType(AccountType.FREE);
                 } else {
-                    /* Premium account [well...most likely] */
-                    /**
-                     * Premium accounts must not have any expire-date! </br>
-                     * 2021-06-05: Only set expire-date if it is still valid. Premium accounts are premium as long as "isExpired" != true.
-                     */
+                    /* Assume that we got a premium account */
                     account.setType(AccountType.PREMIUM);
+                }
+                if (isCanceled != null) {
                     if (Boolean.TRUE.equals(isCanceled)) {
-                        ai.setStatus("Premium Account (subscription cancelled)");
+                        packageFeatures.add("subscription cancelled");
                     } else {
-                        ai.setStatus("Premium Account (subscription running)");
+                        packageFeatures.add("subscription running");
                     }
-                    final String expiryDate = (String) user.get("expiryDate");
-                    if (!StringUtils.isEmpty(expiryDate)) {
-                        final long expireTimestamp = TimeFormatter.getMilliSeconds(expiryDate, "yyyy'-'MM'-'dd'T'HH':'mm':'ss", null);
-                        if (expireTimestamp > System.currentTimeMillis()) {
-                            ai.setValidUntil(expireTimestamp, br);
-                            foundValidExpireDate = true;
-                        }
+                }
+                String packageFeaturesCommaSeparated = "";
+                for (final String packageFeature : packageFeatures) {
+                    if (packageFeaturesCommaSeparated.length() > 0) {
+                        packageFeaturesCommaSeparated += ", ";
                     }
+                    packageFeaturesCommaSeparated += packageFeature;
+                }
+                ai.setStatus(account.getType().getLabel() + " (" + packageFeaturesCommaSeparated + ")");
+                if (account.getType() == AccountType.PREMIUM) {
                     final List<Map<String, Object>> bundles = (List<Map<String, Object>>) user.get("addons");
-                    if (!foundValidExpireDate && bundles != null) {
+                    if (bundles != null) {
                         /**
                          * Try to find alternative expire-date inside users' additional purchased "bundles". </br>
                          * Each bundle can have different expire-dates and also separate pricing and so on.
@@ -928,6 +941,7 @@ public class PornportalCom extends PluginForHost {
                     }
                     /* Now check which other websites we can now use as well and add them via multihoster handling. */
                     try {
+                        /* TODO: 2024-01-10: Review this. Looks like this is either broken and/or was disabled by Pornportal. */
                         getPage(br, "https://site-ma." + this.getHost() + "/");
                         final Map<String, Object> initialState = getJsonJuanInitialState(br);
                         final Map<String, Object> client = (Map<String, Object>) initialState.get("client");
