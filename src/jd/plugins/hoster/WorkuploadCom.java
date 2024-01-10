@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.parser.UrlQuery;
@@ -64,7 +63,7 @@ public class WorkuploadCom extends PluginForHost {
     public static Browser prepBR(final Browser br) {
         br.setFollowRedirects(true);
         br.setAllowedResponseCodes(new int[] { 410 });
-        /* 2023-01-10: This looks to be enough to get around their anti bot stuff */
+        /* 2023-01-10: This looks to be enough to sometimes get around their anti bot stuff */
         br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
         return br;
     }
@@ -73,11 +72,6 @@ public class WorkuploadCom extends PluginForHost {
     public String getAGBLink() {
         return "http://workupload.com/tos";
     }
-
-    /* Connection stuff */
-    private static final boolean FREE_RESUME       = false;
-    private static final int     FREE_MAXCHUNKS    = 1;
-    private static final int     FREE_MAXDOWNLOADS = -1;
 
     @Override
     public String getLinkID(final DownloadLink link) {
@@ -248,9 +242,6 @@ public class WorkuploadCom extends PluginForHost {
     public void handleAntiBot(final Browser br, final Request req) throws PluginException {
         if (isAntiBotCaptchaBlocked(br)) {
             /* 2023-03-20: Added detection for this but captcha handling is still missing. */
-            if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Anti bot block");
-            }
             logger.info("Entered anti bot handling");
             // final String urlbefore = br.getURL();
             final Browser brc = br.cloneBrowser();
@@ -284,6 +275,7 @@ public class WorkuploadCom extends PluginForHost {
                 final String captchaCookie = brc.getCookie(brc.getHost(), "captcha");
                 if (captchaCookie != null) {
                     logger.info("Captcha success: captchaCookie = " + captchaCookie);
+                    req.resetConnection();
                     br.getPage(req);
                     if (isAntiBotCaptchaBlocked(br)) {
                         logger.warning("WTF we are still/again bot blocked");
@@ -324,7 +316,7 @@ public class WorkuploadCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return FREE_MAXDOWNLOADS;
+        return -1;
     }
 
     @Override
