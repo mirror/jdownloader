@@ -416,7 +416,7 @@ public class PornportalCom extends PluginForHost {
                     }
                 }
                 if (result == null) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to refresh expired directurl --> Content offline?");
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to refresh expired directurl --> Content offline or session expired?");
                 }
                 newDirecturl = result.getStringProperty(PROPERTY_directurl);
                 if (newDirecturl == null) {
@@ -456,8 +456,7 @@ public class PornportalCom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        logger.info("Downloading in free mode (e.g. trailer download or active premium direct-downloadurls)");
-        this.handlePremium(link, null);
+        this.handleDownload(link, null);
     }
 
     @Override
@@ -856,7 +855,7 @@ public class PornportalCom extends PluginForHost {
                      */
                     final boolean trustBannedFlag = false;
                     if (trustBannedFlag) {
-                        throw new AccountInvalidException("Account banned");
+                        throw new AccountInvalidException("Account banned for reason: " + user.get("banReason"));
                     } else {
                         logger.info("Account might be banned??");
                     }
@@ -870,7 +869,7 @@ public class PornportalCom extends PluginForHost {
                     account.setType(AccountType.FREE);
                     /* Free accounts can be used to download trailers */
                     ai.setStatus("Free Account (expired premium)");
-                } else if (isTrial) {
+                } else if (Boolean.TRUE.equals(isTrial)) {
                     /* Free trial -> Free Account with premium capability */
                     account.setType(AccountType.PREMIUM);
                     ai.setStatus("Free Account (Trial)");
@@ -1165,9 +1164,14 @@ public class PornportalCom extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        handleDownload(link, account);
+    }
+
+    private void handleDownload(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link, account, true);
         final String dllink = link.getStringProperty(PROPERTY_directurl);
         if (StringUtils.isEmpty(dllink)) {
+            /* This should never happen! */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);

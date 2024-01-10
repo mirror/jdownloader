@@ -67,7 +67,8 @@ public class WorkuploadCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setAllowedResponseCodes(new int[] { 410 });
-        br.getPage("https://" + this.getHost() + "/file/" + this.getFID(link));
+        final String fileID = this.getFID(link);
+        br.getPage("https://" + this.getHost() + "/file/" + fileID);
         if (br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 410 || this.br.containsHTML("img/404\\.jpg\"|>Whoops\\! 404|> Datei gesperrt")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (isAntiBotCaptchaBlocked(br)) {
@@ -79,9 +80,19 @@ public class WorkuploadCom extends PluginForHost {
             link.setSha256Hash(sha256);
         }
         if (isPasswordProtected(br)) {
-            link.getLinkStatus().setStatusText("This url is password protected");
+            link.setPasswordProtected(true);
+            /* Small trick to obtain filename for password protected files */
+            final Browser brc = br.cloneBrowser();
+            brc.getPage(br.getURL("/report/" + fileID));
+            final String filename = brc.getRegex("<b>\\s*Datei\\s*: ([^<]+)</b>").getMatch(0);
+            if (filename != null) {
+                link.setName(Encoding.htmlDecode(filename).trim());
+            } else {
+                logger.warning("Failed to find filename");
+            }
         } else {
-            String filename = br.getRegex("<td>Dateiname:</td><td>([^<>\"]*?)<").getMatch(0);
+            link.setPasswordProtected(false);
+            String filename = br.getRegex("<td>\\s*Dateiname\\s*:\\s*</td><td>([^<>\"]*?)<").getMatch(0);
             if (filename == null) {
                 filename = br.getRegex("class=\"intro\">[\n\t\r ]*?<b>([^<>\"]+)</b>").getMatch(0);
             }
@@ -104,12 +115,15 @@ public class WorkuploadCom extends PluginForHost {
             if (filename == null) {
                 filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
             }
-            if (filename == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (filename != null) {
+                link.setName(Encoding.htmlDecode(filename).trim());
+            } else {
+                logger.warning("Failed to find filename");
             }
-            link.setName(Encoding.htmlDecode(filename).trim());
             if (filesize != null) {
                 link.setDownloadSize(SizeFormatter.getSize(filesize));
+            } else {
+                logger.warning("Failed to find filesize");
             }
         }
         return AvailableStatus.TRUE;
@@ -135,7 +149,7 @@ public class WorkuploadCom extends PluginForHost {
                 if (passCode == null) {
                     passCode = getUserInput("Password?", link);
                 }
-                this.br.postPage(this.br.getURL(), "passwordprotected_file%5Bpassword%5D=" + Encoding.urlEncode(passCode) + "&passwordprotected_file%5Bsubmit%5D=&passwordprotected_file%5Bkey%5D=" + this.getFID(link));
+                br.postPage(this.br.getURL(), "passwordprotected_file%5Bpassword%5D=" + Encoding.urlEncode(passCode) + "&passwordprotected_file%5Bsubmit%5D=&passwordprotected_file%5Bkey%5D=" + this.getFID(link));
                 if (isPasswordProtected(br)) {
                     link.setDownloadPassword(null);
                     throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
@@ -144,10 +158,10 @@ public class WorkuploadCom extends PluginForHost {
                     link.setDownloadPassword(passCode);
                 }
             }
-            this.br.getPage("/start/" + this.getFID(link));
-            this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            this.br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-            this.br.getPage("/api/file/getDownloadServer/" + this.getFID(link));
+            br.getPage("/start/" + this.getFID(link));
+            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+            br.getPage("/api/file/getDownloadServer/" + this.getFID(link));
             dllink = PluginJSonUtils.getJsonValue(this.br, "url");
             if (StringUtils.isEmpty(dllink)) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
@@ -172,6 +186,42 @@ public class WorkuploadCom extends PluginForHost {
     private boolean isAntiBotCaptchaBlocked(final Browser br) {
         return br.containsHTML("class=\"fa fa-shield-check\"");
     }
+    // public void handleAntiBot(final Browser br) throws PluginException {
+    // if (isAntiBotCaptchaBlocked(br)) {
+    // /* 2023-03-20: Added detection for this but captcha handling is still missing. */
+    // final String result = getAntibotResult(this);
+    // throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Anti bot block");
+    // }
+    // }
+    //
+    // public static String getAntibotResult(final Plugin plugin) {
+    // final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(plugin);
+    // final ScriptEngine engine = manager.getEngineByName("javascript");
+    // final StringBuilder sb = new StringBuilder();
+    // sb.append("async function sha256(message, find, i) { const msgBuffer = new TextEncoder().encode(message); const hashBuffer = await
+    // crypto.subtle.digest('SHA-256', msgBuffer); const hashArray = Array.from(new Uint8Array(hashBuffer)); const hashHex = hashArray.map(b
+    // => b.toString(16).padStart(2, '0')).join(''); if(find.includes(hashHex)){ return i; } }");
+    // sb.append("function getresult(res) { let found = 0; let i = 0; var captcharesult = ''; while (i < res.data.range) {
+    // sha256(res.data.puzzle + i, res.data.find, i).then(function(s){ if(typeof s !== \"undefined\"){ captcharesult = captcharesult + s + '
+    // '); found++; if(found == res.data.find.length){ break; } } }); i++; } return captcharesult; }");
+    // sb.append("var finalresult = getresult();");
+    // try {
+    // final String jsCorrected = sb.toString().replace("async ", " ").replace("await ", "").replace("let ", "var ").replace("const ", "var
+    // ");
+    // System.out.print(jsCorrected);
+    // engine.eval(jsCorrected);
+    // return engine.get("finalresult").toString();
+    // } catch (final Exception e) {
+    // if (plugin != null) {
+    // plugin.getLogger().info(e.toString());
+    // }
+    // e.printStackTrace();
+    // return null;
+    // }
+    // }
+    // public static void main(String[] args) throws InterruptedException, MalformedURLException {
+    // System.out.print("Captcharesult = " + getAntibotResult(null));
+    // }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {

@@ -196,6 +196,15 @@ public class FastShareCz extends PluginForHost {
         } else {
             br.followConnection();
         }
+        final String htmlRefresh = br.getRequest().getHTMLRefresh();
+        if (htmlRefresh != null) {
+            if (htmlRefresh.matches("^https?://[^/]+/?$")) {
+                /* Redirect to mainpage */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else {
+                br.getPage(htmlRefresh);
+            }
+        }
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML("(?i)(<title>\\s*FastShare\\.[a-z]+\\s*</title>|>Tento soubor byl smazán na základě požadavku vlastníka autorských)")) {
@@ -242,10 +251,10 @@ public class FastShareCz extends PluginForHost {
             logger.info("Re-using stored directurl: " + storedDirecturl);
             dllink = storedDirecturl;
         } else {
-            requestFileInformation(link, account);
             /* First check if linkcheck found a direct-url */
             dllink = link.getStringProperty(directurlproperty);
             if (dllink == null) {
+                requestFileInformation(link, account);
                 this.checkErrors(br, link, account);
                 if (this.isPremiumAccount(account)) {
                     dllink = br.getRegex("\"(https?://[a-z0-9]+\\." + Pattern.quote(br.getHost()) + "/download\\.php[^<>\"]*?)\"").getMatch(0);
