@@ -15,14 +15,16 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.parser.UrlQuery;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -45,7 +47,7 @@ import jd.plugins.PluginForHost;
 public class AnimeUltimeNet extends PluginForHost {
     public AnimeUltimeNet(PluginWrapper wrapper) {
         super(wrapper);
-        // this.enablePremium("https://www.anime-ultime.net/premium-0-1");
+        this.enablePremium("https://www." + getHost() + "/premium-0-1");
     }
 
     @Override
@@ -75,31 +77,38 @@ public class AnimeUltimeNet extends PluginForHost {
         return buildAnnotationUrls(getPluginDomains());
     }
 
+    private static final String PATTERN_FILE_FREE    = "/info\\-0\\-1/((\\d+)(/([^/#]+))?)";
+    private static final String PATTERN_FILE_PREMIUM = "/ddl/(\\d+)/orig/([^/#]+)";
+
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/info\\-0\\-1/((\\d+)(/([^/#]+))?)");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "(" + PATTERN_FILE_FREE + "|" + PATTERN_FILE_PREMIUM + ")");
         }
         return ret.toArray(new String[0]);
     }
 
     @Override
     public String getAGBLink() {
-        return "https://www.anime-ultime.net/index-0-1#principal";
+        return "https://www." + getHost() + "/index-0-1#principal";
     }
 
     @Override
     public String getLinkID(final DownloadLink link) {
-        final String linkid = getFID(link);
-        if (linkid != null) {
-            return "alimeultimenet://file/" + linkid;
+        final String fileid = getFID(link);
+        if (fileid != null) {
+            return "alimeultimenet://file/" + fileid;
         } else {
             return super.getLinkID(link);
         }
     }
 
     private String getFID(final DownloadLink link) {
-        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(1);
+        String fileid = new Regex(link.getPluginPatternMatcher(), PATTERN_FILE_FREE).getMatch(1);
+        if (fileid == null) {
+            fileid = new Regex(link.getPluginPatternMatcher(), PATTERN_FILE_PREMIUM).getMatch(0);
+        }
+        return fileid;
     }
 
     private String getDirecturlProperty(final Account account) {
@@ -119,21 +128,30 @@ public class AnimeUltimeNet extends PluginForHost {
         return 1;
     }
 
-    @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        return requestFileInformation(link, null);
+    }
+
+    private AvailableStatus requestFileInformation(final DownloadLink link, final Account account) throws Exception {
         this.setBrowserExclusive();
-        br.getPage("https://www." + this.getHost() + "/info-0-1/" + new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0));
-        // br.getPage(link.getPluginPatternMatcher());
+        if (account != null) {
+            this.login(account, false);
+        }
+        final String fileid = this.getFID(link);
+        if (!link.isNameSet()) {
+            link.setName(fileid);
+        }
+        br.getPage("https://www." + this.getHost() + "/info-0-1/" + fileid);
         if (this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML("(?i)>\\s*0 vostfr streaming\\s*<")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String fid = new Regex(link.getDownloadURL(), "(\\d+)$").getMatch(0);
+        final String titleFromURL = new Regex(br.getURL(), PATTERN_FILE_FREE).getMatch(3);
         String filename = br.getRegex("<h1>([^<>\"]*?)</h1>").getMatch(0);
-        if (filename == null) {
-            filename = fid;
+        if (filename == null && titleFromURL != null) {
+            filename = titleFromURL.replace("-", " ");
         }
         String filesize = br.getRegex("Taille\\s*:\\s*([^<>\"]*?)<br />").getMatch(0);
         String ext = br.getRegex("Conteneur\\s*:\\s*([^<>\"]*?)<br />").getMatch(0);
@@ -149,10 +167,14 @@ public class AnimeUltimeNet extends PluginForHost {
             }
             filesize = filesize.replace("mo", "mb");
             link.setDownloadSize(SizeFormatter.getSize(filesize));
+        } else {
+            logger.warning("Failed to find filesize");
         }
         if (filename != null) {
             filename = Encoding.htmlDecode(filename).trim() + ext;
             link.setName(filename);
+        } else {
+            logger.warning("Failed to find filename");
         }
         return AvailableStatus.TRUE;
     }
@@ -170,33 +192,50 @@ public class AnimeUltimeNet extends PluginForHost {
             logger.info("Re-using stored directlink: " + storedDirectlink);
             dllink = storedDirectlink;
         } else {
-            requestFileInformation(link);
-            if (account != null) {
-                this.login(account, false);
-            }
-            final String fid = getFID(link);
+            requestFileInformation(link, account);
+            final String fileid = getFID(link);
             /*
              * 2023-01-09: It is possible to download as premium user in free mode but let's not be evil and hope that they will patch this
              * possibility soon!
              */
-            final boolean enforcePremiumLinkAlsoInFreeMode = false;
-            if ((account != null && account.getType() == AccountType.PREMIUM) || enforcePremiumLinkAlsoInFreeMode) {
-                dllink = "https://www." + this.getHost() + "/ddl/" + fid + "/orig/";
+            final String premiumDirecturl = br.getRegex("(/ddl/" + fileid + "/orig/[^/#\"]+)\"").getMatch(0);
+            if (premiumDirecturl != null) {
+                /* Premium user -> We can skip the other steps (we could also do the other steps and it would work fine too). */
+                dllink = premiumDirecturl;
             } else {
-                final Browser brc = br.cloneBrowser();
-                brc.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                brc.postPage("/ddl/authorized_download.php", "idfile=" + fid + "&type=orig");
-                final Map<String, Object> entries = restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.MAP);
-                final boolean skipPreDownloadWaittime = false;
-                if (!skipPreDownloadWaittime) {
-                    final int waittime = ((Number) entries.get("wait")).intValue();
-                    this.sleep(waittime * 1000l, link);
-                }
-                brc.postPage("/ddl/authorized_download.php", "idfile=" + fid + "&type=orig");
-                final Map<String, Object> entries2 = restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.MAP);
-                dllink = entries2.get("link").toString();
-                if (StringUtils.isEmpty(dllink)) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                final boolean enforcePremiumLinkAlsoInFreeMode = false;
+                if ((account == null || account.getType() == AccountType.FREE) && enforcePremiumLinkAlsoInFreeMode) {
+                    /**
+                     * 2023-01-11: With this trick we can theoretically download in premium mode for free lol </br>
+                     * Free connection limits still apply but this could be used to skip pre download wait time.
+                     */
+                    dllink = "https://www." + this.getHost() + "/ddl/" + fileid + "/orig/";
+                } else {
+                    final Browser brc = br.cloneBrowser();
+                    brc.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+                    brc.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                    final UrlQuery dlquery = new UrlQuery();
+                    dlquery.add("idfile", fileid);
+                    dlquery.add("type", "orig");
+                    brc.postPage("/ddl/authorized_download.php", dlquery);
+                    final Map<String, Object> entries = restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.MAP);
+                    dllink = (String) entries.get("link");
+                    if (dllink == null) {
+                        /* 2nd step is not always needed */
+                        final boolean skipPreDownloadWaittime = false;
+                        if (!skipPreDownloadWaittime) {
+                            final int waittimeSeconds = ((Number) entries.get("wait")).intValue();
+                            logger.info("Pre download wait in seconds: " + waittimeSeconds);
+                            this.sleep(waittimeSeconds * 1000l, link);
+                        }
+                        brc.postPage(brc.getURL(), dlquery);
+                        final Map<String, Object> entries2 = restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.MAP);
+                        dllink = (String) entries2.get("link");
+                        if (StringUtils.isEmpty(dllink)) {
+                            /* Very very rare problem */
+                            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Wait error: Server thinks we haven't waited long enough", 1 * 60 * 1000l);
+                        }
+                    }
                 }
             }
         }
@@ -205,14 +244,15 @@ public class AnimeUltimeNet extends PluginForHost {
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 br.followConnection(true);
                 if (dl.getConnection().getResponseCode() == 403) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 15 * 60 * 1000l);
                 } else if (dl.getConnection().getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404 - file offline?", 60 * 60 * 1000l);
+                } else if (dl.getConnection().getResponseCode() == 503) {
+                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error 503 - too many concurrent connections", 1 * 60 * 1000l);
                 } else {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
-            link.setProperty(directlinkproperty, dl.getConnection().getURL().toExternalForm());
         } catch (final Exception e) {
             if (storedDirectlink != null) {
                 link.removeProperty(directlinkproperty);
@@ -275,22 +315,16 @@ public class AnimeUltimeNet extends PluginForHost {
         final AccountInfo ai = new AccountInfo();
         login(account, true);
         ai.setUnlimitedTraffic();
-        // if (br.containsHTML("")) {
-        // account.setType(AccountType.FREE);
-        // /* free accounts can still have captcha */
-        // account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
-        // account.setConcurrentUsePossible(false);
-        // } else {
-        // final String expire = br.getRegex("").getMatch(0);
-        // if (expire == null) {
-        // throw new AccountInvalidException();
-        // } else {
-        // ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH));
-        // }
-        // account.setType(AccountType.PREMIUM);
-        // account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
-        // account.setConcurrentUsePossible(true);
-        // }
+        br.getPage("/premium-0-1");
+        final String expire = br.getRegex("(\\d{2} [A-Za-z]+ 20\\d{2})").getMatch(0);
+        if (expire == null) {
+            account.setType(AccountType.FREE);
+            account.setMaxSimultanDownloads(this.getMaxSimultanFreeDownloadNum());
+        } else {
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.FRANCE));
+            account.setType(AccountType.PREMIUM);
+            account.setMaxSimultanDownloads(getMaxSimultanPremiumDownloadNum()); // Checked 2024-01-11
+        }
         return ai;
     }
 
@@ -300,8 +334,14 @@ public class AnimeUltimeNet extends PluginForHost {
     }
 
     @Override
+    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
+        /* 2023-01-11: No captchas at all */
+        return false;
+    }
+
+    @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
+        return 5;
     }
 
     @Override

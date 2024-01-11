@@ -600,6 +600,7 @@ public class PornportalCom extends PluginForHost {
 
                             @Override
                             protected boolean isEnterprise() {
+                                /* 2023-01-11: This is mandatory! Without this, this reCaptcha may fail for some users. */
                                 return true;
                             }
                         };
