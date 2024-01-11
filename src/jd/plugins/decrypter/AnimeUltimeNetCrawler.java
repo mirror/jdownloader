@@ -83,7 +83,7 @@ public class AnimeUltimeNetCrawler extends PluginForDecrypt {
         final String[] urls = br.getRegex("(info\\-0\\-1/((\\d+)(/([^/]+))?))").getColumn(0);
         for (String url : urls) {
             url = "/" + url;
-            ret.add(createDownloadlink(br.getURL(url).toString()));
+            ret.add(createDownloadlink(br.getURL(url).toExternalForm()));
         }
         final FilePackage fp = FilePackage.getInstance();
         if (title != null) {

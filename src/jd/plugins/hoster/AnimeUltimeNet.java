@@ -25,6 +25,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -48,6 +49,11 @@ public class AnimeUltimeNet extends PluginForHost {
     public AnimeUltimeNet(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www." + getHost() + "/premium-0-1");
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.VIDEO_STREAMING };
     }
 
     @Override
@@ -139,8 +145,9 @@ public class AnimeUltimeNet extends PluginForHost {
             this.login(account, false);
         }
         final String fileid = this.getFID(link);
+        final String extDefault = "mp4";
         if (!link.isNameSet()) {
-            link.setName(fileid);
+            link.setName(fileid + "." + extDefault);
         }
         br.getPage("https://www." + this.getHost() + "/info-0-1/" + fileid);
         if (this.br.getHttpConnection().getResponseCode() == 404) {
@@ -149,32 +156,34 @@ public class AnimeUltimeNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String titleFromURL = new Regex(br.getURL(), PATTERN_FILE_FREE).getMatch(3);
-        String filename = br.getRegex("<h1>([^<>\"]*?)</h1>").getMatch(0);
-        if (filename == null && titleFromURL != null) {
-            filename = titleFromURL.replace("-", " ");
+        String filetitle = br.getRegex("<h1>([^<>\"]*?)</h1>").getMatch(0);
+        if (filetitle == null && titleFromURL != null) {
+            filetitle = titleFromURL.replace("-", " ");
         }
         String filesize = br.getRegex("Taille\\s*:\\s*([^<>\"]*?)<br />").getMatch(0);
-        String ext = br.getRegex("Conteneur\\s*:\\s*([^<>\"]*?)<br />").getMatch(0);
-        if (ext != null) {
-            ext = "." + ext.trim();
-        } else {
-            ext = "";
-        }
         if (filesize != null) {
             if (filesize.equals("")) {
                 /* Probably offline as filesize is not given and downloadlink is not available/dead(404) */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            filesize = filesize.replace("mo", "mb");
+            /* Convert French to English */
+            filesize = filesize.replaceAll("(?i)Ko", "Kb").replaceAll("(?i)Mo", "Mb").replaceAll("(?i)Go", "Gb");
             link.setDownloadSize(SizeFormatter.getSize(filesize));
         } else {
             logger.warning("Failed to find filesize");
         }
-        if (filename != null) {
-            filename = Encoding.htmlDecode(filename).trim() + ext;
-            link.setName(filename);
+        if (filetitle != null) {
+            filetitle = Encoding.htmlDecode(filetitle).trim();
+            String fileextension = br.getRegex("Conteneur\\s*:\\s*([A-Za-z0-9]+)").getMatch(0);
+            if (fileextension != null) {
+                fileextension = fileextension.trim();
+            } else {
+                /* Fallback: We know that most of all of their files are video files. */
+                fileextension = extDefault;
+            }
+            link.setName(filetitle + "." + fileextension);
         } else {
-            logger.warning("Failed to find filename");
+            logger.warning("Failed to find filetitle");
         }
         return AvailableStatus.TRUE;
     }
@@ -267,7 +276,6 @@ public class AnimeUltimeNet extends PluginForHost {
 
     private boolean login(final Account account, final boolean force) throws Exception {
         synchronized (account) {
-            br.setFollowRedirects(true);
             br.setCookiesExclusive(true);
             final Cookies cookies = account.loadCookies("");
             if (cookies != null) {
