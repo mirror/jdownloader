@@ -21,11 +21,14 @@ import java.util.List;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class FilelionsTo extends XFileSharingProBasic {
@@ -132,5 +135,22 @@ public class FilelionsTo extends XFileSharingProBasic {
     @Override
     protected boolean supports_availablecheck_filename_abuse() {
         return false;
+    }
+
+    @Override
+    protected boolean isOffline(final DownloadLink link, final Browser br, final String correctedBR) {
+        if (br.containsHTML(">\\s*File is no longer available")) {
+            return true;
+        } else {
+            return super.isOffline(link, br, correctedBR);
+        }
+    }
+
+    @Override
+    protected void checkErrors(final Browser br, final String html, final DownloadLink link, final Account account, final boolean checkAll) throws NumberFormatException, PluginException {
+        super.checkErrors(br, html, link, account, checkAll);
+        if (br.containsHTML(">\\s*Video temporarily not available")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Video temporarily not available");
+        }
     }
 }

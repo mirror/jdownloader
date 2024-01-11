@@ -28,6 +28,8 @@ import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
@@ -73,7 +75,9 @@ public class Etsy extends antiDDoSForDecrypt {
             ret.add(createDownloadlink(Encoding.htmlDecode(link)));
         }
         if (ret.isEmpty()) {
-            if (br.containsHTML("<div elementtiming=\"ux-nla-message\">")) {
+            if (br.containsHTML("interstitial\\.captcha-delivery\\.com")) {
+                throw new DecrypterRetryException(RetryReason.BLOCKED_BY, "Anti bot captcha/page");
+            } else if (br.containsHTML("<div elementtiming=\"ux-nla-message\">")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -89,5 +93,11 @@ public class Etsy extends antiDDoSForDecrypt {
             fp.addLinks(ret);
         }
         return ret;
+    }
+
+    @Override
+    public int getMaxConcurrentProcessingInstances() {
+        /* 2023-01-11: Prevent anti bot page from showing up */
+        return 1;
     }
 }

@@ -104,4 +104,9 @@ public class FilelandIo extends XFileSharingProBasic {
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
     }
+
+    @Override
+    protected boolean supports_availablecheck_filesize_html() {
+        return false;
+    }
 }
