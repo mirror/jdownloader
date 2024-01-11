@@ -275,6 +275,7 @@ public class WorkuploadCom extends PluginForHost {
                 final String captchaCookie = brc.getCookie(brc.getHost(), "captcha");
                 if (captchaCookie != null) {
                     logger.info("Captcha success: captchaCookie = " + captchaCookie);
+                    /* Reset request so we can send it again as a new request. */
                     req.resetConnection();
                     br.getPage(req);
                     if (isAntiBotCaptchaBlocked(br)) {

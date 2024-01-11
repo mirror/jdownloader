@@ -597,6 +597,11 @@ public class PornportalCom extends PluginForHost {
                             public TYPE getType() {
                                 return TYPE.INVISIBLE;
                             }
+
+                            @Override
+                            protected boolean isEnterprise() {
+                                return true;
+                            }
                         };
                         recaptchaV2Response = captcha.getToken();
                         logindata.put("googleReCaptchaResponse", recaptchaV2Response);

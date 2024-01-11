@@ -61,6 +61,7 @@ public class EPornerCom extends PluginForHost {
     public Browser createNewBrowserInstance() {
         final Browser br = super.createNewBrowserInstance();
         br.setFollowRedirects(true);
+        br.setAllowedResponseCodes(410);
         return br;
     }
 
@@ -160,6 +161,8 @@ public class EPornerCom extends PluginForHost {
         }
         br.getPage(link.getPluginPatternMatcher());
         if (this.br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (this.br.getHttpConnection().getResponseCode() == 410) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML("id=\"deletedfile\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
