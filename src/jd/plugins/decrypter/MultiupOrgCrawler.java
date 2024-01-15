@@ -54,6 +54,13 @@ public class MultiupOrgCrawler extends antiDDoSForDecrypt {
         super(wrapper);
     }
 
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.setFollowRedirects(true);
+        return br;
+    }
+
     private static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
@@ -80,7 +87,6 @@ public class MultiupOrgCrawler extends antiDDoSForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        br.setFollowRedirects(true);
         String contenturl = param.getCryptedUrl();
         contenturl = contenturl.replaceFirst("/(en|fr)/", "/");
         contenturl = contenturl.replaceFirst("(?i)http://", "https://");

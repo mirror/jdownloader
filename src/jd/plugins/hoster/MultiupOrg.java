@@ -52,18 +52,22 @@ import jd.plugins.components.MultiHosterManagement;
 public class MultiupOrg extends PluginForHost {
     private static final String          API_BASE                   = "https://multiup.io/api";
     private static MultiHosterManagement mhm                        = new MultiHosterManagement("multiup.io");
-    /** 2019-04-24: According to support: max con per file:3, max per account: 15 */
-    private static final int             defaultMAXDOWNLOADSPremium = 5;
-    private static final int             defaultMAXCHUNKS           = -3;
-    private static final boolean         defaultRESUME              = true;
+    /** 2023-01-15: Max connections per IP in total according to admin: 3 */
+    private static final int             defaultMAXDOWNLOADSPremium = 3;
+    private static final int             defaultMAXCHUNKS           = 1;
 
     @Override
     public Browser createNewBrowserInstance() {
-        final Browser br = new Browser();
+        final Browser br = super.createNewBrowserInstance();
         br.setCookiesExclusive(true);
         br.getHeaders().put("User-Agent", "JDownloader");
         br.setFollowRedirects(true);
         return br;
+    }
+
+    @Override
+    public boolean isResumeable(final DownloadLink link, final Account account) {
+        return true;
     }
 
     @SuppressWarnings("deprecation")
@@ -140,7 +144,7 @@ public class MultiupOrg extends PluginForHost {
             }
         }
         try {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, defaultRESUME, defaultMAXCHUNKS);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, this.isResumeable(link, account), defaultMAXCHUNKS);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 /* 402 - Payment required */
                 if (dl.getConnection().getResponseCode() == 402) {
