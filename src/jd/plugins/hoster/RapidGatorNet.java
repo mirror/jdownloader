@@ -249,7 +249,8 @@ public class RapidGatorNet extends PluginForHost {
     }
 
     private AvailableStatus requestFileInformation(final DownloadLink link, final Account account) throws Exception {
-        if (account != null) {
+        if (account != null && PluginJsonConfig.get(RapidGatorConfig.class).isEnableAPIPremium() && account.hasProperty(PROPERTY_sessionid)) {
+            /* API usage is enabled by user, account is available and an API session is available too --> Use API-linkcheck */
             return requestFileInformationAPI(link, account);
         } else {
             return requestFileInformationWebsite(link, null);

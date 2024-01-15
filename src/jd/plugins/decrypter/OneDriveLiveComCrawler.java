@@ -120,6 +120,10 @@ public class OneDriveLiveComCrawler extends PluginForDecrypt {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             final Map<String, Object> resourceinfo = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+            final Map<String, Object> errormap = (Map<String, Object>) resourceinfo.get("error");
+            if (errormap != null) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, errormap.get("localizedMessage").toString());
+            }
             final Map<String, Object> foldermap = (Map<String, Object>) resourceinfo.get("folder");
             final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
             if (foldermap != null) {

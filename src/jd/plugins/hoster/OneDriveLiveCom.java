@@ -16,6 +16,7 @@
 package jd.plugins.hoster;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import org.appwork.storage.TypeRef;
@@ -23,6 +24,7 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.parser.UrlQuery;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.AccountRequiredException;
@@ -108,10 +110,17 @@ public class OneDriveLiveCom extends PluginForHost {
         final String cid = link.getStringProperty(PROPERTY_CID);
         // final String folder_id = link.getStringProperty(PROPERTY_FOLDER_ID);
         // final String authkey = link.getStringProperty(PROPERTY_AUTHKEY);
-        br.getHeaders().put("Origin", "https://onedrive.live.com");
-        br.getHeaders().put("Referer", "https://onedrive.live.com/");
-        br.getPage("https://api.onedrive.com/v1.0/drives/" + cid + "/items/" + fileID + "?select=id%2C%40content.downloadUrl");
-        if (br.getHttpConnection().getResponseCode() == 404) {
+        final Browser brc = br.cloneBrowser();
+        brc.getHeaders().put("Origin", "https://onedrive.live.com");
+        brc.getHeaders().put("Referer", "https://onedrive.live.com/");
+        final String authkey = link.getStringProperty(PROPERTY_AUTHKEY);
+        final UrlQuery query = new UrlQuery();
+        if (authkey != null) {
+            query.add("authkey", Encoding.urlEncode(authkey));
+        }
+        query.add("select", "id%2C%40content.downloadUrl");
+        brc.getPage("https://api.onedrive.com/v1.0/drives/" + cid.toLowerCase(Locale.ENGLISH) + "/items/" + fileID + "?" + query.toString());
+        if (brc.getHttpConnection().getResponseCode() == 404) {
             /*
              * E.g. {"error":{"code":"itemNotFound","message":"Item does not exist"
              * ,"localizedMessage":"Das Element fehlt scheinbar. Möglicherweise wurde das Element von einer anderen Person gelöscht oder verschoben, oder Sie besitzen keine Berechtigungen, um es anzuzeigen."
@@ -119,7 +128,11 @@ public class OneDriveLiveCom extends PluginForHost {
              */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+        final Map<String, Object> entries = restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.MAP);
+        final Map<String, Object> errormap = (Map<String, Object>) entries.get("error");
+        if (errormap != null) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, errormap.get("localizedMessage").toString());
+        }
         final String directurl = entries.get("@content.downloadUrl").toString();
         link.setProperty(PROPERTY_DIRECTURL, directurl);
         return AvailableStatus.TRUE;
