@@ -16,6 +16,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 
 import jd.PluginWrapper;
@@ -67,7 +68,7 @@ public class AnimeUltimeNetCrawler extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/file\\-0\\-1/((\\d+)(/([^/#]+))?)");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/file\\-0\\-1/(\\d+)(/[\\w\\-]+)?");
         }
         return ret.toArray(new String[0]);
     }
@@ -80,10 +81,22 @@ public class AnimeUltimeNetCrawler extends PluginForDecrypt {
         }
         final String folderID = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(1);
         final String title = br.getRegex("<title>(.*?)</title>").getMatch(0);
-        final String[] urls = br.getRegex("(info\\-0\\-1/((\\d+)(/([^/]+))?))").getColumn(0);
+        final String[] urls = br.getRegex("(info\\-0\\-1/\\d+/[\\w\\-]+)").getColumn(0);
+        final HashSet<String> dupes = new HashSet<String>();
+        final boolean enableFastLinkcheck = true;
         for (String url : urls) {
+            if (!dupes.add(url)) {
+                continue;
+            }
             url = "/" + url;
-            ret.add(createDownloadlink(br.getURL(url).toExternalForm()));
+            url = br.getURL(url).toExternalForm();
+            final String urlSlug = url.substring(url.lastIndexOf("/") + 1);
+            final DownloadLink file = createDownloadlink(url);
+            file.setName(urlSlug.replace("-", " ").trim() + ".mp4");
+            if (enableFastLinkcheck) {
+                file.setAvailable(true);
+            }
+            ret.add(file);
         }
         final FilePackage fp = FilePackage.getInstance();
         if (title != null) {

@@ -21,6 +21,7 @@ import java.util.List;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
@@ -108,5 +109,14 @@ public class FilelandIo extends XFileSharingProBasic {
     @Override
     protected boolean supports_availablecheck_filesize_html() {
         return false;
+    }
+
+    @Override
+    public boolean isPremiumOnly(final Browser br) {
+        if (br.containsHTML("You're attempting to download a|which is available for direct purchases or if you have enough funds on your account balance")) {
+            return true;
+        } else {
+            return super.isPremiumOnly(br);
+        }
     }
 }

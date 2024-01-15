@@ -27,28 +27,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
-import jd.PluginWrapper;
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
-import jd.controlling.downloadcontroller.DiskSpaceReservation;
-import jd.http.Browser;
-import jd.plugins.Account;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
-import jd.plugins.PluginProgress;
-import jd.plugins.download.HashInfo;
-import jd.utils.locale.JDL;
-
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.shutdown.ShutdownVetoException;
 import org.appwork.shutdown.ShutdownVetoListener;
 import org.appwork.storage.JSonMapperException;
-import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
@@ -73,6 +56,22 @@ import org.jdownloader.plugins.PluginTaskID;
 import org.jdownloader.plugins.components.firefile.FirefileCipherOutputStream;
 import org.jdownloader.plugins.components.firefile.FirefileLink;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
+
+import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
+import jd.controlling.downloadcontroller.DiskSpaceReservation;
+import jd.http.Browser;
+import jd.plugins.Account;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
+import jd.plugins.PluginProgress;
+import jd.plugins.download.HashInfo;
+import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "firefile.cc" }, urls = { "https?://firefile\\.cc/drive/s/[a-zA-Z0-9]+![a-zA-Z0-9]+" })
 public class FirefileCc extends PluginForHost {
@@ -449,10 +448,14 @@ public class FirefileCc extends PluginForHost {
         api.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         api.getPage("https://firefile.cc/secure/uploads/downloadChunk?hashes=" + entryInfo.get("hash") + "&shareable_link=" + linkInfo.get("id"));
         try {
-            final Map<String, Object> apiResponse = restoreFromString(api.toString(), TypeRef.MAP);
+            final Map<String, Object> apiResponse = restoreFromString(api.getRequest().getHtmlCode(), TypeRef.MAP);
             return (String) apiResponse.get("url");
-        } catch (JSonMapperException e) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, null, e);
+        } catch (final JSonMapperException e) {
+            if (api.getHttpConnection().getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Error 403: Unsupported password protected file or unknown error", e);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, null, e);
+            }
         }
     }
 
@@ -464,7 +467,7 @@ public class FirefileCc extends PluginForHost {
         api.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         api.getPage("https://firefile.cc/secure/drive/shareable-links/" + linkData.getHash() + "?&withEntries=true");
         try {
-            final Map<String, Object> apiResponse = restoreFromString(api.toString(), TypeRef.MAP);
+            final Map<String, Object> apiResponse = restoreFromString(api.getRequest().getHtmlCode(), TypeRef.MAP);
             return apiResponse;
         } catch (JSonMapperException e) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, null, e);

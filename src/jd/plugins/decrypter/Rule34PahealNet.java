@@ -20,6 +20,7 @@ import java.util.HashSet;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -37,46 +38,69 @@ public class Rule34PahealNet extends PluginForDecrypt {
         super(wrapper);
     }
 
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.setFollowRedirects(true);
+        return br;
+    }
+
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String contenturl = param.getCryptedUrl();
-        br.setFollowRedirects(true);
         br.getPage(contenturl);
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">\\s*No Images Found\\s*<")) {
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML(">\\s*No Images Found\\s*<")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(new Regex(contenturl, "/post/list/(.*?)/\\d+").getMatch(0));
         final HashSet<String> loop = new HashSet<String>();
+        final HashSet<String> dupes = new HashSet<String>();
         String next = null;
-        final HashSet<String> dups = new HashSet<String>();
         do {
-            if (next != null) {
-                sleep(1000, param);
-                br.getPage(next);
-            }
             String[] links = br.getRegex("<br><a href=('|\")(https?://.*?)\\1>").getColumn(1);
             if (links == null || links.length == 0) {
                 links = br.getRegex("('|\")(https?://[^/]+\\.paheal\\.net/_images/[a-z0-9]+/.*?)\\1").getColumn(1);
+                if (links == null || links.length == 0) {
+                    links = br.getRegex("('|\")(https?://rule34-[a-zA-Z0-9\\-]*?\\.paheal\\.net/_images/[a-z0-9]+/.*?)\\1").getColumn(1);
+                    if (links == null || links.length == 0) {
+                        /* 2023-01-15 */
+                        links = br.getRegex("(https://\\w+\\.paheal-cdn\\.net/[a-f0-9]{2}/[a-f0-9]{2}/[a-f0-9]{32})").getColumn(0);
+                    }
+                }
             }
             if (links == null || links.length == 0) {
-                links = br.getRegex("('|\")(https?://rule34-[a-zA-Z0-9\\-]*?\\.paheal\\.net/_images/[a-z0-9]+/.*?)\\1").getColumn(1);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            if (links == null || links.length == 0) {
-                logger.warning("Decrypter broken for link: " + contenturl);
-                return null;
-            }
+            int numberofNewItems = 0;
             for (final String singlelink : links) {
-                if (dups.add(singlelink)) {
+                if (dupes.add(singlelink)) {
                     final DownloadLink dl = createDownloadlink(DirectHTTP.createURLForThisPlugin(singlelink));
                     dl.setAvailable(true);
                     fp.add(dl);
                     ret.add(dl);
                     distribute(dl);
+                    numberofNewItems++;
                 }
             }
-            next = br.getRegex("\"(/post/[^<>\"]*?)\">Next</a>").getMatch(0);
-        } while (!this.isAbort() && next != null && loop.add(next));
+            next = br.getRegex("\"(/post/[^<>\"]*?)\">\\s*Next\\s*</a>").getMatch(0);
+            if (numberofNewItems == 0) {
+                logger.info("Stopping because: Failed to find any new items");
+                break;
+            } else if (next == null) {
+                logger.info("Stopping because: Failed to find next page URL");
+                break;
+            } else if (!loop.add(next)) {
+                logger.info("Stopping because: The page we were about to crawl as next page has already been crawled -> Reached end?");
+                break;
+            } else {
+                /* Continue to next page */
+                sleep(1000, param);
+                br.getPage(next);
+            }
+        } while (!this.isAbort());
         return ret;
     }
 
@@ -88,5 +112,11 @@ public class Rule34PahealNet extends PluginForDecrypt {
     @Override
     public SiteTemplate siteTemplateType() {
         return SiteTemplate.Danbooru;
+    }
+
+    @Override
+    public int getMaxConcurrentProcessingInstances() {
+        /* 2023-01-15 */
+        return 2;
     }
 }

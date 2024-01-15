@@ -23,6 +23,7 @@ import java.util.Map;
 
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.Time;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.parser.UrlQuery;
@@ -97,9 +98,11 @@ public class RosefileNet extends PluginForHost {
     }
 
     /* Connection stuff */
-    private static final int FREE_MAXDOWNLOADS            = 1;
-    private static final int ACCOUNT_FREE_MAXDOWNLOADS    = 1;
-    private static final int ACCOUNT_PREMIUM_MAXDOWNLOADS = Integer.MAX_VALUE;
+    private static final int FREE_MAXDOWNLOADS                = 1;
+    private static final int ACCOUNT_FREE_MAXDOWNLOADS        = 1;
+    private static final int ACCOUNT_PREMIUM_MAXDOWNLOADS     = Integer.MAX_VALUE;
+    private final String     PROPERTY_RECAPTCHA_KEY           = "recaptcha_key";
+    private final String     PROPERTY_RECAPTCHA_KEY_TIMESTAMP = "recaptcha_key_timestamp";
 
     @Override
     public String getLinkID(final DownloadLink link) {
@@ -115,6 +118,10 @@ public class RosefileNet extends PluginForHost {
         return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
+    private String getContentURL(final DownloadLink link) {
+        return link.getPluginPatternMatcher().replaceFirst("(?i)/d/", "/");
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         if (!link.isNameSet()) {
@@ -123,7 +130,7 @@ public class RosefileNet extends PluginForHost {
         }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(link.getPluginPatternMatcher());
+        br.getPage(getContentURL(link));
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML("(?i)404 File does not exist")) {
@@ -172,7 +179,7 @@ public class RosefileNet extends PluginForHost {
             if (account != null) {
                 this.login(account, false);
                 /* Extra check! */
-                br.getPage(link.getPluginPatternMatcher());
+                br.getPage(getContentURL(link));
                 if (!this.isLoggedin(br)) {
                     throw new AccountUnavailableException("Session expired?", 30 * 1000l);
                 }
@@ -191,6 +198,8 @@ public class RosefileNet extends PluginForHost {
             }
             final Browser ajax = br.cloneBrowser();
             ajax.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            ajax.getHeaders().put("Accept", "text/plain, */*; q=0.01");
+            ajax.getHeaders().put("Origin", "https://" + br.getHost());
             final boolean looksLikePremiumADownloadWithoutWait = br.containsHTML("load_down");
             if (account != null && looksLikePremiumADownloadWithoutWait) {
                 final UrlQuery query = new UrlQuery();
@@ -199,21 +208,54 @@ public class RosefileNet extends PluginForHost {
                 ajax.postPage("/ajax.php", query);
             } else {
                 /** 2021-04-12: Waittime and captcha (required for anonymous downloads in browser) is skippable! */
+                // final Browser br3 = ajax.cloneBrowser();
+                // br3.postPage("/ajax.php", "action=add_ref&file_id=" + internalFileID + "&ref=&screen=1920*1080");
                 ajax.getPage("/ajax.php?action=load_time&ctime=" + System.currentTimeMillis());
                 final Map<String, Object> entries = restoreFromString(ajax.getRequest().getHtmlCode(), TypeRef.MAP);
                 final int waitSeconds = ((Number) entries.get("waittime_s")).intValue();
                 if (waitSeconds > 300) {
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waitSeconds * 1000l);
                 }
-                this.sleep(waitSeconds * 1001l, link);
+                final long waitMillis = waitSeconds * 1000;
+                final boolean allowSolveCaptchaDuringWait = true;
+                final String cachedSitekey = this.getPluginConfig().getStringProperty(PROPERTY_RECAPTCHA_KEY);
+                final long timestampSitekeyStored = this.getPluginConfig().getLongProperty(PROPERTY_RECAPTCHA_KEY_TIMESTAMP, 0);
+                String reCaptchav2Response = null;
+                if (allowSolveCaptchaDuringWait && cachedSitekey != null && System.currentTimeMillis() - timestampSitekeyStored < 48 * 60 * 60 * 1000) {
+                    /* 2023-01-15: Trick to save time */
+                    final long timestampBefore = Time.systemIndependentCurrentJVMTimeMillis();
+                    final CaptchaHelperHostPluginRecaptchaV2 rc2 = new CaptchaHelperHostPluginRecaptchaV2(this, br, cachedSitekey);
+                    reCaptchav2Response = rc2.getToken();
+                    final long millisecondsPassedDuringCaptcha = Time.systemIndependentCurrentJVMTimeMillis() - timestampBefore;
+                    final long millisecondsLeftToWait = waitMillis - millisecondsPassedDuringCaptcha;
+                    logger.info("Seconds left to wait after captcha: " + millisecondsLeftToWait / 1000);
+                    this.sleep(millisecondsLeftToWait, link);
+                } else {
+                    sleep(waitMillis + 1000, link);
+                }
                 br.getPage("/d/" + this.getFID(link) + "/" + Encoding.urlEncode(link.getName()) + ".html");
+                final String fileURLSlashD = br.getURL();
+                final String recaptchaActionKey;
+                if (br.containsHTML("=check_recaptcha")) {
+                    recaptchaActionKey = "check_recaptcha";
+                } else {
+                    recaptchaActionKey = "check_captcha"; // 2024-01-15: Default
+                }
                 final UrlQuery query = new UrlQuery();
                 query.add("file_id", internalFileID);
-                if (AbstractRecaptchaV2.containsRecaptchaV2Class(br)) {
+                if (reCaptchav2Response != null || AbstractRecaptchaV2.containsRecaptchaV2Class(br)) {
                     /* New 2023-11-15 */
-                    query.add("action", "check_recaptcha");
-                    final String reCaptchav2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                    query.add("action", recaptchaActionKey);
+                    if (reCaptchav2Response == null) {
+                        /* Solve captcha if it hasn't been solved before */
+                        final CaptchaHelperHostPluginRecaptchaV2 rc2 = new CaptchaHelperHostPluginRecaptchaV2(this, br);
+                        final String siteKey = rc2.getSiteKey();
+                        reCaptchav2Response = rc2.getToken();
+                        /* No exception -> Save reCaptcha key for later usage */
+                        this.getPluginConfig().setProperty(PROPERTY_RECAPTCHA_KEY, siteKey);
+                    }
                     query.add("token", Encoding.urlEncode(reCaptchav2Response));
+                    query.add("type", "recaptcha");
                 } else if (AbstractHCaptcha.containsHCaptcha(br)) {
                     query.add("action", "check_hcaptcha");
                     final CaptchaHelperHostPluginHCaptcha hCaptcha = new CaptchaHelperHostPluginHCaptcha(this, br);
@@ -225,10 +267,14 @@ public class RosefileNet extends PluginForHost {
                     final String code = getCaptchaCode("/imagecode.php?t=" + System.currentTimeMillis(), link);
                     query.add("code", Encoding.urlEncode(code));
                 }
+                ajax.getHeaders().put("Referer", fileURLSlashD);
                 ajax.postPage("/ajax.php", query);
                 if (ajax.getRequest().getHtmlCode().equalsIgnoreCase("false")) {
                     /* This should never happen! */
                     throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                }
+                if (reCaptchav2Response != null) {
+                    this.getPluginConfig().setProperty(PROPERTY_RECAPTCHA_KEY_TIMESTAMP, System.currentTimeMillis());
                 }
             }
             String dllink = ajax.getRegex("true\\|<a href=\"([^<>\"]+)").getMatch(0);
