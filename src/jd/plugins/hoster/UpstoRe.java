@@ -15,7 +15,6 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -199,8 +198,11 @@ public class UpstoRe extends antiDDoSForHost {
         final String directurlproperty = "freelink";
         final boolean resume = false;
         final int maxchunks = 1;
-        if (this.attemptStoredDownloadurlDownload(link, directurlproperty, resume, maxchunks)) {
-            logger.info("Re-using stored directurl");
+        final String storedDirecturl = link.getStringProperty(directurlproperty);
+        String dllink = null;
+        if (storedDirecturl != null) {
+            logger.info("Trying to re-use stored directurl: " + storedDirecturl);
+            dllink = storedDirecturl;
         } else {
             requestFileInformation(link);
             handleErrorsHTML(this.br);
@@ -282,7 +284,7 @@ public class UpstoRe extends antiDDoSForHost {
                 setDownloadStarted(link, 0);
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 3 * 60 * 60 * 1000l);
             }
-            String dllink = br.getRegex("<div style=\"margin: 10px auto 20px\" class=\"center\">\\s*<a href=\"(https?://[^<>\"]*?)\"").getMatch(0);
+            dllink = br.getRegex("<div style=\"margin: 10px auto 20px\" class=\"center\">\\s*<a href=\"(https?://[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) {
                 dllink = br.getRegex("\"(https?://d\\d+\\.[^/]+/l/[^<>\"]*?)\"").getMatch(0);
             }
@@ -306,6 +308,9 @@ public class UpstoRe extends antiDDoSForHost {
                 handleErrorsJson();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+        }
+        dllink = correctProtocolInFinalDownloadurl(dllink);
+        try {
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxchunks);
             /*
              * The download attempt already triggers reconnect waittime! Save timestamp here to calculate correct remaining waittime later!
@@ -318,8 +323,15 @@ public class UpstoRe extends antiDDoSForHost {
                 handleServerErrors(this.br);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            link.setProperty(directurlproperty, dllink);
+        } catch (final Exception e) {
+            if (storedDirecturl != null) {
+                link.removeProperty(directurlproperty);
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Stored directurl expired", e);
+            } else {
+                throw e;
+            }
         }
+        link.setProperty(directurlproperty, dl.getConnection().getURL().toExternalForm());
         try {
             /* Add a download slot */
             controlMaxFreeDownloads(null, link, +1);
@@ -338,37 +350,6 @@ public class UpstoRe extends antiDDoSForHost {
                 final int after = before + num;
                 freeRunning.set(after);
                 logger.info("freeRunning(" + link.getName() + ")|max:" + getMaxSimultanFreeDownloadNum() + "|before:" + before + "|after:" + after + "|num:" + num);
-            }
-        }
-    }
-
-    private boolean attemptStoredDownloadurlDownload(final DownloadLink link, final String directurlproperty, final boolean resume, final int maxchunks) throws Exception {
-        final String url = link.getStringProperty(directurlproperty);
-        if (StringUtils.isEmpty(url)) {
-            return false;
-        }
-        boolean valid = false;
-        try {
-            final Browser brc = br.cloneBrowser();
-            dl = new jd.plugins.BrowserAdapter().openDownload(brc, link, url, resume, maxchunks);
-            if (this.looksLikeDownloadableContent(dl.getConnection())) {
-                valid = true;
-                return true;
-            } else {
-                link.removeProperty(directurlproperty);
-                brc.followConnection(true);
-                throw new IOException();
-            }
-        } catch (final Throwable e) {
-            logger.log(e);
-            return false;
-        } finally {
-            if (!valid) {
-                try {
-                    dl.getConnection().disconnect();
-                } catch (Throwable ignore) {
-                }
-                this.dl = null;
             }
         }
     }
@@ -627,6 +608,7 @@ public class UpstoRe extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dllink = Encoding.htmlDecode(dllink).replace("\\", "");
+        dllink = correctProtocolInFinalDownloadurl(dllink);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             logger.warning("The final dllink seems not to be a file!");
@@ -636,6 +618,11 @@ public class UpstoRe extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
+    }
+
+    private String correctProtocolInFinalDownloadurl(final String url) {
+        /* 2024-01-16: Temp workaround, see https://board.jdownloader.org/showthread.php?t=95034 */
+        return url.replaceFirst("(?i)^https://", "http://");
     }
 
     @Override
