@@ -60,6 +60,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.download.HashInfo;
 import jd.plugins.hoster.ArchiveOrg;
 
@@ -861,7 +862,12 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
     }
 
     private String getBookReaderURL(final Browser br) {
-        return br.getRegex("(?i)(?:\\'|\")([^\\'\"]+BookReaderJSIA\\.php\\?[^\\'\"]+)").getMatch(0);
+        String url = br.getRegex("(?i)(?:\\'|\")([^\\'\"]+BookReaderJSIA\\.php\\?[^\\'\"]+)").getMatch(0);
+        if (url != null) {
+            url = PluginJSonUtils.unescape(url);
+            return url;
+        }
+        return null;
     }
 
     private static HashMap<String, AtomicInteger> LOCKS = new HashMap<String, AtomicInteger>();
