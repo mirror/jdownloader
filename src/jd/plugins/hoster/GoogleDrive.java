@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
@@ -504,40 +505,68 @@ public class GoogleDrive extends PluginForHost {
             return;
         }
         String docDownloadURL = null;
-        String fileExtension = Plugin.getFileNameExtensionFromString(filename);
-        if (fileExtension != null && exportFormatDownloadurls != null) {
-            fileExtension = fileExtension.toLowerCase(Locale.ENGLISH).replace(".", "");
+        String preGivenFileExtensionLowercase = Plugin.getFileNameExtensionFromString(filename);
+        String finalFileExtension = null;
+        if (exportFormatDownloadurls != null) {
+            if (preGivenFileExtensionLowercase != null) {
+                preGivenFileExtensionLowercase = preGivenFileExtensionLowercase.toLowerCase(Locale.ENGLISH).replace(".", "");
+            }
+            final Map<String, String> extToDownloadlinkMap = new HashMap<String, String>();
             final Iterator<Entry<String, Object>> iterator = exportFormatDownloadurls.entrySet().iterator();
             while (iterator.hasNext()) {
                 final String docDownloadURLCandidate = (String) iterator.next().getValue();
-                if (docDownloadURLCandidate.toLowerCase(Locale.ENGLISH).contains("exportformat=" + fileExtension)) {
-                    docDownloadURL = docDownloadURLCandidate;
-                    break;
+                try {
+                    final String extFromDownloadurlCandidate = UrlQuery.parse(docDownloadURLCandidate).get("exportFormat");
+                    if (extFromDownloadurlCandidate != null) {
+                        extToDownloadlinkMap.put(extFromDownloadurlCandidate.toLowerCase(Locale.ENGLISH), docDownloadURLCandidate);
+                    }
+                } catch (final MalformedURLException e) {
+                    e.printStackTrace();
                 }
             }
+            if (preGivenFileExtensionLowercase != null && extToDownloadlinkMap.containsKey(preGivenFileExtensionLowercase)) {
+                docDownloadURL = extToDownloadlinkMap.get(preGivenFileExtensionLowercase);
+                finalFileExtension = preGivenFileExtensionLowercase;
+            }
+            if (docDownloadURL == null) {
+                /* Fallback */
+                final String[] fileExtFallbackPriorityList = new String[] { "pdf", "zip", "txt" };
+                for (final String fileExtFallback : fileExtFallbackPriorityList) {
+                    docDownloadURL = extToDownloadlinkMap.get(fileExtFallback);
+                    if (docDownloadURL != null) {
+                        finalFileExtension = fileExtFallback;
+                        break;
+                    }
+                }
+            }
+            /* If docDownloadURL is still null here this means that this is a Google Document with a file-type we do not know. */
         }
         if (!StringUtils.isEmpty(docDownloadURL)) {
             /* We found an export format suiting our filename-extension --> Prefer that */
             link.setProperty(PROPERTY_FORCED_FINAL_DOWNLOADURL, docDownloadURL);
             link.setFinalFileName(filename);
-        } else if (googleDriveDocumentType.equalsIgnoreCase("document")) {
-            /* Download in OpenDocument format. */
-            link.setFinalFileName(plg.applyFilenameExtension(filename, ".odt"));
-            if (exportFormatDownloadurls != null && exportFormatDownloadurls.containsKey("application/vnd.oasis.opendocument.text")) {
-                link.setProperty(PROPERTY_FORCED_FINAL_DOWNLOADURL, exportFormatDownloadurls.get("application/vnd.oasis.opendocument.text"));
-            }
-        } else if (googleDriveDocumentType.equalsIgnoreCase("spreadsheet")) {
-            /* Download in OpenDocument format. */
-            link.setFinalFileName(plg.applyFilenameExtension(filename, ".ods"));
-            if (exportFormatDownloadurls != null && exportFormatDownloadurls.containsKey("application/x-vnd.oasis.opendocument.spreadsheet")) {
-                link.setProperty(PROPERTY_FORCED_FINAL_DOWNLOADURL, exportFormatDownloadurls.get("application/x-vnd.oasis.opendocument.spreadsheet"));
-            }
+            link.setFinalFileName(plg.applyFilenameExtension(filename, "." + finalFileExtension));
         } else {
-            /* Unknown document type: Fallback - try to download document as .zip archive. */
-            if (exportFormatDownloadurls != null && exportFormatDownloadurls.containsKey("application/zip")) {
-                link.setProperty(PROPERTY_FORCED_FINAL_DOWNLOADURL, exportFormatDownloadurls.get("application/zip"));
+            /* Legacy fallback */
+            if (googleDriveDocumentType.equalsIgnoreCase("document")) {
+                /* Download in OpenDocument format. */
+                link.setFinalFileName(plg.applyFilenameExtension(filename, ".odt"));
+                if (exportFormatDownloadurls != null && exportFormatDownloadurls.containsKey("application/vnd.oasis.opendocument.text")) {
+                    link.setProperty(PROPERTY_FORCED_FINAL_DOWNLOADURL, exportFormatDownloadurls.get("application/vnd.oasis.opendocument.text"));
+                }
+            } else if (googleDriveDocumentType.equalsIgnoreCase("spreadsheet")) {
+                /* Download in OpenDocument format. */
+                link.setFinalFileName(plg.applyFilenameExtension(filename, ".ods"));
+                if (exportFormatDownloadurls != null && exportFormatDownloadurls.containsKey("application/x-vnd.oasis.opendocument.spreadsheet")) {
+                    link.setProperty(PROPERTY_FORCED_FINAL_DOWNLOADURL, exportFormatDownloadurls.get("application/x-vnd.oasis.opendocument.spreadsheet"));
+                }
+            } else {
+                /* Unknown document type: Fallback - try to download document as .zip archive. */
+                if (exportFormatDownloadurls != null && exportFormatDownloadurls.containsKey("application/zip")) {
+                    link.setProperty(PROPERTY_FORCED_FINAL_DOWNLOADURL, exportFormatDownloadurls.get("application/zip"));
+                }
+                link.setFinalFileName(filename + ".zip");
             }
-            link.setFinalFileName(filename + ".zip");
         }
         link.setProperty(PROPERTY_CACHED_FILENAME, link.getFinalFileName());
     }
@@ -1215,7 +1244,7 @@ public class GoogleDrive extends PluginForHost {
         final int maxchunks = 0;
         if (useAPIForLinkcheck()) {
             /* Always use API for linkchecking if possible, even if in the end, website is used for downloading! */
-            this.requestFileInformationAPI(link, true);
+            requestFileInformationAPI(link, true);
         }
         /* Account is not always used even if it is available. */
         boolean usedAccount = false;
@@ -1265,7 +1294,7 @@ public class GoogleDrive extends PluginForHost {
             } else {
                 logger.info("Downloading original file");
             }
-            this.dl = new jd.plugins.BrowserAdapter().openDownload(br, link, directurl, resume, maxchunks);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, directurl, resume, maxchunks);
         } else {
             /* Website download */
             logger.info("Download in website mode");
@@ -1417,7 +1446,7 @@ public class GoogleDrive extends PluginForHost {
 
     private PluginException getErrorFailedToFindFinalDownloadurl(final DownloadLink link) {
         if (this.isGoogleDocument(link)) {
-            return this.getErrorFailedToFindFinalDownloadurl(link);
+            return new PluginException(LinkStatus.ERROR_FATAL, "This google document is not downloadable(?)");
         } else {
             return new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

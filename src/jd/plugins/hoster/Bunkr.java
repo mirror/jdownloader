@@ -298,38 +298,42 @@ public class Bunkr extends PluginForHost {
             }
             try {
                 handleConnectionErrors(link, br, con);
-            } catch (final PluginException e) {
+            } catch (final PluginException firstException) {
                 /* E.g. redirect from cdn8.bunkr.ru/... to bukrr.su/v/... resulting in new final URL media-files8.bunkr.ru/... */
-                if (e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
+                if (firstException.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
                     /* Dead end */
-                    throw e;
+                    throw firstException;
                 } else if (new Regex(br.getURL(), BunkrAlbum.PATTERN_SINGLE_FILE).patternFind()) {
                     /* Unknown URL format -> We most likely won't be able to refresh directurl from this format. */
                     logger.info("Directurl redirected to URL with unknown format -> We most likely won't be able to refresh directurl from this format. URL: " + br.getURL());
-                    throw e;
+                    throw firstException;
                 } else {
-                    final String singleFileURL = br.getURL();
                     try {
-                        con.disconnect();
-                    } catch (final Throwable ignore) {
+                        final String singleFileURL = br.getURL();
+                        try {
+                            con.disconnect();
+                        } catch (final Throwable ignore) {
+                        }
+                        if (br.getHttpConnection().getResponseCode() == 416) {
+                            /* E.g. resume of download which does not work at this stage -> Access URL to get HTML code. */
+                            br.getPage(singleFileURL);
+                        }
+                        final String freshDirecturl = getDirecturlFromSingleFileAvailablecheck(link, br.getURL(), false);
+                        /* Avoid trying again with the same directurl if we already know the result. */
+                        if (StringUtils.equals(freshDirecturl, lastCachedDirecturl) && exceptionFromDirecturlCheck != null) {
+                            throw exceptionFromDirecturlCheck;
+                        }
+                        br.getHeaders().put("Referer", singleFileURL); // Important!
+                        if (isDownload) {
+                            dl = jd.plugins.BrowserAdapter.openDownload(br, link, freshDirecturl, isResumeable(link, null), this.getMaxChunks(null));
+                            con = dl.getConnection();
+                        } else {
+                            con = br.openGetConnection(freshDirecturl);
+                        }
+                        handleConnectionErrors(link, br, con);
+                    } catch (final Exception secondaryException) {
+                        throw firstException;
                     }
-                    if (br.getHttpConnection().getResponseCode() == 416) {
-                        /* E.g. resume of download which does not work at this stage -> Access URL to get HTML code. */
-                        br.getPage(singleFileURL);
-                    }
-                    final String freshDirecturl = getDirecturlFromSingleFileAvailablecheck(link, br.getURL(), false);
-                    /* Avoid trying again with the same directurl if we already know the result. */
-                    if (StringUtils.equals(freshDirecturl, lastCachedDirecturl) && exceptionFromDirecturlCheck != null) {
-                        throw exceptionFromDirecturlCheck;
-                    }
-                    br.getHeaders().put("Referer", singleFileURL); // Important!
-                    if (isDownload) {
-                        dl = jd.plugins.BrowserAdapter.openDownload(br, link, freshDirecturl, isResumeable(link, null), this.getMaxChunks(null));
-                        con = dl.getConnection();
-                    } else {
-                        con = br.openGetConnection(freshDirecturl);
-                    }
-                    handleConnectionErrors(link, br, con);
                 }
             }
             if (con.getCompleteContentLength() > 0) {
@@ -528,7 +532,7 @@ public class Bunkr extends PluginForHost {
             con.disconnect();
             /* https://bnkr.b-cdn.net/maintenance-vid.mp4 */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Media temporarily not available due to ongoing server maintenance.", 2 * 60 * 60 * 1000l);
-        } else if (parsedExpectedFilesize > 0 && con.getCompleteContentLength() > 0 && con.getCompleteContentLength() < (parsedExpectedFilesize * 0.75)) {
+        } else if (parsedExpectedFilesize > 0 && con.getCompleteContentLength() > 0 && con.getCompleteContentLength() < (parsedExpectedFilesize * 0.5)) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File is too small: File under maintenance?", 1 * 60 * 60 * 1000l);
         }
     }

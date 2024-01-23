@@ -22,6 +22,13 @@ import java.util.concurrent.TimeUnit;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -42,13 +49,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "uploadgig.com" }, urls = { "https?://(?:www\\.)?uploadgig\\.com/file/download/([A-Za-z0-9]+)(/[A-Za-z0-9%\\.\\-_]+)?" })
 public class UploadgigCom extends antiDDoSForHost {
     @Override
@@ -57,6 +57,13 @@ public class UploadgigCom extends antiDDoSForHost {
             return 2000;
         }
         return super.getStartIntervall(downloadLink, account);
+    }
+
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.setFollowRedirects(true);
+        return br;
     }
 
     @Override
@@ -101,27 +108,38 @@ public class UploadgigCom extends antiDDoSForHost {
             // non account
             chunks = 1;
             resumes = false;
-            acctype = "Non Account";
             directlinkproperty = "freelink";
         } else if (AccountType.FREE.equals(account.getType())) {
             // free account
             chunks = 1;
             resumes = false;
-            acctype = "Free Account";
             directlinkproperty = "freelink2";
         } else if (AccountType.PREMIUM.equals(account.getType())) {
             // prem account
             chunks = 0; // 2021-10-20
             resumes = true;
-            acctype = "Premium Account";
             directlinkproperty = "premium_directlink";
+        }
+    }
+
+    @Override
+    public boolean isResumeable(final DownloadLink link, final Account account) {
+        final AccountType type = account != null ? account.getType() : null;
+        if (AccountType.FREE.equals(type)) {
+            /* Free Account */
+            return false;
+        } else if (AccountType.PREMIUM.equals(type)) {
+            /* Premium account */
+            return true;
+        } else {
+            /* Free(anonymous) and unknown account type */
+            return false;
         }
     }
 
     private boolean resumes            = false;
     private int     chunks             = 1;
     private String  directlinkproperty = null;
-    private String  acctype            = null;
 
     private Browser prepBR(final Browser br) {
         /* 2020-06-15: Use old website (?) */
@@ -130,18 +148,22 @@ public class UploadgigCom extends antiDDoSForHost {
         return br;
     }
 
+    private String getContentURL(final DownloadLink link) {
+        return link.getPluginPatternMatcher().replaceFirst("(?i)^http://", "https://");
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         correctDownloadLink(link);
         this.setBrowserExclusive();
         prepBR(br);
-        final String url_filename = new Regex(link.getPluginPatternMatcher(), "([^/]+)$").getMatch(0);
+        final String contenturl = getContentURL(link);
+        final String url_filename = new Regex(contenturl, "([^/]+)$").getMatch(0);
         if (!link.isNameSet() && url_filename != null) {
             /* Set temp name */
             link.setName(url_filename);
         }
-        br.setFollowRedirects(true);
-        getPage(link.getDownloadURL());
+        getPage(contenturl);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -157,11 +179,10 @@ public class UploadgigCom extends antiDDoSForHost {
         } else {
             link.setName(Encoding.htmlDecode(filename.trim()));
         }
-        final String filesize = br.getRegex("class=\"filesize\">\\[([^<>\"]+)\\]<").getMatch(0);
+        final String filesize = br.getRegex("class=\"filesize\">\\[([^<]+)\\]<").getMatch(0);
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
-        br.setFollowRedirects(false);
         return AvailableStatus.TRUE;
     }
 
@@ -183,12 +204,12 @@ public class UploadgigCom extends antiDDoSForHost {
         if (directurl == null) {
             if (account != null) {
                 // login method might have validated cookies
-                getPage(link.getPluginPatternMatcher());
+                getPage(getContentURL(link));
             }
             /* 2020-07-10: See http://uploadgig.com/static/tpl2/js/f45862367.js?v=0.0.2 */
             // premium only content
             if (br.containsHTML(">\\s*This file can be downloaded by Premium Member only")) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
+                throw new AccountRequiredException();
             }
             String csrf_tester = br.getCookie(this.getHost(), "firewall");
             if (csrf_tester == null) {
@@ -245,11 +266,10 @@ public class UploadgigCom extends antiDDoSForHost {
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-        } else {
-            link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
-            dl.setFilenameFix(true);
-            dl.startDownload();
         }
+        link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
+        dl.setFilenameFix(true);
+        dl.startDownload();
     }
 
     protected long calc(Browser br) throws Exception {
@@ -271,7 +291,6 @@ public class UploadgigCom extends antiDDoSForHost {
     private boolean testLink(final Browser br, final DownloadLink downloadLink, final String dllink, boolean throwException) throws Exception {
         try {
             final Browser brc = br.cloneBrowser();
-            brc.setFollowRedirects(true);
             dl = new jd.plugins.BrowserAdapter().openDownload(brc, downloadLink, dllink, resumes, chunks);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 brc.followConnection(true);
@@ -303,7 +322,6 @@ public class UploadgigCom extends antiDDoSForHost {
             URLConnectionAdapter con = null;
             try {
                 final Browser brc = br.cloneBrowser();
-                brc.setFollowRedirects(true);
                 con = brc.openHeadConnection(dllink);
                 if (this.looksLikeDownloadableContent(con)) {
                     if (con.getCompleteContentLength() > 0) {
@@ -391,7 +409,6 @@ public class UploadgigCom extends antiDDoSForHost {
             final boolean ifr = br.isFollowingRedirects();
             try {
                 br.setCookiesExclusive(true);
-                br.setFollowRedirects(true);
                 prepBR(br);
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
@@ -452,11 +469,6 @@ public class UploadgigCom extends antiDDoSForHost {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
                 account.saveCookies(br.getCookies(this.getHost()), "");
-            } catch (final PluginException e) {
-                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
-                    account.clearCookies("");
-                }
-                throw e;
             } finally {
                 br.setFollowRedirects(ifr);
             }
@@ -542,10 +554,11 @@ public class UploadgigCom extends antiDDoSForHost {
             }
             if (directurl == null) {
                 // can be redirect
-                getPage(link.getPluginPatternMatcher());
+                final String contenturl = getContentURL(link);
+                getPage(contenturl);
                 directurl = br.getRedirectLocation();
                 if (directurl == null) {
-                    directurl = link.getPluginPatternMatcher();
+                    directurl = contenturl;
                 }
                 testLink(br, link, directurl, false);
             }

@@ -20,6 +20,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.Regex;
@@ -32,11 +36,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.decrypter.PhotobucketComAlbum;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 @PluginDependencies(dependencies = { PhotobucketComAlbum.class })
@@ -51,7 +50,7 @@ public class PhotobucketCom extends PluginForHost {
     }
 
     private static List<String[]> getPluginDomains() {
-        return jd.plugins.decrypter.PhotobucketComAlbum.getPluginDomains();
+        return PhotobucketComAlbum.getPluginDomains();
     }
 
     public static String[] getAnnotationNames() {
@@ -105,7 +104,7 @@ public class PhotobucketCom extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
+        final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         PhotobucketComAlbum.handleErrors(entries);
         final Map<String, Object> image = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "data/getPublicImage");
         parseFileInfo(link, image);
@@ -178,6 +177,8 @@ public class PhotobucketCom extends PluginForHost {
         }
         try {
             final Browser brc = br.cloneBrowser();
+            /* 2024-01-23: Important else the images may get watermarked lol */
+            brc.getHeaders().put("Referer", url);
             dl = new jd.plugins.BrowserAdapter().openDownload(brc, link, url, FREE_RESUME, FREE_MAXCHUNKS);
             if (this.looksLikeDownloadableContent(dl.getConnection())) {
                 return true;

@@ -120,8 +120,8 @@ public class EroScriptsCom extends antiDDoSForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink parameter) throws Exception {
-        if (parameter.getBooleanProperty("has_file_info")) {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        if (link.getBooleanProperty("has_file_info")) {
             return AvailableStatus.TRUE;
         }
         final Account account = AccountController.getInstance().getValidAccount(this);
@@ -132,30 +132,31 @@ public class EroScriptsCom extends antiDDoSForHost {
         login(br, account, false);
         final Browser testBr = br.cloneBrowser();
         testBr.setFollowRedirects(true);
-        final URLConnectionAdapter con = openAntiDDoSRequestConnection(testBr, testBr.createGetRequest(parameter.getDownloadURL()));
+        final URLConnectionAdapter con = openAntiDDoSRequestConnection(testBr, testBr.createGetRequest(link.getPluginPatternMatcher()));
         try {
             if (!looksLikeDownloadableContent(con)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else {
                 if (con.getCompleteContentLength() > 0) {
-                    parameter.setVerifiedFileSize(con.getCompleteContentLength());
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
                 }
                 final DispositionHeader dispositionHeader = Plugin.parseDispositionHeader(con);
                 if (dispositionHeader != null) {
-                    parameter.setFinalFileName(dispositionHeader.getFilename());
+                    link.setFinalFileName(dispositionHeader.getFilename());
                 }
             }
         } finally {
             con.disconnect();
         }
-        parameter.setPluginPatternMatcher(testBr.getURL());
+        link.setPluginPatternMatcher(testBr.getURL());
         return AvailableStatus.TRUE;
     }
 
     @Override
-    public void handleFree(DownloadLink link) throws Exception {
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
         // no account required?
-        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, link.getDownloadURL());
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, link.getPluginPatternMatcher());
         if (!looksLikeDownloadableContent(dl.getConnection())) {
             br.followConnection(true);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -166,6 +167,11 @@ public class EroScriptsCom extends antiDDoSForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         handleFree(link);
+    }
+
+    @Override
+    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
+        return false;
     }
 
     @Override

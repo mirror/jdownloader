@@ -159,7 +159,7 @@ public class FileCryptCc extends PluginForDecrypt {
                  * Creators can set custom logos on each folder. Each logo has a unique ID. This way we can try specific passwords first
                  * that are typically associated with folders published by those sources.
                  */
-                if ("53d1b".equals(customLogoID) || "80d13".equals(customLogoID) || "fde1d".equals(customLogoID) || "8abe0".equals(customLogoID)) {
+                if ("53d1b".equals(customLogoID) || "80d13".equals(customLogoID) || "fde1d".equals(customLogoID) || "8abe0".equals(customLogoID) || "8f073".equals(customLogoID)) {
                     logoPW = "serienfans.org";
                 } else if ("975e4".equals(customLogoID)) {
                     logoPW = "filmfans.org";
@@ -356,9 +356,9 @@ public class FileCryptCc extends PluginForDecrypt {
                         }
                         captchaForm.put("cap_token", cutcaptcha);
                     } else {
-                        logger.info("Trying to avoid cutcaptcha");
+                        logger.info("Trying to avoid cutcaptcha | cutCaptchaRetryIndex = " + cutCaptchaRetryIndex);
                         /* Clear cookies to increase the chances of getting a different captcha type than cutcaptcha. */
-                        br.clearAll();
+                        br.clearCookies(null);
                         sleep(1000, param);
                         /*
                          * Continue from the beginning. If a password was required, we already know the correct password and won't have to
