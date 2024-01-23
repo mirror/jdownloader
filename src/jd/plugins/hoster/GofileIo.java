@@ -344,7 +344,16 @@ public class GofileIo extends PluginForHost {
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-        } /* Add a download slot */
+        }
+        dl.setFilenameFix(true); // This doesn't work, thus the code below. See: https://svn.jdownloader.org/issues/90330
+        String filenameFromHeader = Plugin.getFileNameFromDispositionHeader(dl.getConnection());
+        if (filenameFromHeader != null) {
+            if (filenameFromHeader.contains("%")) {
+                filenameFromHeader = Encoding.htmlDecode(filenameFromHeader);
+            }
+            link.setFinalFileName(filenameFromHeader);
+        }
+        /* Add a download slot */
         controlMaxFreeDownloads(null, link, +1);
         try {
             /* Start download */

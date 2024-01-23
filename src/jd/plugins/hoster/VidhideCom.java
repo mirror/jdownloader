@@ -21,6 +21,7 @@ import java.util.List;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
@@ -43,7 +44,7 @@ public class VidhideCom extends XFileSharingProBasic {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "vidhide.com" });
+        ret.add(new String[] { "vidhide.com", "vidhidepro.com", "moflix-stream.click" });
         return ret;
     }
 
@@ -57,7 +58,19 @@ public class VidhideCom extends XFileSharingProBasic {
     }
 
     public static String[] getAnnotationUrls() {
-        return XFileSharingProBasic.buildAnnotationUrls(getPluginDomains());
+        return VidhideCom.buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static final String getDefaultAnnotationPatternPartVidhideCom() {
+        return "/(?:d/[A-Za-z0-9]+|(?:embed-|e/|f/)?[a-z0-9]{12}(?:/[^/]+(?:\\.html)?)?)";
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "(?::\\d+)?" + VidhideCom.getDefaultAnnotationPatternPartVidhideCom());
+        }
+        return ret.toArray(new String[0]);
     }
 
     @Override
@@ -103,5 +116,32 @@ public class VidhideCom extends XFileSharingProBasic {
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
+    }
+
+    @Override
+    protected boolean supportsShortURLs() {
+        return false;
+    }
+
+    private final String PATTERN_SPECIAL = "(?i)^https?://[^/]+/f/([a-z0-9]{12}).*";
+
+    @Override
+    protected URL_TYPE getURLType(final String url) {
+        if (url != null && url.matches(PATTERN_SPECIAL)) {
+            return URL_TYPE.OFFICIAL_VIDEO_DOWNLOAD;
+        } else {
+            return super.getURLType(url);
+        }
+    }
+
+    @Override
+    public String getFUIDFromURL(final DownloadLink link) {
+        if (link != null && link.getPluginPatternMatcher() != null) {
+            final Regex special = new Regex(link.getPluginPatternMatcher(), PATTERN_SPECIAL);
+            if (special.patternFind()) {
+                return special.getMatch(0);
+            }
+        }
+        return super.getFUIDFromURL(link);
     }
 }

@@ -16,6 +16,7 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
@@ -23,7 +24,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.plugins.components.config.FreeDiscPlConfig;
@@ -39,12 +39,13 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
 import jd.plugins.hoster.FreeDiscPl;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "freedisc.pl" }, urls = { "https?://(?:(?:www|m)\\.)?freedisc\\.pl/([A-Za-z0-9_\\-]+),d-(\\d+)(,([\\w\\-]+))?" })
@@ -55,6 +56,13 @@ public class FreeDiscPlFolder extends PluginForDecrypt {
             Browser.setBurstRequestIntervalLimitGlobal("freedisc.pl", 1000, 20, 60000);
         } catch (final Throwable ignore) {
         }
+    }
+
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.setFollowRedirects(true);
+        return br;
     }
 
     // private static final String TYPE_FOLDER = "https?://(www\\.)?freedisc\\.pl/[A-Za-z0-9\\-_]+,d-\\d+";
@@ -82,64 +90,79 @@ public class FreeDiscPlFolder extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final Account account = AccountController.getInstance().getValidAccount(this.getHost());
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final Regex dir = new Regex(param.getCryptedUrl(), this.getSupportedLinks());
-        final String user = dir.getMatch(0);
-        final String folderID = dir.getMatch(1);
+        final Regex folderRegex = new Regex(param.getCryptedUrl(), this.getSupportedLinks());
+        final String user = folderRegex.getMatch(0);
+        final String folderID = folderRegex.getMatch(1);
         // final String folderSlug = dir.getMatch(3);
-        br.setFollowRedirects(true);
         prepBR(this.br, account);
         /* Login whenever possible. The only benefit we got from this in this crawler is that we should not get any antiBot captchas. */
         if (account != null) {
-            final PluginForHost plg = this.getNewPluginForHostInstance(this.getHost());
-            ((FreeDiscPl) plg).login(account, false);
+            final FreeDiscPl plg = (FreeDiscPl) this.getNewPluginForHostInstance(this.getHost());
+            plg.login(account, false);
         }
         FreeDiscPl.prepBRAjax(this.br);
         /* First let's find the absolute path to the folder we want. If we fail to do so we can assume that it is offline. */
         getPage("https://" + this.getHost() + "/directory/directory_data/get_tree/" + user, param, account);
-        final Map<String, Object> responseFolderTree = restoreFromString(br.toString(), TypeRef.MAP);
-        final Map<String, Map<String, Object>> folderTree = (Map<String, Map<String, Object>>) JavaScriptEngineFactory.walkJson(responseFolderTree, "response/data");
-        final Map<String, Object> folderInfo = findFolderMap(folderTree, folderID);
+        final Map<String, Object> responseFolderTree = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+        final Map<String, Map<String, Object>> folderTreeData = (Map<String, Map<String, Object>>) JavaScriptEngineFactory.walkJson(responseFolderTree, "response/data");
+        final Map<String, Object> subfolderMap = folderTreeData.get(folderID); // Contains all subfolder items
+        final Map<String, Object> folderInfo = findFolderMap(folderTreeData, folderID);
         if (folderInfo == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String folderPath = findFolderPath(folderTree, folderID);
+        final String folderPath = findFolderPath(folderTreeData, folderID);
         final String dir_count = folderInfo.get("dir_count").toString();
         final String file_count = folderInfo.get("file_count").toString();
         if (dir_count.equals("0") && file_count.equals("0")) {
-            /* Folder is empty --> Return dummy item */
-            final DownloadLink dummy = this.createOfflinelink(param.getCryptedUrl(), "EMPTY_FOLDER_" + folderPath, "This folder is empty");
-            ret.add(dummy);
-            return ret;
+            /* Folder is empty */
+            throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER);
         }
         getPage("https://" + this.getHost() + "/directory/directory_data/get/" + user + "/" + folderID, param, account);
         final boolean crawlSubfolders = PluginJsonConfig.get(FreeDiscPlConfig.class).isCrawlSubfolders();
-        final Map<String, Object> responseFolder = restoreFromString(br.toString(), TypeRef.MAP);
-        final Map<String, Map<String, Object>> data = (Map<String, Map<String, Object>>) JavaScriptEngineFactory.walkJson(responseFolder, "response/data/data");
-        for (final Map<String, Object> resource : data.values()) {
-            final String type = resource.get("type").toString();
-            final boolean isFolder = type.equalsIgnoreCase("d");
-            if (isFolder && !crawlSubfolders) {
-                continue;
-            }
-            final String id = resource.get("id").toString();
-            final String title = resource.get("name").toString();
-            final String name_url = resource.get("name_url").toString();
-            final String filesize = resource.get("size_format").toString();
-            final DownloadLink dl = this.createDownloadlink("https://" + this.getHost() + "/" + user + "," + type + "-" + id + "," + name_url);
-            if (!isFolder) {
-                /* Try to fix extension in filename as their filenames would usually end like "-<ext>". */
-                final String realExtension = FreeDiscPl.getExtensionFromNameInFileURL(name_url);
-                if (realExtension != null && !title.toLowerCase(Locale.ENGLISH).endsWith(realExtension.toLowerCase(Locale.ENGLISH))) {
-                    dl.setName(title + realExtension);
+        final Map<String, Object> responseFolder = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+        final Map<String, Object> filesMap = (Map<String, Object>) JavaScriptEngineFactory.walkJson(responseFolder, "response/data/data"); // Contains
+                                                                                                                                           // all
+                                                                                                                                           // file
+                                                                                                                                           // items
+        int numberofSubfolders = 0;
+        int numberofFiles = 0;
+        final List<Map<String, Object>> filesAndSubfolders = new ArrayList<Map<String, Object>>();
+        filesAndSubfolders.add(subfolderMap);
+        filesAndSubfolders.add(filesMap);
+        for (final Map<String, Object> map : filesAndSubfolders) {
+            for (final Object resourceO : map.values()) {
+                final Map<String, Object> resource = (Map<String, Object>) resourceO;
+                final String type = resource.get("type").toString();
+                final boolean isFolder = type.equalsIgnoreCase("d");
+                if (isFolder) {
+                    numberofSubfolders++;
                 } else {
-                    dl.setName(title);
+                    numberofFiles++;
                 }
-                dl.setDownloadSize(SizeFormatter.getSize(filesize));
-                dl.setAvailable(true);
+                if (isFolder && !crawlSubfolders) {
+                    continue;
+                }
+                final String id = resource.get("id").toString();
+                final String title = resource.get("name").toString();
+                final String name_url = resource.get("name_url").toString();
+                final DownloadLink dl = this.createDownloadlink("https://" + this.getHost() + "/" + user + "," + type + "-" + id + "," + name_url);
+                if (!isFolder) {
+                    /* Try to fix extension in filename as their filenames would usually end like "-<ext>". */
+                    final String realExtension = FreeDiscPl.getExtensionFromNameInFileURL(name_url);
+                    if (realExtension != null && !title.toLowerCase(Locale.ENGLISH).endsWith(realExtension.toLowerCase(Locale.ENGLISH))) {
+                        dl.setName(title + realExtension);
+                    } else {
+                        dl.setName(title);
+                    }
+                    final String filesizeStr = resource.get("size_format").toString();
+                    dl.setDownloadSize(SizeFormatter.getSize(filesizeStr));
+                    dl.setAvailable(true);
+                }
+                dl.setRelativeDownloadFolderPath(folderPath);
+                ret.add(dl);
             }
-            dl.setRelativeDownloadFolderPath(folderPath);
-            ret.add(dl);
         }
+        logger.info("Number of files: " + numberofFiles + " | Subfolders: " + numberofSubfolders + " | crawlSubfolders = " + crawlSubfolders);
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(folderPath);
         fp.addLinks(ret);
@@ -227,7 +250,7 @@ public class FreeDiscPlFolder extends PluginForDecrypt {
         }
     }
 
-    /* NO OVERRIDE!! */
+    @Override
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }

@@ -22,6 +22,12 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
 
+import org.appwork.utils.DebugMode;
+import org.jdownloader.plugins.components.config.MydaddyCcConfig;
+import org.jdownloader.plugins.components.config.MydaddyCcConfig.PreferredStreamQuality;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -33,12 +39,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.DebugMode;
-import org.jdownloader.plugins.components.config.MydaddyCcConfig;
-import org.jdownloader.plugins.components.config.MydaddyCcConfig.PreferredStreamQuality;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class MydaddyCc extends PluginForHost {
@@ -130,13 +130,26 @@ public class MydaddyCc extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404 || this.br.toString().length() < 500) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        br.getRequest().setHtmlCode(PluginJSonUtils.unescape(br.toString()));
+        br.getRequest().setHtmlCode(PluginJSonUtils.unescape(br.getRequest().getHtmlCode()));
+        /* 2023-01-23: Cat mouse games have started */
+        final Regex catMouseVars = br.getRegex("\"nrpuv\"\\,([a-z0-9]+)\\+\"pubs/\"\\+([a-z0-9]+)");
+        String serverReal = null;
+        String internalVideoidReal = null;
+        if (catMouseVars.patternFind()) {
+            serverReal = br.getRegex(catMouseVars.getMatch(0) + "=\"(//[^\"]+)\"").getMatch(0);
+            internalVideoidReal = br.getRegex(catMouseVars.getMatch(1) + "=\"([^\"]+)\"").getMatch(0);
+        }
         final HashMap<Integer, String> qualityMap = new HashMap<Integer, String>();
         final String[] sources = br.getRegex("<source src.*?/>").getColumn(-1);
         int qualityMax = -1;
         for (final String source : sources) {
             final Regex finfo = new Regex(source, "src=\"([^\"]*?(\\d+)\\.mp4)");
-            final String url = finfo.getMatch(0);
+            String url = finfo.getMatch(0);
+            /* 2023-01-23: New: Fix URL */
+            if (serverReal != null && internalVideoidReal != null) {
+                final String newStr = serverReal + "pubs/" + internalVideoidReal + "/";
+                url = url.replace("nrpuv", newStr);
+            }
             final String qualityStr = finfo.getMatch(1);
             if (qualityStr == null || url == null) {
                 continue;

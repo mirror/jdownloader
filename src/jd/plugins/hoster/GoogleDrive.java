@@ -529,13 +529,25 @@ public class GoogleDrive extends PluginForHost {
                 finalFileExtension = preGivenFileExtensionLowercase;
             }
             if (docDownloadURL == null) {
-                /* Fallback */
-                final String[] fileExtFallbackPriorityList = new String[] { "pdf", "zip", "txt" };
-                for (final String fileExtFallback : fileExtFallbackPriorityList) {
-                    docDownloadURL = extToDownloadlinkMap.get(fileExtFallback);
-                    if (docDownloadURL != null) {
-                        finalFileExtension = fileExtFallback;
-                        break;
+                /* Fallback 1 */
+                final Map<String, String> documentTypeToPreferredExtMap = new HashMap<String, String>();
+                documentTypeToPreferredExtMap.put("document", "odt");
+                documentTypeToPreferredExtMap.put("presentation", "pdf");
+                documentTypeToPreferredExtMap.put("spreadsheet", "ods");
+                final String preferredExtByDocumentType = documentTypeToPreferredExtMap.get(googleDriveDocumentType);
+                if (preferredExtByDocumentType != null && extToDownloadlinkMap.containsKey(preferredExtByDocumentType)) {
+                    docDownloadURL = extToDownloadlinkMap.get(preferredExtByDocumentType);
+                    finalFileExtension = preferredExtByDocumentType;
+                }
+                if (docDownloadURL == null) {
+                    /* Fallback 2 */
+                    final String[] fileExtFallbackPriorityList = new String[] { "pdf", "zip", "odt", "ods", "txt" };
+                    for (final String fileExtFallback : fileExtFallbackPriorityList) {
+                        docDownloadURL = extToDownloadlinkMap.get(fileExtFallback);
+                        if (docDownloadURL != null) {
+                            finalFileExtension = fileExtFallback;
+                            break;
+                        }
                     }
                 }
             }
@@ -546,27 +558,6 @@ public class GoogleDrive extends PluginForHost {
             link.setProperty(PROPERTY_FORCED_FINAL_DOWNLOADURL, docDownloadURL);
             link.setFinalFileName(filename);
             link.setFinalFileName(plg.applyFilenameExtension(filename, "." + finalFileExtension));
-        } else {
-            /* Legacy fallback */
-            if (googleDriveDocumentType.equalsIgnoreCase("document")) {
-                /* Download in OpenDocument format. */
-                link.setFinalFileName(plg.applyFilenameExtension(filename, ".odt"));
-                if (exportFormatDownloadurls != null && exportFormatDownloadurls.containsKey("application/vnd.oasis.opendocument.text")) {
-                    link.setProperty(PROPERTY_FORCED_FINAL_DOWNLOADURL, exportFormatDownloadurls.get("application/vnd.oasis.opendocument.text"));
-                }
-            } else if (googleDriveDocumentType.equalsIgnoreCase("spreadsheet")) {
-                /* Download in OpenDocument format. */
-                link.setFinalFileName(plg.applyFilenameExtension(filename, ".ods"));
-                if (exportFormatDownloadurls != null && exportFormatDownloadurls.containsKey("application/x-vnd.oasis.opendocument.spreadsheet")) {
-                    link.setProperty(PROPERTY_FORCED_FINAL_DOWNLOADURL, exportFormatDownloadurls.get("application/x-vnd.oasis.opendocument.spreadsheet"));
-                }
-            } else {
-                /* Unknown document type: Fallback - try to download document as .zip archive. */
-                if (exportFormatDownloadurls != null && exportFormatDownloadurls.containsKey("application/zip")) {
-                    link.setProperty(PROPERTY_FORCED_FINAL_DOWNLOADURL, exportFormatDownloadurls.get("application/zip"));
-                }
-                link.setFinalFileName(filename + ".zip");
-            }
         }
         link.setProperty(PROPERTY_CACHED_FILENAME, link.getFinalFileName());
     }

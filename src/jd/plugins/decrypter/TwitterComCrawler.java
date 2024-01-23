@@ -1595,6 +1595,8 @@ public class TwitterComCrawler extends PluginForDecrypt {
                 throw new DecrypterRetryException(RetryReason.HOST_RATE_LIMIT);
             } else if (br.getHttpConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Invalid API response");
             }
         }
         final Object errorsO = entries.get("errors");

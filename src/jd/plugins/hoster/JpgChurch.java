@@ -85,7 +85,7 @@ public class JpgChurch extends PluginForHost {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/img/([^/\\?#]+)");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/img/([A-Za-z0-9\\-\\.]+)");
         }
         return ret.toArray(new String[0]);
     }
