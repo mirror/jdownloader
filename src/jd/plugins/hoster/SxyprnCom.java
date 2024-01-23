@@ -1,7 +1,8 @@
 package jd.plugins.hoster;
 
-import java.io.IOException;
+import java.util.Map;
 
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.antiDDoSForHost;
@@ -15,6 +16,7 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.parser.html.Form.MethodType;
+import jd.parser.html.HTMLSearch;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -31,6 +33,13 @@ public class SxyprnCom extends antiDDoSForHost {
     public SxyprnCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://sxyprn.com/community/0.html");
+    }
+
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.setFollowRedirects(true);
+        return br;
     }
 
     @Override
@@ -57,15 +66,14 @@ public class SxyprnCom extends antiDDoSForHost {
         return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
-    private String  json         = null;
-    private String  dllink       = null;
-    private boolean server_issue = false;
+    // private String json = null;
+    private String dllink = null;
 
     // private String authorid = null;
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         final Account account = AccountController.getInstance().getValidAccount(this.getHost());
-        return requestFileInformation(link, account);
+        return requestFileInformation(link, account, false);
     }
 
     public static String cleanupTitle(Plugin plugin, Browser br, final String title) {
@@ -80,47 +88,53 @@ public class SxyprnCom extends antiDDoSForHost {
         return ret;
     }
 
-    public AvailableStatus requestFileInformation(final DownloadLink link, final Account account) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
         final String fid = this.getFID(link);
+        final String videoExtDefault = ".mp4";
         if (!link.isNameSet()) {
-            link.setName(fid);
+            link.setName(fid + videoExtDefault);
         }
-        json = null;
         dllink = null;
-        br.setFollowRedirects(true);
         if (account != null) {
-            this.login(this.br, account, false);
+            this.login(br, account, false);
         }
         getPage(link.getPluginPatternMatcher());
         /** 2019-07-08: yourporn.sexy now redirects to youporn.com but sxyprn.com still exists. */
         if (isOffline(br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String title = br.getRegex("name\" content=\"(.*?)\"").getMatch(0);
-        if (link.getFinalFileName() == null && title != null) {
+        String title = regexTitle(br);
+        if (title != null) {
             title = cleanupTitle(this, br, title);
-            link.setFinalFileName(title + ".mp4");
+            link.setFinalFileName(title + videoExtDefault);
         }
         // authorid = br.getRegex("data-authorid='([^']+)'").getMatch(0);
-        json = br.getRegex("data-vnfo=\\'([^\\']+)\\'").getMatch(0);
-        String vnfo = PluginJSonUtils.getJsonValue(json, fid);
+        final String json = br.getRegex("data-vnfo=\\'([^\\']+)\\'").getMatch(0);
+        if (json == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else if (json.length() <= 10) {
+            /* Rare case: E.g. empty json object '[]' */
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error: No video source available");
+        }
+        final Map<String, Object> entries = restoreFromString(json, TypeRef.MAP);
+        String vnfo = (String) entries.get(fid);
         if (vnfo == null && json != null) {
             final String ids[] = new Regex(json, "\"([a-z0-9]*?)\"").getColumn(0);
             for (final String id : ids) {
                 vnfo = PluginJSonUtils.getJsonValue(json, id);
-                dllink = getDllink(link, vnfo);
+                dllink = getDllink(link, vnfo, isDownload);
                 if (dllink != null) {
                     break;
                 }
             }
         } else {
-            dllink = getDllink(link, vnfo);
+            dllink = getDllink(link, vnfo, isDownload);
         }
         return AvailableStatus.TRUE;
     }
 
     public static final String regexTitle(final Browser br) {
-        return br.getRegex("name\" content=\"(.*?)\"").getMatch(0);
+        return HTMLSearch.searchMetaTag(br, "og:title");
     }
 
     public static final boolean isOffline(final Browser br) {
@@ -144,7 +158,7 @@ public class SxyprnCom extends antiDDoSForHost {
         return ret;
     }
 
-    private String getDllink(final DownloadLink link, final String vnfo) throws Exception {
+    private String getDllink(final DownloadLink link, final String vnfo, final boolean isDownload) throws Exception {
         final String tmp[] = vnfo.split("/");
         if (StringUtils.containsIgnoreCase(br.getHost(), "sxyprn.net")) {
             tmp[1] += "5";
@@ -153,52 +167,44 @@ public class SxyprnCom extends antiDDoSForHost {
         }
         tmp[5] = String.valueOf((Long.parseLong(tmp[5]) - (ssut51(tmp[6]) + ssut51(tmp[7]))));
         final String url = "/" + StringUtils.join(tmp, "/");
-        Browser brc = br.cloneBrowser();
-        brc.setFollowRedirects(false);
-        getPage(brc, url);
-        final String redirect = brc.getRedirectLocation();
-        if (redirect != null && link.getVerifiedFileSize() == -1) {
-            brc = br.cloneBrowser();
-            final URLConnectionAdapter con = openAntiDDoSRequestConnection(brc, brc.createHeadRequest(redirect));
+        if (isDownload) {
+            /* Do not validate */
+            return url;
+        } else {
+            final Browser brc = br.cloneBrowser();
+            brc.setFollowRedirects(true);
+            // final String redirect = brc.getRedirectLocation();
+            final URLConnectionAdapter con = openAntiDDoSRequestConnection(brc, brc.createHeadRequest(url));
             try {
-                if (con.isOK() && StringUtils.containsIgnoreCase(con.getContentType(), "video")) {
+                if (this.looksLikeDownloadableContent(con)) {
                     link.setVerifiedFileSize(con.getCompleteContentLength());
-                    return redirect;
+                    final String ext = Plugin.getExtensionFromMimeTypeStatic(con.getContentType());
+                    final String filenameSoFar = link.getName();
+                    if (ext != null && filenameSoFar != null) {
+                        link.setFinalFileName(this.correctOrApplyFileNameExtension(filenameSoFar, "." + ext));
+                    }
+                    return con.getURL().toExternalForm();
                 }
             } finally {
                 con.disconnect();
             }
-        }
-        if (redirect == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        } else {
-            return redirect;
+            return null;
         }
     }
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
-        requestFileInformation(link, null);
         handleDownload(link, null);
     }
 
     private void handleDownload(final DownloadLink link, final Account account) throws Exception {
-        if (dllink == null) {
-            if (json != null && json.length() <= 10) {
-                /* Rare case: E.g. empty json object '[]' */
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error: No video source available");
-            } else if (server_issue) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error: All video sources are broken");
-            }
+        requestFileInformation(link, account, true);
+        if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
         if (!looksLikeDownloadableContent(dl.getConnection())) {
-            try {
-                br.followConnection();
-            } catch (final IOException e) {
-                logger.log(e);
-            }
+            br.followConnection(true);
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
@@ -223,7 +229,6 @@ public class SxyprnCom extends antiDDoSForHost {
     public void login(final Browser brlogin, final Account account, final boolean validateCookies) throws Exception {
         synchronized (account) {
             try {
-                br.setFollowRedirects(true);
                 br.setCookiesExclusive(true);
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
@@ -236,7 +241,7 @@ public class SxyprnCom extends antiDDoSForHost {
                     getPage(brlogin, "https://" + this.getHost() + "/");
                     if (this.isLoggedin(brlogin)) {
                         logger.info("Cookie login successful");
-                        account.saveCookies(this.br.getCookies(this.getHost()), "");
+                        account.saveCookies(br.getCookies(this.getHost()), "");
                         return;
                     } else {
                         logger.info("Cookie login failed");
@@ -255,7 +260,7 @@ public class SxyprnCom extends antiDDoSForHost {
                 if (!isLoggedin(brlogin)) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-                account.saveCookies(this.br.getCookies(this.getHost()), "");
+                account.saveCookies(br.getCookies(this.getHost()), "");
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
                     account.clearCookies("");
@@ -284,7 +289,6 @@ public class SxyprnCom extends antiDDoSForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        requestFileInformation(link, account);
         handleDownload(link, null);
     }
 

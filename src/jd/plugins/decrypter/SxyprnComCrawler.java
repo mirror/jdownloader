@@ -2,11 +2,19 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.HTMLParser;
+import jd.parser.html.HTMLSearch;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -17,17 +25,17 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.hoster.SxyprnCom;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yourporn.sexy", "sxyprn.com" }, urls = { "https?://(?:www\\.)?yourporn\\.sexy/.+", "https?://(?:www\\.)?sxyprn\\.(?:com|net)/.+" })
 public class SxyprnComCrawler extends antiDDoSForDecrypt {
     public SxyprnComCrawler(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.setFollowRedirects(true);
+        return br;
     }
 
     @Override
@@ -43,32 +51,35 @@ public class SxyprnComCrawler extends antiDDoSForDecrypt {
         if (account != null) {
             ((jd.plugins.hoster.SxyprnCom) plg).login(this.br, account, false);
         }
-        br.setFollowRedirects(true);
         getPage(param.getCryptedUrl());
         if (SxyprnCom.isOffline(br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (plg.canHandle(param.getCryptedUrl())) {
             /* Single post */
-            final String packageName = SxyprnCom.cleanupTitle(this, br, SxyprnCom.regexTitle(br));
-            if (packageName != null) {
-                final FilePackage fp = FilePackage.getInstance();
-                fp.setName(packageName);
-                fp.addLinks(ret);
-            }
+            final String packageName = HTMLSearch.searchMetaTag(br, "og:title");
             final String postText = br.getRegex("<textarea([^>]*class='PostEditTA'.*?)</textarea>").getMatch(0);
             if (postText != null) {
                 ret.addAll(crawlURLsGeneric(postText));
             }
             /* This kind of URL also has a selfhosted video which will be handled by our host plugin */
             final DownloadLink main = this.createDownloadlink(param.getCryptedUrl());
+            final String videoExtDefault = ".mp4";
             if (packageName != null) {
-                main.setName(packageName + ".mp4");
+                main.setName(packageName + videoExtDefault);
             } else {
-                main.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
+                main.setName(br._getURL().getPath() + videoExtDefault);
             }
             main.setAvailable(true);
             ret.add(main);
+            final FilePackage fp = FilePackage.getInstance();
+            if (packageName != null) {
+                fp.setName(packageName);
+            } else {
+                /* Fallback */
+                fp.setName(br._getURL().getPath());
+            }
+            fp.addLinks(ret);
         } else if (br.getURL().matches("https?://[^/]+/blog/[a-fA-F0-9]{13}/\\d+\\.html")) {
             /* Crawl all [video-] posts within a blog | first page only */
             final String[] posts = br.getRegex("(<div class='post_el_small'>.*?</div></div>)").getColumn(0);

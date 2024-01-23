@@ -72,7 +72,12 @@ public class GelbooruComCrawler extends PluginForDecrypt {
                 contentIDs = br.getRegex("page=post&[^\"]*id=(\\d+)\\&tags=").getColumn(0);
             }
             if (contentIDs == null || contentIDs.length == 0) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (br.containsHTML(">\\s*Nobody here but us chickens|Check your blacklist")) {
+                    /* E.g. https://gelbooru.com/index.php?page=post&s=list&tags=tag_that_doesnt_exist */
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
             entries_per_page_current = contentIDs.length;
             for (final String contentID : contentIDs) {
