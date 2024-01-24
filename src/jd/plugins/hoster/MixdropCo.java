@@ -71,6 +71,17 @@ public class MixdropCo extends antiDDoSForHost {
     protected List<String> getDeadDomains() {
         final ArrayList<String> deadDomains = new ArrayList<String>();
         deadDomains.add("mixdrop.co");
+        deadDomains.add("md3b0j6hj.com");
+        deadDomains.add("mixdroop.bz");
+        deadDomains.add("mixdroop.co");
+        deadDomains.add("mixdrop.bz");
+        deadDomains.add("mixdrop.ch");
+        deadDomains.add("mixdrop.gl");
+        deadDomains.add("mixdrop.sx");
+        deadDomains.add("mixdrop.to");
+        deadDomains.add("mixdrop.vc");
+        deadDomains.add("mixdrp.co");
+        deadDomains.add("mixdrp.to");
         return deadDomains;
     }
 

@@ -84,6 +84,7 @@ public class SxyprnCom extends antiDDoSForHost {
         ret = ret.replaceAll("(https?://.*?)(\\s+|$)", "");// remove URLs
         ret = ret.replaceAll("(?s)(.+#\\w+)\\s*(.+)", "$1");// remove everything after tags
         ret = ret.replaceAll("(?s)(WATCH FULL VIDEO.+)", "");// remove WATCH FULL VIDEO section
+        ret = ret.replaceFirst("(?i)\\s*on SexyPorn$", "");// remove " on SexyPorn"
         ret = ret.trim();
         return ret;
     }

@@ -14,7 +14,6 @@ import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.HTMLParser;
-import jd.parser.html.HTMLSearch;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -57,7 +56,10 @@ public class SxyprnComCrawler extends antiDDoSForDecrypt {
         }
         if (plg.canHandle(param.getCryptedUrl())) {
             /* Single post */
-            final String packageName = HTMLSearch.searchMetaTag(br, "og:title");
+            String title = SxyprnCom.regexTitle(br);
+            if (title != null) {
+                title = SxyprnCom.cleanupTitle(this, br, title);
+            }
             final String postText = br.getRegex("<textarea([^>]*class='PostEditTA'.*?)</textarea>").getMatch(0);
             if (postText != null) {
                 ret.addAll(crawlURLsGeneric(postText));
@@ -65,16 +67,16 @@ public class SxyprnComCrawler extends antiDDoSForDecrypt {
             /* This kind of URL also has a selfhosted video which will be handled by our host plugin */
             final DownloadLink main = this.createDownloadlink(param.getCryptedUrl());
             final String videoExtDefault = ".mp4";
-            if (packageName != null) {
-                main.setName(packageName + videoExtDefault);
+            if (title != null) {
+                main.setName(title + videoExtDefault);
             } else {
                 main.setName(br._getURL().getPath() + videoExtDefault);
             }
             main.setAvailable(true);
             ret.add(main);
             final FilePackage fp = FilePackage.getInstance();
-            if (packageName != null) {
-                fp.setName(packageName);
+            if (title != null) {
+                fp.setName(title);
             } else {
                 /* Fallback */
                 fp.setName(br._getURL().getPath());

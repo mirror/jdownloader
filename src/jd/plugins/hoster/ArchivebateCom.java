@@ -23,6 +23,7 @@ import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -33,9 +34,16 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class HdsexOrg extends PluginForHost {
-    public HdsexOrg(PluginWrapper wrapper) {
+public class ArchivebateCom extends PluginForHost {
+    public ArchivebateCom(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.setFollowRedirects(true);
+        return br;
     }
 
     @Override
@@ -43,24 +51,11 @@ public class HdsexOrg extends PluginForHost {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
     }
 
-    /* Connection stuff */
-    private static final int free_maxdownloads = -1;
-
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
-        /**
-         * 2024-01-24: The two domains look to belong to the same owner/project but also they seem to host two different instances of the
-         * website here where e.g. not all videos of hdsex.org are available on hdsex2.com.
-         */
-        ret.add(new String[] { "hdsex.org" });
-        ret.add(new String[] { "hdsex2.com" });
+        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "archivebate.com" });
         return ret;
-    }
-
-    @Override
-    public String rewriteHost(final String host) {
-        /* 2023-12-21: Changed main domain from hdsex.org to hdsex2.com since they had major server issue when streaming via hdsex.org */
-        return this.rewriteHost(getPluginDomains(), host);
     }
 
     public static String[] getAnnotationNames() {
@@ -75,14 +70,14 @@ public class HdsexOrg extends PluginForHost {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:(?:www|[a-z]{2})\\.)?" + buildHostsPatternPart(domains) + "/(?:video|embed)/(\\d+)");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:embed|watch)/(\\d+)");
         }
         return ret.toArray(new String[0]);
     }
 
     @Override
     public String getAGBLink() {
-        return "https://hdsex.org/documents/terms-and-conditions";
+        return "https://archivebate.com/terms";
     }
 
     @Override
@@ -101,24 +96,22 @@ public class HdsexOrg extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        final String extDefault = ".mp4";
+        final String fid = this.getFID(link);
         if (!link.isNameSet()) {
-            link.setName(this.getFID(link) + ".mp4");
+            link.setName(fid + extDefault);
         }
         this.setBrowserExclusive();
-        br.setCookie(this.getHost(), "lang", "en");
-        br.setFollowRedirects(true);
-        br.getPage("https://" + this.getHost() + "/video/" + this.getFID(link));
+        br.getPage("https://" + getHost() + "/watch/" + fid);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String title = br.getRegex("video-title=\"([^\"]+)").getMatch(0);
-        if (StringUtils.isEmpty(title)) {
-            title = br.getRegex("<meta itemprop=\"name\" content=\"([^\"]+)\"").getMatch(0);
-        }
+        String title = br.getRegex("<title>([^<]+)</title>").getMatch(0);
         if (title != null) {
             title = Encoding.htmlDecode(title);
             title = title.trim();
-            link.setFinalFileName(title + ".mp4");
+            title = title.replaceFirst(", Archivebate$", "");
+            link.setFinalFileName(title + extDefault);
         }
         return AvailableStatus.TRUE;
     }
@@ -126,22 +119,19 @@ public class HdsexOrg extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
-        String hlsBest = br.getRegex("\"(https?://[^\"]*\\.m3u8[^\"]*)\"").getMatch(0);
-        if (StringUtils.isEmpty(hlsBest)) {
+        br.getPage("/embed/" + this.getFID(link));
+        final String hlsurl = br.getRegex("src=\"(https?://[^\"]+)\"[^>]*type=\"application/x-mpegURL\"").getMatch(0);
+        if (StringUtils.isEmpty(hlsurl)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        hlsBest = Encoding.htmlDecode(hlsBest);
-        br.getHeaders().put("Origin", "https://" + br.getHost());
-        br.getHeaders().put("Referer", "https://" + br.getHost() + "/");
-        br.getPage(hlsBest);
         checkFFmpeg(link, "Download a HLS Stream");
-        dl = new HLSDownloader(link, br, hlsBest);
+        dl = new HLSDownloader(link, br, hlsurl);
         dl.startDownload();
     }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return free_maxdownloads;
+        return Integer.MAX_VALUE;
     }
 
     @Override

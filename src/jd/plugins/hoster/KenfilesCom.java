@@ -17,7 +17,9 @@ package jd.plugins.hoster;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
+import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
@@ -26,6 +28,7 @@ import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
@@ -184,5 +187,20 @@ public class KenfilesCom extends XFileSharingProBasic {
             waitStr = new Regex(correctedBR, ">(\\d+)</span> seconds<").getMatch(0);
         }
         return waitStr;
+    }
+
+    @Override
+    protected Long fetchAccountInfoWebsiteExpireDate(Browser br, Account account, AccountInfo ai) throws Exception {
+        getPage("/?op=my_account");
+        final String[] datesStr = br.getRegex("(\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2})").getColumn(0);
+        if (datesStr != null && datesStr.length > 0) {
+            for (final String expiredateStr : datesStr) {
+                final long timestamp = TimeFormatter.getMilliSeconds(expiredateStr, "yyyy-MM-dd hh:mm:ss", Locale.ENGLISH);
+                if (timestamp > System.currentTimeMillis()) {
+                    return timestamp;
+                }
+            }
+        }
+        return super.fetchAccountInfoWebsiteExpireDate(br, account, ai);
     }
 }
