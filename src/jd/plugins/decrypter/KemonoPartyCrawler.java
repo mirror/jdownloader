@@ -87,13 +87,13 @@ public class KemonoPartyCrawler extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/[^/]+/user/[^/]+(/post/\\d+)?");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/[^/]+/user/([\\w\\-]+)(/post/\\d+)?");
         }
         return ret.toArray(new String[0]);
     }
 
-    private final String TYPE_PROFILE = "(?i)(?:https?://[^/]+)?/([^/]+)/user/([^/\\?]+)(\\?o=(\\d+))?$";
-    private final String TYPE_POST    = "(?i)(?:https?://[^/]+)?/([^/]+)/user/([^/]+)/post/(\\d+)$";
+    private final String TYPE_PROFILE = "(?i)(?:https?://[^/]+)?/([^/]+)/user/([\\w\\-]+)(\\?o=(\\d+))?$";
+    private final String TYPE_POST    = "(?i)(?:https?://[^/]+)?/([^/]+)/user/([\\w\\-]+)/post/(\\d+)$";
     private KemonoParty  hostPlugin   = null;
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
@@ -117,28 +117,28 @@ public class KemonoPartyCrawler extends PluginForDecrypt {
         final String userID = urlinfo.getMatch(1);
         final boolean useAPI = true;
         if (useAPI) {
-            HashSet<String> dupes = null;
-            final boolean useExtendedDupecheck = false;
-            // if(PluginJsonConfig.get(getConfigInterface()).isEnableProfileCrawlerExtendedDupeFiltering())
-            if (useExtendedDupecheck) {
-                dupes = new HashSet<String>();
-            }
-            return crawlProfileAPI(dupes, portal, userID);
+            return crawlProfileAPI(portal, userID);
         } else {
             return crawlProfileWebsite(param, portal, userID);
         }
     }
 
-    private ArrayList<DownloadLink> crawlProfileAPI(final HashSet<String> dupes, final String portal, final String userID) throws Exception {
+    private ArrayList<DownloadLink> crawlProfileAPI(final String portal, final String userID) throws Exception {
         if (portal == null || userID == null) {
             /* Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        final HashSet<String> dupes = new HashSet<String>();
+        final boolean useExtendedDupecheck = false;
+        // TODO: Make use of that setting
+        // if(PluginJsonConfig.get(getConfigInterface()).isEnableProfileCrawlerExtendedDupeFiltering())
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final FilePackage fp = getFilePackageForProfileCrawler(portal, userID);
         int offset = 0;
         int page = 1;
         final int maxItemsPerPage = 50;
+        int numberofContinuousPagesWithoutAnyNewItems = 0;
+        final int maxPagesWithoutNewItems = 15;
         do {
             br.getPage("https://" + this.getHost() + "/api/v1/" + portal + "/user/" + userID + "?o=" + offset);
             final List<HashMap<String, Object>> posts = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.LIST_HASHMAP);
@@ -151,8 +151,9 @@ public class KemonoPartyCrawler extends PluginForDecrypt {
                     break;
                 }
             }
+            final int numberofUniqueItemsOld = dupes.size();
             for (final HashMap<String, Object> post : posts) {
-                final ArrayList<DownloadLink> thisresults = this.crawlProcessPostAPI(dupes, post);
+                final ArrayList<DownloadLink> thisresults = this.crawlProcessPostAPI(dupes, useExtendedDupecheck, post);
                 for (final DownloadLink thisresult : thisresults) {
                     thisresult._setFilePackage(fp);
                     distribute(thisresult);
@@ -160,8 +161,18 @@ public class KemonoPartyCrawler extends PluginForDecrypt {
                 ret.addAll(thisresults);
             }
             logger.info("Crawled page " + page + " | Found items so far: " + ret.size() + " | Offset: " + offset);
+            final int numberofUniqueItemsNew = dupes.size();
+            final int numberofNewItems = numberofUniqueItemsNew - numberofUniqueItemsOld;
+            if (numberofNewItems == 0) {
+                numberofContinuousPagesWithoutAnyNewItems++;
+            } else {
+                numberofContinuousPagesWithoutAnyNewItems = 0;
+            }
             if (this.isAbort()) {
                 logger.info("Stopping because: Aborted by user");
+                break;
+            } else if (numberofContinuousPagesWithoutAnyNewItems >= maxPagesWithoutNewItems) {
+                logger.info("Stopping because: Too many pages without any new items: " + maxPagesWithoutNewItems);
                 break;
             } else if (posts.size() < maxItemsPerPage) {
                 logger.info("Stopping because: Reached last page(?) Page: " + page);
@@ -301,11 +312,11 @@ public class KemonoPartyCrawler extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
-        return crawlProcessPostAPI(null, entries);
+        return crawlProcessPostAPI(new HashSet<String>(), false, entries);
     }
 
     /** Processes a map of an API response containing information about a users' post. */
-    private ArrayList<DownloadLink> crawlProcessPostAPI(HashSet<String> dupes, final Map<String, Object> postmap) throws PluginException {
+    private ArrayList<DownloadLink> crawlProcessPostAPI(final HashSet<String> dupes, final boolean useExtendedDupecheck, final Map<String, Object> postmap) throws PluginException {
         final String portal = postmap.get("service").toString();
         final String userID = postmap.get("user").toString();
         final String postID = postmap.get("id").toString();
@@ -316,18 +327,17 @@ public class KemonoPartyCrawler extends PluginForDecrypt {
         int numberofResultsSimpleCount = 0;
         int index = 0;
         final Map<String, Object> filemap = (Map<String, Object>) postmap.get("file");
-        if (dupes == null) {
-            dupes = new HashSet<String>();
-        }
         if (!filemap.isEmpty()) {
-            final DownloadLink media = buildFileDownloadLinkAPI(dupes, filemap, index);
-            kemonoResults.add(media);
-            index++;
+            final DownloadLink media = buildFileDownloadLinkAPI(dupes, useExtendedDupecheck, filemap, index);
+            if (media != null) {
+                kemonoResults.add(media);
+                index++;
+            }
             numberofResultsSimpleCount++;
         }
         final List<Map<String, Object>> attachments = (List<Map<String, Object>>) postmap.get("attachments");
         for (final Map<String, Object> attachment : attachments) {
-            final DownloadLink media = buildFileDownloadLinkAPI(dupes, attachment, index);
+            final DownloadLink media = buildFileDownloadLinkAPI(dupes, useExtendedDupecheck, attachment, index);
             if (media != null) {
                 kemonoResults.add(media);
                 index++;
@@ -383,14 +393,14 @@ public class KemonoPartyCrawler extends PluginForDecrypt {
         return ret;
     }
 
-    private DownloadLink buildFileDownloadLinkAPI(final HashSet<String> dupes, final Map<String, Object> filemap, final int index) throws PluginException {
+    private DownloadLink buildFileDownloadLinkAPI(final HashSet<String> dupes, final boolean extendedDupeCheck, final Map<String, Object> filemap, final int index) throws PluginException {
         this.ensureInitHosterplugin();
         final String filename = filemap.get("name").toString();
         final String filepath = filemap.get("path").toString();
         final String url = "https://" + this.getHost() + "/data" + filepath + "?f=" + Encoding.urlEncode(filename);
         final String sha256hash = KemonoParty.getSha256HashFromURL(url);
         final String dupeCheckString;
-        if (sha256hash != null) {
+        if (extendedDupeCheck && sha256hash != null) {
             dupeCheckString = sha256hash;
         } else {
             dupeCheckString = filepath;
