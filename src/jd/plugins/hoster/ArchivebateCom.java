@@ -131,7 +131,8 @@ public class ArchivebateCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return Integer.MAX_VALUE;
+        /* 2025-01-25: Their CDN servers are very very slow. */
+        return 2;
     }
 
     @Override

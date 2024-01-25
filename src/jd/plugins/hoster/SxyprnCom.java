@@ -16,7 +16,6 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.parser.html.Form.MethodType;
-import jd.parser.html.HTMLSearch;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -135,7 +134,7 @@ public class SxyprnCom extends antiDDoSForHost {
     }
 
     public static final String regexTitle(final Browser br) {
-        return HTMLSearch.searchMetaTag(br, "og:title");
+        return br.getRegex("<meta property='og:title' content='(.*?)'/>").getMatch(0);
     }
 
     public static final boolean isOffline(final Browser br) {

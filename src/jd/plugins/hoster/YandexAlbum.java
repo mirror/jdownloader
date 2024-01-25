@@ -190,11 +190,11 @@ public class YandexAlbum extends PluginForHost {
             final String id0 = albumGetID0(link);
             final String clientID = albumGetIdClient();
             /* Rare case - probably the user tries to download a video. */
-            String sk = jd.plugins.hoster.DiskYandexNet.getSK(this.br);
+            String sk = DiskYandexNet.getSK(this.br);
             if (StringUtils.isEmpty(sk)) {
                 /** TODO: Maybe keep SK throughout sessions to save that one request ... */
                 logger.info("Getting new SK value ...");
-                sk = jd.plugins.hoster.DiskYandexNet.getNewSK(this.br, "disk.yandex.ru", br.getURL());
+                sk = getNewSK(this.br, "disk.yandex.ru", br.getURL());
             }
             if (StringUtils.isEmpty(sk) || id0 == null) {
                 logger.warning("Failed to get SK value");

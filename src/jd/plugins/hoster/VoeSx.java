@@ -226,7 +226,7 @@ public class VoeSx extends XFileSharingProBasic {
             /* Fallback. Do this again as now we got the html code available so we can e.g. know if this is a video-filehoster or not. */
             this.setWeakFilename(link, br);
         }
-        final String dllink = getDllinkVideohost(link, account, null, br.getRequest().getHtmlCode());
+        final String dllink = getDllinkVideohost(link, account, br, br.getRequest().getHtmlCode());
         if (StringUtils.isEmpty(dllink) && embedOnly) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "This video can be watched as embed only");
         }

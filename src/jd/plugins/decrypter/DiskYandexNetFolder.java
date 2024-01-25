@@ -499,7 +499,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
     }
 
     public static String getHashWithoutPath(final String hash) {
-        if (hash.matches(".+:/.+")) {
+        if (hash.matches(".+:/.?$")) {
             return hash.substring(0, hash.indexOf(":/"));
         } else {
             return hash;
@@ -546,7 +546,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
     }
 
     private void parseFilePropertiesAPI(final DownloadLink dl, final Map<String, Object> entries) throws Exception {
-        final AvailableStatus status = DiskYandexNet.parseInformationAPIAvailablecheckFiles(this, dl, entries);
+        final AvailableStatus status = DiskYandexNet.parseInformationAPIAvailablecheckFiles(this, dl, null, entries);
         dl.setAvailableStatus(status);
     }
 
