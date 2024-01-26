@@ -20,6 +20,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -31,13 +36,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class IcedriveNet extends PluginForHost {
@@ -122,7 +120,7 @@ public class IcedriveNet extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         if (!link.isNameSet()) {
             /* Fallback-filename */
             link.setName(this.getFID(link));
@@ -170,7 +168,7 @@ public class IcedriveNet extends PluginForHost {
         this.handleDownload(link);
     }
 
-    private String requestFileInformation(final DownloadLink link, final Browser br) throws IOException, PluginException {
+    private String requestFileInformation(final DownloadLink link, final Browser br) throws Exception {
         final String internalFileID = this.getInternalFileID(link);
         if (internalFileID == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -178,14 +176,18 @@ public class IcedriveNet extends PluginForHost {
         final Browser brc = br.cloneBrowser();
         brc.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         brc.getPage("https://icedrive.net/API/Internal/V1/?request=download-multi&items=file-" + URLEncode.encodeURIComponent(internalFileID) + "&public=1&sess=1");
-        final Map<String, Object> entries = restoreFromString(brc.toString(), TypeRef.MAP);
+        /** 2024-01-26: Use JavaScriptEngineFactory vs this.restoreFromString because they aren't returning normal json. */
+        final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(brc.getRequest().getHtmlCode());
         final Boolean error = (Boolean) entries.get("error");
         if (error == Boolean.TRUE) {
             final String message = (String) entries.get("message");
             if ("No files found".equals(message)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if ("Error 5050".equals(message)) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown download error");
             }
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown download error");
         }
         final List<Map<String, Object>> mirrors = (List<Map<String, Object>>) entries.get("urls");
         if (mirrors.isEmpty()) {

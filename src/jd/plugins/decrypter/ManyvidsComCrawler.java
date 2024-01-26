@@ -16,17 +16,22 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.parser.UrlQuery;
 
 import jd.PluginWrapper;
+import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.parser.Regex;
+import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -35,6 +40,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.DirectHTTP;
+import jd.plugins.hoster.ManyvidsCom;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class ManyvidsComCrawler extends PluginForDecrypt {
@@ -73,12 +79,19 @@ public class ManyvidsComCrawler extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
+        final Account account = AccountController.getInstance().getValidAccount(this.getHost());
+        if (account != null) {
+            final ManyvidsCom hosterplugin = (ManyvidsCom) this.getNewPluginForHostInstance(this.getHost());
+            hosterplugin.login(account, false);
+        }
+        final String manyvidsKeyPrefix = "manyvids_com://";
         String title = null;
         final boolean useWebsiteHandling = false;
         final Regex urlinfo = new Regex(param.getCryptedUrl(), this.getSupportedLinks());
         final String videoID = urlinfo.getMatch(0);
         String urlSlug = urlinfo.getMatch(2);
         if (useWebsiteHandling) {
+            /* Deprecated code */
             br.getPage(param.getCryptedUrl());
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -121,34 +134,80 @@ public class ManyvidsComCrawler extends PluginForDecrypt {
             return ret;
         }
         /* Find stream-downloadurls */
-        logger.info("Crawling stream downloadurls");
         brc.getPage("/vercel/videos/" + videoID + "/private");
         final Map<String, Object> entries2 = restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.MAP);
         final Map<String, Object> data2 = (Map<String, Object>) entries2.get("data");
-        final Map<String, Object> teasermap = (Map<String, Object>) data2.get("teaser");
-        final String videourl1 = (String) data2.get("filepath");
-        final String videourl2 = (String) data2.get("transcodedFilepath");
-        final String videourlTeaser = teasermap.get("filepath").toString();
-        if (!StringUtils.isEmpty(videourl1)) {
-            /* Original video -> We may know the filesize of this item. */
-            final DownloadLink video1 = this.createDownloadlink(DirectHTTP.createURLForThisPlugin(videourl1));
-            if (!StringUtils.isEmpty(filesizeStr)) {
-                video1.setDownloadSize(SizeFormatter.getSize(filesizeStr));
+        boolean crawlVideoStreams = true;
+        if (Boolean.TRUE.equals(data2.get("isDownloadable"))) {
+            /**
+             * Crawl official video downloads </br>
+             * Users can download videos if they bought them (or if they are premium/flatrate users??)
+             */
+            logger.info("Crawling official downloadlinks");
+            final UrlQuery query = new UrlQuery();
+            query.add("id", videoID);
+            query.add("etag", "KIWI_video_player");
+            br.postPage("https://www." + this.getHost() + "/download.php?" + query.toString(), query);
+            final Map<String, Object> resp = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+            final Object errorO = resp.get("error");
+            if (errorO != null) {
+                /* This should never happen */
+                logger.info("Failed to obtain official downloadlinks because: " + errorO);
+            } else {
+                /* Crawl downloadlinks */
+                final ArrayList<DownloadLink> officialVideoDownloads = new ArrayList<DownloadLink>();
+                final Iterator<Entry<String, Object>> iterator = resp.entrySet().iterator();
+                while (iterator.hasNext()) {
+                    final Entry<String, Object> entry = iterator.next();
+                    final String videoQualityLabel = entry.getKey();
+                    final Map<String, Object> qualitymap = (Map<String, Object>) entry.getValue();
+                    final String file_url = qualitymap.get("file_url").toString();
+                    final String officialVideoDownloadFilesizeStr = qualitymap.get("file_size").toString();
+                    /* Don't do this, it will fuckup URL-encoding. */
+                    // final DownloadLink video = this.createDownloadlink(DirectHTTP.createURLForThisPlugin(file_url));
+                    final DownloadLink video = this.createDownloadlink(file_url);
+                    video.setName(qualitymap.get("file_title") + "." + qualitymap.get("file_ext"));
+                    video.setDownloadSize(SizeFormatter.getSize(officialVideoDownloadFilesizeStr));
+                    video.setLinkID(manyvidsKeyPrefix + "video/" + videoID + "/quality/" + videoQualityLabel);
+                    officialVideoDownloads.add(video);
+                    if (videoQualityLabel.equalsIgnoreCase("original")) {
+                        /* Best possible quality -> Only take this if available */
+                        officialVideoDownloads.clear();
+                        officialVideoDownloads.add(video);
+                        break;
+                    }
+                }
+                ret.addAll(officialVideoDownloads);
+                crawlVideoStreams = false;
             }
-            ret.add(video1);
         }
-        if (!StringUtils.isEmpty(videourl2)) {
-            /* Transcoded video -> We do not know the filesize of this item. */
-            final DownloadLink video2 = this.createDownloadlink(DirectHTTP.createURLForThisPlugin(videourl2));
-            ret.add(video2);
+        if (crawlVideoStreams) {
+            logger.info("Crawling stream downloadurls");
+            final Map<String, Object> teasermap = (Map<String, Object>) data2.get("teaser");
+            final String videourl1 = (String) data2.get("filepath");
+            final String videourl2 = (String) data2.get("transcodedFilepath");
+            final String videourlTeaser = teasermap.get("filepath").toString();
+            if (!StringUtils.isEmpty(videourl1)) {
+                /* Original video -> We may know the filesize of this item. */
+                final DownloadLink video1 = this.createDownloadlink(DirectHTTP.createURLForThisPlugin(videourl1));
+                if (!StringUtils.isEmpty(filesizeStr)) {
+                    video1.setDownloadSize(SizeFormatter.getSize(filesizeStr));
+                }
+                ret.add(video1);
+            }
+            if (!StringUtils.isEmpty(videourl2)) {
+                /* Transcoded video -> We do not know the filesize of this item. */
+                final DownloadLink video2 = this.createDownloadlink(DirectHTTP.createURLForThisPlugin(videourl2));
+                ret.add(video2);
+            }
+            ret.add(this.createDownloadlink(DirectHTTP.createURLForThisPlugin(videourlTeaser)));
         }
-        ret.add(this.createDownloadlink(DirectHTTP.createURLForThisPlugin(videourlTeaser)));
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(title);
         if (!StringUtils.isEmpty(description)) {
             fp.setComment(description);
         }
-        fp.setPackageKey("manyvids_com://video/" + videoID);
+        fp.setPackageKey(manyvidsKeyPrefix + "video/" + videoID);
         /* Set additional properties */
         for (final DownloadLink result : ret) {
             result._setFilePackage(fp);

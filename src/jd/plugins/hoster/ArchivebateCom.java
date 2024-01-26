@@ -30,10 +30,13 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.decrypter.ArchivebateComCrawler;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
+@PluginDependencies(dependencies = { ArchivebateComCrawler.class })
 public class ArchivebateCom extends PluginForHost {
     public ArchivebateCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -52,10 +55,7 @@ public class ArchivebateCom extends PluginForHost {
     }
 
     public static List<String[]> getPluginDomains() {
-        final List<String[]> ret = new ArrayList<String[]>();
-        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "archivebate.com" });
-        return ret;
+        return ArchivebateComCrawler.getPluginDomains();
     }
 
     public static String[] getAnnotationNames() {
@@ -70,7 +70,8 @@ public class ArchivebateCom extends PluginForHost {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:embed|watch)/(\\d+)");
+            /* Dummy regex: Items will be added via crawlerplugin. */
+            ret.add("");
         }
         return ret.toArray(new String[0]);
     }
@@ -91,7 +92,7 @@ public class ArchivebateCom extends PluginForHost {
     }
 
     private String getFID(final DownloadLink link) {
-        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+        return new Regex(link.getPluginPatternMatcher(), "/(?:embed|watch)/(\\d+)").getMatch(0);
     }
 
     @Override

@@ -462,7 +462,14 @@ public class FileCryptCc extends PluginForDecrypt {
                 mirrorLooksToBeOffline = false;
             }
             /* Use clicknload first as it doesn't rely on JD service.jdownloader.org, which can go down! */
-            final ArrayList<DownloadLink> cnlResults = handleCnl2(contenturl, successfullyUsedFolderPassword);
+            final boolean testDevCnlFailure = false;
+            final ArrayList<DownloadLink> cnlResults;
+            if (testDevCnlFailure && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                logger.warning("CNL failure test active!");
+                cnlResults = new ArrayList<DownloadLink>();
+            } else {
+                cnlResults = handleCnl2(contenturl, successfullyUsedFolderPassword);
+            }
             if (!cnlResults.isEmpty()) {
                 logger.info("CNL success");
                 for (final DownloadLink link : cnlResults) {
@@ -484,10 +491,14 @@ public class FileCryptCc extends PluginForDecrypt {
                 if (dlc_id == null) {
                     /* 2023-02-13 */
                     dlc_id = br.getRegex("onclick=\"DownloadDLC[^\\(]*\\('([^']+)'").getMatch(0);
-                }
-                if (dlc_id == null) {
-                    /* 2023-04-06 */
-                    dlc_id = br.getRegex("class=\"dlcdownload\"[^>]* onclick=\"[^\\(]+\\('([^\\']+)").getMatch(0);
+                    if (dlc_id == null) {
+                        /* 2023-04-06 */
+                        dlc_id = br.getRegex("class=\"dlcdownload\"[^>]* onclick=\"[^\\(]+\\('([^\\']+)").getMatch(0);
+                        if (dlc_id == null) {
+                            /* 2024-01-25 */
+                            dlc_id = br.getRegex("DownloadDLC\\('([^\\']+)'\\)").getMatch(0);
+                        }
+                    }
                 }
                 if (dlc_id != null) {
                     logger.info("DLC found - trying to add it");
@@ -539,6 +550,7 @@ public class FileCryptCc extends PluginForDecrypt {
                     /* No mirrors available (disabled by uploader) -> Basically an empty folder */
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 } else {
+                    logger.warning("Failed at mirror: " + mirrorURL);
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
@@ -707,7 +719,7 @@ public class FileCryptCc extends PluginForDecrypt {
     private String cleanHTML = null;
 
     private final void cleanUpHTML() {
-        String toClean = br.toString();
+        String toClean = br.getRequest().getHtmlCode();
         ArrayList<String> regexStuff = new ArrayList<String>();
         // generic cleanup
         regexStuff.add("<!(--.*?--)>");

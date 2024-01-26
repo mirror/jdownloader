@@ -20,9 +20,11 @@ import java.io.IOException;
 import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
+import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -43,8 +45,8 @@ public class HyperFileShareCom extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         login(account);
+        account.setType(AccountType.FREE);
         ai.setUnlimitedTraffic();
-        ai.setStatus("Registered (free) User");
         return ai;
     }
 
@@ -77,7 +79,7 @@ public class HyperFileShareCom extends PluginForHost {
         return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
-    private static final String MAINTENANCE = ">Servers Maintenance<";
+    private static final String MAINTENANCE = ">\\s*Servers Maintenance\\s*<";
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
@@ -135,7 +137,9 @@ public class HyperFileShareCom extends PluginForHost {
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             br.followConnection(true);
             if (br.containsHTML("(You exceeded your download size limit|>You exceeded your download quota)")) {
-                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 60 * 60 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 1 * 60 * 60 * 1000l);
+            } else if (br.containsHTML(">We are sorry, requested file is temporarily not available")) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "We are sorry, requested file is temporarily not available", 60 * 60 * 1000l);
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -184,7 +188,7 @@ public class HyperFileShareCom extends PluginForHost {
             }
         }
         br.postPage("http://www.hyperfileshare.com/index.php", "login=" + Encoding.urlEncode(account.getUser()) + "&psw=" + Encoding.urlEncode(account.getPass()) + "&rem_me=1");
-        if (br.getCookie("http://www.hyperfileshare.com", "sid") == null) {
+        if (br.getCookie("http://www.hyperfileshare.com", "sid", Cookies.NOTDELETEDPATTERN) == null) {
             if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
             } else {

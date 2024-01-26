@@ -102,6 +102,10 @@ public class GofileIo extends PluginForHost {
                 final Browser brc = br.cloneBrowser();
                 brc.getPage("https://" + plugin.getHost() + "/dist/js/alljs.js");
                 token = brc.getRegex("websiteToken\\s*(?::|=)\\s*\"(.*?)\"").getMatch(0);
+                if (token == null) {
+                    /* 2024-01-26 */
+                    token = brc.getRegex("fetchData\\.wt\\s*(?::|=)\\s*\"(.*?)\"").getMatch(0);
+                }
                 if (StringUtils.isEmpty(token)) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 } else {
@@ -130,7 +134,7 @@ public class GofileIo extends PluginForHost {
                 if (!"ok".equalsIgnoreCase(response.get("status").toString())) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                token = (String) JavaScriptEngineFactory.walkJson(response, "data/token");
+                token = JavaScriptEngineFactory.walkJson(response, "data/token").toString();
                 if (StringUtils.isEmpty(token)) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 } else {
@@ -160,9 +164,8 @@ public class GofileIo extends PluginForHost {
         }
         final UrlQuery query = new UrlQuery();
         query.add("contentId", folderID);
-        query.add("websiteToken", getWebsiteToken(this, br));
         query.add("token", Encoding.urlEncode(token));
-        query.add("cache", "true");
+        query.add("wt", getWebsiteToken(this, br));
         String passCode = null;
         boolean passwordCorrect = true;
         boolean passwordRequired = false;

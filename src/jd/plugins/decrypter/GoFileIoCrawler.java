@@ -5,7 +5,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
@@ -17,6 +16,7 @@ import jd.http.Browser;
 import jd.http.requests.GetRequest;
 import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
@@ -38,9 +38,8 @@ public class GoFileIoCrawler extends PluginForDecrypt {
         final String folderID = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
         final UrlQuery query = new UrlQuery();
         query.add("contentId", folderID);
-        query.add("websiteToken", GofileIo.getWebsiteToken(this, br));
         query.add("token", Encoding.urlEncode(token));
-        query.add("cache", "true");
+        query.add("wt", GofileIo.getWebsiteToken(this, br));
         String passCode = param.getDecrypterPassword();
         boolean passwordCorrect = true;
         boolean passwordRequired = false;
@@ -77,12 +76,15 @@ public class GoFileIoCrawler extends PluginForDecrypt {
             throw new DecrypterException(DecrypterException.PASSWORD);
         }
         if (!"ok".equals(response.get("status"))) {
-            if ("error-notPremium".equals(response.get("status"))) {
+            final String statustext = (String) response.get("status");
+            if ("error-notPremium".equals(statustext)) {
                 // {"status":"error-notPremium","data":{}}
+                throw new AccountRequiredException();
+            } else {
+                /* Assume that folder is offline. */
+                /* E.g. {"status":"error-notFound","data":{}} */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            /* Assume that folder is offline. */
-            /* E.g. {"status":"error-notFound","data":{}} */
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         PluginForHost hosterplugin = null;
         final Map<String, Object> data = (Map<String, Object>) response.get("data");
