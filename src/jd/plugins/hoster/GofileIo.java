@@ -76,6 +76,8 @@ public class GofileIo extends PluginForHost {
     private static final String        PROPERTY_DANGEROUS_FILE                                      = "dangerous_file";
     private static final String        PROPERTY_DIRECTURL                                           = "directurl";
     private static final String        PROPERTY_INTERNAL_FILEID                                     = "internal_fileid";
+    private static final String        PROPERTY_PARENT_FOLDER_ID                                    = "parent_folder_id";
+    public static final String         PROPERTY_PARENT_FOLDER_SHORT_ID                              = "parent_folder_short_id";
     private static final String        SETTING_ALLOW_DOWNLOAD_OF_FILES_FLAGGED_AS_MALICIOUS         = "allow_download_of_files_flagged_as_malicious";
     private static final boolean       default_SETTING_ALLOW_DOWNLOAD_OF_FILES_FLAGGED_AS_MALICIOUS = false;
     /* Don't touch the following! */
@@ -144,6 +146,20 @@ public class GofileIo extends PluginForHost {
             }
             br.setCookie(plugin.getHost(), "accountToken", token);
             return token;
+        }
+    }
+
+    @Override
+    public String getPluginContentURL(final DownloadLink link) {
+        final String parentFolderShortID = link.getStringProperty(PROPERTY_PARENT_FOLDER_SHORT_ID);
+        final String parentFolderID = link.getStringProperty(PROPERTY_PARENT_FOLDER_ID);
+        if (parentFolderShortID != null) {
+            return "https://" + getHost() + "/d/" + parentFolderShortID;
+        } else if (parentFolderID != null) {
+            /* Link to next folder which contains this file */
+            return "https://" + getHost() + "/d/" + parentFolderID;
+        } else {
+            return super.getPluginContentURL(link);
         }
     }
 
@@ -321,7 +337,8 @@ public class GofileIo extends PluginForHost {
         if (!StringUtils.isEmpty(downloadURL)) {
             link.setProperty(PROPERTY_DIRECTURL, downloadURL);
         }
-        link.setProperty(PROPERTY_INTERNAL_FILEID, entry.get("id").toString());
+        link.setProperty(PROPERTY_INTERNAL_FILEID, entry.get("id"));
+        link.setProperty(PROPERTY_PARENT_FOLDER_ID, entry.get("parentFolder"));
     }
 
     @Override

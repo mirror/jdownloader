@@ -101,6 +101,7 @@ public class ManyvidsCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        // 2024-01-26: Not used
         this.setBrowserExclusive();
         br.getPage(link.getPluginPatternMatcher());
         if (this.br.getHttpConnection().getResponseCode() == 404) {
@@ -128,6 +129,7 @@ public class ManyvidsCom extends PluginForHost {
     }
 
     private void handleDownload(final DownloadLink link, final Account account) throws Exception, PluginException {
+        // 2024-01-26: Not used
         String dllink = br.getRegex("").getMatch(0);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, this.isResumeable(link, account), 0);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
@@ -254,11 +256,9 @@ public class ManyvidsCom extends PluginForHost {
     }
 
     private String getLoginCookie(final Browser br) {
+        /* Returns login-cookie which is supposed to be the internal user-ID of the profile we are currently logged in. */
         return br.getCookie(br.getHost(), "KGID", Cookies.NOTDELETEDPATTERN);
     }
-    // private boolean isLoggedin(final Browser br) {
-    // return br.containsHTML("/logout");
-    // }
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
@@ -271,6 +271,7 @@ public class ManyvidsCom extends PluginForHost {
         if (Boolean.TRUE.equals(entries.get("premiumMember"))) {
             account.setType(AccountType.PREMIUM);
         } else {
+            /* Free accounts can still contain single bought video elements which the user will be allowed to watch- and download. */
             account.setType(AccountType.FREE);
         }
         ai.setUnlimitedTraffic();

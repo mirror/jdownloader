@@ -88,46 +88,59 @@ public class GoFileIoCrawler extends PluginForDecrypt {
         }
         PluginForHost hosterplugin = null;
         final Map<String, Object> data = (Map<String, Object>) response.get("data");
-        final String currentFolderName = (String) data.get("name");
+        String currentFolderName = (String) data.get("name");
+        if (currentFolderName.matches("^quickUpload_.+") || currentFolderName.equals(folderID)) {
+            /* Invalid value */
+            currentFolderName = null;
+        }
         String path = this.getAdoptedCloudFolderStructure();
         FilePackage fp = null;
-        if (path == null && !StringUtils.isEmpty(currentFolderName) && !currentFolderName.matches("^quickUpload_.+") && !currentFolderName.equals(folderID)) {
-            /* No path given yet --> Use current folder name as root */
-            path = currentFolderName;
+        if (path == null) {
+            if (!StringUtils.isEmpty(currentFolderName)) {
+                /* No path given yet --> Use current folder name as root folder name */
+                path = currentFolderName;
+            }
+        } else {
+            if (!StringUtils.isEmpty(currentFolderName)) {
+                path += "/" + currentFolderName;
+            }
         }
         if (path != null) {
             fp = FilePackage.getInstance();
             fp.setName(path);
         }
+        final String parentFolderShortID = data.get("code").toString();
         final Map<String, Map<String, Object>> files = (Map<String, Map<String, Object>>) data.get("contents");
         for (final Entry<String, Map<String, Object>> item : files.entrySet()) {
             final Map<String, Object> entry = item.getValue();
             final String type = (String) entry.get("type");
             if (type.equals("file")) {
                 final String fileID = item.getKey();
-                final String url = "https://" + this.getHost() + "/?c=" + folderID + "#file=" + fileID;
+                final String url = "https://" + getHost() + "/?c=" + folderID + "#file=" + fileID;
                 if (hosterplugin == null) {
+                    /* Init hosterplugin */
                     hosterplugin = this.getNewPluginForHostInstance(this.getHost());
                 }
                 final DownloadLink file = new DownloadLink(hosterplugin, null, this.getHost(), url, true);
                 GofileIo.parseFileInfo(file, entry);
+                file.setProperty(GofileIo.PROPERTY_PARENT_FOLDER_SHORT_ID, parentFolderShortID);
                 file.setAvailable(true);
                 if (passCode != null) {
                     file.setDownloadPassword(passCode);
                 }
                 if (path != null) {
                     file.setRelativeDownloadFolderPath(path);
+                    file._setFilePackage(fp);
                 }
                 ret.add(file);
             } else if (type.equals("folder")) {
                 /* Subfolder containing more files/folders */
                 final DownloadLink folder = this.createDownloadlink("https://" + this.getHost() + "/d/" + entry.get("code"));
-                final String folderName = (String) entry.get("name");
                 if (passCode != null) {
                     folder.setDownloadPassword(passCode);
                 }
                 if (path != null) {
-                    folder.setRelativeDownloadFolderPath(path + "/" + folderName);
+                    folder.setRelativeDownloadFolderPath(path);
                 }
                 ret.add(folder);
             } else {
@@ -136,9 +149,12 @@ public class GoFileIoCrawler extends PluginForDecrypt {
                 continue;
             }
         }
-        if (fp != null && ret.size() > 1) {
-            fp.addLinks(ret);
-        }
         return ret;
+    }
+
+    @Override
+    public int getMaxConcurrentProcessingInstances() {
+        /* 2024-01-26: Try to prevent running into rate-limit. */
+        return 1;
     }
 }
