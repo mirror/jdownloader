@@ -8,7 +8,6 @@ import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map.Entry;
@@ -43,15 +42,6 @@ public class SystemAPIImpl17 {
 
     public static List<StorageInformationStorable> getStorageInfos(final String path) {
         final List<StorageInformationStorable> ret = new ArrayList<StorageInformationStorable>();
-        final List<String> typeFilters;
-        final List<String> pathFilters;
-        if (CrossSystem.isUnix()) {
-            typeFilters = Arrays.asList("usbfs", "fusectl", "hugetlbfs", "binfmt_misc", "cgroup", "pstore", "sysfs", "tmpfs", "proc", "configfs", "debugfs", "mqueue", "devtmpfs", "devpts", "devfs", "securityfs", "nfsd", "fusectl", "fuse.gvfsd-fuse", "rpc_pipefs", "efivarfs", "fuse.lxcfs", "nsfs", "squashfs");
-            pathFilters = Arrays.asList("/proc", "/boot", "/sys", "/dev", "/run/user");
-        } else {
-            typeFilters = Arrays.asList(new String[0]);
-            pathFilters = Arrays.asList(new String[0]);
-        }
         final LinkedHashMap<Path, FileStore> roots = new LinkedHashMap<Path, FileStore>();
         Path customPath = null;
         if (StringUtils.isNotEmpty(path)) {
@@ -78,7 +68,7 @@ public class SystemAPIImpl17 {
             final Path root = entry.getKey();
             try {
                 final FileStore store = entry.getValue();
-                if ((customPath == null || !customPath.equals(root)) && (store.isReadOnly() || typeFilters.contains(store.type()) || SystemAPIImpl.isFiltered(pathFilters, root.toString()))) {
+                if ((customPath == null || !customPath.equals(root)) && (store.isReadOnly() || SystemAPIImpl.isFilteredFileSystem(store.type()) || SystemAPIImpl.isFilteredPath(root.toString()))) {
                     continue;
                 } else {
                     storage.setPath(root.toString());

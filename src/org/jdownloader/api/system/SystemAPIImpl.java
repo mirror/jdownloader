@@ -102,6 +102,18 @@ public class SystemAPIImpl implements SystemAPI {
         }
     }
 
+    private static final List<String> fileSystemFilters;
+    private static final List<String> pathFilters;
+    static {
+        if (CrossSystem.isUnix()) {
+            fileSystemFilters = Arrays.asList("usbfs", "fusectl", "hugetlbfs", "binfmt_misc", "cgroup", "pstore", "sysfs", "tmpfs", "proc", "configfs", "debugfs", "mqueue", "devtmpfs", "devpts", "devfs", "securityfs", "nfsd", "fusectl", "fuse.gvfsd-fuse", "rpc_pipefs", "efivarfs", "fuse.lxcfs", "nsfs", "squashfs");
+            pathFilters = Arrays.asList("/proc", "/boot", "/sys", "/dev", "/run/user", "/usr/lib", "/usr/src", "/var/lib", "/etc");
+        } else {
+            fileSystemFilters = new ArrayList<String>();
+            pathFilters = new ArrayList<String>();
+        }
+    }
+
     public static List<StorageInformationStorable> getStorageInfos16(final String path) {
         final List<StorageInformationStorable> ret = new ArrayList<StorageInformationStorable>();
         final List<File> roots = new ArrayList<File>();
@@ -113,14 +125,12 @@ public class SystemAPIImpl implements SystemAPI {
                 try {
                     final List<ProcMounts> procMounts = ProcMounts.list();
                     if (procMounts != null) {
-                        final List<String> typeFilters = Arrays.asList("usbfs", "fusectl", "hugetlbfs", "binfmt_misc", "cgroup", "pstore", "sysfs", "tmpfs", "proc", "configfs", "debugfs", "mqueue", "devtmpfs", "devpts", "devfs", "securityfs", "nfsd", "fusectl", "fuse.gvfsd-fuse", "rpc_pipefs", "efivarfs", "fuse.lxcfs", "nsfs", "squashfs");
-                        final List<String> pathFilters = Arrays.asList("/proc", "/boot", "/sys", "/dev", "/run/user");
                         for (final ProcMounts procMount : procMounts) {
                             if (procMount.isReadOnly()) {
                                 continue;
-                            } else if (typeFilters.contains(procMount.getFileSystem())) {
+                            } else if (isFilteredFileSystem(procMount.getFileSystem())) {
                                 continue;
-                            } else if (isFiltered(pathFilters, procMount.getMountPoint())) {
+                            } else if (isFilteredPath(procMount.getMountPoint())) {
                                 continue;
                             } else {
                                 final String mountPoint = procMount.getMountPoint();
@@ -148,10 +158,14 @@ public class SystemAPIImpl implements SystemAPI {
         return ret;
     }
 
-    protected static boolean isFiltered(final List<String> filters, final String path) {
-        if (filters.size() > 0 && path != null) {
-            for (String filter : filters) {
-                if (path.startsWith(filter)) {
+    protected static boolean isFilteredFileSystem(final String fileSystem) {
+        return fileSystemFilters.size() > 0 && fileSystemFilters.contains(fileSystem);
+    }
+
+    protected static boolean isFilteredPath(final String path) {
+        if (pathFilters.size() > 0 && path != null) {
+            for (String pathFilter : pathFilters) {
+                if (path.startsWith(pathFilter)) {
                     return true;
                 }
             }
