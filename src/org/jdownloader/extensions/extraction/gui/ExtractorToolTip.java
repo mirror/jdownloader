@@ -22,8 +22,8 @@ import org.jdownloader.updatev2.gui.LAFOptions;
 
 public class ExtractorToolTip extends PanelToolTip {
     /**
-	 * 
-	 */
+     * 
+     */
     private static final long       serialVersionUID = 2863662451264465139L;
     private Color                   color;
     private JLabel                  empty;
@@ -32,7 +32,6 @@ public class ExtractorToolTip extends PanelToolTip {
     private ExtractionJobTableModel model;
 
     public ExtractorToolTip(ExtractionExtension extractionExtension) {
-
         super(new TooltipPanel("ins 0,wrap 1", "[grow,fill]", "[grow,fill]"));
         this.extractionExtension = extractionExtension;
         color = (LAFOptions.getInstance().getColorForTooltipForeground());
@@ -43,9 +42,9 @@ public class ExtractorToolTip extends PanelToolTip {
         label.setForeground(LAFOptions.getInstance().getColorForTooltipForeground());
         panel.add(label, "");
         panel.add(empty, "hidemode 3,gapleft 23");
-        table = new ExtractionJobTable(model = new ExtractionJobTableModel((LAFOptions.getInstance().getColorForTooltipForeground())));
+        table = new ExtractionJobTable(model = new ExtractionJobTableModel());
+        table.setForeground(LAFOptions.getInstance().getColorForTooltipForeground());
         model.addTableModelListener(new TableModelListener() {
-
             @Override
             public void tableChanged(TableModelEvent e) {
                 // if (AccountTooltip.this.owner != null) AccountTooltip.this.owner.redraw();
@@ -53,13 +52,11 @@ public class ExtractorToolTip extends PanelToolTip {
             }
         });
         table.getTableHeader().setOpaque(false);
-
         panel.add(table.getTableHeader(), "hidemode 3");
         panel.add(table, "hidemode 3");
     }
 
     public void update() {
-
         if (extractionExtension.getJobQueue().getJobs().size() > 0) {
             // ihh
             model.clear();
@@ -72,11 +69,9 @@ public class ExtractorToolTip extends PanelToolTip {
                 String n = ec.getArchive().getName();
                 width = Math.max(width, fm.stringWidth(n));
             }
-
             table.setPreferredSize(new Dimension(width + 110 + 150, list.length * 22));
             table.setVisible(true);
             table.getTableHeader().setVisible(true);
-
             empty.setVisible(false);
             panel.repaint();
         } else {

@@ -7,7 +7,6 @@ import java.awt.event.MouseEvent;
 import java.util.List;
 
 import javax.swing.JComponent;
-import javax.swing.JLabel;
 import javax.swing.JPopupMenu;
 import javax.swing.event.PopupMenuEvent;
 import javax.swing.event.PopupMenuListener;
@@ -43,7 +42,6 @@ public class ExtractorProgress extends IconedProcessIndicator {
     public ExtractorProgress(ExtractionExtension extractionExtension) {
         super(NewTheme.I().getIcon(org.jdownloader.gui.IconKey.ICON_EXTRACT, 16));
         setEnabled(false);
-
         setTitle(_GUI.T.StatusBarImpl_initGUI_extract());
         this.extension = extractionExtension;
         // IconedProcessIndicator comp = new IconedProcessIndicator(32);
@@ -57,7 +55,7 @@ public class ExtractorProgress extends IconedProcessIndicator {
         // comp.setPreferredSize(new Dimension(32, 32));
         tooltip = new ExtractorToolTip(extractionExtension);
         pu = new JPopupMenu();
-        tModel = new ExtractionJobTableModel(new JLabel().getForeground()) {
+        tModel = new ExtractionJobTableModel() {
             /**
              *
              */
@@ -65,7 +63,6 @@ public class ExtractorProgress extends IconedProcessIndicator {
 
             protected void initColumns() {
                 super.initColumns();
-
                 addColumn(new ExtComponentColumn<ExtractionController>("Cancel") {
                     /**
                      *
@@ -74,7 +71,6 @@ public class ExtractorProgress extends IconedProcessIndicator {
                     private ExtButton            renderer;
                     private ExtButton            editor;
                     private ExtractionController activeValue;
-
                     {
                         renderer = getButton();
                         editor = getButton();
@@ -97,7 +93,6 @@ public class ExtractorProgress extends IconedProcessIndicator {
 
                             public void actionPerformed(ActionEvent e) {
                                 TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
-
                                     @Override
                                     protected Void run() throws RuntimeException {
                                         extension.cancel(activeValue);
@@ -151,12 +146,9 @@ public class ExtractorProgress extends IconedProcessIndicator {
                 });
             }
         };
-
         table = new ExtractionJobTable(tModel);
-
         pu.add(table);
         pu.addPopupMenuListener(new PopupMenuListener() {
-
             public void popupMenuWillBecomeVisible(PopupMenuEvent e) {
             }
 
@@ -172,19 +164,16 @@ public class ExtractorProgress extends IconedProcessIndicator {
 
     @Override
     public boolean isTooltipDisabledUntilNextRefocus() {
-
         return false;
     }
 
     public ExtTooltip createExtTooltip(final Point mousePosition) {
         tooltip.update();
         return tooltip;
-
     }
 
     public void mouseClicked(MouseEvent e) {
         if (e.isPopupTrigger() || e.getButton() == MouseEvent.BUTTON3) {
-
             if (table.isEditing()) {
                 table.getCellEditor().stopCellEditing();
             }
@@ -200,7 +189,6 @@ public class ExtractorProgress extends IconedProcessIndicator {
         } else {
             ToolTipController.getInstance().show(this);
         }
-
     }
 
     public void update(Type type, ExtractionController con) {

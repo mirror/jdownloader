@@ -32,6 +32,8 @@
   "minJRE":"1.6",
   "provider":"manual",
   "renames":null,
+  "requiredBy":[],
   "version":null,
+  "autoRenameEnabled":true,
   "confirm":true
 }

@@ -21,11 +21,6 @@ import javax.swing.ListSelectionModel;
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 
-import jd.gui.swing.jdgui.views.settings.panels.accountmanager.AccountEntry;
-import jd.plugins.Account;
-import jd.plugins.AccountInfo;
-import net.miginfocom.swing.MigLayout;
-
 import org.appwork.swing.components.tooltips.PanelToolTip;
 import org.appwork.swing.components.tooltips.TooltipPanel;
 import org.appwork.utils.swing.SwingUtils;
@@ -35,6 +30,11 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.updatev2.gui.LAFOptions;
+
+import jd.gui.swing.jdgui.views.settings.panels.accountmanager.AccountEntry;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
+import net.miginfocom.swing.MigLayout;
 
 public class AccountTooltip extends PanelToolTip {
     private Color                 color;
@@ -46,16 +46,13 @@ public class AccountTooltip extends PanelToolTip {
         if (owner instanceof ServicePanel) {
             ttPosition.y = activeComponent.getLocationOnScreen().y - getPreferredSize().height;
             ttPosition.x = activeComponent.getLocationOnScreen().x;
-
             return AbstractLocator.correct(ttPosition, getPreferredSize());
         } else {
-
             return MouseInfo.getPointerInfo().getLocation();
         }
     }
 
     public AccountTooltip(AccountTooltipOwner owner, AccountServiceCollection accountCollection) {
-
         super(new TooltipPanel("ins 0,wrap 1", "[]", "[][][][][grow,fill]") {
             @Override
             public Dimension getPreferredSize() {
@@ -66,21 +63,15 @@ public class AccountTooltip extends PanelToolTip {
                 return pref;
             }
         });
-
         this.owner = owner;
         color = (LAFOptions.getInstance().getColorForTooltipForeground());
-
         final LinkedList<AccountEntry> domains = new LinkedList<AccountEntry>();
         for (Account acc : accountCollection) {
-
             domains.add(new AccountEntry(acc));
-
         }
-
         table = new AccountListTable(model = new AccountListTableModel(this, owner));
         model.setData(domains);
         model.addTableModelListener(new TableModelListener() {
-
             @Override
             public void tableChanged(TableModelEvent e) {
                 if (AccountTooltip.this.owner != null) {
@@ -90,7 +81,6 @@ public class AccountTooltip extends PanelToolTip {
             }
         });
         table.getTableHeader().setOpaque(false);
-
         JScrollPane sp;
         String txt = accountCollection.getDomainInfo().getTld();
         if (accountCollection.isMulti()) {
@@ -102,10 +92,8 @@ public class AccountTooltip extends PanelToolTip {
         panel.add(label, "gapleft 5,pushx,growx");
         panel.add(table.getTableHeader());
         panel.add(table);
-
         if (accountCollection.isMulti()) {
             panel.setLayout(new MigLayout("ins 0,wrap 1", "[grow,fill]", "[][][][][grow,fill]"));
-
             label = new JLabel(_GUI.T.AccountTooltip_AccountTooltip_supported_hosters());
             SwingUtils.toBold(label);
             label.setForeground(LAFOptions.getInstance().getColorForTooltipForeground());
@@ -116,10 +104,8 @@ public class AccountTooltip extends PanelToolTip {
             list.setLayoutOrientation(JList.VERTICAL_WRAP);
             final ListCellRenderer org = list.getCellRenderer();
             list.setCellRenderer(new ListCellRenderer() {
-
                 public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
                     DomainInfo di = (DomainInfo) value;
-
                     JLabel ret = (JLabel) org.getListCellRendererComponent(list, "", index, isSelected, cellHasFocus);
                     ret.setForeground(LAFOptions.getInstance().getColorForTooltipForeground());
                     ret.setText(di.getTld());
@@ -129,15 +115,12 @@ public class AccountTooltip extends PanelToolTip {
                     return ret;
                 }
             });
-
             list.setVisibleRowCount(dis.size() / 5);
             // list.setFixedCellHeight(22);
             // list.setFixedCellWidth(22);
             list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
             list.setOpaque(false);
-
             panel.add(list);
-
         } else {
             panel.setLayout(new MigLayout("ins 0,wrap 1", "[grow,fill]", "[][][grow,fill]"));
         }
@@ -146,7 +129,6 @@ public class AccountTooltip extends PanelToolTip {
         // table.setBackground(LAFOptions.getInstance().getColorForTooltipBackground());
         // table.setOpaque(true);
         // table.getTableHeader().setBackground(LAFOptions.getInstance().getColorForTooltipBackground());
-
         // panel.setPreferredSize(new Dimension(500, 100));
         // panel.setPreferredSize(new Dimension(panel.getPreferredSize().width, 400));
     }
@@ -177,7 +159,6 @@ public class AccountTooltip extends PanelToolTip {
         }
         ArrayList<DomainInfo> ret = new ArrayList<DomainInfo>(domains);
         Collections.sort(ret, new Comparator<DomainInfo>() {
-
             @Override
             public int compare(DomainInfo o1, DomainInfo o2) {
                 return o1.getTld().compareToIgnoreCase(o2.getTld());
@@ -187,7 +168,6 @@ public class AccountTooltip extends PanelToolTip {
     }
 
     public void update() {
-
         table.getModel().fireTableStructureChanged();
     }
 }

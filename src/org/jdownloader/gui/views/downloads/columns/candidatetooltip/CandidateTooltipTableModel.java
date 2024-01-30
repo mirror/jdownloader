@@ -1,6 +1,5 @@
 package org.jdownloader.gui.views.downloads.columns.candidatetooltip;
 
-import java.awt.Color;
 import java.util.Date;
 import java.util.List;
 
@@ -19,7 +18,6 @@ import org.jdownloader.DomainInfo;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.downloads.columns.CandidateAccountColumn;
 import org.jdownloader.images.BadgeIcon;
-import org.jdownloader.updatev2.gui.LAFOptions;
 
 import jd.controlling.downloadcontroller.HistoryEntry;
 import jd.gui.swing.jdgui.GUIUtils;
@@ -74,11 +72,6 @@ public class CandidateTooltipTableModel extends ExtTableModel<HistoryEntry> {
         }
 
         @Override
-        protected Color getDefaultForeground() {
-            return LAFOptions.getInstance().getColorForTooltipForeground();
-        }
-
-        @Override
         public String getStringValue(HistoryEntry value) {
             return null;
         }
@@ -125,11 +118,6 @@ public class CandidateTooltipTableModel extends ExtTableModel<HistoryEntry> {
             }
             this.rendererField.setText(str);
             maxWidth = Math.max(renderer.getPreferredSize().width, maxWidth);
-        }
-
-        @Override
-        protected Color getDefaultForeground() {
-            return LAFOptions.getInstance().getColorForTooltipForeground();
         }
 
         @Override
@@ -217,11 +205,6 @@ public class CandidateTooltipTableModel extends ExtTableModel<HistoryEntry> {
         }
 
         @Override
-        protected Color getDefaultForeground() {
-            return LAFOptions.getInstance().getColorForTooltipForeground();
-        }
-
-        @Override
         public String getStringValue(HistoryEntry value) {
             return null;
         }
@@ -257,11 +240,6 @@ public class CandidateTooltipTableModel extends ExtTableModel<HistoryEntry> {
         @Override
         public boolean isSortable(HistoryEntry obj) {
             return false;
-        }
-
-        @Override
-        protected Color getDefaultForeground() {
-            return LAFOptions.getInstance().getColorForTooltipForeground();
         }
 
         protected MigPanel createRendererPanel() {

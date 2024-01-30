@@ -17,6 +17,8 @@
   "minJRE":"1.7",
   "provider":"maven",
   "renames":null,
+  "requiredBy":[],
   "version":"/1\\..*/",
+  "autoRenameEnabled":true,
   "confirm":true
 }

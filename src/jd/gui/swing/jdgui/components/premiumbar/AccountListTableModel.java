@@ -18,16 +18,6 @@ import javax.swing.JComponent;
 import javax.swing.JTable;
 import javax.swing.table.JTableHeader;
 
-import jd.controlling.AccountController;
-import jd.controlling.AccountControllerEvent;
-import jd.controlling.AccountControllerListener;
-import jd.controlling.accountchecker.AccountChecker;
-import jd.controlling.accountchecker.AccountCheckerEventListener;
-import jd.gui.swing.jdgui.GUIUtils;
-import jd.gui.swing.jdgui.views.settings.panels.accountmanager.AccountEntry;
-import jd.plugins.AccountInfo;
-import jd.plugins.AccountTrafficView;
-
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.sunwrapper.sun.swing.SwingUtilities2Wrapper;
@@ -53,6 +43,16 @@ import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings.SIZEUNIT;
 import org.jdownloader.updatev2.gui.LAFOptions;
+
+import jd.controlling.AccountController;
+import jd.controlling.AccountControllerEvent;
+import jd.controlling.AccountControllerListener;
+import jd.controlling.accountchecker.AccountChecker;
+import jd.controlling.accountchecker.AccountCheckerEventListener;
+import jd.gui.swing.jdgui.GUIUtils;
+import jd.gui.swing.jdgui.views.settings.panels.accountmanager.AccountEntry;
+import jd.plugins.AccountInfo;
+import jd.plugins.AccountTrafficView;
 
 public class AccountListTableModel extends ExtTableModel<AccountEntry> implements AccountCheckerEventListener, AccountControllerListener {
     private static final long        serialVersionUID = 3120481189794897020L;
@@ -111,7 +111,7 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
 
                 public ExtTableHeaderRenderer getHeaderRenderer(final JTableHeader jTableHeader) {
                     final ExtTableHeaderRenderer ret = new ExtTableHeaderRenderer(this, jTableHeader) {
-                        private final Icon        ok               = NewTheme.I().getIcon(IconKey.ICON_OK, 14);
+                        private final Icon ok = NewTheme.I().getIcon(IconKey.ICON_OK, 14);
                         {
                             AccountListTable.setHeaderRendererColors(this);
                         }
@@ -132,11 +132,6 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
                 @Override
                 public int getMaxWidth() {
                     return 30;
-                }
-
-                @Override
-                protected Color getDefaultForeground() {
-                    return LAFOptions.getInstance().getColorForTooltipForeground();
                 }
 
                 @Override
@@ -165,11 +160,6 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
             @Override
             public boolean isEnabled(AccountEntry obj) {
                 return obj.getAccount().isEnabled();
-            }
-
-            @Override
-            protected Color getDefaultForeground() {
-                return LAFOptions.getInstance().getColorForTooltipForeground();
             }
 
             @Override
@@ -223,11 +213,6 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
             @Override
             public boolean isEnabled(AccountEntry obj) {
                 return obj.getAccount().isEnabled();
-            }
-
-            @Override
-            protected Color getDefaultForeground() {
-                return LAFOptions.getInstance().getColorForTooltipForeground();
             }
 
             final Icon error   = NewTheme.I().getIcon(IconKey.ICON_ERROR, 16);

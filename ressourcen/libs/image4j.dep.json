@@ -9,11 +9,13 @@
     "licenses":["The image4j library is licensed under the GNU LGPL v2.1 so you are free to use it in your Free Software and Open Source projects, as well as commercial projects, under the terms of the LGPL v2.1."],
     "minJRE":"JVM_1_6",
     "name":"ICO (Microsoft icon format - 1, 4, 8, 24 and 32 bit [XP uncompressed, Vista compressed])image4j - Image library in java",
-    "version":"0.7-appworkjre1.6"
+    "version":"0.7-appwork.jre1.6"
   },
   "minJRE":"1.6",
   "provider":"manual",
   "renames":null,
+  "requiredBy":[],
   "version":null,
+  "autoRenameEnabled":true,
   "confirm":true
 }

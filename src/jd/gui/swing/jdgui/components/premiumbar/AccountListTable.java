@@ -6,33 +6,38 @@ import java.awt.event.MouseEvent;
 
 import javax.swing.JPopupMenu;
 import javax.swing.JTable;
+import javax.swing.UIManager;
 
-import jd.gui.swing.jdgui.BasicJDTable;
-import jd.gui.swing.jdgui.views.settings.panels.accountmanager.AccountEntry;
-import jd.gui.swing.jdgui.views.settings.panels.accountmanager.BuyAction;
-import jd.gui.swing.jdgui.views.settings.panels.accountmanager.RefreshAction;
-
+import org.appwork.swing.components.tooltips.ExtTooltip;
 import org.appwork.swing.components.tooltips.ToolTipController;
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.swing.exttable.ExtComponentRowHighlighter;
 import org.appwork.swing.exttable.ExtTableHeaderRenderer;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
-public class AccountListTable extends BasicJDTable<AccountEntry> {
+import jd.gui.swing.jdgui.BasicJDTable;
+import jd.gui.swing.jdgui.views.settings.panels.accountmanager.AccountEntry;
+import jd.gui.swing.jdgui.views.settings.panels.accountmanager.BuyAction;
+import jd.gui.swing.jdgui.views.settings.panels.accountmanager.RefreshAction;
 
+public class AccountListTable extends BasicJDTable<AccountEntry> {
     private static final long serialVersionUID = -2166408567306279016L;
 
     public AccountListTable(AccountListTableModel accountListTableModel) {
         super(accountListTableModel);
-
+        Color color = UIManager.getColor(ExtTooltip.APPWORK_TOOLTIP_FOREGROUND);
+        if (color != null) {
+            setForeground(color);
+        }
         ToolTipController.getInstance().unregister(this);
         this.setBackground(null);
         setOpaque(false);
         setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+        setShowHorizontalLineBelowLastEntry(false);
+        // setBorder(BorderFactory.createMatteBorder(1, 1, 1, 1, Color.RED));
         // this.setShowVerticalLines(false);
         // this.setShowGrid(false);
         // this.setShowHorizontalLines(false);
-
         // this.getModel().addExtComponentRowHighlighter(new ExtComponentRowHighlighter<AccountEntry>(Color.BLACK,
         // ColorUtils.getAlphaInstance(Color.RED, 50), null) {
         // public int getPriority() {
@@ -53,20 +58,22 @@ public class AccountListTable extends BasicJDTable<AccountEntry> {
     }
 
     @Override
-    protected void initAlternateRowHighlighter() {
+    public boolean getShowHorizontalLines() {
+        return false;
+    }
 
+    @Override
+    protected void initAlternateRowHighlighter() {
     }
 
     protected ExtTableHeaderRenderer createDefaultHeaderRenderer(ExtColumn<AccountEntry> column) {
         ExtTableHeaderRenderer ret = new ExtTableHeaderRenderer(column, getTableHeader());
-
         setHeaderRendererColors(ret);
         return ret;
     }
 
     @Override
     protected void addSelectionHighlighter() {
-
     }
 
     public static void setHeaderRendererColors(ExtTableHeaderRenderer ret) {
@@ -83,7 +90,6 @@ public class AccountListTable extends BasicJDTable<AccountEntry> {
         this.getModel().addExtComponentRowHighlighter(new ExtComponentRowHighlighter<AccountEntry>(f, b, null) {
             public int getPriority() {
                 return Integer.MAX_VALUE - 1;
-
             }
 
             @Override
@@ -95,13 +101,12 @@ public class AccountListTable extends BasicJDTable<AccountEntry> {
             public boolean accept(ExtColumn<AccountEntry> column, AccountEntry value, boolean selected, boolean focus, int row) {
                 return mouseOverRow == row;
             }
-
         });
     }
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.appwork.swing.exttable.ExtTable#onShortcutDelete(java.util.java.util.List , java.awt.event.KeyEvent, boolean)
      */
     @Override
@@ -112,7 +117,7 @@ public class AccountListTable extends BasicJDTable<AccountEntry> {
 
     /*
      * (non-Javadoc)
-     * 
+     *
      * @see org.appwork.swing.exttable.ExtTable#onContextMenu(javax.swing.JPopupMenu , java.lang.Object, java.util.java.util.List,
      * org.appwork.swing.exttable.ExtColumn)
      */
@@ -132,5 +137,4 @@ public class AccountListTable extends BasicJDTable<AccountEntry> {
         }
         return popup;
     }
-
 }

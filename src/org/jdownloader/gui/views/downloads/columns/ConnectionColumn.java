@@ -1,5 +1,6 @@
 package org.jdownloader.gui.views.downloads.columns;
 
+import java.awt.Color;
 import java.awt.Point;
 import java.awt.event.MouseEvent;
 import java.io.IOException;
@@ -13,6 +14,7 @@ import javax.swing.Icon;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPopupMenu;
+import javax.swing.UIManager;
 
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.swing.MigPanel;
@@ -415,7 +417,10 @@ public class ConnectionColumn extends ExtColumn<AbstractNode> {
 
         private JLabel add(JLabel lbl) {
             SwingUtils.setOpaque(lbl, false);
-            lbl.setForeground(FOREGROUND_COLOR);
+            Color color = UIManager.getColor(ExtTooltip.APPWORK_TOOLTIP_FOREGROUND);
+            if (color != null) {
+                lbl.setForeground(color);
+            }
             panel.add(lbl);
             return lbl;
         }

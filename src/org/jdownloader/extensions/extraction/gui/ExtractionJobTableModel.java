@@ -1,6 +1,5 @@
 package org.jdownloader.extensions.extraction.gui;
 
-import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
@@ -18,7 +17,6 @@ import org.appwork.swing.components.circlebar.IconPainter;
 import org.appwork.swing.exttable.ExtTableModel;
 import org.appwork.swing.exttable.columns.ExtCircleProgressColumn;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
-import org.appwork.utils.ColorUtils;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.renderer.RenderLabel;
 import org.appwork.utils.swing.renderer.RendererMigPanel;
@@ -36,17 +34,9 @@ public class ExtractionJobTableModel extends ExtTableModel<ExtractionController>
      *
      */
     private static final long serialVersionUID = 7585295834599426087L;
-    private Color             textColor;
-    private Color             back;
 
-    public ExtractionJobTableModel(Color c) {
+    public ExtractionJobTableModel() {
         super("ExtractionJobTableModel4");
-        setColor(c);
-    }
-
-    public void setColor(Color c) {
-        textColor = c;
-        back = c != null ? ColorUtils.getAlphaInstance(c, 50) : null;
     }
 
     @Override
@@ -56,16 +46,6 @@ public class ExtractionJobTableModel extends ExtTableModel<ExtractionController>
              *
              */
             private static final long serialVersionUID = -7294960809807602558L;
-
-            @Override
-            protected Color getDefaultForeground() {
-                final Color ret = textColor;
-                if (ret != null) {
-                    return ret;
-                } else {
-                    return super.getDefaultForeground();
-                }
-            }
 
             @Override
             public boolean isSortable(final ExtractionController obj) {
@@ -127,16 +107,6 @@ public class ExtractionJobTableModel extends ExtTableModel<ExtractionController>
             }
 
             @Override
-            protected Color getDefaultForeground() {
-                final Color ret = textColor;
-                if (ret != null) {
-                    return ret;
-                } else {
-                    return super.getDefaultForeground();
-                }
-            }
-
-            @Override
             public int getDefaultWidth() {
                 return 150;
             }
@@ -190,13 +160,10 @@ public class ExtractionJobTableModel extends ExtTableModel<ExtractionController>
             {
                 determinatedRenderer = new CircledProgressBar();
                 renderer = determinatedRenderer;
-                if (textColor != null) {
-                    determinatedRenderer.setForeground(textColor);
-                }
                 determinatedRenderer.setValueClipPainter(new IconPainter() {
                     public void paint(final CircledProgressBar bar, final Graphics2D g2, final Shape shape, final int diameter, final double progress) {
                         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                        g2.setColor(textColor);
+                        g2.setColor(getTable().getForeground());
                         // g2.fillRect(0, 0, 10, 10);
                         final Area a = new Area(shape);
                         a.intersect(new Area(new Ellipse2D.Float(-(diameter) / 2, -(diameter) / 2, diameter, diameter)));
@@ -216,9 +183,7 @@ public class ExtractionJobTableModel extends ExtTableModel<ExtractionController>
                 determinatedRenderer.setNonvalueClipPainter(new IconPainter() {
                     public void paint(final CircledProgressBar bar, final Graphics2D g2, final Shape shape, final int diameter, final double progress) {
                         g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                        if (back != null) {
-                            g2.setColor(back);
-                        }
+                        g2.setColor(getTable().getBackground());
                         final Area a = new Area(shape);
                         a.intersect(new Area(new Ellipse2D.Float(-(diameter) / 2, -(diameter) / 2, diameter, diameter)));
                         g2.fill(a);
@@ -247,16 +212,6 @@ public class ExtractionJobTableModel extends ExtTableModel<ExtractionController>
             }
 
             @Override
-            protected Color getDefaultForeground() {
-                final Color ret = textColor;
-                if (ret != null) {
-                    return ret;
-                } else {
-                    return super.getDefaultForeground();
-                }
-            }
-
-            @Override
             public JComponent getRendererComponent(ExtractionController value, boolean isSelected, boolean hasFocus, int row, int column) {
                 super.getRendererComponent(value, isSelected, hasFocus, row, column);
                 return panel;
@@ -271,9 +226,7 @@ public class ExtractionJobTableModel extends ExtTableModel<ExtractionController>
             @Override
             public void resetRenderer() {
                 super.resetRenderer();
-                if (textColor != null) {
-                    determinatedRenderer.setForeground(textColor);
-                }
+                determinatedRenderer.setForeground(getTable().getForeground());
                 this.determinatedRenderer.setBorder(BorderFactory.createEmptyBorder(1, 5, 1, 1));
             }
 

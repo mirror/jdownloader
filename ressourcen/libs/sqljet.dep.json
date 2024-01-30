@@ -46,6 +46,8 @@
   "minJRE":"1.6",
   "provider":"maven",
   "renames":null,
+  "requiredBy":[],
   "version":"1.1.10",
+  "autoRenameEnabled":true,
   "confirm":true
 }

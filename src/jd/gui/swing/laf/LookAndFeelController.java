@@ -24,8 +24,6 @@ import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.plaf.metal.MetalLookAndFeel;
 
-import jd.SecondLevelLaunch;
-
 import org.appwork.loggingv3.LogV3;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.ValidationException;
@@ -53,6 +51,8 @@ import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.updatev2.UpdateController;
 import org.jdownloader.updatev2.gui.LAFOptions;
 import org.jdownloader.updatev2.gui.LookAndFeelType;
+
+import jd.SecondLevelLaunch;
 
 public class LookAndFeelController implements LAFManagerInterface {
     private static final LookAndFeelController INSTANCE = new LookAndFeelController();
@@ -233,11 +233,11 @@ public class LookAndFeelController implements LAFManagerInterface {
                 }
                 LAFOptions.init(laf);
                 if (Application.isHeadless()) {
-                    new SyntheticaHelper(LAFOptions.getInstance().getCfg()).setLicense(liz);
+                    SyntheticaHelper.setLicense(liz);
                 } else {
                     new SyntheticaHelper(LAFOptions.getInstance().getCfg()).load(laf, liz);
                 }
-                ExtTooltip.setForgroundColor(LAFOptions.getInstance().getColorForTooltipForeground());
+                UIManager.put(ExtTooltip.APPWORK_TOOLTIP_FOREGROUND, LAFOptions.getInstance().getColorForTooltipForeground());
             } else {
                 /* init for all other laf */
                 UIManager.setLookAndFeel(laf);

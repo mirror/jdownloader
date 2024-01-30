@@ -36,14 +36,11 @@ import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.updatev2.gui.LAFOptions;
 
 public class BasicJDTable<T> extends ExtTable<T> implements GenericConfigEventListener<Integer> {
-
     private static final long serialVersionUID                 = -9181860215412270250L;
     protected int             mouseOverRow                     = -1;
     private Color             sortNotifyColor;
-    private final boolean     overwriteHorizontalLinesPossible;
-
+    protected final boolean   overwriteHorizontalLinesPossible;
     private boolean           showHorizontalLineBelowLastEntry = true;
-
     private boolean           noRepaint                        = false;
 
     public BasicJDTable(ExtTableModel<T> tableModel) {
@@ -53,17 +50,12 @@ public class BasicJDTable<T> extends ExtTable<T> implements GenericConfigEventLi
         this.setShowHorizontalLinesWithoutRepaint(true);
         this.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         sortNotifyColor = CFG_GUI.SORT_COLUMN_HIGHLIGHT_ENABLED.isEnabled() ? (LAFOptions.getInstance().getColorForTableSortedColumnView()) : null;
-
         this.setBackground((LAFOptions.getInstance().getColorForPanelBackground()));
-
         addSelectionHighlighter();
-
         if (CFG_GUI.TABLE_MOUSE_OVER_HIGHLIGHT_ENABLED.isEnabled()) {
-
             initMouseOverRowHighlighter();
         }
         initRowHeight();
-
         this.setIntercellSpacing(new Dimension(0, 0));
         initAlternateRowHighlighter();
         if (Application.getJavaVersion() < Application.JAVA17) {
@@ -80,7 +72,6 @@ public class BasicJDTable<T> extends ExtTable<T> implements GenericConfigEventLi
         if (col != null) {
             setGridColor(col);
         }
-
     }
 
     protected void addSelectionHighlighter() {
@@ -93,7 +84,6 @@ public class BasicJDTable<T> extends ExtTable<T> implements GenericConfigEventLi
             public int getPriority() {
                 return Integer.MAX_VALUE;
             }
-
         });
     }
 
@@ -116,20 +106,17 @@ public class BasicJDTable<T> extends ExtTable<T> implements GenericConfigEventLi
 
     protected void initMouseOverRowHighlighter() {
         addMouseMotionListener(new MouseMotionListener() {
-
             @Override
             public void mouseDragged(MouseEvent e) {
             }
 
             @Override
             public void mouseMoved(MouseEvent e) {
-
                 int newRow = getRowIndexByPoint(e.getPoint());
                 int oldRow = -1;
                 if (newRow != mouseOverRow) {
                     oldRow = mouseOverRow;
                     mouseOverRow = newRow;
-
                     if (oldRow >= 0) {
                         repaintRow(oldRow);
                     }
@@ -137,7 +124,6 @@ public class BasicJDTable<T> extends ExtTable<T> implements GenericConfigEventLi
                         repaintRow(mouseOverRow);
                     }
                 }
-
             }
 
             protected void repaintRow(int newRow) {
@@ -147,19 +133,15 @@ public class BasicJDTable<T> extends ExtTable<T> implements GenericConfigEventLi
             }
         });
         addMouseListener(new MouseAdapter() {
-
             @Override
             public void mouseExited(MouseEvent e) {
                 int newRow = -1;
                 int oldRow = -1;
-
                 oldRow = mouseOverRow;
                 mouseOverRow = newRow;
-
                 if (oldRow >= 0) {
                     repaintRow(oldRow);
                 }
-
             }
 
             protected void repaintRow(int newRow) {
@@ -184,13 +166,11 @@ public class BasicJDTable<T> extends ExtTable<T> implements GenericConfigEventLi
             public int getPriority() {
                 return Integer.MAX_VALUE - 1;
             }
-
         });
     }
 
     @Override
     public boolean editCellAt(int row, int column, EventObject e) {
-
         return super.editCellAt(row, column, e);
     }
 
@@ -204,7 +184,6 @@ public class BasicJDTable<T> extends ExtTable<T> implements GenericConfigEventLi
     protected int calculateAutoRowHeight() {
         // Try to determine the correct auto row height.
         ExtTextColumn<String> col = new ExtTextColumn<String>("Test") {
-
             @Override
             public String getStringValue(String value) {
                 return "Test";
@@ -214,7 +193,6 @@ public class BasicJDTable<T> extends ExtTable<T> implements GenericConfigEventLi
         // use letters that are as height as possible
         col.configureRendererComponent("T§gj²*", true, true, 1, 1);
         int prefHeight = rend.getPreferredSize().height;
-
         final IntegerKeyHandler customRowHeight = LAFOptions.CUSTOM_TABLE_ROW_HEIGHT;
         Integer custom = null;
         if (customRowHeight != null) {
@@ -226,7 +204,6 @@ public class BasicJDTable<T> extends ExtTable<T> implements GenericConfigEventLi
         } else {
             return prefHeight + 3;
         }
-
     }
 
     public boolean isOriginalOrder() {
@@ -234,7 +211,6 @@ public class BasicJDTable<T> extends ExtTable<T> implements GenericConfigEventLi
     }
 
     public boolean isResizeableColumns() {
-
         return true;
     }
 
@@ -249,7 +225,6 @@ public class BasicJDTable<T> extends ExtTable<T> implements GenericConfigEventLi
     @Override
     public void onConfigValueModified(KeyHandler<Integer> keyHandler, Integer newValue) {
         new EDTRunner() {
-
             @Override
             protected void runInEDT() {
                 initRowHeight();
@@ -270,10 +245,11 @@ public class BasicJDTable<T> extends ExtTable<T> implements GenericConfigEventLi
 
     @Override
     public void paintComponent(Graphics g) {
-
+        //
         if (overwriteHorizontalLinesPossible == false || isShowHorizontalLineBelowLastEntry()) {
             super.paintComponent(g);
         } else {
+            // DebugMode.debugger(this instanceof AccountListTable);
             boolean before = getShowHorizontalLines();
             try {
                 if (!isShowHorizontalLineBelowLastEntry()) {
@@ -296,7 +272,6 @@ public class BasicJDTable<T> extends ExtTable<T> implements GenericConfigEventLi
                     Rectangle maxCell = getCellRect(rMax, cMax, true);
                     Rectangle damagedArea = minCell.union(maxCell);
                     SynthGraphicsUtils synthG = context.getStyle().getGraphicsUtils(context);
-
                     int tableWidth = damagedArea.x + damagedArea.width;
                     int y = damagedArea.y;
                     for (int row = rMin; row <= rMax - 1; row++) {
@@ -312,14 +287,12 @@ public class BasicJDTable<T> extends ExtTable<T> implements GenericConfigEventLi
             if (sortNotifyColor != null && sortColumn != null) {
                 filteredColumn = sortColumn.getIndex();
             }
-
             Graphics2D g2 = (Graphics2D) g;
             Composite comp = g2.getComposite();
             final Rectangle visibleRect = this.getVisibleRect();
             g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.1f));
             if (filteredColumn >= 0) {
                 Rectangle first = this.getCellRect(0, filteredColumn, true);
-
                 int w = getModel().getSortColumn().getWidth() - Math.max(0, visibleRect.x - first.x);
                 if (w > 0) {
                     g2.setColor(sortNotifyColor);
@@ -350,5 +323,4 @@ public class BasicJDTable<T> extends ExtTable<T> implements GenericConfigEventLi
             noRepaint = false;
         }
     }
-
 }

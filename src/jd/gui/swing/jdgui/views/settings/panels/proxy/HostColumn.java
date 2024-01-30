@@ -1,5 +1,6 @@
 package jd.gui.swing.jdgui.views.settings.panels.proxy;
 
+import java.awt.Color;
 import java.awt.Point;
 import java.io.IOException;
 import java.net.URL;
@@ -9,6 +10,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import javax.swing.Icon;
 import javax.swing.JLabel;
+import javax.swing.UIManager;
 
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.JSonStorage;
@@ -124,7 +126,10 @@ public class HostColumn extends ExtTextColumn<AbstractProxySelectorImpl> {
             }
             panel.add(lbl = new JLabel(_GUI.T.ConnectionColumn_getStringValue_connection(proxyString + " (000.000.000.000)"), icon, JLabel.LEADING));
             SwingUtils.setOpaque(lbl, false);
-            lbl.setForeground(FOREGROUND_COLOR);
+            Color color = UIManager.getColor(ExtTooltip.APPWORK_TOOLTIP_FOREGROUND);
+            if (color != null) {
+                lbl.setForeground(color);
+            }
             final JLabel finalLbl = lbl;
             final long taskID = TASK.incrementAndGet();
             SCHEDULER.execute(new Runnable() {

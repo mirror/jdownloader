@@ -23,6 +23,8 @@
   "minJRE":"1.6",
   "provider":"maven",
   "renames":{"filters":"Filters"},
+  "requiredBy":[],
   "version":null,
+  "autoRenameEnabled":true,
   "confirm":true
 }

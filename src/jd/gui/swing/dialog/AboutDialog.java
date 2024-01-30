@@ -45,15 +45,6 @@ import javax.swing.JScrollPane;
 import javax.swing.LookAndFeel;
 import javax.swing.UIManager;
 
-import jd.SecondLevelLaunch;
-import jd.controlling.ClipboardMonitoring;
-import jd.controlling.reconnect.ReconnectPluginController;
-import jd.gui.swing.Factory;
-import jd.gui.swing.components.linkbutton.JLink;
-import jd.gui.swing.jdgui.JDGui;
-import jd.nutils.io.JDIO;
-import net.miginfocom.swing.MigLayout;
-
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.swing.MigPanel;
@@ -90,6 +81,15 @@ import org.jdownloader.gui.notify.BubbleNotify.AbstractNotifyWindowFactory;
 import org.jdownloader.gui.notify.gui.AbstractNotifyWindow;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
+
+import jd.SecondLevelLaunch;
+import jd.controlling.ClipboardMonitoring;
+import jd.controlling.reconnect.ReconnectPluginController;
+import jd.gui.swing.Factory;
+import jd.gui.swing.components.linkbutton.JLink;
+import jd.gui.swing.jdgui.JDGui;
+import jd.nutils.io.JDIO;
+import net.miginfocom.swing.MigLayout;
 
 public class AboutDialog extends AbstractDialog<Integer> {
     private int labelHeight = 0;
@@ -499,7 +499,7 @@ public class AboutDialog extends AbstractDialog<Integer> {
         final GregorianCalendar calendar = new GregorianCalendar();
         calendar.setTimeInMillis(System.currentTimeMillis());
         final int year = calendar.get(Calendar.YEAR);
-        return Math.max(2022, year);
+        return Math.max(2024, year);
     }
 
     private String get7ZipJBindingDetails() {

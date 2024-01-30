@@ -31,6 +31,8 @@
   "minJRE":"1.6",
   "provider":"maven",
   "renames":{"jdk15to18":"jdk15on"},
+  "requiredBy":[],
   "version":null,
+  "autoRenameEnabled":true,
   "confirm":true
 }
