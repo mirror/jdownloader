@@ -19,9 +19,9 @@ import org.appwork.utils.JVMVersion;
 import org.appwork.utils.ProcMounts;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.logging2.extmanager.LoggerFactory;
+import org.appwork.utils.os.ContainerRuntime;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.os.CrossSystem.OperatingSystem;
-import org.appwork.utils.os.ContainerRuntime;
 import org.appwork.utils.os.Snap;
 import org.appwork.utils.os.hardware.HardwareType;
 import org.appwork.utils.os.hardware.HardwareTypeInterface;
@@ -98,44 +98,65 @@ public class SystemAPIImpl implements SystemAPI {
         if (JVMVersion.isMinimum(JVMVersion.JAVA_1_7)) {
             return SystemAPIImpl17.getStorageInfos(path);
         } else {
-            final List<StorageInformationStorable> ret = new ArrayList<StorageInformationStorable>();
-            final List<File> roots = new ArrayList<File>();
-            if (StringUtils.isNotEmpty(path)) {
-                roots.add(new File(path));
-            }
-            if (roots.size() == 0) {
-                if (CrossSystem.isUnix()) {
-                    try {
-                        final List<ProcMounts> procMounts = ProcMounts.list();
-                        if (procMounts != null) {
-                            for (final ProcMounts procMount : procMounts) {
-                                if (!procMount.isReadOnly()) {
-                                    final String mountPoint = procMount.getMountPoint();
-                                    if ("/".equals(mountPoint) || mountPoint.startsWith("/home") || mountPoint.startsWith("/mnt") || mountPoint.startsWith("/media")) {
-                                        roots.add(new File(mountPoint));
-                                    }
-                                }
+            return getStorageInfos16(path);
+        }
+    }
+
+    public static List<StorageInformationStorable> getStorageInfos16(final String path) {
+        final List<StorageInformationStorable> ret = new ArrayList<StorageInformationStorable>();
+        final List<File> roots = new ArrayList<File>();
+        if (StringUtils.isNotEmpty(path)) {
+            roots.add(new File(path));
+        }
+        if (roots.size() == 0) {
+            if (CrossSystem.isUnix()) {
+                try {
+                    final List<ProcMounts> procMounts = ProcMounts.list();
+                    if (procMounts != null) {
+                        final List<String> typeFilters = Arrays.asList("usbfs", "fusectl", "hugetlbfs", "binfmt_misc", "cgroup", "pstore", "sysfs", "tmpfs", "proc", "configfs", "debugfs", "mqueue", "devtmpfs", "devpts", "devfs", "securityfs", "nfsd", "fusectl", "fuse.gvfsd-fuse", "rpc_pipefs", "efivarfs", "fuse.lxcfs", "nsfs", "squashfs");
+                        final List<String> pathFilters = Arrays.asList("/proc", "/boot", "/sys", "/dev", "/run/user");
+                        for (final ProcMounts procMount : procMounts) {
+                            if (procMount.isReadOnly()) {
+                                continue;
+                            } else if (typeFilters.contains(procMount.getFileSystem())) {
+                                continue;
+                            } else if (isFiltered(pathFilters, procMount.getMountPoint())) {
+                                continue;
+                            } else {
+                                final String mountPoint = procMount.getMountPoint();
+                                roots.add(new File(mountPoint));
                             }
                         }
-                    } catch (final IOException e) {
                     }
-                }
-                if (roots.size() == 0) {
-                    final File[] fileRoots = File.listRoots();
-                    if (fileRoots != null) {
-                        roots.addAll(Arrays.asList(fileRoots));
-                    }
+                } catch (final IOException e) {
                 }
             }
-            for (final File root : roots) {
-                final StorageInformationStorable storage = new StorageInformationStorable();
-                storage.setPath(root.getPath());
-                storage.setSize(root.getTotalSpace());
-                storage.setFree(root.getUsableSpace());
-                ret.add(storage);
+            if (roots.size() == 0) {
+                final File[] fileRoots = File.listRoots();
+                if (fileRoots != null) {
+                    roots.addAll(Arrays.asList(fileRoots));
+                }
             }
-            return ret;
         }
+        for (final File root : roots) {
+            final StorageInformationStorable storage = new StorageInformationStorable();
+            storage.setPath(root.getPath());
+            storage.setSize(root.getTotalSpace());
+            storage.setFree(root.getUsableSpace());
+            ret.add(storage);
+        }
+        return ret;
+    }
+
+    protected static boolean isFiltered(final List<String> filters, final String path) {
+        if (filters.size() > 0 && path != null) {
+            for (String filter : filters) {
+                if (path.startsWith(filter)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     @Override
