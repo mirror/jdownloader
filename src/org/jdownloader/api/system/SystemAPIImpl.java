@@ -107,7 +107,7 @@ public class SystemAPIImpl implements SystemAPI {
     static {
         if (CrossSystem.isUnix()) {
             fileSystemFilters = Arrays.asList("usbfs", "fusectl", "hugetlbfs", "binfmt_misc", "cgroup", "pstore", "sysfs", "tmpfs", "proc", "configfs", "debugfs", "mqueue", "devtmpfs", "devpts", "devfs", "securityfs", "nfsd", "fusectl", "fuse.gvfsd-fuse", "rpc_pipefs", "efivarfs", "fuse.lxcfs", "nsfs", "squashfs");
-            pathFilters = Arrays.asList("/proc", "/boot", "/sys", "/dev", "/run/user", "/usr/lib", "/usr/src", "/var/lib", "/etc");
+            pathFilters = Arrays.asList("/proc", "/boot", "/sys", "/dev", "/etc", "/run/user", "/usr/lib", "/usr/src", "/var/lib", "/var/log", "/var/tmp");
         } else {
             fileSystemFilters = new ArrayList<String>();
             pathFilters = new ArrayList<String>();
