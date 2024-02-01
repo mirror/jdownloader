@@ -1,5 +1,6 @@
 {
   "artefact":"org.bouncycastle/bcpkix-jdk15to18",
+  "dependencies":null,
   "filter":null,
   "installed":{
     "date":"2023-11-20T17:16:30 CET",
@@ -7,13 +8,13 @@
       {
         "groupId":"org.bouncycastle",
         "artifactId":"bcprov-jdk15to18",
-        "version":1.77,
+        "version":"1.77",
         "type":"jar"
       },
       {
         "groupId":"org.bouncycastle",
         "artifactId":"bcutil-jdk15to18",
-        "version":1.77,
+        "version":"1.77",
         "type":"jar"
       }
     ],

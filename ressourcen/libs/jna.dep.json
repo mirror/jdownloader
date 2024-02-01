@@ -1,9 +1,10 @@
 {
   "artefact":"net.java.dev.jna/jna",
+  "dependencies":null,
   "filter":null,
   "installed":{
     "date":"2023-09-04T11:08:34 CEST",
-    "dependencies":[],
+    "dependencies":null,
     "description":"Java Native Access",
     "hashes":{"jna.jar":"66d4f819a062a51a1d5627bffc23fac55d1677f0e0a1feba144aabdd670a64bb"},
     "licenses":[
@@ -27,7 +28,12 @@
   "minJRE":"1.6",
   "provider":"maven",
   "renames":null,
-  "requiredBy":[],
+  "requiredBy":[{
+    "artefact":"net.java.dev.jna/jna-platform",
+    "file":"C:\\Users\\thomas\\eclipse-workspace - 07_10_2022\\JDownloader\\ressourcen\\libs\\jna-platform.dep.json",
+    "provider":"maven",
+    "version":"5.13.0"
+  }],
   "version":null,
   "autoRenameEnabled":true,
   "confirm":true

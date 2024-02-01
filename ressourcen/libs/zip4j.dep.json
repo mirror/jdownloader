@@ -1,9 +1,41 @@
 {
   "artefact":"net.lingala.zip4j/zip4j",
+  "dependencies":null,
   "filter":null,
   "installed":{
     "date":"2023-09-04T11:08:34 CEST",
-    "dependencies":[],
+    "dependencies":[
+      {
+        "groupId":"junit",
+        "artifactId":"junit",
+        "version":"${junit.version}",
+        "scope":"test"
+      },
+      {
+        "groupId":"org.assertj",
+        "artifactId":"assertj-core",
+        "version":"${assertj.version}",
+        "scope":"test"
+      },
+      {
+        "groupId":"org.mockito",
+        "artifactId":"mockito-core",
+        "version":"${mockito.version}",
+        "scope":"test"
+      },
+      {
+        "groupId":"org.powermock",
+        "artifactId":"powermock-module-junit4",
+        "version":"${powermock.version}",
+        "scope":"test"
+      },
+      {
+        "groupId":"org.powermock",
+        "artifactId":"powermock-api-mockito2",
+        "version":"${powermock.version}",
+        "scope":"test"
+      }
+    ],
     "description":"Zip4j - A Java library for zip files and streams",
     "hashes":{"zip4j.jar":"fb90f436e328d4041db802ce9b571ddb3a580703935ddc37df5183155638af0e"},
     "licenses":[{

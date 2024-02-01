@@ -22,12 +22,12 @@ import java.util.List;
 import java.util.Map;
 
 import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
 
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.XML;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
@@ -271,7 +271,7 @@ public class IgnCom extends PluginForDecrypt {
                 br.getPage("http://rutube.ru/play/embed/" + vid + "?wmode=opaque&autoStart=true");
                 String videoBalancer = br.getRegex("(http\\:\\/\\/bl\\.rutube\\.ru[^\"]+)").getMatch(0);
                 if (videoBalancer != null) {
-                    final DocumentBuilder parser = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+                    final DocumentBuilder parser = XML.newSecureFactory().newDocumentBuilder();
                     final XPath xPath = XPathFactory.newInstance().newXPath();
                     br.getPage(videoBalancer);
                     Document d = parser.parse(new ByteArrayInputStream(br.toString().getBytes("UTF-8")));

@@ -22,13 +22,13 @@ import java.util.List;
 import java.util.Map;
 
 import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
 
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.XML;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.w3c.dom.Document;
@@ -171,7 +171,7 @@ public class RuTubeRuDecrypter extends PluginForDecrypt {
             if (expireTimestampStr == null || !expireTimestampStr.matches("\\d+")) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            final DocumentBuilder parser = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+            final DocumentBuilder parser = XML.newSecureFactory().newDocumentBuilder();
             final XPath xPath = XPathFactory.newInstance().newXPath();
             final Browser streamBR = getAjaxBR(br.cloneBrowser());
             streamBR.getPage(streamDefault);

@@ -601,7 +601,7 @@ public class JAntiCaptcha {
      * @return int -1: Übersprungen Sonst: anzahl der richtig erkanten Letter
      */
     private Document createXMLFromLetterDB() {
-        Document xml = JDUtilities.parseXmlString("<jDownloader></jDownloader>", false);
+        Document xml = JDUtilities.parseXmlString("<jDownloader></jDownloader>");
         if (letterMap != null) {
             Element element = xml.createElement("map");
             xml.getFirstChild().appendChild(element);
@@ -751,7 +751,7 @@ public class JAntiCaptcha {
             logger.severe("jacinfo.xml is missing2");
             return;
         }
-        Document doc = JDUtilities.parseXmlString(JDIO.readFileToString(f), false);
+        Document doc = JDUtilities.parseXmlString(JDIO.readFileToString(f));
         if (doc == null) {
             logger.severe("jacinfo.xml is missing2");
             return;
@@ -1277,7 +1277,7 @@ public class JAntiCaptcha {
         } else {
             str = "<jDownloader></jDownloader>";
         }
-        Document mth = JDUtilities.parseXmlString(str, false);
+        Document mth = JDUtilities.parseXmlString(str);
         logger.info("Get file: " + f);
         if (mth == null) {
             logger.severe("MTH FILE NOT AVAILABLE.");

@@ -1,9 +1,10 @@
 {
   "artefact":"org.bouncycastle/bcprov-jdk15to18",
+  "dependencies":null,
   "filter":null,
   "installed":{
     "date":"2023-11-20T17:16:31 CET",
-    "dependencies":[],
+    "dependencies":null,
     "description":"The Bouncy Castle Crypto package is a Java implementation of cryptographic algorithms. This jar contains JCE provider and lightweight API for the Bouncy Castle Cryptography APIs for JDK 1.5 to JDK 1.8.",
     "hashes":{"bcprov-jdk15on.jar":"c121f7e5aa559444059d44dfb8f55bf9ef0ce2faa22ad643620fa4991285a406"},
     "licenses":[{
@@ -18,7 +19,26 @@
   "minJRE":"1.6",
   "provider":"maven",
   "renames":{"jdk15to18":"jdk15on"},
-  "requiredBy":[],
+  "requiredBy":[
+    {
+      "artefact":"org.bouncycastle/bcpkix-jdk15to18",
+      "file":"C:\\Users\\thomas\\eclipse-workspace - 07_10_2022\\JDownloader\\ressourcen\\libs\\bcpkix-jdk15to18.dep.json",
+      "provider":"maven",
+      "version":"1.77"
+    },
+    {
+      "artefact":"org.bouncycastle/bctls-jdk15to18",
+      "file":"C:\\Users\\thomas\\eclipse-workspace - 07_10_2022\\JDownloader\\ressourcen\\libs\\bctls-jdk15to18.dep.json",
+      "provider":"maven",
+      "version":"1.77"
+    },
+    {
+      "artefact":"org.bouncycastle/bcutil-jdk15to18",
+      "file":"C:\\Users\\thomas\\eclipse-workspace - 07_10_2022\\JDownloader\\ressourcen\\libs\\bcutil-jdk15to18.dep.json",
+      "provider":"maven",
+      "version":"1.77"
+    }
+  ],
   "version":null,
   "autoRenameEnabled":true,
   "confirm":true

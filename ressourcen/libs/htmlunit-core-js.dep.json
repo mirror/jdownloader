@@ -1,9 +1,10 @@
 {
   "artefact":"net.sourceforge.htmlunit/htmlunit-core-js",
+  "dependencies":null,
   "filter":null,
   "installed":{
     "date":"2023-09-04T11:08:34 CEST",
-    "dependencies":[],
+    "dependencies":null,
     "description":"HtmlUnit adaptation of Mozilla Rhino Javascript engine for Java. \n\t\tChanges are documented by a diff (rhinoDiff.txt) contained in the generated jar files.",
     "hashes":{"htmlunit-core-js.jar":"32fd749af1599ab0daf22b60cbe97b6792cb9fe8b4220496a3adb667e58a5c3c"},
     "licenses":[{

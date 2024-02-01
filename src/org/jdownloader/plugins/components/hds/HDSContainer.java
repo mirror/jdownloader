@@ -5,20 +5,20 @@ import java.util.ArrayList;
 import java.util.List;
 
 import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
 
-import jd.http.Browser;
-import jd.plugins.DownloadLink;
-
 import org.appwork.utils.Hash;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.XML;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+
+import jd.http.Browser;
+import jd.plugins.DownloadLink;
 
 public class HDSContainer {
     public static HDSContainer findBestVideoByResolution(final List<HDSContainer> list) {
@@ -171,7 +171,7 @@ public class HDSContainer {
     }
 
     public static List<HDSContainer> getHDSQualities(final Browser br) throws Exception {
-        final DocumentBuilder parser = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+        final DocumentBuilder parser = XML.newSecureFactory().newDocumentBuilder();
         final Document d = parser.parse(new ByteArrayInputStream(br.getRequest().getHtmlCode().getBytes("UTF-8")));
         final XPath xPath = XPathFactory.newInstance().newXPath();
         final NodeList root = (NodeList) xPath.evaluate("/manifest", d, XPathConstants.NODESET);

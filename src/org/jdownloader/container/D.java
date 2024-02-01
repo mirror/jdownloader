@@ -30,6 +30,7 @@ import javax.xml.transform.stream.StreamResult;
 import org.appwork.utils.Files;
 import org.appwork.utils.Hash;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.XML;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ExtensionsFilterInterface;
@@ -741,13 +742,7 @@ public class D extends PluginsC {
         // org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info(jdtc);
         InputSource is;
         Document doc;
-        f = DocumentBuilderFactory.newInstance();
-        f.setValidating(false);
-        // www.owasp.org/index.php/XML_External_Entity_(XXE)_Prevention_Cheat_Sheet
-        f.setFeature("http://xml.org/sax/features/external-general-entities", false);
-        f.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
-        f.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
-        f.setXIncludeAware(false);
+        f = XML.newSecureFactory();
         f.setExpandEntityReferences(false);
         // org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().info("encrypted: "+dlcString);
         if (cs.trim().startsWith("<dlc")) {
@@ -889,7 +884,7 @@ public class D extends PluginsC {
                 continue;
             }
         }
-        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        DocumentBuilderFactory factory = XML.newSecureFactory();
         SubConfiguration cfg = SubConfiguration.getConfig("DLCCONFIG");
         InputSource inSourceHeader = new InputSource(new StringReader("<header><generator><app></app><version/><url></url></generator><tribute/><dlcxmlversion/></header>"));
         InputSource inSourceContent = new InputSource(new StringReader("<content/>"));

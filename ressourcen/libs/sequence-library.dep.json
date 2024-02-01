@@ -1,5 +1,6 @@
 {
   "artefact":"de.regnis.q.sequence/sequence-library",
+  "dependencies":null,
   "filter":null,
   "installed":{
     "date":"2023-09-04T11:08:34 CEST",
@@ -22,7 +23,12 @@
   "minJRE":"1.6",
   "provider":"maven",
   "renames":null,
-  "requiredBy":[],
+  "requiredBy":[{
+    "artefact":"org.tmatesoft.svnkit/svnkit",
+    "file":"C:\\Users\\thomas\\eclipse-workspace - 07_10_2022\\JDownloader\\ressourcen\\libs\\svnkit.dep.json",
+    "provider":"maven",
+    "version":"1.0.3"
+  }],
   "version":"1.0.2",
   "autoRenameEnabled":true,
   "confirm":true

@@ -1,5 +1,6 @@
 {
   "artefact":"net.java.dev.jna/jna-platform",
+  "dependencies":null,
   "filter":null,
   "installed":{
     "date":"2023-09-04T11:08:34 CEST",

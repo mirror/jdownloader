@@ -11,7 +11,11 @@ import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
+
+import org.appwork.utils.XML;
+import org.appwork.utils.encoding.Base64;
+import org.w3c.dom.Document;
+import org.w3c.dom.NodeList;
 
 import jd.controlling.linkcrawler.ArchiveInfo;
 import jd.controlling.linkcrawler.CrawledLink;
@@ -20,10 +24,6 @@ import jd.plugins.ContainerStatus;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginsC;
-
-import org.appwork.utils.encoding.Base64;
-import org.w3c.dom.Document;
-import org.w3c.dom.NodeList;
 
 public class SFDL extends PluginsC {
     /* Documentation: https://github.com/n0ix/SFDL.NET/wiki/How-it-Works-(SFDL-File-documentation) */
@@ -41,7 +41,7 @@ public class SFDL extends PluginsC {
     public ContainerStatus callDecryption(final File sfdlFile) {
         final ContainerStatus cs = new ContainerStatus(sfdlFile);
         try {
-            final DocumentBuilder documentBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+            final DocumentBuilder documentBuilder = XML.newSecureFactory().newDocumentBuilder();
             /* Parse XML file */
             final Document document = documentBuilder.parse(sfdlFile);
             final boolean sfdl_AuthRequired = getNode(document, "AuthRequired").equalsIgnoreCase("true");

@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.controlling.reconnect.pluginsinc.liveheader;
 
 import java.io.StringReader;
@@ -21,6 +20,7 @@ import java.util.HashMap;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 
+import org.appwork.utils.XML;
 import org.jdownloader.logging.LogController;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
@@ -28,25 +28,21 @@ import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 
 public class CLRConverter {
-
     public static String[] createLiveHeader(String clr) {
         try {
-            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            DocumentBuilderFactory factory = XML.newSecureFactory();
             factory.setIgnoringComments(true);
-            factory.setValidating(false);
-
             InputSource inSource = new InputSource(new StringReader(clr));
-
             Document doc = factory.newDocumentBuilder().parse(inSource);
-
             NodeList nodes = doc.getFirstChild().getChildNodes();
             String routerName = null;
             StringBuilder hlh = new StringBuilder();
             hlh.append("[[[HSRC]]]\r\n");
             for (int i = 0; i < nodes.getLength(); i++) {
                 Node node = nodes.item(i);
-                if (node.getNodeType() != 1) continue;
-
+                if (node.getNodeType() != 1) {
+                    continue;
+                }
                 if (node.getNodeName().equalsIgnoreCase("router")) {
                     routerName = node.getAttributes().getNamedItem("name").getNodeValue().trim();
                 } else if (node.getNodeName().equalsIgnoreCase("command")) {
@@ -80,9 +76,7 @@ public class CLRConverter {
                         } catch (Exception ee) {
                             continue;
                         }
-
                     }
-
                     if (method.equalsIgnoreCase("post")) {
                         hlh.append("            Host: %%%routerip%%%\r\n");
                         CLRConverter.inputAuth(hlh, basicauth);
@@ -105,7 +99,6 @@ public class CLRConverter {
                 }
             }
             hlh.append("[[[/HSRC]]]");
-
             return new String[] { routerName, hlh.toString() };
         } catch (Throwable e) {
             LogController.CL().log(e);

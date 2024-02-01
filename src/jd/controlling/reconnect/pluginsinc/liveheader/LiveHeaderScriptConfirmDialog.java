@@ -357,7 +357,7 @@ public class LiveHeaderScriptConfirmDialog extends AbstractDialog<Object> {
             script = script.replaceAll("</RESPONSE.*>", "]]></RESPONSE>");
         }
         StringBuilder sb = new StringBuilder();
-        final Document xmlScript = JDUtilities.parseXmlString(script, false);
+        final Document xmlScript = JDUtilities.parseXmlString(script);
         if (xmlScript == null) {
             logger.severe("Error while parsing the xml string: " + script);
             throw new ReconnectException("Error while parsing the xml string");

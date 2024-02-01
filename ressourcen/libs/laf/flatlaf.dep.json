@@ -1,9 +1,10 @@
 {
   "artefact":"com.formdev/flatlaf",
+  "dependencies":null,
   "filter":["flatlaf.jar"],
   "installed":{
     "date":"2024-01-15T14:47:42 CET",
-    "dependencies":[],
+    "dependencies":null,
     "description":"Flat Look and Feel",
     "hashes":{"flatlaf.jar":"a658a31937a20c4b4a5d98229cbd06e5e67dd3f150f4d6c7a0e4af5e4ffff945"},
     "licenses":[{

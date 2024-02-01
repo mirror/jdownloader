@@ -1,5 +1,15 @@
 {
   "artefact":"org.tmatesoft.svnkit/svnkit",
+  "dependencies":[
+    {
+      "artifactId":"sequence-library",
+      "groupId":"de.regnis.q.sequence"
+    },
+    {
+      "artifactId":"sqljet",
+      "groupId":"org.tmatesoft.sqljet"
+    }
+  ],
   "filter":null,
   "installed":{
     "date":"2023-09-04T11:08:34 CEST",
@@ -37,7 +47,7 @@
       {
         "groupId":"junit",
         "artifactId":"junit",
-        "version":4.8,
+        "version":"4.8",
         "scope":"test"
       },
       {

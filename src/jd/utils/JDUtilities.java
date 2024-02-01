@@ -27,14 +27,8 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 
-import jd.SecondLevelLaunch;
-import jd.nutils.Executer;
-import jd.nutils.Formatter;
-import jd.nutils.io.JDIO;
-import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
-
 import org.appwork.utils.Application;
+import org.appwork.utils.XML;
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.controller.PluginClassLoader;
@@ -48,6 +42,13 @@ import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.xml.sax.InputSource;
+
+import jd.SecondLevelLaunch;
+import jd.nutils.Executer;
+import jd.nutils.Formatter;
+import jd.nutils.io.JDIO;
+import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
 
 /**
  * @author astaldo/JD-Team
@@ -231,14 +232,13 @@ public class JDUtilities {
         return exec.getOutputStream() + " \r\n " + exec.getErrorStream();
     }
 
-    public static Document parseXmlString(final String xmlString, final boolean validating) {
+    public static Document parseXmlString(final String xmlString) {
         if (xmlString == null) {
             return null;
         }
         try {
             // Create a builder factory
-            final DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-            factory.setValidating(validating);
+            final DocumentBuilderFactory factory = XML.newSecureFactory();
             final InputSource inSource = new InputSource(new StringReader(xmlString));
             // Create the builder and parse the file
             final Document doc = factory.newDocumentBuilder().parse(inSource);

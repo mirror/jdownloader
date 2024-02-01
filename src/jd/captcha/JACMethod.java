@@ -92,7 +92,7 @@ public class JACMethod implements Comparable<JACMethod> {
 
     public static java.util.List<JACMethod> parseJACInfo(File dir) {
         String filecontent = JDIO.readFileToString(new File(dir.getAbsolutePath() + "/jacinfo.xml"));
-        Document doc = JDUtilities.parseXmlString(filecontent, false);
+        Document doc = JDUtilities.parseXmlString(filecontent);
         if (doc == null) {
             return null;
         }

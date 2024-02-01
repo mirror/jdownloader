@@ -1,5 +1,6 @@
 {
   "artefact":"org.tmatesoft.sqljet/sqljet",
+  "dependencies":null,
   "filter":null,
   "installed":{
     "date":"2023-09-04T11:08:34 CEST",
@@ -19,18 +20,15 @@
       {
         "groupId":"org.easymock",
         "artifactId":"easymock",
-        "version":2.4,
+        "version":"2.4",
         "scope":"test"
       },
       {
         "groupId":"org.antlr",
         "artifactId":"antlr-runtime",
-        "version":3.4,
+        "version":"3.4",
         "scope":"compile",
-        "exclusions":{
-          "artifactId":"ST4",
-          "groupId":"org.antlr"
-        }
+        "exclusions":"\n        \n          antlr\n          antlr\n        \n        \n          stringtemplate\n          org.antlr\n        \n        \n          ST4\n          org.antlr\n        \n      "
       }
     ],
     "description":"Pure Java Sqlite Library",
@@ -46,7 +44,12 @@
   "minJRE":"1.6",
   "provider":"maven",
   "renames":null,
-  "requiredBy":[],
+  "requiredBy":[{
+    "artefact":"org.tmatesoft.svnkit/svnkit",
+    "file":"C:\\Users\\thomas\\eclipse-workspace - 07_10_2022\\JDownloader\\ressourcen\\libs\\svnkit.dep.json",
+    "provider":"maven",
+    "version":"1.1.10"
+  }],
   "version":"1.1.10",
   "autoRenameEnabled":true,
   "confirm":true

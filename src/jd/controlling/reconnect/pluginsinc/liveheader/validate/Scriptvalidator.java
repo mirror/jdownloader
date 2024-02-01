@@ -16,16 +16,12 @@ import java.util.Map;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
-import jd.controlling.reconnect.pluginsinc.liveheader.LiveHeaderReconnectSettings;
-import jd.controlling.reconnect.pluginsinc.liveheader.remotecall.RouterData;
-import jd.nutils.Formatter;
-import jd.nutils.encoding.Base64;
-
 import org.appwork.remoteapi.exceptions.InternalApiException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.XML;
 import org.appwork.utils.encoding.URLEncode;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.logging2.LogSource;
@@ -38,6 +34,11 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
+
+import jd.controlling.reconnect.pluginsinc.liveheader.LiveHeaderReconnectSettings;
+import jd.controlling.reconnect.pluginsinc.liveheader.remotecall.RouterData;
+import jd.nutils.Formatter;
+import jd.nutils.encoding.Base64;
 
 public class Scriptvalidator {
     protected RouterData rd;
@@ -53,13 +54,12 @@ public class Scriptvalidator {
         return source.split("\r\n|\r|\n");
     }
 
-    public static Document parseXmlString(final String xmlString, final boolean validating) throws SAXException, IOException, ParserConfigurationException {
+    public static Document parseXmlString(final String xmlString) throws SAXException, IOException, ParserConfigurationException {
         if (xmlString == null) {
             return null;
         }
         // Create a builder factory
-        final DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-        factory.setValidating(validating);
+        final DocumentBuilderFactory factory = XML.newSecureFactory();
         final InputSource inSource = new InputSource(new StringReader(xmlString));
         // Create the builder and parse the file
         final Document doc = factory.newDocumentBuilder().parse(inSource);
@@ -96,7 +96,7 @@ public class Scriptvalidator {
             script = script.replaceAll("</RESPONSE.*>", "]]></RESPONSE>");
         }
         StringBuilder sb = new StringBuilder();
-        final Document xmlScript = parseXmlString(script, false);
+        final Document xmlScript = parseXmlString(script);
         if (xmlScript == null) {
             throw new Exception("Error while parsing the xml string");
         }
@@ -393,7 +393,7 @@ public class Scriptvalidator {
         }
     }
 
-    protected HashSet<String> exceptionsParameterKeys  = new HashSet<String>();
+    protected HashSet<String> exceptionsParameterKeys = new HashSet<String>();
     {
         exceptionsParameterKeys.add("var:pagename".toLowerCase(Locale.ENGLISH));
         exceptionsParameterKeys.add("var:errorpagename".toLowerCase(Locale.ENGLISH));
@@ -411,7 +411,7 @@ public class Scriptvalidator {
         exceptionsParameterKeys.add("mbg_webname".toLowerCase(Locale.ENGLISH));
         exceptionsParameterKeys.add("intfName".toLowerCase(Locale.ENGLISH));
     }
-    protected HashSet<String> defaultPasswords         = new HashSet<String>();
+    protected HashSet<String> defaultPasswords = new HashSet<String>();
     {
         defaultPasswords.add("administrator");
         defaultPasswords.add("admin");
@@ -422,7 +422,7 @@ public class Scriptvalidator {
         defaultPasswords.add("password");
         defaultPasswords.add("pass");
     }
-    protected HashSet<String> defaultUsernames         = new HashSet<String>();
+    protected HashSet<String> defaultUsernames = new HashSet<String>();
     {
         defaultUsernames.add("admin");
         defaultUsernames.add("user");
@@ -434,7 +434,7 @@ public class Scriptvalidator {
         defaultUsernames.add("1234");
         defaultUsernames.add("administrator");
     }
-    protected HashSet<String> whitelistValues          = new HashSet<String>();
+    protected HashSet<String> whitelistValues = new HashSet<String>();
     {
         whitelistValues.add("true");
         whitelistValues.add("false");

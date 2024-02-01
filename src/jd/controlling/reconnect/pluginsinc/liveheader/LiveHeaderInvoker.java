@@ -186,7 +186,7 @@ public class LiveHeaderInvoker extends ReconnectInvoker {
         /* we have to handle 401 special */
         br.setAllowedResponseCodes(new int[] { 401 });
         try {
-            final Document xmlScript = JDUtilities.parseXmlString(script, false);
+            final Document xmlScript = JDUtilities.parseXmlString(script);
             if (xmlScript == null) {
                 logger.severe("Error while parsing the xml string: " + script);
                 throw new ReconnectException("Error while parsing the xml string");
