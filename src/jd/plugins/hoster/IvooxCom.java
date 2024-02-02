@@ -22,6 +22,7 @@ import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.HTMLSearch;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -34,6 +35,13 @@ import jd.plugins.PluginForHost;
 public class IvooxCom extends PluginForHost {
     public IvooxCom(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.setFollowRedirects(true);
+        return br;
     }
 
     @Override
@@ -80,16 +88,12 @@ public class IvooxCom extends PluginForHost {
             link.setName(fid + default_extension);
         }
         this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
+        br.getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String title = br.getRegex("<h2>Descripción de ([^<>]+)</h2>").getMatch(0);
-        if (title == null) {
-            /* 2016-10-14: They messed up escaping in this html. */
-            title = br.getRegex("<meta property=\"og:title\" content=\"(.*?)\"\\s*/\\s*>").getMatch(0);
-        }
+        final Regex durationRegex = br.getRegex("var audio_duration  = '(\\d+):(\\d+)';");
+        String title = HTMLSearch.searchMetaTag(br, "og:title");
         String official_download = br.getRegex("downloadlink\\'\\)\\.load\\(\\'([^<>\"\\']+)\\'\\)").getMatch(0);
         if (official_download != null) {
             if (!official_download.startsWith("/")) {
@@ -108,10 +112,16 @@ public class IvooxCom extends PluginForHost {
         if (title != null) {
             title = Encoding.htmlDecode(title);
             title = title.trim();
+            title = title.replaceFirst("\\s*en iVoox$", "");
             link.setName(title + default_extension);
         }
-        /* Important: Direct-URL can only be used one time!! */
-        if (dllink != null && !isDownload) {
+        if (durationRegex.patternFind()) {
+            /* Calculate estimated filesize */
+            final long durationSeconds = (Long.parseLong(durationRegex.getMatch(0)) * 60) + Long.parseLong(durationRegex.getMatch(1));
+            // final long durationMilliseconds = durationSeconds * 1000;
+            link.setDownloadSize(96 * 1024l / 8 * durationSeconds);
+        } else if (dllink != null && !isDownload) {
+            /* Important: Direct-URL can only be used one time!! */
             URLConnectionAdapter con = null;
             try {
                 con = br.openHeadConnection(dllink);

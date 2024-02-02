@@ -152,7 +152,7 @@ public class TiktokComCrawler extends PluginForDecrypt {
         if (hostPlg.canHandle(contenturl)) {
             return crawlSingleMedia(hostPlg, param, contenturl);
         } else if (contenturl.matches(TYPE_USER_USERNAME) || contenturl.matches(TYPE_USER_USER_ID)) {
-            return crawlProfile(param);
+            return crawlProfile(param, contenturl);
         } else if (contenturl.matches(TYPE_PLAYLIST_TAG)) {
             return this.crawlPlaylistTag(param, contenturl);
         } else if (contenturl.matches(TYPE_PLAYLIST_MUSIC)) {
@@ -453,15 +453,15 @@ public class TiktokComCrawler extends PluginForDecrypt {
         return this.processAwemeDetail(hostPlg, aweme_detail, forceGrabAll, isForcedAPIUsage);
     }
 
-    public ArrayList<DownloadLink> crawlProfile(final CryptedLink param) throws Exception {
+    public ArrayList<DownloadLink> crawlProfile(final CryptedLink param, final String contenturl) throws Exception {
         if (PluginJsonConfig.get(TiktokConfig.class).getProfileCrawlerMaxItemsLimit() == 0) {
             logger.info("User has disabled profile crawler --> Returning empty array");
             return new ArrayList<DownloadLink>();
         }
         if (PluginJsonConfig.get(TiktokConfig.class).getProfileCrawlMode() == ProfileCrawlMode.API) {
-            return crawlProfileAPI(param);
+            return crawlProfileAPI(param, contenturl);
         } else {
-            return crawlProfileWebsite(param);
+            return crawlProfileWebsite(param, contenturl);
         }
     }
 
@@ -469,7 +469,7 @@ public class TiktokComCrawler extends PluginForDecrypt {
      * Use website to crawl all videos of a user. </br>
      * Pagination hasn't been implemented so this will only find the first batch of items - usually around 30 items!
      */
-    public ArrayList<DownloadLink> crawlProfileWebsite(final CryptedLink param) throws Exception {
+    public ArrayList<DownloadLink> crawlProfileWebsite(final CryptedLink param, final String contenturl) throws Exception {
         prepBRWebsite(br);
         /* Login whenever possible */
         final TiktokCom hostPlg = (TiktokCom) this.getNewPluginForHostInstance(this.getHost());
@@ -478,7 +478,7 @@ public class TiktokComCrawler extends PluginForDecrypt {
             hostPlg.login(account, false);
         }
         br.setFollowRedirects(true);
-        br.getPage(param.getCryptedUrl());
+        br.getPage(contenturl);
         if (br.getHttpConnection().getResponseCode() == 404) {
             /* Profile does not exist */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -494,7 +494,7 @@ public class TiktokComCrawler extends PluginForDecrypt {
             br.getPage("https://www." + this.getHost() + "/api/search/general/preview/?" + query.toString());
             sleep(1000, param);// this somehow bypass the protection, maybe calling api twice sets a cookie?
             br.getPage("https://www." + this.getHost() + "/api/search/general/preview/?" + query.toString());
-            br.getPage(param.getCryptedUrl());
+            br.getPage(contenturl);
         }
         this.checkErrorsWebsite(br);
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
@@ -673,14 +673,14 @@ public class TiktokComCrawler extends PluginForDecrypt {
         return ret;
     }
 
-    public ArrayList<DownloadLink> crawlProfileAPI(final CryptedLink param) throws Exception {
+    public ArrayList<DownloadLink> crawlProfileAPI(final CryptedLink param, final String contenturl) throws Exception {
         String user_id = null;
-        if (param.getCryptedUrl().matches(TYPE_USER_USER_ID)) {
+        if (contenturl.matches(TYPE_USER_USER_ID)) {
             /* user_id is given inside URL. */
-            user_id = new Regex(param.getCryptedUrl(), TYPE_USER_USER_ID).getMatch(0);
+            user_id = new Regex(contenturl, TYPE_USER_USER_ID).getMatch(0);
         } else {
             /* Only username is given and we need to find the user_id. */
-            final String usernameSlug = new Regex(param.getCryptedUrl(), TYPE_USER_USERNAME).getMatch(0);
+            final String usernameSlug = new Regex(contenturl, TYPE_USER_USERNAME).getMatch(0);
             if (usernameSlug == null) {
                 /* Developer mistake */
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -704,12 +704,12 @@ public class TiktokComCrawler extends PluginForDecrypt {
             }
             if (user_id == null) {
                 logger.info("Using fallback method to find userID!");
-                websitebrowser.getPage(param.getCryptedUrl());
+                websitebrowser.getPage(contenturl);
                 user_id = websitebrowser.getRegex("\"authorId\"\\s*:\\s*\"(.*?)\"").getMatch(0);
                 if (user_id == null && TiktokCom.isBotProtectionActive(websitebrowser)) {
                     sleep(1000, param);// This used to somehow bypass the protection, maybe calling api twice sets a cookie?
                     websitebrowser.getPage("https://www." + this.getHost() + "/api/search/general/preview/?" + query.toString());
-                    websitebrowser.getPage(param.getCryptedUrl());
+                    websitebrowser.getPage(contenturl);
                     user_id = websitebrowser.getRegex("\"authorId\"\\s*:\\s*\"(.*?)\"").getMatch(0);
                 }
             }

@@ -102,6 +102,7 @@ public class ImgurComHoster extends PluginForHost {
     /* DownloadLink properties */
     public static final String  PROPERTY_DOWNLOADLINK_DIRECT_URL                                             = "directlink";
     public static final String  PROPERTY_DOWNLOADLINK_TITLE                                                  = "directtitle";
+    public static final String  PROPERTY_DOWNLOADLINK_GALLERY_ID                                             = "galleryid";
     public static final String  PROPERTY_DOWNLOADLINK_ORDERID                                                = "orderid";
     public static final String  PROPERTY_DOWNLOADLINK_DATE                                                   = "date";
     public static final String  PROPERTY_DOWNLOADLINK_USERNAME                                               = "directusername";
@@ -1391,7 +1392,7 @@ public class ImgurComHoster extends PluginForHost {
                                                       put("SETTING_API_CREDENTIALS_CLIENTSECRET", "Enter your own imgur Oauth Client-Secret\r\nOn change, you will have to remove- and re-add existing imgur accounts to JDownloader!");
                                                       put("SETTING_TEXT_OTHER_SETTINGS", "Other settings:");
                                                       put("SETTING_GRAB_SOURCE_URL_VIDEO", "For video (.gif[v]) urls: Grab source url (e.g. youtube url)?");
-                                                      put("SETTING_TAGS", "Explanation of the available tags:\r\n*username* = Name of the user who posted the content\r\n*title* = Title of the picture\r\n*imgid* = Internal imgur id of the picture e.g. 'BzdfkGj'\r\n*orderid* = Order-ID of the picture e.g. '007'\r\n*ext* = Extension of the file");
+                                                      put("SETTING_TAGS", "Explanation of the available tags:\r\n*username* = Name of the user who posted the content\r\n*title* = Title of the picture\r\n*imgid* = Internal imgur id of the picture e.g. 'BzdfkGj'\r\n*galleryid* = Gallery-ID of the picture if it is part of an album/gallery e.g. 'xxxyyy'\r\n*orderid* = Order-ID of the picture e.g. '007'\r\n*ext* = Extension of the file");
                                                       put("LABEL_FILENAME", "Define custom filename:");
                                                       put("SETTING_TAGS_PACKAGENAME", "Explanation of the available tags:\r\n*username* = Name of the user who posted the content\r\n*title* = Title of the gallery\r\n*galleryid* = Internal imgur id of the gallery e.g. 'AxG3w'");
                                                       put("LABEL_PACKAGENAME", "Define custom packagename for galleries:");
@@ -1411,7 +1412,7 @@ public class ImgurComHoster extends PluginForHost {
                                                       put("SETTING_API_CREDENTIALS_CLIENTSECRET", "Gib deinen persönlichen imgur Oauth Client Secret ein.\r\nFalls du einen existierenden Wert änderst, wirst du existierende imgur Accounts in JD entfernen- und neu hinzufügen müssen!");
                                                       put("SETTING_TEXT_OTHER_SETTINGS", "Andere Einstellungen:");
                                                       put("SETTING_GRAB_SOURCE_URL_VIDEO", "Für video (.gif[v]) urls: Quell-urls (z.B. youtube urls) auch hinzufügen?");
-                                                      put("SETTING_TAGS", "Erklärung der verfügbaren Tags:\r\n*username* = Name des Benutzers, der die Inhalte hochgeladen hat\r\n*title* = Titel des Bildes\r\n*imgid* = Interne imgur id des Bildes z.B. 'DcTnzPt'\r\n*orderid* = Platzierungs-ID des Bildes z.B. '007'\r\n*ext* = Dateiendung");
+                                                      put("SETTING_TAGS", "Erklärung der verfügbaren Tags:\r\n*username* = Name des Benutzers, der die Inhalte hochgeladen hat\r\n*title* = Titel des Bildes\r\n*imgid* = Interne imgur id des Bildes z.B. 'DcTnzPt'\r\n*galleryid* = Gallerie-ID des Bildes sofern es als Teil eines Albums/Gallerie hinzugefügt wurde z.B. 'xxxyyy'\r\n*orderid* = Platzierungs-ID des Bildes z.B. '007'\r\n*ext* = Dateiendung");
                                                       put("LABEL_FILENAME", "Gib das Muster des benutzerdefinierten Dateinamens an:");
                                                       put("SETTING_TAGS_PACKAGENAME", "Erklärung der verfügbaren Tags:\r\n*username* = Name des Benutzers, der die Inhalte hochgeladen hat\r\n*title* = Titel der Gallerie\r\n*galleryid* = Interne imgur id der Gallerie z.B. 'AxG3w'");
                                                       put("LABEL_PACKAGENAME", "Gib das Muster des benutzerdefinierten Paketnamens für Gallerien an:");

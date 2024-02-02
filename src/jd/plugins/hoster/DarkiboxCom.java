@@ -30,6 +30,8 @@ import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class DarkiboxCom extends XFileSharingProBasic {
@@ -143,7 +145,7 @@ public class DarkiboxCom extends XFileSharingProBasic {
         } else {
             logger.info("[DownloadMode] Trying to find official video downloads");
         }
-        final String[][] videoInfo = br.getRegex("href=\"(?:https?://[^/]+)?(/d/[a-z0-9]{12}_[a-z]{1})\".*?\\d+x\\d+,? ([^<]+)<").getMatches();
+        final String[][] videoInfo = br.getRegex("href=\"(?:https?://[^/]+)?(/d/[a-z0-9]{12}_[a-z]{1})\".*?(?:\\d+)?x(?:\\d+)?, ([^<]+)<").getMatches();
         if (videoInfo == null || videoInfo.length == 0) {
             logger.info("Failed to find any official video downloads");
             return null;
@@ -230,6 +232,7 @@ public class DarkiboxCom extends XFileSharingProBasic {
             return filesizeStrChosen;
         }
         this.getPage(br, continueURL);
+        this.checkErrors(br, continueURL, link, account, false);
         String dllink = null;
         final Form download1 = br.getFormByInputFieldKeyValue("op", "download_orig");
         if (download1 != null) {
@@ -266,6 +269,14 @@ public class DarkiboxCom extends XFileSharingProBasic {
             logger.info("Successfully found dllink via official video download");
         }
         return dllink;
+    }
+
+    @Override
+    protected void checkErrors(final Browser br, final String html, final DownloadLink link, final Account account, final boolean checkAll) throws NumberFormatException, PluginException {
+        super.checkErrors(br, html, link, account, checkAll);
+        if (br.containsHTML(">\\s*You are not able to download Files")) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Website error 'You are not able to download Files'");
+        }
     }
 
     @Override
