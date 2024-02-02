@@ -34,6 +34,12 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.notify.BasicNotify;
+import org.jdownloader.gui.notify.BubbleNotify;
+import org.jdownloader.gui.notify.BubbleNotify.AbstractNotifyWindowFactory;
+import org.jdownloader.gui.notify.gui.AbstractNotifyWindow;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
@@ -517,10 +523,13 @@ public class PornHubComVideoCrawler extends PluginForDecrypt {
             } else if (totalNumberofItems != -1 && ret.size() >= totalNumberofItems) {
                 logger.info("Stopping because: Found all items: " + ret.size() + "/" + totalNumberofItems);
                 break;
-            } else if (numberofNewItemsThisPage < max_entries_per_page) {
-                logger.info("Stopping because: Current page contains less new items than max per page: " + numberofNewItemsThisPage + "/" + max_entries_per_page);
+            } else if (numberofNewItemsThisPage == 0) {
+                logger.info("Stopping because: Failed to find any new items on current page");
                 break;
             } else {
+                if (numberofNewItemsThisPage < max_entries_per_page) {
+                    this.displayBubblenotifyMessage(br._getURL().getPath(), "Current page " + page + " contains less items than max which indicates that this collection of items contains duplicates so number of items in the end might be lower than number of items suggested by website which is " + totalNumberofItemsText + ".\r\nnumberofNewItemsThisPage= " + numberofNewItemsThisPage + " of max items on one page: " + max_entries_per_page);
+                }
                 /* Continue to next page */
                 page++;
                 // PornHubCom.getPage(br, "/users/" + username + "/videos/public/ajax?o=mr&page=" + page);
@@ -1169,6 +1178,15 @@ public class PornHubComVideoCrawler extends PluginForDecrypt {
 
     private DownloadLink getDecryptDownloadlink(final String viewKey, final String format, final String quality) {
         return createDownloadlink("https://pornhubdecrypted/" + viewKey + "/" + format + "/" + quality);
+    }
+
+    private void displayBubblenotifyMessage(final String title, final String msg) {
+        BubbleNotify.getInstance().show(new AbstractNotifyWindowFactory() {
+            @Override
+            public AbstractNotifyWindow<?> buildAbstractNotifyWindow() {
+                return new BasicNotify("Pornhub: " + title, msg, new AbstractIcon(IconKey.ICON_INFO, 32));
+            }
+        });
     }
 
     public int getMaxConcurrentProcessingInstances() {

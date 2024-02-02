@@ -630,7 +630,7 @@ public class OneFichierCom extends PluginForHost {
         loginWebsite(account, true);
         /* And yet another workaround for broken API case ... */
         br.getPage("https://" + this.getHost() + "/en/console/index.pl");
-        final boolean isPremium = br.containsHTML("(?i)>\\s*Premium\\s*(offer)\\s*Account\\s*<");
+        final boolean isPremium = br.containsHTML("(?i)>\\s*Premium\\s*(offer)?\\s*Account\\s*<");
         final boolean isAccess = br.containsHTML("(?i)>\\s*Access\\s*(offer)\\s*Account\\s*<");
         // final boolean isFree = br.containsHTML(">\\s*Free\\s*(offer)\\s*Account\\s*<");
         String accountStatus = null;

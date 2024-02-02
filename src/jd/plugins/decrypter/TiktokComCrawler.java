@@ -110,10 +110,12 @@ public class TiktokComCrawler extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final TiktokCom hostPlg = (TiktokCom) this.getNewPluginForHostInstance(this.getHost());
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        if (param.getCryptedUrl().matches(TYPE_REDIRECT) || param.getCryptedUrl().matches(TYPE_APP)) {
+        /* 2023-01-26: Replace photo -> video is just a cheap workaround for now. */
+        final String contenturl = param.getCryptedUrl().replaceFirst("(?i)http://", "https://").replace("/photo/", "/video/");
+        if (contenturl.matches(TYPE_REDIRECT) || contenturl.matches(TYPE_APP)) {
             /* Single redirect URLs */
             br.setFollowRedirects(false);
-            final String initialURL = param.getCryptedUrl().replaceFirst("(?i)http://", "https://");
+            final String initialURL = contenturl;
             String redirect = initialURL;
             int loops = 0;
             do {
@@ -146,14 +148,15 @@ public class TiktokComCrawler extends PluginForDecrypt {
             logger.info("Old URL: " + initialURL + " | New URL: " + redirect);
             ret.add(createDownloadlink(redirect));
             return ret;
-        } else if (hostPlg.canHandle(param.getCryptedUrl())) {
-            return crawlSingleMedia(hostPlg, param);
-        } else if (param.getCryptedUrl().matches(TYPE_USER_USERNAME) || param.getCryptedUrl().matches(TYPE_USER_USER_ID)) {
+        }
+        if (hostPlg.canHandle(contenturl)) {
+            return crawlSingleMedia(hostPlg, param, contenturl);
+        } else if (contenturl.matches(TYPE_USER_USERNAME) || contenturl.matches(TYPE_USER_USER_ID)) {
             return crawlProfile(param);
-        } else if (param.getCryptedUrl().matches(TYPE_PLAYLIST_TAG)) {
-            return this.crawlPlaylistTag(param);
-        } else if (param.getCryptedUrl().matches(TYPE_PLAYLIST_MUSIC)) {
-            return this.crawlPlaylistMusic(param);
+        } else if (contenturl.matches(TYPE_PLAYLIST_TAG)) {
+            return this.crawlPlaylistTag(param, contenturl);
+        } else if (contenturl.matches(TYPE_PLAYLIST_MUSIC)) {
+            return this.crawlPlaylistMusic(param, contenturl);
         } else {
             // unsupported url pattern
             logger.warning("Unsupported URL: " + param.getCryptedUrl());
@@ -161,21 +164,21 @@ public class TiktokComCrawler extends PluginForDecrypt {
         }
     }
 
-    private ArrayList<DownloadLink> crawlSingleMedia(final TiktokCom hostPlg, final CryptedLink param) throws Exception {
-        return crawlSingleMedia(hostPlg, param, AccountController.getInstance().getValidAccount(this.getHost()), false);
+    private ArrayList<DownloadLink> crawlSingleMedia(final TiktokCom hostPlg, final CryptedLink param, final String contenturl) throws Exception {
+        return crawlSingleMedia(hostPlg, param, contenturl, AccountController.getInstance().getValidAccount(this.getHost()), false);
     }
 
-    public ArrayList<DownloadLink> crawlSingleMedia(final TiktokCom hostPlg, final CryptedLink param, final Account account, final boolean forceGrabAll) throws Exception {
+    public ArrayList<DownloadLink> crawlSingleMedia(final TiktokCom hostPlg, final CryptedLink param, final String contenturl, final Account account, final boolean forceGrabAll) throws Exception {
         final DownloadLink link = param.getDownloadLink();
         final boolean forceAPI = link != null ? link.getBooleanProperty(TiktokCom.PROPERTY_FORCE_API, false) : false;
         if (TiktokCom.getDownloadMode() == MediaCrawlMode.API || forceAPI) {
-            return this.crawlSingleMediaAPI(param.getCryptedUrl(), null, forceAPI, forceGrabAll);
+            return this.crawlSingleMediaAPI(contenturl, null, forceAPI, forceGrabAll);
         } else {
             try {
-                return crawlSingleMediaWebsite(hostPlg, param.getCryptedUrl(), null, forceGrabAll);
+                return crawlSingleMediaWebsite(hostPlg, contenturl, null, forceGrabAll);
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND && br.containsHTML("\"(?:status_msg|message)\"\\s*:\\s*\"Something went wrong\"")) {
-                    final ArrayList<DownloadLink> results = this.crawlSingleMediaAPI(param.getCryptedUrl(), null, true, forceGrabAll);
+                    final ArrayList<DownloadLink> results = this.crawlSingleMediaAPI(contenturl, null, true, forceGrabAll);
                     logger.info("Auto fallback to API worked fine");
                     return results;
                 } else {
@@ -794,22 +797,22 @@ public class TiktokComCrawler extends PluginForDecrypt {
         return ret;
     }
 
-    public ArrayList<DownloadLink> crawlPlaylistTag(final CryptedLink param) throws Exception {
+    public ArrayList<DownloadLink> crawlPlaylistTag(final CryptedLink param, final String contenturl) throws Exception {
         if (PluginJsonConfig.get(TiktokConfig.class).getTagCrawlerMaxItemsLimit() == 0) {
             logger.info("User has disabled tag crawler --> Returning empty array");
             return new ArrayList<DownloadLink>();
         }
-        return crawlPlaylistAPI(param);
+        return crawlPlaylistAPI(param, contenturl);
     }
 
-    public ArrayList<DownloadLink> crawlPlaylistAPI(final CryptedLink param) throws Exception {
-        final String tagName = new Regex(param.getCryptedUrl(), TYPE_PLAYLIST_TAG).getMatch(0);
+    public ArrayList<DownloadLink> crawlPlaylistAPI(final CryptedLink param, final String contenturl) throws Exception {
+        final String tagName = new Regex(contenturl, TYPE_PLAYLIST_TAG).getMatch(0);
         if (tagName == null) {
             /* Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         prepBRWebsite(br);
-        br.getPage(param.getCryptedUrl());
+        br.getPage(contenturl);
         checkErrorsWebsite(br);
         final String tagID = br.getRegex("snssdk\\d+://challenge/detail/(\\d+)").getMatch(0);
         if (tagID == null) {
@@ -821,20 +824,7 @@ public class TiktokComCrawler extends PluginForDecrypt {
     }
 
     /** Under development */
-    public ArrayList<DownloadLink> crawlPlaylistMusic(final CryptedLink param) throws Exception {
-        // TODO
-        if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        // if (PluginJsonConfig.get(TiktokConfig.class).getTagCrawlerMaxItemsLimit() == 0) {
-        // logger.info("User has disabled tag crawler --> Returning empty array");
-        // return new ArrayList<DownloadLink>();
-        // }
-        return crawlPlaylistMusicAPI(param);
-    }
-
-    /** Under development */
-    public ArrayList<DownloadLink> crawlPlaylistMusicAPI(final CryptedLink param) throws Exception {
+    public ArrayList<DownloadLink> crawlPlaylistMusic(final CryptedLink param, final String contenturl) throws Exception {
         // TODO
         if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -842,6 +832,19 @@ public class TiktokComCrawler extends PluginForDecrypt {
         final Regex urlinfo = new Regex(param.getCryptedUrl(), TYPE_PLAYLIST_MUSIC);
         final String musicPlaylistTitle = urlinfo.getMatch(0);
         final String musicID = urlinfo.getMatch(1);
+        if (musicPlaylistTitle == null || musicID == null) {
+            /* Developer mistake */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        return crawlPlaylistMusicAPI(param, musicPlaylistTitle, musicID);
+    }
+
+    /** Under development */
+    public ArrayList<DownloadLink> crawlPlaylistMusicAPI(final CryptedLink param, final String musicPlaylistTitle, final String musicID) throws Exception {
+        // TODO
+        if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         if (musicPlaylistTitle == null || musicID == null) {
             /* Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

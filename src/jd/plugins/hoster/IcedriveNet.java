@@ -77,6 +77,7 @@ public class IcedriveNet extends PluginForHost {
     private static final String TYPE_NEW                    = "https?://[^/]+/file/(\\d+)";
     public static final String  PROPERTY_INTERNAL_FILE_ID   = "internal_file_id";
     public static final String  PROPERTY_INTERNAL_FOLDER_ID = "internal_folder_id";
+    public static final String  API_BASE_V2                 = "https://api.icedrive.net/API/Internal/V2";
 
     @Override
     public boolean isResumeable(final DownloadLink link, final Account account) {
@@ -156,7 +157,7 @@ public class IcedriveNet extends PluginForHost {
             return AvailableStatus.TRUE;
         } else {
             if (link.getFinalFileName() == null) {
-                requestFileInformation(link, br);
+                requestFileInformationAPI(link, br);
             }
             /* 2022-02-08: Don't check at all. */
             return AvailableStatus.TRUE;
@@ -168,14 +169,14 @@ public class IcedriveNet extends PluginForHost {
         this.handleDownload(link);
     }
 
-    private String requestFileInformation(final DownloadLink link, final Browser br) throws Exception {
+    private String requestFileInformationAPI(final DownloadLink link, final Browser br) throws Exception {
         final String internalFileID = this.getInternalFileID(link);
         if (internalFileID == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final Browser brc = br.cloneBrowser();
         brc.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        brc.getPage("https://icedrive.net/API/Internal/V1/?request=download-multi&items=file-" + URLEncode.encodeURIComponent(internalFileID) + "&public=1&sess=1");
+        brc.getPage(API_BASE_V2 + "/?request=download-multi&items=file-" + URLEncode.encodeURIComponent(internalFileID) + "&public=1");
         /** 2024-01-26: Use JavaScriptEngineFactory vs this.restoreFromString because they aren't returning normal json. */
         final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(brc.getRequest().getHtmlCode());
         final Boolean error = (Boolean) entries.get("error");
@@ -213,7 +214,7 @@ public class IcedriveNet extends PluginForHost {
     private void handleDownload(final DownloadLink link) throws Exception, PluginException {
         final String directlinkproperty = "free_directlink";
         if (!attemptStoredDownloadurlDownload(link, "free_directlink")) {
-            final String dllink = requestFileInformation(link, br);
+            final String dllink = requestFileInformationAPI(link, br);
             if (StringUtils.isEmpty(dllink)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -265,7 +266,7 @@ public class IcedriveNet extends PluginForHost {
     }
 
     @Override
-    public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
+    public boolean hasCaptcha(final DownloadLink link, final jd.plugins.Account acc) {
         return false;
     }
 

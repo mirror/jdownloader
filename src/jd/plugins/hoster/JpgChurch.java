@@ -63,6 +63,8 @@ public class JpgChurch extends PluginForHost {
     private String                     dllink             = null;
     private final String               PROPERTY_USER      = "user";
     public static final String         PROPERTY_PHPSESSID = "phpsessid";
+    /* Position of item if added as part of album (starts from 1). */
+    public static final String         PROPERTY_POSITION  = "position";
     /* Don't touch the following! */
     private static final AtomicInteger freeRunning        = new AtomicInteger(0);
 

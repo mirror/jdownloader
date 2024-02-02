@@ -27,6 +27,7 @@ import java.util.Map;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
+import org.appwork.storage.JSonMapperException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.swing.MigPanel;
@@ -195,7 +196,7 @@ public class FikperCom extends PluginForHost {
                 postdata.put("links", urlstocheck);
                 br.postPageRaw(API_BASE + "api/file/check-links", JSonStorage.serializeToJson(postdata));
                 this.checkErrorsAPI(br, null, account, null);
-                final List<Map<String, Object>> ressourcelist = (List<Map<String, Object>>) restoreFromString(br.toString(), TypeRef.OBJECT);
+                final List<Map<String, Object>> ressourcelist = (List<Map<String, Object>>) restoreFromString(br.getRequest().getHtmlCode(), TypeRef.OBJECT);
                 for (final DownloadLink link : links) {
                     if (!link.isNameSet()) {
                         link.setName(this.getWeakFilename(link));
@@ -260,7 +261,7 @@ public class FikperCom extends PluginForHost {
             /* {"code":404,"message":"The file might be deleted."} */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+        Map<String, Object> entries = this.checkErrorsAPI(br, link, account);
         String filename = (String) entries.get("name");
         String filesize = StringUtils.valueOfOrNull(entries.get("size"));
         final String message = (String) entries.get("message");
@@ -308,7 +309,7 @@ public class FikperCom extends PluginForHost {
                 this.login(account, false);
                 br.getPage(API_BASE + "api/file/download/" + Encoding.urlEncode(this.getFID(link)));
                 this.checkErrorsAPI(br, link, account, null);
-                dllink = br.toString();
+                dllink = br.getRequest().getHtmlCode();
             } else {
                 // if (account != null) {
                 // this.login(account, false);
@@ -333,7 +334,6 @@ public class FikperCom extends PluginForHost {
                 final boolean skipPreDownloadWaittime = true; // 2022-11-14: Wait time is skippable
                 final boolean useHcaptcha = false;
                 final boolean useSolvemediaCaptcha = true;
-                boolean usedCaptchaTypeCanFail = false;
                 final Map<String, Object> postdata = new HashMap<String, Object>();
                 if (useHcaptcha) {
                     /* 2023-01-16 */
@@ -360,7 +360,6 @@ public class FikperCom extends PluginForHost {
                     final String chid = sm.getChallenge(code);
                     postdata.put("captchaValue", code);
                     postdata.put("challenge", chid);
-                    usedCaptchaTypeCanFail = true;
                 } else {
                     /* Old handling */
                     final String recaptchaV2Response = getRecaptchaHelper(br).getToken();
@@ -374,20 +373,7 @@ public class FikperCom extends PluginForHost {
                     this.sleep(waitBeforeDownloadMillisLeft, link);
                 }
                 br.postPageRaw(API_BASE, JSonStorage.serializeToJson(postdata));
-                final Map<String, Object> dlresponse = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
-                final String code = StringUtils.valueOfOrNull(dlresponse.get("code"));
-                if (code != null && !"200".equals(code)) {
-                    final String message = StringUtils.valueOfOrNull(dlresponse.get("message"));
-                    if ("403".equals(code) && "File size limit".equals(message)) {
-                        // You can download files up to 2GB in free mode.
-                        // {"code":403,"message":"File size limit"}
-                        throw new AccountRequiredException("You can download files up to 2GB in free mode");
-                    } else if ("Invalid captcha.".equals("message") && usedCaptchaTypeCanFail) {
-                        throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_FATAL, "Code:" + code + "|Message:" + message);
-                    }
-                }
+                final Map<String, Object> dlresponse = this.checkErrorsAPI(br, link, account);
                 final String filesize = StringUtils.valueOfOrNull(dlresponse.get("size"));
                 if (filesize != null && filesize.matches("\\d+")) {
                     link.setVerifiedFileSize(Long.parseLong(filesize));
@@ -490,7 +476,8 @@ public class FikperCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        /* 2024-02-02: New value = 1, see: https://board.jdownloader.org/showthread.php?t=95116 */
+        return 1;
     }
 
     /** Using API: https://sapi.fikper.com/api/reference/ */
@@ -508,8 +495,7 @@ public class FikperCom extends PluginForHost {
                     return null;
                 }
                 br.getPage(API_BASE + "api/account");
-                final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
-                checkErrorsAPI(br, null, account, entries);
+                final Map<String, Object> entries = checkErrorsAPI(br, null, account);
                 return entries;
             } catch (final PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
@@ -520,38 +506,80 @@ public class FikperCom extends PluginForHost {
         }
     }
 
-    private void checkErrorsAPI(final Browser br, final DownloadLink link, final Account account, final Map<String, Object> map) throws PluginException {
-        Number code = br.getHttpConnection().getResponseCode();
-        String message = "Unknown error";
-        if (map != null) {
-            code = (Number) map.get("code");
-            message = (String) map.get("message");
+    private Map<String, Object> checkErrorsAPI(final Browser br, final DownloadLink link, final Account account) throws PluginException {
+        try {
+            final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+            checkErrorsAPI(br, link, account, entries);
+            return entries;
+        } catch (final JSonMapperException e) {
+            if (link != null) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Invalid API response", 60 * 1000l);
+            } else {
+                throw new AccountUnavailableException("Invalid API response", 60 * 1000);
+            }
         }
-        if (code == null || StringUtils.isEmpty(message)) {
+    }
+
+    private void checkErrorsAPI(final Browser br, final DownloadLink link, final Account account, final Map<String, Object> entries) throws PluginException {
+        if (entries == null) {
+            /* We can only check for response-code errors */
+            if (br.getHttpConnection().getResponseCode() == 401) {
+                throw new AccountInvalidException("401 Invalid API key");
+            }
+            return;
+        }
+        final String codeStr = StringUtils.valueOfOrNull(entries.get("code"));
+        if (codeStr == null) {
+            return;
+        } else if (!codeStr.matches("\\d+")) {
+            logger.warning("Errorcode is not a number but: " + codeStr);
+            return;
+        }
+        final int code = Integer.parseInt(codeStr);
+        if (code == 200) {
             /* No error */
             return;
         }
-        switch (code.intValue()) {
-        case 200:
-            /* No error */
-            return;
-        case 401:
+        long waitMillisOnRetry = 1 * 60 * 1000;
+        Map<String, Object> msgmap = null;
+        final String message = StringUtils.valueOfOrNull(entries.get("message"));
+        if (message != null && message.startsWith("{")) {
+            /* json inside json */
+            msgmap = restoreFromString(message, TypeRef.MAP);
+            final Object remainingDelay = msgmap.get("remainingDelay");
+            if (remainingDelay != null && remainingDelay.toString().matches("\\d+")) {
+                final long waitMillisOnRetryTmp = Long.parseLong(remainingDelay.toString());
+                if (waitMillisOnRetryTmp >= 60 * 1000) {
+                    waitMillisOnRetry = waitMillisOnRetryTmp;
+                }
+            }
+        }
+        if (code == 401) {
             throw new AccountInvalidException("401 Invalid API key");
-        case 404:
+        } else if (code == 404) {
             if (link != null) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-        default:
-            /* Check for common errormessages */
-            if (message.equalsIgnoreCase("To download this file you should be premium user.")) {
-                throw new AccountRequiredException();
+        } else if (code == 405) {
+            /* 2024-02-02: This may happen when we try to start too many [free] downloads at the same time */
+            /* E.g. {"code":405,"message":"{\"delay\":7200000,\"remainingDelay\":\"7189\"}"} */
+            if (link != null) {
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait before starting more downloads", waitMillisOnRetry);
+            }
+        }
+        if ("File size limit".equals(message)) {
+            // You can download files up to 2GB in free mode.
+            // {"code":403,"message":"File size limit"}
+            throw new AccountRequiredException("You can download files up to 2GB in free mode");
+        } else if ("Invalid captcha.".equals(message)) {
+            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        } else {
+            final String lastResortErrormsg = "Code:" + codeStr + "|Message:" + message;
+            /* Last resort for unknown errormessages. */
+            if (link == null) {
+                throw new AccountUnavailableException(lastResortErrormsg, waitMillisOnRetry);
             } else {
-                /* Last resort for unknown errormessages. */
-                if (link == null) {
-                    throw new AccountUnavailableException(message, 1 * 60 * 1000l);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_FATAL, message);
-                }
+                throw new PluginException(LinkStatus.ERROR_FATAL, lastResortErrormsg);
             }
         }
     }

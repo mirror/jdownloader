@@ -130,9 +130,9 @@ public class TiktokCom extends PluginForHost {
 
     @Override
     public String getLinkID(final DownloadLink link) {
-        final String fid = getContentID(link);
-        if (fid != null) {
-            return this.getHost() + "://" + fid + "_" + getType(link) + "_" + getIndexNumber(link);
+        final String contentID = getContentID(link);
+        if (contentID != null) {
+            return this.getHost() + "://" + contentID + "_" + getType(link) + "_" + getIndexNumber(link);
         } else {
             return super.getLinkID(link);
         }
@@ -143,7 +143,7 @@ public class TiktokCom extends PluginForHost {
     }
 
     public static String getContentID(final String url) {
-        return new Regex(url, "(?i)https?://.*/(?:video|v|embed)/(\\d+)").getMatch(0);
+        return new Regex(url, "(?i)https?://.*/(?:embed|photo|v|video)/(\\d+)").getMatch(0);
     }
 
     // private String dllink = null;
@@ -203,22 +203,22 @@ public class TiktokCom extends PluginForHost {
             /* Login whenever possible. */
             this.login(account, false);
         }
-        final String fid = getContentID(link);
-        if (fid == null) {
+        final String contentID = getContentID(link);
+        if (contentID == null) {
             /* Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        link.setProperty(PROPERTY_AWEME_ITEM_ID, fid);
+        link.setProperty(PROPERTY_AWEME_ITEM_ID, contentID);
         if (!link.isNameSet()) {
             /* Set fallback-filename. Use .mp4 file-extension as most items are expected to be videos. */
-            link.setName(fid + ".mp4");
+            link.setName(contentID + ".mp4");
         }
         String dllink = null;
         dllink = getStoredDirecturl(link);
         if (dllink == null || forceFetchNewDirecturl) {
             logger.info("Obtaining fresh directurl");
             final TiktokComCrawler crawler = (TiktokComCrawler) this.getNewPluginForDecryptInstance(this.getHost());
-            final ArrayList<DownloadLink> results = crawler.crawlSingleMedia(this, new CryptedLink(link.getPluginPatternMatcher()), account, true);
+            final ArrayList<DownloadLink> results = crawler.crawlSingleMedia(this, new CryptedLink(link.getPluginPatternMatcher()), link.getPluginPatternMatcher(), account, true);
             final String storedType = link.getStringProperty(PROPERTY_TYPE);
             DownloadLink result = null;
             final String currentFilename = link.getName();

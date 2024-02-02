@@ -133,6 +133,10 @@ public class JpgChurchCrawler extends PluginForDecrypt {
             }
         }
         String seek = br.getRegex("data-action=\"load-more\" data-seek=\"([^\"]+)\"").getMatch(0);
+        if (seek == null) {
+            /* 2024-02-02 */
+            seek = br.getRegex("seek=([^\\&\"]+)").getMatch(0);
+        }
         if (seek != null) {
             seek = Encoding.htmlDecode(seek);
         }
@@ -178,6 +182,7 @@ public class JpgChurchCrawler extends PluginForDecrypt {
         }
         final HashSet<String> dupes = new HashSet<String>();
         final int maxItemsPerPage = 42;
+        int imagePosition = 1;
         do {
             final String[] htmls = br.getRegex("<div class=\"list-item [^\"]+\"(.*?)class=\"btn-lock fas fa-eye-slash\"[^>]*></div>").getColumn(0);
             int numberofNewItems = 0;
@@ -190,8 +195,10 @@ public class JpgChurchCrawler extends PluginForDecrypt {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 if (!dupes.add(url)) {
+                    logger.info("Skipping dupe: " + url);
                     continue;
                 }
+                imagePosition++;
                 numberofNewItems++;
                 final DownloadLink link = this.createDownloadlink(url);
                 String ext = null;
@@ -213,16 +220,17 @@ public class JpgChurchCrawler extends PluginForDecrypt {
                     link.setDownloadPassword(passCode, true);
                     link.setProperty(JpgChurch.PROPERTY_PHPSESSID, br.getCookie(br.getHost(), "PHPSESSID", Cookies.NOTDELETEDPATTERN));
                 }
+                link.setProperty(JpgChurch.PROPERTY_POSITION, imagePosition);
                 distribute(link);
                 ret.add(link);
             }
-            logger.info("Crawled page " + page + " | Found items so far: " + ret.size());
+            logger.info("Crawled page " + page + " | Number of new items on current page: " + numberofNewItems + " | Found items so far: " + ret.size());
             if (this.isAbort()) {
                 logger.info("Stopping because: Aborted by user");
                 break;
             } else if (apiurl == null || token == null || seek == null) {
                 /* This should never happen */
-                logger.info("Stopping because: At least one mandatory pagination param is missing");
+                logger.info("Stopping because: At least one mandatory pagination param is missing | apiurl=" + apiurl + " | token=" + token + " | seek=" + seek);
                 break;
             } else if (numberofNewItems == 0) {
                 logger.info("Stopping because: Current page contains no new items");
