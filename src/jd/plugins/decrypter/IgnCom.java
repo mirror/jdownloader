@@ -26,13 +26,6 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.XML;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.parser.Regex;
@@ -45,6 +38,12 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.IgnVariant;
 import jd.plugins.hoster.DirectHTTP;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class IgnCom extends PluginForDecrypt {
@@ -271,7 +270,7 @@ public class IgnCom extends PluginForDecrypt {
                 br.getPage("http://rutube.ru/play/embed/" + vid + "?wmode=opaque&autoStart=true");
                 String videoBalancer = br.getRegex("(http\\:\\/\\/bl\\.rutube\\.ru[^\"]+)").getMatch(0);
                 if (videoBalancer != null) {
-                    final DocumentBuilder parser = XML.newSecureFactory().newDocumentBuilder();
+                    final DocumentBuilder parser = RuTubeRuDecrypter.newSecureFactory(this).newDocumentBuilder();
                     final XPath xPath = XPathFactory.newInstance().newXPath();
                     br.getPage(videoBalancer);
                     Document d = parser.parse(new ByteArrayInputStream(br.toString().getBytes("UTF-8")));

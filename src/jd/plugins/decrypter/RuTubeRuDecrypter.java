@@ -39,15 +39,14 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.RuTubeVariant;
 import jd.plugins.hoster.RuTubeRu;
 
-import org.appwork.loggingv3.LogV3;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.XML;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.w3c.dom.Document;
@@ -93,37 +92,37 @@ public class RuTubeRuDecrypter extends PluginForDecrypt {
     /**
      * @return
      */
-    static DocumentBuilderFactory newSecureFactory() {
+    public static DocumentBuilderFactory newSecureFactory(Plugin plugin) {
         final DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         // Enabling secure processing feature to prevent XML vulnerabilities
         try {
             factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
         } catch (final ParserConfigurationException e) {
-            LogV3.exception(XML.class, e);
+            plugin.getLogger().log(e);
         }
         // Disallowing Doctype Declarations to prevent XML External Entity (XXE) attacks
         try {
             factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
         } catch (final ParserConfigurationException e) {
-            LogV3.exception(XML.class, e);
+            plugin.getLogger().log(e);
         }
         // Disabling external general entities to enhance security against XXE
         try {
             factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
         } catch (final ParserConfigurationException e) {
-            LogV3.exception(XML.class, e);
+            plugin.getLogger().log(e);
         }
         // Disabling external parameter entities for additional security
         try {
             factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
         } catch (final ParserConfigurationException e) {
-            LogV3.exception(XML.class, e);
+            plugin.getLogger().log(e);
         }
         // Preventing the loading of external DTDs to secure against XXE attacks
         try {
             factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
         } catch (final ParserConfigurationException e) {
-            LogV3.exception(XML.class, e);
+            plugin.getLogger().log(e);
         }
         // Setting the factory to not be XInclude-aware and not to validate XML documents
         factory.setXIncludeAware(false);
@@ -217,7 +216,7 @@ public class RuTubeRuDecrypter extends PluginForDecrypt {
             if (expireTimestampStr == null || !expireTimestampStr.matches("\\d+")) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            final DocumentBuilder parser = newSecureFactory().newDocumentBuilder();
+            final DocumentBuilder parser = newSecureFactory(this).newDocumentBuilder();
             final XPath xPath = XPathFactory.newInstance().newXPath();
             final Browser streamBR = getAjaxBR(br.cloneBrowser());
             streamBR.getPage(streamDefault);

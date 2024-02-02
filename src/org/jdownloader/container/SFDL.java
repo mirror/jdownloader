@@ -12,11 +12,6 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import javax.xml.parsers.DocumentBuilder;
 
-import org.appwork.utils.XML;
-import org.appwork.utils.encoding.Base64;
-import org.w3c.dom.Document;
-import org.w3c.dom.NodeList;
-
 import jd.controlling.linkcrawler.ArchiveInfo;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.parser.Regex;
@@ -24,6 +19,11 @@ import jd.plugins.ContainerStatus;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginsC;
+
+import org.appwork.utils.XML;
+import org.appwork.utils.encoding.Base64;
+import org.w3c.dom.Document;
+import org.w3c.dom.NodeList;
 
 public class SFDL extends PluginsC {
     /* Documentation: https://github.com/n0ix/SFDL.NET/wiki/How-it-Works-(SFDL-File-documentation) */

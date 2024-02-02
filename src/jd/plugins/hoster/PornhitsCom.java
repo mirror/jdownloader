@@ -17,7 +17,6 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -139,7 +138,7 @@ public class PornhitsCom extends KernelVideoSharingComV2 {
         }
         final String json = decryptMagic(magicString);
         String dllink = null;
-        final List<HashMap<String, Object>> qualities = restoreFromString(json, TypeRef.LIST_HASHMAP);
+        final List<Map<String, Object>> qualities = (List<Map<String, Object>>) restoreFromString(json, TypeRef.OBJECT);
         if (qualities == null || qualities.isEmpty()) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

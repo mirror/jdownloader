@@ -17,17 +17,9 @@ package jd.plugins.hoster;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.parser.Regex;
@@ -37,6 +29,13 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "facecast.net" }, urls = { "https?://(?:www\\.)?facecast\\.net/(?:v|w)/([A-Za-z0-9]+)" })
 public class FacecastNet extends PluginForHost {
@@ -83,7 +82,7 @@ public class FacecastNet extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage("https://" + this.getHost() + "/ajaj/get_servers?_t=" + System.currentTimeMillis());
-        final List<HashMap<String, Object>> ressourcelist = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.LIST_HASHMAP);
+        final List<Map<String, Object>> ressourcelist = (List<Map<String, Object>>) restoreFromString(br.getRequest().getHtmlCode(), TypeRef.OBJECT);
         final Map<String, Object> randomServerMap = ressourcelist.get(new Random().nextInt(ressourcelist.size() - 1));
         final String webapidomain = randomServerMap.get("src").toString();
         br.getPage("https://" + webapidomain + "/eventdata?code=" + fid + "&ref=&_=" + System.currentTimeMillis());
