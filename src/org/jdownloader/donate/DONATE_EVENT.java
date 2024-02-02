@@ -49,6 +49,12 @@ public enum DONATE_EVENT {
                 } else {
                     return false;
                 }
+            } else if (year == 2024) {
+                if ((month == Calendar.SEPTEMBER && day >= 21) || (month == Calendar.OCTOBER && day <= 6)) {
+                    return true;
+                } else {
+                    return false;
+                }
             }
             return false;
         }
@@ -182,6 +188,14 @@ public enum DONATE_EVENT {
                 return true;
             } else if (year == 2024 && month == Calendar.MARCH && day == 31) {
                 return true;
+            } else if (year == 2025 && month == Calendar.APRIL && day == 20) {
+                return true;
+            } else if (year == 2026 && month == Calendar.APRIL && day == 5) {
+                return true;
+            } else if (year == 2027 && month == Calendar.MARCH && day == 28) {
+                return true;
+            } else if (year == 2028 && month == Calendar.APRIL && day == 16) {
+                return true;
             } else {
                 return false;
             }
@@ -213,6 +227,14 @@ public enum DONATE_EVENT {
             } else if (month == Calendar.NOVEMBER && day == 24 && year == 2023) {
                 return true;
             } else if (month == Calendar.NOVEMBER && day == 29 && year == 2024) {
+                return true;
+            } else if (month == Calendar.NOVEMBER && day == 28 && year == 2025) {
+                return true;
+            } else if (month == Calendar.NOVEMBER && day == 27 && year == 2026) {
+                return true;
+            } else if (month == Calendar.NOVEMBER && day == 26 && year == 2027) {
+                return true;
+            } else if (month == Calendar.NOVEMBER && day == 24 && year == 2028) {
                 return true;
             } else {
                 return false;
