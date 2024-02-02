@@ -25,7 +25,6 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings.SIZEUNIT;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
@@ -223,7 +222,7 @@ public class Xt7Pl extends PluginForHost {
             // br.getRegex("<div class=\"download\">(<a target=\"_blank\" href=\"mojekonto/ogladaj/[0-9A-Za-z]*?\">Oglądaj online</a> /
             // )*?<a href=\"([^\"<>]+)\" target=\"_blank\">Pobierz</a>").getMatch(1);
             // Old Regex
-            generatedLink = br.getRegex("<div class=\"download\"><a href=\"([^\"<>]+)\" target=\"_blank\">Pobierz</a>").getMatch(0);
+            generatedLink = br.getRegex("<div class=\"download\"><a href=\"([^\"<>]+)\"[^>]*>\\s*Pobierz\\s*</a>").getMatch(0);
             if (generatedLink == null) {
                 // New Regex (works with video files)
                 generatedLink = br.getRegex("<div class=\"download\">(<a target=\"_blank\" href=\"mojekonto/ogladaj/[0-9A-Za-z]*?\">Oglądaj[ online]*?</a> / )<a href=\"([^\"<>]+)\" target=\"_blank\">Pobierz</a>").getMatch(1);
@@ -257,15 +256,8 @@ public class Xt7Pl extends PluginForHost {
         // wait, workaround
         sleep(1 * 1000l, link);
         int chunks = 0;
-        // generated fileshark.pl link allows only 1 chunk
         // because download doesn't support more chunks and
         // and resume (header response has no: "Content-Range" info)
-        final String url = link.getPluginPatternMatcher();
-        final String oneChunkHostersPattern = ".*fileshark\\.pl.*";
-        if (url.matches(oneChunkHostersPattern) || downloadUrl.matches(oneChunkHostersPattern)) {
-            chunks = 1;
-            resume = false;
-        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, generatedLink, resume, chunks);
         if (dl.getConnection().getContentType().equalsIgnoreCase("text/html")) // unknown
         // error

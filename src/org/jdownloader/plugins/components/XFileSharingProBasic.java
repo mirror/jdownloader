@@ -3541,7 +3541,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
      */
     protected void checkErrors(final Browser br, final String html, final DownloadLink link, final Account account, final boolean checkAll) throws NumberFormatException, PluginException {
         if (checkAll) {
-            if (new Regex(html, "(?i)>\\s*Wrong password").matches()) {
+            if (new Regex(html, "(?i)>\\s*Wrong password").patternFind()) {
                 if (link.isPasswordProtected()) {
                     final String userEnteredPassword = link.getDownloadPassword();
                     /* handle password has failed in the past, additional try catching / resetting values */
@@ -3556,7 +3556,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
                      */
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Got error 'wrong password' but website never prompted for one");
                 }
-            } else if (new Regex(html, "(?i)>\\s*Wrong captcha").matches()) {
+            } else if (new Regex(html, "(?i)>\\s*Wrong captcha").patternFind()) {
                 logger.warning("Wrong captcha (or wrong password as well)!");
                 /*
                  * TODO: Find a way to avoid using a property for this or add the property in very plugin which overrides handleCaptcha e.g.
@@ -3569,7 +3569,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
                     /* This should never happen. Either developer mistake or broken filehost website. */
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server says 'wrong captcha' but never prompted for one");
                 }
-            } else if (new Regex(html, ">\\s*Skipped countdown\\s*<").matches()) {
+            } else if (new Regex(html, ">\\s*Skipped countdown\\s*<").patternFind()) {
                 /* 2019-08-28: e.g. "<br><b class="err">Skipped countdown</b><br>" */
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Fatal countdown error (countdown skipped)");
             }

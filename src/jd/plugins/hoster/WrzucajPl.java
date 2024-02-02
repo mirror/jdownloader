@@ -22,12 +22,15 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.plugins.components.YetiShareCore;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class WrzucajPl extends YetiShareCore {
@@ -132,5 +135,15 @@ public class WrzucajPl extends YetiShareCore {
     @Override
     protected boolean requiresWWW() {
         return false;
+    }
+
+    @Override
+    public void checkErrors(final Browser br, final DownloadLink link, final Account account) throws PluginException {
+        final String errorMsgURL = this.getErrorMsgURL(br);
+        if (errorMsgURL != null && errorMsgURL.contains("Aby pobierać pliki tego rozmiaru")) {
+            /* 2024-02-02 Temp change until core-update gets released */
+            throw new AccountRequiredException();
+        }
+        super.checkErrors(br, link, account);
     }
 }

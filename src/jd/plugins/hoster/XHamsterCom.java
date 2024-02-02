@@ -414,7 +414,13 @@ public class XHamsterCom extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 423", 60 * 60 * 1000l);
                 }
             }
-        } else if (responsecode == 404 || responsecode == 410 || responsecode == 452) {
+        } else if (responsecode == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (responsecode == 410) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (responsecode == 451) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Error 451 Unavailable For Legal Reasons");
+        } else if (responsecode == 452) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (this.isPremiumURL(contentURL)) {

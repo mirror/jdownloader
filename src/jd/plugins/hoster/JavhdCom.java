@@ -95,7 +95,7 @@ public class JavhdCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         final String videoid = this.getFID(link);
         if (!link.isNameSet()) {
-            link.setName(videoid + ".mp4");
+            link.setName(videoid + default_extension);
         }
         dllink = null;
         this.setBrowserExclusive();
@@ -104,11 +104,19 @@ public class JavhdCom extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String videoID = new Regex(br.getURL(), "video/(\\d+)$").getMatch(0);
-        br.getPage("/en/player_api/creator?videoId=" + videoID + "&is_trailer=1");
+        final String videoID1 = new Regex(br.getURL(), "(?i)/video/(\\d+)").getMatch(0);
+        final String videoID2 = new Regex(br.getURL(), "(?i)/id/(\\d+)").getMatch(0);
+        if (videoID1 == null && videoID2 == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (videoID1 != null) {
+            br.getPage("/en/player_api?videoId=" + videoID1 + "&is_trailer=1");
+        } else {
+            br.getPage("/en/player/" + videoID2 + "?is_trailer=1");
+        }
         final Map<String, Object> jsonroot = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         final String id = jsonroot.get("id").toString();
-        if (!id.equals(videoid)) {
+        if (!StringUtils.equals(id, videoID1) && !StringUtils.equals(id, videoID2)) {
             /* Offline = all values will be null */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -155,6 +163,7 @@ public class JavhdCom extends PluginForHost {
         final String titleFromURL = this.getTitleFromURL(link);
         String title = (String) jsonroot.get("title");
         if (StringUtils.isEmpty(title)) {
+            /* Fallback */
             title = titleFromURL;
         }
         title = Encoding.htmlDecode(title);
@@ -168,12 +177,12 @@ public class JavhdCom extends PluginForHost {
         } else {
             ext = default_extension;
         }
+        link.setFinalFileName(title + ext);
         if (!StringUtils.isEmpty(dllink)) {
             if (StringUtils.endsWithCaseInsensitive(dllink, "black_cap.mp4")) {
                 /* Example: https://javhd.com/en/tourjoin?id=30453 */
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Broken video or no trailer available");
             }
-            link.setFinalFileName(title + ext);
             URLConnectionAdapter con = null;
             try {
                 con = br.openHeadConnection(dllink);
@@ -185,9 +194,6 @@ public class JavhdCom extends PluginForHost {
                 } catch (final Throwable e) {
                 }
             }
-        } else {
-            /* We cannot be sure whether we have the correct extension or not! */
-            link.setName(title + ext);
         }
         return AvailableStatus.TRUE;
     }
