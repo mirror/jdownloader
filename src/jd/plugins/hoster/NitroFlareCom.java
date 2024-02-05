@@ -813,12 +813,15 @@ public class NitroFlareCom extends antiDDoSForHost {
                     f.put("login", "");
                     submitForm(f);
                     if (getLoginFormWebsite(br) == null) {
+                        logger.info("Breaking login-loop because: Login successful(?)");
                         break;
                     } else if (!requiresCaptchaWebsite(br)) {
                         /* No captcha required for possible next run --> Looks like login failed --> Do not retry */
+                        logger.info("Breaking login-loop because: No captcha required for possible next run -> Possible login failure");
                         break;
                     } else if (captchaSolved) {
                         /* Do not allow multiple captcha attempts */
+                        logger.info("Breaking login-loop because: Captcha was already solved by user but website is asking for it again -> Possible login failure");
                         break;
                     }
                 }
@@ -943,19 +946,23 @@ public class NitroFlareCom extends antiDDoSForHost {
     }
 
     private Map<String, Object> checkErrorsAPI(final Browser br, final DownloadLink link, final Account account, final boolean solveCaptcha) throws Exception {
-        int errorcode = -1;
+        Number errorcode = -1;
         String msg = null;
         Map<String, Object> entries = null;
         try {
             /* E.g. {"type":"error","message":"Wrong login","code":8} */
             entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
             msg = (String) entries.get("message");
-            errorcode = ((Number) entries.get("code")).intValue();
+            errorcode = (Number) entries.get("code");
         } catch (final Throwable e) {
             logger.warning("Bad API response");
             // logger.log(e);
         }
-        switch (errorcode) {
+        if (errorcode == null) {
+            /* No error */
+            return entries;
+        }
+        switch (errorcode.intValue()) {
         case -1:
             /* No error */
             break;
@@ -1108,7 +1115,7 @@ public class NitroFlareCom extends antiDDoSForHost {
             /* This should never happen */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown API download failure");
         }
-        this.dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, this.isResumeable(link, account), this.getMaxChunks(account));
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, this.isResumeable(link, account), this.getMaxChunks(account));
         if (!looksLikeDownloadableContent(dl.getConnection())) {
             handleDownloadErrors(account, link, true);
         }
@@ -1202,6 +1209,7 @@ public class NitroFlareCom extends antiDDoSForHost {
         }
     }
 
+    @Override
     public boolean hasAutoCaptcha() {
         return false;
     }

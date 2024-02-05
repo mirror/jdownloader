@@ -101,8 +101,6 @@ public class KernelVideoSharingComV2HostsDefault extends KernelVideoSharingComV2
         ret.add(new String[] { "footstockings.com" });
         /* 2022-03-24 */
         ret.add(new String[] { "wild-pornstars.com" });
-        /* 2022-03-24 */
-        ret.add(new String[] { "mypornhere.com" });
         /* 2022-03-28 */
         ret.add(new String[] { "fapnow.xxx" });
         /* 2022-03-28 */
@@ -160,8 +158,6 @@ public class KernelVideoSharingComV2HostsDefault extends KernelVideoSharingComV2
         ret.add(new String[] { "urgayporn.com" });
         /* 2023-07-31 */
         ret.add(new String[] { "gotgayporn.com", "bonertube.com" });
-        /* 2023-10-23: Not to be mistaken with pornado.co! */
-        ret.add(new String[] { "pornado.xxx" });
         return ret;
     }
 

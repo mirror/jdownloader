@@ -25,6 +25,8 @@ import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class ExtMatrixCom extends FlexShareCore {
@@ -71,6 +73,37 @@ public class ExtMatrixCom extends FlexShareCore {
         } else {
             /* Free(anonymous) and unknown account type */
             return 1;
+        }
+    }
+
+    private String getContentURL(final DownloadLink link) {
+        return link.getPluginPatternMatcher().replace("http://", "https://").replaceFirst("/get/", "/files/");
+    }
+
+    @Override
+    protected void handleDownload(final DownloadLink link, final Account account) throws Exception, PluginException {
+        if (account != null && account.getType() == AccountType.PREMIUM) {
+            requestFileInformationWebsite(link, account);
+            br.setFollowRedirects(true);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, this.getContentURL(link), isResumeable(link, account), this.getMaxChunks(account));
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                br.followConnection(true);
+                String getLink = br.getRegex("<a\\s*id\\s*=\\s*'jd_support'\\s*href\\s*=\\s*\"(https?://[^<>\"\\']*?)\"").getMatch(0);
+                if (getLink == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                dl = jd.plugins.BrowserAdapter.openDownload(br, link, getLink, isResumeable(link, account), this.getMaxChunks(account));
+                if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                    logger.warning("The final dllink seems not to be a file!");
+                    br.followConnection(true);
+                    handleErrors(link, account);
+                    handleGeneralServerErrors(dl.getConnection());
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+            }
+            dl.startDownload();
+        } else {
+            super.handleDownload(link, account);
         }
     }
 
