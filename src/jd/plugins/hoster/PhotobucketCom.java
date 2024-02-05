@@ -65,7 +65,7 @@ public class PhotobucketCom extends PluginForHost {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("^https?://(?:(?:next|app)\\.)?" + buildHostsPatternPart(domains) + "/u/([^/]+)/a/([a-f0-9\\-]+)/p/([a-f0-9\\-]+)");
+            ret.add("https?://(?:(?:next|app)\\.)?" + buildHostsPatternPart(domains) + "/u/([^/]+)/a/([a-f0-9\\-]+)/p/([a-f0-9\\-]+)");
         }
         return ret.toArray(new String[0]);
     }

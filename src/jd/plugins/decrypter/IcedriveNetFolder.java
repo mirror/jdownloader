@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.URLEncode;
@@ -46,6 +45,13 @@ import jd.plugins.hoster.IcedriveNet;
 public class IcedriveNetFolder extends PluginForDecrypt {
     public IcedriveNetFolder(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.setFollowRedirects(true);
+        return br;
     }
 
     public static List<String[]> getPluginDomains() {
@@ -152,7 +158,6 @@ public class IcedriveNetFolder extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        br.setFollowRedirects(true);
         br.getPage(param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -175,17 +180,19 @@ public class IcedriveNetFolder extends PluginForDecrypt {
             }
             return crawlFolder(param, br, name, folderID);
         } else {
+            /* Single file */
             if (fileID == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            /* Single file */
-            final DownloadLink dl = this.createDownloadlink(createContentURL(fileID));
-            dl.setFinalFileName(name);
+            final DownloadLink singlefile = this.createDownloadlink(createContentURL(fileID));
+            /* They do not have separate user-browsable URLs for single files inside folders. */
+            singlefile.setContentUrl(param.getCryptedUrl());
+            singlefile.setFinalFileName(name);
             if (size != null) {
-                dl.setDownloadSize(SizeFormatter.getSize(size));
+                singlefile.setDownloadSize(SizeFormatter.getSize(size));
             }
-            dl.setProperty(IcedriveNet.PROPERTY_INTERNAL_FILE_ID, fileID);
-            decryptedLinks.add(dl);
+            singlefile.setProperty(IcedriveNet.PROPERTY_INTERNAL_FILE_ID, fileID);
+            decryptedLinks.add(singlefile);
             return decryptedLinks;
         }
     }

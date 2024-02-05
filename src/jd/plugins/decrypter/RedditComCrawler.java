@@ -122,7 +122,7 @@ public class RedditComCrawler extends PluginForDecrypt {
     public static final String  PATTERN_SELFHOSTED_IMAGE   = "https?://i\\.redd\\.it/([a-z0-9]+)\\.[A-Za-z]{2,5}";
     public static final String  PATTERN_SELFHOSTED_VIDEO   = "https?://v\\.redd\\.it/([a-z0-9]+)";
     private static final String PATTERN_SUBREDDIT          = "(?:https?://[^/]+)?/r/([^/]+)$";
-    private static final String PATTERN_POST               = "(?:https?://[^/]+)?/(r|user|u)/([\\w\\-]+)/comments/([a-z0-9]+)(/([^/\\?]+)/?)?";
+    private static final String PATTERN_POST               = "(?:https?://[^/]+)?/(r|user|u)/([\\w\\-\\.]+)/comments/([a-z0-9]+)(/([^/\\?]+)/?)?";
     private static final String PATTERN_GALLERY            = "(?:https?://[^/]+)?/gallery/([a-z0-9]+)";
     private static final String PATTERN_USER               = "(?:https?://[^/]+)?/(?:user|u)/([\\w\\-]+)$";
     private static final String PATTERN_USER_SAVED_OBJECTS = "(?:https?://[^/]+)?/(?:user|u)/([\\w\\-]+)/saved";

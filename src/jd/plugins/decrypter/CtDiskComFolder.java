@@ -143,13 +143,14 @@ public class CtDiskComFolder extends PluginForDecrypt {
         final String folderBaseID = urlinfo.getMatch(1);
         /* ID that goes to specific subfolder */
         final String folderID = urlinfo.getMatch(2);
+        final String folderIDForQuery = folderID != null ? folderID : "";
         prepAjax(this.br);
         final UrlQuery query = new UrlQuery();
         query.add("path", urlinfo.getMatch(0));
         query.add("d", folderBaseID);
-        query.add("folder_id", folderID != null ? folderID : "");
-        query.add("token", "false");
-        query.add("ref", Encoding.urlEncode(param.getCryptedUrl()));
+        query.add("folder_id", folderIDForQuery);
+        query.add("token", "0");
+        query.add("ref", "");
         br.getHeaders().put("Origin", "https://" + Browser.getHost(param.getCryptedUrl()));
         br.getHeaders().put("Referer", param.getCryptedUrl());
         String passCode = param.getDecrypterPassword();
@@ -173,14 +174,20 @@ public class CtDiskComFolder extends PluginForDecrypt {
                 break;
             }
         } while (true);
-        br.getPage(folderinfo.get("url").toString());
+        final Map<String, Object> folderinfo2 = (Map<String, Object>) folderinfo.get("file");
+        if (folderinfo2 != null) {
+            /* 2024-02-05 */
+            br.getPage(folderinfo2.get("url").toString());
+        } else {
+            br.getPage(folderinfo.get("url").toString());
+        }
         String subfolderpath = this.getAdoptedCloudFolderStructure();
         if (subfolderpath == null) {
             subfolderpath = (String) folderinfo.get("folder_name");
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(subfolderpath);
-        final Map<String, Object> folderoverview = restoreFromString(br.toString(), TypeRef.MAP);
+        final Map<String, Object> folderoverview = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         if (((Number) folderoverview.get("iTotalRecords")).intValue() == 0) {
             ret.add(this.createOfflinelink(param.getCryptedUrl(), "EMPTY_FOLDER " + subfolderpath, "EMPTY_FOLDER " + subfolderpath));
             return ret;
@@ -199,7 +206,7 @@ public class CtDiskComFolder extends PluginForDecrypt {
             // final String info0 = item.get(0).toString();
             final String info1 = item.get(1).toString();
             final Regex folderRegex = new Regex(info1, "onclick=\"load_subdir\\((\\d+)\\)\">([^<]+)</a>");
-            if (folderRegex.matches()) {
+            if (folderRegex.patternFind()) {
                 final String subfolderID = folderRegex.getMatch(0);
                 final String subfolderName = folderRegex.getMatch(1);
                 /* Subfolder */

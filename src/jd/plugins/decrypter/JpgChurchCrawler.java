@@ -98,6 +98,7 @@ public class JpgChurchCrawler extends PluginForDecrypt {
             contentURLCleaned = URLHelper.getUrlWithoutParams(param.getCryptedUrl());
         }
         contentURLCleaned = contentURLCleaned.replaceFirst("(?i)/embeds(/.*)?$", "");
+        contentURLCleaned = contentURLCleaned.replaceFirst("(?i)/albums/?$", "");
         br.getPage(contentURLCleaned);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

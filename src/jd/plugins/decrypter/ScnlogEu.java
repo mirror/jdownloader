@@ -19,6 +19,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -30,9 +33,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 /**
  * So I had this written some time back, just never committed. Here is my original with proper error handling etc. -raz
@@ -81,7 +81,7 @@ public class ScnlogEu extends antiDDoSForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final String[] deadDomains = new String[] { "scnlog.eu", "scnlog.life" };
         br.setFollowRedirects(true);
-        String contenturl = param.toString();
+        String contenturl = param.getCryptedUrl();
         /* Change domain in url if it is a domain known to be dead. */
         final String addedHost = Browser.getHost(contenturl);
         for (final String deadDomain : deadDomains) {
@@ -136,8 +136,14 @@ public class ScnlogEu extends antiDDoSForDecrypt {
         return ret;
     }
 
-    /* NO OVERRIDE!! */
+    @Override
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
+    }
+
+    @Override
+    public int getMaxConcurrentProcessingInstances() {
+        /* 2024-02-05: Preventive measure to try to avoid running into rate-limit. */
+        return 1;
     }
 }

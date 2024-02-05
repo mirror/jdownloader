@@ -158,6 +158,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
         if (isOfflineWebsite(this.br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        this.checkErrors(br);
         final String sk = DiskYandexNet.getSK(this.br);
         final String json = br.getRegex("<script type=\"application/json\"[^>]*id=\"store-prefetch\"[^>]*>(.*?)</script>").getMatch(0);
         Map<String, Object> map = restoreFromString(json, TypeRef.MAP);
@@ -307,6 +308,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
             request.setContentType("text/plain");
             request.setPostDataString("%7B%22hash%22%3A%22" + Encoding.urlEncode(hashMain) + "%3A%22%2C%22offset%22%3A" + offset + "%2C%22withSizes%22%3Atrue%2C%22sk%22%3A%22" + sk + "%22%2C%22options%22%3A%7B%22hasExperimentVideoWithoutPreview%22%3Atrue%7D%7D");
             br.getPage(request);
+            this.checkErrors(br);
             entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
             ressources = (List<Object>) entries.get("resources");
             if (ressources == null) {
@@ -330,6 +332,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
             hashWithPath = getHashFromURL(contenturl);
         } else if (contenturl.matches(type_shortURLs_d) || contenturl.matches(type_shortURLs_i)) {
             br.getPage(contenturl);
+            this.checkErrors(br);
             if (isOfflineWebsite(this.br)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -371,6 +374,7 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
         final FilePackage fp = FilePackage.getInstance();
         do {
             br.getPage(DiskYandexNet.APIV1_BASE + "/disk/public/resources?limit=" + entries_per_request + "&offset=" + offset + "&public_key=" + URLEncode.encodeURIComponent(hashWithoutPath) + "&path=" + URLEncode.encodeURIComponent(internalPath));
+            this.checkErrors(br);
             Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
             /*
              * 2021-01-19:
@@ -450,6 +454,14 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
             }
         } while (!this.isAbort());
         return ret;
+    }
+
+    private void checkErrors(final Browser br) throws PluginException, DecrypterRetryException {
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.getURL().contains("/showcaptcha")) {
+            throw new DecrypterRetryException(RetryReason.HOST_RATE_LIMIT);
+        }
     }
 
     private DownloadLink parseSingleFileAPI(final Map<String, Object> entries) throws Exception {
