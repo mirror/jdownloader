@@ -29,6 +29,18 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.HexFormatter;
+import org.appwork.utils.net.URLHelper;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.containers.VimeoContainer;
+import org.jdownloader.plugins.components.containers.VimeoContainer.Quality;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -55,18 +67,6 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.VimeoCom;
 import jd.plugins.hoster.VimeoCom.VIMEO_URL_TYPE;
 import jd.plugins.hoster.VimeoCom.WrongRefererException;
-
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.HexFormatter;
-import org.appwork.utils.net.URLHelper;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.containers.VimeoContainer;
-import org.jdownloader.plugins.components.containers.VimeoContainer.Quality;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class VimeoComDecrypter extends PluginForDecrypt {
@@ -359,8 +359,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
             br.getPage(parameter);
             final String redirect = br.getRedirectLocation();
             if (redirect == null) {
-                ret.add(createOfflinelink(parameter));
-                return ret;
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             ret.add(this.createDownloadlink(redirect));
             return ret;
@@ -381,8 +380,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
             /* Decrypt all videos of a user- or group. */
             br.getPage(parameter);
             if (this.br.getHttpConnection().getResponseCode() == 404) {
-                ret.add(createOfflinelink(parameter, "Could not find that page"));
-                return ret;
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             final String urlpart_pagination;
             final String user_or_group_id;
@@ -550,8 +548,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                         if (isPasswordProtected(this.br)) {
                             password = handlePW(param, this.br);
                         } else {
-                            ret.add(createOfflinelink(parameter, videoID, null));
-                            return ret;
+                            throw e;
                         }
                     } else if (isPasswordProtected(this.br)) {
                         password = handlePW(param, this.br);
@@ -828,6 +825,7 @@ public class VimeoComDecrypter extends PluginForDecrypt {
                         }
                     }
                     if (!hasVideo) {
+                        /* Add this dummy URL. If e.g. subtitles are aailable we might be able to return them at least. */
                         ret.add(createLinkCrawlerRetry(getCurrentLink(), new DecrypterRetryException(RetryReason.PLUGIN_DEFECT, "UNSUPPORTED_STREAMING_TYPE_HLS_SPLIT_AUDIO_VIDEO_" + videoID, "Unsupported streaming type! See: https://board.jdownloader.org/showthread.php?p=513109#post513109")));
                     }
                 }
@@ -1047,9 +1045,8 @@ public class VimeoComDecrypter extends PluginForDecrypt {
         if ((ret == null || ret.size() == 0) && skippedLinks == 0) {
             logger.warning("Decrypter broken for link: " + parameter);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        } else {
-            return ret;
         }
+        return ret;
     }
 
     public static String getVideoidFromURL(final String url) {

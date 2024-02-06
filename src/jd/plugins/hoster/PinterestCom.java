@@ -55,6 +55,13 @@ public class PinterestCom extends PluginForHost {
         setConfigElements();
     }
 
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.setFollowRedirects(true);
+        return br;
+    }
+
     /* 2021-01-28: Full login + invisible reCaptcha Enterprise --> Broken -> Use cookie login only */
     private static final boolean enforceCookieLoginOnly = true;
 
@@ -107,8 +114,6 @@ public class PinterestCom extends PluginForHost {
     public static final long   trust_cookie_age   = 300000l;
     /* Site constants */
     public static final String x_app_version      = "6cedd5c";
-    /* don't touch the following! */
-    private String             dllink             = null;
     public static final String PROPERTY_DIRECTURL = "free_directlink";
 
     @Override
@@ -119,9 +124,8 @@ public class PinterestCom extends PluginForHost {
             link.setName(pinID);
         }
         this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        dllink = checkDirectLink(link, PROPERTY_DIRECTURL);
-        if (dllink != null) {
+        final String storedDirecturl = checkDirectLink(link, PROPERTY_DIRECTURL);
+        if (storedDirecturl != null) {
             /* Item has been checked before -> Done! */
             return AvailableStatus.TRUE;
         }
@@ -146,8 +150,8 @@ public class PinterestCom extends PluginForHost {
         if (account != null) {
             login(account, false);
             pinMap = PinterestComDecrypter.getPINMap(this.br, link.getPluginPatternMatcher());
-            /* We don't have to be logged in to perform downloads so better log out to avoid account bans. */
-            br.clearCookies(br.getHost());
+            /* We don't have to be logged in to perform downloads so better log out to try to avoid account bans. */
+            br.clearCookies(null);
         } else {
             pinMap = PinterestComDecrypter.getPINMap(this.br, link.getPluginPatternMatcher());
         }
@@ -155,8 +159,6 @@ public class PinterestCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         PinterestComDecrypter.setInfoOnDownloadLink(link, pinMap);
-        /* Property should have been set now -> Check if our directlink is actually valid. */
-        dllink = link.getStringProperty(PROPERTY_DIRECTURL);
         return AvailableStatus.TRUE;
     }
 
@@ -205,6 +207,7 @@ public class PinterestCom extends PluginForHost {
     private void handleDownload(final DownloadLink link, final boolean resumable, final int maxchunks) throws Exception, PluginException {
         if (!this.attemptStoredDownloadurlDownload(link, resumable, maxchunks)) {
             requestFileInformation(link);
+            final String dllink = link.getStringProperty(PROPERTY_DIRECTURL);
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -297,99 +300,78 @@ public class PinterestCom extends PluginForHost {
 
     public void login(final Account account, final boolean force) throws Exception {
         synchronized (account) {
-            try {
-                br.setCookiesExclusive(true);
-                br.setAllowedResponseCodes(new int[] { 401 });
-                br.setFollowRedirects(true);
-                String last_used_host = account.getStringProperty("host");
-                if (last_used_host == null) {
-                    /* Fallback and required on first run */
-                    last_used_host = "pinterest.com";
+            br.setCookiesExclusive(true);
+            br.setAllowedResponseCodes(new int[] { 401 });
+            String last_used_host = account.getStringProperty("host");
+            if (last_used_host == null) {
+                /* Fallback and required on first run */
+                last_used_host = "pinterest.com";
+            }
+            final Cookies cookies = account.loadCookies("");
+            final Cookies userCookies = account.loadUserCookies();
+            if (enforceCookieLoginOnly && userCookies == null) {
+                showCookieLoginInfo();
+                throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_required());
+            }
+            if (userCookies != null) {
+                /* They got a lot of different domains -> Choose the one the user was using */
+                final Cookie sessCookie = userCookies.get("_pinterest_sess");
+                if (sessCookie != null && !StringUtils.isEmpty(sessCookie.getHost()) && sessCookie.getHost().contains("pinterest")) {
+                    last_used_host = sessCookie.getHost();
                 }
-                final Cookies cookies = account.loadCookies("");
-                final Cookies userCookies = account.loadUserCookies();
-                if (enforceCookieLoginOnly && userCookies == null) {
-                    showCookieLoginInfo();
-                    throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_required());
+                br.setCookies(last_used_host, userCookies);
+                br.getPage("https://www." + last_used_host);
+                if (!this.isLoggedINHTML(br)) {
+                    logger.warning("Cookie login failed");
+                    if (account.hasEverBeenValid()) {
+                        throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
+                    } else {
+                        throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
+                    }
                 }
-                if (userCookies != null) {
-                    /* They got a lot of different domains -> Choose the one the user was using */
-                    final Cookie sessCookie = userCookies.get("_pinterest_sess");
-                    if (sessCookie != null && !StringUtils.isEmpty(sessCookie.getHost()) && sessCookie.getHost().contains("pinterest")) {
-                        last_used_host = sessCookie.getHost();
-                    }
-                    br.setCookies(last_used_host, userCookies);
-                    br.getPage("https://www." + last_used_host);
-                    if (!this.isLoggedINHTML(br)) {
-                        logger.warning("Cookie login failed");
-                        if (account.hasEverBeenValid()) {
-                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
-                        } else {
-                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
-                        }
-                    }
+                account.saveCookies(br.getCookies(last_used_host), "");
+                account.setProperty("host", br.getHost());
+                return;
+            }
+            if (cookies != null) {
+                br.setCookies(last_used_host, cookies);
+                if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= trust_cookie_age && !force) {
+                    /* We trust these cookies --> Do not check them */
+                    return;
+                }
+                br.getPage("https://www." + last_used_host + "/");
+                if (this.isLoggedINHTML(br)) {
                     account.saveCookies(br.getCookies(last_used_host), "");
                     account.setProperty("host", br.getHost());
                     return;
                 }
-                if (cookies != null) {
-                    br.setCookies(last_used_host, cookies);
-                    if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= trust_cookie_age && !force) {
-                        /* We trust these cookies --> Do not check them */
-                        return;
-                    }
-                    br.getPage("https://www." + last_used_host + "/");
-                    if (this.isLoggedINHTML(br)) {
-                        account.saveCookies(br.getCookies(last_used_host), "");
-                        account.setProperty("host", br.getHost());
-                        return;
-                    }
-                    /* Full login required */
-                }
-                logger.info("Full login required");
-                /* May redirect to e.g. pinterest.de */
-                br.getPage("https://www." + this.getHost() + "/login/?action=login");
-                String recaptchaV2Response = null;
-                final DownloadLink dlinkbefore = this.getDownloadLink();
-                try {
-                    final DownloadLink dl_dummy;
-                    if (dlinkbefore != null) {
-                        dl_dummy = dlinkbefore;
-                    } else {
-                        dl_dummy = new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true);
-                        this.setDownloadLink(dl_dummy);
-                    }
-                    recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, "6Ldx7ZkUAAAAAF3SZ05DRL2Kdh911tCa3qFP0-0r") {
-                        protected boolean isEnterprise(final String source) {
-                            return true;
-                        }
-
-                        protected TYPE getType(String source) {
-                            return TYPE.INVISIBLE;
-                        }
-                    }.getToken();
-                } finally {
-                    this.setDownloadLink(dlinkbefore);
-                }
-                // prepAPIBR(br);
-                // String postData = "source_url=/login/&data={\"options\":{\"username_or_email\":\"" + account.getUser() +
-                // "\",\"password\":\"" + account.getPass() +
-                // "\"},\"context\":{}}&module_path=App()>LoginPage()>Login()>Button(class_name=primary,+text=Anmelden,+type=submit,+size=large)";
-                // // postData = Encoding.urlEncode(postData);
-                // final String urlpart = new Regex(br.getURL(), "(https?://[^/]+)/").getMatch(0);
-                // br.postPageRaw(urlpart + "/resource/UserSessionResource/create/", postData);
-                br.postPage("https://accounts.pinterest.com/v3/login/handshake/", "username_or_email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&token=" + recaptchaV2Response);
-                if (br.getHttpConnection().getResponseCode() != 200 || br.getCookie(br.getHost(), "_pinterest_sess", Cookies.NOTDELETEDPATTERN) == null) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-                account.saveCookies(br.getCookies(last_used_host), "");
-                account.setProperty("host", br.getHost());
-            } catch (final PluginException e) {
-                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
-                    account.clearCookies("");
-                }
-                throw e;
+                /* Full login required */
             }
+            logger.info("Full login required");
+            /* May redirect to e.g. pinterest.de */
+            br.getPage("https://www." + this.getHost() + "/login/?action=login");
+            String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, "6Ldx7ZkUAAAAAF3SZ05DRL2Kdh911tCa3qFP0-0r") {
+                protected boolean isEnterprise(final String source) {
+                    return true;
+                }
+
+                protected TYPE getType(String source) {
+                    return TYPE.INVISIBLE;
+                }
+            }.getToken();
+            // prepAPIBR(br);
+            // String postData = "source_url=/login/&data={\"options\":{\"username_or_email\":\"" + account.getUser() +
+            // "\",\"password\":\"" + account.getPass() +
+            // "\"},\"context\":{}}&module_path=App()>LoginPage()>Login()>Button(class_name=primary,+text=Anmelden,+type=submit,+size=large)";
+            // // postData = Encoding.urlEncode(postData);
+            // final String urlpart = new Regex(br.getURL(), "(https?://[^/]+)/").getMatch(0);
+            // br.postPageRaw(urlpart + "/resource/UserSessionResource/create/", postData);
+            br.postPage("https://accounts.pinterest.com/v3/login/handshake/", "username_or_email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&token=" + recaptchaV2Response);
+            if (br.getHttpConnection().getResponseCode() != 200 || br.getCookie(br.getHost(), "_pinterest_sess", Cookies.NOTDELETEDPATTERN) == null) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+            account.saveCookies(br.getCookies(last_used_host), "");
+            account.setProperty("host", br.getHost());
         }
     }
 

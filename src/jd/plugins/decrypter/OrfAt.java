@@ -22,6 +22,7 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -31,6 +32,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.DirectHTTP;
+import jd.plugins.hoster.GenericM3u8;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class OrfAt extends PluginForDecrypt {
@@ -113,7 +115,9 @@ public class OrfAt extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        if (param.getCryptedUrl().matches(PATTERN_ARTICLE)) {
+        if (param.getCryptedUrl().matches("(?i)https?://on\\.orf\\.at/.+")) {
+            return this.crawlOrfmediathekNew(param);
+        } else if (param.getCryptedUrl().matches(PATTERN_ARTICLE)) {
             return this.crawlArticle(param);
         } else if (param.getCryptedUrl().matches(PATTERN_COLLECTION)) {
             return this.crawlCollection(param);
@@ -128,6 +132,58 @@ public class OrfAt extends PluginForDecrypt {
             logger.info("Unsupported URL:" + param);
             return new ArrayList<DownloadLink>(0);
         }
+    }
+
+    private ArrayList<DownloadLink> crawlOrfmediathekNew(final CryptedLink param) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        br.getPage(param.getCryptedUrl());
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final String videoDurationStr = br.getRegex("duration=(\\d+)").getMatch(0);
+        if (videoDurationStr == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final String encryptedID = br.getRegex("\"([^\"]+)\"," + videoDurationStr).getMatch(0);
+        if (encryptedID == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        br.getPage("https://api-tvthek.orf.at/api/v4.3/public/episode/encrypted/" + Encoding.urlEncode(encryptedID));
+        final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+        final String contentID = entries.get("id").toString();
+        final Map<String, Object> sources = (Map<String, Object>) entries.get("sources");
+        final String title = entries.get("title").toString();
+        final String description = (String) entries.get("description");
+        final Boolean is_drm_protected = (Boolean) entries.get("is_drm_protected");
+        if (Boolean.TRUE.equals(is_drm_protected)) {
+            // TODO: Add errorhandling
+        }
+        // final List<Map<String, Object>> gapless_sources_austria = (List<Map<String, Object>>) entries.get("gapless_sources_austria");
+        final Boolean has_subtitle = (Boolean) entries.get("has_subtitle");
+        final List<Map<String, Object>> sources_hls = (List<Map<String, Object>>) sources.get("hls");
+        for (final Map<String, Object> hlssource : sources_hls) {
+            final String hlsMaster = hlssource.get("src").toString();
+            final DownloadLink hlsresult = this.createDownloadlink(hlsMaster);
+            hlsresult.setProperty(GenericM3u8.PRESET_NAME_PROPERTY, title);
+            ret.add(hlsresult);
+            /* Only add first item for now */
+            break;
+        }
+        /* Add teaser image */
+        final String imageurl = (String) entries.get("related_audiodescription_episode_image_url");
+        if (imageurl != null) {
+            final DownloadLink image = this.createDownloadlink(imageurl);
+            image.setAvailable(true);
+            ret.add(image);
+        }
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(title);
+        if (description != null) {
+            fp.setComment(description);
+        }
+        fp.setPackageKey("orfmediathek://video/" + contentID);
+        fp.addLinks(ret);
+        return ret;
     }
 
     private ArrayList<DownloadLink> crawlArticle(final CryptedLink param) throws Exception {

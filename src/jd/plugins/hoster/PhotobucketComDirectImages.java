@@ -64,7 +64,7 @@ public class PhotobucketComDirectImages extends PluginForHost {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:i\\d+|hosting)\\.photobucket\\.com/albums/\\w+/\\w+/[^/]+\\.jpg");
+            ret.add("https?://(?:i\\d+|hosting)\\.photobucket\\.com/albums/\\w+/\\w+/[^/]+\\.(jpg|png|gif|webp)");
         }
         return ret.toArray(new String[0]);
     }

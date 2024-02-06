@@ -32,7 +32,7 @@ public class KernelVideoSharingSexwebvideoCom extends KernelVideoSharingComV2 {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "sexwebvideo.com", "sexwebvideo.net" });
+        ret.add(new String[] { "sexwebvideo.com", "sexwebvideo.net", "videowebcam.tv" });
         return ret;
     }
 

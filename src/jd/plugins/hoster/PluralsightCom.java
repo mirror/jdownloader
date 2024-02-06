@@ -61,6 +61,7 @@ import jd.plugins.decrypter.PluralsightComDecrypter;
  */
 @HostPlugin(revision = "$Revision$", interfaceVersion = 1, names = { "pluralsight.com" }, urls = { "https://app\\.pluralsight\\.com/course-player\\?clipId=[a-f0-9\\-]+" })
 public class PluralsightCom extends antiDDoSForHost {
+    private static final boolean                    cookieLoginOnly                          = true;
     private static WeakHashMap<Account, List<Long>> map100PerHour                            = new WeakHashMap<Account, List<Long>>();
     private static WeakHashMap<Account, List<Long>> map200Per4Hours                          = new WeakHashMap<Account, List<Long>>();
     public static final String                      PROPERTY_DURATION_SECONDS                = "duration";
@@ -91,7 +92,11 @@ public class PluralsightCom extends antiDDoSForHost {
 
     @Override
     public LazyPlugin.FEATURE[] getFeatures() {
-        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.VIDEO_STREAMING, LazyPlugin.FEATURE.COOKIE_LOGIN_OPTIONAL };
+        if (cookieLoginOnly) {
+            return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.VIDEO_STREAMING, LazyPlugin.FEATURE.COOKIE_LOGIN_ONLY };
+        } else {
+            return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.VIDEO_STREAMING, LazyPlugin.FEATURE.COOKIE_LOGIN_OPTIONAL };
+        }
     }
 
     @Override
@@ -139,7 +144,8 @@ public class PluralsightCom extends antiDDoSForHost {
             final Object expiresAtDateO = subscription.get("termEndDate");
             final String expiresAtDateStr = expiresAtDateO != null ? expiresAtDateO.toString() : null;
             if (expiresAtDateStr != null) {
-                final long validUntil = TimeFormatter.getMilliSeconds(expiresAtDateStr.replace("Z", "+0000"), "yyyy-MM-dd'T'HH:mm:ss.SSSZ", Locale.ENGLISH);
+                /* Parse ISO 8601 Date / Time Zone */
+                final long validUntil = TimeFormatter.getMilliSeconds(expiresAtDateStr, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.ENGLISH);
                 if (validUntil > System.currentTimeMillis()) {
                     isPremium = true;
                     account.setType(AccountType.PREMIUM);
@@ -199,7 +205,12 @@ public class PluralsightCom extends antiDDoSForHost {
                         }
                     }
                 }
+                if (cookieLoginOnly) {
+                    showCookieLoginInfo();
+                    throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_required());
+                }
                 try {
+                    /* 2024-02-06: This has been broken/incomplete for a long time thus we allow cookie-login only. */
                     logger.info("Performing full login");
                     getRequest(br, this, br.createGetRequest(WEBSITE_BASE_APP + "/id/"));
                     final Form form = br.getFormbyKey("Username");
@@ -794,7 +805,7 @@ public class PluralsightCom extends antiDDoSForHost {
 
     @Override
     public String getDescription() {
-        return "Download course videos from Pluralsight.com";
+        return "Download course video streams and files from Pluralsight.com";
     }
 
     @Override
