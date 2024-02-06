@@ -87,7 +87,7 @@ public class KemonoPartyCrawler extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/[^/]+/user/([\\w\\-]+)(/post/\\d+)?");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/[^/]+/user/([\\w\\-\\.]+)(/post/\\d+)?");
         }
         return ret.toArray(new String[0]);
     }
@@ -140,14 +140,14 @@ public class KemonoPartyCrawler extends PluginForDecrypt {
         int numberofContinuousPagesWithoutAnyNewItems = 0;
         final int maxPagesWithoutNewItems = 15;
         do {
-            br.getPage("https://" + this.getHost() + "/api/v1/" + portal + "/user/" + userID + "?o=" + offset);
+            br.getPage("https://" + this.getHost() + "/api/v1/" + portal + "/user/" + Encoding.urlEncode(userID) + "?o=" + offset);
             final List<HashMap<String, Object>> posts = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.LIST_HASHMAP);
             if (posts == null || posts.isEmpty()) {
                 if (ret.isEmpty()) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 } else {
                     /* This should never happen */
-                    logger.info("Stopping because: Go empty page");
+                    logger.info("Stopping because: Got empty page");
                     break;
                 }
             }

@@ -119,7 +119,7 @@ public class Tb7Pl extends PluginForHost {
             ai.setStatus(_JDT.T.lit_expired());
             ai.setProperty("premium", "FALSE");
             return ai;
-        } else if (br.containsHTML(">Brak ważnego dostępu Premium<")) {
+        } else if (br.containsHTML(">\\s*Brak ważnego dostępu Premium\\s*<")) {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, _JDT.T.plugins_tb7pl_UNSUPPORTED_PREMIUM(), PluginException.VALUE_ID_PREMIUM_DISABLE);
         } else {
             validUntil = br.getRegex("<div class=\"textPremium\">Dostęp Premium ważny do <b>(.*?)</b><br />").getMatch(0);
@@ -131,7 +131,6 @@ public class Tb7Pl extends PluginForHost {
         }
         long expireTime = TimeFormatter.getMilliSeconds(validUntil, "dd.MM.yyyy HH:mm", Locale.ENGLISH);
         ai.setValidUntil(expireTime);
-        account.setValid(true);
         String otherHostersLimitLeft = // br.getRegex(" Pozostały limit na serwisy dodatkowe: <b>([^<>\"\\']+)</b></div>").getMatch(0);
                 br.getRegex("Pozostały Limit Premium do wykorzystania: <b>([^<>\"\\']+)</b></div>").getMatch(0);
         if (otherHostersLimitLeft == null) {
@@ -166,10 +165,6 @@ public class Tb7Pl extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_ONLY);
     }
 
-    private void showMessage(DownloadLink link, String message) {
-        link.getLinkStatus().setStatusText(message);
-    }
-
     /** no override to keep plugin compatible to old stable */
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
         synchronized (hostUnavailableMap) {
@@ -189,7 +184,6 @@ public class Tb7Pl extends PluginForHost {
         }
         final String downloadUrl = link.getPluginPatternMatcher();
         boolean resume = true;
-        showMessage(link, "Phase 1/3: Login");
         login(account, false);
         br.setConnectTimeout(90 * 1000);
         br.setReadTimeout(90 * 1000);
@@ -205,7 +199,6 @@ public class Tb7Pl extends PluginForHost {
             /* generate new downloadlink */
             String url = Encoding.urlEncode(downloadUrl);
             String postData = "step=1" + "&content=" + url;
-            showMessage(link, "Phase 2/3: Generating Link");
             br.postPage(MAINPAGE + "mojekonto/sciagaj", postData);
             if (br.containsHTML("Wymagane dodatkowe [0-9.]+ MB limitu")) {
                 logger.severe("Tb7.pl(Error): " + br.getRegex("(Wymagane dodatkowe [0-9.]+ MB limitu)"));
@@ -218,7 +211,7 @@ public class Tb7Pl extends PluginForHost {
             // br.getRegex("<div class=\"download\">(<a target=\"_blank\" href=\"mojekonto/ogladaj/[0-9A-Za-z]*?\">Oglądaj online</a> /
             // )*?<a href=\"([^\"<>]+)\" target=\"_blank\">Pobierz</a>").getMatch(1);
             // Old Regex
-            generatedLink = br.getRegex("<div class=\"download\"><a href=\"([^\"<>]+)\"[^>]*>\\s*Pobierz\\s*</a>").getMatch(0);
+            generatedLink = br.getRegex("<a[^>]*href=\"([^\"]+)\"[^>]*>\\s*Pobierz\\s*</a>").getMatch(0);
             if (generatedLink == null) {
                 // New Regex (works with video files)
                 generatedLink = br.getRegex("<div class=\"download\">(<a target=\"_blank\" href=\"mojekonto/ogladaj/[0-9A-Za-z]*?\">Oglądaj[ online]*?</a> / )<a href=\"([^\"<>]+)\" target=\"_blank\">Pobierz</a>").getMatch(1);
@@ -255,9 +248,7 @@ public class Tb7Pl extends PluginForHost {
         // because download doesn't support more chunks and
         // and resume (header response has no: "Content-Range" info)
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, generatedLink, resume, chunks);
-        if (dl.getConnection().getContentType().equalsIgnoreCase("text/html")) // unknown
-        // error
-        {
+        if (this.looksLikeDownloadableContent(dl.getConnection())) {
             br.followConnection();
             if (br.containsHTML("<div id=\"message\">Ważność linka wygasła.</div>")) {
                 // previously generated link expired,
@@ -295,7 +286,6 @@ public class Tb7Pl extends PluginForHost {
             dl.getConnection().disconnect();
             tempUnavailableHoster(account, link, 20 * 60 * 1000l);
         }
-        showMessage(link, "Phase 3/3: Begin download");
         dl.startDownload();
     }
 

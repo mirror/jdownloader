@@ -49,7 +49,7 @@ public interface NitroflareConfig extends PluginConfigInterface {
     void setTrustAPIAboutPremiumOnlyFlag(boolean b);
 
     @AboutConfig
-    @DefaultBooleanValue(false)
+    @DefaultBooleanValue(true)
     @DescriptionForConfigEntry(text_UsePremiumAPIEnabled)
     @Order(30)
     boolean isUsePremiumAPIEnabled();

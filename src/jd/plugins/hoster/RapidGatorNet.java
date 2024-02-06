@@ -304,9 +304,7 @@ public class RapidGatorNet extends PluginForHost {
         } else {
             /* Not a direct-URL */
             br.followConnection();
-            if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("File not found")) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
+            this.handleErrorsWebsite(br, link, account, null);
             String filename = br.getRegex("Downloading\\s*:\\s*</strong>\\s*<a href=\"\"[^>]*>([^<>\"]+)<").getMatch(0);
             if (filename == null) {
                 filename = br.getRegex("<title>\\s*Download file\\s*([^<>\"]+)</title>").getMatch(0);
@@ -1315,7 +1313,6 @@ public class RapidGatorNet extends PluginForHost {
         logger.info("Error 404 happened --> Trying to find out whether session is invalid or file is offline");
         if (trustError404) {
             /* File offline */
-            logger.info("Error 404 --> Trusted file offline");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else {
             /*
@@ -1456,6 +1453,13 @@ public class RapidGatorNet extends PluginForHost {
                 throw new AccountUnavailableException("Session expired?", 1 * 60 * 1000);
             }
         }
+        /* Check for offline file */
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML(">\\s*404 File not found")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        /* Check if item is only downloadable for premium users. */
         final String freedlsizelimit = br.getRegex("(?i)'You can download files up to ([\\d\\.]+ ?(MB|GB)) in free mode\\s*<").getMatch(0);
         if (freedlsizelimit != null) {
             throw new AccountRequiredException();

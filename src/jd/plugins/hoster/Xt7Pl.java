@@ -222,7 +222,7 @@ public class Xt7Pl extends PluginForHost {
             // br.getRegex("<div class=\"download\">(<a target=\"_blank\" href=\"mojekonto/ogladaj/[0-9A-Za-z]*?\">Oglądaj online</a> /
             // )*?<a href=\"([^\"<>]+)\" target=\"_blank\">Pobierz</a>").getMatch(1);
             // Old Regex
-            generatedLink = br.getRegex("<div class=\"download\"><a href=\"([^\"<>]+)\"[^>]*>\\s*Pobierz\\s*</a>").getMatch(0);
+            generatedLink = br.getRegex("<a[^>]*href=\"([^\"]+)\"[^>]*>\\s*Pobierz\\s*</a>").getMatch(0);
             if (generatedLink == null) {
                 // New Regex (works with video files)
                 generatedLink = br.getRegex("<div class=\"download\">(<a target=\"_blank\" href=\"mojekonto/ogladaj/[0-9A-Za-z]*?\">Oglądaj[ online]*?</a> / )<a href=\"([^\"<>]+)\" target=\"_blank\">Pobierz</a>").getMatch(1);

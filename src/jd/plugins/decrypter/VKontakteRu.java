@@ -176,6 +176,15 @@ public class VKontakteRu extends PluginForDecrypt {
     /* Ugly public variables */
     private boolean             grabPhotoAlbums                           = false;
 
+    private String fixAddedURL(final String url) {
+        String newurl = url;
+        /* Prefer https protocol */
+        newurl = newurl.replaceFirst("(?i)http://", "https://");
+        /* Remove old/mobile subdomain */
+        newurl = newurl.replaceFirst("^https://m\\.", "https://");
+        return newurl;
+    }
+
     private ArrayList<DownloadLink> getReturnArray() {
         return new ArrayList<DownloadLink>() {
             @Override
@@ -1063,7 +1072,7 @@ public class VKontakteRu extends PluginForDecrypt {
         } else if (param.getCryptedUrl().matches("(?i).*?vk\\.com/id(?:\\-)?\\d+")) {
             contenturl = param.getCryptedUrl().replaceAll("(?i)vk\\.com/|id(?:\\-)?", "vk.com/album") + "_0";
         } else {
-            contenturl = param.getCryptedUrl();
+            contenturl = this.fixAddedURL(param.getCryptedUrl());
         }
         this.getPage(contenturl);
         if (br.containsHTML("(id=\"msg_back_button\">Wr\\&#243;\\&#263;</button|B\\&#322;\\&#261;d dost\\&#281;pu)") || br.containsHTML("(?i)В альбоме нет фотографий|<title>\\s*DELETED\\s*</title>")) {
@@ -1152,7 +1161,7 @@ public class VKontakteRu extends PluginForDecrypt {
             /* Change id links -> albums links */
             contenturl = "https://" + this.getHost() + "/albums" + idregex.getMatch(0);
         } else {
-            contenturl = param.getCryptedUrl();
+            contenturl = this.fixAddedURL(param.getCryptedUrl());
         }
         getPage(contenturl);
         if (br.containsHTML("class=\"photos_no_content\"")) {
@@ -1708,10 +1717,10 @@ public class VKontakteRu extends PluginForDecrypt {
         if (wValue != null && wValue.matches("(?i)wall-?\\d+_\\d+")) {
             contenturl = "https://vk.com/" + wValue;
         } else {
-            contenturl = param.getCryptedUrl();
+            contenturl = this.fixAddedURL(param.getCryptedUrl());
         }
-        final String owner_id = new Regex(contenturl, "/wall(-?\\d+)").getMatch(0);
-        final String wall_post_ID = new Regex(contenturl, "/wall(-?\\d+_\\d+)").getMatch(0);
+        final String owner_id = new Regex(contenturl, "(?i)wall(-?\\d+)").getMatch(0);
+        final String wall_post_ID = new Regex(contenturl, "(?i)wall(-?\\d+_\\d+)").getMatch(0);
         if (owner_id == null || wall_post_ID == null) {
             /* Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

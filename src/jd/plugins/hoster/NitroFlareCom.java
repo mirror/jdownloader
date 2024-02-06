@@ -69,6 +69,33 @@ public class NitroFlareCom extends antiDDoSForHost {
     private final String         PROPERTY_PREMIUM_REQUIRED = "premiumRequired";
 
     @Override
+    public void init() {
+        final String[] siteSupportedNames = siteSupportedNames();
+        for (String siteSupportedName : siteSupportedNames) {
+            try {
+                Browser.setRequestIntervalLimitGlobal(siteSupportedName, 500);
+            } catch (final Throwable t) {
+                logger.log(t);
+            }
+        }
+        final NitroflareConfig cfg = PluginJsonConfig.get(NitroflareConfig.class);
+        /*
+         * 2024-02-06: Ugly workaround as someone is not releasing CORE-updates and I do not want to move NitroflareConfig.class into this
+         * class. Context: https://board.jdownloader.org/showthread.php?t=95064
+         */
+        // TODO: Remove this workaround
+        final String propertyForSpecialAPIModeSettingResetWorkaround202402 = "api_setting_reset_workaround_2024_02_06";
+        if (!cfg.isUsePremiumAPIEnabled() && !this.getPluginConfig().hasProperty(propertyForSpecialAPIModeSettingResetWorkaround202402)) {
+            cfg.setUsePremiumAPIEnabled(true);
+        }
+        /*
+         * Do this only once for each JD installation. If this was executed while the user already had the API setting enabled, do not touch
+         * it afterwards and assume the user knows what he is doing.
+         */
+        this.getPluginConfig().setProperty(propertyForSpecialAPIModeSettingResetWorkaround202402, true);
+    }
+
+    @Override
     public Browser createNewBrowserInstance() {
         final Browser br = super.createNewBrowserInstance();
         br.setFollowRedirects(true);
@@ -124,20 +151,6 @@ public class NitroFlareCom extends antiDDoSForHost {
         this.enablePremium(null);
     }
 
-    @Override
-    public void init() {
-        final String[] siteSupportedNames = siteSupportedNames();
-        if (siteSupportedNames != null) {
-            for (String siteSupportedName : siteSupportedNames) {
-                try {
-                    Browser.setRequestIntervalLimitGlobal(siteSupportedName, 500);
-                } catch (final Throwable t) {
-                    logger.log(t);
-                }
-            }
-        }
-    }
-
     /**
      * Use website or API: https://nitroflare.com/member?s=api </br>
      *
@@ -149,7 +162,7 @@ public class NitroFlareCom extends antiDDoSForHost {
     }
 
     private boolean useAPIFreeMode() {
-        /** 2020-07-03: Doesn't work (yet) thus I've removed this setting RE: psp */
+        /** 2020-07-03: Doesn't work (yet, and/or API just can't be used without account) thus I've removed this setting RE: psp */
         // return PluginJsonConfig.get(NitroflareConfig.class).isUseFreeAPIEnabled();
         return false;
     }

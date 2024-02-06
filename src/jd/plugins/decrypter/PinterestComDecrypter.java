@@ -113,6 +113,10 @@ public class PinterestComDecrypter extends PluginForDecrypt {
     }
 
     private ArrayList<DownloadLink> crawlSinglePIN(final String pinID) throws Exception {
+        if (pinID == null) {
+            /* Developer mistake */
+            throw new IllegalArgumentException();
+        }
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         String contenturl = "https://www." + this.getHost() + "/pin/" + pinID + "/";
         final DownloadLink singlePIN = this.createDownloadlink(contenturl);
@@ -233,8 +237,9 @@ public class PinterestComDecrypter extends PluginForDecrypt {
         if (redirect != null) {
             if (redirect.contains("show_error=true")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else {
+                br.getPage(redirect);
             }
-            br.getPage(redirect);
         }
     }
 
