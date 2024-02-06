@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 import java.util.WeakHashMap;
@@ -120,41 +121,37 @@ public class PluralsightCom extends antiDDoSForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         login(account, true);
-        if (!StringUtils.equals(br.getURL(), WEBSITE_BASE_APP + "/web-analytics/api/v1/users/current")) {
-            getRequest(br, this, br.createGetRequest(WEBSITE_BASE_APP + "/web-analytics/api/v1/users/current"));
-        }
-        final Map<String, Object> map = restoreFromString(br.toString(), TypeRef.MAP);
-        List<Map<String, Object>> subscriptions = (List<Map<String, Object>>) map.get("userSubscriptions");
+        // Old API request for obtaining subscription data: /web-analytics/api/v1/users/current
+        getRequest(br, this, br.createGetRequest(WEBSITE_BASE_APP + "/subscription-lifecycle/api/bootstrap"));
+        final Map<String, Object> root = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+        List<Map<String, Object>> subscriptions = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(root, "data/applicationData/subscriptionAccount/subscriptions");
         if (subscriptions == null) {
-            subscriptions = (List<Map<String, Object>>) map.get("subscriptions");
+            subscriptions = (List<Map<String, Object>>) root.get("subscriptions");
         }
         final AccountInfo ai = new AccountInfo();
         if (subscriptions == null) {
             account.setType(AccountType.UNKNOWN);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Something went wrong with account verification type.");
         }
-        if (subscriptions.size() == 0) {
-            account.setType(AccountType.FREE);
-        } else {
-            boolean isPremium = false;
-            /* Check if this is a premium account by looking through all subscription packages. */
-            for (final Map<String, Object> subscription : subscriptions) {
-                final String expiresAt = subscription.get("expiresAt") != null ? (String) subscription.get("expiresAt") : null;
-                if (expiresAt != null) {
-                    final long validUntil = TimeFormatter.getMilliSeconds(expiresAt.replace("Z", "+0000"), "yyyy-MM-dd'T'HH:mm:ss.SSSZ", null);
-                    if (validUntil > System.currentTimeMillis()) {
-                        isPremium = true;
-                        account.setType(AccountType.PREMIUM);
-                        ai.setStatus("Premium Account: " + subscription.get("name"));
-                        ai.setValidUntil(validUntil, br);
-                        break;
-                    }
+        boolean isPremium = false;
+        /* Check if this is a premium account by looking through all subscription packages. */
+        for (final Map<String, Object> subscription : subscriptions) {
+            final Object expiresAtDateO = subscription.get("termEndDate");
+            final String expiresAtDateStr = expiresAtDateO != null ? expiresAtDateO.toString() : null;
+            if (expiresAtDateStr != null) {
+                final long validUntil = TimeFormatter.getMilliSeconds(expiresAtDateStr.replace("Z", "+0000"), "yyyy-MM-dd'T'HH:mm:ss.SSSZ", Locale.ENGLISH);
+                if (validUntil > System.currentTimeMillis()) {
+                    isPremium = true;
+                    account.setType(AccountType.PREMIUM);
+                    ai.setStatus("Premium Account | Auto renew: " + subscription.get("autoRenew"));
+                    ai.setValidUntil(validUntil, br);
+                    break;
                 }
             }
-            if (!isPremium) {
-                account.setType(AccountType.FREE);
-                ai.setStatus("Free (Expired) Account");
-            }
+        }
+        if (!isPremium) {
+            account.setType(AccountType.FREE);
+            ai.setStatus("Free (Expired) Account");
         }
         account.setMaxSimultanDownloads(1);
         account.setConcurrentUsePossible(true);
