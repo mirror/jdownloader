@@ -25,6 +25,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.CryptedLink;
@@ -39,6 +40,13 @@ import jd.plugins.PluginForDecrypt;
 public class KrakenfilesComFolder extends PluginForDecrypt {
     public KrakenfilesComFolder(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.setFollowRedirects(true);
+        return br;
     }
 
     public static List<String[]> getPluginDomains() {
@@ -103,6 +111,7 @@ public class KrakenfilesComFolder extends PluginForDecrypt {
             }
             fp.setName(path);
         } else {
+            /* Fallback: Assume we are inside the root folder and set name of user/uploader as package-name. */
             fp.setName(profileName);
         }
         fp.addLinks(ret);
@@ -158,7 +167,12 @@ public class KrakenfilesComFolder extends PluginForDecrypt {
                     newitems.add(folder);
                 }
             }
-            next = br.getRegex("<a rel=\"next\" href=\"(/profiles/" + Pattern.quote(profileName) + "\\?page=" + (page + 1) + ")\"").getMatch(0);
+            next = br.getRegex("<a[^>]*rel=\"next\"[^>]*href=\"(/profiles/" + Pattern.quote(profileName) + "(/files/[A-Za-z0-9]+)?\\?page=" + (page + 1) + ")\"").getMatch(0);
+            /* Make items appear live in linkgrabber */
+            for (final DownloadLink result : newitems) {
+                distribute(result);
+                ret.add(result);
+            }
             logger.info("Crawled page " + page + " | Found number of items so far: " + ret.size() + " | Nextpage: " + next);
             if (newitems.isEmpty()) {
                 /* This should never happen. */
@@ -169,10 +183,6 @@ public class KrakenfilesComFolder extends PluginForDecrypt {
                     logger.info("Stopping because: Current page doesn't contain any items");
                     break;
                 }
-            }
-            /* Make items appear live in linkgrabber */
-            for (final DownloadLink result : newitems) {
-                distribute(result);
             }
             if (this.isAbort()) {
                 logger.info("Stopping because: Aborted by user");
