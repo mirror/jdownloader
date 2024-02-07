@@ -18,9 +18,6 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.plugins.HostPlugin;
 
@@ -55,20 +52,5 @@ public class KernelVideoSharingPornadoXxx extends KernelVideoSharingComV2 {
     @Override
     protected String generateContentURL(final String host, final String fuid, final String urlTitle) {
         return generateContentURLDefaultVideosPattern(host, fuid, urlTitle);
-    }
-
-    protected String removeUnwantedURLTitleStuff(String urltitle) {
-        if (urltitle == null) {
-            return null;
-        }
-        if (!StringUtils.isEmpty(urltitle)) {
-            final String removeMe = new Regex(urltitle, "(-[a-f0-9]{16}-?)$").getMatch(0);
-            if (removeMe != null) {
-                /* Special 2024-02-05 */
-                urltitle = urltitle.replace(removeMe, "");
-            }
-            urltitle = super.removeUnwantedURLTitleStuff(urltitle);
-        }
-        return urltitle;
     }
 }

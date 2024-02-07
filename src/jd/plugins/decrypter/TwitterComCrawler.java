@@ -1066,17 +1066,17 @@ public class TwitterComCrawler extends PluginForDecrypt {
         if (account == null && crawlRetweets) {
             displayBubblenotifyMessage("Profile crawler " + username + " | Warning", "Results may be incomplete!\r\nYou've enabled re-tweet crawling in twitter plugin settings.\r\nTwitter is sometimes hiding Re-Tweets when users are not logged in.\r\n" + warningtextNoAccount);
         }
-        if (crawlRetweets) {
-            return this.crawlUserViaGraphqlAPI(username, account);
-        } else {
-            return crawlUserViaAPI(username, crawlUserLikes, param, account);
-        }
+        return this.crawlUserViaGraphqlAPI(username, account);
     }
 
     private final String TWITTER_PROFILE_PACKAGE_KEY_PREFIX       = "twitterprofile://";
     private final String TWITTER_PROFILE_LIKES_PACKAGE_KEY_PREFIX = "twitterprofile_likes://";
 
-    /** Crawls only tweets that were posted by the profile in given URL, no re-tweets!!! */
+    /**
+     * Crawls only tweets that were posted by the profile in given URL, no re-tweets!!! </br>
+     * 2024-02-07: Doesn't work anymore (API call returns blank page).
+     */
+    @Deprecated
     private ArrayList<DownloadLink> crawlUserViaAPI(final String username, final boolean crawlUserLikes, final CryptedLink param, final Account account) throws Exception {
         logger.info("Crawling user profile via API");
         if (username == null) {
@@ -1294,7 +1294,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
         return ret;
     }
 
-    /** Crawls tweets AND re-tweets of profile in given URL. */
+    /** Crawls all Tweets of a profile via GraphQL Web-API. */
     private ArrayList<DownloadLink> crawlUserViaGraphqlAPI(final String username, final Account account) throws Exception {
         if (username == null) {
             /* Developer mistake */
@@ -1328,10 +1328,10 @@ public class TwitterComCrawler extends PluginForDecrypt {
             variables.put("includePromotedContent", true);
             variables.put("withQuickPromoteEligibilityTweetFields", true);
             variables.put("withSuperFollowsUserFields", true);
-            variables.put("withDownvotePerspective", false);
-            variables.put("withReactionsMetadata", false);
-            variables.put("withReactionsPerspective", false);
-            variables.put("withSuperFollowsTweetFields", true);
+            // variables.put("withDownvotePerspective", false);
+            // variables.put("withReactionsMetadata", false);
+            // variables.put("withReactionsPerspective", false);
+            // variables.put("withSuperFollowsTweetFields", true);
             variables.put("withVoice", true);
             variables.put("withV2Timeline", true);
             final UrlQuery query = new UrlQuery();
@@ -1341,12 +1341,12 @@ public class TwitterComCrawler extends PluginForDecrypt {
             getPage(API_BASE_GRAPHQL + "/" + queryID + "/UserTweets?" + query.toString());
             final Map<String, Object> entries = this.handleErrorsAPI(br);
             final List<Map<String, Object>> timelineInstructions = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entries, "data/user/result/timeline_v2/timeline/instructions");
-            final List<DownloadLink> allowedResults = this.crawlUserProfileGraphqlTimelineInstructions(timelineInstructions, user, null, fp);
+            final List<DownloadLink> resultsThisPage = this.crawlUserProfileGraphqlTimelineInstructions(timelineInstructions, user, null, fp);
             /* Yees global variables are dangerous but please don't touch this! */
             totalFoundTweets += profileCrawlerFoundTweetsOnCurrentPage;
-            ret.addAll(allowedResults);
-            distribute(allowedResults);
-            logger.info("Crawled page " + page + " | Found Tweets on this page: " + profileCrawlerFoundTweetsOnCurrentPage + " | Tweets crawled so far: " + profileCrawlerTotalCrawledTweetsCount + " | nextCursor = " + profileCrawlerNextCursor);
+            ret.addAll(resultsThisPage);
+            distribute(resultsThisPage);
+            logger.info("Crawled page " + page + " | Found Tweets on this page: " + profileCrawlerFoundTweetsOnCurrentPage + " | Tweets crawled so far: " + profileCrawlerTotalCrawledTweetsCount + " | nextCursor = " + profileCrawlerNextCursor + " | Skipped Re-Tweets: " + profileCrawlerSkippedResultsByRetweet.size());
             if (this.isAbort()) {
                 logger.info("Stopping because: Aborted by user");
                 break;
@@ -1412,6 +1412,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
     private int                         profileCrawlerFoundTweetsOnCurrentPage                   = 0;
     private boolean                     profileCrawlerStopBecauseReachedUserDefinedMaxItemsLimit = false;
     private final HashSet<DownloadLink> profileCrawlerSkippedResultsByMaxDate                    = new HashSet<DownloadLink>();
+    private final HashSet<DownloadLink> profileCrawlerSkippedResultsByRetweet                    = new HashSet<DownloadLink>();
 
     private ArrayList<DownloadLink> crawlUserProfileGraphqlTimelineInstructions(final List<Map<String, Object>> timelineInstructions, final Map<String, Object> user, final String singleTweetID, final FilePackage fp) throws Exception {
         /* Nullification (yes public variables are evil!) */
@@ -1419,6 +1420,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
         profileCrawlerFoundTweetsOnCurrentPage = 0;
         profileCrawlerStopBecauseReachedUserDefinedMaxItemsLimit = false;
         profileCrawlerSkippedResultsByMaxDate.clear();
+        profileCrawlerSkippedResultsByRetweet.clear();
         final List<String> pinned_tweet_ids_str = user != null ? (List<String>) user.get("pinned_tweet_ids_str") : null;
         final ArrayList<DownloadLink> allowedResults = new ArrayList<DownloadLink>();
         timelineInstructionsLoop: for (final Map<String, Object> timelineInstruction : timelineInstructions) {
@@ -1461,6 +1463,23 @@ public class TwitterComCrawler extends PluginForDecrypt {
                         continue;
                     }
                     final ArrayList<DownloadLink> thisTweetResults = crawlTweetMap(null, tweet, usr, fp);
+                    if (!PluginJsonConfig.get(TwitterConfigInterface.class).isCrawlRetweetsV2()) {
+                        /* Re-Tweet crawling is disabled: Skip all results of this Tweet if it is a Re-Tweet. */
+                        boolean skipAllByRetweet = false;
+                        for (final DownloadLink tweetresult : thisTweetResults) {
+                            if (tweetresult.hasProperty(PROPERTY_RETWEET)) {
+                                skipAllByRetweet = true;
+                                break;
+                            }
+                        }
+                        if (skipAllByRetweet) {
+                            logger.info("Skipping Retweet: " + tweet_id_str);
+                            for (final DownloadLink tweetresult : thisTweetResults) {
+                                profileCrawlerSkippedResultsByRetweet.add(tweetresult);
+                            }
+                            continue;
+                        }
+                    }
                     Long crawledTweetTimestamp = null;
                     for (final DownloadLink thisTweetResult : thisTweetResults) {
                         /* Find timestamp of last added result. Ignore pinned tweets. */

@@ -1921,12 +1921,24 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
             return null;
         }
         if (!StringUtils.isEmpty(urltitle)) {
+            if (removeHashSegmentsFromURLTitles()) {
+                /* E.g. camhub.cc, pornado.xxx, camwhoreshd.com, */
+                final String removeMe = new Regex(urltitle, "(-[a-f0-9]{16}-?)$").getMatch(0);
+                if (removeMe != null) {
+                    /* Special 2024-02-05 */
+                    urltitle = urltitle.replace(removeMe, "");
+                }
+            }
             /* Make the url-filenames look better by using spaces instead of '-'. */
             urltitle = urltitle.replace("-", " ");
             /* Remove eventually existing spaces at the end. */
             urltitle = urltitle.trim();
         }
         return urltitle;
+    }
+
+    protected boolean removeHashSegmentsFromURLTitles() {
+        return true;
     }
 
     /** Returns "better human readable" file-title from URL. */

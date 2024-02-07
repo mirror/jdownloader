@@ -199,7 +199,7 @@ public interface TwitterConfigInterface extends PluginConfigInterface {
 
     void setSingleTweetCrawlerCrawlMode(final SingleTweetCrawlerMode mode);
 
-    @DefaultBooleanValue(false)
+    @DefaultBooleanValue(true)
     @AboutConfig
     @DescriptionForConfigEntry("Crawl Retweets when crawling a Twitter profile?")
     @Order(35)
