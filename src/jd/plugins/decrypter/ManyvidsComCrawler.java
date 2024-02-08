@@ -101,6 +101,13 @@ public class ManyvidsComCrawler extends PluginForDecrypt {
         String urlSlug = urlinfo.getMatch(3);
         if (contentType.equalsIgnoreCase("profile")) {
             /* Crawl user profile */
+            // br.getPage("https://www." + this.getHost() + "/Profile/" + contentID + "/" + urlSlug + "/");
+            // if (br.getHttpConnection().getResponseCode() == 404) {
+            // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            // } else if (!br.getURL().contains(contentID)) {
+            // /* E.g. redirect to mainpage */
+            // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            // }
             br.getPage("https://www." + this.getHost() + "/Profile/" + contentID + "/" + urlSlug + "/Store/Videos/");
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -108,13 +115,15 @@ public class ManyvidsComCrawler extends PluginForDecrypt {
                 /* E.g. redirect to mainpage */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            final String mvtoken = br.getRegex("data-mvtoken=\"([^\"]+)").getMatch(0);
+            String mvtoken = br.getRegex("data-mvtoken=\"([^\"]+)").getMatch(0);
             if (mvtoken == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                final Browser brc = br.cloneBrowser();
+                brc.getPage("/Login");
+                mvtoken = brc.getRegex("data-mvtoken=\"([^\"]+)").getMatch(0);
             }
             /* Obtain first-page-json from html source */
             final String jsonEntityEncoded = br.getRegex("data-store-videos=\"([^\"]+)").getMatch(0);
-            if (jsonEntityEncoded == null) {
+            if (jsonEntityEncoded == null && mvtoken == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             final Browser brc = br.cloneBrowser();
@@ -126,7 +135,9 @@ public class ManyvidsComCrawler extends PluginForDecrypt {
             query.add("category", "all");
             query.add("sort", "0");
             query.add("limit", Integer.toString(maxItemsPerPage));
-            query.add("mvtoken", Encoding.urlEncode(mvtoken));
+            if (mvtoken != null) {
+                query.add("mvtoken", Encoding.urlEncode(mvtoken));
+            }
             int offset = 0;
             final HashSet<String> dupes = new HashSet<String>();
             final FilePackage fp = FilePackage.getInstance();
@@ -137,8 +148,21 @@ public class ManyvidsComCrawler extends PluginForDecrypt {
                 fp.setName(contentID);
             }
             fp.setPackageKey(manyvidsKeyPrefix + contentType + "/" + contentID);
-            Map<String, Object> result = restoreFromString(Encoding.htmlOnlyDecode(jsonEntityEncoded), TypeRef.MAP);
+            Map<String, Object> result;
+            if (jsonEntityEncoded != null) {
+                /* Items of first page are present as json in html -> Use them */
+                result = restoreFromString(Encoding.htmlOnlyDecode(jsonEntityEncoded), TypeRef.MAP);
+            } else {
+                /* Items of first page are not present in html -> Ajax request needed to find them */
+                result = null;
+            }
             do {
+                if (result == null) {
+                    query.addAndReplace("offset", Integer.toString(offset));
+                    brc.getPage("https://www." + this.getHost() + "/api/model/" + contentID + "/videos?" + query.toString());
+                    final Map<String, Object> entries = restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.MAP);
+                    result = (Map<String, Object>) entries.get("result");
+                }
                 final Map<String, Object> content = (Map<String, Object>) result.get("content");
                 final List<Map<String, Object>> items = (List<Map<String, Object>>) content.get("items");
                 int numberofNewItems = 0;
@@ -163,13 +187,14 @@ public class ManyvidsComCrawler extends PluginForDecrypt {
                 } else if (numberofNewItems < maxItemsPerPage) {
                     logger.info("Stopping because: Number of new items is smaller than " + maxItemsPerPage + " --> Reached end?");
                     break;
+                } else if (mvtoken == null) {
+                    /* This should never happen */
+                    logger.info("Stopping because: Cannot execute pagination because 'mvtoken' is missing");
+                    break;
                 } else {
                     /* Continue to next page */
                     offset += maxItemsPerPage;
-                    query.addAndReplace("offset", Integer.toString(offset));
-                    brc.getPage("https://www." + this.getHost() + "/api/model/" + contentID + "/videos?" + query.toString());
-                    final Map<String, Object> entries = restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.MAP);
-                    result = (Map<String, Object>) entries.get("result");
+                    result = null;
                 }
             } while (true);
         } else {
