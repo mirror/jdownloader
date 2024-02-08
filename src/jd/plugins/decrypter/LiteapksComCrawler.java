@@ -22,6 +22,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -35,6 +36,13 @@ import jd.plugins.PluginForDecrypt;
 public class LiteapksComCrawler extends PluginForDecrypt {
     public LiteapksComCrawler(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.setFollowRedirects(true);
+        return br;
     }
 
     public static List<String[]> getPluginDomains() {
@@ -67,7 +75,6 @@ public class LiteapksComCrawler extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        br.setFollowRedirects(true);
         br.getPage(param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -76,7 +83,11 @@ public class LiteapksComCrawler extends PluginForDecrypt {
         if (!param.getCryptedUrl().matches(".+" + downloadOverviewPatternStr) && !br.getURL().matches(".+" + downloadOverviewPatternStr)) {
             final String downloadOverviewUrl = br.getRegex(downloadOverviewPatternStr).getMatch(-1);
             if (downloadOverviewUrl == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                /*
+                 * Probably not a downloadable item but a blog post e.g.
+                 * https://liteapks.com/how-to-install-and-use-zygisk-menu-for-rooted-non-rooted-phone.html
+                 */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             br.getPage(downloadOverviewUrl);
         } else {

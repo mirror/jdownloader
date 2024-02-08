@@ -87,11 +87,11 @@ public class GetComicsInfo extends antiDDoSForDecrypt {
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final String addedurl = param.getCryptedUrl();
-        if (addedurl.matches("https?://[^/]+/share/uploads/\\d+/\\d+/[a-zA-Z0-9\\_\\-]+\\.txt")) {
+        final String contenturl = param.getCryptedUrl().replaceFirst("^(?i)http://", "https://");
+        if (contenturl.matches("https?://[^/]+/share/uploads/\\d+/\\d+/[a-zA-Z0-9\\_\\-]+\\.txt")) {
             // Load page
             br.setFollowRedirects(true);
-            final Request request = br.createGetRequest(addedurl);
+            final Request request = br.createGetRequest(contenturl);
             request.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             final String page = br.getPage(request).toString();
             String[][] regExMatches = new Regex(page, "(https?://.*?)(\\s|$)").getMatches();
@@ -102,7 +102,7 @@ public class GetComicsInfo extends antiDDoSForDecrypt {
         } else {
             // Load page
             br.setFollowRedirects(false);
-            final GetRequest request = br.createGetRequest(addedurl);
+            final GetRequest request = br.createGetRequest(contenturl);
             URLConnectionAdapter con = openAntiDDoSRequestConnection(br, request);
             try {
                 int attempts = 0;
@@ -133,7 +133,7 @@ public class GetComicsInfo extends antiDDoSForDecrypt {
             }
             br.setFollowRedirects(true);
             if (br.containsHTML("You have been redirected through this website from a suspicious source")) {
-                String base64 = new Regex(addedurl, "((aHR0c|ZnRwOi).+)($|\\?)").getMatch(0);
+                String base64 = new Regex(contenturl, "((aHR0c|ZnRwOi).+)($|\\?)").getMatch(0);
                 if (base64 != null) {
                     /* base64 http and ftp */
                     while (true) {
@@ -152,7 +152,11 @@ public class GetComicsInfo extends antiDDoSForDecrypt {
                 }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            final String title = br.getRegex("<title>(.+?) &ndash; GetComics").getMatch(0);
+            String title = br.getRegex("<title>([^<]+)").getMatch(0);
+            if (title != null) {
+                title = Encoding.htmlDecode(title).trim();
+                title = title.replaceFirst("\\s*GetComics$", "");
+            }
             final ArrayList<String> links = new ArrayList<String>();
             final String textBody = br.getRegex("<section class=\"post-contents\">(.*)<strong>(?:Screenshots|Notes)").getMatch(0);
             if (StringUtils.isNotEmpty(textBody)) {
@@ -173,7 +177,7 @@ public class GetComicsInfo extends antiDDoSForDecrypt {
                         String redirect = brc.getRedirectLocation();
                         if (redirect == null) {
                             sleep(1000, param);
-                            getPage(brc, addedurl);
+                            getPage(brc, contenturl);
                             getPage(brc, link);
                             redirect = brc.getRedirectLocation();
                         }
@@ -196,11 +200,14 @@ public class GetComicsInfo extends antiDDoSForDecrypt {
                     }
                 }
             }
-            if (StringUtils.isEmpty(title)) {
-                final FilePackage filePackage = FilePackage.getInstance();
-                filePackage.setName(Encoding.htmlDecode(title));
-                filePackage.addLinks(ret);
+            final FilePackage fp = FilePackage.getInstance();
+            if (!StringUtils.isEmpty(title)) {
+                fp.setName(title);
+            } else {
+                /* Fallback */
+                fp.setName(br._getURL().getPath());
             }
+            fp.addLinks(ret);
         }
         return ret;
     }

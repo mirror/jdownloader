@@ -109,11 +109,11 @@ public class WeTransferComFolder extends PluginForDecrypt {
         }
         final List<Object> ressourcelist = map.get("files") != null ? (List<Object>) map.get("files") : (List) map.get("items");
         /* TODO: Handle this case */
-        final boolean per_file_download_available = map.containsKey("per_file_download_available") && Boolean.TRUE.equals(map.get("per_file_download_available"));
+        // final boolean per_file_download_available = map.containsKey("per_file_download_available") &&
+        // Boolean.TRUE.equals(map.get("per_file_download_available"));
         /* TODO: Handle this case */
-        final boolean password_protected = map.containsKey("password_protected") && Boolean.TRUE.equals(map.get("password_protected"));
+        // final boolean password_protected = map.containsKey("password_protected") && Boolean.TRUE.equals(map.get("password_protected"));
         /* E.g. okay would be "downloadable" */
-        String fpName = null;
         // final String state = (String) map.get("state");
         for (final Object fileo : ressourcelist) {
             final Map<String, Object> entry = (Map<String, Object>) fileo;
@@ -127,36 +127,37 @@ public class WeTransferComFolder extends PluginForDecrypt {
             dl.setReferrerUrl(refererValue);
             String filename = null;
             /* Add folderID as root of the path because otherwise files could be mixed up - there is no real "base folder name" given! */
-            String thisPath;
-            if (shortID != null) {
-                thisPath = shortID + "/";
-            } else {
-                /* Fallback */
-                thisPath = id_main + "/";
-            }
+            String pathForPlugin = null;
             if (absolutePath.contains("/")) {
+                /* Looks like we got a subfolder-structure -> Build path */
+                if (shortID != null) {
+                    pathForPlugin = shortID + "/";
+                } else {
+                    /* Fallback */
+                    pathForPlugin = id_main + "/";
+                }
                 final String[] urlSegments = absolutePath.split("/");
                 filename = urlSegments[urlSegments.length - 1];
-                thisPath += absolutePath.substring(0, absolutePath.lastIndexOf("/"));
-                if (fpName == null) {
-                    /* Let's assume that all files are below this path */
-                    fpName = thisPath;
-                }
+                pathForPlugin += absolutePath.substring(0, absolutePath.lastIndexOf("/"));
             } else {
                 /* In this case given name/path really is only the filename without path -> File of root folder */
                 filename = absolutePath;
                 /* Path == root */
             }
-            dl.setRelativeDownloadFolderPath(thisPath);
+            if (pathForPlugin != null) {
+                dl.setRelativeDownloadFolderPath(pathForPlugin);
+            }
             dl.setFinalFileName(filename);
             dl.setVerifiedFileSize(filesize);
             dl.setContentUrl(contenturl);
             dl.setAvailable(true);
             ret.add(dl);
             /* Set individual packagename per URL because every item can have a totally different file-structure! */
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName(thisPath);
-            dl._setFilePackage(fp);
+            if (pathForPlugin != null) {
+                final FilePackage fp = FilePackage.getInstance();
+                fp.setName(pathForPlugin);
+                dl._setFilePackage(fp);
+            }
         }
         return ret;
     }

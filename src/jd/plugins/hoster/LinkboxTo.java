@@ -27,6 +27,7 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
+import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -84,10 +85,14 @@ public class LinkboxTo extends PluginForHost {
     }
 
     /* Connection stuff */
-    private final boolean      FREE_RESUME             = true;
-    private final int          FREE_MAXCHUNKS          = 0;
+    private final int          FREE_MAXCHUNKS          = 1;
     private final int          FREE_MAXDOWNLOADS       = -1;
     public static final String PROPERTY_FREE_DIRECTURL = "free_directlink";
+
+    @Override
+    public boolean isResumeable(final DownloadLink link, final Account account) {
+        return true;
+    }
 
     // private final boolean ACCOUNT_FREE_RESUME = true;
     // private final int ACCOUNT_FREE_MAXCHUNKS = 0;
@@ -141,10 +146,10 @@ public class LinkboxTo extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        handleDownload(link, FREE_RESUME, FREE_MAXCHUNKS, PROPERTY_FREE_DIRECTURL);
+        handleDownload(link, PROPERTY_FREE_DIRECTURL);
     }
 
-    private void handleDownload(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+    private void handleDownload(final DownloadLink link, final String directlinkproperty) throws Exception, PluginException {
         if (!attemptStoredDownloadurlDownload(link, directlinkproperty)) {
             requestFileInformation(link);
             final String dllink = link.getStringProperty(directlinkproperty);
@@ -152,7 +157,7 @@ public class LinkboxTo extends PluginForHost {
                 logger.warning("Failed to find final downloadurl");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, this.isResumeable(link, null), FREE_MAXCHUNKS);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 br.followConnection(true);
                 if (dl.getConnection().getCompleteContentLength() == 0) {
@@ -193,7 +198,7 @@ public class LinkboxTo extends PluginForHost {
         }
         try {
             final Browser brc = br.cloneBrowser();
-            dl = new jd.plugins.BrowserAdapter().openDownload(brc, link, url, FREE_RESUME, FREE_MAXCHUNKS);
+            dl = new jd.plugins.BrowserAdapter().openDownload(brc, link, url, this.isResumeable(link, null), FREE_MAXCHUNKS);
             if (this.looksLikeDownloadableContent(dl.getConnection())) {
                 preDownloadErrorCheck(dl.getConnection());
                 return true;
