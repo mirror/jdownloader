@@ -58,6 +58,13 @@ public class GrabItShareCom extends PluginForHost {
         this.enablePremium(COOKIE_HOST + "/en/register.php");
     }
 
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.setFollowRedirects(true);
+        return br;
+    }
+
     private String findLink() throws Exception {
         String finalLink = br.getRegex("(http://.{5,30}getfile\\.php\\?id=\\d+\\&a=[a-z0-9]+\\&t=[a-z0-9]+.*?)(\\'|\")").getMatch(0);
         if (finalLink == null) {
@@ -90,7 +97,6 @@ public class GrabItShareCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
-        br.setFollowRedirects(true);
         br.setCustomCharset("utf-8");
         br.setCookie(COOKIE_HOST, "mfh_mylang", "en");
         br.setCookie(COOKIE_HOST, "yab_mylang", "en");
@@ -268,7 +274,6 @@ public class GrabItShareCom extends PluginForHost {
                         return;
                     }
                 }
-                br.setFollowRedirects(true);
                 br.setCookie(COOKIE_HOST, "mfh_mylang", "en");
                 br.setCookie(COOKIE_HOST, "yab_mylang", "en");
                 br.getPage(COOKIE_HOST + "/en/login.php");
@@ -359,7 +364,7 @@ public class GrabItShareCom extends PluginForHost {
         login(account, true);
         br.setFollowRedirects(false);
         br.setCookie(COOKIE_HOST, "mfh_mylang", "en");
-        br.getPage(link.getDownloadURL());
+        br.getPage(link.getPluginPatternMatcher());
         checkOffline();
         if (account.getType() == AccountType.FREE) {
             doFree(link);

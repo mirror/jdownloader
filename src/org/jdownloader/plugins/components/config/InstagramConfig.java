@@ -323,7 +323,7 @@ public interface InstagramConfig extends PluginConfigInterface {
         ENFORCE_ORIGINAL_QUALITY {
             @Override
             public String getLabel() {
-                return "Enforce original quality (account required, on failure = display error)";
+                return "Enforce original quality (account required, on failure = display error message)";
             }
         };
     }

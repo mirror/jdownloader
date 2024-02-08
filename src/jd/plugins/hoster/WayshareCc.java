@@ -18,9 +18,12 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
@@ -88,6 +91,32 @@ public class WayshareCc extends XFileSharingProBasic {
             /* Free(anonymous) and unknown account type */
             return 1;
         }
+    }
+
+    @Override
+    protected String getDllink(final DownloadLink link, final Account account, final Browser br, String src) {
+        String directurl = super.getDllink(link, account, br, src);
+        if (directurl == null) {
+            /* 2024-02-08 */
+            directurl = br.getRegex("<a[^>]*href=\"(https?://[^\"]+)\"[^>]*><i[^>]*data-feather=\"download\"").getMatch(0);
+        }
+        if (directurl == null) {
+            return null;
+        }
+        if (StringUtils.containsIgnoreCase(directurl, "/video.mp4")) {
+            /* Looks like a trailer downloadlink -> Do further checks. */
+            try {
+                final Form download1 = this.findFormDownload1Free(br);
+                final Form download2 = this.findFormDownload2Free(br);
+                if (download1 != null || download2 != null || br.containsHTML("<h3>\\s*Preview video\\s*</h3>")) {
+                    logger.info("Avoid download of trailer: " + directurl);
+                    return null;
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        return directurl;
     }
 
     @Override

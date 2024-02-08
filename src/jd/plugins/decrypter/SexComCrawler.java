@@ -38,8 +38,8 @@ import jd.plugins.PluginException;
 import jd.plugins.hoster.DirectHTTP;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class SexCom extends PornEmbedParser {
-    public SexCom(PluginWrapper wrapper) {
+public class SexComCrawler extends PornEmbedParser {
+    public SexComCrawler(PluginWrapper wrapper) {
         super(wrapper);
     }
 

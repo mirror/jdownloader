@@ -2370,7 +2370,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
                 final int preDownloadWaittimeMillis = Integer.parseInt(waitStr) * 1000;
                 if (preDownloadWaittimeMillis > captchaTimeoutMillis) {
                     final int prePrePreDownloadWait = preDownloadWaittimeMillis - captchaTimeoutMillis;
-                    logger.info("Waittime is higher than interactive captcha timeout --> Waiting a part of it before solving captcha to avoid timeouts");
+                    logger.info("Waittime is higher than interactive captcha timeout --> Waiting a part of it before solving captcha to avoid captcha-token-timeout");
                     logger.info("Pre-pre download waittime seconds: " + (prePrePreDownloadWait / 1000));
                     this.sleep(prePrePreDownloadWait, link);
                 }
