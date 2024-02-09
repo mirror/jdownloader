@@ -182,6 +182,10 @@ public class SharingWtf extends YetiShareCore {
             /* 2023-05-09 */
             continue_link = br.getRegex("(?i)href='(https?://[^<>\"\\']+)' target='_top'[^>]*>\\s*Download\\s*</a>").getMatch(0);
         }
+        if (continue_link == null) {
+            /* 2024-02-09: Premium */
+            continue_link = br.getRegex("data-url=\"(https?://[^\"]+)\" data-fileserver").getMatch(0);
+        }
         if (continue_link != null) {
             return continue_link;
         } else {
