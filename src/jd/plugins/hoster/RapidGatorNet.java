@@ -304,7 +304,7 @@ public class RapidGatorNet extends PluginForHost {
         } else {
             /* Not a direct-URL */
             br.followConnection();
-            this.handleErrorsWebsite(br, link, account, null, true);
+            this.checkOfflineWebsite(br, link, true);
             String filename = br.getRegex("Downloading\\s*:\\s*</strong>\\s*<a href=\"\"[^>]*>([^<>\"]+)<").getMatch(0);
             if (filename == null) {
                 filename = br.getRegex("<title>\\s*Download file\\s*([^<>\"]+)</title>").getMatch(0);
@@ -1458,13 +1458,7 @@ public class RapidGatorNet extends PluginForHost {
             }
         }
         /* Check for offline file */
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (br.containsHTML(">\\s*404 File not found")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (doExtendedOfflineCheck && !br.getURL().contains(this.getFID(link))) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
+        checkOfflineWebsite(br, link, doExtendedOfflineCheck);
         /* Check if item is only downloadable for premium users. */
         final String freedlsizelimit = br.getRegex("(?i)'You can download files up to ([\\d\\.]+ ?(MB|GB)) in free mode\\s*<").getMatch(0);
         if (freedlsizelimit != null) {
@@ -1537,6 +1531,16 @@ public class RapidGatorNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404 (session expired?)", 5 * 60 * 1000l);
         } else if (br.containsHTML(">\\s*An unexpected error occurred\\s*\\.?\\s*<")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "An unexpected error occurred", 15 * 60 * 1000l);
+        }
+    }
+
+    private void checkOfflineWebsite(final Browser br, final DownloadLink link, final boolean doExtendedOfflineCheck) throws PluginException {
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML(">\\s*404 File not found")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (doExtendedOfflineCheck && !br.getURL().contains(this.getFID(link))) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
     }
 
