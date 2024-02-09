@@ -190,9 +190,15 @@ public class SharingWtf extends YetiShareCore {
     }
 
     @Override
-    public void checkErrors(Browser br, final DownloadLink link, final Account account) throws PluginException {
+    public void checkErrors(final Browser br, final DownloadLink link, final Account account) throws PluginException {
         /* 2020-02-17: Special */
         if (br.containsHTML("(?i)you need to be a registered user to download any files")) {
+            throw new AccountRequiredException();
+        } else if (br.containsHTML(">\\s*You must be a registered member account to download files more than")) {
+            /* 2024-02-09 */
+            throw new AccountRequiredException();
+        } else if (br.containsHTML(">\\s*You must be a premium member to download files more")) {
+            /* 2024-02-09 */
             throw new AccountRequiredException();
         }
         String errorMsg = null;

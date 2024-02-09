@@ -18,15 +18,15 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
-
-import org.appwork.utils.Regex;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class BtafileCom extends XFileSharingProBasic {
@@ -114,7 +114,7 @@ public class BtafileCom extends XFileSharingProBasic {
         if (!premiumonly) {
             premiumonly = br.containsHTML(">\\s*This file reached max free downloads limit");
             if (!premiumonly) {
-                premiumonly = new Regex(getCorrectBR(br), ">\\s*This file reached max free downloads limit").matches();
+                premiumonly = new Regex(getCorrectBR(br), ">\\s*This file reached max free downloads limit").patternFind();
             }
         }
         return premiumonly;

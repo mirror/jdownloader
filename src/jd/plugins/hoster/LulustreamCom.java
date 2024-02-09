@@ -174,7 +174,7 @@ public class LulustreamCom extends XFileSharingProBasic {
 
     @Override
     protected boolean isOffline(final DownloadLink link, final Browser br, final String html) {
-        if (br.containsHTML(">\\s*Oops! Page Not Found|>\\s*Sorry, the page you're looking for doesn't exist|>\\s*File is no longer available|>\\s*No such file")) {
+        if (br.containsHTML(">\\s*Oops! Page Not Found|>\\s*Sorry, the page you're looking for doesn't exist|>\\s*File is no longer available|>\\s*No such file|>\\s*File Not Found")) {
             return true;
         } else {
             return false;
