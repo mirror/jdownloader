@@ -33,11 +33,13 @@ import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
+import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.SimFileShareNet;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
+@PluginDependencies(dependencies = { SimFileShareNet.class })
 public class SimFileShareNetFolder extends PluginForDecrypt {
     public SimFileShareNetFolder(PluginWrapper wrapper) {
         super(wrapper);
