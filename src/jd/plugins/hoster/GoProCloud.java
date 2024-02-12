@@ -26,6 +26,25 @@ import java.util.WeakHashMap;
 
 import javax.crypto.Cipher;
 
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.storage.TypeRef;
+import org.appwork.storage.flexijson.FlexiJSONParser;
+import org.appwork.storage.flexijson.FlexiJSonNode;
+import org.appwork.storage.flexijson.FlexiParserException;
+import org.appwork.storage.flexijson.mapper.FlexiJSonMapper;
+import org.appwork.storage.flexijson.mapper.FlexiMapperException;
+import org.appwork.utils.Files;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.crypto.AWSign;
+import org.appwork.utils.encoding.Base64;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.controlling.linkcrawler.LinkVariant;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.host.PluginFinder;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -54,28 +73,8 @@ import jd.plugins.components.gopro.Media;
 import jd.plugins.components.gopro.Variation;
 import jd.plugins.decrypter.GoProCloudDecrypter;
 
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.storage.TypeRef;
-import org.appwork.storage.flexijson.FlexiJSONParser;
-import org.appwork.storage.flexijson.FlexiJSonNode;
-import org.appwork.storage.flexijson.FlexiParserException;
-import org.appwork.storage.flexijson.mapper.FlexiJSonMapper;
-import org.appwork.storage.flexijson.mapper.FlexiMapperException;
-import org.appwork.utils.Files;
-import org.appwork.utils.Hash;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.crypto.AWSign;
-import org.appwork.utils.encoding.Base64;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.controlling.linkcrawler.LinkVariant;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.host.PluginFinder;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "gopro.com" }, urls = { GoProCloud.HTTPS_GOPRO_COM_DOWNLOAD_PREMIUM_FREE })
-public class GoProCloud extends PluginForHost/* implements MenuExtenderHandler */{
+public class GoProCloud extends PluginForHost/* implements MenuExtenderHandler */ {
     public static final String MEDIA                                 = "media";
     public static final String MEDIA_DOWNLOAD                        = "media/download";
     public static final String HTTPS_GOPRO_COM_DOWNLOAD_PREMIUM_FREE = "https?://gopro\\.com/download(?:premium|free)/([^/]+)/([^/]+)";
@@ -142,12 +141,7 @@ public class GoProCloud extends PluginForHost/* implements MenuExtenderHandler *
                     br.clearAll();
                     br.getPage("https://gopro.com/login");
                     final Map<String, Object> loginData = new HashMap<String, Object>();
-                    final String token = br.getRegex("<meta name=\"csrf-token\" content=([^>]+)").getMatch(0);
-                    if (StringUtils.isEmpty(token)) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    final String publicKeyPem = br.getRegex("\"pwPubKey\"\\s*:\\s*\"([^\"]+)").getMatch(0);
-                    // String json = br.getRegex("<script>window.__bootstrap=(.+)").getMatch(0);
+                    final String publicKeyPem = br.getRegex("\"pwPublicKey\"\\s*:\\s*\"([^\"]+)").getMatch(0);
                     try {
                         String base64Encoded = publicKeyPem;
                         base64Encoded = base64Encoded.replaceAll("(?i)^\\s*[\\-]*BEGIN\\s*(RSA\\s*)?PUBLIC\\s*KEY[\\-]*\\s*", "");
@@ -156,23 +150,18 @@ public class GoProCloud extends PluginForHost/* implements MenuExtenderHandler *
                         final PublicKey pub = AWSign.getPublicKey(base64Encoded);
                         final Cipher cipher = Cipher.getInstance("RSA");
                         cipher.init(Cipher.ENCRYPT_MODE, pub);
-                        final String encryptedPassword = Base64.encodeToString(cipher.doFinal(account.getPass().getBytes("UTF-8")));
+                        final String encryptedPassword = Base64.encodeToString(cipher.doFinal((account.getPass()).getBytes("UTF-8")));
                         loginData.put("password", encryptedPassword);
                     } catch (Exception e) {
                         logger.log(e);
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, null, e);
                     }
                     loginData.put("email", account.getUser());
-                    loginData.put("referrer", "");
-                    loginData.put("two_factor", "");
-                    loginData.put("fingerprint", Hash.getMD5(System.currentTimeMillis() + "").toLowerCase(Locale.ROOT));
-                    loginData.put("brand", "");
-                    loginData.put("scope", "username, email, me");
-                    loginData.put("clientUserAgent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/104.0.0.0 Safari/537.36");
+                    loginData.put("twoFactor", "");
+                    loginData.put("redirectUri", "");
                     Map<String, Object> response = null;
                     loginLoop: while (!isAbort()) {
-                        final PostRequest loginRequest = br.createJSonPostRequest("https://gopro.com/login", loginData);
-                        loginRequest.getHeaders().put("x-csrf-token", token);
+                        final PostRequest loginRequest = br.createJSonPostRequest("https://gopro.com/login/api/login", loginData);
                         br.getPage(loginRequest);
                         response = restoreFromString(br.toString(), TypeRef.MAP);
                         final List<Map<String, Object>> errors = (List<Map<String, Object>>) response.get("_errors");
@@ -182,16 +171,19 @@ public class GoProCloud extends PluginForHost/* implements MenuExtenderHandler *
                                 switch (code.intValue()) {
                                 case 401:
                                     // {"_errors":[{"code":401,"description":"Invalid username/password combination."}],"statusCode":401}
+                                case 4009: // since 12.02.2024
+                                    // {code=4009, id=, description=The provided resource owner credentials are not valid, or resource owner
+                                    // cannot be found}
                                     throw new AccountInvalidException("Invalid username/password combination");
                                 case 4014:
                                     // {"_errors":[{"code":4014,"id":"","description":"Invalid Two-Factor Authentication Code. Please try
                                     // again or request a new code"}],"statusCode":401}
                                     logger.info("2FA code required");
                                     final Browser brc = br.cloneBrowser();
-                                    brc.getPage("https://gopro.com/2fa-code?email=" + URLEncode.encodeURIComponent(account.getUser()));
-                                    final Map<String, Object> twoFACodeRequestResponse = restoreFromString(brc.toString(), TypeRef.MAP);
-                                    final Number statusCode = (Number) twoFACodeRequestResponse.get("statusCode");
-                                    if (statusCode == null || statusCode.intValue() != 200) {
+                                    brc.getPage("https://gopro.com/login/api/code?email=" + URLEncode.encodeURIComponent(account.getUser()));
+                                    // final Map<String, Object> twoFACodeRequestResponse = restoreFromString(brc.toString(), TypeRef.MAP);
+                                    // final Number statusCode = (Number) twoFACodeRequestResponse.get("statusCode");
+                                    if (brc.getHttpConnection().getResponseCode() != 200) {
                                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                                     }
                                     final DownloadLink dl_dummy;
@@ -207,10 +199,10 @@ public class GoProCloud extends PluginForHost/* implements MenuExtenderHandler *
                                     if (twoFACode == null || !twoFACode.matches("\\d{6}")) {
                                         throw new AccountInvalidException("Invalid 2-factor-authentication code format (must be 6 digits) !");
                                     }
-                                    loginData.put("two_factor", twoFACode);
+                                    loginData.put("twoFactor", twoFACode);
                                     continue loginLoop;
                                 default:
-                                    break;
+                                    throw new AccountInvalidException("Unexpected Error: " + error.get("description"));
                                 }
                             }
                             throw new AccountInvalidException();
