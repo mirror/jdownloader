@@ -49,8 +49,8 @@ public class BbcComDecrypter extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private final String        TYPE_EMBED      = "https?://[^/]+/[^/]+/av-embeds/.+";
-    private static final String TYPE_PROGRAMMES = "https?://[^/]+/programmes/([^/]+)$";
+    private final String        TYPE_EMBED      = "(?i)https?://[^/]+/[^/]+/av-embeds/.+";
+    private static final String TYPE_PROGRAMMES = "(?i)https?://[^/]+/programmes/([^/]+)$";
 
     @SuppressWarnings("unchecked")
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
@@ -273,26 +273,28 @@ public class BbcComDecrypter extends PluginForDecrypt {
             final Map<String, Object> body = (Map<String, Object>) root.get("body");
             pageTitle = (String) body.get("pageTitle");
             final List<Map<String, Object>> videos = (List<Map<String, Object>>) body.get("videos");
-            for (final Map<String, Object> video : videos) {
-                final String vpid = (String) video.get("versionPid");
-                if (StringUtils.isEmpty(vpid)) {
-                    continue;
-                }
-                final String title = (String) video.get("title");
-                final String description = (String) video.get("description");
-                final String tv_brand = (String) video.get("masterBrand");
-                final String date = (String) video.get("createdDateTime");
-                final DownloadLink dl = generateDownloadlink(vpid);
-                if (!StringUtils.isEmpty(title)) {
-                    dl.setProperty(BbcCom.PROPERTY_TITLE, title);
-                    dl.setProperty(BbcCom.PROPERTY_DATE, new Regex(date, "(\\d{4}-\\d{2}-\\d{2})").getMatch(0));
-                    dl.setProperty(BbcCom.PROPERTY_TV_BRAND, tv_brand);
-                    dl.setContentUrl(param.getCryptedUrl());
-                    if (!StringUtils.isEmpty(description)) {
-                        dl.setComment(description);
+            if (videos != null) {
+                for (final Map<String, Object> video : videos) {
+                    final String vpid = (String) video.get("versionPid");
+                    if (StringUtils.isEmpty(vpid)) {
+                        continue;
                     }
-                    dl.setName(BbcCom.getFilename(dl));
-                    ret.add(dl);
+                    final String title = (String) video.get("title");
+                    final String description = (String) video.get("description");
+                    final String tv_brand = (String) video.get("masterBrand");
+                    final String date = (String) video.get("createdDateTime");
+                    final DownloadLink dl = generateDownloadlink(vpid);
+                    if (!StringUtils.isEmpty(title)) {
+                        dl.setProperty(BbcCom.PROPERTY_TITLE, title);
+                        dl.setProperty(BbcCom.PROPERTY_DATE, new Regex(date, "(\\d{4}-\\d{2}-\\d{2})").getMatch(0));
+                        dl.setProperty(BbcCom.PROPERTY_TV_BRAND, tv_brand);
+                        dl.setContentUrl(param.getCryptedUrl());
+                        if (!StringUtils.isEmpty(description)) {
+                            dl.setComment(description);
+                        }
+                        dl.setName(BbcCom.getFilename(dl));
+                        ret.add(dl);
+                    }
                 }
             }
         }
@@ -372,13 +374,14 @@ public class BbcComDecrypter extends PluginForDecrypt {
                 }
             }
         }
-        // final String[] newsVpids = br.getRegex("version_offset:(p[a-z0-9]+)").getColumn(0);
-        // for (final String newsVpid : newsVpids) {
-        // final DownloadLink dl = generateDownloadlink(newsVpid);
-        // dl.setContentUrl(parameter);
-        // decryptedLinks.add(dl);
-        // }
-        // final String jsonMorphMultiple = br.getRegex("Morph\\.setPayload\\('[^\\']+', (\\{.*?\\})\\);").getMatch(0);
+        /* 2024-02-12: works for e.g. https://www.bbc.co.uk/archive/the-great-egg-race--eggmobiles/zbrvmfr */
+        final String[] jsons20240212 = br.getRegex("Morph\\.setPayload\\('([^']+)', \\(\\{\"\\);").getColumn(0);
+        if (jsons20240212 != null && jsons20240212.length > 0) {
+            for (final String json : jsons20240212) {
+                final Map<String, Object> map20240212 = restoreFromString(json, TypeRef.MAP);
+                findVideoMapsDownloadLinkList20240212(ret, map20240212);
+            }
+        }
         if (this.br.getURL().matches(TYPE_PROGRAMMES)) {
             if (ret.isEmpty()) {
                 ret.addAll(crawlProgrammes(br.getURL()));
@@ -393,11 +396,14 @@ public class BbcComDecrypter extends PluginForDecrypt {
             logger.info("Failed to find any playable content --> Probably only irrelevant photo content or no content at all --> Adding offline url");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        final FilePackage fp = FilePackage.getInstance();
         if (pageTitle != null) {
-            final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(pageTitle).trim());
-            fp.addLinks(ret);
+        } else {
+            /* Fallback */
+            fp.setName(br._getURL().toExternalForm());
         }
+        fp.addLinks(ret);
         return ret;
     }
 
@@ -405,12 +411,15 @@ public class BbcComDecrypter extends PluginForDecrypt {
     private Object findVideoMap(final Object o) {
         if (o instanceof Map) {
             final Map<String, Object> entrymap = (Map<String, Object>) o;
+            final Map<String, Object> safeVideoItem = (Map<String, Object>) entrymap.get("initialItem");
+            if (safeVideoItem != null) {
+                return safeVideoItem;
+            }
             for (final Map.Entry<String, Object> entry : entrymap.entrySet()) {
-                final String key = entry.getKey();
+                /* Walk though all keys */
+                // final String key = entry.getKey();
                 final Object value = entry.getValue();
-                if (key.equals("initialItem") && value instanceof Map) {
-                    return value;
-                } else if (value instanceof List || value instanceof Map) {
+                if (value instanceof List || value instanceof Map) {
                     final Object hit = findVideoMap(value);
                     if (hit != null) {
                         return hit;
@@ -491,6 +500,38 @@ public class BbcComDecrypter extends PluginForDecrypt {
         }
     }
 
+    private void findVideoMapsDownloadLinkList20240212(final ArrayList<DownloadLink> results, final Object o) {
+        if (o instanceof Map) {
+            final Map<String, Object> entrymap = (Map<String, Object>) o;
+            final Object duration = entrymap.get("duration");
+            final String title = (String) entrymap.get("title");
+            final String vpid = entrymap.get("vpid").toString();
+            if (duration != null && title != null && vpid != null) {
+                /* Hit :) */
+                final DownloadLink dl = this.generateDownloadlink(vpid);
+                dl.setContentUrl(br.getURL());
+                dl.setProperty(BbcCom.PROPERTY_TITLE, title);
+                dl.setName(BbcCom.getFilename(dl));
+                results.add(dl);
+            } else {
+                for (final Map.Entry<String, Object> entry : entrymap.entrySet()) {
+                    // final String key = entry.getKey();
+                    final Object value = entry.getValue();
+                    if (value instanceof List || value instanceof Map) {
+                        findVideoMapsDownloadLinkList20240212(results, value);
+                    }
+                }
+            }
+        } else if (o instanceof List) {
+            final List<Object> array = (List) o;
+            for (final Object arrayo : array) {
+                if (arrayo instanceof List || arrayo instanceof Map) {
+                    findVideoMapsDownloadLinkList20240212(results, arrayo);
+                }
+            }
+        }
+    }
+
     private ArrayList<DownloadLink> lookForProgrammesURLs(final CryptedLink param) throws PluginException {
         if (new Regex(param.getCryptedUrl(), TYPE_PROGRAMMES).matches()) {
             /* Developer mistake! */
@@ -513,7 +554,7 @@ public class BbcComDecrypter extends PluginForDecrypt {
      */
     private ArrayList<DownloadLink> crawlProgrammes(final String url) throws PluginException, IOException {
         final Regex urlInfo = new Regex(url, TYPE_PROGRAMMES);
-        if (!urlInfo.matches()) {
+        if (!urlInfo.patternFind()) {
             /* Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

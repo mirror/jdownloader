@@ -37,6 +37,7 @@ import org.appwork.utils.net.URLHelper;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.components.containers.VimeoContainer;
 import org.jdownloader.plugins.components.containers.VimeoContainer.Quality;
 import org.jdownloader.plugins.components.containers.VimeoContainer.Source;
@@ -62,6 +63,7 @@ import jd.parser.html.Form;
 import jd.parser.html.Form.MethodType;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.AccountUnavailableException;
 import jd.plugins.DecrypterRetryException;
 import jd.plugins.DecrypterRetryException.RetryReason;
@@ -78,31 +80,32 @@ import jd.utils.locale.JDL;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vimeo.com" }, urls = { "decryptedforVimeoHosterPlugin://.+" })
 public class VimeoCom extends PluginForHost {
     /* Skip HLS because of unsupported split video/audio. */
-    public static final boolean ALLOW_HLS                       = false;
-    private static final String MAINPAGE                        = "https://vimeo.com";
-    private String              finalURL;
-    public static final String  Q_MOBILE                        = "Q_MOBILE";
-    public static final String  Q_ORIGINAL                      = "Q_ORIGINAL";
-    public static final String  Q_HD                            = "Q_HD";
-    public static final String  Q_SD                            = "Q_SD";
-    public static final String  Q_BEST                          = "Q_BEST";
-    public static final String  SUBTITLE                        = "SUBTITLE";
-    public static final String  CUSTOM_DATE                     = "CUSTOM_DATE_3";
-    public static final String  CUSTOM_PACKAGENAME_SINGLE_VIDEO = "CUSTOM_PACKAGENAME_SINGLE_VIDEO";
-    public static final String  CUSTOM_FILENAME                 = "CUSTOM_FILENAME_3";
-    public static final String  ALWAYS_LOGIN                    = "ALWAYS_LOGIN";
-    public static final String  VVC                             = "VVC_1";
-    public static final String  P_240                           = "P_240";
-    public static final String  P_360                           = "P_360";
-    public static final String  P_480                           = "P_480";
-    public static final String  P_540                           = "P_540";
-    public static final String  P_720                           = "P_720";
-    public static final String  P_1080                          = "P_1080";
-    public static final String  P_1440                          = "P_1440";
-    public static final String  P_2560                          = "P_2560";
-    public static final String  ASK_REF                         = "ASK_REF";
-    public static final String  PROPERTY_PASSWORD_COOKIE_KEY    = "password_cookie_key";
-    public static final String  PROPERTY_PASSWORD_COOKIE_VALUE  = "password_cookie_value";
+    public static final boolean  ALLOW_HLS                       = false;
+    private static final String  MAINPAGE                        = "https://vimeo.com";
+    private String               finalURL;
+    public static final String   Q_MOBILE                        = "Q_MOBILE";
+    public static final String   Q_ORIGINAL                      = "Q_ORIGINAL";
+    public static final String   Q_HD                            = "Q_HD";
+    public static final String   Q_SD                            = "Q_SD";
+    public static final String   Q_BEST                          = "Q_BEST";
+    public static final String   SUBTITLE                        = "SUBTITLE";
+    public static final String   CUSTOM_DATE                     = "CUSTOM_DATE_3";
+    public static final String   CUSTOM_PACKAGENAME_SINGLE_VIDEO = "CUSTOM_PACKAGENAME_SINGLE_VIDEO";
+    public static final String   CUSTOM_FILENAME                 = "CUSTOM_FILENAME_3";
+    public static final String   ALWAYS_LOGIN                    = "ALWAYS_LOGIN";
+    public static final String   VVC                             = "VVC_1";
+    public static final String   P_240                           = "P_240";
+    public static final String   P_360                           = "P_360";
+    public static final String   P_480                           = "P_480";
+    public static final String   P_540                           = "P_540";
+    public static final String   P_720                           = "P_720";
+    public static final String   P_1080                          = "P_1080";
+    public static final String   P_1440                          = "P_1440";
+    public static final String   P_2560                          = "P_2560";
+    public static final String   ASK_REF                         = "ASK_REF";
+    public static final String   PROPERTY_PASSWORD_COOKIE_KEY    = "password_cookie_key";
+    public static final String   PROPERTY_PASSWORD_COOKIE_VALUE  = "password_cookie_value";
+    private static final boolean allowCookieLoginOnly            = true;
 
     public VimeoCom(final PluginWrapper wrapper) {
         super(wrapper);
@@ -112,7 +115,16 @@ public class VimeoCom extends PluginForHost {
 
     @Override
     public LazyPlugin.FEATURE[] getFeatures() {
-        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.VIDEO_STREAMING };
+        final List<LazyPlugin.FEATURE> ret = new ArrayList<LazyPlugin.FEATURE>();
+        ret.add(LazyPlugin.FEATURE.VIDEO_STREAMING);
+        if (allowCookieLoginOnly) {
+            ret.add(LazyPlugin.FEATURE.COOKIE_LOGIN_ONLY);
+        } else {
+            ret.add(LazyPlugin.FEATURE.COOKIE_LOGIN_OPTIONAL);
+        }
+        // TODO: Make use of this
+        // ret.add(LazyPlugin.FEATURE.USERNAME_IS_EMAIL);
+        return ret.toArray(new LazyPlugin.FEATURE[0]);
     }
 
     @Override
@@ -254,7 +266,7 @@ public class VimeoCom extends PluginForHost {
         Object lock = new Object();
         if (account != null) {
             try {
-                login(this, br, account);
+                login(this, br, account, false);
                 lock = account;
             } catch (PluginException e) {
                 logger.log(e);
@@ -789,7 +801,6 @@ public class VimeoCom extends PluginForHost {
         handleFree(link);
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         synchronized (account) {
@@ -802,7 +813,7 @@ public class VimeoCom extends PluginForHost {
                 }
             }
             setBrowserExclusive();
-            login(this, br, account);
+            login(this, br, account, false);
             if (br.getRequest() == null || !StringUtils.containsIgnoreCase(br.getHost(), "vimeo.com")) {
                 br.getPage(MAINPAGE);
             }
@@ -819,7 +830,6 @@ public class VimeoCom extends PluginForHost {
             } else {
                 ai.setStatus(null);
             }
-            account.setValid(true);
             ai.setUnlimitedTraffic();
             return ai;
         }
@@ -837,49 +847,64 @@ public class VimeoCom extends PluginForHost {
         }
     }
 
-    public static void login(final Plugin plugin, Browser br, Account account) throws PluginException, IOException {
+    public void login(final Plugin plugin, final Browser br, final Account account, final boolean validateCookies) throws PluginException, IOException {
         synchronized (account) {
-            try {
-                br = prepBrGeneral(plugin, null, br);
-                br.setFollowRedirects(true);
-                Cookies cookies = account.loadCookies("");
-                if (cookies != null) {
-                    br.setCookies(MAINPAGE, cookies);
-                    if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= 1 * 60 * 1000l) {
-                        /* We trust these cookies --> Do not check them */
-                        return;
-                    }
-                    br.getPage(MAINPAGE);
-                    if (!isLoggedIn(br)) {
-                        cookies = null;
-                    }
-                }
-                if (cookies == null) {
-                    br.getPage("https://www.vimeo.com/log_in");
-                    final String xsrft = getXsrft(br);
-                    // static post are bad idea, always use form.
-                    final Form login = br.getFormbyProperty("id", "login_form");
-                    if (login == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    login.put("token", Encoding.urlEncode(xsrft));
-                    login.put("email", Encoding.urlEncode(account.getUser()));
-                    login.put("password", Encoding.urlEncode(account.getPass()));
-                    br.submitForm(login);
-                    if (br.getHttpConnection().getResponseCode() == 406) {
-                        throw new AccountUnavailableException("Account login temp. blocked", 15 * 60 * 1000l);
-                    }
-                    if (!isLoggedIn(br)) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
-                }
-                account.saveCookies(br.getCookies(MAINPAGE), "");
-            } catch (final PluginException e) {
-                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
-                    account.clearCookies("");
-                }
-                throw e;
+            prepBrGeneral(plugin, null, br);
+            br.setFollowRedirects(true);
+            final Cookies cookies = account.loadCookies("");
+            final Cookies userCookies = account.loadUserCookies();
+            if (allowCookieLoginOnly && userCookies == null) {
+                showCookieLoginInfo();
+                throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_required());
             }
+            if (cookies != null || userCookies != null) {
+                if (userCookies != null) {
+                    br.setCookies(getHost(), userCookies);
+                } else {
+                    br.setCookies(getHost(), cookies);
+                }
+                if (!validateCookies) {
+                    /* Do not validate cookies */
+                    return;
+                }
+                br.getPage("https://" + getHost() + "/");
+                if (isLoggedIn(br)) {
+                    logger.info("Cookie login successful");
+                    if (userCookies == null) {
+                        account.saveCookies(br.getCookies(br.getHost()), "");
+                    }
+                    return;
+                } else {
+                    logger.info("Cookie login failed");
+                    br.clearCookies(null);
+                    if (userCookies != null) {
+                        if (account.hasEverBeenValid()) {
+                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
+                        } else {
+                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
+                        }
+                    }
+                }
+            }
+            logger.info("Performing full login");
+            br.getPage("https://www.vimeo.com/log_in");
+            final String xsrft = getXsrft(br);
+            // static post are bad idea, always use form.
+            final Form login = br.getFormbyProperty("id", "login_form");
+            if (login == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            login.put("token", Encoding.urlEncode(xsrft));
+            login.put("email", Encoding.urlEncode(account.getUser()));
+            login.put("password", Encoding.urlEncode(account.getPass()));
+            br.submitForm(login);
+            if (br.getHttpConnection().getResponseCode() == 406) {
+                throw new AccountUnavailableException("Account login temp. blocked", 15 * 60 * 1000l);
+            }
+            if (!isLoggedIn(br)) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+            account.saveCookies(br.getCookies(br.getHost()), "");
         }
     }
 
@@ -997,7 +1022,7 @@ public class VimeoCom extends PluginForHost {
             /* 2022-11-10: player.vimeo.com/video/... */
             ret = br.getRegex("window\\.playerConfig\\s*=\\s*(\\{.*?\\})\\s*var\\s*\\w+\\s*= ").getMatch(0);
             if (ret == null) {
-                ret = br.getRegex("window\\.playerConfig\\s*=\\s*(\\{.*?\\}); ").getMatch(0);
+                ret = br.getRegex("window\\.playerConfig\\s*=\\s*(\\{.*?\\})(;|</script>)").getMatch(0);
             }
         }
         return ret;

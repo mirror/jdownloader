@@ -1130,12 +1130,14 @@ public class TwitterComCrawler extends PluginForDecrypt {
                 /* Set additional properties and determine date to be used as timestamp of last crawled tweet */
                 for (final DownloadLink thisTweetResult : thisResults) {
                     /* Find timestamp of last added result. Ignore pinned tweets. */
-                    if (!thisTweetResult.hasProperty(PROPERTY_TWEET_ID)) {
+                    final String thisTweetID = thisTweetResult.getStringProperty(PROPERTY_TWEET_ID);
+                    if (thisTweetID == null) {
                         continue;
                     }
                     if (pinned_tweet_ids_str != null && pinned_tweet_ids_str.contains(tweetID)) {
                         thisTweetResult.setProperty(PROPERTY_PINNED_TWEET, true);
                     } else {
+                        logger.info("Tweet used as source for last crawled Tweet timestamp: " + thisTweetID);
                         lastCrawledTweetTimestamp = thisTweetResult.getLongProperty(PROPERTY_DATE_TIMESTAMP, -1);
                     }
                 }
@@ -1157,7 +1159,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
                 logger.info("Stopping because: Reached user defined max items count: " + maxTweetsToCrawl);
                 break tweetTimeline;
             } else if (skippedResultsByMaxDate.size() > 0) {
-                logger.info("Stopping because: Last item age is older than user defined max age " + this.maxTweetDateStr);
+                logger.info("Stopping because: Last item age is older than user defined max age: " + this.maxTweetDateStr);
                 break tweetTimeline;
             } else if (tweetMap.isEmpty()) {
                 logger.info("Current page (" + page + ") didn't contain any results --> Probably it contained only explicit content and we're lacking permissions to view that!");
@@ -1347,6 +1349,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
         profileCrawlerSkippedResultsByMaxDate.clear();
         profileCrawlerSkippedResultsByRetweet.clear();
         final List<String> pinned_tweet_ids_str = user != null ? (List<String>) user.get("pinned_tweet_ids_str") : null;
+        final String username = user != null ? user.get("screen_name").toString() : null;
         final ArrayList<DownloadLink> allowedResults = new ArrayList<DownloadLink>();
         timelineInstructionsLoop: for (final Map<String, Object> timelineInstruction : timelineInstructions) {
             final String timelineInstructionType = timelineInstruction.get("type").toString();
@@ -1395,15 +1398,28 @@ public class TwitterComCrawler extends PluginForDecrypt {
                     final ArrayList<DownloadLink> thisTweetResults = crawlTweetMap(null, tweet, usr, fp);
                     if (!PluginJsonConfig.get(TwitterConfigInterface.class).isCrawlRetweetsV2()) {
                         /* Re-Tweet crawling is disabled: Skip all results of this Tweet if it is a Re-Tweet. */
-                        boolean skipAllByRetweet = false;
+                        boolean isRetweet = false;
+                        boolean looksLikeRetweetOrIsItemFromOtherUser = false;
                         for (final DownloadLink tweetresult : thisTweetResults) {
                             if (tweetresult.hasProperty(PROPERTY_RETWEET)) {
-                                skipAllByRetweet = true;
+                                isRetweet = true;
+                                break;
+                            }
+                            /*
+                             * Tweets from other users than the one we are crawling now are either Retweets or Tweets which are part of
+                             * Tweet comments/replies. Typicall if a user does not want to have Retweets we want to filter such items too.
+                             */
+                            final String tweetUsername = tweetresult.getStringProperty(PROPERTY_USERNAME);
+                            if (tweetresult.hasProperty(PROPERTY_RETWEET)) {
+                                isRetweet = true;
+                                break;
+                            } else if (username != null && !tweetUsername.equals(username)) {
+                                looksLikeRetweetOrIsItemFromOtherUser = true;
                                 break;
                             }
                         }
-                        if (skipAllByRetweet) {
-                            logger.info("Skipping Retweet: " + tweetID);
+                        if (isRetweet || looksLikeRetweetOrIsItemFromOtherUser) {
+                            logger.info("Skipping Retweet: " + tweetID + " | isRetweet=" + isRetweet + " | looksLikeRetweetOrIsItemFromOtherUser=" + looksLikeRetweetOrIsItemFromOtherUser);
                             for (final DownloadLink tweetresult : thisTweetResults) {
                                 profileCrawlerSkippedResultsByRetweet.add(tweetresult);
                             }
@@ -1412,13 +1428,19 @@ public class TwitterComCrawler extends PluginForDecrypt {
                     }
                     Long crawledTweetTimestamp = null;
                     for (final DownloadLink thisTweetResult : thisTweetResults) {
-                        /* Find timestamp of last added result. Ignore pinned tweets. */
+                        /* Find timestamp of last added result. Ignore pinned Tweets. */
                         if (!thisTweetResult.hasProperty(PROPERTY_TWEET_ID)) {
+                            /* Skip items which would not go into Twitter hosterplugin such as crawled external URLs inside post-text. */
                             continue;
                         }
-                        if (pinned_tweet_ids_str != null && pinned_tweet_ids_str.contains(tweetID)) {
+                        final boolean isPinnedTweet = pinned_tweet_ids_str != null && pinned_tweet_ids_str.contains(tweetID);
+                        if (isPinnedTweet) {
+                            /* Mark pinned Tweets as such. */
                             thisTweetResult.setProperty(PROPERTY_PINNED_TWEET, true);
-                        } else {
+                        }
+                        if (!isPinnedTweet) {
+                            /* Find date of last crawled Tweet. */
+                            logger.info("Tweet used as source for last crawled Tweet timestamp: " + tweetID);
                             crawledTweetTimestamp = thisTweetResult.getLongProperty(PROPERTY_DATE_TIMESTAMP, -1);
                         }
                     }

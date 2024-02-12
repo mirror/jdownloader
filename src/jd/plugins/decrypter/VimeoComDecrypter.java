@@ -1082,9 +1082,10 @@ public class VimeoComDecrypter extends PluginForDecrypt {
         return ret;
     }
 
-    public boolean login(Account account) throws Exception {
+    public boolean login(final Account account) throws Exception {
         try {
-            VimeoCom.login(this, br, account);
+            final VimeoCom hosterplugin = (VimeoCom) this.getNewPluginForHostInstance(this.getHost());
+            hosterplugin.login(this, br, account, false);
             return true;
         } catch (PluginException e) {
             logger.log(e);

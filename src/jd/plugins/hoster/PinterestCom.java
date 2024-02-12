@@ -15,7 +15,6 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -32,7 +31,6 @@ import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
-import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -111,10 +109,11 @@ public class PinterestCom extends PluginForHost {
         return new Regex(pin_url, "pin/([^/]+)/?$").getMatch(0);
     }
 
-    public static final long   trust_cookie_age   = 300000l;
     /* Site constants */
-    public static final String x_app_version      = "6cedd5c";
-    public static final String PROPERTY_DIRECTURL = "free_directlink";
+    public static final String x_app_version             = "6cedd5c";
+    @Deprecated
+    public static final String PROPERTY_DIRECTURL_LEGACY = "free_directlink";
+    public static final String PROPERTY_DIRECTURL_LIST   = "directlink_list";
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
@@ -124,11 +123,6 @@ public class PinterestCom extends PluginForHost {
             link.setName(pinID);
         }
         this.setBrowserExclusive();
-        final String storedDirecturl = checkDirectLink(link, PROPERTY_DIRECTURL);
-        if (storedDirecturl != null) {
-            /* Item has been checked before -> Done! */
-            return AvailableStatus.TRUE;
-        }
         /* 2021-03-02: PINs may redirect to other PINs in very rare cases -> Handle that */
         br.getPage(link.getPluginPatternMatcher());
         String redirect = br.getRegex("window\\.location\\s*=\\s*\"([^\"]+)\"").getMatch(0);
@@ -205,71 +199,50 @@ public class PinterestCom extends PluginForHost {
     }
 
     private void handleDownload(final DownloadLink link, final boolean resumable, final int maxchunks) throws Exception, PluginException {
-        if (!this.attemptStoredDownloadurlDownload(link, resumable, maxchunks)) {
+        List<String> storedDirecturls = getStoredDirecturls(link);
+        if (storedDirecturls == null || storedDirecturls.isEmpty()) {
             requestFileInformation(link);
-            final String dllink = link.getStringProperty(PROPERTY_DIRECTURL);
-            if (dllink == null) {
+            storedDirecturls = getStoredDirecturls(link);
+            if (storedDirecturls == null || storedDirecturls.isEmpty()) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
-            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+        }
+        int index = 0;
+        /*
+         * Try to download all available items. In some rare cases, the original image is not downloadable so the next best item will be
+         * downloaded instead.
+         */
+        for (final String storedDirecturl : storedDirecturls) {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, storedDirecturl, resumable, maxchunks);
+            if (this.looksLikeDownloadableContent(dl.getConnection())) {
+                /* Looks good -> Download that item */
+                break;
+            } else {
                 br.followConnection(true);
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (index == storedDirecturls.size() - 1) {
+                    /* This is the last item */
+                    /* Make sure that new directurls will be obtained for next try. */
+                    link.removeProperty(PROPERTY_DIRECTURL_LEGACY);
+                    link.removeProperty(PROPERTY_DIRECTURL_LIST);
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "Broken media?");
+                } else {
+                    logger.info("Invalid directurl: " + storedDirecturl);
+                }
+                index++;
+                // continue
             }
         }
         dl.startDownload();
     }
 
-    /** Checks directurl and sets filesize on success. */
-    private String checkDirectLink(final DownloadLink link, final String property) {
-        String dllink = link.getStringProperty(property);
-        if (dllink != null) {
-            URLConnectionAdapter con = null;
-            try {
-                final Browser br2 = br.cloneBrowser();
-                con = br2.openGetConnection(dllink);
-                if (!this.looksLikeDownloadableContent(con)) {
-                    throw new IOException();
-                } else {
-                    if (con.getCompleteContentLength() > 0) {
-                        link.setDownloadSize(con.getCompleteContentLength());
-                    }
-                    return dllink;
-                }
-            } catch (final Exception e) {
-                logger.log(e);
-                return null;
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (final Throwable e) {
-                }
-            }
-        }
-        return null;
-    }
-
-    private boolean attemptStoredDownloadurlDownload(final DownloadLink link, final boolean resumes, final int maxchunks) throws Exception {
-        final String url = link.getStringProperty(PROPERTY_DIRECTURL);
-        if (StringUtils.isEmpty(url)) {
-            return false;
-        }
-        try {
-            final Browser brc = br.cloneBrowser();
-            dl = new jd.plugins.BrowserAdapter().openDownload(brc, link, url, resumes, maxchunks);
-            if (this.looksLikeDownloadableContent(dl.getConnection())) {
-                return true;
-            } else {
-                brc.followConnection(true);
-                throw new IOException();
-            }
-        } catch (final Throwable e) {
-            logger.log(e);
-            try {
-                dl.getConnection().disconnect();
-            } catch (Throwable ignore) {
-            }
-            return false;
+    private List<String> getStoredDirecturls(final DownloadLink link) {
+        final String legacyItem = link.getStringProperty(PROPERTY_DIRECTURL_LEGACY);
+        if (legacyItem != null) {
+            final List<String> ret = new ArrayList<String>();
+            ret.add(legacyItem);
+            return ret;
+        } else {
+            return (List<String>) link.getProperty(PinterestCom.PROPERTY_DIRECTURL_LIST);
         }
     }
 
@@ -298,7 +271,7 @@ public class PinterestCom extends PluginForHost {
         return -1;
     }
 
-    public void login(final Account account, final boolean force) throws Exception {
+    public void login(final Account account, final boolean validateCookies) throws Exception {
         synchronized (account) {
             br.setCookiesExclusive(true);
             br.setAllowedResponseCodes(new int[] { 401 });
@@ -321,6 +294,10 @@ public class PinterestCom extends PluginForHost {
                 }
                 br.setCookies(last_used_host, userCookies);
                 br.getPage("https://www." + last_used_host);
+                if (!validateCookies) {
+                    /* Do not validate cookies */
+                    return;
+                }
                 if (!this.isLoggedINHTML(br)) {
                     logger.warning("Cookie login failed");
                     if (account.hasEverBeenValid()) {
@@ -335,8 +312,8 @@ public class PinterestCom extends PluginForHost {
             }
             if (cookies != null) {
                 br.setCookies(last_used_host, cookies);
-                if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= trust_cookie_age && !force) {
-                    /* We trust these cookies --> Do not check them */
+                if (!validateCookies) {
+                    /* Do not validate cookies */
                     return;
                 }
                 br.getPage("https://www." + last_used_host + "/");
@@ -399,10 +376,6 @@ public class PinterestCom extends PluginForHost {
         handleDownload(link, false, 1);
     }
 
-    public static String getPictureDescription(final DownloadLink dl) {
-        return dl.getStringProperty("description", null);
-    }
-
     @Override
     public String getDescription() {
         return "JDownloader's Pinterest plugin helps downloading pictures from pinterest.com.";
@@ -423,6 +396,8 @@ public class PinterestCom extends PluginForHost {
     }
 
     @Override
-    public void resetDownloadlink(DownloadLink link) {
+    public void resetDownloadlink(final DownloadLink link) {
+        link.removeProperty(PROPERTY_DIRECTURL_LEGACY);
+        link.removeProperty(PROPERTY_DIRECTURL_LIST);
     }
 }

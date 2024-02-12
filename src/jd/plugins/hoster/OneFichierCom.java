@@ -643,24 +643,18 @@ public class OneFichierCom extends PluginForHost {
         final AccountInfo ai = new AccountInfo();
         br.setAllowedResponseCodes(new int[] { 403, 503 });
         loginWebsite(account, true);
-        /* And yet another workaround for broken API case ... */
-        br.getPage("https://" + this.getHost() + "/en/console/index.pl");
-        final boolean isPremium = br.containsHTML("(?i)>\\s*Premium\\s*(offer)?\\s*Account\\s*<");
-        final boolean isAccess = br.containsHTML("(?i)>\\s*Access\\s*(offer)\\s*Account\\s*<");
-        // final boolean isFree = br.containsHTML(">\\s*Free\\s*(offer)\\s*Account\\s*<");
+        br.getPage("/console/abo.pl");
         String accountStatus = null;
-        if (isPremium || isAccess) {
-            final GetRequest get = new GetRequest("https://" + this.getHost() + "/en/console/abo.pl");
-            get.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            br.setFollowRedirects(true);
-            br.getPage(get);
-            final String validUntil = br.getRegex("(?i)subscription is valid until\\s*<[^<]*>(\\d+-\\d+-\\d+)").getMatch(0);
-            if (validUntil != null) {
-                final long validUntilTimestamp = TimeFormatter.getMilliSeconds(validUntil, "yyyy'-'MM'-'dd", Locale.FRANCE);
-                if (validUntilTimestamp > 0) {
-                    setValidUntil(ai, validUntilTimestamp);
-                }
-            }
+        final String validUntil = br.getRegex("(?i)subscription is valid until\\s*<[^<]*>(\\d+-\\d+-\\d+)").getMatch(0);
+        if (validUntil != null) {
+            final long validUntilTimestamp = TimeFormatter.getMilliSeconds(validUntil, "yyyy'-'MM'-'dd", Locale.FRANCE);
+            // if (validUntilTimestamp > 0) {
+            // setValidUntil(ai, validUntilTimestamp);
+            // }
+            // final boolean isPremium = br.containsHTML("(?i)>\\s*Premium\\s*(offer)?\\s*Account\\s*<");
+            // final boolean isAccess = br.containsHTML("(?i)>\\s*Access\\s*(offer)\\s*Account\\s*<");
+            final boolean isPremium = true;
+            setValidUntil(ai, validUntilTimestamp);
             if (isPremium) {
                 accountStatus = "Premium Account";
             } else {
@@ -728,7 +722,7 @@ public class OneFichierCom extends PluginForHost {
          * {"status":"KO","message":"Flood detected: IP Locked #38"} [DOWNLOADS VIA API WILL STILL WORK!!]
          */
         performAPIRequest(API_BASE + "/user/info.cgi", "");
-        AccountInfo ai = new AccountInfo();
+        final AccountInfo ai = new AccountInfo();
         final String apierror = this.getAPIErrormessage(br);
         final boolean apiTempBlocked = !StringUtils.isEmpty(apierror) && apierror.matches("(?i)Flood detected: (User|IP) Locked.*?");
         if (apiTempBlocked) {
@@ -986,114 +980,107 @@ public class OneFichierCom extends PluginForHost {
 
     private void loginWebsite(final Account account, final boolean force) throws Exception {
         synchronized (account) {
-            try {
-                /* Load cookies */
-                prepareBrowserWebsite(br);
-                final Cookies cookies = account.loadCookies("");
-                if (cookies != null) {
-                    logger.info("Attempting cookie login");
-                    br.setCookies(this.getHost(), cookies);
-                    setBasicAuthHeader(br, account);
-                    if (!force) {
-                        logger.info("Trust cookies without check");
+            /* Load cookies */
+            prepareBrowserWebsite(br);
+            final Cookies cookies = account.loadCookies("");
+            if (cookies != null) {
+                logger.info("Attempting cookie login");
+                br.setCookies(this.getHost(), cookies);
+                setBasicAuthHeader(br, account);
+                if (!force) {
+                    /* Do not validate cookies */
+                    return;
+                } else {
+                    br.getPage("https://" + this.getHost() + "/console/index.pl");
+                    if (isLoggedinWebsite(br)) {
+                        logger.info("Cookie login successful");
+                        account.saveCookies(br.getCookies(getHost()), "");
                         return;
                     } else {
-                        br.getPage("https://" + this.getHost() + "/console/index.pl");
-                        if (isLoggedinWebsite(br)) {
-                            logger.info("Cookie login successful");
-                            account.saveCookies(br.getCookies(getHost()), "");
-                            return;
-                        } else {
-                            logger.info("Cookie login failed");
-                            br.clearAll();
-                            this.prepareBrowserWebsite(this.br);
-                        }
+                        logger.info("Cookie login failed");
+                        br.clearCookies(null);
+                        this.prepareBrowserWebsite(this.br);
                     }
                 }
-                logger.info("Performing full website login");
-                final String username = account.getUser();
-                final String password = account.getPass();
-                if (username == null || !username.matches(".+@.+")) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "You need to use Email as username!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                } else if (password == null) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "No password given!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-                final UrlQuery query = new UrlQuery();
-                query.add("mail", Encoding.urlEncode(username));
-                query.add("pass", Encoding.urlEncode(password));
-                query.add("lt", "on"); // long term session
-                query.add("other", "on"); // set cookies also on other 1fichier domains
-                query.add("valider", "ok");
-                br.postPage("https://" + this.getHost() + "/login.pl", query);
-                Form twoFAForm = null;
-                final String formKey2FA = "tfa";
-                final Form[] forms = br.getForms();
-                for (final Form form : forms) {
-                    final InputField twoFAField = form.getInputField(formKey2FA);
-                    if (twoFAField != null) {
-                        twoFAForm = form;
-                        break;
-                    }
-                }
-                if (!isLoggedinWebsite(this.br) && twoFAForm != null) {
-                    logger.info("2FA code required");
-                    final DownloadLink dl_dummy;
-                    if (this.getDownloadLink() != null) {
-                        dl_dummy = this.getDownloadLink();
-                    } else {
-                        dl_dummy = new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true);
-                    }
-                    String twoFACode = getUserInput("Enter 2-Factor authentication code", dl_dummy);
-                    if (twoFACode != null) {
-                        twoFACode = twoFACode.trim();
-                    }
-                    if (twoFACode == null || !twoFACode.matches("\\d{6}")) {
-                        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                            throw new AccountUnavailableException("\r\nUngültiges Format der 2-faktor-Authentifizierung!", 1 * 60 * 1000l);
-                        } else {
-                            throw new AccountUnavailableException("\r\nInvalid 2-factor-authentication code format!", 1 * 60 * 1000l);
-                        }
-                    }
-                    logger.info("Submitting 2FA code");
-                    twoFAForm.put(formKey2FA, twoFACode);
-                    br.submitForm(twoFAForm);
-                    if (!isLoggedinWebsite(this.br)) {
-                        if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                            throw new AccountUnavailableException("\r\nUngültiger 2-faktor-Authentifizierungscode!", 1 * 60 * 1000l);
-                        } else {
-                            throw new AccountUnavailableException("\r\nInvalid 2-factor-authentication code!", 1 * 60 * 1000l);
-                        }
-                    }
-                }
-                if (!isLoggedinWebsite(this.br)) {
-                    final String errorTooManyLoginAttempts = br.getRegex("(?i)>(More than \\d+ login try per \\d+ minutes is not allowed)").getMatch(0);
-                    if (errorTooManyLoginAttempts != null) {
-                        throw new AccountUnavailableException(errorTooManyLoginAttempts, 1 * 60 * 1000l);
-                    }
-                    if (br.containsHTML("(?i)following many identification errors")) {
-                        if (br.containsHTML("(?i)Your account will be unlock")) {
-                            throw new AccountUnavailableException("Your account will be unlocked within 1 hour", 60 * 60 * 1000l);
-                        } else if (br.containsHTML("(?i)your IP address") && br.containsHTML("(?i)is temporarily locked")) {
-                            throw new AccountUnavailableException("For security reasons, following many identification errors, your IP address is temporarily locked.", 60 * 60 * 1000l);
-                        } else {
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                        }
-                    }
-                    logger.info("Username/Password also invalid via site login or user has 2FA login enabled!");
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort oder Zwei-Faktor-Authentifizierung aktiviert!\r\nFalls du die Zwei-Faktor-Authentifizierung aktiviert hast, kannst du diese deaktivieren und es erneut versuchen.\r\nPremium Benutzer können die Zwei-Faktor-Authentifizierung aktiviert lassen und es per API Login erneut versuchen.\r\nErklärung des Logins per API (nur premium Benutzer):\r\n1. Login per API in den JD Einstellungen aktivieren: Einstellungen -> Plugins -> 1fichier.com -> Use Premium API\r\n2. Deinen API Key von der 1fichier Webseite kopieren: 1fichier.com/console/params.pl\r\n3. Erneut versuchen, deinen 1fichier Account in JD hinzuzufügen und dabei den API Key eingeben.\r\nFalls du myjdownloader verwendest, gib deinen API Key in das Benutzername- & Passwort Feld ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or 2-factor-authentication enabled!\r\nIf you have 2-factor-authentication enabled, you have to disable it and try again.\r\nPremium users can leave 2FA login enabled and try again via API login:\r\nHow to login in JD via API key (premium users only):\r\n1. Enable API Key login for JD via Settings -> Plugins -> 1fichier.com -> Use Premium API\r\n2. Get your API Key from the following webpage: 1fichier.com/console/params.pl\r\n3. Open this add-account-dialog again and enter your API key to add your account to JD.\r\nIn case you are using myjdownloader, enter your API Key in both the username- and password field.", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
-                }
-                setBasicAuthHeader(br, account);
-                account.saveCookies(br.getCookies(this.getHost()), "");
-            } catch (final PluginException e) {
-                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
-                    account.clearCookies("");
-                }
-                throw e;
             }
+            logger.info("Performing full website login");
+            final String username = account.getUser();
+            final String password = account.getPass();
+            if (username == null || !username.matches(".+@.+")) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "You need to use Email as username!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else if (password == null) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, "No password given!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+            final UrlQuery query = new UrlQuery();
+            query.add("mail", Encoding.urlEncode(username));
+            query.add("pass", Encoding.urlEncode(password));
+            query.add("lt", "on"); // long term session
+            query.add("other", "on"); // set cookies also on other 1fichier domains
+            query.add("valider", "ok");
+            br.postPage("https://" + this.getHost() + "/login.pl", query);
+            Form twoFAForm = null;
+            final String formKey2FA = "tfa";
+            final Form[] forms = br.getForms();
+            for (final Form form : forms) {
+                final InputField twoFAField = form.getInputField(formKey2FA);
+                if (twoFAField != null) {
+                    twoFAForm = form;
+                    break;
+                }
+            }
+            if (!isLoggedinWebsite(this.br) && twoFAForm != null) {
+                logger.info("2FA code required");
+                final DownloadLink dl_dummy;
+                if (this.getDownloadLink() != null) {
+                    dl_dummy = this.getDownloadLink();
+                } else {
+                    dl_dummy = new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true);
+                }
+                String twoFACode = getUserInput("Enter 2-Factor authentication code", dl_dummy);
+                if (twoFACode != null) {
+                    twoFACode = twoFACode.trim();
+                }
+                if (twoFACode == null || !twoFACode.matches("\\d{6}")) {
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new AccountUnavailableException("\r\nUngültiges Format der 2-faktor-Authentifizierung!", 1 * 60 * 1000l);
+                    } else {
+                        throw new AccountUnavailableException("\r\nInvalid 2-factor-authentication code format!", 1 * 60 * 1000l);
+                    }
+                }
+                logger.info("Submitting 2FA code");
+                twoFAForm.put(formKey2FA, twoFACode);
+                br.submitForm(twoFAForm);
+                if (!isLoggedinWebsite(this.br)) {
+                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                        throw new AccountUnavailableException("\r\nUngültiger 2-faktor-Authentifizierungscode!", 1 * 60 * 1000l);
+                    } else {
+                        throw new AccountUnavailableException("\r\nInvalid 2-factor-authentication code!", 1 * 60 * 1000l);
+                    }
+                }
+            }
+            if (!isLoggedinWebsite(this.br)) {
+                final String errorTooManyLoginAttempts = br.getRegex("(?i)>(More than \\d+ login try per \\d+ minutes is not allowed)").getMatch(0);
+                if (errorTooManyLoginAttempts != null) {
+                    throw new AccountUnavailableException(errorTooManyLoginAttempts, 1 * 60 * 1000l);
+                }
+                if (br.containsHTML("(?i)following many identification errors")) {
+                    if (br.containsHTML("(?i)Your account will be unlock")) {
+                        throw new AccountUnavailableException("Your account will be unlocked within 1 hour", 60 * 60 * 1000l);
+                    } else if (br.containsHTML("(?i)your IP address") && br.containsHTML("(?i)is temporarily locked")) {
+                        throw new AccountUnavailableException("For security reasons, following many identification errors, your IP address is temporarily locked.", 60 * 60 * 1000l);
+                    } else {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                }
+                logger.info("Username/Password also invalid via site login or user has 2FA login enabled!");
+                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername/Passwort oder Zwei-Faktor-Authentifizierung aktiviert!\r\nFalls du die Zwei-Faktor-Authentifizierung aktiviert hast, kannst du diese deaktivieren und es erneut versuchen.\r\nPremium Benutzer können die Zwei-Faktor-Authentifizierung aktiviert lassen und es per API Login erneut versuchen.\r\nErklärung des Logins per API (nur premium Benutzer):\r\n1. Login per API in den JD Einstellungen aktivieren: Einstellungen -> Plugins -> 1fichier.com -> Use Premium API\r\n2. Deinen API Key von der 1fichier Webseite kopieren: 1fichier.com/console/params.pl\r\n3. Erneut versuchen, deinen 1fichier Account in JD hinzuzufügen und dabei den API Key eingeben.\r\nFalls du myjdownloader verwendest, gib deinen API Key in das Benutzername- & Passwort Feld ein.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password or 2-factor-authentication enabled!\r\nIf you have 2-factor-authentication enabled, you have to disable it and try again.\r\nPremium users can leave 2FA login enabled and try again via API login:\r\nHow to login in JD via API key (premium users only):\r\n1. Enable API Key login for JD via Settings -> Plugins -> 1fichier.com -> Use Premium API\r\n2. Get your API Key from the following webpage: 1fichier.com/console/params.pl\r\n3. Open this add-account-dialog again and enter your API key to add your account to JD.\r\nIn case you are using myjdownloader, enter your API Key in both the username- and password field.", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+            }
+            setBasicAuthHeader(br, account);
+            account.saveCookies(br.getCookies(this.getHost()), "");
         }
     }
 
