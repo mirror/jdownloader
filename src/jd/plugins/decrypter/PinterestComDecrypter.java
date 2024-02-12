@@ -26,7 +26,6 @@ import java.util.Map.Entry;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
-import org.appwork.uio.UIOManager;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.URLEncode;
 import org.jdownloader.plugins.controller.LazyPlugin;
@@ -95,14 +94,13 @@ public class PinterestComDecrypter extends PluginForDecrypt {
         return ret.toArray(new String[0]);
     }
 
-    private static final boolean force_api_usage                     = true;
     // private ArrayList<DownloadLink> decryptedLinks = null;
-    private ArrayList<String>    dupeList                            = new ArrayList<String>();
-    private boolean              enable_description_inside_filenames = false;
-    private boolean              enable_crawl_alternative_URL        = false;
-    public static final String   TYPE_PIN                            = "(?i)https?://[^/]+/pin/([A-Za-z0-9\\-_]+)/?";
-    private static final String  TYPE_BOARD                          = "(?i)https?://[^/]+/([^/]+)/([^/]+)/?";
-    private static final String  TYPE_BOARD_SECTION                  = "(?i)https?://[^/]+/[^/]+/[^/]+/([^/]+)/?";
+    private ArrayList<String>   dupeList                            = new ArrayList<String>();
+    private boolean             enable_description_inside_filenames = false;
+    private boolean             enable_crawl_alternative_URL        = false;
+    public static final String  TYPE_PIN                            = "(?i)https?://[^/]+/pin/([A-Za-z0-9\\-_]+)/?";
+    private static final String TYPE_BOARD                          = "(?i)https?://[^/]+/([^/]+)/([^/]+)/?";
+    private static final String TYPE_BOARD_SECTION                  = "(?i)https?://[^/]+/[^/]+/[^/]+/([^/]+)/?";
 
     @SuppressWarnings({ "deprecation" })
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
@@ -408,7 +406,6 @@ public class PinterestComDecrypter extends PluginForDecrypt {
         pinPaginationPostData.put("context", pinPaginationpostDataContext);
         ajax.getPage("/resource/BoardSectionPinsResource/get/?source_url=" + URLEncode.encodeURIComponent(source_url) + "&data=" + URLEncode.encodeURIComponent(JSonStorage.serializeToJson(pinPaginationPostData)) + "&_=" + System.currentTimeMillis());
         do {
-            logger.info("Crawling section " + sectionID + " page: " + pageCounter);
             final Map<String, Object> sectionPaginationInfo = restoreFromString(ajax.getRequest().getHtmlCode(), TypeRef.MAP);
             final Object bookmarksO = JavaScriptEngineFactory.walkJson(sectionPaginationInfo, "resource/options/bookmarks");
             final String bookmarks = (String) JavaScriptEngineFactory.walkJson(sectionPaginationInfo, "resource/options/bookmarks/{0}");
@@ -425,6 +422,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
                     processedPINCounter++;
                 }
             }
+            logger.info("Crawling section " + sectionID + " page: " + pageCounter + " | Found items so far: " + ret.size());
             pageCounter++;
             if (this.isAbort()) {
                 logger.info("Crawler aborted by user");
@@ -529,58 +527,57 @@ public class PinterestComDecrypter extends PluginForDecrypt {
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(boardName);
-        if (loggedIN || force_api_usage) {
-            final Map<String, Object> postDataOptions = new HashMap<String, Object>();
-            final String source_url = new URL(contenturl).getPath();
-            postDataOptions.put("isPrefetch", false);
-            postDataOptions.put("board_id", boardID);
-            postDataOptions.put("board_url", "/" + username + "/" + boardSlug);
-            postDataOptions.put("currentFilter", -1);
-            postDataOptions.put("field_set_key", "react_grid_pin");
-            postDataOptions.put("filter_section_pins", true);
-            postDataOptions.put("sort", "default");
-            postDataOptions.put("layout", "default");
-            postDataOptions.put("page_size", 25);
-            postDataOptions.put("redux_normalize_feed", true);
-            postDataOptions.put("no_fetch_context_on_resource", false);
-            Map<String, Object> postData = new HashMap<String, Object>();
-            postData.put("options", postDataOptions);
-            postData.put("context", new HashMap<String, Object>());
-            int page = 0;
-            int crawledSectionlessPINs = 0;
-            logger.info("Crawling all sectionless PINs: " + sectionlessPinCount);
-            do {
-                page += 1;
-                logger.info("Crawling sectionless PINs page: " + page + " | " + crawledSectionlessPINs + " / " + sectionlessPinCount + " PINs crawled");
-                br.getPage("/resource/BoardFeedResource/get/?source_url=" + Encoding.urlEncode(source_url) + "&data=" + URLEncode.encodeURIComponent(JSonStorage.serializeToJson(postData)) + "&_=" + System.currentTimeMillis());
-                Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
-                entries = (Map<String, Object>) entries.get("resource_response");
-                final String bookmark = (String) entries.get("bookmark");
-                final List<Object> pinList = (List<Object>) entries.get("data");
-                for (final Object pint : pinList) {
-                    final Map<String, Object> single_pinterest_data = (Map<String, Object>) pint;
-                    proccessMap(single_pinterest_data, boardID, fp);
-                }
-                crawledSectionlessPINs += pinList.size();
-                if (StringUtils.isEmpty(bookmark) || bookmark.equalsIgnoreCase("-end-")) {
-                    logger.info("Stopping because: Reached end");
-                    break;
-                } else if (crawledSectionlessPINs >= sectionlessPinCount) {
-                    /* Fail-safe */
-                    logger.info("Stopping because: Found all items");
-                    break;
-                } else {
-                    /* Continue to next page */
-                    postDataOptions.put("bookmarks", new String[] { bookmark });
-                }
-            } while (!this.isAbort());
-        } else {
-            crawlBoardWebsite(contenturl);
-            final int max_entries_per_page_free = 25;
-            if (totalPinCount > max_entries_per_page_free) {
-                UIOManager.I().showMessageDialog("Please add your pinterest.com account at Settings->Account manager to find more than " + max_entries_per_page_free + " images");
+        final int maxItemsPerPage = 25; // 2024-02-12: Website is using value 15
+        final Map<String, Object> postDataOptions = new HashMap<String, Object>();
+        final String source_url = new URL(contenturl).getPath();
+        postDataOptions.put("add_vase", true);
+        postDataOptions.put("board_id", boardID);
+        postDataOptions.put("field_set_key", "react_grid_pin");
+        postDataOptions.put("filter_section_pins", false);
+        postDataOptions.put("is_react", true);
+        postDataOptions.put("prepend", false);
+        postDataOptions.put("page_size", maxItemsPerPage);
+        // postDataOptions.put("isPrefetch", false);
+        // postDataOptions.put("board_id", boardID);
+        // postDataOptions.put("board_url", "/" + username + "/" + boardSlug);
+        // postDataOptions.put("currentFilter", -1);
+        // postDataOptions.put("field_set_key", "react_grid_pin");
+        // postDataOptions.put("filter_section_pins", true);
+        // postDataOptions.put("sort", "default");
+        // postDataOptions.put("layout", "default");
+        // postDataOptions.put("page_size", maxItemsPerPage);
+        // postDataOptions.put("redux_normalize_feed", true);
+        // postDataOptions.put("no_fetch_context_on_resource", false);
+        final Map<String, Object> postData = new HashMap<String, Object>();
+        postData.put("options", postDataOptions);
+        postData.put("context", new HashMap<String, Object>());
+        int page = 0;
+        int crawledSectionlessPINs = 0;
+        logger.info("Crawling all sectionless PINs: " + sectionlessPinCount);
+        do {
+            page += 1;
+            br.getPage("/resource/BoardFeedResource/get/?source_url=" + Encoding.urlEncode(source_url) + "&data=" + URLEncode.encodeURIComponent(JSonStorage.serializeToJson(postData)) + "&_=" + System.currentTimeMillis());
+            final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+            final Map<String, Object> resource_response = (Map<String, Object>) entries.get("resource_response");
+            final List<Map<String, Object>> pinList = (List<Map<String, Object>>) resource_response.get("data");
+            for (final Map<String, Object> pin : pinList) {
+                proccessMap(pin, boardID, fp);
             }
-        }
+            crawledSectionlessPINs += pinList.size();
+            logger.info("Crawling sectionless PINs page: " + page + " | " + crawledSectionlessPINs + " / " + sectionlessPinCount + " PINs crawled");
+            final String bookmark = (String) resource_response.get("bookmark");
+            if (StringUtils.isEmpty(bookmark) || bookmark.equalsIgnoreCase("-end-")) {
+                logger.info("Stopping because: Reached end");
+                break;
+            } else if (crawledSectionlessPINs >= sectionlessPinCount) {
+                /* Fail-safe */
+                logger.info("Stopping because: Found all items");
+                break;
+            } else {
+                /* Continue to next page */
+                postDataOptions.put("bookmarks", new String[] { bookmark });
+            }
+        } while (!this.isAbort());
         return ret;
     }
 
@@ -686,55 +683,6 @@ public class PinterestComDecrypter extends PluginForDecrypt {
             }
         }
         return null;
-    }
-
-    @Deprecated
-    private ArrayList<DownloadLink> crawlBoardWebsite(final String contenturl) throws PluginException {
-        /*
-         * Also possible using json of P.start.start( to get the first 25 entries: resourceDataCache --> Last[] --> data --> Here we go --->
-         * But I consider this as an unsafe method.
-         */
-        final String[] linkinfo = br.getRegex("<div class=\"bulkEditPinWrapper\">(.*?)class=\"creditTitle\"").getColumn(0);
-        if (linkinfo == null || linkinfo.length == 0) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        for (final String sinfo : linkinfo) {
-            String description = new Regex(sinfo, "title=\"([^<>\"]*?)\"").getMatch(0);
-            if (description == null) {
-                description = new Regex(sinfo, "<p class=\"pinDescription\">([^<>]*?)<").getMatch(0);
-            }
-            final String directlink = new Regex(sinfo, "\"(https?://[a-z0-9\\.\\-]+/originals/[^<>\"]*?)\"").getMatch(0);
-            final String pin_id = new Regex(sinfo, "/pin/([A-Za-z0-9\\-_]+)/").getMatch(0);
-            if (pin_id == null) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else if (dupeList.contains(pin_id)) {
-                logger.info("Skipping duplicate: " + pin_id);
-                continue;
-            }
-            dupeList.add(pin_id);
-            String filename = pin_id;
-            final String content_url = "http://www.pinterest.com/pin/" + pin_id + "/";
-            final DownloadLink dl = createDownloadlink(content_url);
-            dl.setContentUrl(content_url);
-            dl.setLinkID(PinterestCom.getLinkidForInternalDuplicateCheck(content_url, directlink));
-            if (directlink != null) {
-                dl.setProperty(PinterestCom.PROPERTY_DIRECTURL_LEGACY, directlink);
-            }
-            if (description != null) {
-                dl.setComment(description);
-                dl.setProperty("description", description);
-                if (enable_description_inside_filenames) {
-                    filename += "_" + description;
-                }
-            }
-            dl.setProperty("decryptedfilename", filename);
-            dl.setName(filename + ".jpg");
-            dl.setAvailable(true);
-            ret.add(dl);
-            distribute(dl);
-        }
-        return ret;
     }
 
     /** Log in the account of the hostplugin */

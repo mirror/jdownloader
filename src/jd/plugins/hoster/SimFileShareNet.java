@@ -1,10 +1,14 @@
 package jd.plugins.hoster;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -13,7 +17,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "simfileshare.net" }, urls = { "https?://(?:www\\.)?(simfileshare\\.net/download/|simfil\\.es/)(\\d+)/?" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class SimFileShareNet extends PluginForHost {
     public SimFileShareNet(PluginWrapper wrapper) {
         super(wrapper);
@@ -24,6 +28,34 @@ public class SimFileShareNet extends PluginForHost {
         final Browser br = super.createNewBrowserInstance();
         br.setFollowRedirects(true);
         return br;
+    }
+
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "simfileshare.net", "simfil.es" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:download/)?(\\d+)/?");
+        }
+        return ret.toArray(new String[0]);
     }
 
     @Override
@@ -42,7 +74,7 @@ public class SimFileShareNet extends PluginForHost {
     }
 
     private String getFID(final DownloadLink link) {
-        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(1);
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
     @Override
@@ -53,8 +85,9 @@ public class SimFileShareNet extends PluginForHost {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (con.isContentDisposition()) {
-            link.setVerifiedFileSize(con.getLongContentLength());
-            link.setFinalFileName(getFileNameFromDispositionHeader(con));
+            link.setVerifiedFileSize(con.getCompleteContentLength());
+            final String filenameFromHeader = getFileNameFromDispositionHeader(con);
+            link.setFinalFileName(Encoding.htmlDecode(filenameFromHeader));
             con.disconnect();
             return AvailableStatus.TRUE;
         } else {
@@ -65,8 +98,8 @@ public class SimFileShareNet extends PluginForHost {
         if (fileInfos == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        link.setName(Encoding.htmlDecode(fileInfos[0]).trim());
         link.setDownloadSize(SizeFormatter.getSize(fileInfos[1]));
-        link.setName(fileInfos[0]);
         return AvailableStatus.TRUE;
     }
 
