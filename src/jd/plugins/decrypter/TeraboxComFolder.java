@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.regex.Pattern;
 
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
@@ -56,6 +57,13 @@ public class TeraboxComFolder extends PluginForDecrypt {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
         ret.add(new String[] { "terabox.com", "teraboxapp.com", "dubox.com", "4funbox.com", "mirrobox.com", "1024tera.com" });
+        return ret;
+    }
+
+    public static List<String> getDeadDomains() {
+        final List<String> ret = new ArrayList<String>();
+        /* 2024-02-12: They still own this domain but older URLs will redirect to an error page while the content may still be online. */
+        ret.add("dubox.com");
         return ret;
     }
 
@@ -102,27 +110,34 @@ public class TeraboxComFolder extends PluginForDecrypt {
         br.setCookie(host, "BOXCLND", passwordCookie);
     }
 
-    private static final String            TYPE_SHORT                = "https?://[^/]+/s/(.+)";
-    private static final String            TYPE_SHORT_NEW            = "https?://[^/]+/(?:[a-z0-9]+/)?sharing/link\\?surl=([A-Za-z0-9\\-_]+)";
+    private static final String            TYPE_SHORT                = "(?i)https?://[^/]+/s/(.+)";
+    private static final String            TYPE_SHORT_NEW            = "(?i)https?://[^/]+/(?:[a-z0-9]+/)?sharing/link\\?surl=([A-Za-z0-9\\-_]+)";
     /* For such URLs leading to single files we'll crawl all items of the folder that file is in -> Makes it easier */
-    private static final String            TYPE_SINGLE_VIDEO         = "https?://[^/]+/web/share/videoPlay\\?surl=([A-Za-z0-9\\-_]+)\\&dir=([^\\&]+)";
+    private static final String            TYPE_SINGLE_VIDEO         = "(?i)https?://[^/]+/web/share/videoPlay\\?surl=([A-Za-z0-9\\-_]+)\\&dir=([^\\&]+)";
     private static final AtomicLong        anonymousJstokenTimestamp = new AtomicLong(-1);
     private static AtomicReference<String> anonymousJstoken          = new AtomicReference<String>(null);
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final Account account = AccountController.getInstance().getValidAccount(this.getHost());
         return crawlFolder(this, param, account, null);
     }
 
     public ArrayList<DownloadLink> crawlFolder(final Plugin callingPlugin, final CryptedLink param, final Account account, final String targetFileID) throws Exception {
-        final UrlQuery paramsOfAddedURL = UrlQuery.parse(param.getCryptedUrl());
+        String contenturl = param.getCryptedUrl();
+        final List<String> deadDomains = getDeadDomains();
+        final String domainOfAddedURL = Browser.getHost(contenturl);
+        if (deadDomains.contains(domainOfAddedURL)) {
+            /* Fix domain inside URL */
+            contenturl = contenturl.replaceFirst(Pattern.quote(domainOfAddedURL) + "/", getHost() + "/");
+        }
+        final UrlQuery paramsOfAddedURL = UrlQuery.parse(contenturl);
         String surl;
         String preGivenPath = null;
-        if (param.getCryptedUrl().matches(TYPE_SHORT)) {
-            surl = new Regex(param.getCryptedUrl(), TYPE_SHORT).getMatch(0);
-        } else if (param.getCryptedUrl().matches(TYPE_SHORT_NEW)) {
+        if (contenturl.matches(TYPE_SHORT)) {
+            surl = new Regex(contenturl, TYPE_SHORT).getMatch(0);
+        } else if (contenturl.matches(TYPE_SHORT_NEW)) {
             surl = new Regex(param.getCryptedUrl(), TYPE_SHORT_NEW).getMatch(0);
-        } else if (param.getCryptedUrl().matches(TYPE_SINGLE_VIDEO)) {
+        } else if (contenturl.matches(TYPE_SINGLE_VIDEO)) {
             surl = paramsOfAddedURL.get("surl");
             preGivenPath = paramsOfAddedURL.get("dir");
         } else {
@@ -179,7 +194,7 @@ public class TeraboxComFolder extends PluginForDecrypt {
             }
             if (useStrangeSUrlWorkaround) {
                 surlbrowser = br.cloneBrowser();
-                surlbrowser.getPage(param.getCryptedUrl());
+                surlbrowser.getPage(contenturl);
             }
         } else {
             synchronized (anonymousJstokenTimestamp) {
@@ -188,7 +203,7 @@ public class TeraboxComFolder extends PluginForDecrypt {
                     final String newJstoken;
                     if (useStrangeSUrlWorkaround) {
                         surlbrowser = br.cloneBrowser();
-                        surlbrowser.getPage(param.getCryptedUrl());
+                        surlbrowser.getPage(contenturl);
                         newJstoken = TeraboxCom.regexJsToken(surlbrowser);
                     } else {
                         newJstoken = TeraboxCom.getJsToken(br, this.getHost());
@@ -272,7 +287,7 @@ public class TeraboxComFolder extends PluginForDecrypt {
                     if (errno == -62) {
                         captchaRequired = true;
                         br.getPage("/api/getcaptcha?prod=shareverify&app_id=" + getAppID() + "&web=1&channel=" + getChannel() + "&clienttype=" + getClientType());
-                        entries = restoreFromString(br.toString(), TypeRef.MAP);
+                        entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
                         final String captchaurl = (String) entries.get("vcode_img");
                         final String code = this.getCaptchaCode(captchaurl, param);
                         querypwPOST.appendEncoded("vcode", code);
@@ -282,7 +297,7 @@ public class TeraboxComFolder extends PluginForDecrypt {
                         querypwPOST.add("vcode_str", "");
                     }
                     br.postPage("/share/verify?" + querypw.toString(), querypwPOST);
-                    entries = restoreFromString(br.toString(), TypeRef.MAP);
+                    entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
                     errno = ((Number) entries.get("errno")).intValue();
                     passwordCookie = (String) entries.get("randsk");
                     if (!StringUtils.isEmpty(passwordCookie)) {

@@ -213,6 +213,7 @@ public class PinterestCom extends PluginForHost {
          * downloaded instead.
          */
         for (final String storedDirecturl : storedDirecturls) {
+            logger.info("Attempting to download item " + index + "/" + storedDirecturls.size() + " | " + storedDirecturl);
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, storedDirecturl, resumable, maxchunks);
             if (this.looksLikeDownloadableContent(dl.getConnection())) {
                 /* Looks good -> Download that item */

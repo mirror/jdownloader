@@ -62,7 +62,7 @@ public class XiaoshenkeNetCrawler extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/video(h|x)/([a-f0-9]+)");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/video(h|videotr|x)/([a-f0-9]+)");
         }
         return ret.toArray(new String[0]);
     }
@@ -75,6 +75,9 @@ public class XiaoshenkeNetCrawler extends PluginForDecrypt {
         final String contentID = urlinfo.getMatch(1);
         if (urltype.equalsIgnoreCase("h")) {
             ret.add(createDownloadlink("https://mydaddy.cc/video/" + contentID + "/"));
+        } else if (urltype.equalsIgnoreCase("videotr")) {
+            /* 2024-02-12 */
+            ret.add(createDownloadlink("https://www.porntrex.com/embed/" + contentID));
         } else if (urltype.equalsIgnoreCase("x")) {
             /* 2023-12-04 */
             ret.add(createDownloadlink(SxyprnComCrawler.getContentURL("sxyprn.com", contentID)));

@@ -33,6 +33,7 @@ import jd.parser.html.HTMLParser;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -44,13 +45,14 @@ import jd.plugins.components.SiteType.SiteTemplate;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "grabitshare.com" }, urls = { "https?://(?:www\\.)?grabitshare\\.com/((\\?d|download\\.php\\?id)=[A-Z0-9]+|([a-z]{2}/)?file/[0-9]+/)" })
 public class GrabItShareCom extends PluginForHost {
-    private static final String IPBLOCKED        = "(You have got max allowed bandwidth size per hour|You have got max allowed download sessions from the same IP|\">Dostigli ste download limit\\. Pričekajte 1h za nastavak)";
     private static final String RECAPTCHATEXT    = "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)";
     private static final String CHEAPCAPTCHATEXT = "captcha\\.php";
+    /* 2024-02-12: They do not support https lol */
+    private static final String PROTOCOL         = "http://";
 
     public GrabItShareCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("https://www." + getHost() + "/en/register.php");
+        this.enablePremium(PROTOCOL + "www." + getHost() + "/en/register.php");
     }
 
     @Override
@@ -63,44 +65,63 @@ public class GrabItShareCom extends PluginForHost {
         return br;
     }
 
-    private String findLink() throws Exception {
-        String finalLink = br.getRegex("(http://.{5,30}getfile\\.php\\?id=\\d+\\&a=[a-z0-9]+\\&t=[a-z0-9]+.*?)(\\'|\")").getMatch(0);
-        if (finalLink == null) {
-            String[] sitelinks = HTMLParser.getHttpLinks(br.toString(), null);
-            if (sitelinks == null || sitelinks.length == 0) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            for (String alink : sitelinks) {
-                alink = Encoding.htmlDecode(alink);
-                if (alink.contains("access_key=") || alink.contains("getfile.php?")) {
-                    finalLink = alink;
-                    break;
-                }
-            }
-        }
-        return finalLink;
-    }
-
     // MhfScriptBasic 1.2, added new filesize-/name regexes & limit-reached text
     @Override
     public String getAGBLink() {
-        return "https://www." + getHost() + "/rules.php";
+        return PROTOCOL + "www." + getHost() + "/rules.php";
     }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return Integer.MAX_VALUE;
+    }
+
+    @Override
+    public boolean isResumeable(final DownloadLink link, final Account account) {
+        final AccountType type = account != null ? account.getType() : null;
+        if (AccountType.FREE.equals(type)) {
+            /* Free Account */
+            return true;
+        } else if (AccountType.PREMIUM.equals(type) || AccountType.LIFETIME.equals(type)) {
+            /* Premium account */
+            return true;
+        } else {
+            /* Free(anonymous) and unknown account type */
+            return false;
+        }
+    }
+
+    public int getMaxChunks(final Account account) {
+        final AccountType type = account != null ? account.getType() : null;
+        if (AccountType.FREE.equals(type)) {
+            /* Free Account */
+            return 1;
+        } else if (AccountType.PREMIUM.equals(type) || AccountType.LIFETIME.equals(type)) {
+            /* Premium account */
+            return -5;
+        } else {
+            /* Free(anonymous) and unknown account type */
+            return 1;
+        }
     }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        return requestFileInformation(link, null);
+    }
+
+    private AvailableStatus requestFileInformation(final DownloadLink link, final Account account) throws Exception {
         this.setBrowserExclusive();
-        br.getPage(link.getPluginPatternMatcher());
+        if (account != null) {
+            this.login(account, false);
+        }
+        final String contenturl = link.getPluginPatternMatcher().replaceFirst("(?i)https://", PROTOCOL);
+        br.getPage(contenturl);
         final String redirect = br.getRegex("<p>The document has moved <a href=\"(.*?)\">here</a>\\.</p>").getMatch(0);
         if (redirect != null) {
             br.getPage(redirect);
         }
-        checkOffline();
+        checkOffline(br);
         String filename = br.getRegex("title=\"Click this to report (.*?)\"").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("<p align=\"center\"><b><font size=\"4\">(.*?)</font><font").getMatch(0);
@@ -124,30 +145,16 @@ public class GrabItShareCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    private void checkOffline() throws PluginException {
-        if (br.containsHTML("(?i)(Your requested file is not found|No file found)")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-    }
-
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
-        requestFileInformation(link);
-        doFree(link);
+        handleDownload(link, null);
     }
 
-    private void doFree(final DownloadLink link) throws Exception {
+    private void handleDownload(final DownloadLink link, final Account account) throws Exception {
         this.setBrowserExclusive();
-        requestFileInformation(link);
-        if (br.containsHTML(">\\s*Pristup ovom sadržaju imaju samo")) {
-            throw new AccountRequiredException();
-        }
-        if (br.containsHTML("value=\"Free Users\"")) {
-            br.postPage(link.getPluginPatternMatcher(), "Free=Free+Users");
-        } else if (br.getFormbyProperty("name", "entryform1") != null) {
-            br.submitForm(br.getFormbyProperty("name", "entryform1"));
-        }
+        requestFileInformation(link, account);
+        this.checkErrors(br);
         String passCode = null;
         Form captchaform = br.getFormbyProperty("name", "myform");
         if (captchaform == null) {
@@ -159,78 +166,95 @@ public class GrabItShareCom extends PluginForHost {
                 }
             }
         }
-        if (br.containsHTML("class=textinput name=downloadpw") || br.containsHTML(RECAPTCHATEXT) || br.containsHTML(CHEAPCAPTCHATEXT)) {
-            if (captchaform == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            for (int i = 0; i <= 3; i++) {
-                if (br.containsHTML(CHEAPCAPTCHATEXT)) {
-                    logger.info("Found normal captcha");
-                    String code = getCaptchaCode("/captcha.php", link);
-                    captchaform.put("captchacode", code);
-                } else if (br.containsHTML(RECAPTCHATEXT)) {
-                    logger.info("Found reCaptcha");
-                    final Recaptcha rc = new Recaptcha(br, this);
-                    rc.parse();
-                    rc.load();
-                    File cf = rc.downloadCaptcha(getLocalCaptchaFile());
-                    captchaform.put("recaptcha_challenge_field", rc.getChallenge());
-                    captchaform.put("recaptcha_response_field", getCaptchaCode("recaptcha", cf, link));
-                }
-                if (br.containsHTML("class=textinput name=downloadpw")) {
-                    if (link.getDownloadPassword() == null) {
-                        passCode = getUserInput("Password?", link);
-                    } else {
-                        /* gespeicherten PassCode holen */
-                        passCode = link.getDownloadPassword();
+        if (captchaform != null) {
+            if (br.containsHTML("class=textinput name=downloadpw") || br.containsHTML(RECAPTCHATEXT) || br.containsHTML(CHEAPCAPTCHATEXT)) {
+                for (int i = 0; i <= 3; i++) {
+                    if (br.containsHTML(CHEAPCAPTCHATEXT)) {
+                        logger.info("Found normal captcha");
+                        String code = getCaptchaCode("/captcha.php", link);
+                        captchaform.put("captchacode", code);
+                    } else if (br.containsHTML(RECAPTCHATEXT)) {
+                        logger.info("Found reCaptcha");
+                        final Recaptcha rc = new Recaptcha(br, this);
+                        rc.parse();
+                        rc.load();
+                        File cf = rc.downloadCaptcha(getLocalCaptchaFile());
+                        captchaform.put("recaptcha_challenge_field", rc.getChallenge());
+                        captchaform.put("recaptcha_response_field", getCaptchaCode("recaptcha", cf, link));
                     }
-                    captchaform.put("downloadpw", passCode);
+                    if (br.containsHTML("class=textinput name=downloadpw")) {
+                        if (link.getDownloadPassword() == null) {
+                            passCode = getUserInput("Password?", link);
+                        } else {
+                            /* gespeicherten PassCode holen */
+                            passCode = link.getDownloadPassword();
+                        }
+                        captchaform.put("downloadpw", passCode);
+                    }
+                    br.submitForm(captchaform);
+                    if (br.containsHTML("Password Error")) {
+                        logger.warning("Wrong password!");
+                        link.setDownloadPassword(null);
+                        continue;
+                    }
+                    checkErrors(br);
+                    if (br.containsHTML("Captcha number error") || br.containsHTML(RECAPTCHATEXT) || br.containsHTML(CHEAPCAPTCHATEXT)) {
+                        logger.warning("Wrong captcha or wrong password!");
+                        link.setDownloadPassword(null);
+                        continue;
+                    }
+                    break;
                 }
+            } else {
+                logger.info("No captcha required(?)");
                 br.submitForm(captchaform);
-                if (br.containsHTML("Password Error")) {
-                    logger.warning("Wrong password!");
-                    link.setDownloadPassword(null);
-                    continue;
-                }
-                if (br.containsHTML(IPBLOCKED)) {
-                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
-                }
-                if (br.containsHTML("Captcha number error") || br.containsHTML(RECAPTCHATEXT) || br.containsHTML(CHEAPCAPTCHATEXT)) {
-                    logger.warning("Wrong captcha or wrong password!");
-                    link.setDownloadPassword(null);
-                    continue;
-                }
-                break;
+            }
+            checkErrors(br);
+            if (br.containsHTML("Password Error")) {
+                link.setDownloadPassword(null);
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password");
+            } else if (br.containsHTML("Captcha number error") || br.containsHTML(RECAPTCHATEXT) || br.containsHTML(CHEAPCAPTCHATEXT)) {
+                logger.info("Wrong captcha or wrong password!");
+                link.setDownloadPassword(null);
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
         }
-        if (br.containsHTML(IPBLOCKED)) {
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
-        }
-        if (br.containsHTML("Password Error")) {
-            logger.warning("Wrong password!");
-            link.setDownloadPassword(null);
-            throw new PluginException(LinkStatus.ERROR_RETRY);
-        }
-        if (br.containsHTML("Captcha number error") || br.containsHTML(RECAPTCHATEXT) || br.containsHTML(CHEAPCAPTCHATEXT)) {
-            logger.warning("Wrong captcha or wrong password!");
-            link.setDownloadPassword(null);
-            throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+        final Form continueform = br.getFormbyKey("downloadtype");
+        if (continueform != null) {
+            /* 2024-02-12: Premium download form */
+            br.submitForm(continueform);
+            checkErrors(br);
         }
         if (passCode != null) {
             link.setDownloadPassword(passCode);
         }
-        String finalLink = findLink();
+        final String finalLink = findLink(br);
         if (finalLink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, finalLink, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, finalLink, this.isResumeable(link, null), this.getMaxChunks(account));
         checkErrorsAfterDownloadAttempt();
         dl.startDownload();
     }
 
+    private void checkOffline(final Browser br) throws PluginException {
+        if (br.containsHTML("(?i)(Your requested file is not found|No file found)")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+    }
+
+    private void checkErrors(final Browser br) throws PluginException {
+        checkOffline(br);
+        if (br.containsHTML(">\\s*Pristup ovom sadržaju imaju samo")) {
+            throw new AccountRequiredException();
+        } else if (br.containsHTML("(You have got max allowed bandwidth size per hour|You have got max allowed download sessions from the same IP|\">Dostigli ste download limit\\. Pričekajte 1h za nastavak)")) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
+        }
+    }
+
     private void checkErrorsAfterDownloadAttempt() throws PluginException, IOException {
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            br.followConnection(true);
+            br.followConnection();
             final UrlQuery query = UrlQuery.parse(br.getURL());
             final String errorStr = query.get("code");
             if (errorStr != null) {
@@ -245,7 +269,6 @@ public class GrabItShareCom extends PluginForHost {
         }
     }
 
-    @SuppressWarnings("unchecked")
     public void login(final Account account, final boolean validateCookies) throws Exception {
         synchronized (account) {
             /** Load cookies */
@@ -257,12 +280,12 @@ public class GrabItShareCom extends PluginForHost {
                 if (!validateCookies) {
                     return;
                 } else {
-                    // TODO: Add cookie validation
+                    logger.info("Validating cookies...");
+                    br.getPage(PROTOCOL + "www." + getHost() + "/");
                     return;
                 }
             }
-            br.getPage("https://www." + getHost() + "/en/login.php");
-            final String lang = System.getProperty("user.language");
+            br.getPage(PROTOCOL + "www." + getHost() + "/en/login.php");
             Form form = br.getFormbyProperty("name", "lOGIN");
             if (form == null) {
                 form = br.getForm(0);
@@ -282,11 +305,10 @@ public class GrabItShareCom extends PluginForHost {
             br.getPage("/members.php");
             final String premium = br.getRegex("return overlay\\(this, \\'package_details\\',\\'width=\\d+px,height=\\d+px,center=1,resize=1,scrolling=1\\'\\)\">(Premium)</a>").getMatch(0);
             if (br.getCookie(getHost(), "mfh_passhash", Cookies.NOTDELETEDPATTERN) == null || "0".equals(br.getCookie(getHost(), "mfh_uid", Cookies.NOTDELETEDPATTERN))) {
-                if ("de".equalsIgnoreCase(lang)) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
+                throw new AccountInvalidException();
+            } else if (!isLoggedin(br)) {
+                /* This should never happen */
+                throw new AccountInvalidException();
             }
             if (premium == null) {
                 account.setType(AccountType.FREE);
@@ -295,6 +317,10 @@ public class GrabItShareCom extends PluginForHost {
             }
             account.saveCookies(br.getCookies(getHost()), "");
         }
+    }
+
+    private boolean isLoggedin(final Browser br) {
+        return br.containsHTML("logout=1");
     }
 
     @Override
@@ -314,7 +340,9 @@ public class GrabItShareCom extends PluginForHost {
         String expires = getData("Vaše članstvo istiće");
         if (expires != null) {
             expires = expires.trim();
-            if (!expires.equals("Never") && !expires.equals("Nikada")) {
+            if (expires.equals("Never") || expires.equals("Nikada")) {
+                account.setType(AccountType.LIFETIME);
+            } else {
                 String[] e = expires.split("/");
                 Calendar cal = new GregorianCalendar(Integer.parseInt("20" + e[2]), Integer.parseInt(e[1]) - 1, Integer.parseInt(e[0]));
                 ai.setValidUntil(cal.getTimeInMillis());
@@ -330,56 +358,7 @@ public class GrabItShareCom extends PluginForHost {
     }
 
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        login(account, true);
-        br.setFollowRedirects(false);
-        br.setCookie(getHost(), "mfh_mylang", "en");
-        br.getPage(link.getPluginPatternMatcher());
-        checkOffline();
-        if (account.getType() == AccountType.FREE) {
-            doFree(link);
-        } else {
-            String finalLink = null;
-            if (br.getRedirectLocation() != null && (br.getRedirectLocation().contains("access_key=") || br.getRedirectLocation().contains("getfile.php"))) {
-                finalLink = br.getRedirectLocation();
-            } else {
-                if (br.containsHTML("You have got max allowed download sessions from the same IP")) {
-                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
-                }
-                String passCode = null;
-                if (br.containsHTML("downloadpw")) {
-                    logger.info("The file you're trying to download is password protected...");
-                    link.setPasswordProtected(true);
-                    Form pwform = br.getFormbyProperty("name", "myform");
-                    if (pwform == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    if (link.getDownloadPassword() == null) {
-                        passCode = getUserInput("Password?", link);
-                    } else {
-                        /* gespeicherten PassCode holen */
-                        passCode = link.getDownloadPassword();
-                    }
-                    pwform.put("downloadpw", Encoding.urlEncode(passCode));
-                    br.submitForm(pwform);
-                }
-                if (br.containsHTML("You have got max allowed download sessions from the same IP")) {
-                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, null, 10 * 60 * 1001l);
-                } else if (br.containsHTML("Password Error")) {
-                    link.setDownloadPassword(null);
-                    throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password");
-                }
-                if (passCode != null) {
-                    link.setDownloadPassword(passCode);
-                }
-                finalLink = findLink(br);
-            }
-            if (finalLink == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, finalLink, true, -5);
-            checkErrorsAfterDownloadAttempt();
-            dl.startDownload();
-        }
+        handleDownload(link, account);
     }
 
     private String getData(final String data) {
@@ -391,7 +370,26 @@ public class GrabItShareCom extends PluginForHost {
     }
 
     private String findLink(final Browser br) throws Exception {
-        return br.getRegex("(http://[a-z0-9\\-\\.]{5,30}/getfile\\.php\\?id=\\d+[^<>\"\\']*?)(\"|\\')").getMatch(0);
+        final String newResult = br.getRegex("(https?://[a-z0-9\\-\\.]{5,30}/getfile\\.php\\?id=\\d+[^<>\"\\']*?)(\"|\\')").getMatch(0);
+        if (newResult != null) {
+            return newResult;
+        }
+        /* Old handling */
+        String finalLink = br.getRegex("(https?://.{5,30}getfile\\.php\\?id=\\d+\\&a=[a-z0-9]+\\&t=[a-z0-9]+.*?)(\\'|\")").getMatch(0);
+        if (finalLink == null) {
+            String[] sitelinks = HTMLParser.getHttpLinks(br.getRequest().getHtmlCode(), null);
+            if (sitelinks == null || sitelinks.length == 0) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            for (String alink : sitelinks) {
+                alink = Encoding.htmlDecode(alink);
+                if (alink.contains("access_key=") || alink.contains("getfile.php?")) {
+                    finalLink = alink;
+                    break;
+                }
+            }
+        }
+        return finalLink;
     }
 
     @Override
