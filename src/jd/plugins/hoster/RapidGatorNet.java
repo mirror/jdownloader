@@ -26,7 +26,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.WeakHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.appwork.net.protocol.http.HTTPConstants;
@@ -231,18 +230,6 @@ public class RapidGatorNet extends PluginForHost {
     private String hotlinkDirectURL = null;
 
     @Override
-    public void clean() {
-        try {
-            super.clean();
-        } finally {
-            synchronized (INVALIDSESSIONMAP) {
-                // remove weak references
-                INVALIDSESSIONMAP.size();
-            }
-        }
-    }
-
-    @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         final Account account = AccountController.getInstance().getValidAccount(this.getHost());
         return requestFileInformation(link, account);
@@ -251,7 +238,27 @@ public class RapidGatorNet extends PluginForHost {
     private AvailableStatus requestFileInformation(final DownloadLink link, final Account account) throws Exception {
         if (account != null && PluginJsonConfig.get(RapidGatorConfig.class).isEnableAPIPremium() && account.hasProperty(PROPERTY_sessionid)) {
             /* API usage is enabled by user, account is available and an API session is available too --> Use API-linkcheck */
-            return requestFileInformationAPI(link, account);
+            try {
+                return requestFileInformationAPI(link, account);
+            } catch (final AccountUnavailableException aue) {
+                /* Fallback 1 */
+                logger.log(aue);
+                /*
+                 * Do not disable account because of this [yet]. Only let this happen if the session failure occurs during download attempt.
+                 */
+                // this.handleAccountException(account, this.getLogger(), aue);
+                logger.info("AccountUnavailableException happened during attempted API availablecheck -> Fallback to website availablecheck");
+                return requestFileInformationWebsite(link, null);
+            } catch (final AccountInvalidException aie) {
+                /* Fallback 2 */
+                logger.log(aie);
+                /*
+                 * Do not disable account because of this [yet]. Only let this happen if the session failure occurs during download attempt.
+                 */
+                // this.handleAccountException(account, this.getLogger(), aie);
+                logger.info("AccountInvalidException happened during attempted API availablecheck -> Fallback to website availablecheck");
+                return requestFileInformationWebsite(link, null);
+            }
         } else {
             return requestFileInformationWebsite(link, null);
         }
@@ -1223,7 +1230,7 @@ public class RapidGatorNet extends PluginForHost {
                 } else if (status == 401 || StringUtils.containsIgnoreCase(errorMessage, "Session not exist") || StringUtils.containsIgnoreCase(errorMessage, "Session doesn't exist")) {
                     // {"response":null,"status":401,"details":"Error. Session doesn't exist"}
                     // {"response":null,"status":401,"details":"Error. Session not exist"}
-                    handleInvalidSession(link, account, null);
+                    handleInvalidSession(link, account, "401");
                 }
             }
             if (status == 404) {
@@ -1233,8 +1240,10 @@ public class RapidGatorNet extends PluginForHost {
             } else if (status == 503) {
                 // {"response":null,"status":503,"details":"Download temporarily unavailable"}
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errorMessage, 30 * 60 * 1000l);
-            } else if (StringUtils.containsIgnoreCase(errorMessage, "This download session is not for you") || StringUtils.containsIgnoreCase(errorMessage, "Session not found")) {
-                handleInvalidSession(link, account, null);
+            } else if (StringUtils.containsIgnoreCase(errorMessage, "This download session is not for you")) {
+                handleInvalidSession(link, account, "Error 'This download session is not for you'");
+            } else if (StringUtils.containsIgnoreCase(errorMessage, "Session not found")) {
+                handleInvalidSession(link, account, "Error 'Session not found'");
             } else if (errorMessage.contains("Error: You requested login to your account from unusual Ip address")) {
                 /* User needs to confirm his current IP. */
                 String statusMessage;
@@ -1288,25 +1297,13 @@ public class RapidGatorNet extends PluginForHost {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection(true);
             /* We are not logged in when e.g. hotlink is available. */
-            if (session_id != null) {
+            if (session_id != null && br.getRequest().getHtmlCode().startsWith("{")) {
                 handleErrors_api(session_id, link, account, br);
-            }
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server did not respond with file content");
-        }
-        try {
-            dl.startDownload();
-        } finally {
-            /* Successful download attempt = Login session is valid! */
-            synchronized (INVALIDSESSIONMAP) {
-                final WeakHashMap<Account, String> map = INVALIDSESSIONMAP.get(link);
-                if (map != null) {
-                    map.remove(account);
-                    if (map.size() == 0) {
-                        INVALIDSESSIONMAP.remove(link);
-                    }
-                }
+            } else {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server did not respond with file content");
             }
         }
+        dl.startDownload();
     }
 
     private void handle404API(final DownloadLink link, final Account account, final boolean trustError404) throws Exception {
@@ -1328,8 +1325,7 @@ public class RapidGatorNet extends PluginForHost {
             final boolean trust_session_validity_check = false;
             if (trust_session_validity_check) {
                 logger.info("Checking for invalid session or 404 file not found");
-                final boolean session_valid = validateSessionAPI(account);
-                if (session_valid) {
+                if (validateSessionAPI(account)) {
                     /* Trust previous error --> File is offline */
                     logger.info("Session is valid --> File is offline");
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -1400,46 +1396,14 @@ public class RapidGatorNet extends PluginForHost {
         }
     }
 
-    private static WeakHashMap<DownloadLink, WeakHashMap<Account, String>> INVALIDSESSIONMAP = new WeakHashMap<DownloadLink, WeakHashMap<Account, String>>();
-
     /** Call this on expired session_id! */
     private void handleInvalidSession(final DownloadLink link, final Account account, final String error_hint) throws PluginException {
-        /*
-         * TODO: Consider deleting current session_id to enforce creation of a new session_id.b Keep in mind that frequently creating new
-         * session_ids is bad!
-         */
-        final String session_id;
-        if (account != null) {
-            synchronized (account) {
-                session_id = account.getStringProperty(PROPERTY_sessionid);
-            }
+        /* We should not have to reset the session_id property here as it should happen automatically on next accountcheck! */
+        final long waittime = 1 * 60 * 1000l;
+        if (error_hint != null) {
+            throw new AccountUnavailableException(String.format("Session expired | Reason: %s", error_hint), waittime);
         } else {
-            session_id = null;
-        }
-        synchronized (INVALIDSESSIONMAP) {
-            if (link != null && account != null) {
-                WeakHashMap<Account, String> map = INVALIDSESSIONMAP.get(link);
-                if (map == null) {
-                    map = new WeakHashMap<Account, String>();
-                    map.put(account, session_id);
-                    INVALIDSESSIONMAP.put(link, map);
-                    // throw AccountUnavailableException
-                } else if (!map.containsKey(account) || !StringUtils.equals(map.get(account), session_id)) {
-                    map.put(account, session_id);
-                    // throw AccountUnavailableException
-                } else {
-                    /* We've retried with new session but same error --> Problem is not the session but the file */
-                    map.remove(account);
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File seems to be temporarily not available, please try again later", 30 * 60 * 1000l);
-                }
-            }
-            /* We should not have to reset the session_id property here as it should happen automatically on next accountcheck! */
-            final long waittime = 1 * 60 * 1000l;
-            if (error_hint != null) {
-                throw new AccountUnavailableException(String.format("[%s]Session expired - waiting before opening new session", error_hint), waittime);
-            } else {
-                throw new AccountUnavailableException("Session expired - waiting before opening new session", waittime);
-            }
+            throw new AccountUnavailableException("Session expired", waittime);
         }
     }
 

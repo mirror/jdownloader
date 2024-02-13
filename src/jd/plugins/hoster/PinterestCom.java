@@ -105,8 +105,19 @@ public class PinterestCom extends PluginForHost {
         return "https://about.pinterest.com/de/terms-service";
     }
 
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        if (link != null && link.getPluginPatternMatcher() != null) {
+            final String pin_id = getPinID(link.getPluginPatternMatcher());
+            if (pin_id != null) {
+                return "pinterest_pin://" + pin_id;
+            }
+        }
+        return super.getLinkID(link);
+    }
+
     public static String getPinID(final String pin_url) {
-        return new Regex(pin_url, "pin/([^/]+)/?$").getMatch(0);
+        return new Regex(pin_url, "(?i)pin/([^/]+)/?$").getMatch(0);
     }
 
     /* Site constants */
@@ -245,26 +256,6 @@ public class PinterestCom extends PluginForHost {
         } else {
             return (List<String>) link.getProperty(PinterestCom.PROPERTY_DIRECTURL_LIST);
         }
-    }
-
-    /**
-     * Returns internal linkid, uses pin_id only if it fails to find something better. pin_ids can vary for usage via account vs. non
-     * account which means one and the same PIN object can have 2 different IDs e.g. <br />
-     * 561824122247791853 == AWgdN4e_KINL2m6FsLk-aGJiMvq_NZ7BIW0pc5rDZqb1BcwCpPxGRAE <br />
-     * Ideal directlink for linkid: https://s-media-cache-ak0.pinimg.com/originals/aa/f2/04/aaf204b422904144d1bb0fd763866d05.jpg <br />
-     * Non-ideal directlink for linkid:
-     * https://s-media-cache-ak0.pinimg.com/736x/aa/f2/04/aaf204b422904144d1bb0fd763866d05--sacred-garden-garden-statues.jpg <br />
-     */
-    public static String getLinkidForInternalDuplicateCheck(final String pin_url, final String directlink) {
-        if (pin_url == null && directlink == null) {
-            return null;
-        }
-        String internal_linkid = directlink != null ? new Regex(directlink, "https?://[^/]+/[^/]+/(.+)").getMatch(0) : null;
-        if (internal_linkid == null) {
-            /* Fallback */
-            internal_linkid = getPinID(pin_url);
-        }
-        return "pinterest://" + internal_linkid;
     }
 
     @Override
