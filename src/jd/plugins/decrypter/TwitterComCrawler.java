@@ -125,6 +125,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
     private static AtomicReference<String> GUEST_TOKEN                                                      = new AtomicReference<String>();
     private static AtomicLong              GUEST_TOKEN_TS                                                   = new AtomicLong(-1);
     public static final String             PROPERTY_USERNAME                                                = "username";
+    public static final String             PROPERTY_USER_ID                                                 = "user_id";
     private static final String            PROPERTY_DATE                                                    = "date";
     private static final String            PROPERTY_DATE_TIMESTAMP                                          = "date_timestamp";
     public static final String             PROPERTY_MEDIA_INDEX                                             = "mediaindex";
@@ -429,7 +430,8 @@ public class TwitterComCrawler extends PluginForDecrypt {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
-            return this.crawlTweetMap(username, tweetMap, null, null);
+            final Map<String, Object> userMap = (Map<String, Object>) JavaScriptEngineFactory.walkJson(tweetResult, "result/core/user_results/result/legacy");
+            return this.crawlTweetMap(username, tweetMap, userMap, null);
         } else {
             final String queryID = this.getGraphqlQueryID("TweetDetail");
             final Map<String, Object> variables = new HashMap<String, Object>();
@@ -568,16 +570,18 @@ public class TwitterComCrawler extends PluginForDecrypt {
      */
     private ArrayList<DownloadLink> crawlTweetMap(String username, Map<String, Object> tweet, Map<String, Object> user, FilePackage fp) throws MalformedURLException, PluginException {
         final TwitterConfigInterface cfg = PluginJsonConfig.get(TwitterConfigInterface.class);
-        final Boolean retweetedBoolean = (Boolean) tweet.get("retweeted");
+        // final Boolean retweetedBoolean = (Boolean) tweet.get("retweeted");
         Map<String, Object> retweeted_status = (Map<String, Object>) tweet.get("retweeted_status");
         Map<String, Object> userInContextOfReTweet = null;
-        if (retweeted_status == null && Boolean.TRUE.equals(retweetedBoolean)) {
+        if (retweeted_status == null) {
             /* 2023-10-16 */
             retweeted_status = (Map<String, Object>) JavaScriptEngineFactory.walkJson(tweet, "retweeted_status_result/result/legacy");
             /* Get map of user who tweeted that re-tweet originally. This can differ from the user who re-tweeted the main tweet. */
-            userInContextOfReTweet = (Map<String, Object>) JavaScriptEngineFactory.walkJson(tweet, "retweeted_status_result/result/core/user_results/result/legacy");
-            if (userInContextOfReTweet == null) {
-                logger.warning("Failed to find map of re-tweet user: Possible plugin failure");
+            if (retweeted_status != null) {
+                userInContextOfReTweet = (Map<String, Object>) JavaScriptEngineFactory.walkJson(tweet, "retweeted_status_result/result/core/user_results/result/legacy");
+                if (userInContextOfReTweet == null) {
+                    logger.warning("Failed to find map of re-tweet user: Possible plugin failure");
+                }
             }
         }
         boolean isRetweet = false;
@@ -589,7 +593,6 @@ public class TwitterComCrawler extends PluginForDecrypt {
             tweet = retweeted_status;
             isRetweet = true;
         }
-        final String tweetID = tweet.get("id_str").toString();
         final Object userInContextOfTweet = tweet.get("user");
         if (userInContextOfReTweet != null) {
             user = userInContextOfReTweet;
@@ -600,9 +603,14 @@ public class TwitterComCrawler extends PluginForDecrypt {
              */
             user = (Map<String, Object>) userInContextOfTweet;
         }
-        if (user != null) {
-            username = (String) user.get("screen_name");
+        if (user == null) {
+            throw new IllegalArgumentException();
         }
+        final String tweetID = tweet.get("id_str").toString();
+        if (username == null) {
+            username = user.get("screen_name").toString();
+        }
+        final List<String> pinned_tweet_ids_str = (List<String>) user.get("pinned_tweet_ids_str");
         final String created_at = tweet.get("created_at").toString();
         final long timestamp = getTimestampTwitterDate(created_at);
         final String formattedDate = formatTwitterDateFromTimestamp(timestamp);
@@ -825,10 +833,12 @@ public class TwitterComCrawler extends PluginForDecrypt {
         }
         retInternal.addAll(retMedia);
         /* Add remaining plugin properties */
+        final boolean isPinnedTweet = pinned_tweet_ids_str != null && pinned_tweet_ids_str.contains(tweetID);
         for (final DownloadLink dl : retInternal) {
             /* Add additional properties */
             dl.setContentUrl(urlToTweet);
             dl.setProperty(PROPERTY_USERNAME, username);
+            dl.setProperty(PROPERTY_USER_ID, tweet.get("user_id_str"));
             dl.setProperty(PROPERTY_TWEET_ID, tweetID);
             dl.setProperty(PROPERTY_DATE, formattedDate);
             dl.setProperty(PROPERTY_DATE_TIMESTAMP, timestamp);
@@ -840,6 +850,9 @@ public class TwitterComCrawler extends PluginForDecrypt {
             }
             if (isRetweet) {
                 dl.setProperty(PROPERTY_RETWEET, true);
+            }
+            if (isPinnedTweet) {
+                dl.setProperty(PROPERTY_PINNED_TWEET, true);
             }
             /* Set filename which gets created based on user settings and previously set properties. */
             setFormattedFilename(dl);
@@ -1359,7 +1372,6 @@ public class TwitterComCrawler extends PluginForDecrypt {
         profileCrawlerStopBecauseReachedUserDefinedMaxItemsLimit = false;
         profileCrawlerSkippedResultsByMaxDate.clear();
         profileCrawlerSkippedResultsByRetweet.clear();
-        final List<String> pinned_tweet_ids_str = user != null ? (List<String>) user.get("pinned_tweet_ids_str") : null;
         final String username = user != null ? user.get("screen_name").toString() : null;
         final ArrayList<DownloadLink> allowedResults = new ArrayList<DownloadLink>();
         timelineInstructionsLoop: for (final Map<String, Object> timelineInstruction : timelineInstructions) {
@@ -1445,12 +1457,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
                             /* Skip items which would not go into Twitter hosterplugin such as crawled external URLs inside post-text. */
                             continue;
                         }
-                        final boolean isPinnedTweet = pinned_tweet_ids_str != null && pinned_tweet_ids_str.contains(tweetID);
-                        if (isPinnedTweet) {
-                            /* Mark pinned Tweets as such. */
-                            thisTweetResult.setProperty(PROPERTY_PINNED_TWEET, true);
-                        }
-                        if (!isPinnedTweet) {
+                        if (!thisTweetResult.getBooleanProperty(PROPERTY_PINNED_TWEET, false)) {
                             /* Find date of last crawled Tweet. */
                             logger.info("Tweet used as source for last crawled Tweet timestamp: " + tweetID);
                             crawledTweetTimestamp = thisTweetResult.getLongProperty(PROPERTY_DATE_TIMESTAMP, -1);
