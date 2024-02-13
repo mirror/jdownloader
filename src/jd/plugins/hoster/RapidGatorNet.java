@@ -1308,6 +1308,10 @@ public class RapidGatorNet extends PluginForHost {
 
     private void handle404API(final DownloadLink link, final Account account, final boolean trustError404) throws Exception {
         logger.info("Error 404 happened --> Trying to find out whether session is invalid or file is offline");
+        if (link == null) {
+            /* This should never happen */
+            handleInvalidSession(link, account, null);
+        }
         if (trustError404) {
             /* File offline */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -1322,8 +1326,8 @@ public class RapidGatorNet extends PluginForHost {
              * 2019-12-18: Seems like our session validity check still does not work which will lead to false positive 'file not found'
              * errors --> Avoid this and retry later instead! Proof: jdlog://6540330900751/
              */
-            final boolean trust_session_validity_check = false;
-            if (trust_session_validity_check) {
+            final boolean trust_api_session_validity_check = false;
+            if (trust_api_session_validity_check) {
                 logger.info("Checking for invalid session or 404 file not found");
                 if (validateSessionAPI(account)) {
                     /* Trust previous error --> File is offline */
@@ -1339,33 +1343,8 @@ public class RapidGatorNet extends PluginForHost {
                  * Session validity check cannot be trusted either --> Check if URL is really offline; if yes, display offline; temp disable
                  * account and wait for new session
                  */
-                if (link != null) {
-                    try {
-                        requestFileInformationWebsite(link, null);
-                        logger.info("File is online --> Probably expired session");
-                    } catch (final InterruptedException e) {
-                        throw e;
-                    } catch (final Throwable e) {
-                        if (e instanceof PluginException) {
-                            final PluginException ep = (PluginException) e;
-                            switch (ep.getLinkStatus()) {
-                            case LinkStatus.ERROR_FILE_NOT_FOUND:
-                            case LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE:
-                            case LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE:
-                            case LinkStatus.ERROR_PLUGIN_DEFECT:
-                                throw ep;
-                            default:
-                                /* Ignore other errors */
-                                logger.log(e);
-                                break;
-                            }
-                        } else {
-                            logger.log(e);
-                        }
-                    }
-                } else {
-                    logger.info("Error 404 happened outside download handling which is unusual --> Probably expired session");
-                }
+                requestFileInformationWebsite(link, null);
+                logger.info("File is online --> Probably expired session");
                 /* Probably expired session */
                 handleInvalidSession(link, account, "404");
             }
