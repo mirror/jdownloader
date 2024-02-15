@@ -162,7 +162,9 @@ public abstract class Tb7AndXt7PlCORE extends PluginForHost {
         }
         ai.setStatus("Premium" + " (" + getPhrase("TRAFFIC_LEFT") + ": " + (otherHostersLimitLeftStr == null ? getPhrase("UNKNOWN") : otherHostersLimitLeftStr) + (unlimited == null ? "" : ", " + unlimited + ": " + getPhrase("UNLIMITED")) + ")");
         if (otherHostersLimitLeftStr != null) {
+            final long hardcodedMaxTrafficDaily = SizeFormatter.getSize("30GB"); // 2024-02-15
             ai.setTrafficLeft(SizeFormatter.getSize(otherHostersLimitLeftStr));
+            ai.setTrafficMax(hardcodedMaxTrafficDaily);
         }
         /* Find list of supported hosts */
         br.getPage("/jdhostingi.txt");

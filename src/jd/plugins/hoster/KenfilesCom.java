@@ -24,6 +24,7 @@ import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
@@ -51,6 +52,13 @@ public class KenfilesCom extends XFileSharingProBasic {
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
         ret.add(new String[] { "kenfiles.com", "kfs.space" });
         return ret;
+    }
+
+    @Override
+    protected List<String> getDeadDomains() {
+        final ArrayList<String> deadDomains = new ArrayList<String>();
+        deadDomains.add("kfs.space");
+        return deadDomains;
     }
 
     public static String[] getAnnotationNames() {
@@ -202,5 +210,25 @@ public class KenfilesCom extends XFileSharingProBasic {
             }
         }
         return super.fetchAccountInfoWebsiteExpireDate(br, account, ai);
+    }
+
+    @Override
+    protected boolean looksLikeDownloadableContent(final URLConnectionAdapter urlConnection) {
+        if (urlConnection == null) {
+            return false;
+        }
+        final List<String> contentTypeValues = urlConnection.getRequest().getResponseHeaders("Content-Type");
+        if (contentTypeValues != null) {
+            /*
+             * 2024-02-15: Special check to detect case when they send two content-type headers (e.g. "video/mp4" and at the same time
+             * "text/html; charset=utf-8" lol)
+             */
+            for (final String contentTypeValue : contentTypeValues) {
+                if (contentTypeValue.contains("html")) {
+                    return false;
+                }
+            }
+        }
+        return super.looksLikeDownloadableContent(urlConnection);
     }
 }

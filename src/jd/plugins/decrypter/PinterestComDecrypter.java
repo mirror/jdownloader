@@ -26,8 +26,15 @@ import java.util.Map.Entry;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.URLEncode;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.notify.BasicNotify;
+import org.jdownloader.gui.notify.BubbleNotify;
+import org.jdownloader.gui.notify.BubbleNotify.AbstractNotifyWindowFactory;
+import org.jdownloader.gui.notify.gui.AbstractNotifyWindow;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
@@ -91,30 +98,256 @@ public class PinterestComDecrypter extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:(?:www|[a-z]{2})\\.)?" + buildHostsPatternPart(domains) + "/(pin/[A-Za-z0-9\\-_]+/|[^/]+/[^/]+/(?:[^/]+/)?)");
+            ret.add("https?://(?:(?:www|[a-z]{2})\\.)?" + buildHostsPatternPart(domains) + "/.+");
         }
         return ret.toArray(new String[0]);
     }
 
-    // private ArrayList<DownloadLink> decryptedLinks = null;
-    private ArrayList<String>   dupeList                            = new ArrayList<String>();
-    private boolean             enable_description_inside_filenames = false;
-    private boolean             enable_crawl_alternative_URL        = false;
-    public static final String  TYPE_PIN                            = "(?i)https?://[^/]+/pin/([A-Za-z0-9\\-_]+)/?";
-    private static final String TYPE_BOARD                          = "(?i)https?://[^/]+/([^/]+)/([^/]+)/?";
-    private static final String TYPE_BOARD_SECTION                  = "(?i)https?://[^/]+/[^/]+/[^/]+/([^/]+)/?";
+    private boolean             enable_crawl_alternative_URL = false;
+    public static final String  TYPE_PIN                     = "(?i)https?://[^/]+/pin/([A-Za-z0-9\\-_]+)/?";
+    private static final String TYPE_BOARD                   = "(?i)https?://[^/]+/([^/]+)/([^/]+)/?";
+    private static final String TYPE_BOARD_SECTION           = "(?i)https?://[^/]+/([^/]+)/([^/]+)/([^/]+)/?";
 
     @SuppressWarnings({ "deprecation" })
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        currentUsername = null;
+        currentBoardSlug = null;
+        currentBoardPath = null;
         final PluginForHost hostPlugin = this.getNewPluginForHostInstance(this.getHost());
-        enable_description_inside_filenames = hostPlugin.getPluginConfig().getBooleanProperty(PinterestCom.ENABLE_DESCRIPTION_IN_FILENAMES, PinterestCom.defaultENABLE_DESCRIPTION_IN_FILENAMES);
         enable_crawl_alternative_URL = hostPlugin.getPluginConfig().getBooleanProperty(PinterestCom.ENABLE_CRAWL_ALTERNATIVE_SOURCE_URLS, PinterestCom.defaultENABLE_CRAWL_ALTERNATIVE_SOURCE_URLS);
-        final Regex singlepinregex = (new Regex(param.getCryptedUrl(), TYPE_PIN));
+        final String url = param.getCryptedUrl();
+        final Regex singlepinregex = (new Regex(url, TYPE_PIN));
         if (singlepinregex.patternFind()) {
             return crawlSinglePIN(singlepinregex.getMatch(0));
+        } else if (new Regex(url, TYPE_BOARD_SECTION).patternFind()) {
+            return this.crawlSection(param);
         } else {
-            return crawlBoardPINs(param.getCryptedUrl());
+            if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                return crawlAllOtherItems(param.getCryptedUrl());
+            } else {
+                return crawlBoardPINs(param.getCryptedUrl());
+            }
         }
+    }
+
+    private String currentUsername  = null;
+    private String currentBoardSlug = null;
+    private String currentBoardPath = null;
+
+    /**
+     * One function which can handle _any_ type of supported pinterest link (except for single PIN links). </br>
+     * WORK IN PROGRESS
+     */
+    private ArrayList<DownloadLink> crawlAllOtherItems(final String contenturl) throws Exception {
+        if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            return null;
+        }
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        br.getPage(contenturl);
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        /* TODO: Check if login is needed at all */
+        // final boolean loggedin = getUserLogin(false);
+        final String json = br.getRegex("<script id=\"__PWS_DATA__\" type=\"application/json\">(\\{.*?)</script>").getMatch(0);
+        final Map<String, Object> root = restoreFromString(json, TypeRef.MAP);
+        final Map<String, Object> initialReduxState = (Map<String, Object>) JavaScriptEngineFactory.walkJson(root, "props/initialReduxState");
+        final Map<String, Object> resources = (Map<String, Object>) initialReduxState.get("resources");
+        // final Map<String, Object> resourcesUserResource = (Map<String, Object>) resources.get("UserResource");
+        int expectedNumberofItems = 0;
+        final Map<String, Object> resourcesBoardResource = (Map<String, Object>) JavaScriptEngineFactory.walkJson(resources, "BoardResource/{0}/data");
+        final Map<String, Object> resourcesBoardFeedResource = (Map<String, Object>) JavaScriptEngineFactory.walkJson(resources, "BoardFeedResource/{0}");
+        if (resourcesBoardResource != null && resourcesBoardFeedResource != null) {
+            /* This is a board -> Crawl all PINs from this board */
+            currentBoardSlug = "";
+            currentBoardPath = resourcesBoardResource.get("url").toString();
+            final String boardName = resourcesBoardResource.get("name").toString();
+            final String boardID = resourcesBoardResource.get("id").toString();
+            final String boardDescription = resourcesBoardResource.get("seo_description").toString();
+            final int boardPinCount = ((Number) resourcesBoardResource.get("pin_count")).intValue();
+            final int boardSectionCount = ((Number) resourcesBoardResource.get("section_count")).intValue();
+            if (boardPinCount > 0) {
+                /* Crawl all loose/sectionless PINs */
+                logger.info("Crawling all PINs of board" + boardName + " | " + boardPinCount);
+                this.displayBubblenotifyMessage("Board " + boardName + " | Sectionless PINs", "Crawling all " + boardPinCount + " PINs of board " + boardName);
+                expectedNumberofItems += boardPinCount;
+                final int maxItemsPerPage = 15;
+                final Map<String, Object> postDataOptions = new HashMap<String, Object>();
+                postDataOptions.put("add_vase", true);
+                postDataOptions.put("board_id", boardID);
+                postDataOptions.put("field_set_key", "react_grid_pin");
+                postDataOptions.put("filter_section_pins", false);
+                postDataOptions.put("is_react", true);
+                postDataOptions.put("prepend", false);
+                postDataOptions.put("page_size", maxItemsPerPage);
+                final Map<String, Object> postData = new HashMap<String, Object>();
+                postData.put("options", postDataOptions);
+                postData.put("context", new HashMap<String, Object>());
+                final FilePackage fp = FilePackage.getInstance();
+                fp.setName(boardName);
+                if (!StringUtils.isEmpty(boardDescription)) {
+                    fp.setComment(boardDescription);
+                }
+                fp.setPackageKey("pinterest://board/" + boardID);
+                ret.addAll(this.crawlPaginationGeneric("BoardFeedResource", resourcesBoardFeedResource, postData, boardPinCount, fp));
+            } else {
+                logger.info("Skipping board " + boardName + " because it does not contain any items.");
+            }
+            if (boardSectionCount > 0) {
+                logger.info("Crawling all sections of board" + boardName + " | " + boardSectionCount);
+                this.displayBubblenotifyMessage("Board " + boardName + " | sections", "Crawling all " + boardSectionCount + " sections of board " + boardName);
+                expectedNumberofItems += boardSectionCount;
+                final Map<String, Object> postDataOptions = new HashMap<String, Object>();
+                postDataOptions.put("board_id", boardID);
+                final Map<String, Object> postData = new HashMap<String, Object>();
+                postData.put("options", postDataOptions);
+                postData.put("context", new HashMap<String, Object>());
+                final FilePackage fp = FilePackage.getInstance();
+                fp.setName(boardName);
+                if (!StringUtils.isEmpty(boardDescription)) {
+                    fp.setComment(boardDescription);
+                }
+                final Map<String, Object> resourcesBoardSectionsResource = (Map<String, Object>) JavaScriptEngineFactory.walkJson(resources, "BoardSectionsResource/{0}");
+                ret.addAll(this.crawlPaginationGeneric("BoardSectionsResource", resourcesBoardSectionsResource, postData, boardSectionCount, fp));
+            }
+        }
+        final Map<String, Object> resourcesUserPinsResource = (Map<String, Object>) JavaScriptEngineFactory.walkJson(resources, "UserPinsResource/{0}");
+        if (resourcesUserPinsResource != null) {
+            /* This is a user/profile -> Crawl all loose PINs from this profile */
+            /* Find user-map */
+            final Map<String, Object> usersmap = (Map<String, Object>) initialReduxState.get("users");
+            Map<String, Object> usermap = null;
+            if (usersmap != null) {
+                for (final Object mapO : usersmap.values()) {
+                    final Map<String, Object> map = (Map<String, Object>) mapO;
+                    if (map.containsKey("full_name")) {
+                        usermap = map;
+                        break;
+                    }
+                }
+            }
+            if (usermap == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            final String username = usermap.get("username").toString();
+            final String userID = usermap.get("id").toString();
+            final int userPinCount = ((Integer) usermap.get("pin_count")).intValue();
+            final int userBoardCount = ((Integer) usermap.get("board_count")).intValue();
+            if (userPinCount > 0) {
+                logger.info("Crawling all loose PINs: " + userPinCount);
+                this.displayBubblenotifyMessage("Profile " + username, "Crawling all " + userPinCount + " loose PINs of profile " + username);
+                expectedNumberofItems += userPinCount;
+                final Map<String, Object> postDataOptions = new HashMap<String, Object>();
+                postDataOptions.put("add_vase", true);
+                postDataOptions.put("field_set_key", "mobile_grid_item");
+                postDataOptions.put("is_own_profile_pins", false);
+                postDataOptions.put("username", username);
+                final Map<String, Object> postData = new HashMap<String, Object>();
+                postData.put("options", postDataOptions);
+                postData.put("context", new HashMap<String, Object>());
+                final FilePackage fp = FilePackage.getInstance();
+                fp.setName(username);
+                final String description = (String) usermap.get("seo_description");
+                if (!StringUtils.isEmpty(description)) {
+                    fp.setComment(description);
+                }
+                fp.setPackageKey("pinterest://profile_sectionless_pins/" + userID);
+                ret.addAll(this.crawlPaginationGeneric("UserPinsResource", resourcesUserPinsResource, postData, userPinCount, fp));
+            } else {
+                logger.info("Skipping profile " + username + " PINs because this profile does not contain any items.");
+            }
+            /* TODO: Maybe add a setting for this */
+            final boolean allowCrawlAllBoardsOfUser = false;
+            if (userBoardCount > 0 && allowCrawlAllBoardsOfUser) {
+                logger.info("Crawling all boards: " + userBoardCount);
+                this.displayBubblenotifyMessage("Profile " + username, "Crawling all " + userBoardCount + " boards of profile " + username);
+                final Map<String, Object> resourcesBoardsFeedResource = (Map<String, Object>) JavaScriptEngineFactory.walkJson(resources, "BoardsFeedResource/{0}");
+                expectedNumberofItems += userBoardCount;
+                final Map<String, Object> postDataOptions = new HashMap<String, Object>();
+                postDataOptions.put("field_set_key", "profile_grid_item");
+                postDataOptions.put("filter_stories", false);
+                postDataOptions.put("sort", "last_pinned_to");
+                postDataOptions.put("username", username);
+                final Map<String, Object> postData = new HashMap<String, Object>();
+                postData.put("options", postDataOptions);
+                postData.put("context", new HashMap<String, Object>());
+                ret.addAll(this.crawlPaginationGeneric("BoardsFeedResource", resourcesBoardsFeedResource, postData, userBoardCount, null));
+            }
+        }
+        if (expectedNumberofItems == 0) {
+            /* Empty board/profile */
+            throw new DecrypterRetryException(RetryReason.EMPTY_PROFILE);
+        }
+        return ret;
+    }
+
+    private ArrayList<DownloadLink> crawlPaginationGeneric(final String resourceType, final Map<String, Object> startMap, final Map<String, Object> postData, final int expectedNumberofItems, final FilePackage fp) throws Exception {
+        final String source_url = br._getURL().getPath();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        List<Map<String, Object>> itemsList = (List<Map<String, Object>>) startMap.get("data");
+        if (itemsList == null) {
+            /* This should never happen! */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        String nextbookmark = startMap.get("nextBookmark").toString();
+        final Map<String, Object> postDataOptions = (Map<String, Object>) postData.get("options");
+        final String boardID = (String) postDataOptions.get("board_id");
+        /**
+         * A page size is not always given. It is controlled serverside via the "bookmark" parameter. </br>
+         * Any page can have any number of items.
+         */
+        final Number page_sizeO = (Number) postDataOptions.get("page_size");
+        final int maxItemsPerPage = page_sizeO != null ? page_sizeO.intValue() : -1;
+        int page = 1;
+        int crawledItems = 0;
+        final List<Integer> pagesWithPossiblyMissingItems = new ArrayList<Integer>();
+        do {
+            for (final Map<String, Object> pin : itemsList) {
+                final ArrayList<DownloadLink> results = proccessMap(pin, boardID, fp);
+                ret.addAll(results);
+            }
+            crawledItems += itemsList.size();
+            logger.info("Crawled page: " + page + " | " + crawledItems + "/" + expectedNumberofItems + " items crawled | retSize=" + ret.size() + " | nextbookmark= " + nextbookmark);
+            if (this.isAbort()) {
+                logger.info("Stopping because: Aborted by user");
+                break;
+            } else if (StringUtils.isEmpty(nextbookmark) || nextbookmark.equalsIgnoreCase("-end-")) {
+                logger.info("Stopping because: Reached end");
+                break;
+            } else if (expectedNumberofItems != -1 && crawledItems >= expectedNumberofItems) {
+                /* Fail-safe */
+                logger.info("Stopping because: Found all sectionless items");
+                break;
+            } else {
+                /* Continue to next page */
+                /* Collect pages with possibly missing items. Only do this if we're not on the last page. */
+                if (itemsList.size() < maxItemsPerPage) {
+                    /* Fail-safe */
+                    logger.info("Found page with possibly missing items: " + page);
+                    pagesWithPossiblyMissingItems.add(page);
+                }
+                postDataOptions.put("bookmarks", new String[] { nextbookmark });
+                br.getPage("/resource/" + resourceType + "/get/?source_url=" + Encoding.urlEncode(source_url) + "&data=" + URLEncode.encodeURIComponent(JSonStorage.serializeToJson(postData)) + "&_=" + System.currentTimeMillis());
+                final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+                final Map<String, Object> resource_response = (Map<String, Object>) entries.get("resource_response");
+                nextbookmark = (String) resource_response.get("bookmark");
+                itemsList = (List<Map<String, Object>>) resource_response.get("data");
+                page += 1;
+            }
+        } while (!this.isAbort());
+        final long numberofMissingItems = expectedNumberofItems != -1 ? expectedNumberofItems - crawledItems : 0;
+        if (numberofMissingItems > 0) {
+            /*
+             * 2024-02-13: Sometimes items are missing for unknown reasons e.g. one is missing here:
+             * https://www.pinterest.de/josielindatoth/deserts/
+             */
+            String msg = "Missing items: " + numberofMissingItems;
+            if (pagesWithPossiblyMissingItems.size() > 0) {
+                msg += "\nPages where those items should be located: " + pagesWithPossiblyMissingItems.toString();
+            }
+            this.displayBubblenotifyMessage("Missing PINs in package " + fp.getName(), msg);
+        }
+        return ret;
     }
 
     private ArrayList<DownloadLink> crawlSinglePIN(final String pinID) throws Exception {
@@ -239,19 +472,8 @@ public class PinterestComDecrypter extends PluginForDecrypt {
                 return map;
             }
         }
+        /* PIN does not exist(?) */
         return null;
-    }
-
-    /** 2020-11-16 */
-    public static void followSpecialRedirect(final Browser br) throws IOException, PluginException {
-        final String redirect = br.getRegex("window\\.location = \"([^<>\"]+)\"").getMatch(0);
-        if (redirect != null) {
-            if (redirect.contains("show_error=true")) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else {
-                br.getPage(redirect);
-            }
-        }
     }
 
     /** Returns highest resolution image URL inside given PIN Map. */
@@ -323,69 +545,34 @@ public class PinterestComDecrypter extends PluginForDecrypt {
         return externalURL;
     }
 
-    /**
-     * @return: true: target section was found and only this will be crawler false: failed to find target section - in this case we should
-     *          crawl everything we find </br>
-     *          This can crawl A LOT of stuff! E.g. a board contains 1000 sections, each section contains 1000 PINs...
-     */
-    private ArrayList<DownloadLink> crawlSections(final String contenturl, final Browser ajax, final String boardID, final long totalInsideSectionsPinCount) throws Exception {
-        final String username_and_boardname = new Regex(contenturl, "https?://[^/]+/(.+)/").getMatch(0).replace("/", " - ");
-        final Map<String, Object> postDataOptions = new HashMap<String, Object>();
-        final String source_url = new URL(contenturl).getPath();
-        postDataOptions.put("isPrefetch", false);
-        postDataOptions.put("board_id", boardID);
-        postDataOptions.put("redux_normalize_feed", true);
-        postDataOptions.put("no_fetch_context_on_resource", false);
-        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final Map<String, Object> postData = new HashMap<String, Object>();
-        postData.put("options", postDataOptions);
-        postData.put("context", new HashMap<String, Object>());
-        int sectionPage = -1;
-        ajax.getPage("/resource/BoardSectionsResource/get/?source_url=" + Encoding.urlEncode(source_url) + "&data=" + URLEncode.encodeURIComponent(JSonStorage.serializeToJson(postData)));
-        final int maxSectionsPerPage = 25;
-        sectionPagination: do {
-            sectionPage += 1;
-            logger.info("Crawling sections page: " + (sectionPage + 1));
-            final Map<String, Object> sectionsData = restoreFromString(ajax.getRequest().getHtmlCode(), TypeRef.MAP);
-            final List<Object> sections = (List) JavaScriptEngineFactory.walkJson(sectionsData, "resource_response/data");
-            int sectionCounter = 1;
-            for (final Object sectionO : sections) {
-                final Map<String, Object> entries = (Map<String, Object>) sectionO;
-                final String section_title = (String) entries.get("title");
-                // final String sectionSlug = (String) entries.get("slug");
-                final long section_total_pin_count = JavaScriptEngineFactory.toLong(entries.get("pin_count"), 0);
-                final String sectionID = (String) entries.get("id");
-                if (StringUtils.isEmpty(section_title) || sectionID == null || section_total_pin_count == 0) {
-                    /* Skip invalid entries and empty sections */
-                    continue;
-                }
-                logger.info("Crawling section " + sectionCounter + " of " + sections.size() + " --> ID = " + sectionID);
-                final FilePackage fpSection = FilePackage.getInstance();
-                fpSection.setName(username_and_boardname + " - " + section_title);
-                ret.addAll(crawlSection(ajax, source_url, boardID, sectionID, fpSection));
-                sectionCounter += 1;
-                if (this.isAbort()) {
-                    break sectionPagination;
-                }
-            }
-            final String sectionsNextBookmark = (String) JavaScriptEngineFactory.walkJson(sectionsData, "resource_response/bookmark");
-            if (StringUtils.isEmpty(sectionsNextBookmark) || sectionsNextBookmark.equalsIgnoreCase("-end-")) {
-                logger.info("Stopping sections crawling because: Reached end");
-                break sectionPagination;
-            } else if (sections.size() < maxSectionsPerPage) {
-                /* Fail safe */
-                logger.info("Stopping because: Current page contains less than " + maxSectionsPerPage + " items");
-                break sectionPagination;
-            } else {
-                postDataOptions.put("bookmarks", new String[] { sectionsNextBookmark });
-                ajax.getPage("/resource/BoardSectionsResource/get/?source_url=" + Encoding.urlEncode(source_url) + "&data=" + URLEncode.encodeURIComponent(JSonStorage.serializeToJson(postData)) + "&_=" + System.currentTimeMillis());
-            }
-        } while (!this.isAbort());
-        logger.info("Section crawler done");
-        return ret;
+    private ArrayList<DownloadLink> crawlSection(final CryptedLink param) throws Exception {
+        final String url = param.getCryptedUrl();
+        final Regex boardSectionRegex = new Regex(url, TYPE_BOARD_SECTION);
+        if (!boardSectionRegex.patternFind()) {
+            /* Developer mistake */
+            throw new IllegalArgumentException();
+        }
+        final DownloadLink sourceItem = param.getDownloadLink();
+        if (sourceItem == null) {
+            logger.info("Section URL without DownloadLink context");
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        /* Obtain cached data */
+        final String boardID = sourceItem.getStringProperty("board_id");
+        final String sectionID = sourceItem.getStringProperty("section_id");
+        if (boardID == null || sectionID == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final String username = boardSectionRegex.getMatch(0);
+        final String boardname = boardSectionRegex.getMatch(1);
+        final String sectionname = boardSectionRegex.getMatch(2);
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(username + " - " + boardname + " - " + sectionname);
+        fp.setPackageKey("pinterest://board/" + boardID + "/section/" + sectionID);
+        return this.crawlSection(br, url, boardID, sectionID, fp);
     }
 
-    private ArrayList<DownloadLink> crawlSection(final Browser ajax, final String source_url, final String boardID, final String sectionID, final FilePackage fp) throws Exception {
+    private ArrayList<DownloadLink> crawlSection(final Browser br, final String source_url, final String boardID, final String sectionID, final FilePackage fp) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         int processedPINCounter = 0;
         int pageCounter = 1;
@@ -405,263 +592,114 @@ public class PinterestComDecrypter extends PluginForDecrypt {
         Map<String, Object> pinPaginationPostData = new HashMap<String, Object>();
         pinPaginationPostData.put("options", pinPaginationPostDataOptions);
         pinPaginationPostData.put("context", pinPaginationpostDataContext);
-        ajax.getPage("/resource/BoardSectionPinsResource/get/?source_url=" + URLEncode.encodeURIComponent(source_url) + "&data=" + URLEncode.encodeURIComponent(JSonStorage.serializeToJson(pinPaginationPostData)) + "&_=" + System.currentTimeMillis());
         do {
-            final Map<String, Object> sectionPaginationInfo = restoreFromString(ajax.getRequest().getHtmlCode(), TypeRef.MAP);
+            String url = "/resource/BoardSectionPinsResource/get/?source_url=" + URLEncode.encodeURIComponent(source_url) + "&data=" + URLEncode.encodeURIComponent(JSonStorage.serializeToJson(pinPaginationPostData)) + "&_=" + System.currentTimeMillis();
+            if (br.getRequest() == null) {
+                /* First request */
+                url = "https://" + getHost() + url;
+            }
+            br.getPage(url);
+            final Map<String, Object> sectionPaginationInfo = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
             final Object bookmarksO = JavaScriptEngineFactory.walkJson(sectionPaginationInfo, "resource/options/bookmarks");
             final String bookmarks = (String) JavaScriptEngineFactory.walkJson(sectionPaginationInfo, "resource/options/bookmarks/{0}");
-            final List<Object> pins = (List) JavaScriptEngineFactory.walkJson(sectionPaginationInfo, "resource_response/data");
-            final int sizeBefore = ret.size();
-            for (final Object pinO : pins) {
-                final Map<String, Object> pinMap = (Map<String, Object>) pinO;
-                final ArrayList<DownloadLink> thisRet = proccessMap(pinMap, boardID, fp);
-                if (thisRet == null || thisRet.isEmpty()) {
-                    logger.info("Stopping PIN pagination because: Found unprocessable PIN map");
-                    break;
-                } else {
-                    ret.addAll(thisRet);
-                    processedPINCounter++;
-                }
+            final List<Map<String, Object>> pins = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(sectionPaginationInfo, "resource_response/data");
+            int numberofNewItemsThisPage = 0;
+            for (final Map<String, Object> pinmap : pins) {
+                final ArrayList<DownloadLink> thisRet = proccessMap(pinmap, boardID, fp);
+                ret.addAll(thisRet);
+                numberofNewItemsThisPage++;
             }
-            logger.info("Crawling section " + sectionID + " page: " + pageCounter + " | Found items so far: " + ret.size());
-            pageCounter++;
+            processedPINCounter += pins.size();
+            logger.info("Crawled section " + sectionID + " page: " + pageCounter + "Processed items on this page: " + numberofNewItemsThisPage + " | Processed PINs so far: " + processedPINCounter);
             if (this.isAbort()) {
                 logger.info("Crawler aborted by user");
-                break;
-            } else if (ret.size() <= sizeBefore) {
-                logger.info("Stopping because: Failed to find any new items on current page");
                 break;
             } else if (StringUtils.isEmpty(bookmarks) || bookmarks.equals("-end-") || bookmarksO == null) {
                 /* Looks as if we've reached the end */
                 logger.info("Stopping because: Reached end");
                 break;
+            } else if (numberofNewItemsThisPage < maxPINsPerRequest) {
+                /* Fail safe */
+                logger.info("Stopping because: Reached end(?)");
+                break;
             } else {
                 /* Load next page */
                 pinPaginationPostDataOptions.put("bookmarks", bookmarksO);
-                ajax.getPage("/resource/BoardSectionPinsResource/get/?source_url=" + URLEncode.encodeURIComponent(source_url) + "&data=" + URLEncode.encodeURIComponent(JSonStorage.serializeToJson(pinPaginationPostData)) + "&_=" + System.currentTimeMillis());
+                pageCounter++;
             }
         } while (true);
         logger.info("Number of PINs in current section: " + processedPINCounter);
         return ret;
     }
 
-    private ArrayList<DownloadLink> crawlBoardPINs(final String contenturl) throws Exception {
-        /*
-         * In case the user wants to add a specific section, we have to get to the section overview --> Find sectionID --> Finally crawl
-         * section PINs
-         */
+    /**
+     * Crawls single PIN from given Map.
+     *
+     * @throws IOException
+     */
+    private ArrayList<DownloadLink> proccessMap(final Map<String, Object> map, final String board_id, final FilePackage fp) throws PluginException, IOException {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final boolean loggedIN = getUserLogin(false);
-        String targetSectionSlug = null;
-        final String username = URLEncode.decodeURIComponent(new Regex(contenturl, TYPE_BOARD).getMatch(0));
-        final String boardSlug = URLEncode.decodeURIComponent(new Regex(contenturl, TYPE_BOARD).getMatch(1));
-        // final String sourceURL;
-        if (contenturl.matches(TYPE_BOARD_SECTION)) {
-            /* Remove targetSection from URL as we cannot use it in this way. */
-            targetSectionSlug = new Regex(contenturl, TYPE_BOARD_SECTION).getMatch(0);
-        }
-        final String sourceURL = URLEncode.decodeURIComponent(new URL(contenturl).getPath());
-        prepAPIBRCrawler(this.br);
-        br.getPage("https://www." + this.getHost() + "/resource/BoardResource/get/?source_url=" + URLEncode.encodeURIComponent(sourceURL) + "style%2F&data=%7B%22options%22%3A%7B%22isPrefetch%22%3Afalse%2C%22username%22%3A%22" + URLEncode.encodeURIComponent(username) + "%22%2C%22slug%22%3A%22" + URLEncode.encodeURIComponent(boardSlug) + "%22%2C%22field_set_key%22%3A%22detailed%22%2C%22no_fetch_context_on_resource%22%3Afalse%7D%2C%22context%22%3A%7B%7D%7D&_=" + System.currentTimeMillis());
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        Map<String, Object> jsonRoot = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
-        final Map<String, Object> boardPageResource = (Map<String, Object>) JavaScriptEngineFactory.walkJson(jsonRoot, "resource_response/data");
-        final String boardID = boardPageResource.get("id").toString();
-        final long section_count = ((Number) boardPageResource.get("section_count")).longValue();
-        /* Find out how many PINs we have to crawl. */
-        final long totalPinCount = ((Number) boardPageResource.get("pin_count")).longValue();
-        final long sectionlessPinCount = ((Number) boardPageResource.get("sectionless_pin_count")).longValue();
-        final long totalInsideSectionsPinCount = (totalPinCount > 0 && sectionlessPinCount < totalPinCount) ? totalPinCount - sectionlessPinCount : 0;
-        logger.info("PINs total: " + totalPinCount + " | PINs inside sections: " + totalInsideSectionsPinCount + " | PINs outside sections: " + sectionlessPinCount);
-        if (totalPinCount == 0) {
-            throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER);
-        }
-        /*
-         * Sections are like folders. Now find all the PINs that are not in any sections (it may happen that we already have everything at
-         * this stage!) Only decrypt these leftover PINs if either the user did not want to have a specified section only or if he wanted to
-         * have a specified section only but we failed to find that.
-         */
-        br.getPage(contenturl);
-        final String json = this.getJsonSourceFromHTML(this.br, loggedIN);
-        final Map<String, Object> tmpMap = restoreFromString(json, TypeRef.MAP);
-        String targetSectionID = null;
-        if (section_count > 0 && targetSectionSlug != null) {
-            /* Small workaround to find sectionID (I've failed to find an API endpoint that returns this section only). */
-            targetSectionID = this.findSectionID(tmpMap, targetSectionSlug);
-            if (targetSectionID == null) {
-                logger.warning("Failed to crawl user desired section -> Crawling sectionless PINs only...");
-            } else {
-                final FilePackage fpSection = FilePackage.getInstance();
-                fpSection.setName(username + " - " + boardSlug + " - " + targetSectionSlug);
-                ret.addAll(this.crawlSection(br.cloneBrowser(), sourceURL, boardID, targetSectionID, fpSection));
-                logger.info("Total number of PINs crawled in desired single section: " + ret.size());
+        final String type = map.get("type").toString();
+        if (type.equals("pin") || type.equals("interest")) {
+            final Map<String, Object> user = (Map<String, Object>) map.get("pinner");
+            final String pin_id = map.get("id").toString();
+            final String username = user != null ? user.get("username").toString() : null;
+            final DownloadLink dl = this.createDownloadlink("https://www." + this.getHost() + "/pin/" + pin_id + "/");
+            if (!StringUtils.isEmpty(board_id)) {
+                dl.setProperty("boardid", board_id);
             }
-        } else if (totalInsideSectionsPinCount > 0) {
-            ret.addAll(this.crawlSections(contenturl, br.cloneBrowser(), boardID, totalInsideSectionsPinCount));
-            logger.info("Total number of PINs crawled in sections: " + ret.size());
-        }
-        if (sectionlessPinCount <= 0) {
-            /* No items at all available */
-            logger.info("This board doesn't contain any loose PINs");
-            if (ret.isEmpty()) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else {
-                /* We got results -> Return them */
-                return ret;
+            if (!StringUtils.isEmpty(username)) {
+                dl.setProperty("username", username);
             }
-        }
-        /* Find- and set PackageName (Board Name) */
-        final String boardName = boardPageResource.get("name").toString();
-        final Map<String, Object> boardFeedResource = (Map<String, Object>) JavaScriptEngineFactory.walkJson(tmpMap, "props/initialReduxState/resources/BoardFeedResource/{0}");
-        List<Map<String, Object>> pinList = (List<Map<String, Object>>) boardFeedResource.get("data");
-        String nextbookmark = boardFeedResource.get("nextBookmark").toString();
-        final FilePackage fp = FilePackage.getInstance();
-        fp.setName(boardName);
-        final int maxItemsPerPage = 15;
-        final Map<String, Object> postDataOptions = new HashMap<String, Object>();
-        final String source_url = new URL(contenturl).getPath();
-        postDataOptions.put("add_vase", true);
-        postDataOptions.put("board_id", boardID);
-        postDataOptions.put("field_set_key", "react_grid_pin");
-        postDataOptions.put("filter_section_pins", false);
-        postDataOptions.put("is_react", true);
-        postDataOptions.put("prepend", false);
-        postDataOptions.put("page_size", maxItemsPerPage);
-        // postDataOptions.put("isPrefetch", false);
-        // postDataOptions.put("board_id", boardID);
-        // postDataOptions.put("board_url", "/" + username + "/" + boardSlug);
-        // postDataOptions.put("currentFilter", -1);
-        // postDataOptions.put("field_set_key", "react_grid_pin");
-        // postDataOptions.put("filter_section_pins", true);
-        // postDataOptions.put("sort", "default");
-        // postDataOptions.put("layout", "default");
-        // postDataOptions.put("page_size", maxItemsPerPage);
-        // postDataOptions.put("redux_normalize_feed", true);
-        // postDataOptions.put("no_fetch_context_on_resource", false);
-        final Map<String, Object> postData = new HashMap<String, Object>();
-        postData.put("options", postDataOptions);
-        postData.put("context", new HashMap<String, Object>());
-        int page = 0;
-        int crawledSectionlessPINs = 0;
-        logger.info("Crawling all sectionless PINs: " + sectionlessPinCount);
-        do {
-            page += 1;
-            for (final Map<String, Object> pin : pinList) {
-                proccessMap(pin, boardID, fp);
+            setInfoOnDownloadLink(dl, map);
+            if (fp != null) {
+                dl._setFilePackage(fp);
             }
-            crawledSectionlessPINs += pinList.size();
-            logger.info("Crawling sectionless PINs page: " + page + " | " + crawledSectionlessPINs + " / " + sectionlessPinCount + " PINs crawled");
-            if (StringUtils.isEmpty(nextbookmark) || nextbookmark.equalsIgnoreCase("-end-")) {
-                logger.info("Stopping because: Reached end");
-                break;
-            } else if (crawledSectionlessPINs >= sectionlessPinCount) {
-                /* Fail-safe */
-                logger.info("Stopping because: Found all items");
-                break;
-            } else {
-                /* Continue to next page */
-                postDataOptions.put("bookmarks", new String[] { nextbookmark });
-                br.getPage("/resource/BoardFeedResource/get/?source_url=" + Encoding.urlEncode(source_url) + "&data=" + URLEncode.encodeURIComponent(JSonStorage.serializeToJson(postData)) + "&_=" + System.currentTimeMillis());
-                final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
-                final Map<String, Object> resource_response = (Map<String, Object>) entries.get("resource_response");
-                nextbookmark = (String) resource_response.get("bookmark");
-                pinList = (List<Map<String, Object>>) resource_response.get("data");
+            ret.add(dl);
+            distribute(dl);
+            String externalURL = null;
+            if (this.enable_crawl_alternative_URL && (externalURL = getAlternativeExternalURLInPINMap(map)) != null) {
+                ret.add(this.createDownloadlink(externalURL));
             }
-        } while (!this.isAbort());
-        return ret;
-    }
-
-    private String getJsonSourceFromHTML(final Browser br, final boolean loggedIN) {
-        String json_source_from_html;
-        if (loggedIN) {
-            json_source_from_html = br.getRegex("id=\\'initial\\-state\\'>window\\.__INITIAL_STATE__ =(.*?)</script>").getMatch(0);
+        } else if (type.equals("board")) {
+            final String boardID = map.get("id").toString();
+            final String boardURL = map.get("url").toString();
+            final String fullurl = br.getURL(boardURL).toExternalForm();
+            final DownloadLink dl = this.createDownloadlink(fullurl);
+            dl.setProperty("board_id", boardID);
+            ret.add(dl);
+        } else if (type.equals("board_section")) {
+            if (currentBoardPath == null) {
+                /* Developer mistake */
+                throw new IllegalArgumentException();
+            }
+            final String sectionSlug = map.get("slug").toString();
+            final DownloadLink section = this.createDownloadlink("https://" + getHost() + currentBoardPath + sectionSlug);
+            /* Important for next crawl-round */
+            section.setProperty("board_id", board_id);
+            section.setProperty("section_id", map.get("id"));
+            ret.add(section);
         } else {
-            json_source_from_html = br.getRegex("P\\.main\\.start\\((\\{.*?\\})\\);[\t\n\r]+").getMatch(0);
-            if (json_source_from_html == null) {
-                json_source_from_html = br.getRegex("P\\.startArgs\\s*=\\s*(\\{.*?\\});[\t\n\r]+").getMatch(0);
-            }
-            /* 2018-12-11: Does not contain what we want! */
-            // if (json_source_from_html == null) {
-            // json_source_from_html = br.getRegex("id=\\'jsInit1\\'>(\\{.*?\\})</script>").getMatch(0);
-            // }
-        }
-        if (json_source_from_html == null) {
-            /* 2018-12-11: For loggedin- and loggedoff */
-            json_source_from_html = br.getRegex("id=.initial-state.[^>]*?>(\\{.*?\\})</script>").getMatch(0);
-            if (json_source_from_html == null) {
-                /* 2024-02-13 */
-                json_source_from_html = br.getRegex("<script id=\"__PWS_DATA__\" type=\"application/json\">(\\{.*?)</script>").getMatch(0);
-            }
-        }
-        return json_source_from_html;
-    }
-
-    /** Crawls single PIN from given Map. */
-    private ArrayList<DownloadLink> proccessMap(final Map<String, Object> map, final String board_id, final FilePackage fp) throws PluginException {
-        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final String type = getStringFromJson(map, "type");
-        if (type == null || !(type.equals("pin") || type.equals("interest"))) {
-            /* Skip invalid objects! */
-            return null;
-        }
-        final Map<String, Object> single_pinterest_pinner = (Map<String, Object>) map.get("pinner");
-        final Object usernameo = single_pinterest_pinner != null ? single_pinterest_pinner.get("username") : null;
-        final String pin_id = (String) map.get("id");
-        final String username = usernameo != null ? (String) usernameo : null;
-        // final String pinner_name = pinner_nameo != null ? (String) pinner_nameo : null;
-        if (StringUtils.isEmpty(pin_id)) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        } else if (dupeList.contains(pin_id)) {
-            logger.info("Skipping duplicate: " + pin_id);
-            return null;
-        }
-        dupeList.add(pin_id);
-        final DownloadLink dl = this.createDownloadlink("https://www." + this.getHost() + "/pin/" + pin_id + "/");
-        if (!StringUtils.isEmpty(board_id)) {
-            dl.setProperty("boardid", board_id);
-        }
-        if (!StringUtils.isEmpty(username)) {
-            dl.setProperty("username", username);
-        }
-        setInfoOnDownloadLink(dl, map);
-        fp.add(dl);
-        dl._setFilePackage(fp);
-        ret.add(dl);
-        distribute(dl);
-        final String externalURL = getAlternativeExternalURLInPINMap(map);
-        if (externalURL != null && this.enable_crawl_alternative_URL) {
-            ret.add(this.createDownloadlink(externalURL));
+            logger.info("Ignoring invalid type: " + type);
         }
         return ret;
-    }
-
-    /* Wrapper which either returns object as String or (e.g. it is missing or different datatype), null. */
-    private String getStringFromJson(final Map<String, Object> entries, final String key) {
-        final String output;
-        final Object jsono = entries.get(key);
-        if (jsono != null && jsono instanceof String) {
-            output = (String) jsono;
-        } else {
-            output = null;
-        }
-        return output;
     }
 
     /** Recursive function to find the ID of a sectionSlug. */
-    private String findSectionID(final Object jsono, final String sectionSlug) throws PluginException {
+    private String recursiveFindSectionID(final Object jsono, final String sectionSlug) throws PluginException {
         if (jsono instanceof Map) {
-            final Map<String, Object> mapTmp = (Map<String, Object>) jsono;
-            final Iterator<Entry<String, Object>> iterator = mapTmp.entrySet().iterator();
+            final Map<String, Object> map = (Map<String, Object>) jsono;
+            final Object slugO = map.get("slug");
+            if (slugO != null && slugO instanceof String && slugO.toString().equals(sectionSlug)) {
+                return map.get("id").toString();
+            }
+            final Iterator<Entry<String, Object>> iterator = map.entrySet().iterator();
             while (iterator.hasNext()) {
                 final Entry<String, Object> entry = iterator.next();
-                final String key = entry.getKey();
+                // final String key = entry.getKey();
                 final Object value = entry.getValue();
-                if (key.equals("slug") && value instanceof String && value.toString().equalsIgnoreCase(sectionSlug)) {
-                    return (String) mapTmp.get("id");
-                } else if (value instanceof List || value instanceof Map) {
-                    final String result = findSectionID(value, sectionSlug);
+                if (value instanceof List || value instanceof Map) {
+                    final String result = recursiveFindSectionID(value, sectionSlug);
                     if (result != null) {
                         return result;
                     }
@@ -671,7 +709,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
             final List<Object> ressourcelist = (List<Object>) jsono;
             for (final Object arrayo : ressourcelist) {
                 if (arrayo instanceof List || arrayo instanceof Map) {
-                    final String result = findSectionID(arrayo, sectionSlug);
+                    final String result = recursiveFindSectionID(arrayo, sectionSlug);
                     if (result != null) {
                         return result;
                     }
@@ -702,5 +740,222 @@ public class PinterestComDecrypter extends PluginForDecrypt {
         // PinterestCom.prepAPIBR(br);
         br.setAllowedResponseCodes(new int[] { 503, 504 });
         br.setLoadLimit(br.getLoadLimit() * 4);
+    }
+
+    private void displayBubblenotifyMessage(final String title, final String msg) {
+        BubbleNotify.getInstance().show(new AbstractNotifyWindowFactory() {
+            @Override
+            public AbstractNotifyWindow<?> buildAbstractNotifyWindow() {
+                return new BasicNotify("Pinterest: " + title, msg, new AbstractIcon(IconKey.ICON_INFO, 32));
+            }
+        });
+    }
+
+    @Deprecated
+    /**
+     * Deprecated since 2024-02-15. Use {@link #crawlAllOtherItems(String)}
+     */
+    private ArrayList<DownloadLink> crawlBoardPINs(final String contenturl) throws Exception {
+        /*
+         * In case the user wants to add a specific section, we have to get to the section overview --> Find sectionID --> Finally crawl
+         * section PINs
+         */
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final boolean loggedIN = getUserLogin(false);
+        String targetSectionSlug = null;
+        final String username = URLEncode.decodeURIComponent(new Regex(contenturl, TYPE_BOARD).getMatch(0));
+        final String boardSlug = URLEncode.decodeURIComponent(new Regex(contenturl, TYPE_BOARD).getMatch(1));
+        // final String sourceURL;
+        if (contenturl.matches(TYPE_BOARD_SECTION)) {
+            /* Remove targetSection from URL as we cannot use it in this way. */
+            targetSectionSlug = new Regex(contenturl, TYPE_BOARD_SECTION).getMatch(2);
+        }
+        final String sourceURL = URLEncode.decodeURIComponent(new URL(contenturl).getPath());
+        prepAPIBRCrawler(this.br);
+        br.getPage("https://www." + this.getHost() + "/resource/BoardResource/get/?source_url=" + URLEncode.encodeURIComponent(sourceURL) + "style%2F&data=%7B%22options%22%3A%7B%22isPrefetch%22%3Afalse%2C%22username%22%3A%22" + URLEncode.encodeURIComponent(username) + "%22%2C%22slug%22%3A%22" + URLEncode.encodeURIComponent(boardSlug) + "%22%2C%22field_set_key%22%3A%22detailed%22%2C%22no_fetch_context_on_resource%22%3Afalse%7D%2C%22context%22%3A%7B%7D%7D&_=" + System.currentTimeMillis());
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final Map<String, Object> jsonRoot = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+        final Map<String, Object> boardPageResource = (Map<String, Object>) JavaScriptEngineFactory.walkJson(jsonRoot, "resource_response/data");
+        final String boardID = boardPageResource.get("id").toString();
+        final long section_count = ((Number) boardPageResource.get("section_count")).longValue();
+        /* Find out how many PINs we have to crawl. */
+        final long totalPinCount = ((Number) boardPageResource.get("pin_count")).longValue();
+        final long sectionlessPinCount = ((Number) boardPageResource.get("sectionless_pin_count")).longValue();
+        final long totalInsideSectionsPinCount = (totalPinCount > 0 && sectionlessPinCount < totalPinCount) ? totalPinCount - sectionlessPinCount : 0;
+        logger.info("PINs total: " + totalPinCount + " | PINs inside sections: " + totalInsideSectionsPinCount + " | PINs outside sections: " + sectionlessPinCount);
+        if (totalPinCount == 0) {
+            throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER);
+        }
+        /*
+         * Sections are like folders. Now find all the PINs that are not in any sections (it may happen that we already have everything at
+         * this stage!) Only decrypt these leftover PINs if either the user did not want to have a specified section only or if he wanted to
+         * have a specified section only but we failed to find that.
+         */
+        br.getPage(contenturl);
+        final String json = br.getRegex("<script id=\"__PWS_DATA__\" type=\"application/json\">(\\{.*?)</script>").getMatch(0);
+        final Map<String, Object> tmpMap = restoreFromString(json, TypeRef.MAP);
+        String targetSectionID = null;
+        if (section_count > 0 && targetSectionSlug != null) {
+            /* Small workaround to find sectionID (I've failed to find an API endpoint that returns this section only). */
+            targetSectionID = this.recursiveFindSectionID(tmpMap, targetSectionSlug);
+            if (targetSectionID == null) {
+                logger.warning("Failed to crawl user desired section -> Crawling sectionless PINs only...");
+            } else {
+                final FilePackage fp = FilePackage.getInstance();
+                fp.setName(username + " - " + boardSlug + " - " + targetSectionSlug);
+                fp.setPackageKey("pinterest://board/" + boardID + "/section/" + targetSectionID);
+                ret.addAll(this.crawlSection(br.cloneBrowser(), sourceURL, boardID, targetSectionID, fp));
+                logger.info("Total number of PINs crawled in desired single section: " + ret.size());
+            }
+        } else if (totalInsideSectionsPinCount > 0) {
+            ret.addAll(this.crawlSections(contenturl, br.cloneBrowser(), boardID, totalInsideSectionsPinCount));
+            logger.info("Total number of PINs crawled in sections: " + ret.size());
+        }
+        if (sectionlessPinCount <= 0) {
+            /* No items at all available */
+            logger.info("This board doesn't contain any loose PINs");
+            if (ret.isEmpty()) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else {
+                /* We got results -> Return them */
+                return ret;
+            }
+        }
+        /* Find- and set PackageName (Board Name) */
+        final String boardName = boardPageResource.get("name").toString();
+        final Map<String, Object> boardFeedResource = (Map<String, Object>) JavaScriptEngineFactory.walkJson(tmpMap, "props/initialReduxState/resources/BoardFeedResource/{0}");
+        List<Map<String, Object>> pinList = (List<Map<String, Object>>) boardFeedResource.get("data");
+        String nextbookmark = boardFeedResource.get("nextBookmark").toString();
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(boardName);
+        fp.setPackageKey("pinterest://board/" + boardID);
+        final int maxItemsPerPage = 15;
+        final Map<String, Object> postDataOptions = new HashMap<String, Object>();
+        final String source_url = new URL(contenturl).getPath();
+        postDataOptions.put("add_vase", true);
+        postDataOptions.put("board_id", boardID);
+        postDataOptions.put("field_set_key", "react_grid_pin");
+        postDataOptions.put("filter_section_pins", false);
+        postDataOptions.put("is_react", true);
+        postDataOptions.put("prepend", false);
+        postDataOptions.put("page_size", maxItemsPerPage);
+        final Map<String, Object> postData = new HashMap<String, Object>();
+        postData.put("options", postDataOptions);
+        postData.put("context", new HashMap<String, Object>());
+        int page = 1;
+        int crawledSectionlessPINs = 0;
+        logger.info("Crawling all sectionless PINs: " + sectionlessPinCount);
+        final List<Integer> pagesWithPossiblyMissingItems = new ArrayList<Integer>();
+        do {
+            for (final Map<String, Object> pin : pinList) {
+                proccessMap(pin, boardID, fp);
+            }
+            crawledSectionlessPINs += pinList.size();
+            logger.info("Crawled sectionless PINs page: " + page + " | " + crawledSectionlessPINs + "/" + sectionlessPinCount + " PINs crawled | nextbookmark= " + nextbookmark);
+            if (this.isAbort()) {
+                logger.info("Stopping because: Aborted by user");
+                break;
+            } else if (StringUtils.isEmpty(nextbookmark) || nextbookmark.equalsIgnoreCase("-end-")) {
+                logger.info("Stopping because: Reached end");
+                break;
+            } else if (crawledSectionlessPINs >= sectionlessPinCount) {
+                /* Fail-safe */
+                logger.info("Stopping because: Found all sectionless items");
+                break;
+            } else {
+                /* Continue to next page */
+                /* Collect pages with possibly missing items. Only do this if we're not on the last page. */
+                if (pinList.size() < maxItemsPerPage) {
+                    /* Fail-safe */
+                    logger.info("Found page with possibly missing items: " + page);
+                    pagesWithPossiblyMissingItems.add(page);
+                }
+                postDataOptions.put("bookmarks", new String[] { nextbookmark });
+                br.getPage("/resource/BoardFeedResource/get/?source_url=" + Encoding.urlEncode(source_url) + "&data=" + URLEncode.encodeURIComponent(JSonStorage.serializeToJson(postData)) + "&_=" + System.currentTimeMillis());
+                final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+                final Map<String, Object> resource_response = (Map<String, Object>) entries.get("resource_response");
+                nextbookmark = (String) resource_response.get("bookmark");
+                pinList = (List<Map<String, Object>>) resource_response.get("data");
+                page += 1;
+            }
+        } while (!this.isAbort());
+        final long numberofMissingItems = sectionlessPinCount - crawledSectionlessPINs;
+        if (numberofMissingItems > 0) {
+            /*
+             * 2024-02-13: Sometimes items are missing for unknown reasons e.g. one is missing here:
+             * https://www.pinterest.de/josielindatoth/deserts/
+             */
+            String msg = "Missing items: " + numberofMissingItems;
+            if (pagesWithPossiblyMissingItems.size() > 0) {
+                msg += "\nPages where those items should be located: " + pagesWithPossiblyMissingItems.toString();
+            }
+            this.displayBubblenotifyMessage("Missing PINs in board " + boardName, msg);
+        }
+        return ret;
+    }
+
+    /**
+     * @return: true: target section was found and only this will be crawler false: failed to find target section - in this case we should
+     *          crawl everything we find </br>
+     *          This can crawl A LOT of stuff! E.g. a board contains 1000 sections, each section contains 1000 PINs...
+     */
+    @Deprecated
+    private ArrayList<DownloadLink> crawlSections(final String contenturl, final Browser ajax, final String boardID, final long totalInsideSectionsPinCount) throws Exception {
+        final String username_and_boardname = new Regex(contenturl, "https?://[^/]+/(.+)/").getMatch(0).replace("/", " - ");
+        final Map<String, Object> postDataOptions = new HashMap<String, Object>();
+        final String source_url = new URL(contenturl).getPath();
+        postDataOptions.put("isPrefetch", false);
+        postDataOptions.put("board_id", boardID);
+        postDataOptions.put("redux_normalize_feed", true);
+        postDataOptions.put("no_fetch_context_on_resource", false);
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final Map<String, Object> postData = new HashMap<String, Object>();
+        postData.put("options", postDataOptions);
+        postData.put("context", new HashMap<String, Object>());
+        int sectionPage = -1;
+        ajax.getPage("/resource/BoardSectionsResource/get/?source_url=" + Encoding.urlEncode(source_url) + "&data=" + URLEncode.encodeURIComponent(JSonStorage.serializeToJson(postData)));
+        final int maxSectionsPerPage = 25;
+        sectionPagination: do {
+            sectionPage += 1;
+            logger.info("Crawling sections page: " + (sectionPage + 1));
+            final Map<String, Object> sectionsData = restoreFromString(ajax.getRequest().getHtmlCode(), TypeRef.MAP);
+            final List<Map<String, Object>> sections = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(sectionsData, "resource_response/data");
+            int sectionCounter = 1;
+            for (final Map<String, Object> entries : sections) {
+                final String section_title = (String) entries.get("title");
+                // final String sectionSlug = (String) entries.get("slug");
+                final long section_total_pin_count = JavaScriptEngineFactory.toLong(entries.get("pin_count"), 0);
+                final String sectionID = (String) entries.get("id");
+                if (StringUtils.isEmpty(section_title) || sectionID == null || section_total_pin_count == 0) {
+                    /* Skip invalid entries and empty sections */
+                    continue;
+                }
+                logger.info("Crawling section " + sectionCounter + " of " + sections.size() + " --> ID = " + sectionID);
+                final FilePackage fp = FilePackage.getInstance();
+                fp.setName(username_and_boardname + " - " + section_title);
+                fp.setPackageKey("pinterest://board/" + boardID + "/section/" + sectionID);
+                ret.addAll(crawlSection(ajax, source_url, boardID, sectionID, fp));
+                sectionCounter += 1;
+                if (this.isAbort()) {
+                    break sectionPagination;
+                }
+            }
+            final String sectionsNextBookmark = (String) JavaScriptEngineFactory.walkJson(sectionsData, "resource_response/bookmark");
+            if (StringUtils.isEmpty(sectionsNextBookmark) || sectionsNextBookmark.equalsIgnoreCase("-end-")) {
+                logger.info("Stopping sections crawling because: Reached end");
+                break sectionPagination;
+            } else if (sections.size() < maxSectionsPerPage) {
+                /* Fail safe */
+                logger.info("Stopping because: Current page contains less than " + maxSectionsPerPage + " items");
+                break sectionPagination;
+            } else {
+                postDataOptions.put("bookmarks", new String[] { sectionsNextBookmark });
+                ajax.getPage("/resource/BoardSectionsResource/get/?source_url=" + Encoding.urlEncode(source_url) + "&data=" + URLEncode.encodeURIComponent(JSonStorage.serializeToJson(postData)) + "&_=" + System.currentTimeMillis());
+            }
+        } while (!this.isAbort());
+        logger.info("Section crawler done");
+        return ret;
     }
 }

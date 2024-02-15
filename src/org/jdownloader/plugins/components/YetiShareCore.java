@@ -722,16 +722,48 @@ public abstract class YetiShareCore extends antiDDoSForHost {
                             if (storedInternalFileID == null) {
                                 link.setProperty(PROPERTY_INTERNAL_FILE_ID, htmlFileID);
                             } else if (htmlFileID != null && !StringUtils.equals(storedInternalFileID, htmlFileID)) {
-                                logger.info("fileID changed!?:stored=" + storedInternalFileID + "|html=" + htmlFileID);
+                                logger.info("fileID changed!?:stored=" + storedInternalFileID + " | html=" + htmlFileID);
                                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                             }
                             final String fileID = this.getStoredInternalFileID(link);
-                            /* 2023-07-06: "p=true" has been added for wrzucaj.pl but that shouldn't affect other websites. */
-                            this.postPage("/account/ajax/file_details", "u=" + fileID + "&p=true");
-                            final Map<String, Object> root = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
-                            final String html = (String) root.get("html");
-                            /* Small workaround to have this html code available in our current browser instance. */
-                            br.getRequest().setHtmlCode(html);
+                            boolean passwordSuccess = false;
+                            String passCode = link.getDownloadPassword();
+                            int counter = 0;
+                            boolean isPasswordRequired = false;
+                            do {
+                                requestFileDetailsNewYetiShare(br, fileID);
+                                /* Grab Form on first loop, then re-use it */
+                                final Form pwForm = br.getFormbyProperty("id", "folderPasswordForm");
+                                if (pwForm == null) {
+                                    /* File is not password protected or correct password has already been entered */
+                                    break;
+                                }
+                                link.setPasswordProtected(true);
+                                pwForm.setMethod(MethodType.POST);
+                                if (passCode == null) {
+                                    passCode = getUserInput("Password?", link);
+                                }
+                                pwForm.put("folderPassword", Encoding.urlEncode(passCode));
+                                submitForm(br, pwForm);
+                                final Map<String, Object> pwresponse = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+                                if (Boolean.TRUE.equals(pwresponse.get("success"))) {
+                                    /* Success! Quit loop. */
+                                    logger.info("Password success: passCode= " + passCode);
+                                    passwordSuccess = true;
+                                    link.setDownloadPassword(passCode);
+                                    requestFileDetailsNewYetiShare(br, fileID);
+                                    break;
+                                } else {
+                                    /* Try again */
+                                    logger.info("Password failure: passCode= " + passCode);
+                                    link.setDownloadPassword(null);
+                                    passCode = null;
+                                    counter++;
+                                }
+                            } while (!this.isAbort() && !passwordSuccess && counter < 3);
+                            if (isPasswordRequired && !passwordSuccess) {
+                                throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
+                            }
                             /* Check for rare case: Final downloadurl inside html provided by via json (e.g. mediafile.cc). */
                             continueLink = getContinueLink(this.br);
                             if (!StringUtils.isEmpty(continueLink)) {
@@ -945,6 +977,15 @@ public abstract class YetiShareCore extends antiDDoSForHost {
         dl.startDownload();
     }
 
+    protected void requestFileDetailsNewYetiShare(final Browser br, final String fileID) throws Exception {
+        /* 2023-07-06: "p=true" has been added for wrzucaj.pl but that shouldn't affect other websites. */
+        postPage(br, "/account/ajax/file_details", "u=" + fileID + "&p=true");
+        final Map<String, Object> root = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+        final String html = root.get("html").toString();
+        /* Small workaround to have this html code available in our current browser instance. */
+        br.getRequest().setHtmlCode(html);
+    }
+
     /** Use this if you want to add/modify the captcha form just before it gets submitted. */
     protected void hookBeforeCaptchaFormSubmit(final Browser br, final Form captchaForm) {
     }
@@ -965,38 +1006,47 @@ public abstract class YetiShareCore extends antiDDoSForHost {
         /* E.g. used for letsupload.io/letsupload.co */
     }
 
+    /** Password handling for older YetiShare versions. */
+    @Deprecated
     protected void handlePasswordProtection(final DownloadLink link, final Account account, final Browser br) throws Exception {
-        if (getPasswordProtectedForm(this.br) != null) {
-            /* Old layout additionally redirects to "/file_password.html?file=<fuid>" */
-            link.setPasswordProtected(true);
-            String passCode = link.getDownloadPassword();
-            if (passCode == null) {
-                passCode = getUserInput("Password?", link);
-            }
-            final Form pwform = this.getPasswordProtectedForm(this.br);
-            pwform.put("filePassword", Encoding.urlEncode(passCode));
-            br.setFollowRedirects(false);
-            this.submitForm(pwform);
-            if (this.isDownloadlink(br.getRedirectLocation())) {
-                /*
-                 * We can start the download right away -> Entered password is correct and we're probably logged in into a premium account.
-                 */
-                link.setDownloadPassword(passCode);
-                dl = jd.plugins.BrowserAdapter.openDownload(br, link, br.getRedirectLocation(), this.isResumeable(link, account), this.getMaxChunks(account));
-            } else {
-                /* No download -> Either wrong password or correct password & free download */
-                br.setFollowRedirects(true);
-                if (getPasswordProtectedForm(this.br) != null) {
-                    /* Assume that entered password is wrong! */
-                    link.setDownloadPassword(null);
-                    throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
-                } else {
-                    /* Correct password --> Store it */
-                    link.setDownloadPassword(passCode);
+        final boolean isFollowingRedirects = br.isFollowingRedirects();
+        try {
+            if (getPasswordProtectedForm(br) != null) {
+                /* Old layout additionally redirects to "/file_password.html?file=<fuid>" */
+                link.setPasswordProtected(true);
+                String passCode = link.getDownloadPassword();
+                if (passCode == null) {
+                    passCode = getUserInput("Password?", link);
                 }
+                final Form pwform = this.getPasswordProtectedForm(br);
+                pwform.put("filePassword", Encoding.urlEncode(passCode));
+                br.setFollowRedirects(false);
+                this.submitForm(br, pwform);
+                if (this.isDownloadlink(br.getRedirectLocation())) {
+                    /*
+                     * We can start the download right away -> Entered password is correct and we're probably logged in into a premium
+                     * account.
+                     */
+                    link.setDownloadPassword(passCode);
+                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, br.getRedirectLocation(), this.isResumeable(link, account), this.getMaxChunks(account));
+                } else {
+                    /* No download -> Either wrong password or correct password & free download */
+                    br.followRedirect(true);
+                    if (getPasswordProtectedForm(br) != null) {
+                        /* Assume that entered password is wrong! */
+                        link.setDownloadPassword(null);
+                        throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
+                    } else {
+                        /* Correct password --> Store it */
+                        link.setDownloadPassword(passCode);
+                    }
+                }
+            } else {
+                link.setPasswordProtected(false);
             }
-        } else {
-            link.setPasswordProtected(false);
+        } finally {
+            /* Restore previous value */
+            br.setFollowRedirects(isFollowingRedirects);
         }
     }
 

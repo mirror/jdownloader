@@ -36,7 +36,6 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPlugin
 import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.plugins.components.config.NitroflareConfig;
 import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -340,7 +339,7 @@ public class NitroFlareCom extends antiDDoSForHost {
                     }
                     return true;
                 }
-                final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+                final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
                 final Map<String, Object> result = (Map<String, Object>) entries.get("result");
                 /* This will be a map if we checked at least one valid fileID. If all given fileIDs are invalid it will be an empty list! */
                 final Object filesO = result.get("files");
@@ -691,9 +690,9 @@ public class NitroFlareCom extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
         }
-        if (StringUtils.startsWithCaseInsensitive(br.toString(), "To continue this download please")) {
+        if (StringUtils.startsWithCaseInsensitive(br.getRequest().getHtmlCode(), "To continue this download please")) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "To continue this download please purchase premium or turn off your VPN.", 60 * 60 * 1000l);
-        } else if (StringUtils.startsWithCaseInsensitive(br.toString(), "You can't use free download with a VPN")) {
+        } else if (StringUtils.startsWithCaseInsensitive(br.getRequest().getHtmlCode(), "You can't use free download with a VPN")) {
             /* You can't use free download with a VPN / proxy turned on. Please turn it off and try again. */
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You can't use free download with a VPN / proxy turned on. Please turn it off and try again", 60 * 60 * 1000l);
         } else if (br.containsHTML("(?i)This file is available with premium key only|This file is available with Premium only")) {
@@ -715,7 +714,7 @@ public class NitroFlareCom extends antiDDoSForHost {
             } else {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED);
             }
-        } else if (StringUtils.startsWithCaseInsensitive(br.toString(), "﻿Free download is currently unavailable due to overloading in the server")) {
+        } else if (StringUtils.startsWithCaseInsensitive(br.getRequest().getHtmlCode(), "﻿Free download is currently unavailable due to overloading in the server")) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Free download Overloaded, will try again later", 5 * 60 * 1000l);
         } else if (br.containsHTML("(?i)>\\s*Your ip (has|is) been blocked, if you think it is mistake contact us")) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Your ip is blocked", 30 * 60 * 1000l);
@@ -1000,12 +999,19 @@ public class NitroFlareCom extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
             final Request previousRequest = br.getRequest().cloneRequest();
-            final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, "6Lenx_USAAAAAF5L1pmTWvWcH73dipAEzNnmNLgy").getToken();
+            final String captchaResponse;
+            /* 2024-02-13: Just a test. */
+            final boolean useHcaptcha = false;
+            if (useHcaptcha) {
+                captchaResponse = new CaptchaHelperHostPluginHCaptcha(this, br, "c38dc51d-dc74-48c0-9ce6-ad5dd86847e4").getToken();
+            } else {
+                captchaResponse = new CaptchaHelperHostPluginRecaptchaV2(this, br, "6Lenx_USAAAAAF5L1pmTWvWcH73dipAEzNnmNLgy").getToken();
+            }
             final UrlQuery query = new UrlQuery();
-            query.add("response", Encoding.urlEncode(recaptchaV2Response));
+            query.add("response", Encoding.urlEncode(captchaResponse));
             final String solveCaptchaURL = getAPIBase() + "/solveCaptcha?user=" + Encoding.urlEncode(account.getUser());
             this.postPage(solveCaptchaURL, query.toMap());
-            if (!br.toString().equalsIgnoreCase("passed")) {
+            if (!br.getRequest().getHtmlCode().equalsIgnoreCase("passed")) {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             } else {
                 br.getPage(solveCaptchaURL + "&solved=1");
@@ -1121,7 +1127,7 @@ public class NitroFlareCom extends antiDDoSForHost {
     private void handlePremiumDownloadAPI(final DownloadLink link, final Account account) throws Exception {
         this.getPage(getAPIBase() + "/getDownloadLink?user=" + Encoding.urlEncode(account.getUser()) + "&premiumKey=" + Encoding.urlEncode(account.getPass()) + "&file=" + Encoding.urlEncode(this.getFID(link)));
         this.checkErrorsAPI(br, link, account);
-        final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
+        final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         final Map<String, Object> result = (Map<String, Object>) entries.get("result");
         final String dllink = result.get("url").toString();
         if (StringUtils.isEmpty(dllink) || !dllink.startsWith("http")) {
@@ -1150,7 +1156,7 @@ public class NitroFlareCom extends antiDDoSForHost {
         if (br.containsHTML(err1)) {
             // I don't see why this would happening logs contain no proxy!
             throw new PluginException(LinkStatus.ERROR_FATAL, err1);
-        } else if (account != null && br.getHttpConnection() != null && (br.toString().equals("Your premium has reached the maximum volume for today") || br.containsHTML("(?i)<p id=\"error\"[^>]+>\\s*Your premium has reached the maximum volume for today|>\\s*This download exceeds the daily download limit"))) {
+        } else if (account != null && br.getHttpConnection() != null && (br.getRequest().getHtmlCode().equals("Your premium has reached the maximum volume for today") || br.containsHTML("(?i)<p id=\"error\"[^>]+>\\s*Your premium has reached the maximum volume for today|>\\s*This download exceeds the daily download limit"))) {
             throw new AccountUnavailableException("Daily downloadlimit reached", 5 * 60 * 1000l);
         } else if (br.containsHTML("(?i)>\\s*This download exceeds the daily download limit\\. You can purchase")) {
             // not enough traffic to download THIS file, doesn't mean zero traffic left.
