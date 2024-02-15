@@ -6,13 +6,13 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
-import jd.controlling.TaskQueue;
-
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
 import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.queue.QueueAction;
+
+import jd.controlling.TaskQueue;
 
 public abstract class HistoryManager<T extends HistoryEntry> {
     protected final ArrayList<T> packageHistory;
@@ -48,6 +48,7 @@ public abstract class HistoryManager<T extends HistoryEntry> {
         }
     }
 
+    /** Max number of history entries. */
     protected abstract int getMaxLength();
 
     public synchronized List<T> list() {
@@ -91,12 +92,17 @@ public abstract class HistoryManager<T extends HistoryEntry> {
             boolean found = false;
             for (final T existing : packageHistory) {
                 if (existing.getName().equalsIgnoreCase(packageName)) {
+                    /*
+                     * Entry with the same name has been found -> Update last used timestamp and re-sort list so it will be the first entry
+                     * next time.
+                     */
                     existing.setTime(System.currentTimeMillis());
                     found = true;
                     break;
                 }
             }
             if (!found) {
+                /* This package name is not in our list -> Add it */
                 final T newOne = createNew(packageName);
                 newOne.setTime(System.currentTimeMillis());
                 packageHistory.add(0, newOne);

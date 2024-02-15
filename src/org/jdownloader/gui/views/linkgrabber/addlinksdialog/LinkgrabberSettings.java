@@ -246,6 +246,7 @@ public interface LinkgrabberSettings extends ConfigInterface {
     @DefaultIntValue(25)
     @RequiresRestart("A JDownloader Restart is Required")
     @DescriptionForConfigEntry("How many entries will be in the Packagename quick selection")
+    @SpinnerValidator(min = 0, max = 250)
     int getPackageNameHistoryLength();
 
     void setPackageNameHistoryLength(int i);

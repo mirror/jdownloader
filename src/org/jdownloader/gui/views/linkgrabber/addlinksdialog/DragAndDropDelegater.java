@@ -14,14 +14,14 @@ import javax.swing.Icon;
 import javax.swing.JComponent;
 import javax.swing.TransferHandler;
 
-import jd.controlling.ClipboardMonitoring;
-import jd.controlling.ClipboardMonitoring.HTMLFragment;
-import jd.parser.html.HTMLParser;
-
 import org.appwork.swing.components.ExtTextArea;
 import org.appwork.utils.DebugMode;
 import org.appwork.utils.ReflectionUtils;
 import org.jdownloader.logging.LogController;
+
+import jd.controlling.ClipboardMonitoring;
+import jd.controlling.ClipboardMonitoring.HTMLFragment;
+import jd.parser.html.HTMLParser;
 
 public class DragAndDropDelegater extends TransferHandler {
     private final TransferHandler org;
@@ -57,10 +57,11 @@ public class DragAndDropDelegater extends TransferHandler {
     }
 
     @Override
-    public boolean importData(TransferSupport support) {
+    public boolean importData(final TransferSupport support) {
         try {
             final HTMLFragment htmlFragment = ClipboardMonitoring.getHTMLFragment(support.getTransferable(), support.getDataFlavors());
             if (htmlFragment != null) {
+                /* Get links from html code and if any links are detected, return a newline-separated list of links as drop content. */
                 final String[] links = HTMLParser.getHttpLinks(htmlFragment.getFragment(), htmlFragment.getSourceURL());
                 if (links != null && links.length > 0) {
                     final StringBuilder sb = new StringBuilder();
@@ -71,9 +72,6 @@ public class DragAndDropDelegater extends TransferHandler {
                         sb.append(link);
                     }
                     final TransferSupport ret = new TransferSupport(support.getComponent(), new StringSelection(sb.toString()));
-                    if (support.isDrop()) {
-                        ret.setDropAction(support.getDropAction());
-                    }
                     return org.importData(ret);
                 }
             }

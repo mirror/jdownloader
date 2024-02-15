@@ -180,11 +180,6 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
     }
 
     // @Override
-    // public ModalityType getModalityType() {
-    // return ModalityType.MODELESS;
-    // }
-    //
-    // @Override
     // public Window getOwner() {
     //
     // return null;
@@ -516,7 +511,7 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
                         inform();
                         String textAuto = config.getPresetDebugLinks();
                         ClipboardContent clipboardContent = null;
-                        if (StringUtils.isEmpty(textAuto) && (config.isAutoFillAddLinksDialogWithClipboardContentEnabled())) {
+                        if (StringUtils.isEmpty(textAuto) && config.isAutoFillAddLinksDialogWithClipboardContentEnabled()) {
                             final ClipboardMonitoring clp = ClipboardMonitoring.getINSTANCE();
                             clipboardContent = clp.getCurrentContent();
                             if (clipboardContent != null) {
@@ -762,9 +757,7 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
                                 }
                             };
                         }
-                        if (!config.isAddLinksPreParserEnabled()) {
-                            resultText = textAuto;
-                        } else {
+                        if (config.isAddLinksPreParserEnabled()) {
                             final String parseTextAuto = preprocessFind(textAuto);
                             final String base = clipboardContent != null ? clipboardContent.getBrowserURL() : null;
                             String[] result = HTMLParser.getHttpLinks(parseTextAuto, base, new HtmlParserResultSet() {
@@ -799,6 +792,8 @@ public class AddLinksDialog extends AbstractDialog<LinkCollectingJob> {
                                 }
                             }
                             resultText = StringUtils.join(result, "\r\n");
+                        } else {
+                            resultText = textAuto;
                         }
                     } else {
                         resultText = "";
