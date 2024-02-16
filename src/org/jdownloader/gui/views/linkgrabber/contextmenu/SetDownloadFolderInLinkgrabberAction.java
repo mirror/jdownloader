@@ -3,7 +3,6 @@ package org.jdownloader.gui.views.linkgrabber.contextmenu;
 import java.io.File;
 import java.util.List;
 
-import org.appwork.utils.DebugMode;
 import org.appwork.utils.event.queue.Queue;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
@@ -59,20 +58,22 @@ public class SetDownloadFolderInLinkgrabberAction extends SetDownloadFolderActio
     }
 
     @Override
+    /** New package gets created when the download-path of one or multiple items of an existing package gets changed. */
     protected CrawledPackage createNewByPrototype(SelectionInfo<CrawledPackage, CrawledLink> si, CrawledPackage entry) {
         final CrawledPackage pkg = new CrawledPackage();
+        /* Set package expanded status based on global setting. */
         pkg.setExpanded(CFG_LINKCOLLECTOR.CFG.isPackageAutoExpanded());
         if (TYPE.NORMAL == entry.getType()) {
+            /* Source package is a "normal" package -> Keep package-name */
             pkg.setName(entry.getName());
         } else {
-            final String pkgName;
-            if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-                pkgName = LinknameCleaner.cleanPackagenameNew(getSelection().getPackageView(entry).getChildren().get(0).getName(), true);
-            } else {
-                pkgName = LinknameCleaner.cleanPackagename(getSelection().getPackageView(entry).getChildren().get(0).getName(), false, false, LinknameCleaner.EXTENSION_SETTINGS.REMOVE_ALL, true);
-            }
-            pkg.setName(pkgName);
+            /*
+             * Source package is a "special" package like "permanently offline" or "various" -> Use the filename of the first item of that
+             * package and create a new package name by that.
+             */
+            pkg.setName(LinknameCleaner.derivePackagenameFromFilename(getSelection().getPackageView(entry).getChildren().get(0).getName()));
         }
+        /* Adopt comment of source-package. */
         pkg.setComment(entry.getComment());
         return pkg;
     }

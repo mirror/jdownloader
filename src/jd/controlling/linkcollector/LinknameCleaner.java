@@ -443,8 +443,6 @@ public class LinknameCleaner {
         if (removeIndex > 0) {
             name = name.substring(0, removeIndex);
         }
-        // TODO: Check if we want to include cleanup here!
-        // return cleanPackagenameNew(name, true);
         return name;
     }
 
