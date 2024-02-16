@@ -1402,7 +1402,7 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
                             brc.setAllowedResponseCodes(new int[] { 405 });
                             con = openAntiDDoSRequestConnection(brc, brc.createHeadRequest(dllinkTmp));
                             final String workaroundURL = getHttpServerErrorWorkaroundURL(con);
-                            if (workaroundURL != null) {
+                            if (workaroundURL != null && !this.looksLikeDownloadableContent(con)) {
                                 con.disconnect();
                                 con = openAntiDDoSRequestConnection(brc, brc.createHeadRequest(workaroundURL));
                             }
