@@ -14,14 +14,14 @@ import javax.swing.Icon;
 import javax.swing.JComponent;
 import javax.swing.TransferHandler;
 
+import jd.controlling.ClipboardMonitoring;
+import jd.controlling.ClipboardMonitoring.HTMLFragment;
+import jd.parser.html.HTMLParser;
+
 import org.appwork.swing.components.ExtTextArea;
 import org.appwork.utils.DebugMode;
 import org.appwork.utils.ReflectionUtils;
 import org.jdownloader.logging.LogController;
-
-import jd.controlling.ClipboardMonitoring;
-import jd.controlling.ClipboardMonitoring.HTMLFragment;
-import jd.parser.html.HTMLParser;
 
 public class DragAndDropDelegater extends TransferHandler {
     private final TransferHandler org;

@@ -36,6 +36,14 @@ import javax.imageio.ImageIO;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 
+import jd.captcha.utils.GifDecoder;
+import jd.http.Browser;
+import jd.http.Browser.BrowserException;
+import jd.http.Request;
+import jd.http.URLConnectionAdapter;
+import jd.plugins.PluginForHost;
+import net.sf.image4j.codec.ico.ICODecoder;
+
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
@@ -60,14 +68,6 @@ import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.updatev2.gui.LAFOptions;
-
-import jd.captcha.utils.GifDecoder;
-import jd.http.Browser;
-import jd.http.Browser.BrowserException;
-import jd.http.Request;
-import jd.http.URLConnectionAdapter;
-import jd.plugins.PluginForHost;
-import net.sf.image4j.codec.ico.ICODecoder;
 
 public class FavIcons {
     private static final ThreadPoolExecutor                                      THREAD_POOL;
@@ -521,7 +521,7 @@ public class FavIcons {
                 return false;
             } else {
                 final String path = new URL(host).getFile();
-                return path.matches("(?i).+\\.(ico|png|svg)$");
+                return path.matches("(?i).+\\.(ico|png|svg|jpg)$");
             }
         } catch (MalformedURLException e) {
             return false;
@@ -636,11 +636,11 @@ public class FavIcons {
             ret.add(host);
         } else {
             final String requestHtml = favBr.toString().replaceAll("(?s)<!--.*?-->", "");
-            String urls[] = new Regex(requestHtml, "rel\\s*=\\s*('|\")(SHORTCUT |apple-touch-)?ICON('|\")[^>]*href\\s*=\\s*('|\")([^>'\"]*\\.(ico|png|svg)[^>'\"]*)('|\")").getColumn(4);
+            String urls[] = new Regex(requestHtml, "rel\\s*=\\s*('|\")(SHORTCUT |apple-touch-)?ICON('|\")[^>]*href\\s*=\\s*('|\")([^>'\"]*\\.(ico|png|svg|jpg)[^>'\"]*)('|\")").getColumn(4);
             if (urls != null && urls.length > 0) {
                 ret.addAll(Arrays.asList(urls));
             }
-            urls = new Regex(requestHtml, "href\\s*=\\s*('|\")([^>'\"]*\\.(ico|png|svg)[^>'\"]*)('|\")[^>]*rel\\s*=\\s*('|\")(SHORTCUT |apple-touch-)?ICON('|\")").getColumn(1);
+            urls = new Regex(requestHtml, "href\\s*=\\s*('|\")([^>'\"]*\\.(ico|png|svg|jpg)[^>'\"]*)('|\")[^>]*rel\\s*=\\s*('|\")(SHORTCUT |apple-touch-)?ICON('|\")").getColumn(1);
             if (urls != null && urls.length > 0) {
                 ret.addAll(Arrays.asList(urls));
             }
@@ -648,7 +648,7 @@ public class FavIcons {
                 /*
                  * workaround for hoster with not complete url, eg rapidshare.com
                  */
-                String url = new Regex(requestHtml, "rel\\s*=\\s*('|\")(SHORTCUT |apple-touch-)?ICON('|\")[^>]*href\\s*=\\s*[^>]*//([^>'\"]*\\.(ico|png|svg)[^>'\"]*)('|\")").getMatch(3);
+                String url = new Regex(requestHtml, "rel\\s*=\\s*('|\")(SHORTCUT |apple-touch-)?ICON('|\")[^>]*href\\s*=\\s*[^>]*//([^>'\"]*\\.(ico|png|svg|jpg)[^>'\"]*)('|\")").getMatch(3);
                 if (!StringUtils.isEmpty(url) && !url.equalsIgnoreCase(host)) {
                     url = "http://" + url;
                 }

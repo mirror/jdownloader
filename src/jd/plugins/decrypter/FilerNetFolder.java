@@ -19,10 +19,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.ReflectionUtils;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -38,7 +34,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
 import jd.plugins.hoster.FilerNet;
+
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.ReflectionUtils;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 @PluginDependencies(dependencies = { FilerNet.class })
@@ -81,7 +81,8 @@ public class FilerNetFolder extends PluginForDecrypt {
             /* Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        br.getPage(FilerNet.API_BASE + "/folder/" + folderID + ".json");
+        PluginForHost hostPlugin = getNewPluginForHostInstance(getHost());
+        br.getPage(((FilerNet) hostPlugin).getAPI_BASE() + "/folder/" + folderID + ".json");
         Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
         int code = ((Integer) ReflectionUtils.cast(entries.get("code"), Integer.class)).intValue();
         if (code == 506) {

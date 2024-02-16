@@ -20,12 +20,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.ReflectionUtils;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -48,6 +42,12 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.ReflectionUtils;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filer.net" }, urls = { "https?://(?:www\\.)?filer\\.net/(?:app\\.php/)?(?:get|dl)/([a-z0-9]+)" })
 public class FilerNet extends PluginForHost {
     private int                 statusCode                                             = 0;
@@ -61,10 +61,12 @@ public class FilerNet extends PluginForHost {
     private static final String DIRECT_WEB                                             = "directlinkWeb";
     private static final String DIRECT_API                                             = "directlinkApi";
     private static final String SETTING_ENABLE_API_FOR_FREE_AND_FREE_ACCOUNT_DOWNLOADS = "ENABLE_API_FOR_FREE_AND_FREE_ACCOUNT_DOWNLOADS";
-    private static final String SETTING_ENABLE_HTTP                                    = "ENABLE_HTTP";
+    private static final String DISABLE_HTTPS                                          = "DISABLE_HTTPS";
     private static final String SETTING_WAIT_MINUTES_ON_NO_FREE_SLOTS                  = "WAIT_MINUTES_ON_NO_FREE_SLOTS";
     private static final int    defaultSETTING_WAIT_MINUTES_ON_NO_FREE_SLOTS           = 10;
-    public static final String  API_BASE                                               = "http://filer.net/api";
+    // API Docs: https://filer.net/api
+    public static final String  API_BASE                                               = "https://api.filer.net/api";                                      // "https://filer.net/api";
+    public static final String  BASE                                                   = "https://filer.net";                                              // "https://filer.net/api";
 
     @SuppressWarnings("deprecation")
     public FilerNet(PluginWrapper wrapper) {
@@ -113,10 +115,19 @@ public class FilerNet extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public void correctDownloadLink(DownloadLink link) {
-        if (this.getPluginConfig().getBooleanProperty(SETTING_ENABLE_HTTP, false)) {
-            link.setUrlDownload("http://" + this.getHost() + "/get/" + getFileID(link));
+        final String url = rewriteProtocol("https://" + this.getHost() + "/get/" + getFileID(link));
+        link.setUrlDownload(url);
+    }
+
+    public String getAPI_BASE() {
+        return rewriteProtocol(API_BASE);
+    }
+
+    public String rewriteProtocol(String url) {
+        if (this.getPluginConfig().getBooleanProperty(DISABLE_HTTPS, false)) {
+            return url.replaceFirst("^https://", "http://");
         } else {
-            link.setUrlDownload("https://" + this.getHost() + "/get/" + getFileID(link));
+            return url.replaceFirst("^http://", "https://");
         }
     }
 
@@ -156,7 +167,7 @@ public class FilerNet extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        callAPI(null, API_BASE + "/status/" + getFID(link) + ".json");
+        callAPI(null, getAPI_BASE() + "/status/" + getFID(link) + ".json");
         if (statusCode == STATUSCODE_APIDISABLED) {
             link.getLinkStatus().setStatusText(ERRORMESSAGE_APIDISABLEDTEXT);
             return AvailableStatus.UNCHECKABLE;
@@ -197,7 +208,7 @@ public class FilerNet extends PluginForHost {
         }
         String dllink = checkDirectLink(link, DIRECT_API);
         if (dllink == null) {
-            callAPI(null, "http://filer.net/get/" + getFID(link) + ".json");
+            callAPI(null, rewriteProtocol(BASE) + "/get/" + getFID(link) + ".json");
             handleErrorsAPI(account);
             if (statusCode == 203) {
                 // they can repeat this twice
@@ -209,7 +220,7 @@ public class FilerNet extends PluginForHost {
                     }
                     final int wait = getWait();
                     sleep(wait * 1001l + 1000l, link);
-                    callAPI(null, "http://filer.net/get/" + getFID(link) + ".json?token=" + token);
+                    callAPI(null, rewriteProtocol(BASE) + "/get/" + getFID(link) + ".json?token=" + token);
                     // they can make you wait again...
                     handleErrorsAPI(account);
                 } while (statusCode == 203 && ++i <= 2);
@@ -225,7 +236,7 @@ public class FilerNet extends PluginForHost {
                         continue;
                     }
                     br.setFollowRedirects(false);
-                    br.postPage("http://filer.net/get/" + getFID(link) + ".json", "g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response) + "&hash=" + getFID(link));
+                    br.postPage(rewriteProtocol(BASE) + "/get/" + getFID(link) + ".json", "g-recaptcha-response=" + Encoding.urlEncode(recaptchaV2Response) + "&hash=" + getFID(link));
                     dllink = br.getRedirectLocation();
                     if (dllink == null) {
                         updateStatuscode();
@@ -352,7 +363,7 @@ public class FilerNet extends PluginForHost {
             /** Load cookies */
             br.setCookiesExclusive(true);
             br.getHeaders().put("Authorization", "Basic " + Encoding.Base64Encode(account.getUser() + ":" + account.getPass()));
-            callAPI(account, API_BASE + "/profile.json");
+            callAPI(account, getAPI_BASE() + "/profile.json");
         }
     }
 
@@ -457,7 +468,7 @@ public class FilerNet extends PluginForHost {
             handleDownloadErrors();
             br.getHeaders().put("Authorization", "Basic " + Encoding.Base64Encode(account.getUser() + ":" + account.getPass()));
             br.setFollowRedirects(false);
-            callAPI(account, API_BASE + "/dl/" + getFID(link) + ".json");
+            callAPI(account, getAPI_BASE() + "/dl/" + getFID(link) + ".json");
             if (statusCode == 504) {
                 if (StringUtils.isEmpty(statusMessage)) {
                     throw new AccountUnavailableException("Traffic limit reached", 60 * 60 * 1000l);
@@ -640,7 +651,7 @@ public class FilerNet extends PluginForHost {
 
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SETTING_ENABLE_API_FOR_FREE_AND_FREE_ACCOUNT_DOWNLOADS, "Enable API for free- and free account downloads?\r\nBy disabling this you will force JD to use the website instead.\r\nThis could lead to unexpected errors.").setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SETTING_ENABLE_HTTP, "Use HTTP instead of HTTPS").setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), DISABLE_HTTPS, "Use HTTP instead of HTTPS").setDefaultValue(false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SPINNER, getPluginConfig(), SETTING_WAIT_MINUTES_ON_NO_FREE_SLOTS, "Wait minutes on error 'no free slots available'", 1, 600, 1).setDefaultValue(defaultSETTING_WAIT_MINUTES_ON_NO_FREE_SLOTS));
     }
 
