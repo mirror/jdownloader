@@ -272,6 +272,7 @@ public class GenericM3u8Decrypter extends PluginForDecrypt {
 
     @Override
     public boolean hasCaptcha(final CryptedLink link, final Account acc) {
+        /* This is a generic plugin. Captchas are never required. */
         return false;
     }
 

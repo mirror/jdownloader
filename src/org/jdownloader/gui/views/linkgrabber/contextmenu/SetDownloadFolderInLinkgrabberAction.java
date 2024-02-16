@@ -62,7 +62,9 @@ public class SetDownloadFolderInLinkgrabberAction extends SetDownloadFolderActio
     protected CrawledPackage createNewByPrototype(SelectionInfo<CrawledPackage, CrawledLink> si, CrawledPackage entry) {
         final CrawledPackage pkg = new CrawledPackage();
         pkg.setExpanded(CFG_LINKCOLLECTOR.CFG.isPackageAutoExpanded());
-        if (TYPE.NORMAL != entry.getType()) {
+        if (TYPE.NORMAL == entry.getType()) {
+            pkg.setName(entry.getName());
+        } else {
             final String pkgName;
             if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
                 pkgName = LinknameCleaner.cleanPackagenameNew(getSelection().getPackageView(entry).getChildren().get(0).getName(), true);
@@ -70,8 +72,6 @@ public class SetDownloadFolderInLinkgrabberAction extends SetDownloadFolderActio
                 pkgName = LinknameCleaner.cleanPackagename(getSelection().getPackageView(entry).getChildren().get(0).getName(), false, false, LinknameCleaner.EXTENSION_SETTINGS.REMOVE_ALL, true);
             }
             pkg.setName(pkgName);
-        } else {
-            pkg.setName(entry.getName());
         }
         pkg.setComment(entry.getComment());
         return pkg;

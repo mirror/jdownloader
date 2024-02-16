@@ -25,6 +25,8 @@ import java.util.Map;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 
+import org.appwork.storage.JSonMapperException;
+import org.appwork.storage.TypeRef;
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtPasswordField;
 import org.appwork.utils.StringUtils;
@@ -53,15 +55,10 @@ import jd.plugins.components.MultiHosterManagement;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "cocoleech.com" }, urls = { "" })
 public class CocoleechCom extends PluginForHost {
-    private static final String          API_ENDPOINT        = "https://members.cocoleech.com/auth/api";
-    /* Last updated: 2017-02-08 according to admin request. */
-    private static final int             defaultMAXDOWNLOADS = 20;
-    private static final int             defaultMAXCHUNKS    = -4;
-    private static final boolean         defaultRESUME       = true;
-    // private final String apikey = "cdb5efc9c72196c1bd8b7a594b46b44f";
-    private static final String          PROPERTY_DIRECTURL  = "cocoleechcom_directlink";
-    private static final String          PROPERTY_MAXCHUNKS  = "cocoleechcom_maxchunks";
-    private static MultiHosterManagement mhm                 = new MultiHosterManagement("cocoleech.com");
+    private static final String          API_ENDPOINT       = "https://members.cocoleech.com/auth/api";
+    private static final String          PROPERTY_DIRECTURL = "cocoleechcom_directlink";
+    private static final String          PROPERTY_MAXCHUNKS = "cocoleechcom_maxchunks";
+    private static MultiHosterManagement mhm                = new MultiHosterManagement("cocoleech.com");
 
     @SuppressWarnings("deprecation")
     public CocoleechCom(PluginWrapper wrapper) {
@@ -86,6 +83,17 @@ public class CocoleechCom extends PluginForHost {
         br.getHeaders().put("User-Agent", "JDownloader");
         br.setFollowRedirects(true);
         return br;
+    }
+
+    @Override
+    public boolean isResumeable(final DownloadLink link, final Account account) {
+        return true;
+    }
+
+    public int getMaxChunks(final DownloadLink link, final Account account) {
+        /* Last updated: 2017-02-08 according to admin request. */
+        final int maxChunks = link.getIntegerProperty(PROPERTY_MAXCHUNKS, -4);
+        return maxChunks;
     }
 
     @Override
@@ -122,7 +130,7 @@ public class CocoleechCom extends PluginForHost {
         }
         try {
             final Browser brc = br.cloneBrowser();
-            dl = new jd.plugins.BrowserAdapter().openDownload(brc, link, url, defaultRESUME, link.getIntegerProperty(PROPERTY_MAXCHUNKS, defaultMAXCHUNKS));
+            dl = new jd.plugins.BrowserAdapter().openDownload(brc, link, url, this.isResumeable(link, null), this.getMaxChunks(link, null));
             dl.setFilenameFix(true);
             if (this.looksLikeDownloadableContent(dl.getConnection())) {
                 return true;
@@ -150,22 +158,20 @@ public class CocoleechCom extends PluginForHost {
             /* Request creation of downloadlink */
             this.br.getPage(API_ENDPOINT + "?key=" + Encoding.urlEncode(account.getPass()) + "&link=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)));
             handleAPIErrors(this.br, account, link);
-            final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-            String maxchunksStr = null;
+            final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
             final Object chunksO = entries.get("chunks");
             if (chunksO != null) {
-                maxchunksStr = chunksO.toString();
+                final String maxchunksStr = chunksO.toString();
+                if (!StringUtils.isEmpty(maxchunksStr) && maxchunksStr.matches("^\\d+$")) {
+                    final int maxChunks = -Integer.parseInt(maxchunksStr);
+                    link.setProperty(PROPERTY_MAXCHUNKS, maxChunks);
+                }
             }
             final String dllink = (String) entries.get("download");
             if (StringUtils.isEmpty(dllink)) {
                 mhm.handleErrorGeneric(account, link, "Failed to find final downloadurl", 50, 5 * 60 * 1000l);
             }
-            int maxChunks = defaultMAXCHUNKS;
-            if (!StringUtils.isEmpty(maxchunksStr) && maxchunksStr.matches("^\\d+$")) {
-                maxChunks = -Integer.parseInt(maxchunksStr);
-                link.setProperty(PROPERTY_MAXCHUNKS, maxChunks);
-            }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, defaultRESUME, maxChunks);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, this.isResumeable(link, account), this.getMaxChunks(link, account));
             dl.setFilenameFix(true);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 br.followConnection(true);
@@ -185,7 +191,7 @@ public class CocoleechCom extends PluginForHost {
         prepBR(this.br);
         final AccountInfo ai = new AccountInfo();
         login(account);
-        Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         /*
          * 2021-11-29: Users enter API key only from now on --> Try to find username in API answer and set it so accounts in JD still have
          * unique username strings!
@@ -202,7 +208,7 @@ public class CocoleechCom extends PluginForHost {
             timestampValiduntil = TimeFormatter.getMilliSeconds(validuntil, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH);
         }
         if ("premium".equalsIgnoreCase(accounttype) && timestampValiduntil > System.currentTimeMillis()) {
-            ai.setValidUntil(timestampValiduntil);
+            ai.setValidUntil(timestampValiduntil, br);
             account.setType(AccountType.PREMIUM);
             account.setConcurrentUsePossible(true);
             /*
@@ -229,9 +235,9 @@ public class CocoleechCom extends PluginForHost {
             ai.setStatus(accountPackage);
         }
         this.br.getPage(API_ENDPOINT + "/hosts-status");
-        ArrayList<String> supportedhostslist = new ArrayList();
-        entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-        final List<Map<String, Object>> hosters = (List<Map<String, Object>>) entries.get("result");
+        final Map<String, Object> hoststatusmap = JavaScriptEngineFactory.jsonToJavaMap(br.getRequest().getHtmlCode());
+        final ArrayList<String> supportedhostslist = new ArrayList();
+        final List<Map<String, Object>> hosters = (List<Map<String, Object>>) hoststatusmap.get("result");
         for (final Map<String, Object> hostinfo : hosters) {
             String host = (String) hostinfo.get("host");
             final String status = (String) hostinfo.get("status");
@@ -262,7 +268,19 @@ public class CocoleechCom extends PluginForHost {
     }
 
     private void handleAPIErrors(final Browser br, final Account account, final DownloadLink link) throws Exception {
-        final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        Map<String, Object> entries = null;
+        try {
+            entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+        } catch (final JSonMapperException ignore) {
+            /* This should never happen. */
+            final String msg = "Invalid API response";
+            final long wait = 1 * 60 * 1000;
+            if (link != null) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, msg, wait);
+            } else {
+                throw new AccountUnavailableException(msg, wait);
+            }
+        }
         /**
          * 2021-09-10: "status" is independent from e.g. {"status":"100","message":"Incorrect log-in or password."} </br>
          * {"status":"100","message":"Your IP is blocked for today. Please contact support."}
@@ -272,11 +290,10 @@ public class CocoleechCom extends PluginForHost {
             if (statusmsg.equalsIgnoreCase("Incorrect log-in or password.")) {
                 throw new AccountInvalidException(statusmsg);
             } else if (statusmsg.equalsIgnoreCase("Incorrect API key.")) {
-                String errormsg = statusmsg + "\r\n Find your API Key here: members.cocoleech.com/settings";
+                String errormsg = statusmsg + "\r\nFind your API Key here: members.cocoleech.com/settings";
                 errormsg += "\r\nIf you're using myjdownloader, enter your API Key into both the username and password fields.";
                 throw new AccountInvalidException(errormsg);
             } else if (statusmsg.equalsIgnoreCase("Premium membership expired.")) {
-                account.getAccountInfo().setExpired(true);
                 throw new AccountUnavailableException(statusmsg, 5 * 60 * 1000l);
             } else if (statusmsg.equalsIgnoreCase("Your IP is blocked for today. Please contact support.")) {
                 /* Put all account temp. unavailable errors here. */
@@ -295,7 +312,7 @@ public class CocoleechCom extends PluginForHost {
     @Override
     public int getMaxSimultanDownload(final DownloadLink link, final Account account) {
         if (account != null) {
-            return defaultMAXDOWNLOADS;
+            return Integer.MAX_VALUE;
         } else {
             return 0;
         }

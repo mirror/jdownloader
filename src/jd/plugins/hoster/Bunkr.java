@@ -372,6 +372,24 @@ public class Bunkr extends PluginForHost {
             filenameFromHTML = Encoding.htmlDecode(filenameFromHTML).trim();
             filenameFromHTML = filenameFromHTML.replaceAll("(?i)\\s*\\|\\s*Bunkr\\s*", "");
         }
+        if (filenameFromHTML != null) {
+            /* Unsafe name */
+            setFilename(link, filenameFromHTML, false, false);
+        }
+        String filesize = br.getRegex("Download\\s*(\\d+[^<]+)</a>").getMatch(0);
+        if (filesize == null) {
+            filesize = br.getRegex("class=\"[^>]*text[^>]*\"[^>]*>\\s*([0-9\\.]+\\s+[MKG]B)").getMatch(0);
+        }
+        if (filesize != null) {
+            final long parsedFilesize = SizeFormatter.getSize(filesize);
+            link.setDownloadSize(parsedFilesize);
+            link.setProperty(PROPERTY_PARSED_FILESIZE, parsedFilesize);
+        }
+        /* 2024-02-16: New: Additional step required */
+        final String nextStepURL = br.getRegex("(https?://get\\.[^/]+/file/\\d+)").getMatch(0);
+        if (nextStepURL != null) {
+            br.getPage(nextStepURL);
+        }
         String directurl = br.getRegex("(?i)href\\s*=\\s*\"(https?://[^\"]+)[^>]*>\\s*Download").getMatch(0);
         if (directurl == null) {
             /* Video stream (For "/v/ URLs."URL is usually the same as downloadurl.) */
@@ -380,15 +398,16 @@ public class Bunkr extends PluginForHost {
                 /* Video stream (URL is usually the same as downloadurl) */
                 directurl = br.getRegex("<source src\\s*=\\s*\"(https?://[^\"]+)\"[^>]*type=.video/mp4").getMatch(0);
                 if (directurl == null) {
-                    String directurlForFileWithoutExtOrUnknownExt = null;
+                    String unsafeDirecturlResultForFileWithoutExtOrUnknownExt = null;
                     String unsafeDirecturlResult = null;
                     final String[] urls = HTMLParser.getHttpLinks(br.getRequest().getHtmlCode(), br.getURL());
                     for (final String url : urls) {
                         if (url.matches(BunkrAlbum.TYPE_MEDIA_FILES_WITH_EXT) || url.matches(BunkrAlbum.TYPE_CDN_WITH_EXT)) {
+                            /* Safe result */
                             directurl = url;
                             break;
                         } else if (url.matches(BunkrAlbum.TYPE_MEDIA_FILES_WITHOUT_EXT) || new Regex(url, BunkrAlbum.PATTERN_CDN_WITHOUT_EXT).patternFind()) {
-                            directurlForFileWithoutExtOrUnknownExt = url;
+                            unsafeDirecturlResultForFileWithoutExtOrUnknownExt = url;
                         } else if (StringUtils.containsIgnoreCase(url, "download=true")) {
                             /* Image URLs: bunkr.bla/i/... */
                             directurl = url;
@@ -397,13 +416,13 @@ public class Bunkr extends PluginForHost {
                             unsafeDirecturlResult = url;
                         }
                     }
-                    if (directurl == null && directurlForFileWithoutExtOrUnknownExt != null) {
-                        /* File without extension or extension we don't know. */
-                        directurl = directurlForFileWithoutExtOrUnknownExt;
-                    }
                     if (directurl == null && unsafeDirecturlResult != null) {
                         logger.info("Using unsafeDirecturlResult as directurl");
                         directurl = unsafeDirecturlResult;
+                    } else if (directurl == null && unsafeDirecturlResultForFileWithoutExtOrUnknownExt != null) {
+                        /* File without extension or extension we don't know. */
+                        logger.info("Using unsafeDirecturlResultForFileWithoutExtOrUnknownExt as directurl");
+                        directurl = unsafeDirecturlResultForFileWithoutExtOrUnknownExt;
                     }
                 }
                 /* Last chance */
@@ -419,19 +438,6 @@ public class Bunkr extends PluginForHost {
                     }
                 }
             }
-        }
-        String filesize = br.getRegex("Download\\s*(\\d+[^<]+)</a>").getMatch(0);
-        if (filesize == null) {
-            filesize = br.getRegex("class=\"[^>]*text[^>]*\"[^>]*>\\s*([0-9\\.]+\\s+[MKG]B)").getMatch(0);
-        }
-        if (filesize != null) {
-            final long parsedFilesize = SizeFormatter.getSize(filesize);
-            link.setDownloadSize(parsedFilesize);
-            link.setProperty(PROPERTY_PARSED_FILESIZE, parsedFilesize);
-        }
-        if (filenameFromHTML != null) {
-            /* Unsafe name */
-            setFilename(link, filenameFromHTML, false, false);
         }
         if (directurl == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

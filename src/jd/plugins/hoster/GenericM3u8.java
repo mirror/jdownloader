@@ -19,6 +19,16 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.ffmpeg.json.Stream;
+import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.plugins.components.config.GenericM3u8DecrypterConfig;
+import org.jdownloader.plugins.components.hls.HlsContainer.StreamCodec;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -30,16 +40,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.ffmpeg.json.Stream;
-import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.downloader.hls.M3U8Playlist;
-import org.jdownloader.plugins.components.config.GenericM3u8DecrypterConfig;
-import org.jdownloader.plugins.components.hls.HlsContainer.StreamCodec;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "M3u8" }, urls = { "m3u8s?://.+" })
 public class GenericM3u8 extends PluginForHost {
@@ -96,9 +96,17 @@ public class GenericM3u8 extends PluginForHost {
 
     @Override
     public void correctDownloadLink(final DownloadLink link) throws Exception {
+        final String newurl = getContentURL(link);
+        if (!link.getPluginPatternMatcher().equals(newurl)) {
+            link.setPluginPatternMatcher(newurl);
+        }
+    }
+
+    private String getContentURL(final DownloadLink link) {
         if (link.getPluginPatternMatcher().startsWith("m3u8")) {
-            final String url = "http" + link.getPluginPatternMatcher().substring(4);
-            link.setPluginPatternMatcher(url);
+            return "http" + link.getPluginPatternMatcher().substring(4);
+        } else {
+            return link.getPluginPatternMatcher();
         }
     }
 
@@ -110,7 +118,7 @@ public class GenericM3u8 extends PluginForHost {
         checkFFProbe(link, "Check a HLS Stream");
         this.setBrowserExclusive();
         final String cookiesString = link.getStringProperty("cookies");
-        final String downloadurl = link.getPluginPatternMatcher();
+        final String downloadurl = getContentURL(link);
         if (cookiesString != null) {
             final String host = Browser.getHost(downloadurl);
             br.setCookies(host, Cookies.parseCookies(cookiesString, host, null));
@@ -181,19 +189,20 @@ public class GenericM3u8 extends PluginForHost {
     public static void setFilename(Plugin plugin, final DownloadLink link, final boolean setFinalFilename) throws MalformedURLException {
         if (link.getFinalFileName() != null) {
             /**
-             * No not modify filename once final name has been set. </br> This e.g. allows other plugins/crawlers to set desired filenames
-             * telling this plugin not to use the default filenames down below.
+             * No not modify filename once final name has been set. </br>
+             * This e.g. allows other plugins/crawlers to set desired filenames telling this plugin not to use the default filenames down
+             * below.
              */
             return;
         }
         final int videoHeight = link.getIntegerProperty(PROPERTY_HEIGHT, 0);
         final int bandwidth = link.getIntegerProperty(PROPERTY_BANDWIDTH, 0);
-        String name = link.getStringProperty(PRESET_NAME_PROPERTY, link.getStringProperty(DEPRECATED_NAME_PROPERTY));
+        /* 2024-02-16: Do not touch this "DEPRECATED_NAME_PROPERTY" handling for now! */
+        String name = link.getStringProperty(PRESET_NAME_PROPERTY, DEPRECATED_NAME_PROPERTY);
         if (name == null) {
-            name = link.isNameSet() ? link.getName() : getFileNameFromURL(new URL(link.getPluginPatternMatcher().replaceFirst("^m3u8s?", "https://")));
+            name = link.isNameSet() ? link.getName() : getFileNameFromURL(new URL(link.getPluginPatternMatcher().replaceFirst("(?i)^m3u8s?", "https://")));
             /* .m3u8 is not a valid file extension and we don't want to have this in our filename */
             name = name.replaceFirst("(?i)\\.m3u8$", "");
-            name = plugin.correctOrApplyFileNameExtension(name, ".dummy").replaceFirst("\\.dummy$", "");
             /* store name as property to avoid name duplication issue */
             link.setProperty(DEPRECATED_NAME_PROPERTY, name);
         }
