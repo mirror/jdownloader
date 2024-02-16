@@ -676,43 +676,36 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
                 brc.setFollowRedirects(true);
                 brc.setAllowedResponseCodes(new int[] { 405 });
                 // In case the link redirects to the finallink -
-                // br.getHeaders().put("Accept-Encoding", "identity");
+                // brc.getHeaders().put("Accept-Encoding", "identity");
                 con = openAntiDDoSRequestConnection(brc, brc.createHeadRequest(dllink));
                 final String workaroundURL = getHttpServerErrorWorkaroundURL(con);
-                if (workaroundURL != null) {
+                if (workaroundURL != null && !this.looksLikeDownloadableContent(con)) {
                     con.disconnect();
                     con = openAntiDDoSRequestConnection(brc, brc.createGetRequest(workaroundURL));
                 }
-                if (this.looksLikeDownloadableContent(con)) {
-                    if (con.getCompleteContentLength() > 0) {
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                this.handleConnectionErrors(brc, con);
+                if (con.getCompleteContentLength() > 0) {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                }
+                this.dllink = con.getRequest().getUrl();
+                logger.info("dllink: " + dllink);
+                /* Save directurl for later usage */
+                link.setProperty(PROPERTY_DIRECTURL, this.dllink);
+                if (StringUtils.isEmpty(title)) {
+                    /* Fallback - attempt to find final filename */
+                    final String contentDispositionFilename = Plugin.getFileNameFromDispositionHeader(con);
+                    final String filenameFromFinalDownloadurl;
+                    if (!StringUtils.isEmpty(contentDispositionFilename)) {
+                        logger.info("Using final filename from content-disposition header: " + contentDispositionFilename);
+                        title = contentDispositionFilename;
+                        link.setFinalFileName(title);
+                    } else if (!StringUtils.isEmpty(filenameFromFinalDownloadurl = Plugin.getFileNameFromURL(con.getURL()))) {
+                        logger.info("Using final filename from inside final downloadurl: " + filenameFromFinalDownloadurl);
+                        title = filenameFromFinalDownloadurl;
+                        link.setFinalFileName(title);
+                    } else {
+                        logger.warning("Failed to find any final filename so far");
                     }
-                    this.dllink = con.getRequest().getUrl();
-                    logger.info("dllink: " + dllink);
-                    /* Save directurl for later usage */
-                    link.setProperty(PROPERTY_DIRECTURL, this.dllink);
-                    if (StringUtils.isEmpty(title)) {
-                        /* Fallback - attempt to find final filename */
-                        final String headerFilename = Plugin.getFileNameFromHeader(con);
-                        final String filenameFromFinalDownloadurl = Plugin.getFileNameFromURL(con.getURL());
-                        if (!StringUtils.isEmpty(headerFilename)) {
-                            logger.info("Using final filename from content-disposition header: " + headerFilename);
-                            title = headerFilename;
-                            link.setFinalFileName(title);
-                        } else if (!StringUtils.isEmpty(filenameFromFinalDownloadurl)) {
-                            logger.info("Using final filename from inside final downloadurl: " + filenameFromFinalDownloadurl);
-                            title = filenameFromFinalDownloadurl;
-                            link.setFinalFileName(title);
-                        } else {
-                            logger.warning("Failed to find any final filename so far");
-                        }
-                    }
-                } else {
-                    brc.followConnection(true);
-                    if (br.getHttpConnection().getResponseCode() == 429) {
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Error 429 too many requests", 1 * 60 * 1000l);
-                    }
-                    exceptionNoFile();
                 }
             } finally {
                 try {
@@ -837,13 +830,9 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
                 URLConnectionAdapter con = null;
                 try {
                     con = openAntiDDoSRequestConnection(br, br.createHeadRequest(dllink));
-                    if (!this.looksLikeDownloadableContent(con)) {
-                        /* Dead end */
-                        exceptionNoFile();
-                    } else {
-                        if (con.getCompleteContentLength() > 0) {
-                            link.setVerifiedFileSize(con.getCompleteContentLength());
-                        }
+                    this.handleConnectionErrors(br, con);
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
                     }
                 } finally {
                     try {
@@ -1036,11 +1025,7 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
                     final Browser brc = br.cloneBrowser();
                     /* Access hls master */
                     getPage(brc, this.dllink);
-                    if (brc.getHttpConnection().getResponseCode() == 403) {
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-                    } else if (brc.getHttpConnection().getResponseCode() == 404) {
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-                    }
+                    handleConnectionErrors(brc, brc.getHttpConnection());
                     final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(brc));
                     if (hlsbest == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -1054,24 +1039,12 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
                     final boolean isResumeable = isResumeable(link, account);
                     dl = new jd.plugins.BrowserAdapter().openDownload(br, link, this.dllink, isResumeable, maxChunks);
                     final String workaroundURL = getHttpServerErrorWorkaroundURL(dl.getConnection());
-                    if (workaroundURL != null) {
+                    if (workaroundURL != null && !this.looksLikeDownloadableContent(dl.getConnection())) {
                         dl.getConnection().disconnect();
                         dl = new jd.plugins.BrowserAdapter().openDownload(br, link, workaroundURL, isResumeable, maxChunks);
                     }
-                    if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-                        br.followConnection(true);
-                        if (dl.getConnection().getResponseCode() == 403) {
-                            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-                        } else if (dl.getConnection().getResponseCode() == 404) {
-                            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-                        } else if (dl.getConnection().getResponseCode() == 503) {
-                            /* Should only happen in rare cases */
-                            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error 503 connection limit reached", 5 * 60 * 1000l);
-                        } else {
-                            exceptionNoFile();
-                        }
-                    }
-                    link.setProperty(PROPERTY_DIRECTURL, dl.getConnection().getURL().toString());
+                    handleConnectionErrors(br, dl.getConnection());
+                    link.setProperty(PROPERTY_DIRECTURL, dl.getConnection().getURL().toExternalForm());
                 }
             } catch (final Exception e) {
                 throw e;
@@ -1082,6 +1055,35 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
         dl.startDownload();
     }
 
+    @Override
+    protected boolean looksLikeDownloadableContent(final URLConnectionAdapter urlConnection) {
+        final String contentType = urlConnection.getContentType();
+        if (contentType != null && contentType.equalsIgnoreCase("application/vnd.apple.mpegurl")) {
+            /* HLS download */
+            return true;
+        } else {
+            return super.looksLikeDownloadableContent(urlConnection);
+        }
+    }
+
+    private void handleConnectionErrors(final Browser br, final URLConnectionAdapter con) throws PluginException, IOException {
+        if (!this.looksLikeDownloadableContent(con)) {
+            br.followConnection(true);
+            if (con.getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+            } else if (con.getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            } else if (con.getResponseCode() == 429) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Error 429 too many requests", 1 * 60 * 1000l);
+            } else if (con.getResponseCode() == 503) {
+                /* Should only happen in rare cases */
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error 503 connection limit reached", 5 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Final downloadurl did not lead to file");
+            }
+        }
+    }
+
     private boolean attemptStoredDownloadurlDownload(final DownloadLink link, final Account account) throws Exception {
         final String url = link.getStringProperty(PROPERTY_DIRECTURL);
         if (StringUtils.isEmpty(url)) {
@@ -1089,14 +1091,11 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
         }
         boolean valid = false;
         try {
-            final Browser brc = br.cloneBrowser();
-            dl = new jd.plugins.BrowserAdapter().openDownload(brc, link, url, this.isResumeable(link, account), this.getMaxChunks(account));
-            if (this.looksLikeDownloadableContent(dl.getConnection())) {
-                valid = true;
-                return true;
-            } else if (StringUtils.equalsIgnoreCase(dl.getConnection().getContentType(), "application/vnd.apple.mpegurl")) {
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, url, this.isResumeable(link, account), this.getMaxChunks(account));
+            this.handleConnectionErrors(br, dl.getConnection());
+            valid = true;
+            if (StringUtils.equalsIgnoreCase(dl.getConnection().getContentType(), "application/vnd.apple.mpegurl")) {
                 /* HLS download */
-                valid = true;
                 try {
                     dl.getConnection().disconnect();
                 } catch (final Throwable ignore) {
@@ -1104,8 +1103,7 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
                 dl = new HLSDownloader(link, br, url);
                 return true;
             } else {
-                brc.followConnection(true);
-                throw new IOException();
+                return true;
             }
         } catch (final Throwable e) {
             logger.log(e);
@@ -1121,16 +1119,12 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
         }
     }
 
-    protected void exceptionNoFile() throws PluginException {
-        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Final downloadurl did not lead to file");
-    }
-
     public static String getHttpServerErrorWorkaroundURL(final URLConnectionAdapter con) {
         /* 2020-11-03: TODO: Check if this is still needed. */
-        if (con.getResponseCode() == 403 || con.getResponseCode() == 404 || con.getResponseCode() == 405) {
+        if (con.getResponseCode() == 403 || con.getResponseCode() == 404 || con.getResponseCode() == 405 || con.getResponseCode() == 410) {
             /*
              * Small workaround for buggy servers that redirect and fail if the Referer is wrong then or Cloudflare cookies were missing on
-             * first attempt Examples: hdzog.com (404)
+             * first attempt Examples: hdzog.com (404), xozilla.xxx (410)
              */
             return con.getRequest().getUrl();
         } else {

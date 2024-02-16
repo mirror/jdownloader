@@ -19,8 +19,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.ReflectionUtils;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -37,14 +41,19 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.hoster.FilerNet;
 
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.ReflectionUtils;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 @PluginDependencies(dependencies = { FilerNet.class })
 public class FilerNetFolder extends PluginForDecrypt {
     public FilerNetFolder(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.setFollowRedirects(true);
+        br.getHeaders().put("User-Agent", "JDownloader");
+        return br;
     }
 
     public static List<String[]> getPluginDomains() {
@@ -74,16 +83,14 @@ public class FilerNetFolder extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        br.setFollowRedirects(false);
-        br.getHeaders().put("User-Agent", "JDownloader");
         final String folderID = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
         if (folderID == null) {
             /* Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        PluginForHost hostPlugin = getNewPluginForHostInstance(getHost());
+        final PluginForHost hostPlugin = getNewPluginForHostInstance(getHost());
         br.getPage(((FilerNet) hostPlugin).getAPI_BASE() + "/folder/" + folderID + ".json");
-        Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
+        Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         int code = ((Integer) ReflectionUtils.cast(entries.get("code"), Integer.class)).intValue();
         if (code == 506) {
             /* Offline folder */
@@ -94,7 +101,7 @@ public class FilerNetFolder extends PluginForDecrypt {
             for (int i = 1; i <= 3; i++) {
                 final String passCode = getUserInput("Password?", param);
                 br.getPage("/api/folder/" + folderID + ".json?password=" + Encoding.urlEncode(passCode));
-                entries = restoreFromString(br.toString(), TypeRef.MAP);
+                entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
                 code = ((Integer) ReflectionUtils.cast(entries.get("code"), Integer.class)).intValue();
                 if (code == 201) {
                     logger.info("Wrong password: " + passCode);
