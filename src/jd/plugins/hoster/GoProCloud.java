@@ -17,27 +17,24 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.security.PublicKey;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.WeakHashMap;
 
-import javax.crypto.Cipher;
-
 import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.storage.flexijson.FlexiJSONParser;
 import org.appwork.storage.flexijson.FlexiJSonNode;
 import org.appwork.storage.flexijson.FlexiParserException;
+import org.appwork.storage.flexijson.JSPath;
 import org.appwork.storage.flexijson.mapper.FlexiJSonMapper;
 import org.appwork.storage.flexijson.mapper.FlexiMapperException;
 import org.appwork.utils.Files;
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.crypto.AWSign;
-import org.appwork.utils.encoding.Base64;
-import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.Time;
 import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.controlling.linkcrawler.LinkVariant;
@@ -47,6 +44,7 @@ import org.jdownloader.plugins.controller.host.PluginFinder;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
+import jd.controlling.accountchecker.AccountCheckerThread;
 import jd.http.Browser;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
@@ -75,10 +73,14 @@ import jd.plugins.decrypter.GoProCloudDecrypter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "gopro.com" }, urls = { GoProCloud.HTTPS_GOPRO_COM_DOWNLOAD_PREMIUM_FREE })
 public class GoProCloud extends PluginForHost/* implements MenuExtenderHandler */ {
-    public static final String MEDIA                                 = "media";
-    public static final String MEDIA_DOWNLOAD                        = "media/download";
-    public static final String HTTPS_GOPRO_COM_DOWNLOAD_PREMIUM_FREE = "https?://gopro\\.com/download(?:premium|free)/([^/]+)/([^/]+)";
-    public static final String ACCESS_TOKEN                          = "accessToken";
+    private static final String HTTPS_API_GOPRO_COM_V1_OAUTH2_TOKEN   = "https://api.gopro.com/v1/oauth2/token";
+    private static final String CLIENT_SECRET                         = "3863c9b438c07b82f39ab3eeeef9c24fefa50c6856253e3f1d37e0e3b1ead68d";
+    private static final String CLIENT_ID                             = "71611e67ea968cfacf45e2b6936c81156fcf5dbe553a2bf2d342da1562d05f46";
+    public static final String  EXPIRES_TIME                          = "expiresTime";
+    public static final String  MEDIA                                 = "media";
+    public static final String  MEDIA_DOWNLOAD                        = "media/download";
+    public static final String  HTTPS_GOPRO_COM_DOWNLOAD_PREMIUM_FREE = "https?://gopro\\.com/download(?:premium|free)/([^/]+)/([^/]+)";
+    public static final String  ACCESS_JSON                           = "accessJson";
 
     public GoProCloud(PluginWrapper wrapper) {
         super(wrapper);
@@ -136,90 +138,79 @@ public class GoProCloud extends PluginForHost/* implements MenuExtenderHandler *
         }
         synchronized (account) {
             try {
-                String accessToken = account.getStringProperty(ACCESS_TOKEN, null);
-                if (StringUtils.isEmpty(accessToken)) {
-                    br.clearAll();
-                    br.getPage("https://gopro.com/login");
-                    final Map<String, Object> loginData = new HashMap<String, Object>();
-                    final String publicKeyPem = br.getRegex("\"pwPublicKey\"\\s*:\\s*\"([^\"]+)").getMatch(0);
-                    try {
-                        String base64Encoded = publicKeyPem;
-                        base64Encoded = base64Encoded.replaceAll("(?i)^\\s*[\\-]*BEGIN\\s*(RSA\\s*)?PUBLIC\\s*KEY[\\-]*\\s*", "");
-                        base64Encoded = base64Encoded.replaceAll("(?i)\\s*[\\-]*END\\s*(RSA\\s*)?PUBLIC\\s*KEY[\\-]*\\s*$", "");
-                        base64Encoded = base64Encoded.replaceAll("\\s+", "");
-                        final PublicKey pub = AWSign.getPublicKey(base64Encoded);
-                        final Cipher cipher = Cipher.getInstance("RSA");
-                        cipher.init(Cipher.ENCRYPT_MODE, pub);
-                        final String encryptedPassword = Base64.encodeToString(cipher.doFinal((account.getPass()).getBytes("UTF-8")));
-                        loginData.put("password", encryptedPassword);
-                    } catch (Exception e) {
-                        logger.log(e);
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, null, e);
-                    }
-                    loginData.put("email", account.getUser());
-                    loginData.put("twoFactor", "");
-                    loginData.put("redirectUri", "");
-                    Map<String, Object> response = null;
-                    loginLoop: while (!isAbort()) {
-                        final PostRequest loginRequest = br.createJSonPostRequest("https://gopro.com/login/api/login", loginData);
-                        br.getPage(loginRequest);
-                        response = restoreFromString(br.toString(), TypeRef.MAP);
-                        final List<Map<String, Object>> errors = (List<Map<String, Object>>) response.get("_errors");
-                        if (errors != null && errors.size() > 0) {
-                            for (final Map<String, Object> error : errors) {
-                                final Number code = (Number) error.get("code");
-                                switch (code.intValue()) {
-                                case 401:
-                                    // {"_errors":[{"code":401,"description":"Invalid username/password combination."}],"statusCode":401}
-                                case 4009: // since 12.02.2024
-                                    // {code=4009, id=, description=The provided resource owner credentials are not valid, or resource owner
-                                    // cannot be found}
-                                    throw new AccountInvalidException("Invalid username/password combination");
-                                case 4014:
-                                    // {"_errors":[{"code":4014,"id":"","description":"Invalid Two-Factor Authentication Code. Please try
-                                    // again or request a new code"}],"statusCode":401}
-                                    logger.info("2FA code required");
-                                    final Browser brc = br.cloneBrowser();
-                                    brc.getPage("https://gopro.com/login/api/code?email=" + URLEncode.encodeURIComponent(account.getUser()));
-                                    // final Map<String, Object> twoFACodeRequestResponse = restoreFromString(brc.toString(), TypeRef.MAP);
-                                    // final Number statusCode = (Number) twoFACodeRequestResponse.get("statusCode");
-                                    if (brc.getHttpConnection().getResponseCode() != 200) {
-                                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                                    }
-                                    final DownloadLink dl_dummy;
-                                    if (this.getDownloadLink() != null) {
-                                        dl_dummy = this.getDownloadLink();
-                                    } else {
-                                        dl_dummy = new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true);
-                                    }
-                                    String twoFACode = getUserInput("Enter GoPro 2-Factor SMS authentication code", dl_dummy);
-                                    if (twoFACode != null) {
-                                        twoFACode = twoFACode.trim();
-                                    }
-                                    if (twoFACode == null || !twoFACode.matches("\\d{6}")) {
-                                        throw new AccountInvalidException("Invalid 2-factor-authentication code format (must be 6 digits) !");
-                                    }
-                                    loginData.put("twoFactor", twoFACode);
-                                    continue loginLoop;
-                                default:
-                                    throw new AccountInvalidException("Unexpected Error: " + error.get("description"));
-                                }
-                            }
-                            throw new AccountInvalidException();
-                        }
-                        break;
-                    }
-                    accessToken = response != null ? (String) response.get("access_token") : null;
-                    if (StringUtils.isEmpty(accessToken)) {
-                        throw new AccountInvalidException();
+                String accessJson = account.getStringProperty(ACCESS_JSON, null);
+                String token = null;
+                Map<String, Object> tokenMap = null;
+                if (StringUtils.isNotEmpty(accessJson)) {
+                    tokenMap = restoreFromString(accessJson, TypeRef.MAP);
+                    token = (String) tokenMap.get("access_token");
+                    long expiresTime = ((Number) tokenMap.get(EXPIRES_TIME)).longValue();
+                    if (expiresTime - Time.now() < 10 * 60000) {
+                        // refresh required;
+                        accessJson = null;
+                        token = null;
                     }
                 }
-                account.setProperty(ACCESS_TOKEN, accessToken);
-                br.getHeaders().put(HTTPConstants.HEADER_REQUEST_AUTHORIZATION, "Bearer " + accessToken);
-                return accessToken;
+                if (Thread.currentThread() instanceof AccountCheckerThread) {
+                    if (token != null && tokenMap != null) {
+                        Browser clone = br.cloneBrowser();
+                        clone.getHeaders().put(HTTPConstants.HEADER_REQUEST_AUTHORIZATION, "Bearer " + token);
+                        clone.getPage("https://api.gopro.com/v1/users/" + tokenMap.get("resource_owner_id") + "/identities");
+                        if (clone.getRequest().getHttpConnection().getResponseCode() != 200) {
+                            // refresh required;
+                            accessJson = null;
+                            token = null;
+                        }
+                    }
+                }
+                if (StringUtils.isEmpty(accessJson)) {
+                    Map<String, Object> d = new HashMap<String, Object>();
+                    if (tokenMap != null && tokenMap.get("refresh_token") != null) {
+                        // try to refresh
+                        d.put("grant_type", "refresh_token");
+                        d.put("client_id", CLIENT_ID);
+                        d.put("client_secret", CLIENT_SECRET);
+                        d.put("refresh_token", tokenMap.get("refresh_token"));
+                        PostRequest r = br.createJSonPostRequest(HTTPS_API_GOPRO_COM_V1_OAUTH2_TOKEN, d);
+                        br.getPage(r);
+                        tokenMap = restoreFromString(br.toString(), TypeRef.MAP);
+                    }
+                    if (tokenMap == null || tokenMap.get("access_token") == null) {
+                        // try to re-login
+                        d = new HashMap<String, Object>();
+                        d.put("grant_type", "password");
+                        d.put("client_id", CLIENT_ID);
+                        d.put("client_secret", CLIENT_SECRET);
+                        d.put("scope", "root root:channels public me upload media_library_beta live");
+                        d.put("username", account.getUser());
+                        d.put("password", account.getPass());
+                        PostRequest r = br.createJSonPostRequest(HTTPS_API_GOPRO_COM_V1_OAUTH2_TOKEN, d);
+                        br.getPage(r);
+                        tokenMap = restoreFromString(br.toString(), TypeRef.MAP);
+                        if (br.getHttpConnection().getResponseCode() == 401) {
+                            throw new AccountInvalidException();
+                        }
+                    }
+                    if (tokenMap == null || StringUtils.isEmpty((String) tokenMap.get("access_token"))) {
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                    }
+                    long expires_in = ((Number) tokenMap.get("expires_in")).longValue();
+                    tokenMap.put(EXPIRES_TIME, Time.now() + expires_in * 1000);
+                    // String accessToken = tokenMap != null ? (String) tokenMap.get("access_token") : null;
+                    // if (StringUtils.isEmpty(accessToken)) {
+                    // throw new AccountInvalidException();
+                    // }
+                    account.setProperty(ACCESS_JSON, JSonStorage.serializeToJson(tokenMap));
+                }
+                if (tokenMap == null || StringUtils.isEmpty((String) tokenMap.get("access_token"))) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                token = (String) tokenMap.get("access_token");
+                br.getHeaders().put(HTTPConstants.HEADER_REQUEST_AUTHORIZATION, "Bearer " + token);
+                return token;
             } catch (PluginException e) {
                 if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
-                    account.removeProperty(ACCESS_TOKEN);
+                    account.removeProperty(ACCESS_JSON);
                 }
                 throw e;
             }
@@ -324,7 +315,7 @@ public class GoProCloud extends PluginForHost/* implements MenuExtenderHandler *
                 } catch (NumberFormatException e) {
                 }
             }
-            if (source == null) {
+            if (source == null && resp.getEmbedded() != null) {
                 for (Variation v : resp.getEmbedded().getVariations()) {
                     if ("source".equals(variant) && "concat".equals(v.getLabel())) {
                         // do not scan downscaled variants
@@ -342,7 +333,7 @@ public class GoProCloud extends PluginForHost/* implements MenuExtenderHandler *
                     }
                 }
             }
-            if (source == null) {
+            if (source == null && resp.getEmbedded() != null) {
                 for (Variation v : resp.getEmbedded().getSidecar_files()) {
                     if (variant.equals(v.getLabel())) {
                         source = v;
@@ -541,23 +532,24 @@ public class GoProCloud extends PluginForHost/* implements MenuExtenderHandler *
     }
 
     public static Request doAPIRequest(Plugin plugin, Account account, Browser br, final String url) throws Exception {
-        final String usedAccessToken = account != null ? account.getStringProperty(ACCESS_TOKEN, null) : null;
         Request request = br.createGetRequest(url);
+        br.setAllowedResponseCodes(401, 500);
         request.getHeaders().put(HTTPConstants.HEADER_REQUEST_ACCEPT, "application/vnd.gopro.jk.media+json; version=2.0.0");
         br.getPage(request);
-        if (br.getHttpConnection().getResponseCode() == 401 && account != null) {
-            synchronized (account) {
-                if (StringUtils.equals(usedAccessToken, account.getStringProperty(ACCESS_TOKEN, null))) {
-                    account.removeProperty(ACCESS_TOKEN);
-                }
-                if (plugin instanceof GoProCloud) {
-                    ((GoProCloud) plugin).login(br, account);
-                    request = request.cloneRequest();
-                    br.getPage(request);
-                } else if (plugin instanceof GoProCloudDecrypter) {
-                    ((GoProCloudDecrypter) plugin).login(br, account);
-                    request = request.cloneRequest();
-                    br.getPage(request);
+        // 15.02.24: bad access token: Api response with 500 internal server error
+        if (account != null) {
+            if (br.getHttpConnection().getResponseCode() == 401 || br.getHttpConnection().getResponseCode() == 500) {
+                synchronized (account) {
+                    account.removeProperty(ACCESS_JSON);
+                    if (plugin instanceof GoProCloud) {
+                        ((GoProCloud) plugin).login(br, account);
+                        request = request.cloneRequest();
+                        br.getPage(request);
+                    } else if (plugin instanceof GoProCloudDecrypter) {
+                        ((GoProCloudDecrypter) plugin).login(br, account);
+                        request = request.cloneRequest();
+                        br.getPage(request);
+                    }
                 }
             }
         }
@@ -572,6 +564,10 @@ public class GoProCloud extends PluginForHost/* implements MenuExtenderHandler *
         }
         try {
             final FlexiJSonNode ret = new FlexiJSONParser(jsonString).parse();
+            if (ret != null && ret.resolvePath(JSPath.fromPathString("error")) != null && cacheSource != null && cacheSource.getStringProperty(MEDIA_DOWNLOAD) != null) {
+                cacheSource.removeProperty(MEDIA_DOWNLOAD);
+                return getDownloadResponse(plugin, account, br, id, cacheSource);
+            }
             if (ret != null && cacheSource != null) {
                 cacheSource.setProperty(MEDIA_DOWNLOAD, jsonString);
             }
@@ -590,6 +586,10 @@ public class GoProCloud extends PluginForHost/* implements MenuExtenderHandler *
         }
         try {
             final FlexiJSonNode ret = new FlexiJSONParser(jsonString).parse();
+            if (ret != null && ret.resolvePath(JSPath.fromPathString("error")) != null && cacheSource != null && cacheSource.getStringProperty(MEDIA) != null) {
+                cacheSource.removeProperty(MEDIA);
+                return getMediaResponse(plugin, account, br, id, cacheSource);
+            }
             if (ret != null && cacheSource != null) {
                 cacheSource.setProperty(MEDIA, jsonString);
             }

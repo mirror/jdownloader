@@ -215,15 +215,7 @@ public class BackupRestoreAction extends CustomizableAppAction implements Action
                                 while (backup.exists()) {
                                     backup = Application.getResource("cfg_backup_" + System.currentTimeMillis());
                                 }
-                                final ZipIOReader zip = new ZipIOReader(file);
-                                try {
-                                    zip.extractTo(tmp);
-                                } finally {
-                                    try {
-                                        zip.close();
-                                    } catch (Throwable e) {
-                                    }
-                                }
+                                ZipIOReader.extractTo(file, tmp);
                                 Application.getResource("cfg").renameTo(backup);
                                 if (getMaxCFGBackupFolders() >= 0) {
                                     cleanupCFGBackFolders(getMaxCFGBackupFolders());
