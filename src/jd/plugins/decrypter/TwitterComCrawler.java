@@ -998,7 +998,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
         if (account == null && crawlRetweets) {
             displayBubblenotifyMessage("Profile crawler " + username + " | Warning", "Results may be incomplete!\r\nYou've enabled re-tweet crawling in twitter plugin settings.\r\nTwitter is sometimes hiding Re-Tweets when users are not logged in.\r\n" + warningtextNoAccount);
         }
-        return this.crawlUserViaGraphqlAPI(username, account, crawlUserLikes);
+        return this.crawlUserViaGraphqlAPI(param, username, account, crawlUserLikes);
     }
 
     private final String TWITTER_PROFILE_PACKAGE_KEY_PREFIX       = "twitterprofile://";
@@ -1213,6 +1213,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
                 logger.info("Stopping because: Reached max number of pages without result in a row [probably explicit content]: " + maxNumberofPagesInARowWithoutResult);
                 break tweetTimeline;
             }
+            /* Continue to next page */
             /** Store this information in URL so in case crawler fails, it will resume from previous position if user adds that URL. */
             addedURLQuery.addAndReplace("page", Integer.toString(page));
             addedURLQuery.addAndReplace("totalCrawledTweetsCount", Integer.toString(totalCrawledTweetsCount));
@@ -1220,7 +1221,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
             this.resumeURL = addedURLWithoutParams + "?" + addedURLQuery.toString();
             page++;
             /* Wait before accessing next page. */
-            this.sleep(cfg.getProfileCrawlerWaittimeBetweenPaginationMilliseconds(), param);
+            sleep(cfg.getProfileCrawlerWaittimeBetweenPaginationMilliseconds(), param);
         } while (!this.isAbort());
         logger.info("Done after " + page + " pages | last nextCursor = " + nextCursor);
         if (ret.isEmpty()) {
@@ -1235,7 +1236,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
     }
 
     /** Crawls all Tweets of a profile via GraphQL Web-API. */
-    private ArrayList<DownloadLink> crawlUserViaGraphqlAPI(final String username, final Account account, final boolean crawlUserLikes) throws Exception {
+    private ArrayList<DownloadLink> crawlUserViaGraphqlAPI(final CryptedLink param, final String username, final Account account, final boolean crawlUserLikes) throws Exception {
         if (username == null) {
             /* Developer mistake */
             throw new IllegalArgumentException();
@@ -1268,6 +1269,8 @@ public class TwitterComCrawler extends PluginForDecrypt {
             fp.setName(username);
             fp.setPackageKey(TWITTER_PROFILE_PACKAGE_KEY_PREFIX + userID);
         }
+        final TwitterConfigInterface cfg = PluginJsonConfig.get(TwitterConfigInterface.class);
+        final long waitBetweenPaginationRequestsMillis = cfg.getProfileCrawlerWaittimeBetweenPaginationMilliseconds();
         int totalFoundTweets = 0;
         do {
             final Map<String, Object> variables = new HashMap<String, Object>();
@@ -1317,7 +1320,11 @@ public class TwitterComCrawler extends PluginForDecrypt {
                 logger.info("Stopping because: Last item age is older than user defined max age " + this.maxTweetDateStr);
                 break;
             } else {
+                /* Continue to next page */
                 page++;
+                /* Wait before accessing next page. */
+                logger.info("Waiting " + waitBetweenPaginationRequestsMillis + " milliseconds before accessing next page");
+                sleep(waitBetweenPaginationRequestsMillis, param);
                 continue;
             }
         } while (true);
@@ -1715,11 +1722,6 @@ public class TwitterComCrawler extends PluginForDecrypt {
         }
     }
 
-    public int getMaxConcurrentProcessingInstances() {
-        /* 2020-01-30: We have to perform a lot of requests --> Set this to 1. */
-        return 1;
-    }
-
     @Deprecated
     private ArrayList<DownloadLink> crawlCard(final String contenturl) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
@@ -1794,5 +1796,11 @@ public class TwitterComCrawler extends PluginForDecrypt {
         link.setProperty(GenericM3u8.PRESET_NAME_PROPERTY, broadcastTitle);
         ret.add(link);
         return ret;
+    }
+
+    @Override
+    public int getMaxConcurrentProcessingInstances() {
+        /* 2020-01-30: We have to perform a lot of requests --> Set this to 1. */
+        return 1;
     }
 }
