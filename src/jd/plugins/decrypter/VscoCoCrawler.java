@@ -26,11 +26,13 @@ import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
+import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.http.Request;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DecrypterRetryException;
@@ -40,7 +42,6 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
 import jd.plugins.hoster.VscoCo;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
@@ -49,11 +50,18 @@ public class VscoCoCrawler extends PluginForDecrypt {
         super(wrapper);
     }
 
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.setFollowRedirects(true);
+        return br;
+    }
+
     public static final String     PROPERTY_USERNAME      = "user";
     private final String           PROPERTY_DATE          = "date";
     private final String           PROPERTY_DATE_CAPTURED = "date_captured";
     private final SimpleDateFormat sd                     = new SimpleDateFormat("yyyy-MM-dd");
-    private PluginForHost          hosterPlugin           = null;
+    private VscoCo                 hosterPlugin           = null;
 
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
@@ -91,17 +99,22 @@ public class VscoCoCrawler extends PluginForDecrypt {
 
     @SuppressWarnings({ "unchecked" })
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        hosterPlugin = this.getNewPluginForHostInstance(this.getHost());
-        String username = new Regex(param.getCryptedUrl(), "https?://([^/]+)\\.vsco\\.co/").getMatch(0);
+        hosterPlugin = (VscoCo) this.getNewPluginForHostInstance(this.getHost());
+        final String contenturl = param.getCryptedUrl().replaceFirst("^(?i)http://", "https://");
+        String username = new Regex(contenturl, "(?i)https?://([^/]+)\\.vsco\\.co/").getMatch(0);
         if (username == null) {
-            username = new Regex(param.getCryptedUrl(), "vsco\\.co/([\\w-]+)").getMatch(0);
+            username = new Regex(contenturl, "(?i)vsco\\.co/([\\w-]+)").getMatch(0);
         }
         if (username == null) {
             /* Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        br.setFollowRedirects(true);
-        br.getPage(param.getCryptedUrl());
+        final Account account = AccountController.getInstance().getValidAccount(getHost());
+        if (account != null) {
+            /* Registered users can view more items */
+            hosterPlugin.login(account, false);
+        }
+        br.getPage(contenturl);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }

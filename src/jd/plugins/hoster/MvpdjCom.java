@@ -130,7 +130,7 @@ public class MvpdjCom extends PluginForHost {
         String title_html = null;
         if (loggedIN) {
             /* Download via download button --> Higher quality */
-            br.postPage("https://www.mvpdj.com/song/download", "id=" + fid);
+            br.postPage("https://www." + getHost() + "/song/download", "id=" + fid);
             title_html = this.br.getRegex("class=\"dt_tc_big\"[^<>]*?>([^<>]+)<").getMatch(0);
             if (this.br.containsHTML(">账户余额不足，请先充值")) {
                 /*
@@ -153,9 +153,9 @@ public class MvpdjCom extends PluginForHost {
                 logger.info("Trying stream download");
             }
             br.getPage(link.getPluginPatternMatcher());
-            if (this.br.getHttpConnection().getResponseCode() == 404) {
+            if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else if (!br.containsHTML(fid)) {
+            } else if (!br.containsHTML("data-id=\"" + fid)) {
                 /* E.g. https://www.mvpdj.com/song/player/111222333 */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }

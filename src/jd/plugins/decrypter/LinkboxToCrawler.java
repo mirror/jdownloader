@@ -74,14 +74,14 @@ public class LinkboxToCrawler extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:(?:www|[a-z]{2})\\.)?" + buildHostsPatternPart(domains) + "/a/(f|s)/([A-Za-z0-9]+)(\\?pid=(\\d+))?");
+            ret.add("https?://(?:(?:www|[a-z]{2})\\.)?" + buildHostsPatternPart(domains) + "/a/(d|f|s)/([A-Za-z0-9]+)(\\?pid=(\\d+))?");
         }
         return ret.toArray(new String[0]);
     }
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final Regex urlinfo = new Regex(param.getCryptedUrl(), this.getSupportedLinks());
-        final String type = urlinfo.getMatch(0);
+        final String folderType = urlinfo.getMatch(0);
         final String folderID = urlinfo.getMatch(1);
         final String subfolderID = urlinfo.getMatch(3);
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
@@ -90,31 +90,35 @@ public class LinkboxToCrawler extends PluginForDecrypt {
         query.add("sortField", "name");
         query.add("sortAsc", "1");
         query.add("pageSize", Integer.toString(maxItemsPerPage));
-        query.add("token", "");
+        // query.add("token", "");
         query.add("shareToken", folderID);
         query.add("needTpInfo", "1");
+        if (folderType.equals("d")) {
+            /* 2024-02-19 */
+            query.add("scene", "comList");
+        } else if (folderType.equals("f")) {
+            /* Rare type of folder containing a single item. */
+            query.add("scene", "singleItem");
+        } else {
+            /* Type s */
+            query.add("scene", "singleGroup");
+        }
         if (subfolderID != null) {
             query.add("pid", subfolderID);
         } else {
             query.add("pid", "0");
         }
-        if (type.equals("f")) {
-            /* Rare type of folder containing a single item. */
-            query.add("scene", "singleItem");
-        } else {
-            query.add("scene", "singleGroup");
-        }
-        query.add("name", "");
+        query.add("platform", "web");
+        query.add("pf", "web");
+        query.add("lan", "en");
+        // query.add("name", "");
         final HashSet<String> dupes = new HashSet<String>();
         int page = 1;
-        String path = this.getAdoptedCloudFolderStructure("");
-        FilePackage packageForFiles = FilePackage.getInstance();
-        if (!StringUtils.isEmpty(path)) {
-            packageForFiles.setName(path);
-        }
+        String path = this.getAdoptedCloudFolderStructure();
+        FilePackage packageForFiles = null;
         do {
             query.addAndReplace("pageNo", Integer.toString(page));
-            br.getPage("https://www." + this.getHost() + "/api/file/share_out_list/?" + query.toString());
+            br.getPage("https://www." + getHost() + "/api/file/share_out_list/?" + query.toString());
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -124,9 +128,23 @@ public class LinkboxToCrawler extends PluginForDecrypt {
                 /* 2023-11-13: E.g. content abused: {"data":null,"msg":"data removed","status":700} */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
+            final String currentFolderName = (String) data.get("dirName");
             final List<Map<String, Object>> ressources = (List<Map<String, Object>>) data.get("list");
             if (ressources.isEmpty()) {
                 throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER, path + "_" + folderID);
+            }
+            if (page == 1) {
+                if (!StringUtils.isEmpty(currentFolderName)) {
+                    if (!StringUtils.isEmpty(path)) {
+                        path += "/" + currentFolderName;
+                    } else {
+                        path = currentFolderName;
+                    }
+                }
+                packageForFiles = FilePackage.getInstance();
+                if (path != null) {
+                    packageForFiles.setName(path);
+                }
             }
             int numberofNewItemsOnCurrentPage = 0;
             for (final Map<String, Object> ressource : ressources) {
@@ -138,8 +156,15 @@ public class LinkboxToCrawler extends PluginForDecrypt {
                         continue;
                     }
                     numberofNewItemsOnCurrentPage++;
-                    link = this.createDownloadlink(createFolderURL(folderID, thisSubfolderID));
-                    link.setRelativeDownloadFolderPath("/" + ressource.get("name"));
+                    link = this.createDownloadlink(createFolderURL(folderType, folderID, thisSubfolderID));
+                    final String thisFolderName = ressource.get("name").toString();
+                    if (path != null) {
+                        /* Add this folder to existing path */
+                        link.setRelativeDownloadFolderPath(path + "/" + thisFolderName);
+                    } else {
+                        /* Use this folder as root */
+                        link.setRelativeDownloadFolderPath(thisFolderName);
+                    }
                 } else {
                     /* File */
                     final String fileID = ressource.get("item_id").toString();
@@ -161,8 +186,8 @@ public class LinkboxToCrawler extends PluginForDecrypt {
             if (this.isAbort()) {
                 logger.info("Stopping because: Aborted by user");
                 break;
-            } else if (numberofNewItemsOnCurrentPage == 0) {
-                logger.info("Stopping because: Failed to find any new items on current page: " + page);
+            } else if (numberofNewItemsOnCurrentPage < maxItemsPerPage) {
+                logger.info("Stopping because: Reached end?");
                 break;
             } else {
                 /* Continue to next page */
@@ -172,8 +197,8 @@ public class LinkboxToCrawler extends PluginForDecrypt {
         return ret;
     }
 
-    public static String createFolderURL(final String folderID, final String subfolderID) {
-        String url = "https://www.sharezweb.com/a/s/" + folderID;
+    public static String createFolderURL(final String folderType, final String folderID, final String subfolderID) {
+        String url = "https://www.sharezweb.com/a/" + folderType + "/" + folderID;
         if (subfolderID != null) {
             url += "?pid=" + subfolderID;
         }

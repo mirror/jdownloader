@@ -32,24 +32,18 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "microsoft.com" }, urls = { "https?://(?:www\\.)?microsoft\\.com/(?:en\\-us|de\\-de)/download/(?:details|confirmation)\\.aspx\\?id=\\d+" })
-public class MicrosoftComDecrypter extends PluginForDecrypt {
-    public MicrosoftComDecrypter(PluginWrapper wrapper) {
+public class MicrosoftComCrawler extends PluginForDecrypt {
+    public MicrosoftComCrawler(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        final String dlid = new Regex(param.toString(), "(\\d+)$").getMatch(0);
-        final String parameter = "https://www.microsoft.com/en-us/download/details.aspx?id=" + dlid;
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final String dlid = new Regex(param.getCryptedUrl(), "(\\d+)$").getMatch(0);
+        final String contentur = "https://www.microsoft.com/en-us/download/details.aspx?id=" + dlid;
         br.setFollowRedirects(true);
-        br.getPage(parameter);
+        br.getPage(contentur);
         if (br.getHttpConnection().getResponseCode() == 404) {
-            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
-            offline.setFinalFileName(dlid);
-            offline.setAvailable(false);
-            offline.setProperty("offline", true);
-            decryptedLinks.add(offline);
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         br.getPage("https://www.microsoft.com/en-us/download/confirmation.aspx?id=" + dlid);
         String fpName = br.getRegex("<h2 class=\"title\">([^<>\"]*?)</h2>").getMatch(0);
@@ -58,9 +52,9 @@ public class MicrosoftComDecrypter extends PluginForDecrypt {
         }
         final String dlTable = br.getRegex("<div class=\"chooseFile jsOff\">(.*?)</div>").getMatch(0);
         if (dlTable == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String[] entries = new Regex(dlTable, "<tr>(.*?)</tr>").getColumn(0);
         if (entries.length > 0) {
             for (final String dlentry : entries) {
@@ -72,8 +66,7 @@ public class MicrosoftComDecrypter extends PluginForDecrypt {
                     dl.setFinalFileName(Encoding.htmlDecode(filename.trim()));
                     dl.setDownloadSize(SizeFormatter.getSize(filesize));
                     dl.setAvailable(true);
-                    dl.setProperty("mainlink", parameter);
-                    decryptedLinks.add(dl);
+                    ret.add(dl);
                 }
             }
         } else {
@@ -88,14 +81,14 @@ public class MicrosoftComDecrypter extends PluginForDecrypt {
                 link.setDownloadSize(SizeFormatter.getSize(filesize));
             }
             link.setAvailable(true);
-            decryptedLinks.add(link);
+            ret.add(link);
         }
-        if (decryptedLinks.size() == 0) {
+        if (ret.size() == 0) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final FilePackage fp = FilePackage.getInstance();
-        fp.setName(Encoding.htmlDecode(fpName.trim()));
-        fp.addLinks(decryptedLinks);
-        return decryptedLinks;
+        fp.setName(Encoding.htmlDecode(fpName).trim());
+        fp.addLinks(ret);
+        return ret;
     }
 }

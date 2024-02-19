@@ -6291,7 +6291,7 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "... Force Start" })
     String ConfirmSelectionBarAction_sub_button_add_and_force_all();
 
-    @Default(lngs = { "en" }, values = { "Ary ou sure? You are trying to disable all premium accounts.\r\nIf you continue, JDownloader will NOT use your premium accounts unless you re-enable this feature." })
+    @Default(lngs = { "en" }, values = { "Are you sure? You are trying to disable all premium accounts.\r\nIf you continue, JDownloader will NOT use your premium accounts unless you re-enable this feature." })
     String are_you_sure_disabled_premium();
 
     @Default(lngs = { "en" }, values = { "Premium Account usage enabled. If you add a premium account, JDownloader will use it." })

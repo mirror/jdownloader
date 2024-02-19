@@ -15,16 +15,25 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.DebugMode;
 import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.controlling.linkcrawler.LinkCrawlerDeepInspector;
+import jd.http.Browser;
+import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
+import jd.parser.html.Form;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -37,15 +46,33 @@ import jd.plugins.decrypter.VscoCoCrawler;
 public class VscoCo extends PluginForHost {
     public VscoCo(PluginWrapper wrapper) {
         super(wrapper);
+        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            this.enablePremium("https://" + getHost() + "/user/signup");
+        }
+    }
+
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.setFollowRedirects(true);
+        return br;
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        if (cookieLoginOnly) {
+            return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.COOKIE_LOGIN_ONLY };
+        } else {
+            return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.COOKIE_LOGIN_OPTIONAL };
+        }
     }
 
     /* Connection stuff */
-    private static final boolean free_resume       = true;
-    private static final int     free_maxchunks    = 0;
-    private static final int     free_maxdownloads = -1;
-    public static final String   PROPERTY_MEDIA_ID = "media_id";
-    public static final String   PROPERTY_QUALITY  = "quality";
-    private final String         PROPERTY_HLS_URL  = "hls_url";
+    private static final int   free_maxchunks    = 0;
+    public static final String PROPERTY_MEDIA_ID = "media_id";
+    public static final String PROPERTY_QUALITY  = "quality";
+    private final String       PROPERTY_HLS_URL  = "hls_url";
+    private final boolean      cookieLoginOnly   = true;
 
     public static List<String[]> getPluginDomains() {
         return VscoCoCrawler.getPluginDomains();
@@ -87,6 +114,11 @@ public class VscoCo extends PluginForHost {
         }
     }
 
+    @Override
+    public boolean isResumeable(final DownloadLink link, final Account account) {
+        return true;
+    }
+
     private String getMediaID(final DownloadLink link) {
         return link.getStringProperty(PROPERTY_MEDIA_ID);
     }
@@ -120,7 +152,6 @@ public class VscoCo extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
-        br.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         final String singleHLSURL = link.getStringProperty(PROPERTY_HLS_URL);
         try {
@@ -160,13 +191,17 @@ public class VscoCo extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
+        handleDownload(link, null);
+    }
+
+    private void handleDownload(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
         if (isHLSVideo(link)) {
             checkFFmpeg(link, "Download a HLS Stream");
             dl = new HLSDownloader(link, br, link.getStringProperty(PROPERTY_HLS_URL));
             dl.startDownload();
         } else {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher(), free_resume, free_maxchunks);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher(), this.isResumeable(link, null), free_maxchunks);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 br.followConnection(true);
                 if (dl.getConnection().getResponseCode() == 403) {
@@ -181,9 +216,98 @@ public class VscoCo extends PluginForHost {
         }
     }
 
+    public boolean login(final Account account, final boolean force) throws Exception {
+        synchronized (account) {
+            br.setCookiesExclusive(true);
+            final Cookies cookies = account.loadCookies("");
+            final Cookies userCookies = account.loadUserCookies();
+            final String accounturl = "/user/account";
+            if (cookies != null || userCookies != null) {
+                logger.info("Attempting cookie login");
+                if (userCookies != null) {
+                    br.setCookies(this.getHost(), userCookies);
+                } else {
+                    br.setCookies(this.getHost(), cookies);
+                }
+                if (!force) {
+                    /* Don't validate cookies */
+                    return false;
+                }
+                // br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko)
+                // Chrome/121.0.0.0 Safari/537.36");
+                br.getPage("https://" + this.getHost() + accounturl);
+                if (this.isLoggedin(br)) {
+                    logger.info("Cookie login successful");
+                    /* Refresh cookie timestamp */
+                    account.saveCookies(br.getCookies(br.getHost()), "");
+                    return true;
+                } else {
+                    logger.info("Cookie login failed");
+                    br.clearCookies(null);
+                    if (userCookies != null) {
+                        if (account.hasEverBeenValid()) {
+                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
+                        } else {
+                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
+                        }
+                    }
+                }
+            }
+            if (cookieLoginOnly) {
+                showCookieLoginInfo();
+                throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_required());
+            }
+            logger.info("Performing full login");
+            if (true) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            // TODO: Add username + password login support
+            br.getPage("https://" + this.getHost() + "/login.php");
+            final Form loginform = br.getFormbyProperty("name", "bla");
+            if (loginform == null) {
+                logger.warning("Failed to find loginform");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            br.getPage(accounturl);
+            if (!isLoggedin(br)) {
+                throw new AccountInvalidException();
+            }
+            account.saveCookies(br.getCookies(br.getHost()), "");
+            return true;
+        }
+    }
+
+    private boolean isLoggedin(final Browser br) {
+        return br.containsHTML("class=\"sign-out\"");
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        final AccountInfo ai = new AccountInfo();
+        login(account, true);
+        ai.setUnlimitedTraffic();
+        account.setType(AccountType.FREE);
+        return ai;
+    }
+
+    @Override
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        this.handleDownload(link, account);
+    }
+
+    @Override
+    public boolean hasCaptcha(final DownloadLink link, final Account acc) {
+        return false;
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return Integer.MAX_VALUE;
+    }
+
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return free_maxdownloads;
+        return Integer.MAX_VALUE;
     }
 
     @Override

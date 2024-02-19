@@ -22,8 +22,11 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.Locale;
 import java.util.Scanner;
+import java.util.TimeZone;
 
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
@@ -149,7 +152,27 @@ public class ZdfDeMediathek extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (dllink.contains("hinweis_fsk")) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Nur von 20-06 Uhr verfügbar!", 30 * 60 * 1000l);
+            final long browserDateTimestamp = br.getCurrentServerTime(System.currentTimeMillis());
+            final Calendar c = Calendar.getInstance(TimeZone.getTimeZone("GMT+1"));
+            if (browserDateTimestamp != -1) {
+                c.setTime(new Date(browserDateTimestamp));
+            }
+            c.set(c.HOUR_OF_DAY, 20);
+            c.set(c.MINUTE, 0);
+            c.set(c.SECOND, 0);
+            final long tsLater = c.getTimeInMillis();
+            final long timeUntilLater = tsLater - System.currentTimeMillis();
+            final long waitMillisUntilVideoIsAvailable;
+            if (timeUntilLater > 0) {
+                waitMillisUntilVideoIsAvailable = timeUntilLater;
+            } else {
+                /**
+                 * This should never happen. Either server time is wrong/offset or user has wrong local OS time. </br>
+                 * Video should already be available -> Wait static wait time
+                 */
+                waitMillisUntilVideoIsAvailable = 30 * 60 * 1000;
+            }
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Dieses Video ist im Sinne des Jugendschutzes nur von 20.00 bis 6.00 Uhr verfügbar.", waitMillisUntilVideoIsAvailable);
         }
         if (dllink.startsWith("rtmp")) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported streaming protocol");

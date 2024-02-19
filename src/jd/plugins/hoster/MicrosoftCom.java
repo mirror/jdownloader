@@ -26,7 +26,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "microsoft.com" }, urls = { "https?://(?:www\\.)?(?:download\\.microsoft\\.com/download/|download\\.windowsupdate\\.com)[^<>\"]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "microsoft.com" }, urls = { "https?://(?:download\\.microsoft\\.com/download/|download\\.windowsupdate\\.com)[^<>\"]+" })
 public class MicrosoftCom extends PluginForHost {
     public MicrosoftCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -40,21 +40,24 @@ public class MicrosoftCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
-        final String sha1 = new Regex(link.getPluginPatternMatcher(), "_([a-f0-9]{40})\\.").getMatch(0);
+        final String contenturl = link.getPluginPatternMatcher();
+        final String sha1 = new Regex(contenturl, "_([a-f0-9]{40})\\.").getMatch(0);
         if (sha1 != null) {
             link.setSha1Hash(sha1);
         }
         br.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            con = br.openHeadConnection(link.getPluginPatternMatcher());
-            if (this.looksLikeDownloadableContent(con)) {
-                link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con).trim()));
-                if (con.getCompleteContentLength() > 0) {
-                    link.setVerifiedFileSize(con.getCompleteContentLength());
-                }
-            } else {
+            con = br.openHeadConnection(contenturl);
+            if (!this.looksLikeDownloadableContent(con)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            final String filenameFromHeader = getFileNameFromHeader(con);
+            if (filenameFromHeader != null) {
+                link.setFinalFileName(Encoding.htmlDecode(filenameFromHeader).trim());
+            }
+            if (con.getCompleteContentLength() > 0) {
+                link.setVerifiedFileSize(con.getCompleteContentLength());
             }
         } finally {
             try {
@@ -70,7 +73,7 @@ public class MicrosoftCom extends PluginForHost {
         requestFileInformation(link);
         dl = new jd.plugins.BrowserAdapter().openDownload(br, link, link.getPluginPatternMatcher(), true, 0);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            br.followConnection(true);
+            br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
@@ -82,7 +85,7 @@ public class MicrosoftCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return Integer.MAX_VALUE;
     }
 
     @Override

@@ -20,25 +20,31 @@ import java.util.List;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.parser.Regex;
+import jd.http.Browser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.hoster.LinkboxTo;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class LinkboxToCrawlerShorturls extends PluginForDecrypt {
-    public LinkboxToCrawlerShorturls(PluginWrapper wrapper) {
+public class MicrosoftComShorturlCrawler extends PluginForDecrypt {
+    public MicrosoftComShorturlCrawler(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.setFollowRedirects(false);
+        return br;
     }
 
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "lbx.to" });
+        ret.add(new String[] { "microsoft.com" });
         return ret;
     }
 
@@ -58,27 +64,23 @@ public class LinkboxToCrawlerShorturls extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(d|f|s)/([A-Za-z0-9]+)");
+            ret.add("https?://go\\." + buildHostsPatternPart(domains) + "/fwlink/\\?linkid=\\d+");
         }
         return ret.toArray(new String[0]);
     }
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final String contenturl = param.getCryptedUrl().replaceFirst("^(?i)http://", "https://");
+        br.getPage(contenturl);
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final String finallink = br.getRedirectLocation();
+        if (finallink == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final Regex finfo = new Regex(param.getCryptedUrl(), this.getSupportedLinks());
-        final String folderType = finfo.getMatch(0);
-        final String ressourceID = finfo.getMatch(1);
-        if (folderType == null || ressourceID == null) {
-            /* Developer mistake */
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        final String hosterpluginMainDomain = LinkboxTo.getPluginDomains().get(0)[0];
-        if (folderType.equals("f")) {
-            /* Other/special kind of folder: Single item folder */
-            ret.add(createDownloadlink("https://www." + hosterpluginMainDomain + "/a/f/" + ressourceID));
-        } else {
-            ret.add(createDownloadlink(LinkboxToCrawler.createFolderURL(folderType, ressourceID, null)));
-        }
+        ret.add(createDownloadlink(finallink));
         return ret;
     }
 }

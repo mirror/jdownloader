@@ -16,7 +16,11 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.text.DecimalFormat;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
+import java.util.TimeZone;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.downloader.hds.HDSDownloader;
@@ -30,31 +34,46 @@ import jd.config.ConfigEntry;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.utils.locale.JDL;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "orf.at" }, urls = { "https?://tvthek\\.orf\\.atdecrypted\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "orf.at" }, urls = { "" })
 public class ORFMediathek extends PluginForHost {
-    private static final String NEW_URLFORMAT  = "https?://tvthek\\.orf\\.atdecrypted\\d+";
-    private static final String TYPE_AUDIO     = "https?://ooe\\.orf\\.at/radio/stories/\\d+/";
-    public static final String  Q_SUBTITLES    = "Q_SUBTITLES";
-    public static final String  Q_THUMBNAIL    = "Q_THUMBNAIL";
-    public static final String  Q_BEST         = "Q_BEST_2";
-    public static final String  Q_LOW          = "Q_LOW";
-    public static final String  Q_VERYLOW      = "Q_VERYLOW";
-    public static final String  Q_MEDIUM       = "Q_MEDIUM";
-    public static final String  Q_HIGH         = "Q_HIGH";
-    public static final String  Q_VERYHIGH     = "Q_VERYHIGH";
-    public static final String  VIDEO_SEGMENTS = "VIDEO_SEGMENTS";
-    public static final String  VIDEO_GAPLESS  = "VIDEO_GAPLESS";
-    public static final String  HTTP_STREAM    = "HTTP_STREAM";
-    public static final String  HLS_STREAM     = "HLS_STREAM";
-    public static final String  HDS_STREAM     = "HDS_STREAM";
+    private static final String TYPE_AUDIO                      = "(?i)https?://ooe\\.orf\\.at/radio/stories/(\\d+)/";
+    public static final String  Q_SUBTITLES                     = "Q_SUBTITLES";
+    public static final String  Q_THUMBNAIL                     = "Q_THUMBNAIL";
+    public static final String  Q_BEST                          = "Q_BEST_2";
+    public static final String  Q_LOW                           = "Q_LOW";
+    public static final String  Q_VERYLOW                       = "Q_VERYLOW";
+    public static final String  Q_MEDIUM                        = "Q_MEDIUM";
+    public static final String  Q_HIGH                          = "Q_HIGH";
+    public static final String  Q_VERYHIGH                      = "Q_VERYHIGH";
+    public static final String  VIDEO_SEGMENTS                  = "VIDEO_SEGMENTS";
+    public static final String  SETTING_PREFER_VIDEO_GAPLESS    = "VIDEO_GAPLESS";
+    public static final String  HTTP_STREAM                     = "HTTP_STREAM";
+    public static final String  HLS_STREAM                      = "HLS_STREAM";
+    public static final String  HDS_STREAM                      = "HDS_STREAM";
+    public static final String  PROPERTY_TITLE                  = "title";
+    public static final String  PROPERTY_VIDEO_POSITION         = "video_position";
+    public static final String  PROPERTY_VIDEO_POSITION_MAX     = "video_position_max";
+    public static final String  PROPERTY_INTERNAL_QUALITY       = "directQuality";
+    public static final String  PROPERTY_STREAMING_TYPE         = "streamingType";
+    public static final String  PROPERTY_CONTENT_TYPE           = "contentType";
+    public static final String  PROPERTY_QUALITY_HUMAN_READABLE = "directFMT";
+    public static final String  PROPERTY_SEGMENT_ID             = "segment_id";
+    public static final String  PROPERTY_VIDEO_ID               = "video_id";
+    public static final String  PROPERTY_DELIVERY               = "delivery";
+    public static final String  PROPERTY_DIRECTURL              = "directURL";
+    public static final String  PROPERTY_SOURCEURL              = "mainlink";
+    public static final String  PROPERTY_AGE_RESTRICTED         = "age_restricted";
+    public static String        CONTENT_TYPE_IMAGE              = "image";
+    public static String        CONTENT_TYPE_SUBTITLE           = "subtitle";
+    public static String        CONTENT_TYPE_VIDEO              = "video";
 
     public ORFMediathek(PluginWrapper wrapper) {
         super(wrapper);
@@ -74,18 +93,28 @@ public class ORFMediathek extends PluginForHost {
     }
 
     @Override
+    public String getLinkID(final DownloadLink link) {
+        if (link == null || link.getPluginPatternMatcher() == null) {
+            return super.getLinkID(link);
+        }
+        final Regex typeAudio = new Regex(link.getPluginPatternMatcher(), TYPE_AUDIO);
+        if (typeAudio.patternFind()) {
+            return "orfmediathek://audio/" + typeAudio.getMatch(0);
+        } else {
+            return "orfmediathek://playlist/" + link.getStringProperty(PROPERTY_SEGMENT_ID) + "/contentType/" + getContentType(link) + "/" + link.getStringProperty(PROPERTY_VIDEO_ID) + "/delivery/" + link.getStringProperty(PROPERTY_DELIVERY) + "/streamingtype/" + link.getStringProperty(PROPERTY_STREAMING_TYPE) + "/quality/" + link.getStringProperty(PROPERTY_QUALITY_HUMAN_READABLE);
+        }
+    }
+
+    @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         return requestFileInformation(link, false);
     }
 
     private AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws IOException, PluginException {
-        if (!link.getDownloadURL().matches(NEW_URLFORMAT)) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
         URLConnectionAdapter con = null;
         String dllink = null;
-        if (link.getDownloadURL().matches(TYPE_AUDIO)) {
-            br.getPage(link.getDownloadURL());
+        if (link.getPluginPatternMatcher().matches(TYPE_AUDIO)) {
+            br.getPage(link.getPluginPatternMatcher());
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -107,15 +136,14 @@ public class ORFMediathek extends PluginForHost {
             }
             try {
                 con = br.openGetConnection(dllink);
-                this.handleConnectionErrors(link, br, con);
-                if (looksLikeDownloadableContent(con, link)) {
-                    if (con.getCompleteContentLength() > 0) {
-                        link.setDownloadSize(con.getCompleteContentLength());
-                    }
-                    link.setProperty("directURL", dllink);
-                } else {
+                this.handleConnectionErrors(br, link, con);
+                if (!looksLikeDownloadableContent(con, link)) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
+                if (con.getCompleteContentLength() > 0) {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                }
+                link.setProperty(PROPERTY_DIRECTURL, dllink);
                 return AvailableStatus.TRUE;
             } finally {
                 try {
@@ -123,31 +151,24 @@ public class ORFMediathek extends PluginForHost {
                 } catch (final Throwable e) {
                 }
             }
-        } else if (link.getStringProperty("directURL", null) == null) {
-            if (link.getBooleanProperty("offline", false)) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            /* fetch fresh directURL */
-            this.setBrowserExclusive();
-            br.getPage(link.getPluginPatternMatcher());
-            if (br.containsHTML("Keine aktuellen Sendungen vorhanden")) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            if (true) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE);
-            }
         } else {
-            link.setFinalFileName(link.getStringProperty("directName", null));
+            final String deprecatedPreSetFilename = link.getStringProperty("directName");
+            if (deprecatedPreSetFilename != null) {
+                link.setFinalFileName(deprecatedPreSetFilename);
+            } else {
+                link.setFinalFileName(getFormattedVideoFilename(link));
+            }
         }
-        if (this.isSubtitle(link) || ("http".equals(link.getStringProperty("streamingType")) && StringUtils.equalsIgnoreCase("progressive", link.getStringProperty("delivery")))) {
+        if (isSubtitle(link) || isImage(link) || isVideoProgressiveStream(link)) {
             final Browser br2 = br.cloneBrowser();
-            dllink = link.getStringProperty("directURL");
+            dllink = link.getStringProperty(PROPERTY_DIRECTURL);
             if (dllink == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                /* Invalid item (this should never happen!). */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             try {
                 con = br2.openHeadConnection(dllink);
-                handleConnectionErrors(link, br2, con);
+                handleConnectionErrors(br2, link, con);
                 if (con.getCompleteContentLength() > 0) {
                     link.setVerifiedFileSize(con.getCompleteContentLength());
                 }
@@ -161,7 +182,7 @@ public class ORFMediathek extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    private void handleConnectionErrors(final DownloadLink link, final Browser br, final URLConnectionAdapter con) throws PluginException, IOException {
+    private void handleConnectionErrors(final Browser br, final DownloadLink link, final URLConnectionAdapter con) throws PluginException, IOException {
         if (!this.looksLikeDownloadableContent(con, link)) {
             br.followConnection(true);
             if (con.getResponseCode() == 403) {
@@ -169,9 +190,60 @@ public class ORFMediathek extends PluginForHost {
             } else if (con.getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             } else {
+                handleURLBasedErrors(br, link);
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Broken file?");
             }
         }
+        handleURLBasedErrors(br, link);
+    }
+
+    private void handleURLBasedErrors(final Browser br, final DownloadLink link) throws PluginException {
+        if (isAgeRestrictedByCurrentTime(br.getURL())) {
+            // Account.setNextDayAsTempTimeout
+            /*
+             * E.g. progressive:
+             * https://apasfpd.sf.apa.at/gp/online/14ed5a0157632458580f9bc7bfd1feba/1708297200/Jugendschutz0600b2000_Q8C.mp4
+             */
+            /* E.g. HLS: https://apasfiis.sf.apa.at/gp_nas/_definst_/nas/gp/online/Jugendschutz0600b2000_Q8C.mp4/playlist.m3u8 */
+            // Last-Modified: Mon, 18 Mar 2019 23:11:36 GMT
+            final long browserDateTimestamp = br.getCurrentServerTime(System.currentTimeMillis());
+            final Calendar c = Calendar.getInstance(TimeZone.getTimeZone("GMT+1"));
+            if (browserDateTimestamp != -1) {
+                c.setTime(new Date(browserDateTimestamp));
+            }
+            c.set(c.HOUR_OF_DAY, 20);
+            c.set(c.MINUTE, 0);
+            c.set(c.SECOND, 0);
+            final long tsLater = c.getTimeInMillis();
+            final long timeUntilLater = tsLater - System.currentTimeMillis();
+            final long waitMillisUntilVideoIsAvailable;
+            if (timeUntilLater > 0) {
+                waitMillisUntilVideoIsAvailable = timeUntilLater;
+            } else {
+                /**
+                 * This should never happen. Either server time is wrong/offset or user has wrong local OS time. </br>
+                 * Video should already be available -> Wait static wait time
+                 */
+                waitMillisUntilVideoIsAvailable = 30 * 60 * 1000;
+            }
+            link.setProperty(ORFMediathek.PROPERTY_AGE_RESTRICTED, true);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Dieses Video ist im Sinne des Jugendschutzes nur von 20.00 bis 6.00 Uhr verfügbar.", waitMillisUntilVideoIsAvailable);
+        } else {
+            final String errortextGeoBlocked1 = "Error 403: GEO-blocked content or video temporarily unavailable via this streaming method. Check your orf.at plugin settings.";
+            final String errortextGeoBlocked2 = "GEO-blocked";
+            if (br.getHttpConnection().getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, errortextGeoBlocked1);
+            } else if (StringUtils.containsIgnoreCase(br.getURL(), "geoprotection_")) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, errortextGeoBlocked2);
+            } else if (StringUtils.containsIgnoreCase(br.getURL(), "nicht_verfuegbar_hr")) {
+                /* 2023-11-27 */
+                throw new PluginException(LinkStatus.ERROR_FATAL, errortextGeoBlocked2);
+            }
+        }
+    }
+
+    public static boolean isAgeRestrictedByCurrentTime(final String url) {
+        return StringUtils.containsIgnoreCase(url, "/Jugendschutz");
     }
 
     @Override
@@ -182,28 +254,34 @@ public class ORFMediathek extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     private void download(final DownloadLink link) throws Exception {
-        final String dllink = link.getStringProperty("directURL");
+        final String dllink = link.getStringProperty(PROPERTY_DIRECTURL);
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (!link.getDownloadURL().matches(TYPE_AUDIO)) {
-            if (dllink.contains("hinweis_fsk")) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Nur von 20-06 Uhr verfügbar!", 30 * 60 * 1000l);
-            }
-        }
-        if ("hls".equals(link.getStringProperty("delivery"))) {
+        if (isSubtitle(link)) {
+            /* Workaround for old downloadcore bug that can lead to incomplete files */
+            br.getHeaders().put("Accept-Encoding", "identity");
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
+            handleConnectionErrors(br, link, dl.getConnection());
+            dl.startDownload();
+        } else if ("hls".equals(link.getStringProperty(PROPERTY_DELIVERY)) && dllink.contains("playlist.m3u8")) {
+            /* HLS playlist which should contain only one quality (for older items from tvthek.orf.at). */
             checkFFmpeg(link, "Download a HLS Stream");
             br.getPage(dllink);
-            checkGeoBlockedForSegmentStreamDownloads(br);
+            handleURLBasedErrors(br, link);
             final HlsContainer best = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(br));
             if (best == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             dl = new HLSDownloader(link, br, best.getDownloadurl());
             dl.startDownload();
-        } else if ("hds".equals(link.getStringProperty("delivery"))) {
+        } else if ("hls".equals(link.getStringProperty(PROPERTY_DELIVERY))) {
+            checkFFmpeg(link, "Download a HLS Stream");
+            dl = new HLSDownloader(link, br, dllink);
+            dl.startDownload();
+        } else if ("hds".equals(link.getStringProperty(PROPERTY_DELIVERY))) {
             br.getPage(dllink);
-            checkGeoBlockedForSegmentStreamDownloads(br);
+            handleURLBasedErrors(br, link);
             final List<HDSContainer> all = HDSContainer.getHDSQualities(br);
             if (all == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -217,6 +295,7 @@ public class ORFMediathek extends PluginForHost {
                 @Override
                 protected URLConnectionAdapter onNextFragment(URLConnectionAdapter connection, int fragmentIndex) throws IOException, PluginException {
                     if (fragmentIndex == 1 && StringUtils.containsIgnoreCase(connection.getRequest().getLocation(), "geoprotection_")) {
+                        /* GEO-blocked during download --> This should be a rare occurence */
                         connection.disconnect();
                         throw new PluginException(LinkStatus.ERROR_FATAL, "GEO-blocked");
                     }
@@ -226,36 +305,78 @@ public class ORFMediathek extends PluginForHost {
             this.dl = dl;
             dl.setEstimatedDuration(hit.getDuration());
             dl.startDownload();
-        } else if (dllink.startsWith("rtmp")) {
+        } else if (StringUtils.startsWithCaseInsensitive(dllink, "rtmp")) {
             /* 2023-11-27: This should never happen */
             throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported protocol rtmp(e)");
         } else {
-            if (isSubtitle(link)) {
-                /* Workaround for old downloadcore bug that can lead to incomplete files */
-                br.getHeaders().put("Accept-Encoding", "identity");
-            }
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
-            this.handleConnectionErrors(link, br, dl.getConnection());
+            this.handleConnectionErrors(br, link, dl.getConnection());
             dl.startDownload();
         }
     }
 
-    private void checkGeoBlockedForSegmentStreamDownloads(final Browser br) throws PluginException {
-        final String errortextGeoBlocked1 = "Error 403: GEO-blocked content or video temporarily unavailable via this streaming method. Check your orf.at plugin settings.";
-        final String errortextGeoBlocked2 = "GEO-blocked";
-        if (br.getHttpConnection().getResponseCode() == 403) {
-            throw new PluginException(LinkStatus.ERROR_FATAL, errortextGeoBlocked1);
-        } else if (StringUtils.containsIgnoreCase(br.getURL(), "geoprotection_")) {
-            throw new PluginException(LinkStatus.ERROR_FATAL, errortextGeoBlocked2);
-        } else if (StringUtils.containsIgnoreCase(br.getURL(), "nicht_verfuegbar_hr")) {
-            /* 2023-11-27 */
-            throw new PluginException(LinkStatus.ERROR_FATAL, errortextGeoBlocked2);
+    public static String getFormattedVideoFilename(final DownloadLink link) {
+        final String ext;
+        final boolean isImage = isImage(link);
+        if (isSubtitle(link)) {
+            ext = ".srt";
+        } else if (isImage) {
+            ext = ".jpeg";
+        } else {
+            ext = ".mp4";
+        }
+        final String title = link.getStringProperty(PROPERTY_TITLE);
+        final int position = link.getIntegerProperty(PROPERTY_VIDEO_POSITION, -1);
+        final int positionMax = link.getIntegerProperty(PROPERTY_VIDEO_POSITION_MAX, -1);
+        final String streamingType = link.getStringProperty(PROPERTY_STREAMING_TYPE);
+        final String delivery = link.getStringProperty(PROPERTY_DELIVERY);
+        final String playlistID = link.getStringProperty(PROPERTY_VIDEO_ID);
+        final String segmentID = link.getStringProperty(PROPERTY_SEGMENT_ID);
+        final String fmtHumanReadable = link.getStringProperty(PROPERTY_QUALITY_HUMAN_READABLE);
+        String indexStr = "";
+        if (position != -1 && positionMax > 1) {
+            indexStr = new DecimalFormat("00").format(position) + "_";
+        }
+        String filename;
+        if (isImage) {
+            filename = indexStr + title;
+        } else {
+            filename = indexStr + title + "@" + streamingType + delivery;
+            filename += "_" + playlistID + "_" + segmentID;
+            filename += "@" + fmtHumanReadable;
+        }
+        filename += ext;
+        return filename;
+    }
+
+    public static String getContentType(final DownloadLink link) {
+        final String streamingType = link.getStringProperty(PROPERTY_STREAMING_TYPE);
+        if (StringUtils.equalsIgnoreCase(streamingType, "subtitle")) {
+            /* For items added until including revision 48529. */
+            return CONTENT_TYPE_SUBTITLE;
+        } else {
+            return link.getStringProperty(PROPERTY_CONTENT_TYPE);
         }
     }
 
-    private boolean isSubtitle(final DownloadLink link) {
-        final String streamingType = link.getStringProperty("streamingType");
-        if (StringUtils.equalsIgnoreCase(streamingType, "subtitle")) {
+    public static boolean isSubtitle(final DownloadLink link) {
+        if (StringUtils.equalsIgnoreCase(getContentType(link), CONTENT_TYPE_SUBTITLE)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public static boolean isVideoProgressiveStream(final DownloadLink link) {
+        if ("http".equals(link.getStringProperty(PROPERTY_STREAMING_TYPE)) && StringUtils.equalsIgnoreCase("progressive", link.getStringProperty("delivery"))) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public static boolean isImage(final DownloadLink link) {
+        if (StringUtils.equalsIgnoreCase(getContentType(link), CONTENT_TYPE_IMAGE)) {
             return true;
         } else {
             return false;
@@ -299,23 +420,23 @@ public class ORFMediathek extends PluginForHost {
     }
 
     private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_SUBTITLES, "Download subtitle whenever possible").setDefaultValue(false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_THUMBNAIL, "Download thumbnail whenever possible").setDefaultValue(false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_SUBTITLES, "Download subtitle").setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_THUMBNAIL, "Download thumbnail").setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        final ConfigEntry bestonly = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_BEST, JDL.L("plugins.hoster.orf.best", "Load Best Version ONLY")).setDefaultValue(true);
+        final ConfigEntry bestonly = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_BEST, "Load Best Version ONLY").setDefaultValue(true);
         getConfig().addEntry(bestonly);
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_VERYLOW, JDL.L("plugins.hoster.orf.loadverylow", "Load very low version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_LOW, JDL.L("plugins.hoster.orf.loadlow", "Load low version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_MEDIUM, JDL.L("plugins.hoster.orf.loadmedium", "Load medium version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_HIGH, JDL.L("plugins.hoster.orf.loadhigh", "Load high version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_VERYHIGH, JDL.L("plugins.hoster.orf.loadveryhigh", "Load very high version")).setDefaultValue(true).setEnabledCondidtion(bestonly, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_VERYLOW, "Load very low version").setDefaultValue(true).setEnabledCondidtion(bestonly, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_LOW, "Load low version").setDefaultValue(true).setEnabledCondidtion(bestonly, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_MEDIUM, "Load medium version").setDefaultValue(true).setEnabledCondidtion(bestonly, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_HIGH, "Load high version").setDefaultValue(true).setEnabledCondidtion(bestonly, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_VERYHIGH, "Load very high version").setDefaultValue(true).setEnabledCondidtion(bestonly, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), VIDEO_GAPLESS, JDL.L("plugins.hoster.orf.videogapless", "Load gapless video")).setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), VIDEO_SEGMENTS, JDL.L("plugins.hoster.orf.videosegments", "Load video segments")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), SETTING_PREFER_VIDEO_GAPLESS, "Prefer gapless video").setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), VIDEO_SEGMENTS, "Load video segments").setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), HTTP_STREAM, JDL.L("plugins.hoster.orf.loadhttp", "Load http streams ONLY")).setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), HLS_STREAM, JDL.L("plugins.hoster.orf.loadhttp", "Load hls streams ONLY")).setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), HDS_STREAM, JDL.L("plugins.hoster.orf.loadhttp", "Load hds streams ONLY")).setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), HTTP_STREAM, "Load http streams").setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), HLS_STREAM, "Load hls streams").setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), HDS_STREAM, "Load hds streams").setDefaultValue(true));
     }
 }

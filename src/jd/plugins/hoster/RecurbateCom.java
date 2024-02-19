@@ -84,7 +84,7 @@ public class RecurbateCom extends PluginForHost {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "recurbate.me", "recu.me", "recurbate.com", "recurbate.xyz", "recurbate.cc" });
+        ret.add(new String[] { "recu.me", "recurbate.me", "recurbate.com", "recurbate.xyz", "recurbate.cc" });
         return ret;
     }
 
@@ -99,6 +99,8 @@ public class RecurbateCom extends PluginForHost {
         deadDomains.add("recurbate.com");
         deadDomains.add("recurbate.xyz");
         deadDomains.add("recurbate.cc");
+        /* 2024-02-19 */
+        deadDomains.add("recurbate.me");
         return deadDomains;
     }
 
