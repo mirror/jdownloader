@@ -60,6 +60,7 @@ import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.os.DesktopSupportLinux;
 import org.appwork.utils.swing.EDTHelper;
 import org.appwork.utils.swing.EDTRunner;
+import org.appwork.utils.swing.SwingUtils;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
@@ -336,11 +337,11 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
                             /*
                              * on Gnome3, Unity, this can happen because icon might be blacklisted, see here
                              * http://www.webupd8.org/2011/04/how-to-re-enable -notification-area.html
-                             * 
+                             *
                              * dconf-editor", then navigate to desktop > unity > panel and whitelist JDownloader
-                             * 
+                             *
                              * also see http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=7103610
-                             * 
+                             *
                              * TODO: maybe add dialog to inform user
                              */
                             LogController.CL().log(e);
@@ -467,7 +468,10 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
             trayIconTooltip = new TrayIconTooltip();
             this.trayIconTooltip = trayIconTooltip;
         }
-        trayIconTooltip.showTooltip(((TrayMouseAdapter) e.getSource()).getEstimatedTopLeft());
+        Rectangle bounds = ((TrayMouseAdapter) e.getSource()).getUnscaledBounds();
+        Point target = new Point(bounds.x, bounds.y);
+        target = SwingUtils.convertToScaled(target, null);
+        trayIconTooltip.showTooltip(target);
     }
 
     private void removeTrayIcon() {
