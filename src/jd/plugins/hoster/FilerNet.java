@@ -16,21 +16,17 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.ReflectionUtils;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.http.Browser;
 import jd.http.Cookies;
+import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -47,6 +43,12 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.ReflectionUtils;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filer.net" }, urls = { "https?://(?:www\\.)?filer\\.net/(?:app\\.php/)?(?:get|dl)/([a-z0-9]+)" })
 public class FilerNet extends PluginForHost {
@@ -78,7 +80,18 @@ public class FilerNet extends PluginForHost {
 
     @Override
     public Browser createNewBrowserInstance() {
-        final Browser br = super.createNewBrowserInstance();
+        final Browser br = new Browser() {
+            @Override
+            public URLConnectionAdapter openRequestConnection(Request request, final boolean followRedirects) throws IOException {
+                request.setURL(new URL(rewriteProtocol(request.getURL().toExternalForm())));
+                return super.openRequestConnection(request, followRedirects);
+            }
+
+            @Override
+            public Browser createNewBrowserInstance() {
+                return FilerNet.this.createNewBrowserInstance();
+            }
+        };
         br.setFollowRedirects(true);
         br.getHeaders().put("User-Agent", "JDownloader");
         return br;
