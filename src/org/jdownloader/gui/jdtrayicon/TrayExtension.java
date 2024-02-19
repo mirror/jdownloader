@@ -331,7 +331,13 @@ public class TrayExtension extends AbstractExtension<TrayConfig, TrayiconTransla
                             }
                             if (!getSettings().isTrayOnlyVisibleIfWindowIsHiddenEnabled() || !guiFrame.isVisible()) {
                                 systemTray.add(trayIcon);
-                                ma.startListener();
+                                // without this delay, the tooltip is shown after startup in some cases at the mouse pointer
+                                SwingUtils.invokeLater(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        ma.startListener();
+                                    }
+                                }, 0);
                             }
                         } catch (Throwable e) {
                             /*
