@@ -410,6 +410,10 @@ public class RecurbateCom extends PluginForHost {
         String username = br.getRegex("(?i)Nickname\\s*</div>\\s*<div class=\"col-sm-8\">\\s*([^<>\"]+)").getMatch(0);
         if (username == null) {
             username = br.getRegex("class='fas fa-user-circle'></i>\\s*<span class=\"crop-ellipsis\"[^>]*title=\"([^\"]+)").getMatch(0);
+            if (username == null) {
+                // 2024-02-20
+                username = br.getRegex("class='far fa-user-circle'></i>\\s*<span class=\"crop-ellipsis\" title=\"([^\"]+)").getMatch(0);
+            }
         }
         if (username != null) {
             /* User can theoretically enter whatever he wants in username field when doing cookie login --> We prefer unique usernames. */

@@ -595,8 +595,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
      * Example: streamhide.com
      */
     protected boolean supportsShortURLs() {
-        // TODO: 2023-07-25: Change this to false by default
-        return true;
+        return false;
     }
 
     @Override
@@ -992,7 +991,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
     }
 
     public AvailableStatus requestFileInformationWebsite(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
-        this.resolveShortURL(this.br.cloneBrowser(), link, account);
+        resolveShortURL(this.br.cloneBrowser(), link, account);
         /* First, set fallback-filename */
         if (!link.isNameSet()) {
             setWeakFilename(link, null);
@@ -1810,7 +1809,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        this.resolveShortURL(this.br.cloneBrowser(), link, null);
+        resolveShortURL(this.br.cloneBrowser(), link, null);
         doFree(link, null);
     }
 
@@ -2625,7 +2624,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
      * @throws Exception
      */
     public Form findFormDownload2Premium(final DownloadLink downloadLink, final Account account, final Browser br) throws Exception {
-        return br == null ? null : br.getFormbyProperty("name", "F1");
+        return br.getFormbyProperty("name", "F1");
     }
 
     /**
@@ -4732,7 +4731,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        this.resolveShortURL(this.br.cloneBrowser(), link, account);
+        resolveShortURL(this.br.cloneBrowser(), link, account);
         if (this.attemptStoredDownloadurlDownload(link, account)) {
             try {
                 if (dl.getConnection() != null) {
@@ -5266,13 +5265,14 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
                     }
                 } catch (final Throwable e) {
                     logger.log(e);
-                    logger.info("");
-                }
-                logger.info("API download status: " + apiDownloadsPossible);
-                if (apiDownloadsPossible) {
-                    account.setProperty(PROPERTY_ACCOUNT_ALLOW_API_DOWNLOAD_ATTEMPT_IN_WEBSITE_MODE, true);
-                } else {
-                    account.removeProperty(PROPERTY_ACCOUNT_ALLOW_API_DOWNLOAD_ATTEMPT_IN_WEBSITE_MODE);
+                    logger.info("Exception occured API download check");
+                } finally {
+                    logger.info("API download status: " + apiDownloadsPossible);
+                    if (apiDownloadsPossible) {
+                        account.setProperty(PROPERTY_ACCOUNT_ALLOW_API_DOWNLOAD_ATTEMPT_IN_WEBSITE_MODE, true);
+                    } else {
+                        account.removeProperty(PROPERTY_ACCOUNT_ALLOW_API_DOWNLOAD_ATTEMPT_IN_WEBSITE_MODE);
+                    }
                 }
             }
         }
@@ -5320,7 +5320,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
                 sb.delete(0, sb.capacity());
                 for (final DownloadLink link : links) {
                     try {
-                        this.resolveShortURL(br.cloneBrowser(), link, null);
+                        resolveShortURL(br.cloneBrowser(), link, null);
                     } catch (final PluginException e) {
                         logger.log(e);
                         if (e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {

@@ -57,7 +57,7 @@ public class ORFMediathek extends PluginForHost {
     public static final String  SETTING_PREFER_VIDEO_GAPLESS    = "VIDEO_GAPLESS";
     public static final String  HTTP_STREAM                     = "HTTP_STREAM";
     public static final String  HLS_STREAM                      = "HLS_STREAM";
-    public static final String  HDS_STREAM                      = "HDS_STREAM";
+    public static final String  HDS_STREAM                      = "HDS_STREAM_2024_02_20";
     public static final String  PROPERTY_TITLE                  = "title";
     public static final String  PROPERTY_VIDEO_POSITION         = "video_position";
     public static final String  PROPERTY_VIDEO_POSITION_MAX     = "video_position_max";
@@ -407,7 +407,7 @@ public class ORFMediathek extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return Integer.MAX_VALUE;
     }
 
     @Override
@@ -437,6 +437,6 @@ public class ORFMediathek extends PluginForHost {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), HTTP_STREAM, "Load http streams").setDefaultValue(true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), HLS_STREAM, "Load hls streams").setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), HDS_STREAM, "Load hds streams").setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), HDS_STREAM, "Load hds streams (unavailable since 2024-02-20)").setDefaultValue(false).setEnabled(false));
     }
 }

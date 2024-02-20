@@ -56,17 +56,20 @@ public class OldGamesCom extends PluginForHost {
     }
 
     @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.setFollowRedirects(true);
+        return br;
+    }
+
+    @Override
     public String getAGBLink() {
         return "https://www.old-games.com/";
     }
 
     /* Connection stuff */
-    private static final boolean FREE_RESUME                  = true;
-    private static final int     FREE_MAXCHUNKS               = 1;
-    private static final int     FREE_MAXDOWNLOADS            = 2;
-    private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
-    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 1;
-    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
+    private static final int FREE_MAXCHUNKS            = 1;
+    private static final int ACCOUNT_PREMIUM_MAXCHUNKS = 1;
 
     @Override
     public String getLinkID(final DownloadLink link) {
@@ -83,15 +86,20 @@ public class OldGamesCom extends PluginForHost {
     }
 
     @Override
+    public boolean isResumeable(final DownloadLink link, final Account account) {
+        return true;
+    }
+
+    @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        final String fid = this.getFID(link);
         if (!link.isNameSet()) {
             /* Set fallback-filename */
-            link.setName(this.getFID(link));
+            link.setName(fid);
         }
-        br.setFollowRedirects(true);
         br.getPage(getGetfileURL(link));
-        if (this.br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         /* First try to get nicer name */
@@ -110,22 +118,24 @@ public class OldGamesCom extends PluginForHost {
                 filename = filename.replace(", " + filesize, "");
             }
             link.setDownloadSize(SizeFormatter.getSize(filesize));
+        } else {
+            logger.warning("Failed to find filesize");
         }
-        link.setName(this.getFID(link) + "_" + Encoding.htmlDecode(filename.trim()));
+        link.setName(fid + "_" + Encoding.htmlDecode(filename.trim()));
         return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link);
-        doFree(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+        doFree(link, this.isResumeable(link, null), FREE_MAXCHUNKS, "free_directlink");
     }
 
     private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         String dllink = checkDirectLink(link, directlinkproperty);
         if (dllink == null) {
-            this.br.getPage("/getfree/" + this.getFID(link));
-            if (this.br.containsHTML("(?i)Download limit exceeded")) {
+            br.getPage("/getfree/" + this.getFID(link));
+            if (br.containsHTML("(?i)Download limit exceeded")) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Download limit exceeded");
             }
             dllink = getFinalDownloadlink(br);
@@ -170,7 +180,6 @@ public class OldGamesCom extends PluginForHost {
             URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
-                br2.setFollowRedirects(true);
                 con = br2.openHeadConnection(dllink);
                 if (looksLikeDownloadableContent(con)) {
                     return dllink;
@@ -193,7 +202,7 @@ public class OldGamesCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return FREE_MAXDOWNLOADS;
+        return 2;
     }
 
     private void login(final Account account, final boolean force) throws Exception {
@@ -206,10 +215,9 @@ public class OldGamesCom extends PluginForHost {
                     br.setCookies(cookies);
                     return;
                 }
-                br.setFollowRedirects(false);
                 br.setCookie(this.getHost(), "acc", account.getPass());
-                br.getPage("http://www." + this.getHost() + "/getfile/10");
-                if (this.br.containsHTML("name=\"acc\"")) {
+                br.getPage("https://www." + this.getHost() + "/getfile/10");
+                if (!isLoggedin(br)) {
                     throw new AccountInvalidException();
                 }
                 account.saveCookies(br.getCookies(br.getHost()), "");
@@ -222,13 +230,22 @@ public class OldGamesCom extends PluginForHost {
         }
     }
 
+    private boolean isLoggedin(final Browser br) {
+        if (br.containsHTML("name=\"acc\"")) {
+            /* HTML code contains login-field -> We are not logged in */
+            return false;
+        } else {
+            /* HTML does not contain login-field -> We are logged in */
+            return true;
+        }
+    }
+
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         login(account, true);
         ai.setUnlimitedTraffic();
         account.setType(AccountType.PREMIUM);
-        account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
         account.setConcurrentUsePossible(true);
         return ai;
     }
@@ -237,13 +254,12 @@ public class OldGamesCom extends PluginForHost {
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
         login(account, false);
-        br.setFollowRedirects(false);
         br.getPage(getGetfileURL(link));
         final String dllink = getFinalDownloadlink(br);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, this.isResumeable(link, account), ACCOUNT_PREMIUM_MAXCHUNKS);
         if (!looksLikeDownloadableContent(dl.getConnection())) {
             logger.warning("The final dllink seems not to be a file!");
-            br.followConnection(true);
+            br.followConnection();
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
@@ -320,7 +336,7 @@ public class OldGamesCom extends PluginForHost {
         @Override
         public boolean validateInputs() {
             final String pw = getPassword();
-            if (pw != null) {
+            if (!StringUtils.isEmpty(pw)) {
                 apiPINLabel.setForeground(Color.BLACK);
                 return true;
             } else {
@@ -337,7 +353,7 @@ public class OldGamesCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return ACCOUNT_PREMIUM_MAXDOWNLOADS;
+        return Integer.MAX_VALUE;
     }
 
     @Override

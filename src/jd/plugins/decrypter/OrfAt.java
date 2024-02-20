@@ -187,38 +187,39 @@ public class OrfAt extends PluginForDecrypt {
         final ORFMediathek hosterplugin = (ORFMediathek) this.getNewPluginForHostInstance("orf.at");
         final Map<String, Long> qualityIdentifierToFilesizeMapGLOBAL = new HashMap<String, Long>();
         final List<String> selectedQualities = new ArrayList<String>();
-        if (cfg.getBooleanProperty(jd.plugins.hoster.ORFMediathek.Q_VERYLOW, true)) {
+        if (cfg.getBooleanProperty(ORFMediathek.Q_VERYLOW, true)) {
             selectedQualities.add("VERYLOW");
         }
-        if (cfg.getBooleanProperty(jd.plugins.hoster.ORFMediathek.Q_LOW, true)) {
+        if (cfg.getBooleanProperty(ORFMediathek.Q_LOW, true)) {
             selectedQualities.add("LOW");
         }
-        if (cfg.getBooleanProperty(jd.plugins.hoster.ORFMediathek.Q_MEDIUM, true)) {
+        if (cfg.getBooleanProperty(ORFMediathek.Q_MEDIUM, true)) {
             selectedQualities.add("MEDIUM");
         }
-        if (cfg.getBooleanProperty(jd.plugins.hoster.ORFMediathek.Q_HIGH, true)) {
+        if (cfg.getBooleanProperty(ORFMediathek.Q_HIGH, true)) {
             selectedQualities.add("HIGH");
         }
-        if (cfg.getBooleanProperty(jd.plugins.hoster.ORFMediathek.Q_VERYHIGH, true)) {
+        if (cfg.getBooleanProperty(ORFMediathek.Q_VERYHIGH, true)) {
             selectedQualities.add("VERYHIGH");
         }
         boolean isCurrentlyAgeRestricted = false;
         String thumbnailurlFromFirstSegment = null;
-        final boolean preferBestVideo = cfg.getBooleanProperty(jd.plugins.hoster.ORFMediathek.Q_BEST, true);
+        final boolean preferBestVideo = cfg.getBooleanProperty(ORFMediathek.Q_BEST, true);
         boolean isProgressiveStreamAvailable = false;
         if (segments != null) {
             final List<String> selectedDeliveryTypes = new ArrayList<String>();
-            boolean allow_HTTP = cfg.getBooleanProperty(jd.plugins.hoster.ORFMediathek.HTTP_STREAM, true);
-            final boolean allow_HDS = cfg.getBooleanProperty(jd.plugins.hoster.ORFMediathek.HDS_STREAM, true);
-            final boolean allow_HLS = cfg.getBooleanProperty(jd.plugins.hoster.ORFMediathek.HLS_STREAM, true);
-            if (allow_HDS) {
+            final boolean enforceProgressive = true;
+            final boolean allowProgressive = cfg.getBooleanProperty(ORFMediathek.HTTP_STREAM, true);
+            final boolean hdsServersideBroken = true; // 2024-02-20: https://board.jdownloader.org/showthread.php?t=95259
+            final boolean allow_HDS = cfg.getBooleanProperty(ORFMediathek.HDS_STREAM, true);
+            final boolean allow_HLS = cfg.getBooleanProperty(ORFMediathek.HLS_STREAM, true);
+            if (allow_HDS && !hdsServersideBroken) {
                 selectedDeliveryTypes.add("hds");
             }
             if (allow_HLS) {
                 selectedDeliveryTypes.add("hls");
             }
-            allow_HTTP = true; // 2024-02-07: Enforce progressive
-            if (allow_HTTP || true) {
+            if (allowProgressive || enforceProgressive) {
                 selectedDeliveryTypes.add("progressive");
             }
             int videoPosition = 0;
@@ -384,7 +385,7 @@ public class OrfAt extends PluginForDecrypt {
                 final List<DownloadLink> finalresults = new ArrayList<DownloadLink>();
                 finalresults.addAll(chosenVideoResults);
                 /* Add a subtitle-result for each chosen video quality */
-                if (cfg.getBooleanProperty(jd.plugins.hoster.ORFMediathek.Q_SUBTITLES, true) && !StringUtils.isEmpty(subtitleurl)) {
+                if (cfg.getBooleanProperty(ORFMediathek.Q_SUBTITLES, true) && !StringUtils.isEmpty(subtitleurl)) {
                     for (final DownloadLink chosenVideoResult : chosenVideoResults) {
                         final DownloadLink subtitle = createDownloadlink(subtitleurl);
                         subtitle.setDefaultPlugin(hosterplugin);
@@ -397,7 +398,7 @@ public class OrfAt extends PluginForDecrypt {
                         finalresults.add(subtitle);
                     }
                 }
-                if (cfg.getBooleanProperty(jd.plugins.hoster.ORFMediathek.Q_THUMBNAIL, true) && !StringUtils.isEmpty(thumbnailurl)) {
+                if (cfg.getBooleanProperty(ORFMediathek.Q_THUMBNAIL, true) && !StringUtils.isEmpty(thumbnailurl)) {
                     final DownloadLink thumbnail = this.createDownloadlink(thumbnailurl);
                     thumbnail.setDefaultPlugin(hosterplugin);
                     thumbnail.setHost(hosterplugin.getHost());
@@ -504,7 +505,7 @@ public class OrfAt extends PluginForDecrypt {
             for (final DownloadLink chosenVideoResult : videoSelectedResults) {
                 thisFinalResults.add(chosenVideoResult);
                 /* Add a subtitle-result for each chosen video quality */
-                if (cfg.getBooleanProperty(jd.plugins.hoster.ORFMediathek.Q_SUBTITLES, true) && !StringUtils.isEmpty(subtitleurl)) {
+                if (cfg.getBooleanProperty(ORFMediathek.Q_SUBTITLES, true) && !StringUtils.isEmpty(subtitleurl)) {
                     final DownloadLink subtitle = createDownloadlink(subtitleurl);
                     subtitle.setDefaultPlugin(hosterplugin);
                     subtitle.setHost(hosterplugin.getHost());
@@ -516,7 +517,7 @@ public class OrfAt extends PluginForDecrypt {
                 }
             }
             /* Add teaser/thumbnail image */
-            if (cfg.getBooleanProperty(jd.plugins.hoster.ORFMediathek.Q_THUMBNAIL, true) && !StringUtils.isEmpty(thumbnailurlFromFirstSegment)) {
+            if (cfg.getBooleanProperty(ORFMediathek.Q_THUMBNAIL, true) && !StringUtils.isEmpty(thumbnailurlFromFirstSegment)) {
                 final DownloadLink thumbnail = this.createDownloadlink(thumbnailurlFromFirstSegment);
                 thumbnail.setDefaultPlugin(hosterplugin);
                 thumbnail.setHost(hosterplugin.getHost());
@@ -597,9 +598,9 @@ public class OrfAt extends PluginForDecrypt {
         final SubConfiguration cfg = SubConfiguration.getConfig("orf.at");
         final List<String> selectedQualities = new ArrayList<String>();
         final List<String> selectedDeliveryTypes = new ArrayList<String>();
-        boolean allow_HTTP = cfg.getBooleanProperty(jd.plugins.hoster.ORFMediathek.HTTP_STREAM, true);
-        final boolean allow_HDS = cfg.getBooleanProperty(jd.plugins.hoster.ORFMediathek.HDS_STREAM, true);
-        final boolean allow_HLS = cfg.getBooleanProperty(jd.plugins.hoster.ORFMediathek.HLS_STREAM, true);
+        boolean allow_HTTP = cfg.getBooleanProperty(ORFMediathek.HTTP_STREAM, true);
+        final boolean allow_HDS = cfg.getBooleanProperty(ORFMediathek.HDS_STREAM, true);
+        final boolean allow_HLS = cfg.getBooleanProperty(ORFMediathek.HLS_STREAM, true);
         if (allow_HDS) {
             selectedDeliveryTypes.add("hds");
         }
@@ -610,19 +611,19 @@ public class OrfAt extends PluginForDecrypt {
         if (allow_HTTP || true) {
             selectedDeliveryTypes.add("progressive");
         }
-        if (cfg.getBooleanProperty(jd.plugins.hoster.ORFMediathek.Q_VERYLOW, true)) {
+        if (cfg.getBooleanProperty(ORFMediathek.Q_VERYLOW, true)) {
             selectedQualities.add("VERYLOW");
         }
-        if (cfg.getBooleanProperty(jd.plugins.hoster.ORFMediathek.Q_LOW, true)) {
+        if (cfg.getBooleanProperty(ORFMediathek.Q_LOW, true)) {
             selectedQualities.add("LOW");
         }
-        if (cfg.getBooleanProperty(jd.plugins.hoster.ORFMediathek.Q_MEDIUM, true)) {
+        if (cfg.getBooleanProperty(ORFMediathek.Q_MEDIUM, true)) {
             selectedQualities.add("MEDIUM");
         }
-        if (cfg.getBooleanProperty(jd.plugins.hoster.ORFMediathek.Q_HIGH, true)) {
+        if (cfg.getBooleanProperty(ORFMediathek.Q_HIGH, true)) {
             selectedQualities.add("HIGH");
         }
-        if (cfg.getBooleanProperty(jd.plugins.hoster.ORFMediathek.Q_VERYHIGH, true)) {
+        if (cfg.getBooleanProperty(ORFMediathek.Q_VERYHIGH, true)) {
             selectedQualities.add("VERYHIGH");
         }
         final ORFMediathek hosterplugin = (ORFMediathek) this.getNewPluginForHostInstance("orf.at");
@@ -782,7 +783,7 @@ public class OrfAt extends PluginForDecrypt {
                 }
             }
             final List<DownloadLink> chosenVideoResults = new ArrayList<DownloadLink>();
-            if (cfg.getBooleanProperty(jd.plugins.hoster.ORFMediathek.Q_BEST, true)) {
+            if (cfg.getBooleanProperty(ORFMediathek.Q_BEST, true)) {
                 /* Assume that we always find best-results. */
                 chosenVideoResults.addAll(bestVideos);
             } else {
@@ -797,7 +798,7 @@ public class OrfAt extends PluginForDecrypt {
             final List<DownloadLink> finalresults = new ArrayList<DownloadLink>();
             finalresults.addAll(chosenVideoResults);
             /* Add a subtitle-result for each chosen video quality */
-            if (cfg.getBooleanProperty(jd.plugins.hoster.ORFMediathek.Q_SUBTITLES, true) && !StringUtils.isEmpty(subtitleurl)) {
+            if (cfg.getBooleanProperty(ORFMediathek.Q_SUBTITLES, true) && !StringUtils.isEmpty(subtitleurl)) {
                 for (final DownloadLink chosenVideoResult : chosenVideoResults) {
                     final DownloadLink subtitle = createDownloadlink(subtitleurl);
                     subtitle.setDefaultPlugin(hosterplugin);
@@ -810,7 +811,7 @@ public class OrfAt extends PluginForDecrypt {
                     finalresults.add(subtitle);
                 }
             }
-            if (cfg.getBooleanProperty(jd.plugins.hoster.ORFMediathek.Q_THUMBNAIL, true) && !StringUtils.isEmpty(thumbnailurl)) {
+            if (cfg.getBooleanProperty(ORFMediathek.Q_THUMBNAIL, true) && !StringUtils.isEmpty(thumbnailurl)) {
                 final DownloadLink thumbnail = this.createDownloadlink(thumbnailurl);
                 thumbnail.setDefaultPlugin(hosterplugin);
                 thumbnail.setHost(hosterplugin.getHost());

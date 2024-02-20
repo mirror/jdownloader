@@ -41,7 +41,6 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
-import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -244,7 +243,7 @@ public class OkRu extends PluginForHost {
         // }
         // }
         /* Only check filesize during linkcheck to avoid double-http-requests */
-        if (!StringUtils.isEmpty(dllink) && !isDownload && !dllink.contains(".m3u8")) {
+        if (!isDownload && !StringUtils.isEmpty(dllink) && !dllink.contains(".m3u8")) {
             URLConnectionAdapter con = null;
             try {
                 con = br.openHeadConnection(dllink);
@@ -286,7 +285,7 @@ public class OkRu extends PluginForHost {
             return true;
         } else if (offlineBecauseOfDMCA(br)) {
             return true;
-        } else if (br.containsHTML(">The author of this video has not been found or is blocked")) {
+        } else if (br.containsHTML(">\\s*The author of this video has not been found or is blocked")) {
             /* 2020-11-30 */
             return true;
         }
@@ -305,8 +304,8 @@ public class OkRu extends PluginForHost {
         return false;
     }
 
-    public static boolean offlineBecauseOfDMCA(final Browser brcheck) {
-        return brcheck.containsHTML(">Video has been blocked due to author's rights infingement<|>The video is blocked<|>Group, where this video was posted, has not been found");
+    public static boolean offlineBecauseOfDMCA(final Browser br) {
+        return br.containsHTML(">Video has been blocked due to author's rights infingement<|>The video is blocked<|>Group, where this video was posted, has not been found");
     }
 
     @Override
@@ -323,8 +322,10 @@ public class OkRu extends PluginForHost {
         requestFileInformation(link, account, true);
         if (br.containsHTML("class=\"fierr\"") || br.containsHTML("(?i)>\\s*Access to this video is restricted")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download impossible - video corrupted?", 3 * 60 * 60 * 1000l);
-        } else if (this.paidContent) {
-            throw new AccountRequiredException();
+        } else if (br.containsHTML("class=\"fierr\"") || br.containsHTML("(?i)>\\s*Access to this video is restricted")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download impossible - video corrupted?", 3 * 60 * 60 * 1000l);
+        } else if (br.containsHTML(">\\s*This video is not available in your region")) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "GEO-blocked");
         } else if (StringUtils.isEmpty(dllink)) {
             logger.warning("Failed to find final downloadurl");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

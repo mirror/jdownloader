@@ -589,7 +589,6 @@ public class SendCm extends XFileSharingProBasic {
 
     @Override
     protected boolean allowAPIDownloadIfApikeyIsAvailable(final DownloadLink link, final Account account) {
-        // TODO: Refactor/remove this after next Fullbuild
         if (account == null) {
             return false;
         } else {

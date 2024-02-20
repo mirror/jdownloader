@@ -231,4 +231,28 @@ public class KenfilesCom extends XFileSharingProBasic {
         }
         return super.looksLikeDownloadableContent(urlConnection);
     }
+    // @Override
+    // public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+    // if (this.enableAccountApiOnlyMode()) {
+    // /* API-only mode */
+    // handleDownload(link, account, null, getDllinkAPI(link, account), null);
+    // } else {
+    // super.handlePremium(link, account);
+    // }
+    // }
+    //
+    // @Override
+    // protected boolean supportsAPIMassLinkcheck() {
+    // if (isAPIKey(this.getAPIKey())) {
+    // return true;
+    // } else {
+    // return false;
+    // }
+    // }
+    //
+    // @Override
+    // /** API docs: https://kenfiles.com/pages/api */
+    // protected boolean enableAccountApiOnlyMode() {
+    // return true;
+    // }
 }
