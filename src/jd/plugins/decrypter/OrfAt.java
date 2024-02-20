@@ -385,7 +385,7 @@ public class OrfAt extends PluginForDecrypt {
                 final List<DownloadLink> finalresults = new ArrayList<DownloadLink>();
                 finalresults.addAll(chosenVideoResults);
                 /* Add a subtitle-result for each chosen video quality */
-                if (cfg.getBooleanProperty(ORFMediathek.Q_SUBTITLES, true) && !StringUtils.isEmpty(subtitleurl)) {
+                if (cfg.getBooleanProperty(ORFMediathek.Q_SUBTITLES, ORFMediathek.Q_SUBTITLES_default) && !StringUtils.isEmpty(subtitleurl)) {
                     for (final DownloadLink chosenVideoResult : chosenVideoResults) {
                         final DownloadLink subtitle = createDownloadlink(subtitleurl);
                         subtitle.setDefaultPlugin(hosterplugin);
@@ -398,7 +398,7 @@ public class OrfAt extends PluginForDecrypt {
                         finalresults.add(subtitle);
                     }
                 }
-                if (cfg.getBooleanProperty(ORFMediathek.Q_THUMBNAIL, true) && !StringUtils.isEmpty(thumbnailurl)) {
+                if (cfg.getBooleanProperty(ORFMediathek.Q_THUMBNAIL, ORFMediathek.Q_THUMBNAIL_default) && !StringUtils.isEmpty(thumbnailurl)) {
                     final DownloadLink thumbnail = this.createDownloadlink(thumbnailurl);
                     thumbnail.setDefaultPlugin(hosterplugin);
                     thumbnail.setHost(hosterplugin.getHost());
@@ -505,7 +505,7 @@ public class OrfAt extends PluginForDecrypt {
             for (final DownloadLink chosenVideoResult : videoSelectedResults) {
                 thisFinalResults.add(chosenVideoResult);
                 /* Add a subtitle-result for each chosen video quality */
-                if (cfg.getBooleanProperty(ORFMediathek.Q_SUBTITLES, true) && !StringUtils.isEmpty(subtitleurl)) {
+                if (cfg.getBooleanProperty(ORFMediathek.Q_SUBTITLES, ORFMediathek.Q_SUBTITLES_default) && !StringUtils.isEmpty(subtitleurl)) {
                     final DownloadLink subtitle = createDownloadlink(subtitleurl);
                     subtitle.setDefaultPlugin(hosterplugin);
                     subtitle.setHost(hosterplugin.getHost());
@@ -517,7 +517,7 @@ public class OrfAt extends PluginForDecrypt {
                 }
             }
             /* Add teaser/thumbnail image */
-            if (cfg.getBooleanProperty(ORFMediathek.Q_THUMBNAIL, true) && !StringUtils.isEmpty(thumbnailurlFromFirstSegment)) {
+            if (cfg.getBooleanProperty(ORFMediathek.Q_THUMBNAIL, ORFMediathek.Q_THUMBNAIL_default) && !StringUtils.isEmpty(thumbnailurlFromFirstSegment)) {
                 final DownloadLink thumbnail = this.createDownloadlink(thumbnailurlFromFirstSegment);
                 thumbnail.setDefaultPlugin(hosterplugin);
                 thumbnail.setHost(hosterplugin.getHost());
@@ -556,13 +556,9 @@ public class OrfAt extends PluginForDecrypt {
     private ArrayList<DownloadLink> crawlOrfmediathekOld(final CryptedLink param) throws Exception {
         final String contenturl = param.getCryptedUrl().replaceFirst("/index\\.php/", "/");
         final boolean rewriteUrlsToNewMediathek = true;
-        final String videoID = new Regex(param.getCryptedUrl(), "/profile/[^/]+/[^/]+/[^/]+/(\\d+)").getMatch(0);
-        if (rewriteUrlsToNewMediathek) {
-            if (videoID == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            final String newurl = "https://on.orf.at/video/" + videoID;
-            return this.crawlOrfmediathekNew(param, newurl);
+        final String videoIDFromURL = new Regex(param.getCryptedUrl(), "/profile/[^/]+/[^/]+/[^/]+/(\\d+)").getMatch(0);
+        if (rewriteUrlsToNewMediathek && videoIDFromURL != null) {
+            return this.crawlOrfmediathekNew(param, generateContenturlMediathek(videoIDFromURL, null));
         }
         br.setAllowedResponseCodes(500);
         br.setLoadLimit(this.br.getLoadLimit() * 4);
@@ -585,6 +581,12 @@ public class OrfAt extends PluginForDecrypt {
         final Map<String, Object> gapless_video = (Map<String, Object>) playlist.get("gapless_video");
         final List<Map<String, Object>> segments = (List<Map<String, Object>>) playlist.get("videos");
         final String titleOfPlaylistOrVideo = playlist.get("title").toString();
+        if (rewriteUrlsToNewMediathek) {
+            if (StringUtils.isEmpty(contentIDSlashPlaylistIDSlashVideoID)) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            return this.crawlOrfmediathekNew(param, generateContenturlMediathek(contentIDSlashPlaylistIDSlashVideoID, null));
+        }
         final boolean isGaplessVideo;
         if (gapless_video != null && !gapless_video.isEmpty()) {
             /* Prefer single gapless video. */
@@ -798,7 +800,7 @@ public class OrfAt extends PluginForDecrypt {
             final List<DownloadLink> finalresults = new ArrayList<DownloadLink>();
             finalresults.addAll(chosenVideoResults);
             /* Add a subtitle-result for each chosen video quality */
-            if (cfg.getBooleanProperty(ORFMediathek.Q_SUBTITLES, true) && !StringUtils.isEmpty(subtitleurl)) {
+            if (cfg.getBooleanProperty(ORFMediathek.Q_SUBTITLES, ORFMediathek.Q_SUBTITLES_default) && !StringUtils.isEmpty(subtitleurl)) {
                 for (final DownloadLink chosenVideoResult : chosenVideoResults) {
                     final DownloadLink subtitle = createDownloadlink(subtitleurl);
                     subtitle.setDefaultPlugin(hosterplugin);
@@ -811,7 +813,7 @@ public class OrfAt extends PluginForDecrypt {
                     finalresults.add(subtitle);
                 }
             }
-            if (cfg.getBooleanProperty(ORFMediathek.Q_THUMBNAIL, true) && !StringUtils.isEmpty(thumbnailurl)) {
+            if (cfg.getBooleanProperty(ORFMediathek.Q_THUMBNAIL, ORFMediathek.Q_THUMBNAIL_default) && !StringUtils.isEmpty(thumbnailurl)) {
                 final DownloadLink thumbnail = this.createDownloadlink(thumbnailurl);
                 thumbnail.setDefaultPlugin(hosterplugin);
                 thumbnail.setHost(hosterplugin.getHost());
@@ -841,6 +843,14 @@ public class OrfAt extends PluginForDecrypt {
             }
         }
         return ret;
+    }
+
+    private static String generateContenturlMediathek(final String videoID, final String slug) {
+        String url = "https://on.orf.at/video/" + videoID;
+        if (slug != null) {
+            url += "/" + slug;
+        }
+        return url;
     }
 
     private static String heightToHumanReadableQualityIdentifier(final int height) {
@@ -1415,7 +1425,7 @@ public class OrfAt extends PluginForDecrypt {
             ret.add(video);
         }
         final String thumbnailurl = (String) episode.get("related_audiodescription_episode_image_url");
-        if (thumbnailurl != null && cfg.getBooleanProperty(ORFMediathek.Q_THUMBNAIL, true)) {
+        if (thumbnailurl != null && cfg.getBooleanProperty(ORFMediathek.Q_THUMBNAIL, ORFMediathek.Q_THUMBNAIL_default)) {
             final DownloadLink thumbnail = this.createDownloadlink(thumbnailurl);
             thumbnail.setFinalFileName(title + Plugin.getFileNameExtensionFromURL(thumbnailurl));
             thumbnail.setAvailable(true);

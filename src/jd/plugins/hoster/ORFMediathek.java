@@ -46,7 +46,9 @@ import jd.plugins.PluginForHost;
 public class ORFMediathek extends PluginForHost {
     private static final String TYPE_AUDIO                      = "(?i)https?://ooe\\.orf\\.at/radio/stories/(\\d+)/";
     public static final String  Q_SUBTITLES                     = "Q_SUBTITLES";
+    public static final boolean Q_SUBTITLES_default             = true;
     public static final String  Q_THUMBNAIL                     = "Q_THUMBNAIL";
+    public static final boolean Q_THUMBNAIL_default             = true;
     public static final String  Q_BEST                          = "Q_BEST_2";
     public static final String  Q_LOW                           = "Q_LOW";
     public static final String  Q_VERYLOW                       = "Q_VERYLOW";
@@ -416,7 +418,7 @@ public class ORFMediathek extends PluginForHost {
 
     @Override
     public String getDescription() {
-        return "JDownloader's ORF Plugin helps downloading videoclips from orf.at. ORF provides different video qualities.";
+        return "JDownloader's ORF Plugin helps downloading videos from on.orf.at. ORF provides different video qualities and types of media.";
     }
 
     private void setConfigElements() {
