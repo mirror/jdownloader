@@ -27,29 +27,23 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class UqloadCom extends XFileSharingProBasic {
-    public UqloadCom(final PluginWrapper wrapper) {
+public class VudeoWs extends XFileSharingProBasic {
+    public VudeoWs(final PluginWrapper wrapper) {
         super(wrapper);
-        // this.enablePremium(super.getPurchasePremiumURL());
+        this.enablePremium(super.getPurchasePremiumURL());
     }
 
     /**
      * DEV NOTES XfileSharingProBasic Version SEE SUPER-CLASS<br />
      * mods: See overridden functions<br />
      * limit-info:<br />
-     * captchatype-info: 2019-05-16: null<br />
+     * captchatype-info: null 4dignum solvemedia reCaptchaV2, hcaptcha<br />
      * other:<br />
      */
-    @Override
-    public String rewriteHost(final String host) {
-        /* 2023-08-09: They're frequently changing their main domain. */
-        return this.rewriteHost(getPluginDomains(), host);
-    }
-
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "uqload.to", "uqload.io", "uqload.co", "uqload.com" });
+        ret.add(new String[] { "vudeo.ws" });
         return ret;
     }
 
@@ -68,10 +62,11 @@ public class UqloadCom extends XFileSharingProBasic {
 
     @Override
     public boolean isResumeable(final DownloadLink link, final Account account) {
-        if (account != null && account.getType() == AccountType.FREE) {
+        final AccountType type = account != null ? account.getType() : null;
+        if (AccountType.FREE.equals(type)) {
             /* Free Account */
             return true;
-        } else if (account != null && account.getType() == AccountType.PREMIUM) {
+        } else if (AccountType.PREMIUM.equals(type) || AccountType.LIFETIME.equals(type)) {
             /* Premium account */
             return true;
         } else {
@@ -82,21 +77,22 @@ public class UqloadCom extends XFileSharingProBasic {
 
     @Override
     public int getMaxChunks(final Account account) {
-        if (account != null && account.getType() == AccountType.FREE) {
+        final AccountType type = account != null ? account.getType() : null;
+        if (AccountType.FREE.equals(type)) {
             /* Free Account */
             return 0;
-        } else if (account != null && account.getType() == AccountType.PREMIUM) {
+        } else if (AccountType.PREMIUM.equals(type) || AccountType.LIFETIME.equals(type)) {
             /* Premium account */
             return 0;
         } else {
             /* Free(anonymous) and unknown account type */
-            return -2;
+            return 0;
         }
     }
 
     @Override
     public int getMaxSimultaneousFreeAnonymousDownloads() {
-        return 2;
+        return -1;
     }
 
     @Override
@@ -107,26 +103,5 @@ public class UqloadCom extends XFileSharingProBasic {
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
-    }
-
-    @Override
-    public boolean isVideohosterEmbed() {
-        return true;
-    }
-
-    @Override
-    public boolean isVideohoster_enforce_video_filename() {
-        return true;
-    }
-
-    @Override
-    protected boolean supports_availablecheck_filesize_html() {
-        return false;
-    }
-
-    @Override
-    public boolean supports_availablecheck_filesize_via_embedded_video() {
-        /* 2019-05-16: Special, experimental */
-        return true;
     }
 }

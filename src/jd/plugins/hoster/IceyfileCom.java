@@ -1,5 +1,5 @@
 //jDownloader - Downloadmanager
-//Copyright (C) 2013  JD-Team support@jdownloader.org
+//Copyright (C) 2016  JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -18,7 +18,7 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jdownloader.plugins.components.XFileSharingProBasic;
+import org.jdownloader.plugins.components.YetiShareCore;
 
 import jd.PluginWrapper;
 import jd.plugins.Account;
@@ -26,30 +26,25 @@ import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class UqloadCom extends XFileSharingProBasic {
-    public UqloadCom(final PluginWrapper wrapper) {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
+public class IceyfileCom extends YetiShareCore {
+    public IceyfileCom(PluginWrapper wrapper) {
         super(wrapper);
-        // this.enablePremium(super.getPurchasePremiumURL());
+        this.enablePremium(getPurchasePremiumURL());
     }
 
     /**
-     * DEV NOTES XfileSharingProBasic Version SEE SUPER-CLASS<br />
+     * DEV NOTES YetiShare<br />
+     ****************************
      * mods: See overridden functions<br />
      * limit-info:<br />
-     * captchatype-info: 2019-05-16: null<br />
-     * other:<br />
+     * captchatype-info: null solvemedia reCaptchaV2, hcaptcha<br />
+     * other: <br />
      */
-    @Override
-    public String rewriteHost(final String host) {
-        /* 2023-08-09: They're frequently changing their main domain. */
-        return this.rewriteHost(getPluginDomains(), host);
-    }
-
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "uqload.to", "uqload.io", "uqload.co", "uqload.com" });
+        ret.add(new String[] { "iceyfile.com" });
         return ret;
     }
 
@@ -63,7 +58,7 @@ public class UqloadCom extends XFileSharingProBasic {
     }
 
     public static String[] getAnnotationUrls() {
-        return XFileSharingProBasic.buildAnnotationUrls(getPluginDomains());
+        return YetiShareCore.buildAnnotationUrls(getPluginDomains());
     }
 
     @Override
@@ -80,7 +75,6 @@ public class UqloadCom extends XFileSharingProBasic {
         }
     }
 
-    @Override
     public int getMaxChunks(final Account account) {
         if (account != null && account.getType() == AccountType.FREE) {
             /* Free Account */
@@ -90,16 +84,15 @@ public class UqloadCom extends XFileSharingProBasic {
             return 0;
         } else {
             /* Free(anonymous) and unknown account type */
-            return -2;
+            return 0;
         }
     }
 
     @Override
-    public int getMaxSimultaneousFreeAnonymousDownloads() {
-        return 2;
+    public int getMaxSimultanFreeDownloadNum() {
+        return -1;
     }
 
-    @Override
     public int getMaxSimultaneousFreeAccountDownloads() {
         return -1;
     }
@@ -107,26 +100,5 @@ public class UqloadCom extends XFileSharingProBasic {
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
-    }
-
-    @Override
-    public boolean isVideohosterEmbed() {
-        return true;
-    }
-
-    @Override
-    public boolean isVideohoster_enforce_video_filename() {
-        return true;
-    }
-
-    @Override
-    protected boolean supports_availablecheck_filesize_html() {
-        return false;
-    }
-
-    @Override
-    public boolean supports_availablecheck_filesize_via_embedded_video() {
-        /* 2019-05-16: Special, experimental */
-        return true;
     }
 }
