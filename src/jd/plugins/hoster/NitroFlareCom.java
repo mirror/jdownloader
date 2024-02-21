@@ -496,7 +496,7 @@ public class NitroFlareCom extends antiDDoSForHost {
                     throwPremiumRequiredException(link);
                 }
                 requestFileInformationWebsite(link);
-                handleErrors(account, br, false);
+                handleErrors(account, br, false, false);
                 // randomHash(br, link);
                 final Browser ajax = this.setAjaxHeaders(br.cloneBrowser());
                 postPage(ajax, "/ajax/setCookie.php", "fileId=" + getFID(link));
@@ -519,8 +519,9 @@ public class NitroFlareCom extends antiDDoSForHost {
                     }
                 }
                 postPage(ajax, "/ajax/freeDownload.php", "method=startTimer&fileId=" + getFID(link));
-                handleErrors(account, ajax, false);
+                handleErrors(account, ajax, false, false);
                 if (!ajax.containsHTML("^\\s*1\\s*$")) {
+                    handleErrors(account, ajax, false, true);
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 final long timestampBeforeCaptchaSolving = System.currentTimeMillis();
@@ -613,7 +614,7 @@ public class NitroFlareCom extends antiDDoSForHost {
                     dllink = ajax.getRegex("(?i)href=\"(https?://[^\"]+)\"[^>]*>Click here to download").getMatch(0);
                 }
                 if (dllink == null) {
-                    handleErrors(account, ajax, true);
+                    handleErrors(account, ajax, true, true);
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
@@ -682,19 +683,27 @@ public class NitroFlareCom extends antiDDoSForHost {
         return br;
     }
 
-    private void handleErrors(final Account account, final Browser br, final boolean postCaptcha) throws PluginException {
+    /**
+     * @param isLastResort:
+     *            Set this to true to gurantee that a PluginException will happen no matter what.
+     */
+    private void handleErrors(final Account account, final Browser br, final boolean postCaptcha, final boolean isLastResort) throws PluginException {
         if (postCaptcha) {
             if (br.containsHTML("You don't have an entry ticket\\. Please refresh the page to get a new one")) {
+                /**
+                 * This should be a rare error. </br>
+                 * 2024-02-21: This may still happen sometimes for unknown reasons
+                 */
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "You don't have an entry ticket. Please refresh the page to get a new one.", 2 * 60 * 1000l);
             } else if (br.containsHTML("File doesn't exist")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
         }
         if (StringUtils.startsWithCaseInsensitive(br.getRequest().getHtmlCode(), "To continue this download please")) {
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "To continue this download please purchase premium or turn off your VPN.", 60 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "To continue this download please purchase premium or turn off your VPN.", 60 * 60 * 1000l);
         } else if (StringUtils.startsWithCaseInsensitive(br.getRequest().getHtmlCode(), "You can't use free download with a VPN")) {
             /* You can't use free download with a VPN / proxy turned on. Please turn it off and try again. */
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You can't use free download with a VPN / proxy turned on. Please turn it off and try again", 60 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "You can't use free download with a VPN / proxy turned on. Please turn it off and try again", 60 * 60 * 1000l);
         } else if (br.containsHTML("(?i)This file is available with premium key only|This file is available with Premium only")) {
             throwPremiumRequiredException(this.getDownloadLink());
         } else if (br.containsHTML("(?i)Free downloading is not possible")) {
@@ -718,6 +727,15 @@ public class NitroFlareCom extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Free download Overloaded, will try again later", 5 * 60 * 1000l);
         } else if (br.containsHTML("(?i)>\\s*Your ip (has|is) been blocked, if you think it is mistake contact us")) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Your ip is blocked", 30 * 60 * 1000l);
+        }
+        if (isLastResort) {
+            final int htmllength = br.getRequest().getHtmlCode().length();
+            if (htmllength > 0 && htmllength <= 100) {
+                /* Looks like website-error (plaintext, no html code) */
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Website error: " + br.getRequest().getHtmlCode());
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
     }
 
@@ -823,7 +841,14 @@ public class NitroFlareCom extends antiDDoSForHost {
                     f.put("email", Encoding.urlEncode(account.getUser().toLowerCase(Locale.ENGLISH)));
                     f.put("password", Encoding.urlEncode(account.getPass()));
                     f.put("login", "");
-                    submitForm(f);
+                    final boolean followRedirectsOld = br.isFollowingRedirects();
+                    try {
+                        /* 2024-02-21: Cheap workaround for redirect-loop which will also happen in browser sometimes. */
+                        br.setFollowRedirects(false);
+                        submitForm(f);
+                    } finally {
+                        br.setFollowRedirects(followRedirectsOld);
+                    }
                     if (getLoginFormWebsite(br) == null) {
                         logger.info("Breaking login-loop because: Login successful(?)");
                         break;
@@ -1112,6 +1137,7 @@ public class NitroFlareCom extends antiDDoSForHost {
                 /* Needed if user has disabled direct downloads in his nitroflare account. */
                 dllink = br.getRegex("<a[^>]*id=\"download\"[^>]*href\\s*=\\s*\"([^\"]+)\"").getMatch(0);
                 if (dllink == null) {
+                    handleDownloadErrors(account, link, true);
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Can't find dllink!");
                 }
                 this.dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, this.isResumeable(link, account), this.getMaxChunks(account));

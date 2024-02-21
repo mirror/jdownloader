@@ -38,11 +38,13 @@ public class NZB extends PluginsC {
             final ArchiveInfo archiveInfo;
             final FilePackage fp;
             if (nzbCommonFilenameScheme.patternFind()) {
+                /* Name package by title in given filename. */
                 fp = FilePackage.getInstance();
                 fp.setName(nzbCommonFilenameScheme.getMatch(0));
                 archiveInfo = new ArchiveInfo();
                 archiveInfo.addExtractionPassword(nzbCommonFilenameScheme.getMatch(1));
             } else {
+                /* Do not set any package -> Let upper auto handling do this. */
                 fp = null;
                 archiveInfo = null;
             }

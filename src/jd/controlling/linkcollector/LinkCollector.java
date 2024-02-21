@@ -1155,11 +1155,6 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                                 }
                                 if (filenameForPackagenameDerivation != null) {
                                     crawledPackageName = LinknameCleaner.derivePackagenameFromFilename(filenameForPackagenameDerivation);
-                                    crawledPackageName = LinknameCleaner.cleanPackagenameNew(filenameForPackagenameDerivation, true);
-                                    if (StringUtils.isEmpty(crawledPackageName)) {
-                                        // TODO: Review this
-                                        crawledPackageName = _JDT.T.LinkCollector_addCrawledLink_offlinepackage();
-                                    }
                                 }
                             }
                             final CrawledPackageMappingID crawledPackageMapID = new CrawledPackageMappingID(crawledPackageID, crawledPackageName, downloadFolder);
