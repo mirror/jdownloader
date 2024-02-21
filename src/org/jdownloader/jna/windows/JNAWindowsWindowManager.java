@@ -36,6 +36,9 @@ public class JNAWindowsWindowManager extends WindowsWindowManager {
                         LoggerFactory.getDefaultLogger().log(e);
                     }
                 }
+                break;
+            default:
+                break;
             }
         }
     }

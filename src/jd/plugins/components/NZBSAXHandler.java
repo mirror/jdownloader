@@ -14,6 +14,10 @@ import javax.xml.XMLConstants;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
+import jd.parser.Regex;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+
 import org.appwork.utils.Files;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
@@ -27,10 +31,6 @@ import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
-
-import jd.parser.Regex;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 
 public class NZBSAXHandler extends DefaultHandler {
     public static ArrayList<DownloadLink> parseNZB(final String string) throws Exception {
@@ -50,12 +50,13 @@ public class NZBSAXHandler extends DefaultHandler {
         final SAXParserFactory factory = SAXParserFactory.newInstance();
         // www.owasp.org/index.php/XML_External_Entity_(XXE)_Prevention_Cheat_Sheet
         factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
-        factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
         factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
         factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
         factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
         factory.setXIncludeAware(false);
         factory.setValidating(false);
+        // required by some NZB
+        factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", false);
         final SAXParser saxParser = factory.newSAXParser();
         try {
             saxParser.parse(new InputSource(is), handler);
@@ -84,15 +85,15 @@ public class NZBSAXHandler extends DefaultHandler {
     private String                              date              = null;
     private boolean                             isyEnc            = false;
     private final Comparator<UsenetFileSegment> segmentComparator = new Comparator<UsenetFileSegment>() {
-                                                                      public int compare(int x, int y) {
-                                                                          return (x < y) ? -1 : ((x == y) ? 0 : 1);
-                                                                      }
+        public int compare(int x, int y) {
+            return (x < y) ? -1 : ((x == y) ? 0 : 1);
+        }
 
-                                                                      @Override
-                                                                      public int compare(UsenetFileSegment o1, UsenetFileSegment o2) {
-                                                                          return compare(o1.getIndex(), o2.getIndex());
-                                                                      }
-                                                                  };
+        @Override
+        public int compare(UsenetFileSegment o1, UsenetFileSegment o2) {
+            return compare(o1.getIndex(), o2.getIndex());
+        }
+    };
 
     public NZBSAXHandler(ArrayList<DownloadLink> downloadLinks) {
         this.downloadLinks = downloadLinks;
