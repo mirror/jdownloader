@@ -28,6 +28,7 @@ import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -38,6 +39,13 @@ import jd.plugins.PluginException;
 public class OncamMe extends antiDDoSForHost {
     public OncamMe(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.setFollowRedirects(true);
+        return br;
     }
 
     @Override
@@ -110,11 +118,10 @@ public class OncamMe extends antiDDoSForHost {
         if (titleUrl != null) {
             link.setFinalFileName(titleUrl.replace("-", " ").trim() + extDefault);
         } else {
-            link.setFinalFileName(this.getFID(link) + ".mp4");
+            link.setFinalFileName(fid + extDefault);
         }
         dllink = null;
         this.setBrowserExclusive();
-        br.setFollowRedirects(true);
         final boolean isEmbedURL = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0) != null;
         if (isEmbedURL) {
             getPage("https://" + this.getHost() + "/" + fid + "/");
@@ -129,22 +136,24 @@ public class OncamMe extends antiDDoSForHost {
             link.setFinalFileName(Encoding.htmlDecode(title).trim() + extDefault);
         }
         String jsStr = br.getRegex("var f = \\[([^\\]]+)\\]").getMatch(0);
-        jsStr = jsStr.replace("'", "");
-        final String[] params = jsStr.split(",");
-        /* 2022-01-10: This URL is only valid once so don't check it in download mode. */
-        this.dllink = "/filev.php?id=" + params[0] + "&file_id=" + params[1] + "&server=" + params[2] + "&hash=" + params[3] + "&expire=" + params[4] + "&file=" + params[5];
-        if (!StringUtils.isEmpty(dllink) && !isDownload) {
-            URLConnectionAdapter con = null;
-            try {
-                con = openAntiDDoSRequestConnection(br, br.createHeadRequest(dllink));
-                handleConnectionErrors(br, con);
-                if (con.getCompleteContentLength() > 0) {
-                    link.setVerifiedFileSize(con.getCompleteContentLength());
-                }
-            } finally {
+        if (jsStr != null) {
+            jsStr = jsStr.replace("'", "");
+            final String[] params = jsStr.split(",");
+            /* 2022-01-10: This URL is only valid once so don't check it in download mode. */
+            dllink = "/filev.php?id=" + params[0] + "&file_id=" + params[1] + "&server=" + params[2] + "&hash=" + params[3] + "&expire=" + params[4] + "&file=" + params[5];
+            if (!StringUtils.isEmpty(dllink) && !isDownload) {
+                URLConnectionAdapter con = null;
                 try {
-                    con.disconnect();
-                } catch (final Throwable e) {
+                    con = openAntiDDoSRequestConnection(br, br.createHeadRequest(dllink));
+                    handleConnectionErrors(br, con);
+                    if (con.getCompleteContentLength() > 0) {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
+                } finally {
+                    try {
+                        con.disconnect();
+                    } catch (final Throwable e) {
+                    }
                 }
             }
         }
@@ -154,7 +163,9 @@ public class OncamMe extends antiDDoSForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link, true);
-        if (StringUtils.isEmpty(dllink)) {
+        if (br.containsHTML(">\\s*This video is private")) {
+            throw new AccountRequiredException("This video is private");
+        } else if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);

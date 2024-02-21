@@ -98,7 +98,7 @@ public class OldRAFDownload extends DownloadInterface {
     private boolean                                 resumedDownload;
 
     /**
-     * Gibt die Anzahl der Chunks an die dieser Download verwenden soll. Chu8nks koennen nur vor dem Downloadstart gesetzt werden!
+     * Gibt die Anzahl der Chunks an die dieser Download verwenden soll. Chunks koennen nur vor dem Downloadstart gesetzt werden!
      */
     public void setChunkNum(int num) {
         if (num <= 0) {

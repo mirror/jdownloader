@@ -44,7 +44,7 @@ public class IceyfileCom extends YetiShareCore {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "iceyfile.com" });
+        ret.add(new String[] { "iceyfile.net", "iceyfile.com" });
         return ret;
     }
 
@@ -59,6 +59,12 @@ public class IceyfileCom extends YetiShareCore {
 
     public static String[] getAnnotationUrls() {
         return YetiShareCore.buildAnnotationUrls(getPluginDomains());
+    }
+
+    @Override
+    public String rewriteHost(final String host) {
+        /* 2024-02-21: Main domain has changed from iceyfile.com to iceyfile.net */
+        return this.rewriteHost(getPluginDomains(), host);
     }
 
     @Override

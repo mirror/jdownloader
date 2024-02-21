@@ -22,6 +22,19 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonMapperException;
+import org.appwork.storage.TypeRef;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.parser.UrlQuery;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
@@ -40,25 +53,10 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.MultiHosterManagement;
 
-import org.appwork.storage.JSonMapperException;
-import org.appwork.storage.TypeRef;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.parser.UrlQuery;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 //IMPORTANT: this class must stay in jd.plugins.hoster because it extends another plugin (UseNet) which is only available through PluginClassLoader
 abstract public class ZeveraCore extends UseNet {
     /* Connection limits */
-    private static final boolean ACCOUNT_PREMIUM_RESUME                 = true;
-    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS              = 0;
-    private final String         API_STATUS_FOR_QUEUE_DEFERRED_HANDLING = "deferred";
+    private final String API_STATUS_FOR_QUEUE_DEFERRED_HANDLING = "deferred";
 
     protected abstract MultiHosterManagement getMultiHosterManagement();
 
@@ -79,6 +77,11 @@ abstract public class ZeveraCore extends UseNet {
     public boolean isResumeable(final DownloadLink link, final Account account) {
         /* Resume is always possible */
         return true;
+    }
+
+    public int getMaxChunks(final Account account) {
+        /* 2024-02-21: Workaround until "X-Cached" auto handling is working as expected. */
+        return 1;
     }
 
     @Override
@@ -365,15 +368,7 @@ abstract public class ZeveraCore extends UseNet {
                 }
             }
             try {
-                dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
-                if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-                    br.followConnection(true);
-                    /* Only check for API issues if we got a json response. */
-                    if (br.getHttpConnection().getContentType().contains("application/json")) {
-                        handleAPIErrors(this, this.br, link, account);
-                    }
-                    getMultiHosterManagement().handleErrorGeneric(account, link, "Unknown download error", 50, 5 * 60 * 1000l);
-                }
+                probeDownload(link, account, dllink, true);
             } catch (final Exception e) {
                 if (storedDirecturl != null) {
                     link.removeProperty(directlinkproperty);
@@ -394,18 +389,39 @@ abstract public class ZeveraCore extends UseNet {
         }
     }
 
+    /** Prepares start of a download. Throws exception if non-file-content is returned on http request. */
+    private void probeDownload(final DownloadLink link, final Account account, final String dllink, final boolean isMultihostHandling) throws Exception {
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, this.isResumeable(link, account), getMaxChunks(account));
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            br.followConnection();
+            if (isMultihostHandling) {
+                /* Only check for API issues if we got a json response. */
+                if (br.getHttpConnection().getContentType().contains("application/json")) {
+                    handleAPIErrors(this, br, link, account);
+                }
+                getMultiHosterManagement().handleErrorGeneric(account, link, "Unknown download error", 50, 5 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Final downloadurl did not lead to downloadable content", 3 * 60 * 1000l);
+            }
+        }
+        // TODO: Make use of this
+        final int maxChunks;
+        final String cacheStatus = dl.getConnection().getRequest().getResponseHeader("X-Cached");
+        if (StringUtils.equalsIgnoreCase(cacheStatus, "hit")) {
+            maxChunks = getMaxChunks(account);
+        } else {
+            maxChunks = 1;
+        }
+    }
+
     private void handleDLSelfhosted(final DownloadLink link, final Account account) throws Exception {
-        final Map<String, Object> details = this.requestFileInformationSelfhosted(link, account);
-        final String dllink = (String) details.get("link");
+        final Map<String, Object> details = requestFileInformationSelfhosted(link, account);
+        final String dllink = details.get("link").toString();
         if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
-        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            br.followConnection(true);
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Final downloadurl did not lead to downloadable content", 3 * 60 * 1000l);
-        }
-        this.dl.startDownload();
+        probeDownload(link, account, dllink, false);
+        dl.startDownload();
     }
 
     @Override
@@ -804,7 +820,8 @@ abstract public class ZeveraCore extends UseNet {
     }
 
     /**
-     * @return true: Account has 'access_token' property. </br> false: Account does not have 'access_token' property.
+     * @return true: Account has 'access_token' property. </br>
+     *         false: Account does not have 'access_token' property.
      */
     public static boolean setAuthHeader(final Browser br, final Account account) {
         final String access_token = account.getStringProperty("access_token");
@@ -863,7 +880,8 @@ abstract public class ZeveraCore extends UseNet {
     }
 
     /**
-     * Indicates whether downloads via free accounts are possible or not. </br> 2023-11-08: That feature has been removed serverside.
+     * Indicates whether downloads via free accounts are possible or not. </br>
+     * 2023-11-08: That feature has been removed serverside.
      */
     @Deprecated
     private final boolean supportsFreeAccountDownloadMode(final Account account) {
@@ -871,8 +889,10 @@ abstract public class ZeveraCore extends UseNet {
     }
 
     /**
-     * Indicates whether or not to display free account download dialogs which tell the user to activate free mode via website. </br> Some
-     * users find this annoying and will deactivate it. </br> default = true </br> 2023-11-08: That feature has been removed serverside.
+     * Indicates whether or not to display free account download dialogs which tell the user to activate free mode via website. </br>
+     * Some users find this annoying and will deactivate it. </br>
+     * default = true </br>
+     * 2023-11-08: That feature has been removed serverside.
      */
     @Deprecated
     private final boolean displayFreeAccountDownloadDialogs(final Account account) {
@@ -888,9 +908,10 @@ abstract public class ZeveraCore extends UseNet {
 
     /**
      * 2019-08-21: Premiumize.me has so called 'booster points' which basically means that users with booster points can download more than
-     * normal users can with their fair use limit: https://www.premiumize.me/booster </br> Premiumize has not yet integrated this in their
-     * API which means accounts with booster points will run into the fair-use-limit in JDownloader and will not be able to download any
-     * more files then. </br> This workaround can set accounts to unlimited traffic so that users will still be able to download.</br>
+     * normal users can with their fair use limit: https://www.premiumize.me/booster </br>
+     * Premiumize has not yet integrated this in their API which means accounts with booster points will run into the fair-use-limit in
+     * JDownloader and will not be able to download any more files then. </br>
+     * This workaround can set accounts to unlimited traffic so that users will still be able to download.</br>
      * Remove this workaround once Premiumize has integrated their booster points into their API.
      */
     public boolean isBoosterPointsUnlimitedTrafficWorkaroundActive(final Account account) {

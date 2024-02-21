@@ -119,9 +119,10 @@ public class OneTwoThreePanCom extends PluginForHost {
     }
 
     private AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws IOException, PluginException {
+        final String shareKey = getShareKey(link);
         if (!link.isNameSet()) {
             /* Fallback */
-            link.setName(getShareKey(link) + "_ " + getFileID(link));
+            link.setName(shareKey + "_ " + getFileID(link));
         }
         this.setBrowserExclusive();
         final String etag = link.getStringProperty(PROPERTY_ETAG);
@@ -142,9 +143,10 @@ public class OneTwoThreePanCom extends PluginForHost {
         postdata.put("Etag", etag);
         postdata.put("FileID", fileidO);
         postdata.put("S3keyFlag", s3keyflag);
-        postdata.put("ShareKey", getShareKey(link));
+        postdata.put("ShareKey", shareKey);
         postdata.put("Size", sizebytes);
-        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+        final boolean tryExperimentalAPIRequest = false;
+        if (tryExperimentalAPIRequest && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
             /* 2023-11-20: Testing as some parts of their website were changed. */
             br.getHeaders().put("App-Version", "3");
             br.getHeaders().put("Content-Type", "application/json;charset=UTF-8");
@@ -157,7 +159,9 @@ public class OneTwoThreePanCom extends PluginForHost {
              */
             br.postPageRaw("https://www.123pan.com/b/api/share/download/info?" + System.currentTimeMillis(), JSonStorage.serializeToJson(postdata));
         } else {
-            br.postPageRaw(OneTwoThreePanComFolder.API_BASE + "/share/download/info", JSonStorage.serializeToJson(postdata));
+            String url = OneTwoThreePanComFolder.API_BASE + "/share/download/info?";
+            url += System.currentTimeMillis() + "=" + System.currentTimeMillis();
+            br.postPageRaw(url, JSonStorage.serializeToJson(postdata));
         }
         final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         final Object dataO = entries.get("data");
@@ -166,12 +170,14 @@ public class OneTwoThreePanCom extends PluginForHost {
             /* E.g. {"code":400,"message":"非法请求,源文件不存在","data":null} */
             // TODO: 2023-11-20: Update errorhandling
             final int code = Integer.parseInt(entries.get("code").toString());
+            final String message = entries.get("message").toString();
             if (code == 429) {
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Error 429 rate limit reached", 3 * 60 * 1000l);
             } else if (code == 5112) {
+                /* Account required to download this file */
                 throw new AccountRequiredException();
             } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                throw new PluginException(LinkStatus.ERROR_FATAL, message);
             }
         }
         final String url = data.get("DownloadURL").toString();

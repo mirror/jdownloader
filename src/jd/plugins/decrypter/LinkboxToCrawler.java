@@ -173,7 +173,7 @@ public class LinkboxToCrawler extends PluginForDecrypt {
                     }
                     numberofNewItemsOnCurrentPage++;
                     link = this.createDownloadlink(createFileURL(fileID));
-                    LinkboxTo.parseFileInfoAndSetFilename(link, ressource);
+                    LinkboxTo.parseFileInfoAndSetFilename(link, null, ressource);
                     if (!StringUtils.isEmpty(path)) {
                         link.setRelativeDownloadFolderPath(path);
                     }

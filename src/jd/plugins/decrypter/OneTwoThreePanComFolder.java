@@ -31,6 +31,7 @@ import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DecrypterRetryException;
 import jd.plugins.DecrypterRetryException.RetryReason;
@@ -45,6 +46,13 @@ import jd.plugins.hoster.OneTwoThreePanCom;
 public class OneTwoThreePanComFolder extends PluginForDecrypt {
     public OneTwoThreePanComFolder(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.setFollowRedirects(true);
+        return br;
     }
 
     public static final String API_BASE   = "https://www.123pan.com/a/api";
@@ -73,7 +81,7 @@ public class OneTwoThreePanComFolder extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/s/([A-Za-z0-9\\-_]+)(#fileID=(\\d+))?");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/s/([A-Za-z0-9\\-_]+)(#folderID=(\\d+))?");
         }
         return ret.toArray(new String[0]);
     }
@@ -82,61 +90,80 @@ public class OneTwoThreePanComFolder extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        br.setFollowRedirects(true);
-        final Regex urlinfo = new Regex(param.getCryptedUrl(), this.getSupportedLinks());
+        final String contenturl = param.getCryptedUrl().replaceFirst("^(?i)http://", "https://");
+        final Regex urlinfo = new Regex(contenturl, this.getSupportedLinks());
         final String shareKey = urlinfo.getMatch(0);
-        final String preGivenFileID = urlinfo.getMatch(2);
+        final String preGivenSubfolderID = urlinfo.getMatch(2);
         Map<String, Object> entries = null;
         String path = this.getAdoptedCloudFolderStructure();
         String currentFolderName = null;
-        // TODO: Add support for password protected items
         String passCode = param.getDecrypterPassword();
-        boolean isPasswordProtected = false;
-        if (preGivenFileID != null) {
+        if (preGivenSubfolderID != null) {
             /* Access WebAPI right away. */
-            entries = accessPageViaWebAPI(br, shareKey, preGivenFileID, null);
+            entries = accessPageViaWebAPI(br, shareKey, preGivenSubfolderID, null);
         } else {
             /* Access website/HTML */
-            br.getPage(param.getCryptedUrl());
+            br.getPage(contenturl);
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             final String json = br.getRegex("window\\.g_initialProps = (\\{.+\\});\\s+").getMatch(0);
             final Map<String, Object> root = restoreFromString(json, TypeRef.MAP);
             final Map<String, Object> folderinfomap = (Map<String, Object>) JavaScriptEngineFactory.walkJson(root, "res/data");
-            if (Boolean.TRUE.equals(folderinfomap.get("HasPwd"))) {
-                // TODO: Add support for password protected items
-                logger.info("Password protected items are not yet supported");
-                isPasswordProtected = true;
-                throw new DecrypterRetryException(RetryReason.PLUGIN_DEFECT, "PASSWORD_PROTECTED_ITEMS_ARE_NOT_YET_SUPPORTED_" + shareKey, "Contact JDownloader support and ask for implementation.");
-            }
             /* If we have a single file only, this is the name of the single file. */
             currentFolderName = folderinfomap.get("ShareName").toString();
-            entries = (Map<String, Object>) root.get("reslist");
+            if (Boolean.TRUE.equals(folderinfomap.get("HasPwd"))) {
+                logger.info("Folder is password protected");
+                boolean pwSuccess = false;
+                int counter = 0;
+                final int counterMax = 3;
+                do {
+                    logger.info("Password attempt " + counter + "/" + counterMax);
+                    if (passCode == null || counter > 0) {
+                        passCode = getUserInput("Password?", param);
+                    }
+                    entries = accessPageViaWebAPI(br, shareKey, "0", passCode);
+                    if (((Number) entries.get("code")).intValue() == 5103) {
+                        logger.info("Wrong password: " + passCode);
+                        counter++;
+                        continue;
+                    } else {
+                        logger.info("Valid password: " + passCode);
+                        pwSuccess = true;
+                        break;
+                    }
+                } while (!this.isAbort() && counter <= counterMax);
+                if (!pwSuccess) {
+                    throw new DecrypterException(DecrypterException.PASSWORD);
+                }
+            } else {
+                entries = (Map<String, Object>) root.get("reslist");
+            }
             if (path == null) {
                 path = currentFolderName;
             } else {
                 path = "/" + currentFolderName;
             }
         }
-        if (isPasswordProtected) {
-            // TODO: Add support for password protected items
-        }
-        FilePackage fp = null;
+        final FilePackage fp = FilePackage.getInstance();
         if (!StringUtils.isEmpty(path)) {
-            fp = FilePackage.getInstance();
             fp.setName(path);
+        } else {
+            /* Fallback */
+            fp.setName(br._getURL().getPath());
         }
         int page = 0;
-        do {
+        pagination: do {
             page++;
             final Map<String, Object> data = (Map<String, Object>) entries.get("data");
             final List<Map<String, Object>> items = (List<Map<String, Object>>) data.get("InfoList");
             for (final Map<String, Object> item : items) {
-                final DownloadLink link = this.createDownloadlink("https://www.123pan.com/s/" + shareKey + "#fileID=" + item.get("FileId"));
+                final String fileID = item.get("FileId").toString();
+                final DownloadLink link;
                 final String itemTitle = item.get("FileName").toString();
                 if (((Number) item.get("Type")).intValue() == 0) {
                     /* File */
+                    link = this.createDownloadlink("https://www.123pan.com/s/" + shareKey + "#fileID=" + fileID);
                     final long filesizeBytes = ((Number) item.get("Size")).longValue();
                     final String directurl = (String) item.get("DownloadUrl");
                     link.setFinalFileName(itemTitle);
@@ -151,7 +178,6 @@ public class OneTwoThreePanComFolder extends PluginForDecrypt {
                     if (!StringUtils.isEmpty(directurl)) {
                         link.setProperty(OneTwoThreePanCom.PROPERTY_DIRECTURL, directurl);
                     }
-                    link.setMD5Hash(item.get("Etag").toString());
                     /* Do not set relative path and FilePackage for single file items without a folder. */
                     if (!StringUtils.isEmpty(path) && !StringUtils.equals(itemTitle, currentFolderName)) {
                         link.setRelativeDownloadFolderPath(path);
@@ -159,6 +185,7 @@ public class OneTwoThreePanComFolder extends PluginForDecrypt {
                     }
                 } else {
                     /* Folder */
+                    link = this.createDownloadlink("https://www.123pan.com/s/" + shareKey + "#folderID=" + fileID);
                     if (!StringUtils.isEmpty(path) && !StringUtils.equals(itemTitle, currentFolderName)) {
                         /*
                          * X-th item in crawl-chain: Remember folder-structure as API always only provides title of folders we can currently
@@ -179,13 +206,13 @@ public class OneTwoThreePanComFolder extends PluginForDecrypt {
             logger.info("Crawled page " + page + " | Items found on this page: " + items.size() + " | Total: " + ret.size());
             if (this.isAbort()) {
                 logger.info("Stopping because: Aborted by user");
-                break;
+                break pagination;
             } else if (items.size() < maxItemsPerPage) {
                 logger.info("Stopping because: Current page contains less items than max per page: " + items.size() + "/" + maxItemsPerPage);
-                break;
+                break pagination;
             } else {
                 // TODO: Add pagination support
-                break;
+                break pagination;
             }
         } while (true);
         if (ret.isEmpty()) {
@@ -204,11 +231,11 @@ public class OneTwoThreePanComFolder extends PluginForDecrypt {
         if (password != null) {
             query.add("SharePwd", Encoding.urlEncode(password));
         }
-        query.add("ParentFileId", "0");
+        query.add("ParentFileId", parentFileID);
         query.add("Page", "1");
         query.add("event", "homeListFile");
-        query.add("operateType", "1");
-        br.getPage(API_BASE + "/share/get?limit=" + maxItemsPerPage + "&next=1&orderBy=file_name&orderDirection=asc&shareKey=" + shareKey + "&ParentFileId=" + parentFileID + "&Page=1&event=homeListFile&operateType=4");
+        query.add("operateType", "4");
+        br.getPage(API_BASE + "/share/get?" + query.toString());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
