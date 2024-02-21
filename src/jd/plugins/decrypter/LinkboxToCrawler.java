@@ -86,7 +86,7 @@ public class LinkboxToCrawler extends PluginForDecrypt {
         final String subfolderID = urlinfo.getMatch(3);
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final int maxItemsPerPage = 50;
-        final UrlQuery query = new UrlQuery();
+        final UrlQuery query = LinkboxTo.getBaseQuery();
         query.add("sortField", "name");
         query.add("sortAsc", "1");
         query.add("pageSize", Integer.toString(maxItemsPerPage));
@@ -108,9 +108,6 @@ public class LinkboxToCrawler extends PluginForDecrypt {
         } else {
             query.add("pid", "0");
         }
-        query.add("platform", "web");
-        query.add("pf", "web");
-        query.add("lan", "en");
         // query.add("name", "");
         final HashSet<String> dupes = new HashSet<String>();
         int page = 1;

@@ -187,10 +187,10 @@ public class OrfAt extends PluginForDecrypt {
         final ORFMediathek hosterplugin = (ORFMediathek) this.getNewPluginForHostInstance("orf.at");
         final Map<String, Long> qualityIdentifierToFilesizeMapGLOBAL = new HashMap<String, Long>();
         final List<String> selectedQualities = new ArrayList<String>();
-        if (cfg.getBooleanProperty(ORFMediathek.Q_VERYLOW, true)) {
+        if (cfg.getBooleanProperty(ORFMediathek.Q_VERYLOW, ORFMediathek.Q_VERYLOW_default)) {
             selectedQualities.add("VERYLOW");
         }
-        if (cfg.getBooleanProperty(ORFMediathek.Q_LOW, true)) {
+        if (cfg.getBooleanProperty(ORFMediathek.Q_LOW, ORFMediathek.Q_LOW_default)) {
             selectedQualities.add("LOW");
         }
         if (cfg.getBooleanProperty(ORFMediathek.Q_MEDIUM, true)) {
@@ -204,7 +204,7 @@ public class OrfAt extends PluginForDecrypt {
         }
         boolean isCurrentlyAgeRestricted = false;
         String thumbnailurlFromFirstSegment = null;
-        final boolean preferBestVideo = cfg.getBooleanProperty(ORFMediathek.Q_BEST, true);
+        final boolean preferBestVideo = cfg.getBooleanProperty(ORFMediathek.Q_BEST, ORFMediathek.Q_BEST_default);
         boolean isProgressiveStreamAvailable = false;
         if (segments != null) {
             final List<String> selectedDeliveryTypes = new ArrayList<String>();
@@ -613,10 +613,10 @@ public class OrfAt extends PluginForDecrypt {
         if (allow_HTTP || true) {
             selectedDeliveryTypes.add("progressive");
         }
-        if (cfg.getBooleanProperty(ORFMediathek.Q_VERYLOW, true)) {
+        if (cfg.getBooleanProperty(ORFMediathek.Q_VERYLOW, ORFMediathek.Q_VERYLOW_default)) {
             selectedQualities.add("VERYLOW");
         }
-        if (cfg.getBooleanProperty(ORFMediathek.Q_LOW, true)) {
+        if (cfg.getBooleanProperty(ORFMediathek.Q_LOW, ORFMediathek.Q_LOW_default)) {
             selectedQualities.add("LOW");
         }
         if (cfg.getBooleanProperty(ORFMediathek.Q_MEDIUM, true)) {
@@ -785,7 +785,7 @@ public class OrfAt extends PluginForDecrypt {
                 }
             }
             final List<DownloadLink> chosenVideoResults = new ArrayList<DownloadLink>();
-            if (cfg.getBooleanProperty(ORFMediathek.Q_BEST, true)) {
+            if (cfg.getBooleanProperty(ORFMediathek.Q_BEST, ORFMediathek.Q_BEST_default)) {
                 /* Assume that we always find best-results. */
                 chosenVideoResults.addAll(bestVideos);
             } else {

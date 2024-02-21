@@ -376,6 +376,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
             /* Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        dupeListForProfileCrawlerTweetIDs.clear();
         final boolean preferNewWay20230811 = true;
         if (preferNewWay20230811) {
             // final String queryID = this.getGraphqlQueryID("TweetResultByRestId");
@@ -523,14 +524,14 @@ public class TwitterComCrawler extends PluginForDecrypt {
         final TwitterConfigInterface cfg = PluginJsonConfig.get(TwitterConfigInterface.class);
         // final Boolean retweetedBoolean = (Boolean) tweet.get("retweeted");
         Map<String, Object> retweeted_status = (Map<String, Object>) tweet.get("retweeted_status");
-        Map<String, Object> userInContextOfReTweet = null;
+        Map<String, Object> retweetUser = null;
         if (retweeted_status == null) {
             /* 2023-10-16 */
             retweeted_status = (Map<String, Object>) JavaScriptEngineFactory.walkJson(tweet, "retweeted_status_result/result/legacy");
             /* Get map of user who tweeted that re-tweet originally. This can differ from the user who re-tweeted the main tweet. */
             if (retweeted_status != null) {
-                userInContextOfReTweet = (Map<String, Object>) JavaScriptEngineFactory.walkJson(tweet, "retweeted_status_result/result/core/user_results/result/legacy");
-                if (userInContextOfReTweet == null) {
+                retweetUser = (Map<String, Object>) JavaScriptEngineFactory.walkJson(tweet, "retweeted_status_result/result/core/user_results/result/legacy");
+                if (retweetUser == null) {
                     /* This should never happen */
                     logger.warning("Failed to find map of re-tweet user: Possible plugin failure");
                 }
@@ -538,21 +539,19 @@ public class TwitterComCrawler extends PluginForDecrypt {
             if (retweeted_status == null) {
                 /* 2024-02-20 */
                 retweeted_status = (Map<String, Object>) JavaScriptEngineFactory.walkJson(tweet, "retweeted_status_result/result/tweet/legacy");
-                userInContextOfReTweet = (Map<String, Object>) JavaScriptEngineFactory.walkJson(tweet, "retweeted_status_result/result/tweet/core/user_results/result/legacy");
+                retweetUser = (Map<String, Object>) JavaScriptEngineFactory.walkJson(tweet, "retweeted_status_result/result/tweet/core/user_results/result/legacy");
             }
         }
         boolean isRetweet = false;
+        final Object userInContextOfTweet = tweet.get("user");
         if (retweeted_status != null && !retweeted_status.isEmpty()) {
             /*
              * Content of tweet is in this if whole tweet is a retweet. Also fields of "root map" of tweet can be truncated then e.g. text
              * of tweet in "full_text" is not the full text then.
              */
             tweet = retweeted_status;
+            user = retweetUser;
             isRetweet = true;
-        }
-        final Object userInContextOfTweet = tweet.get("user");
-        if (userInContextOfReTweet != null) {
-            user = userInContextOfReTweet;
         } else if (userInContextOfTweet != null) {
             /**
              * Prefer this as our user object. </br>
@@ -564,6 +563,10 @@ public class TwitterComCrawler extends PluginForDecrypt {
             throw new IllegalArgumentException();
         }
         final String tweetID = tweet.get("id_str").toString();
+        /* Debug code down below */
+        // if (tweetID.equals("test")) {
+        // logger.info("hit");
+        // }
         if (username == null) {
             username = user.get("screen_name").toString();
         }
@@ -1207,6 +1210,8 @@ public class TwitterComCrawler extends PluginForDecrypt {
         final String queryID = this.getGraphqlQueryID(queryName);
         final Map<String, Object> user = getUserInfo(br, account, username);
         final Number statuses_count = (Number) user.get("statuses_count");
+        // TODO: Make use of this to crawl all items from "/username/media"
+        final Number media_count = (Number) user.get("media_count");
         final String userID = user.get("id_str").toString();
         final HashSet<String> cursorDupes = new HashSet<String>();
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
@@ -1291,9 +1296,9 @@ public class TwitterComCrawler extends PluginForDecrypt {
             }
         } while (true);
         logger.info("Last nextCursor: " + profileCrawlerNextCursor);
+        final String bubbleNotifyTitle = "Twitter profile " + username + " | ID: " + userID;
         if (ret.isEmpty()) {
             /* We found nothing -> Check why */
-            final String bubbleNotifyTitle = "Twitter profile " + username + " | ID: " + userID;
             final String bubbleNotifyTextEnding = "\r\nTotal number of Tweets in this profile: " + statuses_count;
             if (totalFoundTweets == 0) {
                 if (statuses_count != null && statuses_count.intValue() > 0 && account == null) {
@@ -1311,6 +1316,11 @@ public class TwitterComCrawler extends PluginForDecrypt {
                     displayBubblenotifyMessage(bubbleNotifyTitle, "Returning no results because:\r\nMost likely user has disabled tweet text crawler but this profile only contained text tweets.\r\nMinimum number of skipped possible Tweets: " + totalFoundTweets + bubbleNotifyTextEnding);
                 }
             }
+        } else if (statuses_count != null && totalFoundTweets < statuses_count.intValue()) {
+            String text = "Some items may be missing!";
+            text += "\nTotal number of Tweets: " + statuses_count + " Crawled: " + totalFoundTweets;
+            text += "\nLogged in users can sometimes see more items than anonymous users.";
+            displayBubblenotifyMessage(bubbleNotifyTitle, text);
         }
         return ret;
     }
@@ -1382,15 +1392,24 @@ public class TwitterComCrawler extends PluginForDecrypt {
                 } else {
                     thisRoot = tweetResult;
                 }
-                final Map<String, Object> usr = (Map<String, Object>) JavaScriptEngineFactory.walkJson(thisRoot, "core/user_results/result/legacy");
-                final Map<String, Object> tweet = (Map<String, Object>) thisRoot.get("legacy");
+                Map<String, Object> tweetUser = (Map<String, Object>) JavaScriptEngineFactory.walkJson(thisRoot, "core/user_results/result/legacy");
+                Map<String, Object> tweet = (Map<String, Object>) thisRoot.get("legacy");
+                Map<String, Object> quoted_status = (Map<String, Object>) JavaScriptEngineFactory.walkJson(thisRoot, "quoted_status_result/result/legacy");
+                Map<String, Object> quotedUser = (Map<String, Object>) JavaScriptEngineFactory.walkJson(thisRoot, "quoted_status_result/result/core/user_results/result/legacy");
+                if (quoted_status != null && quotedUser != null) {
+                    /* 2024-02-21: Current Tweet is a reply to a quoted Tweet -> Return only quoted Tweet */
+                    tweet = quoted_status;
+                    tweetUser = quotedUser;
+                }
                 final String tweetIDStr = tweet.get("id_str").toString();
-                dupeListForProfileCrawlerTweetIDs.add(tweetIDStr);
-                if (singleTweetID != null && !StringUtils.equals(tweetIDStr, singleTweetID)) {
+                if (!dupeListForProfileCrawlerTweetIDs.add(tweetIDStr)) {
+                    /* Skip dupes */
+                    continue;
+                } else if (singleTweetID != null && !StringUtils.equals(tweetIDStr, singleTweetID)) {
                     logger.info("Skipping tweetID because it does not match the one we're looking for: " + tweetIDStr);
                     continue;
                 }
-                final ArrayList<DownloadLink> thisTweetResults = crawlTweetMap(null, tweet, usr, fp);
+                final ArrayList<DownloadLink> thisTweetResults = crawlTweetMap(null, tweet, tweetUser, fp);
                 /* If we're crawling users' likes, we do not want to filter any Tweets since likes can contain items of any users. */
                 if (singleTweetID == null && !crawlUserLikes && !PluginJsonConfig.get(TwitterConfigInterface.class).isCrawlRetweetsV2()) {
                     /* Re-Tweet crawling is disabled: Skip all results of this Tweet if it is a Re-Tweet. */
@@ -1489,6 +1508,10 @@ public class TwitterComCrawler extends PluginForDecrypt {
             // logger.info("hit");
             // }
             // }
+            final String rest_id = (String) map.get("rest_id");
+            if (rest_id != null && rest_id.equals("1759699103360135552")) {
+                logger.info("hit");
+            }
             if (__typename != null && (__typename.equals("Tweet") || __typename.equals("TweetWithVisibilityResults")) && (tweetMap != null || legacyMap != null)) {
                 results.add(map);
             } else if (__typename != null && __typename.equals("TweetTombstone")) {

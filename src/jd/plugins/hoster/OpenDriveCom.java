@@ -18,8 +18,11 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.Map;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
-import jd.config.Property;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
@@ -37,10 +40,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "opendrive.com" }, urls = { "https?://(?:www\\.)?(?:[a-z0-9]+\\.)?(?:opendrive\\.com/files\\?[A-Za-z0-9\\-_]+|od\\.lk/(?:d|f)/[A-Za-z0-9\\-_]+)" })
 public class OpenDriveCom extends PluginForHost {
@@ -230,48 +229,41 @@ public class OpenDriveCom extends PluginForHost {
 
     private void login(final Account account, final boolean force) throws Exception {
         synchronized (account) {
-            try {
-                br.setCookiesExclusive(true);
-                final Cookies cookies = account.loadCookies("");
-                if (cookies != null && !force) {
-                    br.setCookies(this.getHost(), cookies);
-                    return;
-                }
-                this.br.setFollowRedirects(true);
-                this.br.getPage("https://www." + this.getHost() + "/login");
-                Form loginform = this.br.getFormbyProperty("id", "login-form");
-                if (loginform == null) {
-                    loginform = this.br.getForm(0);
-                }
-                if (loginform == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                loginform.put("login_username", account.getUser());
-                loginform.put("login_password", account.getPass());
-                loginform.remove("remember_me");
-                loginform.put("remember_me", "on");
-                for (int i = 0; i < 3; i++) { // Sometimes retry is needed, redirected to /login?ref=%2Ffiles&s=...
-                    br.submitForm(loginform);
-                    if (br.containsHTML("(?i)>\\s*Invalid  username or password\\s*<")) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nUngültiger Benutzername oder ungültiges Passwort!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
-                    if (br.containsHTML("\"user-controls-menu\"")) {
-                        break;
-                    }
-                    Thread.sleep(3 * 1000);
-                }
-                account.saveCookies(this.br.getCookies(br.getHost()), "");
-            } catch (final PluginException e) {
-                account.clearCookies("");
-                account.setProperty("cookies", Property.NULL);
-                throw e;
+            br.setCookiesExclusive(true);
+            final Cookies cookies = account.loadCookies("");
+            if (cookies != null && !force) {
+                br.setCookies(this.getHost(), cookies);
+                return;
             }
+            this.br.setFollowRedirects(true);
+            this.br.getPage("https://www." + this.getHost() + "/login");
+            Form loginform = this.br.getFormbyProperty("id", "login-form");
+            if (loginform == null) {
+                loginform = this.br.getForm(0);
+            }
+            if (loginform == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            loginform.put("login_username", account.getUser());
+            loginform.put("login_password", account.getPass());
+            loginform.remove("remember_me");
+            loginform.put("remember_me", "on");
+            for (int i = 0; i < 3; i++) { // Sometimes retry is needed, redirected to /login?ref=%2Ffiles&s=...
+                br.submitForm(loginform);
+                if (br.containsHTML("(?i)>\\s*Invalid  username or password\\s*<")) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nUngültiger Benutzername oder ungültiges Passwort!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+                if (br.containsHTML("\"user-controls-menu\"")) {
+                    break;
+                }
+                Thread.sleep(3 * 1000);
+            }
+            account.saveCookies(br.getCookies(br.getHost()), "");
         }
     }
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
         login(account, true);
         br.getPage("/settings");
         if (br.containsHTML("(?i)<b>\\s*Personal account\\s*</b><br>\\s*Basic")) {
@@ -282,7 +274,7 @@ public class OpenDriveCom extends PluginForHost {
             }
         }
         account.setType(AccountType.PREMIUM);
-        ai.setStatus("Premium account");
+        final AccountInfo ai = new AccountInfo();
         return ai;
     }
 

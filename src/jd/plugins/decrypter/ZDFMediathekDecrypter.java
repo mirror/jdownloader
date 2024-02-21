@@ -427,6 +427,8 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
             streamInfoMap = (Map<String, Object>) JavaScriptEngineFactory.walkJson(relsTarget, "streams", "default");
             final String player_url_template = (String) streamInfoMap.get("http://zdf.de/rels/streams/ptmd-template");
             /* E.g. "/tmd/2/{playerId}/vod/ptmd/mediathek/161215_sendungroyale065ddm_nmg" */
+            /** 2024-02-21: Possible values: zdf_pd_download_1, ngplayer_2_3, android_native_5 */
+            /* Regarding android_native_5: See also: https://github.com/mediathekview/MServer/issues/592 */
             streamsJsonURL = player_url_template.replace("{playerId}", "ngplayer_2_3");
             downloadsJsonURL = player_url_template.replace("{playerId}", "zdf_pd_download_1");
         } else {

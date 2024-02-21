@@ -45,13 +45,17 @@ import jd.plugins.PluginForHost;
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "orf.at" }, urls = { "" })
 public class ORFMediathek extends PluginForHost {
     private static final String TYPE_AUDIO                      = "(?i)https?://ooe\\.orf\\.at/radio/stories/(\\d+)/";
+    /* Variables related to plugin settings */
     public static final String  Q_SUBTITLES                     = "Q_SUBTITLES";
     public static final boolean Q_SUBTITLES_default             = true;
     public static final String  Q_THUMBNAIL                     = "Q_THUMBNAIL";
     public static final boolean Q_THUMBNAIL_default             = true;
     public static final String  Q_BEST                          = "Q_BEST_2";
-    public static final String  Q_LOW                           = "Q_LOW";
+    public static final boolean Q_BEST_default                  = true;
     public static final String  Q_VERYLOW                       = "Q_VERYLOW";
+    public static final boolean Q_VERYLOW_default               = true;
+    public static final String  Q_LOW                           = "Q_LOW";
+    public static final boolean Q_LOW_default                   = true;
     public static final String  Q_MEDIUM                        = "Q_MEDIUM";
     public static final String  Q_HIGH                          = "Q_HIGH";
     public static final String  Q_VERYHIGH                      = "Q_VERYHIGH";
@@ -422,14 +426,14 @@ public class ORFMediathek extends PluginForHost {
     }
 
     private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_SUBTITLES, "Download subtitle").setDefaultValue(true));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_THUMBNAIL, "Download thumbnail").setDefaultValue(true));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_SUBTITLES, "Download subtitle").setDefaultValue(Q_SUBTITLES_default));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_THUMBNAIL, "Download thumbnail").setDefaultValue(Q_THUMBNAIL_default));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        final ConfigEntry bestonly = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_BEST, "Load Best Version ONLY").setDefaultValue(true);
+        final ConfigEntry bestonly = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_BEST, "Load Best Version ONLY").setDefaultValue(Q_BEST_default);
         getConfig().addEntry(bestonly);
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_VERYLOW, "Load very low version").setDefaultValue(true).setEnabledCondidtion(bestonly, false));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_LOW, "Load low version").setDefaultValue(true).setEnabledCondidtion(bestonly, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_VERYLOW, "Load very low version").setDefaultValue(Q_VERYLOW_default).setEnabledCondidtion(bestonly, false));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_LOW, "Load low version").setDefaultValue(Q_LOW_default).setEnabledCondidtion(bestonly, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_MEDIUM, "Load medium version").setDefaultValue(true).setEnabledCondidtion(bestonly, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_HIGH, "Load high version").setDefaultValue(true).setEnabledCondidtion(bestonly, false));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_VERYHIGH, "Load very high version").setDefaultValue(true).setEnabledCondidtion(bestonly, false));
