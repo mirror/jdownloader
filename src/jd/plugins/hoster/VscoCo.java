@@ -18,7 +18,7 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.components.hls.HlsContainer;
@@ -29,6 +29,7 @@ import jd.controlling.linkcrawler.LinkCrawlerDeepInspector;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
@@ -46,9 +47,7 @@ import jd.plugins.decrypter.VscoCoCrawler;
 public class VscoCo extends PluginForHost {
     public VscoCo(PluginWrapper wrapper) {
         super(wrapper);
-        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-            this.enablePremium("https://" + getHost() + "/user/signup");
-        }
+        this.enablePremium("https://" + getHost() + "/user/signup");
     }
 
     @Override
@@ -132,7 +131,7 @@ public class VscoCo extends PluginForHost {
     }
 
     private boolean isVideo(final DownloadLink link) {
-        if (link.getName().contains(".mp4") || link.getPluginPatternMatcher().contains(".mp4")) {
+        if (StringUtils.containsIgnoreCase(link.getName(), ".mp4") || StringUtils.containsIgnoreCase(link.getPluginPatternMatcher(), ".mp4")) {
             return true;
         } else if (isHLSVideo(link)) {
             return true;
@@ -175,7 +174,7 @@ public class VscoCo extends PluginForHost {
                 }
             } else if (this.looksLikeDownloadableContent(con)) {
                 if (con.getCompleteContentLength() > 0) {
-                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                    link.setDownloadSize(con.getCompleteContentLength());
                 }
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -195,6 +194,11 @@ public class VscoCo extends PluginForHost {
     }
 
     private void handleDownload(final DownloadLink link, final Account account) throws Exception {
+        /* 2024-02-22: Login not required for downloading */
+        final boolean loginRequiredForDownloading = false;
+        if (account != null && loginRequiredForDownloading) {
+            this.login(account, false);
+        }
         requestFileInformation(link);
         if (isHLSVideo(link)) {
             checkFFmpeg(link, "Download a HLS Stream");
@@ -224,17 +228,24 @@ public class VscoCo extends PluginForHost {
             final String accounturl = "/user/account";
             if (cookies != null || userCookies != null) {
                 logger.info("Attempting cookie login");
+                String userAgentByCookies = null;
                 if (userCookies != null) {
                     br.setCookies(this.getHost(), userCookies);
+                    userAgentByCookies = userCookies.getUserAgent();
                 } else {
                     br.setCookies(this.getHost(), cookies);
+                }
+                final String lastUsedUserAgent = account.getStringProperty("useragent");
+                if (userAgentByCookies != null) {
+                    br.getHeaders().put("User-Agent", userAgentByCookies);
+                    account.setProperty("lastUsedUserAgent", lastUsedUserAgent);
+                } else if (lastUsedUserAgent != null) {
+                    br.getHeaders().put("User-Agent", lastUsedUserAgent);
                 }
                 if (!force) {
                     /* Don't validate cookies */
                     return false;
                 }
-                // br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko)
-                // Chrome/121.0.0.0 Safari/537.36");
                 br.getPage("https://" + this.getHost() + accounturl);
                 if (this.isLoggedin(br)) {
                     logger.info("Cookie login successful");
@@ -261,7 +272,7 @@ public class VscoCo extends PluginForHost {
             if (true) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            // TODO: Add username + password login support
+            // TODO: Maybe add username + password login support
             br.getPage("https://" + this.getHost() + "/login.php");
             final Form loginform = br.getFormbyProperty("name", "bla");
             if (loginform == null) {
@@ -287,6 +298,15 @@ public class VscoCo extends PluginForHost {
         login(account, true);
         ai.setUnlimitedTraffic();
         account.setType(AccountType.FREE);
+        if (account.loadUserCookies() != null) {
+            /* Try to set unique username since user can enter whatever he wants into username field when cookie login is used. */
+            final String username = br.getRegex("vsco\\.co/([^<]+)</h5>\\s*<a href=\"/user/share").getMatch(0);
+            if (username != null) {
+                account.setUser(Encoding.htmlDecode(username).trim());
+            } else {
+                logger.warning("Failed to find username in HTML");
+            }
+        }
         return ai;
     }
 
