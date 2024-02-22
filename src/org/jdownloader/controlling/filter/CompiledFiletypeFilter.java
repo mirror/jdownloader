@@ -300,6 +300,7 @@ public class CompiledFiletypeFilter {
     }
 
     public static enum AudioExtensions implements CompiledFiletypeExtension {
+        AC3,
         MP3,
         WMA,
         AAC,
@@ -384,7 +385,8 @@ public class CompiledFiletypeFilter {
         MP4,
         H264,
         H265,
-        M2TS,
+        M2TS("m2ts|m2t|mts"),
+        MP2T("tsv|tsa|ts"),
         M4U,
         M4V,
         MOV,

@@ -220,12 +220,12 @@ public class HTTPChunk extends Thread {
                             if (contentRange != null) {
                                 // content-range available
                                 if (contentRange[0] != chunkRange.getFrom()) {
-                                    setError(ERROR.RANGE, new IOException("RangeError(From):" + Arrays.toString(contentRange) + "|" + chunkRange + "|" + dl.getVerifiedFileSize()));
+                                    setError(ERROR.RANGE, new IOException("RangeError(From):" + Arrays.toString(contentRange) + "|" + chunkRange + "|VerifiedFileSize:" + dl.getVerifiedFileSize()));
                                     return null;
                                 }
                                 if (chunkRange.getTo() != null && chunkRange.getTo() >= 0 && contentRange[1] < chunkRange.getTo()) {
                                     if (true) {
-                                        logger.info("Allow smaller response range:" + Arrays.toString(contentRange) + "|" + chunkRange + "|" + dl.getVerifiedFileSize());
+                                        logger.info("Allow smaller response range:" + Arrays.toString(contentRange) + "|" + chunkRange + "|VerifiedFileSize:" + dl.getVerifiedFileSize());
                                     } else {
                                         setError(ERROR.RANGE, new IOException("RangeError(To)"));
                                         return null;
@@ -233,10 +233,14 @@ public class HTTPChunk extends Thread {
                                 }
                                 if (dl.getVerifiedFileSize() >= 0 && contentRange[2] != dl.getVerifiedFileSize()) {
                                     if (contentRange[2] == -1) {
-                                        logger.info("RangeWarning(Size):" + Arrays.toString(contentRange) + "|" + chunkRange + "|" + dl.getVerifiedFileSize());
+                                        logger.info("RangeWarning(Size):" + Arrays.toString(contentRange) + "|" + chunkRange + "|VerifiedFileSize:" + dl.getVerifiedFileSize());
                                     } else {
-                                        setError(ERROR.RANGE, new IOException("RangeError(Size):" + Arrays.toString(contentRange) + "|" + chunkRange + "|" + dl.getVerifiedFileSize()));
-                                        return null;
+                                        if (con.isContentDecoded()) {
+                                            logger.info("RangeWarning(Size):" + Arrays.toString(contentRange) + "|" + chunkRange + "|VerifiedFileSize:" + dl.getVerifiedFileSize() + "|Content-Encoding" + con.getHeaderField(HTTPConstants.HEADER_RESPONSE_CONTENT_ENCODING));
+                                        } else {
+                                            setError(ERROR.RANGE, new IOException("RangeError(Size):" + Arrays.toString(contentRange) + "|" + chunkRange + "|VerifiedFileSize:" + dl.getVerifiedFileSize()));
+                                            return null;
+                                        }
                                     }
                                 }
                             } else {
@@ -246,7 +250,7 @@ public class HTTPChunk extends Thread {
                                         // found servers that respond with 200 code and correct content length but no content-range/206
                                         logger.info("ResponseWarning(invalid content-range?!)");
                                     } else {
-                                        setError(ERROR.RANGE, new IOException("RangeError(Missing):" + Arrays.toString(contentRange) + "|" + chunkRange + "|" + dl.getVerifiedFileSize()));
+                                        setError(ERROR.RANGE, new IOException("RangeError(Missing):" + Arrays.toString(contentRange) + "|" + chunkRange + "|VerifiedFileSize:" + dl.getVerifiedFileSize()));
                                         return null;
                                     }
                                 }
