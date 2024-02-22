@@ -58,6 +58,14 @@ public class KinkCom extends PluginForHost {
     }
 
     @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.setFollowRedirects(true);
+        br.getHeaders().put("User-Agent", "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:88.0) Gecko/20100101 Firefox/88.0");
+        return br;
+    }
+
+    @Override
     public LazyPlugin.FEATURE[] getFeatures() {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX, LazyPlugin.FEATURE.COOKIE_LOGIN_OPTIONAL };
     }
@@ -67,14 +75,18 @@ public class KinkCom extends PluginForHost {
     // protocol: no https
     // other:
     /* Connection stuff */
-    private static final boolean resume       = true;
-    private static final int     maxchunks    = 0;
-    private static final int     maxdownloads = -1;
-    private String               dllink       = null;
+    private static final int maxchunks    = 0;
+    private static final int maxdownloads = -1;
+    private String           dllink       = null;
 
     @Override
     public String getAGBLink() {
         return "https://kink.zendesk.com/hc/en-us/articles/360004660854-Kink-com-Terms-of-Use";
+    }
+
+    @Override
+    public boolean isResumeable(final DownloadLink link, final Account account) {
+        return true;
     }
 
     @Override
@@ -107,32 +119,29 @@ public class KinkCom extends PluginForHost {
 
     private AvailableStatus requestFileInformation(final DownloadLink link, final Account account) throws IOException, PluginException, InterruptedException {
         final String extDefault = ".mp4";
+        final String fid = this.getFID(link);
         if (!link.isNameSet()) {
-            link.setName(this.getFID(link) + extDefault);
-        }
-        if (checkDirectLink(link, account) != null) {
-            logger.info("Availablecheck via directurl complete");
-            return AvailableStatus.TRUE;
+            link.setName(fid + extDefault);
         }
         if (account != null) {
             this.login(account, false);
         }
         dllink = null;
-        br.setFollowRedirects(true);
         br.getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String title = br.getRegex("<title>\\s*([^<>\"]+)\\s*</title>").getMatch(0);
-        if (StringUtils.isEmpty(title)) {
-            title = this.getFID(link);
+        final String title = br.getRegex("<title>\\s*([^<>\"]+)\\s*</title>").getMatch(0);
+        String filetitle;
+        if (!StringUtils.isEmpty(title)) {
+            filetitle = fid + "_" + title;
         } else {
-            title = this.getFID(link) + "_" + title;
+            filetitle = fid;
         }
         if (account != null) {
             /* Look for "official" downloadlinks --> Find highest quality */
             int qualityMax = -1;
-            final String[][] dlinfos = br.getRegex("download\\s*=\\s*\"(https?://[^\"]+)\"[^/]*>\\s*(\\d+)\\s*<span").getMatches();
+            final String[][] dlinfos = br.getRegex("download\\s*=\\s*\"(https?://[^\"]+)\"[^>]*quality=\"(\\d+)\"").getMatches();
             if (dlinfos == null || dlinfos.length == 0) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -157,19 +166,18 @@ public class KinkCom extends PluginForHost {
             dllink = url;
             logger.info("Chosen trailer: " + dllink);
         }
-        title = Encoding.htmlDecode(title);
-        title = title.trim();
-        link.setName(this.applyFilenameExtension(title, extDefault));
+        filetitle = Encoding.htmlDecode(filetitle);
+        filetitle = filetitle.trim();
+        link.setFinalFileName(this.applyFilenameExtension(filetitle, extDefault));
         if (!StringUtils.isEmpty(dllink) && !(Thread.currentThread() instanceof SingleDownloadController)) {
             link.setProperty(this.getDirectlinkProperty(link, account), this.dllink);
             URLConnectionAdapter con = null;
             try {
                 final Browser brc = br.cloneBrowser();
-                br.setFollowRedirects(true);
                 con = brc.openHeadConnection(dllink);
                 handleConnectionErrors(brc, con);
                 if (con.getCompleteContentLength() > 0) {
-                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                    link.setDownloadSize(con.getCompleteContentLength());
                 }
             } finally {
                 try {
@@ -181,39 +189,19 @@ public class KinkCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    private String checkDirectLink(final DownloadLink link, final Account account) {
-        String dllink = link.getStringProperty(this.getDirectlinkProperty(link, account));
-        if (dllink != null) {
-            URLConnectionAdapter con = null;
-            try {
-                final Browser br2 = br.cloneBrowser();
-                br2.setFollowRedirects(true);
-                con = br2.openHeadConnection(dllink);
-                if (this.looksLikeDownloadableContent(con)) {
-                    if (con.getCompleteContentLength() > 0) {
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
-                    }
-                    return dllink;
-                }
-            } catch (final Exception e) {
-                logger.log(e);
-                return null;
-            } finally {
-                if (con != null) {
-                    con.disconnect();
-                }
-            }
-        }
-        return null;
-    }
-
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         handleDownload(link, null);
     }
 
     private void handleDownload(final DownloadLink link, final Account account) throws Exception {
-        if (!this.attemptStoredDownloadurlDownload(link, account)) {
+        final String directlinkproperty = this.getDirectlinkProperty(link, account);
+        final String storedDirecturl = link.getStringProperty(directlinkproperty);
+        String dllink = null;
+        if (storedDirecturl != null) {
+            logger.info("Re-using stored directurl: " + storedDirecturl);
+            dllink = storedDirecturl;
+        } else {
             requestFileInformation(link, account);
             if (StringUtils.isEmpty(dllink)) {
                 /* Display premiumonly message in this case */
@@ -222,8 +210,17 @@ public class KinkCom extends PluginForHost {
                 }
                 throw new AccountRequiredException();
             }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxchunks);
+        }
+        try {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, this.isResumeable(link, account), maxchunks);
             handleConnectionErrors(br, dl.getConnection());
+        } catch (final Exception e) {
+            if (storedDirecturl != null) {
+                link.removeProperty(directlinkproperty);
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Stored directurl expired", e);
+            } else {
+                throw e;
+            }
         }
         dl.startDownload();
     }
@@ -241,110 +238,75 @@ public class KinkCom extends PluginForHost {
         }
     }
 
-    private boolean attemptStoredDownloadurlDownload(final DownloadLink link, final Account account) throws Exception {
-        final String url = link.getStringProperty(this.getDirectlinkProperty(link, account));
-        if (StringUtils.isEmpty(url)) {
-            return false;
-        }
-        try {
-            final Browser brc = br.cloneBrowser();
-            dl = new jd.plugins.BrowserAdapter().openDownload(brc, link, url, resume, maxchunks);
-            if (this.looksLikeDownloadableContent(dl.getConnection())) {
-                return true;
-            } else {
-                brc.followConnection(true);
-                throw new IOException();
-            }
-        } catch (final Throwable e) {
-            logger.log(e);
-            try {
-                dl.getConnection().disconnect();
-            } catch (Throwable ignore) {
-            }
-            return false;
-        }
-    }
-
-    @Override
-    public void init() {
-        // see pf value
-        br.getHeaders().put("User-Agent", "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:88.0) Gecko/20100101 Firefox/88.0");
-    }
-
     private void login(final Account account, final boolean force) throws IOException, InterruptedException, PluginException {
         synchronized (account) {
-            try {
-                br.setFollowRedirects(true);
-                br.setCookiesExclusive(true);
-                br.setAllowedResponseCodes(new int[] { 401 });
-                final Cookies userCookies = account.loadUserCookies();
-                final Cookies cookies = account.loadCookies("");
-                if (userCookies != null) {
-                    if (checkAndSaveCookies(br, userCookies, account)) {
-                        /* Cookies are valid. */
-                        return;
+            br.setCookiesExclusive(true);
+            br.setAllowedResponseCodes(new int[] { 401 });
+            final Cookies userCookies = account.loadUserCookies();
+            final Cookies cookies = account.loadCookies("");
+            if (userCookies != null) {
+                if (checkAndSaveCookies(br, userCookies, account)) {
+                    /* Cookies are valid. */
+                    return;
+                } else {
+                    if (account.hasEverBeenValid()) {
+                        throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
                     } else {
-                        if (account.hasEverBeenValid()) {
-                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
-                        } else {
-                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
-                        }
-                    }
-                } else if (cookies != null) {
-                    if (checkAndSaveCookies(br, cookies, account)) {
-                        /* Cookies are valid. */
-                        return;
+                        throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
                     }
                 }
-                logger.info("Performing full login");
-                br.setCookie(getHost(), "ktvc", "0");
-                br.setCookie(getHost(), "privyOptIn", "false");
-                br.getPage("https://www." + getHost() + "/login");
-                final Form loginform = br.getFormbyProperty("name", "login");
-                if (loginform == null) {
-                    logger.warning("Failed to find loginform");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                /* Add some browser fingerprinting magic */
-                loginform.put("pf", Encoding.urlEncode(getPFValue(this.br, loginform)));
-                loginform.put("username", Encoding.urlEncode(account.getUser()));
-                loginform.put("password", Encoding.urlEncode(account.getPass()));
-                if (loginform.containsHTML("phone") && !loginform.hasInputFieldByName("phone")) {
-                    loginform.put("phone", "");
-                }
-                /* Makes the cookies last for 30 days */
-                loginform.put("remember", "on");
-                final boolean captchaRequired = br.containsHTML("window\\.grecaptchaRequired\\s*=\\s*true");
-                if (captchaRequired) {
-                    final Browser brc = br.cloneBrowser();
-                    brc.getPage("/javascripts/kink.min.1293.js");
-                    final String reCaptchaKey = brc.getRegex("recaptchaPublicKey\\s*:\\s*\"([^\"]+)").getMatch(0);
-                    if (reCaptchaKey == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, reCaptchaKey) {
-                        @Override
-                        public TYPE getType() {
-                            return TYPE.INVISIBLE;
-                        }
-                    }.getToken();
-                    loginform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-                }
-                final Request post = br.createFormRequest(loginform);
-                post.getHeaders().put("Origin", "https://www." + this.getHost());
-                br.getPage(post);
-                if (!isLoggedin(br)) {
-                    /* Recommend cookie login to user */
-                    showCookieLoginInfo();
-                    throw new AccountInvalidException();
-                }
-                account.saveCookies(br.getCookies(br.getHost()), "");
-            } catch (final PluginException e) {
-                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+            } else if (cookies != null) {
+                if (checkAndSaveCookies(br, cookies, account)) {
+                    /* Cookies are valid. */
+                    return;
+                } else {
+                    br.clearCookies(null);
                     account.clearCookies("");
                 }
-                throw e;
             }
+            logger.info("Performing full login");
+            br.setCookie(getHost(), "ktvc", "0");
+            br.setCookie(getHost(), "privyOptIn", "false");
+            br.getPage("https://www." + getHost() + "/login");
+            final Form loginform = br.getFormbyProperty("name", "login");
+            if (loginform == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Failed to find loginform");
+            }
+            /* Add some browser fingerprinting magic */
+            loginform.put("pf", Encoding.urlEncode(getPFValue(this.br, loginform)));
+            loginform.put("username", Encoding.urlEncode(account.getUser()));
+            loginform.put("password", Encoding.urlEncode(account.getPass()));
+            if (loginform.containsHTML("phone") && !loginform.hasInputFieldByName("phone")) {
+                loginform.put("phone", "");
+            }
+            /* Makes the cookies last for 30 days */
+            loginform.put("remember", "on");
+            final boolean captchaRequired = br.containsHTML("window\\.grecaptchaRequired\\s*=\\s*true");
+            if (captchaRequired) {
+                final Browser brc = br.cloneBrowser();
+                brc.getPage("/assets/packs/global.1355.js");
+                String reCaptchaKey = brc.getRegex("var c\\s*=\\s*\"([^\"]+)").getMatch(0);
+                if (reCaptchaKey == null) {
+                    logger.warning("Failed to find reCaptchaKey -> Fallback to hardcoded value");
+                    reCaptchaKey = "6LfTIKIdAAAAAI56SZ-5XsX2yS2HpjTKyFwmz-C9"; // 2024-02-22
+                }
+                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, reCaptchaKey) {
+                    @Override
+                    public TYPE getType() {
+                        return TYPE.INVISIBLE;
+                    }
+                }.getToken();
+                loginform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+            }
+            final Request post = br.createFormRequest(loginform);
+            post.getHeaders().put("Origin", "https://www." + this.getHost());
+            br.getPage(post);
+            if (!isLoggedin(br)) {
+                /* Recommend cookie login to user */
+                showCookieLoginInfo();
+                throw new AccountInvalidException();
+            }
+            account.saveCookies(br.getCookies(br.getHost()), "");
         }
     }
 
@@ -386,13 +348,17 @@ public class KinkCom extends PluginForHost {
             /* E.g. first full website login */
             br.getPage("/my/billing");
         }
-        final Cookies userCooies = account.loadUserCookies();
-        if (userCooies != null) {
+        final Cookies userCookies = account.loadUserCookies();
+        if (userCookies != null) {
             /*
              * When using cookie login users can enter whatever they want into username field --> We're trying to get unique values for that
              * field too!
              */
-            final String username = br.getRegex("account-name\"[^>]*>([^<]+)<").getMatch(0);
+            String username = br.getRegex("account-name\"[^>]*>([^<]+)<").getMatch(0);
+            if (username == null) {
+                /* 2024-02-22 */
+                username = br.getRegex("id=\"userDropdownMenu\"[^>]*>\\s*<li><p [^>]*>([^<]+)<").getMatch(0);
+            }
             if (username != null) {
                 account.setUser(Encoding.htmlDecode(username).trim());
             } else {
@@ -445,7 +411,7 @@ public class KinkCom extends PluginForHost {
         /* Try to let user know when login session will expire */
         final Cookies allCookies = br.getCookies(br.getHost());
         final Cookie cookie = allCookies.get("kinky.sess");
-        if (cookie != null && userCooies != null) {
+        if (cookie != null && userCookies != null) {
             final SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm");
             final String sessionExpireDateFormatted = formatter.format(new Date(cookie.getExpireDate()));
             statusText += " | Cookies valid until: " + sessionExpireDateFormatted;

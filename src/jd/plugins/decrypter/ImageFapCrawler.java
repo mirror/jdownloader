@@ -21,6 +21,11 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.URLHelper;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -35,11 +40,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.hoster.ImageFap;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.net.URLHelper;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imagefap.com" }, urls = { "https?://(?:www\\.)?imagefap\\.com/(gallery\\.php\\?p?gid=.+|gallery/.+|pictures/\\d+/.*|photo/\\d+|organizer/\\d+|(usergallery|showfavorites)\\.php\\?userid=\\d+(&folderid=-?\\d+)?)" })
 public class ImageFapCrawler extends PluginForDecrypt {
@@ -62,15 +62,14 @@ public class ImageFapCrawler extends PluginForDecrypt {
     @Override
     public int getMaxConcurrentProcessingInstances() {
         /*
-         * 2020-09-16: One measure to try not to exceed rate limits:
-         * https://www.imagefaq.cc/forum/viewtopic.php?f=4&t=17675&sid=0ed66fda947338862f2cb3d32622e030
+         * 2020-09-16: One measure to try not to exceed rate limits: https://www.imagefap.com/forum/viewtopic.php?f=4&t=17675
          */
         return 1;
     }
 
     private String getPage(final Browser br, final String url) throws Exception {
         ImageFap.getRequest(this, br, br.createGetRequest(url));
-        return br.toString();
+        return br.getRequest().getHtmlCode();
     }
 
     @SuppressWarnings("deprecation")
@@ -78,16 +77,16 @@ public class ImageFapCrawler extends PluginForDecrypt {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
         ImageFap.prepBR(this.br);
-        String parameter = param.getCryptedUrl();
+        String contenturl = param.getCryptedUrl();
         final Map<String, String> dupes = new HashMap<String, String>();
-        final PluginForHost hosterplugin = this.getNewPluginForHostInstance(this.getHost());
-        final String oid = new Regex(parameter, "(?:organizer)/(\\d+)").getMatch(0);
+        final PluginForHost hosterplugin = this.getNewPluginForHostInstance(getHost());
+        final String oid = new Regex(contenturl, "(?:organizer)/(\\d+)").getMatch(0);
         if (oid != null) {
             /** organizerID link **/
             int pageIndex = 0;
             br.setFollowRedirects(true);
             do {
-                getPage(this.br, "https://www." + this.getHost() + "/organizer/" + oid + "/?page=" + (pageIndex > 0 ? Integer.toString(pageIndex) : ""));
+                getPage(br, "https://www." + this.getHost() + "/organizer/" + oid + "/?page=" + (pageIndex > 0 ? Integer.toString(pageIndex) : ""));
                 pageIndex++;
                 final String galleries[] = br.getRegex("(/gallery/\\d+|/gallery\\.php\\?gid=\\d+)").getColumn(0);
                 if (galleries == null || galleries.length == 0) {
@@ -97,7 +96,7 @@ public class ImageFapCrawler extends PluginForDecrypt {
                     for (final String gallery : galleries) {
                         final String dupePage = dupes.put(gallery, pageURL);
                         if (dupePage != null) {
-                            System.out.println("Dupe:" + gallery + "\t" + dupePage + "\t" + pageURL);
+                            logger.info("Skipping dupe:" + gallery + "\t" + dupePage + "\t" + pageURL);
                         } else {
                             final DownloadLink link = createDownloadlink("https://www.imagefap.com" + gallery);
                             ret.add(link);
@@ -107,12 +106,12 @@ public class ImageFapCrawler extends PluginForDecrypt {
             } while (!this.isAbort());
             return ret;
         }
-        final String userID = new Regex(parameter, "(?i)userid=(\\d+)").getMatch(0);
-        final String folderID = new Regex(parameter, "(?i)folderid=(-?\\d+)").getMatch(0);
+        final String userID = new Regex(contenturl, "(?i)userid=(\\d+)").getMatch(0);
+        final String folderID = new Regex(contenturl, "(?i)folderid=(-?\\d+)").getMatch(0);
         if (userID != null && folderID != null) {
             /** user/folderID link **/
-            final boolean userGallery = StringUtils.containsIgnoreCase(parameter, "usergallery.php");
-            final boolean favoriteGallery = StringUtils.containsIgnoreCase(parameter, "showfavorites.php");
+            final boolean userGallery = StringUtils.containsIgnoreCase(contenturl, "usergallery.php");
+            final boolean favoriteGallery = StringUtils.containsIgnoreCase(contenturl, "showfavorites.php");
             int pageIndex = 0;
             br.setFollowRedirects(true);
             do {
@@ -147,7 +146,7 @@ public class ImageFapCrawler extends PluginForDecrypt {
             return ret;
         } else if (userID != null) {
             br.setFollowRedirects(true);
-            getPage(this.br, parameter);
+            getPage(this.br, contenturl);
             final String galleries[] = br.getRegex("((usergallery|showfavorites)\\.php\\?userid=\\d+&folderid=-?\\d+)").getColumn(0);
             if (galleries != null) {
                 final String pageURL = br.getURL();
@@ -161,43 +160,43 @@ public class ImageFapCrawler extends PluginForDecrypt {
             }
             return ret;
         } else {
-            if (parameter.matches(type_invalid)) {
+            if (contenturl.matches(type_invalid)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            final Regex singlephoto = new Regex(parameter, "(?i)https?://[^/]+/photo/(\\d+)");
+            final Regex singlephoto = new Regex(contenturl, "(?i)https?://[^/]+/photo/(\\d+)");
             if (singlephoto.patternFind()) {
                 /* Single photo */
                 final String photoID = singlephoto.getMatch(0);
-                final DownloadLink link = new DownloadLink(hosterplugin, this.getHost(), parameter + "/");
+                final DownloadLink link = new DownloadLink(hosterplugin, this.getHost(), contenturl + "/");
                 link.setProperty(ImageFap.PROPERTY_PHOTO_ID, photoID);
                 ret.add(link);
             } else {
                 /* Gallery */
                 /* view=2 -> "One page" view -> More images on each page */
-                String galleryIDStr = new Regex(parameter, "(?:pictures|gallery)/(\\d+)/?").getMatch(0);
+                String galleryIDStr = new Regex(contenturl, "(?:pictures|gallery)/(\\d+)/?").getMatch(0);
                 if (galleryIDStr == null) {
-                    galleryIDStr = new Regex(parameter, "gallery\\.php\\?p?gid=(\\d+)").getMatch(0);
+                    galleryIDStr = new Regex(contenturl, "gallery\\.php\\?p?gid=(\\d+)").getMatch(0);
                 }
-                parameter = parameter.replaceAll("view\\=[0-9]+", "view=2");
-                if (new Regex(parameter, "(?i)imagefap\\.com/gallery\\.php\\?pgid=").matches()) {
+                contenturl = contenturl.replaceAll("view\\=[0-9]+", "view=2");
+                if (new Regex(contenturl, "(?i)imagefap\\.com/gallery\\.php\\?pgid=").matches()) {
                     /**
                      * Workaround to get all images on one page for private galleries (site buggy)
                      */
                     getPage(this.br, "https://www." + this.getHost() + "/gallery.php?view=2");
-                } else if (!parameter.contains("view=2")) {
-                    parameter = addParameter(parameter, "view=2");
-                    parameter = addParameter(parameter, "gid=" + galleryIDStr);
+                } else if (!contenturl.contains("view=2")) {
+                    contenturl = addParameter(contenturl, "view=2");
+                    contenturl = addParameter(contenturl, "gid=" + galleryIDStr);
                 }
-                getPage(this.br, parameter);
+                getPage(this.br, contenturl);
                 if (br.containsHTML("(?i)>\\s*This gallery has been flagged")) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
                 if (br.getRedirectLocation() != null) {
                     if (br.getRedirectLocation().contains("/pictures/")) {
-                        parameter = br.getRedirectLocation();
-                        parameter = addParameter(parameter, "view=2");
-                        logger.info("New parameter is set: " + parameter);
-                        getPage(this.br, parameter);
+                        contenturl = br.getRedirectLocation();
+                        contenturl = addParameter(contenturl, "view=2");
+                        logger.info("New parameter is set: " + contenturl);
+                        getPage(this.br, contenturl);
                     } else {
                         logger.warning("Getting unknown redirect page");
                         getPage(this.br, br.getRedirectLocation());
@@ -233,7 +232,7 @@ public class ImageFapCrawler extends PluginForDecrypt {
                 final UrlQuery query = new UrlQuery();
                 query.add("gid", galleryIDStr);
                 query.add("view", firstPageViewParam != null ? firstPageViewParam : "0");
-                int maxPage = this.getMaxPage(br);
+                int maxPage = this.findMaxPage(br);
                 for (int page = 0; page <= maxPage; page++) {
                     if (page > 0) {
                         query.addAndReplace("page", Integer.toString(page));
@@ -250,10 +249,10 @@ public class ImageFapCrawler extends PluginForDecrypt {
                     }
                     if (page == maxPage) {
                         /**
-                         * Find new max page value if it looks like we're currently on the last page. </br> E.g. if we are on page one,
-                         * highest page number we can see is 10 even though the item may have 20+ pages.
+                         * Find new max page value if it looks like we're currently on the last page. </br>
+                         * E.g. if we are on page one, highest page number we can see is 10 even though the item may have 20+ pages.
                          */
-                        final int maxPageValueOfCurrentPage = getMaxPage(br);
+                        final int maxPageValueOfCurrentPage = findMaxPage(br);
                         if (maxPageValueOfCurrentPage > maxPage) {
                             logger.info("Found new maxPage value: old: " + maxPage + " --> New: " + maxPageValueOfCurrentPage);
                             maxPage = maxPageValueOfCurrentPage;
@@ -314,7 +313,7 @@ public class ImageFapCrawler extends PluginForDecrypt {
         return "https://www." + this.getHost() + "/photo/" + photoID + "/";
     }
 
-    private int getMaxPage(final Browser br) {
+    private int findMaxPage(final Browser br) {
         int maxPage = 0;
         final String[] pages = br.getRegex("(?i)page=(\\d+)").getColumn(0);
         for (final String pageStr : pages) {
@@ -337,7 +336,8 @@ public class ImageFapCrawler extends PluginForDecrypt {
         return url;
     }
 
+    @Override
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
-        return false;
+        return true;
     }
 }
