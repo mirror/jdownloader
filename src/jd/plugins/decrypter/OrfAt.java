@@ -170,6 +170,8 @@ public class OrfAt extends PluginForDecrypt {
         final Map<String, Object> sourcesForGaplessVideo = (Map<String, Object>) entries.get("sources");
         final String contentIDSlashPlaylistIDSlashVideoID = entries.get("id").toString();
         final List<Map<String, Object>> segments = (List<Map<String, Object>>) _embedded.get("segments");
+        final String dateStr = entries.get("date").toString();
+        final String dateWithoutTime = new Regex(dateStr, "(\\d{4}-\\d{2}-\\d{2})").getMatch(0);
         final String mainVideoTitle = entries.get("title").toString();
         final String description = (String) entries.get("description");
         // final Boolean is_drm_protected = (Boolean) entries.get("is_drm_protected");
@@ -178,7 +180,7 @@ public class OrfAt extends PluginForDecrypt {
         // }
         final String sourceurl = param.getCryptedUrl();
         final FilePackage fp = FilePackage.getInstance();
-        fp.setName(mainVideoTitle);
+        fp.setName(dateWithoutTime + " - " + mainVideoTitle);
         if (description != null) {
             fp.setComment(description);
         }
@@ -202,6 +204,8 @@ public class OrfAt extends PluginForDecrypt {
         if (cfg.getBooleanProperty(ORFMediathek.Q_VERYHIGH, true)) {
             selectedQualities.add("VERYHIGH");
         }
+        final Map<String, Object> gapless_subtitlemap = (Map<String, Object>) _embedded.get("subtitle");
+        final String gapless_subtitleurl = gapless_subtitlemap != null ? (String) gapless_subtitlemap.get("srt_url") : null;
         boolean isCurrentlyAgeRestricted = false;
         String thumbnailurlFromFirstSegment = null;
         final boolean preferBestVideo = cfg.getBooleanProperty(ORFMediathek.Q_BEST, ORFMediathek.Q_BEST_default);
@@ -227,7 +231,6 @@ public class OrfAt extends PluginForDecrypt {
                 videoPosition++;
                 final String segmentID = segment.get("id").toString();
                 String thumbnailurl = null;
-                List<Map<String, Object>> subtitle_list = null;
                 final Map<String, Object> thisEmbedded = (Map<String, Object>) segment.get("_embedded");
                 final Map<String, Object> thisplaylist = (Map<String, Object>) thisEmbedded.get("playlist");
                 thumbnailurl = (String) JavaScriptEngineFactory.walkJson(segment, "_embedded/image/public_urls/highlight_teaser/url");
@@ -235,15 +238,28 @@ public class OrfAt extends PluginForDecrypt {
                     thumbnailurlFromFirstSegment = thumbnailurl;
                 }
                 final List<Map<String, Object>> sources = (List<Map<String, Object>>) thisplaylist.get("sources");
-                subtitle_list = (List<Map<String, Object>>) thisplaylist.get("subtitles");
-                final String titlethis = thisplaylist.get("title").toString();
+                final List<Map<String, Object>> subtitle_list = (List<Map<String, Object>>) thisplaylist.get("subtitles");
                 String subtitleurl = null;
+                if (subtitle_list != null && subtitle_list.size() > 0) {
+                    /* [0] = .srt, [1] = WEBVTT .vtt */
+                    if (subtitle_list.size() > 1) {
+                        subtitleurl = (String) JavaScriptEngineFactory.walkJson(subtitle_list.get(1), "src");
+                    } else if (subtitle_list.size() == 1) {
+                        subtitleurl = (String) JavaScriptEngineFactory.walkJson(subtitle_list.get(0), "src");
+                    } else {
+                        subtitleurl = null;
+                    }
+                }
+                if (subtitleurl == null && segments.size() == 1 && gapless_subtitleurl != null) {
+                    /* Only one segment -> We can use gapless subtitle as fallback */
+                    subtitleurl = gapless_subtitleurl;
+                }
+                final String titlethis = thisplaylist.get("title").toString();
                 int numberofSkippedDRMItems = 0;
                 final Map<String, Long> qualityIdentifierToFilesizeMap = new HashMap<String, Long>();
                 final List<DownloadLink> videoresults = new ArrayList<DownloadLink>();
                 final HashSet<String> allAvailableQualitiesAsHumanReadableIdentifiers = new HashSet<String>();
                 for (final Map<String, Object> source : sources) {
-                    subtitleurl = null;
                     final String url_directlink_video = (String) source.get("src");
                     final String fmt = (String) source.get("quality");
                     final String protocol = (String) source.get("protocol");
@@ -252,16 +268,6 @@ public class OrfAt extends PluginForDecrypt {
                     if (StringUtils.equals(fmt, "QXADRM")) {
                         numberofSkippedDRMItems++;
                         continue;
-                    }
-                    if (subtitle_list != null && subtitle_list.size() > 0) {
-                        /* [0] = .srt, [1] = WEBVTT .vtt */
-                        if (subtitle_list.size() > 1) {
-                            subtitleurl = (String) JavaScriptEngineFactory.walkJson(subtitle_list.get(1), "src");
-                        } else if (subtitle_list.size() == 1) {
-                            subtitleurl = (String) JavaScriptEngineFactory.walkJson(subtitle_list.get(0), "src");
-                        } else {
-                            subtitleurl = null;
-                        }
                     }
                     /* possible protocols: http, rtmp, rtsp, hds, hls */
                     if (!"http".equals(protocol)) {
@@ -500,18 +506,16 @@ public class OrfAt extends PluginForDecrypt {
                 }
             }
             final List<DownloadLink> thisFinalResults = new ArrayList<DownloadLink>();
-            final Map<String, Object> subtitlemap = (Map<String, Object>) _embedded.get("subtitle");
-            final String subtitleurl = subtitlemap != null ? (String) subtitlemap.get("srt_url") : null;
             for (final DownloadLink chosenVideoResult : videoSelectedResults) {
                 thisFinalResults.add(chosenVideoResult);
                 /* Add a subtitle-result for each chosen video quality */
-                if (cfg.getBooleanProperty(ORFMediathek.Q_SUBTITLES, ORFMediathek.Q_SUBTITLES_default) && !StringUtils.isEmpty(subtitleurl)) {
-                    final DownloadLink subtitle = createDownloadlink(subtitleurl);
+                if (cfg.getBooleanProperty(ORFMediathek.Q_SUBTITLES, ORFMediathek.Q_SUBTITLES_default) && !StringUtils.isEmpty(gapless_subtitleurl)) {
+                    final DownloadLink subtitle = createDownloadlink(gapless_subtitleurl);
                     subtitle.setDefaultPlugin(hosterplugin);
                     subtitle.setHost(hosterplugin.getHost());
                     /* Inherit properties from video item */
                     subtitle.setProperties(chosenVideoResult.getProperties());
-                    subtitle.setProperty(ORFMediathek.PROPERTY_DIRECTURL, subtitleurl);
+                    subtitle.setProperty(ORFMediathek.PROPERTY_DIRECTURL, gapless_subtitleurl);
                     subtitle.setProperty(ORFMediathek.PROPERTY_CONTENT_TYPE, ORFMediathek.CONTENT_TYPE_SUBTITLE);
                     thisFinalResults.add(subtitle);
                 }
