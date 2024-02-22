@@ -398,7 +398,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
 
     /** Indicates that this website is hosting video content only. */
     private boolean isVideohoster() {
-        return isVideohosterEmbed() || isVideohosterEmbedHTML(br);
+        return isVideohosterEmbed() || (br != null && isVideohosterEmbedHTML(br));
     }
 
     /**
@@ -954,6 +954,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
     }
 
     protected boolean probeDirectDownload(final DownloadLink link, final Account account, final Browser br, final Request request, final boolean setFilesize) throws Exception {
+        request.getHeaders().put(HTTPConstants.HEADER_REQUEST_ACCEPT_ENCODING, "identity");
         final URLConnectionAdapter con = openAntiDDoSRequestConnection(br, request);
         try {
             if (this.looksLikeDownloadableContent(con)) {
@@ -965,7 +966,11 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
                     return false;
                 }
                 if (setFilesize && completeContentLength > 0) {
-                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                    if (con.isContentDecoded()) {
+                        link.setDownloadSize(completeContentLength);
+                    } else {
+                        link.setVerifiedFileSize(completeContentLength);
+                    }
                 }
                 final String headerFilename = Plugin.getFileNameFromDispositionHeader(con);
                 if (!StringUtils.isEmpty(headerFilename)) {
@@ -2669,23 +2674,31 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
         try {
             final Browser br2 = br.cloneBrowser();
             br2.setFollowRedirects(true);
+            final Request request;
             if (supportsHEADRequestForDirecturlCheck()) {
-                con = openAntiDDoSRequestConnection(br2, br2.createHeadRequest(directurl));
+                request = br2.createHeadRequest(directurl);
             } else {
-                con = openAntiDDoSRequestConnection(br2, br2.createGetRequest(directurl));
+                request = br2.createGetRequest(directurl);
             }
+            request.getHeaders().put(HTTPConstants.HEADER_REQUEST_ACCEPT_ENCODING, "identity");
+            con = openAntiDDoSRequestConnection(br2, request);
             if (con.getResponseCode() == 503) {
                 /* 503 too many connections: URL is valid but we can't use it at this moment. */
                 throwException = true;
                 exception503ConnectionLimitReached();
                 return directurl;
             } else if (looksLikeDownloadableContent(con)) {
-                if (con.getCompleteContentLength() >= 0 && con.getCompleteContentLength() < 100) {
+                final long completeContentLength = con.getCompleteContentLength();
+                if (completeContentLength >= 0 && completeContentLength < 100) {
                     /* Rare case */
-                    throw new Exception("very likely no file but an error message!length=" + con.getCompleteContentLength());
+                    throw new Exception("very likely no file but an error message!length=" + completeContentLength);
                 } else {
-                    if (setFilesize && con.getCompleteContentLength() > 0) {
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    if (setFilesize && completeContentLength > 0) {
+                        if (con.isContentDecoded()) {
+                            link.setDownloadSize(completeContentLength);
+                        } else {
+                            link.setVerifiedFileSize(completeContentLength);
+                        }
                     }
                     return directurl;
                 }

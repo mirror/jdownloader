@@ -36,14 +36,6 @@ import javax.imageio.ImageIO;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 
-import jd.captcha.utils.GifDecoder;
-import jd.http.Browser;
-import jd.http.Browser.BrowserException;
-import jd.http.Request;
-import jd.http.URLConnectionAdapter;
-import jd.plugins.PluginForHost;
-import net.sf.image4j.codec.ico.ICODecoder;
-
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
@@ -65,9 +57,17 @@ import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
+import org.jdownloader.plugins.controller.host.PluginFinder;
 import org.jdownloader.updatev2.gui.LAFOptions;
+
+import jd.captcha.utils.GifDecoder;
+import jd.http.Browser;
+import jd.http.Browser.BrowserException;
+import jd.http.Request;
+import jd.http.URLConnectionAdapter;
+import jd.plugins.PluginForHost;
+import net.sf.image4j.codec.ico.ICODecoder;
 
 public class FavIcons {
     private static final ThreadPoolExecutor                                      THREAD_POOL;
@@ -208,6 +208,17 @@ public class FavIcons {
         return ret;
     }
 
+    private static LazyHostPlugin getPlugin(final String host) {
+        LazyHostPlugin existingHostPlugin = new PluginFinder()._assignHost(host);
+        if (existingHostPlugin == null) {
+            final String domain = PublicSuffixList.getInstance().getDomain(host);
+            if (!host.equalsIgnoreCase(domain)) {
+                existingHostPlugin = new PluginFinder()._assignHost(domain);
+            }
+        }
+        return existingHostPlugin;
+    }
+
     private static ImageIcon add(final String host, FavIconRequestor requestor) {
         ImageIcon icon = null;
         synchronized (LOCK) {
@@ -240,7 +251,7 @@ public class FavIcons {
                         final List<String> tryHosts = new ArrayList<String>();
                         BufferedImage favicon = null;
                         String[] siteSupportedNames = null;
-                        final LazyHostPlugin existingHostPlugin = HostPluginController.getInstance().get(host);
+                        final LazyHostPlugin existingHostPlugin = getPlugin(host);
                         if (existingHostPlugin != null) {
                             if (existingHostPlugin.hasFeature(LazyPlugin.FEATURE.INTERNAL)) {
                                 synchronized (LOCK) {
@@ -283,7 +294,12 @@ public class FavIcons {
                             }
                         }
                         if (favicon == null) {
-                            tryHosts.add(host);
+                            if (existingHostPlugin != null) {
+                                tryHosts.add(existingHostPlugin.getHost());
+                            }
+                            if (!tryHosts.contains(host)) {
+                                tryHosts.add(host);
+                            }
                             if (!host.matches("\\d+\\.\\d+\\.\\d+\\.\\d+")) {
                                 final String domain;
                                 if (PublicSuffixList.getInstance() != null) {
@@ -300,7 +316,9 @@ public class FavIcons {
                                         if (domain != null && !tryHost.contains(domain) || tryHost.indexOf('.') == -1) {
                                             break;
                                         }
-                                        tryHosts.add(tryHost);
+                                        if (!tryHosts.contains(tryHost)) {
+                                            tryHosts.add(tryHost);
+                                        }
                                     } else {
                                         break;
                                     }
@@ -323,6 +341,8 @@ public class FavIcons {
                                     FileCreationManager.getInstance().mkdir(outputFile.getParentFile());
                                     fos = new FileOutputStream(outputFile);
                                     ImageProvider.writeImage(favicon, "png", fos);
+                                    fos.close();
+                                    fos = null;
                                     outputFile = null;
                                     /* load and scale it again */
                                     if (requestors != null && requestors.size() > 0) {
@@ -489,7 +509,7 @@ public class FavIcons {
                 }
             }
             if (siteSupportedNames == null) {
-                final LazyHostPlugin existingHostPlugin = HostPluginController.getInstance().get(host);
+                final LazyHostPlugin existingHostPlugin = getPlugin(host);
                 if (existingHostPlugin != null) {
                     final LogSource logger = LogController.getFastPluginLogger("FavIcons");
                     try {
@@ -649,10 +669,12 @@ public class FavIcons {
                  * workaround for hoster with not complete url, eg rapidshare.com
                  */
                 String url = new Regex(requestHtml, "rel\\s*=\\s*('|\")(SHORTCUT |apple-touch-)?ICON('|\")[^>]*href\\s*=\\s*[^>]*//([^>'\"]*\\.(ico|png|svg|jpg)[^>'\"]*)('|\")").getMatch(3);
-                if (!StringUtils.isEmpty(url) && !url.equalsIgnoreCase(host)) {
-                    url = "http://" + url;
+                if (!StringUtils.isEmpty(url)) {
+                    if (!url.equalsIgnoreCase(host)) {
+                        url = "http://" + url;
+                    }
+                    ret.add(url);
                 }
-                ret.add(url);
             }
             ret.add("/favicon.ico");
         }
