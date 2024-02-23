@@ -1212,6 +1212,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
             /* Developer mistake */
             throw new IllegalArgumentException();
         }
+        resetUglyGlobalVariables();
         final String queryName;
         if (crawlUserLikes) {
             queryName = "Likes";
