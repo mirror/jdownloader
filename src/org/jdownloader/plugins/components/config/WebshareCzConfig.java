@@ -11,12 +11,15 @@ import org.jdownloader.plugins.config.Type;
 
 @PluginHost(host = "webshare.cz", type = Type.HOSTER)
 public interface WebshareCzConfig extends PluginConfigInterface {
-    final String              TEXT_MaxSimultaneousFreeOrFreeAccountDownloads = "Max simultaneous for free- and free-account downloads";
-    public static TRANSLATION TRANSLATION                                    = new TRANSLATION();
+    public static TRANSLATION TRANSLATION = new TRANSLATION();
 
     public static class TRANSLATION {
         public String getMaxSimultaneousFreeOrFreeAccountDownloads_label() {
-            return TEXT_MaxSimultaneousFreeOrFreeAccountDownloads;
+            return "Max simultaneous for free- and free-account downloads";
+        }
+
+        public String getMaxRetriesOnErrorTemporarilyUnavailable_label() {
+            return "Max retries on error 'File temporarily unavailable' (0 = unlimited)";
         }
     }
 
@@ -25,8 +28,17 @@ public interface WebshareCzConfig extends PluginConfigInterface {
     @DefaultIntValue(5)
     @SpinnerValidator(min = 1, max = 20, step = 1)
     @Order(10)
-    @DescriptionForConfigEntry(TEXT_MaxSimultaneousFreeOrFreeAccountDownloads)
+    @DescriptionForConfigEntry("How many max simultaneous downloads should be possible in free- and free-account mode?")
     int getMaxSimultaneousFreeOrFreeAccountDownloads();
 
-    void setMaxSimultaneousFreeOrFreeAccountDownloads(int maxdls);
+    void setMaxSimultaneousFreeOrFreeAccountDownloads(int i);
+
+    @AboutConfig
+    @DefaultIntValue(0)
+    @SpinnerValidator(min = 0, max = 100, step = 1)
+    @Order(20)
+    @DescriptionForConfigEntry("How many times should JDownloader retry when error 'File temporarily unavailable' happens?")
+    int getMaxRetriesOnErrorTemporarilyUnavailable();
+
+    void setMaxRetriesOnErrorTemporarilyUnavailable(int i);
 }

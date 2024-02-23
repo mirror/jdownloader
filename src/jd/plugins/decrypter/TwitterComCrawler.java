@@ -332,7 +332,9 @@ public class TwitterComCrawler extends PluginForDecrypt {
                 br.getPage("https://abs.twimg.com/responsive-web/client-web/api.b9f7c7ea.js");
                 final HashSet<String> operationNamesToCache = new HashSet<String>();
                 operationNamesToCache.add("UserByScreenName");
+                operationNamesToCache.add("UserMedia");
                 operationNamesToCache.add("UserTweets");
+                operationNamesToCache.add("Likes");
                 operationNamesToCache.add("TweetDetail");
                 operationNamesToCache.add("TweetResultByRestId");
                 /* Just in case this isn't in here already */
@@ -450,58 +452,6 @@ public class TwitterComCrawler extends PluginForDecrypt {
             final List<Map<String, Object>> timelineInstructions = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entries, "data/threaded_conversation_with_injections_v2/instructions");
             final ArrayList<DownloadLink> ret = this.crawlUserProfileGraphqlTimelineInstructions(timelineInstructions, null, tweetID, null, false);
             return ret;
-        }
-    }
-
-    @Deprecated
-    /**
-     * 2023-07-13: Looks like twitter has disabled this API(?) </br>
-     * It e.g. returns: {"errors":[{"code":179,"message":"Sorry, you are not authorized to see this status."}]} ...even though user has the
-     * rights to view that tweet.
-     */
-    private ArrayList<DownloadLink> crawlSingleTweetViaOldAPI(final Account account, final String tweetID) throws Exception {
-        logger.info("Crawling Tweet via old API");
-        prepareAPI(this.br, account);
-        final boolean tryNewMethod = true; /* 2021-06-15 */
-        boolean looksLikeOfflineError34 = false;
-        if (tryNewMethod) {
-            br.getPage("https://api.twitter.com/1.1/statuses/show/" + tweetID + ".json?cards_platform=Web-12&include_reply_count=1&include_cards=1&include_user_entities=0&tweet_mode=extended");
-            try {
-                handleErrorsAPI(this.br);
-                final Map<String, Object> tweet = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
-                return crawlTweetMap(tweet);
-            } catch (final PluginException e) {
-                if (e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND && br.containsHTML("\"code\"\\s*:\\s*34")) {
-                    logger.log(e);
-                    /* Double-check down below. */
-                    logger.info("Tweet looks to be offline");
-                    looksLikeOfflineError34 = true;
-                } else {
-                    throw e;
-                }
-            }
-        }
-        br.getPage(API_BASE_v2 + "/timeline/conversation/" + tweetID + ".json?include_profile_interstitial_type=1&include_blocking=1&include_blocked_by=1&include_followed_by=1&include_want_retweets=1&include_mute_edge=1&include_can_dm=1&include_can_media_tag=1&skip_status=1&cards_platform=Web-12&include_cards=1&include_composer_source=true&include_ext_alt_text=true&include_reply_count=1&tweet_mode=extended&include_entities=true&include_user_entities=true&include_ext_media_color=true&include_ext_media_availability=true&send_error_codes=true&simple_quoted_tweets=true&count=20&ext=mediaStats%2CcameraMoment");
-        handleErrorsAPI(this.br);
-        final Map<String, Object> root = JavaScriptEngineFactory.jsonToJavaMap(br.getRequest().getHtmlCode());
-        final Map<String, Object> tweet = (Map<String, Object>) JavaScriptEngineFactory.walkJson(root, "globalObjects/tweets/" + tweetID);
-        if (tweet == null) {
-            if (looksLikeOfflineError34) {
-                /**
-                 * We're missing the permissions to view this content. </br>
-                 * Most likely it is age restricted content and (age verified) account is required.
-                 */
-                if (account == null) {
-                    logger.info("Looks like an account is required to crawl this thread");
-                } else {
-                    logger.info("Looks like given account is lacking permissions to view this tweet");
-                }
-                throw new AccountRequiredException();
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-        } else {
-            return crawlTweetMap(tweet);
         }
     }
 
@@ -964,6 +914,58 @@ public class TwitterComCrawler extends PluginForDecrypt {
     private final String TWITTER_PROFILE_PACKAGE_KEY_PREFIX       = "twitterprofile://";
     private final String TWITTER_PROFILE_LIKES_PACKAGE_KEY_PREFIX = "twitterprofile_likes://";
 
+    @Deprecated
+    /**
+     * 2023-07-13: Looks like twitter has disabled this API(?) </br>
+     * It e.g. returns: {"errors":[{"code":179,"message":"Sorry, you are not authorized to see this status."}]} ...even though user has the
+     * rights to view that tweet.
+     */
+    private ArrayList<DownloadLink> crawlSingleTweetViaOldAPI(final Account account, final String tweetID) throws Exception {
+        logger.info("Crawling Tweet via old API");
+        prepareAPI(this.br, account);
+        final boolean tryNewMethod = true; /* 2021-06-15 */
+        boolean looksLikeOfflineError34 = false;
+        if (tryNewMethod) {
+            br.getPage("https://api.twitter.com/1.1/statuses/show/" + tweetID + ".json?cards_platform=Web-12&include_reply_count=1&include_cards=1&include_user_entities=0&tweet_mode=extended");
+            try {
+                handleErrorsAPI(this.br);
+                final Map<String, Object> tweet = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+                return crawlTweetMap(tweet);
+            } catch (final PluginException e) {
+                if (e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND && br.containsHTML("\"code\"\\s*:\\s*34")) {
+                    logger.log(e);
+                    /* Double-check down below. */
+                    logger.info("Tweet looks to be offline");
+                    looksLikeOfflineError34 = true;
+                } else {
+                    throw e;
+                }
+            }
+        }
+        br.getPage(API_BASE_v2 + "/timeline/conversation/" + tweetID + ".json?include_profile_interstitial_type=1&include_blocking=1&include_blocked_by=1&include_followed_by=1&include_want_retweets=1&include_mute_edge=1&include_can_dm=1&include_can_media_tag=1&skip_status=1&cards_platform=Web-12&include_cards=1&include_composer_source=true&include_ext_alt_text=true&include_reply_count=1&tweet_mode=extended&include_entities=true&include_user_entities=true&include_ext_media_color=true&include_ext_media_availability=true&send_error_codes=true&simple_quoted_tweets=true&count=20&ext=mediaStats%2CcameraMoment");
+        handleErrorsAPI(this.br);
+        final Map<String, Object> root = JavaScriptEngineFactory.jsonToJavaMap(br.getRequest().getHtmlCode());
+        final Map<String, Object> tweet = (Map<String, Object>) JavaScriptEngineFactory.walkJson(root, "globalObjects/tweets/" + tweetID);
+        if (tweet == null) {
+            if (looksLikeOfflineError34) {
+                /**
+                 * We're missing the permissions to view this content. </br>
+                 * Most likely it is age restricted content and (age verified) account is required.
+                 */
+                if (account == null) {
+                    logger.info("Looks like an account is required to crawl this thread");
+                } else {
+                    logger.info("Looks like given account is lacking permissions to view this tweet");
+                }
+                throw new AccountRequiredException();
+            } else {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+        } else {
+            return crawlTweetMap(tweet);
+        }
+    }
+
     /**
      * Crawls only tweets that were posted by the profile in given URL, no re-tweets!!! </br>
      * 2024-02-07: Doesn't work anymore (API call returns blank page).
@@ -1207,11 +1209,52 @@ public class TwitterComCrawler extends PluginForDecrypt {
         } else {
             queryName = "UserTweets";
         }
-        final String queryID = this.getGraphqlQueryID(queryName);
         final Map<String, Object> user = getUserInfo(br, account, username);
         final Number statuses_count = (Number) user.get("statuses_count");
         // TODO: Make use of this to crawl all items from "/username/media"
         final Number media_count = (Number) user.get("media_count");
+        final String userID = user.get("id_str").toString();
+        /* Clear some global variables (Yes I know, ugly) */
+        dupeListForProfileCrawlerTweetIDs.clear();
+        if (this.preGivenPageNumber != null && this.preGivenNumberOfTotalWalkedThroughTweetsCount != null && this.preGivenNextCursor != null) {
+            // TODO: Review this
+            /* Resume from last state */
+            // profileCrawlerTotalCrawledTweetsCount = this.preGivenNumberOfTotalWalkedThroughTweetsCount.intValue();
+            profileCrawlerNextCursor = this.preGivenNextCursor;
+        }
+        final ArrayList<DownloadLink> ret = crawlTweetsViaGraphqlAPI(queryName, param, user, account, crawlUserLikes);
+        final int totalFoundTweets = dupeListForProfileCrawlerTweetIDs.size();
+        final String bubbleNotifyTitle = "Twitter profile " + username + " | ID: " + userID;
+        if (ret.isEmpty()) {
+            /* We found nothing -> Check why */
+            final String bubbleNotifyTextEnding = "\r\nTotal number of Tweets in this profile: " + statuses_count;
+            if (totalFoundTweets == 0) {
+                if (statuses_count != null && statuses_count.intValue() > 0 && account == null) {
+                    displayBubblenotifyMessage(bubbleNotifyTitle, "Returning no results because:\r\nAccount required to view Tweets of this profile." + bubbleNotifyTextEnding);
+                    throw new AccountRequiredException();
+                } else {
+                    /* No results and we don't know why. */
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+            } else {
+                /* No results because of users' settings. */
+                if (profileCrawlerSkippedResultsByMaxDate.size() > 0) {
+                    displayBubblenotifyMessage(bubbleNotifyTitle, "Returning no results because:\r\nAll existing elements have earlier timestamps than user defined max_date parameter " + maxTweetDateStr + ".\r\nMinimum number of skipped Tweets: " + profileCrawlerSkippedResultsByMaxDate.size() + bubbleNotifyTextEnding);
+                } else {
+                    displayBubblenotifyMessage(bubbleNotifyTitle, "Returning no results because:\r\nMost likely user has disabled tweet text crawler but this profile only contained text tweets.\r\nMinimum number of skipped possible Tweets: " + totalFoundTweets + bubbleNotifyTextEnding);
+                }
+            }
+        } else if (statuses_count != null && totalFoundTweets < statuses_count.intValue()) {
+            String text = "Some items may be missing!";
+            text += "\nTotal number of Tweets: " + statuses_count + " Crawled: " + totalFoundTweets;
+            text += "\nLogged in users can sometimes see more items than anonymous users.";
+            displayBubblenotifyMessage(bubbleNotifyTitle, text);
+        }
+        return ret;
+    }
+
+    private ArrayList<DownloadLink> crawlTweetsViaGraphqlAPI(final String queryName, final CryptedLink param, final Map<String, Object> user, final Account account, final boolean crawlUserLikes) throws Exception {
+        final String username = user.get("screen_name").toString();
         final String userID = user.get("id_str").toString();
         final HashSet<String> cursorDupes = new HashSet<String>();
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
@@ -1219,6 +1262,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
         /* Clear some global variables (Yes I know, ugly) */
         dupeListForProfileCrawlerTweetIDs.clear();
         if (this.preGivenPageNumber != null && this.preGivenNumberOfTotalWalkedThroughTweetsCount != null && this.preGivenNextCursor != null) {
+            // TODO: Review this
             /* Resume from last state */
             page = this.preGivenPageNumber.intValue();
             // profileCrawlerTotalCrawledTweetsCount = this.preGivenNumberOfTotalWalkedThroughTweetsCount.intValue();
@@ -1234,7 +1278,8 @@ public class TwitterComCrawler extends PluginForDecrypt {
         }
         final TwitterConfigInterface cfg = PluginJsonConfig.get(TwitterConfigInterface.class);
         final long waitBetweenPaginationRequestsMillis = cfg.getProfileCrawlerWaittimeBetweenPaginationMilliseconds();
-        int totalFoundTweets = 0;
+        final String queryID = this.getGraphqlQueryID(queryName);
+        logger.info("Crawling query " + queryName + " | queryID: " + queryID);
         do {
             final Map<String, Object> variables = new HashMap<String, Object>();
             variables.put("userId", userID);
@@ -1262,8 +1307,6 @@ public class TwitterComCrawler extends PluginForDecrypt {
             final int numberofTweetsCrawledBefore = dupeListForProfileCrawlerTweetIDs.size();
             final List<DownloadLink> resultsThisPage = this.crawlUserProfileGraphqlTimelineInstructions(timelineInstructions, user, null, fp, crawlUserLikes);
             final int numberofTweetsCrawledThisPage = dupeListForProfileCrawlerTweetIDs.size() - numberofTweetsCrawledBefore;
-            /* Yees global variables are dangerous but please don't touch this! */
-            totalFoundTweets += numberofTweetsCrawledThisPage;
             ret.addAll(resultsThisPage);
             distribute(resultsThisPage);
             logger.info("Crawled page " + page + " | Found new Tweets on this page: " + numberofTweetsCrawledThisPage + " | Tweets crawled so far: " + dupeListForProfileCrawlerTweetIDs.size() + " | nextCursor = " + profileCrawlerNextCursor + " | Skipped Re-Tweets: " + profileCrawlerSkippedResultsByRetweet.size() + " | Skipped Tweets via user defined max-date: " + profileCrawlerSkippedResultsByMaxDate.size());
@@ -1296,32 +1339,6 @@ public class TwitterComCrawler extends PluginForDecrypt {
             }
         } while (true);
         logger.info("Last nextCursor: " + profileCrawlerNextCursor);
-        final String bubbleNotifyTitle = "Twitter profile " + username + " | ID: " + userID;
-        if (ret.isEmpty()) {
-            /* We found nothing -> Check why */
-            final String bubbleNotifyTextEnding = "\r\nTotal number of Tweets in this profile: " + statuses_count;
-            if (totalFoundTweets == 0) {
-                if (statuses_count != null && statuses_count.intValue() > 0 && account == null) {
-                    displayBubblenotifyMessage(bubbleNotifyTitle, "Returning no results because:\r\nAccount required to view Tweets of this profile." + bubbleNotifyTextEnding);
-                    throw new AccountRequiredException();
-                } else {
-                    /* No results and we don't know why. */
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-            } else {
-                /* No results because of users' settings. */
-                if (profileCrawlerSkippedResultsByMaxDate.size() > 0) {
-                    displayBubblenotifyMessage(bubbleNotifyTitle, "Returning no results because:\r\nAll existing elements have earlier timestamps than user defined max_date parameter " + maxTweetDateStr + ".\r\nMinimum number of skipped Tweets: " + profileCrawlerSkippedResultsByMaxDate.size() + bubbleNotifyTextEnding);
-                } else {
-                    displayBubblenotifyMessage(bubbleNotifyTitle, "Returning no results because:\r\nMost likely user has disabled tweet text crawler but this profile only contained text tweets.\r\nMinimum number of skipped possible Tweets: " + totalFoundTweets + bubbleNotifyTextEnding);
-                }
-            }
-        } else if (statuses_count != null && totalFoundTweets < statuses_count.intValue()) {
-            String text = "Some items may be missing!";
-            text += "\nTotal number of Tweets: " + statuses_count + " Crawled: " + totalFoundTweets;
-            text += "\nLogged in users can sometimes see more items than anonymous users.";
-            displayBubblenotifyMessage(bubbleNotifyTitle, text);
-        }
         return ret;
     }
 

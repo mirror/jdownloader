@@ -22,6 +22,12 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.Hash;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.config.WebshareCzConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -38,12 +44,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.Hash;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.config.WebshareCzConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class WebShareCz extends PluginForHost {
@@ -90,8 +90,8 @@ public class WebShareCz extends PluginForHost {
         return PluginJsonConfig.get(this.getConfigInterface()).getMaxSimultaneousFreeOrFreeAccountDownloads();
     }
 
-    public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload("https://" + this.getHost() + "/file/" + new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0) + "/");
+    private String getContentURL(final DownloadLink link) {
+        return "https://" + this.getHost() + "/file/" + getFID(link) + "/";
     }
 
     @Override
@@ -155,7 +155,7 @@ public class WebShareCz extends PluginForHost {
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
         if (!looksLikeDownloadableContent(dl.getConnection())) {
-            br.followConnection(true);
+            br.followConnection();
             checkErrorsAPI(br);
             if (br.containsHTML("(?i)(>\\s*Požadovaný soubor nebyl nalezen|>\\s*Requested file not found)")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -202,74 +202,67 @@ public class WebShareCz extends PluginForHost {
 
     private void login(final Account account, final boolean force) throws Exception {
         synchronized (account) {
-            try {
-                // Load cookies
-                br.setCookiesExclusive(true);
-                final Cookies cookies = account.loadCookies("");
-                if (cookies != null) {
-                    logger.info("Attempting cookie login");
-                    this.br.setCookies(this.getHost(), cookies);
-                    if (!force) {
-                        /* Do not verify cookies */
-                        return;
-                    }
-                    br.postPage("https://" + this.getHost() + "/api/user_data/", "wst=" + getToken(account));
-                    final String status = getXMLtagValue("status");
-                    if (StringUtils.equalsIgnoreCase(status, "OK")) {
-                        logger.info("Cookie login successful");
-                        account.saveCookies(this.br.getCookies(this.getHost()), "");
-                        return;
-                    } else {
-                        logger.info("Cookie login failed");
-                        br.clearCookies(null);
-                    }
+            // Load cookies
+            br.setCookiesExclusive(true);
+            final Cookies cookies = account.loadCookies("");
+            if (cookies != null) {
+                logger.info("Attempting cookie login");
+                this.br.setCookies(this.getHost(), cookies);
+                if (!force) {
+                    /* Do not verify cookies */
+                    return;
                 }
-                logger.info("Performing full login");
-                br.setFollowRedirects(false);
-                br.postPage("https://" + this.getHost() + "/api/salt/", "username_or_email=" + Encoding.urlEncode(account.getUser()) + "&wst=");
-                final String lang = System.getProperty("user.language");
-                final String salt = br.getRegex("<salt>([^<]*?)</salt>").getMatch(0);
-                if (salt == null) {
-                    if ("de".equalsIgnoreCase(lang)) {
-                        throw new AccountInvalidException("\r\nUngültige E-Mail Adresse oder Benutzername!");
-                    } else {
-                        throw new AccountInvalidException("\r\nInvalid E-Mail or username!");
-                    }
-                }
-                final String password = JDHash.getSHA1(crypt_md5(account.getPass().getBytes("UTF-8"), salt));
-                final String digest = Hash.getMD5(account.getUser() + ":Webshare:" + account.getPass());
-                /* wst is random 16 char cookie, app().setCookie('wst', ws.strings.randomString(16)) || app().cookie('wst') */
-                /*
-                 * for request, wst is reverse string of wst cookie value, args.wst = app().auth().token() ||
-                 * ws.strings.subString(app().cookie('wst'), 16, 0);
-                 */
-                br.postPage("/api/login/", "username_or_email=" + Encoding.urlEncode(account.getUser()) + "&password=" + password + "&digest=" + digest + "&keep_logged_in=1&wst=");
-                if (br.containsHTML("<code>LOGIN_FATAL_\\d+</code>")) {
-                    if ("de".equalsIgnoreCase(lang)) {
-                        throw new AccountInvalidException("\r\nUngültiges Passwort!\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!");
-                    } else {
-                        throw new AccountInvalidException("\r\nInvalid password!\r\nQuick help:\r\nYou're sure that the password you entered is correct?\r\nIf your password contains special characters, change it (remove them) and try again!");
-                    }
-                }
-                final String token = getXMLtagValue("token");
-                if (StringUtils.isEmpty(token)) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                account.setProperty("token", token);
-                br.setCookie(br.getHost(), "wst", token);
-                account.saveCookies(this.br.getCookies(this.getHost()), "");
-            } catch (final PluginException e) {
-                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                br.postPage("https://" + this.getHost() + "/api/user_data/", "wst=" + getToken(account));
+                final String status = getXMLtagValue("status");
+                if (StringUtils.equalsIgnoreCase(status, "OK")) {
+                    logger.info("Cookie login successful");
+                    account.saveCookies(this.br.getCookies(this.getHost()), "");
+                    return;
+                } else {
+                    logger.info("Cookie login failed");
+                    br.clearCookies(null);
                     account.clearCookies("");
                 }
-                throw e;
             }
+            logger.info("Performing full login");
+            br.setFollowRedirects(false);
+            br.postPage("https://" + this.getHost() + "/api/salt/", "username_or_email=" + Encoding.urlEncode(account.getUser()) + "&wst=");
+            final String lang = System.getProperty("user.language");
+            final String salt = br.getRegex("<salt>([^<]*?)</salt>").getMatch(0);
+            if (salt == null) {
+                if ("de".equalsIgnoreCase(lang)) {
+                    throw new AccountInvalidException("\r\nUngültige E-Mail Adresse oder Benutzername!");
+                } else {
+                    throw new AccountInvalidException("\r\nInvalid E-Mail or username!");
+                }
+            }
+            final String password = JDHash.getSHA1(crypt_md5(account.getPass().getBytes("UTF-8"), salt));
+            final String digest = Hash.getMD5(account.getUser() + ":Webshare:" + account.getPass());
+            /* wst is random 16 char cookie, app().setCookie('wst', ws.strings.randomString(16)) || app().cookie('wst') */
+            /*
+             * for request, wst is reverse string of wst cookie value, args.wst = app().auth().token() ||
+             * ws.strings.subString(app().cookie('wst'), 16, 0);
+             */
+            br.postPage("/api/login/", "username_or_email=" + Encoding.urlEncode(account.getUser()) + "&password=" + password + "&digest=" + digest + "&keep_logged_in=1&wst=");
+            if (br.containsHTML("<code>LOGIN_FATAL_\\d+</code>")) {
+                if ("de".equalsIgnoreCase(lang)) {
+                    throw new AccountInvalidException("\r\nUngültiges Passwort!\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!");
+                } else {
+                    throw new AccountInvalidException("\r\nInvalid password!\r\nQuick help:\r\nYou're sure that the password you entered is correct?\r\nIf your password contains special characters, change it (remove them) and try again!");
+                }
+            }
+            final String token = getXMLtagValue("token");
+            if (StringUtils.isEmpty(token)) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            account.setProperty("token", token);
+            br.setCookie(br.getHost(), "wst", token);
+            account.saveCookies(this.br.getCookies(this.getHost()), "");
         }
     }
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        final AccountInfo ai = new AccountInfo();
         login(account, true);
         if (!br.getURL().contains("/api/user_data/")) {
             br.postPage("/api/user_data/", "wst=" + getToken(account));
@@ -283,6 +276,7 @@ public class WebShareCz extends PluginForHost {
                 throw new AccountInvalidException();
             }
         }
+        final AccountInfo ai = new AccountInfo();
         final String daysStr = getXMLtagValue("vip_days");
         String statustext;
         if (daysStr == null || "0".equals(daysStr)) {
@@ -319,7 +313,7 @@ public class WebShareCz extends PluginForHost {
         pwProtectedErrorhandling(link);
         login(account, false);
         final boolean isPremium = AccountType.PREMIUM.equals(account.getType());
-        br.postPage("https://" + this.getHost() + "/api/file_link/", "ident=" + new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)/?$").getMatch(0) + "&wst=" + getToken(account));
+        br.postPage("https://" + this.getHost() + "/api/file_link/", "ident=" + this.getFID(link) + "&wst=" + getToken(account));
         final String dllink = getXMLtagValue("link");
         if (StringUtils.isEmpty(dllink)) {
             checkErrorsAPI(br);
@@ -329,7 +323,7 @@ public class WebShareCz extends PluginForHost {
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, isPremium, isPremium ? 0 : 1);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             logger.warning("The final dllink seems not to be a file!");
-            br.followConnection(true);
+            br.followConnection();
             checkErrorsAPI(br);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -380,8 +374,8 @@ public class WebShareCz extends PluginForHost {
      * $FreeBSD: src/lib/libcrypt/crypt-md5.c,v 1.5 1999/12/17 20:21:45 peter Exp $
      */
     private final String magic    = "$1$"; /*
-     * This string is magic for this algorithm. Having it this way, we can get get better later on
-     */
+                                            * This string is magic for this algorithm. Having it this way, we can get get better later on
+                                            */
     private final int    MD5_SIZE = 16;
 
     private static void memset(byte[] array) {

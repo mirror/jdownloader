@@ -17,7 +17,10 @@ package jd.plugins.hoster;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.gui.translate._GUI;
@@ -25,12 +28,13 @@ import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.ConfigEntry;
 import jd.controlling.linkcrawler.LinkCrawlerDeepInspector;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
-import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -41,6 +45,7 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.decrypter.VscoCoCrawler;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
@@ -48,6 +53,7 @@ public class VscoCo extends PluginForHost {
     public VscoCo(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://" + getHost() + "/user/signup");
+        setConfigElements();
     }
 
     @Override
@@ -71,7 +77,7 @@ public class VscoCo extends PluginForHost {
     public static final String PROPERTY_MEDIA_ID = "media_id";
     public static final String PROPERTY_QUALITY  = "quality";
     private final String       PROPERTY_HLS_URL  = "hls_url";
-    private final boolean      cookieLoginOnly   = true;
+    private final boolean      cookieLoginOnly   = DebugMode.TRUE_IN_IDE_ELSE_FALSE == false ? true : false;
 
     public static List<String[]> getPluginDomains() {
         return VscoCoCrawler.getPluginDomains();
@@ -197,7 +203,7 @@ public class VscoCo extends PluginForHost {
         /* 2024-02-22: Login not required for downloading */
         final boolean loginRequiredForDownloading = false;
         if (account != null && loginRequiredForDownloading) {
-            this.login(account, false);
+            login(account, false);
         }
         requestFileInformation(link);
         if (isHLSVideo(link)) {
@@ -226,21 +232,32 @@ public class VscoCo extends PluginForHost {
             final Cookies cookies = account.loadCookies("");
             final Cookies userCookies = account.loadUserCookies();
             final String accounturl = "/user/account";
+            final String userAgentFromConfig = this.getPluginConfig().getStringProperty(SETTING_CUSTOM_USER_AGENT, SETTING_CUSTOM_USER_AGENT_default);
+            if (userAgentFromConfig != null) {
+                br.getHeaders().put("User-Agent", userAgentFromConfig);
+            }
             if (cookies != null || userCookies != null) {
                 logger.info("Attempting cookie login");
-                String userAgentByCookies = null;
+                String userAgentFromCookies = null;
                 if (userCookies != null) {
                     br.setCookies(this.getHost(), userCookies);
-                    userAgentByCookies = userCookies.getUserAgent();
+                    userAgentFromCookies = userCookies.getUserAgent();
                 } else {
                     br.setCookies(this.getHost(), cookies);
                 }
                 final String lastUsedUserAgent = account.getStringProperty("useragent");
-                if (userAgentByCookies != null) {
-                    br.getHeaders().put("User-Agent", userAgentByCookies);
-                    account.setProperty("lastUsedUserAgent", lastUsedUserAgent);
+                String useragent = null;
+                if (userAgentFromCookies != null) {
+                    useragent = userAgentFromCookies;
+                } else if (userAgentFromConfig != null) {
+                    useragent = userAgentFromConfig;
                 } else if (lastUsedUserAgent != null) {
-                    br.getHeaders().put("User-Agent", lastUsedUserAgent);
+                    useragent = lastUsedUserAgent;
+                }
+                if (useragent != null) {
+                    /* Special User-Agent value present: Set it and save it on account for later usage. */
+                    br.getHeaders().put("User-Agent", userAgentFromCookies);
+                    account.setProperty("lastUsedUserAgent", useragent);
                 }
                 if (!force) {
                     /* Don't validate cookies */
@@ -257,7 +274,7 @@ public class VscoCo extends PluginForHost {
                     br.clearCookies(null);
                     if (userCookies != null) {
                         if (account.hasEverBeenValid()) {
-                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
+                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired() + "\r\nUse FlagCookies browser addon for cookie import!");
                         } else {
                             throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
                         }
@@ -269,27 +286,34 @@ public class VscoCo extends PluginForHost {
                 throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_required());
             }
             logger.info("Performing full login");
-            if (true) {
+            final boolean codeBelowIsUnfinished = true;
+            if (codeBelowIsUnfinished) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            // TODO: Maybe add username + password login support
-            br.getPage("https://" + this.getHost() + "/login.php");
-            final Form loginform = br.getFormbyProperty("name", "bla");
-            if (loginform == null) {
-                logger.warning("Failed to find loginform");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            br.getPage(accounturl);
+            /* TODO: Unfinished code down below */
+            final String currentUserAgent = br.getHeaders().get("User-Agent");
+            // br.getPage("https://" + getHost() + "/user/login");
+            br.getPage("https://" + getHost() + "/csrf-token");
+            final Map<String, Object> tokenResp = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+            final String csrfToken = tokenResp.get("csrfToken").toString();
+            br.getHeaders().put("Referer", "https://" + br.getHost() + "/user/login");
+            br.getHeaders().put("Vs-Csrf-Token", csrfToken);
+            br.getHeaders().put("Accept", "application/json");
+            br.getHeaders().put("Content-Type", "application/json");
+            br.getHeaders().put("Origin", "https://" + getHost());
+            br.postPageRaw("/grpc/user/login", "{\"credential\":{\"vscoCredential\":{\"identity\":\"" + PluginJSonUtils.escape(account.getUser()) + "\",\"" + PluginJSonUtils.escape(account.getPass()) + "\":\"4jd2userztrtzkzonly\"}},\"provider\":1}");
+            final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
             if (!isLoggedin(br)) {
                 throw new AccountInvalidException();
             }
             account.saveCookies(br.getCookies(br.getHost()), "");
+            account.setProperty("lastUsedUserAgent", currentUserAgent);
             return true;
         }
     }
 
     private boolean isLoggedin(final Browser br) {
-        return br.containsHTML("class=\"sign-out\"");
+        return br.containsHTML("TODO_THIS_DOESNT_WORK_YET");
     }
 
     @Override
@@ -341,5 +365,12 @@ public class VscoCo extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
         link.removeProperty(PROPERTY_HLS_URL);
+    }
+
+    private static final String SETTING_CUSTOM_USER_AGENT         = "custom_user_agent";
+    private static final String SETTING_CUSTOM_USER_AGENT_default = null;
+
+    private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), SETTING_CUSTOM_USER_AGENT, "Custom User-Agent value").setDefaultValue(SETTING_CUSTOM_USER_AGENT_default));
     }
 }

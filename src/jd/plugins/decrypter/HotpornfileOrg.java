@@ -27,6 +27,7 @@ import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -41,6 +42,13 @@ import jd.plugins.PluginForDecrypt;
 public class HotpornfileOrg extends PluginForDecrypt {
     public HotpornfileOrg(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.setFollowRedirects(true);
+        return br;
     }
 
     @Override
@@ -93,7 +101,6 @@ public class HotpornfileOrg extends PluginForDecrypt {
                 recaptchaV2Response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br, "6Lf1jhYUAAAAAN8kNxOBBEUu3qBPcy4UNu4roO5K").getToken();
                 freshReCaptchaV2Response = recaptchaV2Response;
             }
-            // br.setCookie(br.getHost(), "cAsh", cid);
             final UrlQuery query = new UrlQuery();
             query.add("action", "get_links");
             query.add("postId", postID);
@@ -105,6 +112,11 @@ public class HotpornfileOrg extends PluginForDecrypt {
                 query.add("fb", "true");
             }
             query.add("challenge", Encoding.urlEncode(recaptchaV2Response));
+            /*
+             * Fallback value for when challenge fails. Website is also using this but only when a certain amount of time has passed (45
+             * seconds in last test).
+             */
+            query.add("fjdw", "true");
             br.postPage("/wp-admin/admin-ajax.php", query);
             entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
             lastNext = next;
@@ -164,7 +176,7 @@ public class HotpornfileOrg extends PluginForDecrypt {
     }
 
     private static String generateCID() {
-        // https://www.hotpornfile.org/wp-content/cache/autoptimize/js/autoptimize_192cd586b7da5c9f3b02b330c898f3cd.js
+        // https://www.hotpornfile.org/wp-content/cache/autoptimize/js/autoptimize_cc7f9ec72ccfaed2d3e5faa655373b57.js
         // return generateRandomString("0123456789", 4) + "XXXX" + generateRandomString("0123456789abcdef", 16);
         return "1002XXXX" + generateRandomString("0123456789abcdef", 16);
     }
@@ -181,5 +193,10 @@ public class HotpornfileOrg extends PluginForDecrypt {
     public int getMaxConcurrentProcessingInstances() {
         /* 2023-03-27: Attempt to avoid captchas. */
         return 1;
+    }
+
+    @Override
+    public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
+        return true;
     }
 }
