@@ -1197,6 +1197,15 @@ public class TwitterComCrawler extends PluginForDecrypt {
         return ret;
     }
 
+    private void resetUglyGlobalVariables() {
+        /* Clear some global variables (Yes I know, global variables are evil but this whole plugin is a mess so idk) */
+        dupeListForProfileCrawlerTweetIDs.clear();
+        profileCrawlerNextCursor = null;
+        profileCrawlerStopBecauseReachedUserDefinedMaxItemsLimit = false;
+        profileCrawlerSkippedResultsByMaxDate.clear();
+        profileCrawlerSkippedResultsByRetweet.clear();
+    }
+
     /** Crawls all Tweets of a profile via GraphQL Web-API. */
     private ArrayList<DownloadLink> crawlUserViaGraphqlAPI(final CryptedLink param, final String username, final Account account, final boolean crawlUserLikes) throws Exception {
         if (username == null) {
@@ -1214,8 +1223,6 @@ public class TwitterComCrawler extends PluginForDecrypt {
         // TODO: Make use of this to crawl all items from "/username/media"
         final Number media_count = (Number) user.get("media_count");
         final String userID = user.get("id_str").toString();
-        /* Clear some global variables (Yes I know, ugly) */
-        dupeListForProfileCrawlerTweetIDs.clear();
         if (this.preGivenPageNumber != null && this.preGivenNumberOfTotalWalkedThroughTweetsCount != null && this.preGivenNextCursor != null) {
             // TODO: Review this
             /* Resume from last state */
@@ -1355,17 +1362,16 @@ public class TwitterComCrawler extends PluginForDecrypt {
      * 2023-07-21: Time for some ugly codes: Public variables!
      */
     private String                      profileCrawlerNextCursor                                 = null;
+    /*
+     * Returns Twitter status IDs of all items that have been walked-through. This does not mean that those will actually be returned - they
+     * can be filtered by user-settings. This variable mainly exists to prevent infinite loops.
+     */
     private HashSet<String>             dupeListForProfileCrawlerTweetIDs                        = new HashSet<String>();
     private boolean                     profileCrawlerStopBecauseReachedUserDefinedMaxItemsLimit = false;
     private final HashSet<DownloadLink> profileCrawlerSkippedResultsByMaxDate                    = new HashSet<DownloadLink>();
     private final HashSet<DownloadLink> profileCrawlerSkippedResultsByRetweet                    = new HashSet<DownloadLink>();
 
     private ArrayList<DownloadLink> crawlUserProfileGraphqlTimelineInstructions(final List<Map<String, Object>> timelineInstructions, final Map<String, Object> user, final String singleTweetID, final FilePackage fp, final boolean crawlUserLikes) throws Exception {
-        /* Nullification (yes public variables are evil!) */
-        profileCrawlerNextCursor = null;
-        profileCrawlerStopBecauseReachedUserDefinedMaxItemsLimit = false;
-        profileCrawlerSkippedResultsByMaxDate.clear();
-        profileCrawlerSkippedResultsByRetweet.clear();
         final ArrayList<DownloadLink> allowedResults = new ArrayList<DownloadLink>();
         timelineInstructionsLoop: for (final Map<String, Object> timelineInstruction : timelineInstructions) {
             final String timelineInstructionType = timelineInstruction.get("type").toString();

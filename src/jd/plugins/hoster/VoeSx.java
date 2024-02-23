@@ -168,7 +168,11 @@ public class VoeSx extends XFileSharingProBasic {
             /* 2023-11-21 */
             hlsMaster = new Regex(src, "(?i)\"(https?://[^/]+/engine/hls[^\"]+)").getMatch(0);
         }
-        final String altSourceB64 = br.getRegex("let wc0 = '([^\\']+)").getMatch(0);
+        String altSourceB64 = br.getRegex("let wc0 = '([^\\']+)").getMatch(0);
+        if (altSourceB64 == null) {
+            /* 2024-02-23 */
+            altSourceB64 = br.getRegex("let [^=]+ = '(ey[^\\']+)").getMatch(0);
+        }
         if (altSourceB64 != null && hlsMaster == null) {
             /* 2024-01-23 */
             final String json = Encoding.Base64Decode(altSourceB64);

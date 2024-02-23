@@ -18,6 +18,12 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.Map;
 
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.net.HTTPHeader;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -38,12 +44,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.net.HTTPHeader;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "opendrive.com" }, urls = { "https?://(?:www\\.)?(?:[a-z0-9]+\\.)?(?:opendrive\\.com/files\\?[A-Za-z0-9\\-_]+|od\\.lk/(?:d|f)/[A-Za-z0-9\\-_]+)" })
 public class OpenDriveCom extends PluginForHost {
@@ -90,6 +90,11 @@ public class OpenDriveCom extends PluginForHost {
     };
 
     private static final MODE access_mode = MODE.WEBSITE_AJAX;
+
+    @Override
+    public boolean isResumeable(final DownloadLink link, final Account account) {
+        return false;
+    }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
@@ -221,7 +226,7 @@ public class OpenDriveCom extends PluginForHost {
         }
         final Request initialRequest = br.createGetRequest(Encoding.htmlDecode(dllink));
         initialRequest.getHeaders().put(new HTTPHeader(HTTPConstants.HEADER_REQUEST_ACCEPT_ENCODING, "", false));
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, initialRequest, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, initialRequest, this.isResumeable(link, null), 1);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             br.followConnection(true);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -296,7 +301,7 @@ public class OpenDriveCom extends PluginForHost {
         }
         final Request initialRequest = br.createGetRequest(Encoding.htmlDecode(dllink));
         initialRequest.getHeaders().put(new HTTPHeader(HTTPConstants.HEADER_REQUEST_ACCEPT_ENCODING, "", false));
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, initialRequest, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, initialRequest, this.isResumeable(link, account), 1);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection(true);
