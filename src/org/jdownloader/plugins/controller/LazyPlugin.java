@@ -278,6 +278,22 @@ public abstract class LazyPlugin<T extends Plugin> implements MinTimeWeakReferen
             public boolean isInternal() {
                 return false;
             }
+        },
+        BUBBLE_NOTIFICATION {
+            @Override
+            public String getLabel() {
+                return "This plugin can display bubble notifications";
+            }
+
+            @Override
+            public String getTooltip() {
+                return "This plugin can display bubble notifications";
+            }
+
+            @Override
+            public boolean isInternal() {
+                return true;
+            }
         };
 
         public static final long CACHEVERSION = Math.abs(StringUtils.join(values(), "<->").hashCode()) + Math.abs(StringUtils.join(values(), ":").hashCode()) + Math.abs(StringUtils.join(values(), "<=>").hashCode());
