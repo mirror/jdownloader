@@ -1,3 +1,4 @@
+AutoDetectAction_run_failed2=Nije pronađena radna metoda ponovnog povezivanja UPNP.\nUmjesto toga isprobajte Live Header Reconnect!
 AutoDetectUpnpAction_AutoDetectUpnpAction_=Pokušava pronaći sve UPNP rekonekt uređaje u Vašoj mreži.\r\n Većina FritzBox rutera se može rekonektirati na ovaj način.
 UPNPReconnectInvoker_getName_=UPNP ruter rekonekcija
 UPNPRouterPlugin_run_error=Niti jedan UPNP uređaj nije pronađen. Umjesto toga pokušajte rekonekciju sa Live Header!
