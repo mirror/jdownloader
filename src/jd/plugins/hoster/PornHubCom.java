@@ -100,7 +100,6 @@ public class PornHubCom extends PluginForHost {
     public static final boolean                   use_download_workarounds                = true;
     private static final String                   type_photo                              = "(?i).+/photo/\\d+";
     private static final String                   type_gif_webm                           = "(?i).+/(embed)?gif/\\d+";
-    private static final String                   type_modelhub                           = "(?i).+modelhub\\.com/.+";
     public static final String                    html_privatevideo                       = "id=\"iconLocked\"";
     public static final String                    html_privateimage                       = "profile/private-lock\\.png";
     public static final String                    html_purchase_only                      = "(?i)'Buy on video player'";
@@ -301,9 +300,6 @@ public class PornHubCom extends PluginForHost {
         if ("pornhubdecrypted".equals(urlDomain)) {
             /* do not modify pornhubdecrypted URLs */
             return url;
-        } else if (url.matches(type_modelhub)) {
-            /* Do not modify modelhub URLs */
-            return url;
         }
         final String preferredSubdomain = getPreferredSubdomain(url);
         if (url.matches(type_photo)) {
@@ -322,10 +318,6 @@ public class PornHubCom extends PluginForHost {
     public static boolean requiresPremiumAccount(final String url) {
         if (url == null) {
             return false;
-        } else if (url.matches(PornHubComVideoCrawler.PATTERN_MODELHUB_USER_PHOTO_ALBUMS)) {
-            return false;
-        } else if (url.matches(type_modelhub)) {
-            return true;
         } else {
             return false;
         }
@@ -1143,7 +1135,7 @@ public class PornHubCom extends PluginForHost {
     }
 
     public static final String[] domainsFree                     = new String[] { "pornhub.com", "pornhub.org" };
-    public static final String[] domainsPremium                  = new String[] { "pornhubpremium.com", "modelhub.com" };
+    public static final String[] domainsPremium                  = new String[] { "pornhubpremium.com" };
     public static final String   PROPERTY_LAST_USED_LOGIN_DOMAIN = "last_used_login_domain";
 
     public boolean login(final Account account, final boolean force) throws Exception {
@@ -1630,7 +1622,6 @@ public class PornHubCom extends PluginForHost {
         synchronized (DEFAULT_COOKIES) {
             DEFAULT_COOKIES.put("accessAgeDisclaimerPH", "1");
             DEFAULT_COOKIES.put("accessAgeDisclaimerUK", "1");// 2023-07-19
-            DEFAULT_COOKIES.put("accessAgeDisclaimerMH", "1");// 2023-08-30: modelhub.com
             /* 2023-04-14: STATE OF UTAH WARNING */
             DEFAULT_COOKIES.put("accessPH", "1");
         }
@@ -1841,8 +1832,7 @@ public class PornHubCom extends PluginForHost {
     }
 
     public static boolean domainCanBeChanged(final String domain) {
-        if (domain.equalsIgnoreCase("modelhub.com") || domain.equalsIgnoreCase("pornhubpremium.com")) {
-            /* E.g. modelhub.org / pornhubpremium.org does not exist. */
+        if (domain.equalsIgnoreCase("pornhubpremium.com")) {
             return false;
         } else {
             return true;

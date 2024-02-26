@@ -20,7 +20,6 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -41,7 +40,6 @@ import org.jdownloader.gui.notify.BubbleNotify.AbstractNotifyWindowFactory;
 import org.jdownloader.gui.notify.gui.AbstractNotifyWindow;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
@@ -88,7 +86,7 @@ public class PornHubComVideoCrawler extends PluginForDecrypt {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "pornhub.com", "pornhub.org", "pornhubpremium.com", "pornhubpremium.org", "modelhub.com" });
+        ret.add(new String[] { "pornhub.com", "pornhub.org", "pornhubpremium.com", "pornhubpremium.org" });
         return ret;
     }
 
@@ -114,10 +112,6 @@ public class PornHubComVideoCrawler extends PluginForDecrypt {
             /* Single video embeded */
             pattern += "embed/[a-z0-9]+|";
             pattern += "embed_player\\.php\\?id=\\d+|";
-            /* Single video modelhub.com 2021-01-06 */
-            pattern += "video/ph[a-f0-9]+|";
-            /* All photo albums of a user modelhub.com */
-            pattern += "[^/]+/photos$|";
             /* All videos of a pornstar/model */
             pattern += "(pornstar|model)/[^/]+(/gifs(/video|/public)?|/public|/videos(/premium|/paid|/upload|/public)?|/from_videos|/photos)?|";
             /* All videos of a channel */
@@ -132,13 +126,12 @@ public class PornHubComVideoCrawler extends PluginForDecrypt {
         return ret.toArray(new String[0]);
     }
 
-    private static final String TYPE_PORNSTAR_VIDEOS_UPLOAD        = "(?i)https?://[^/]+/pornstar/([^/]+)/videos/upload$";
-    private static final String TYPE_PORNSTAR_VIDEOS               = "(?i)https?://[^/]+/pornstar/([^/]+)/videos/?$";
-    private static final String TYPE_MODEL_VIDEOS                  = "(?i)https?://[^/]+/model/([^/]+)/videos/?$";
-    private static final String TYPE_USER_FAVORITES                = "(?i)https?://[^/]+/users/([^/]+)/videos(/?|/favorites/?)$";
-    private static final String TYPE_USER_VIDEOS_PUBLIC            = "(?i)https?://[^/]+/users/([^/]+)/videos/public$";
-    private static final String TYPE_CHANNEL_VIDEOS                = "(?i)https?://[^/]+/channels/([^/]+)(/?|/videos/?)$";
-    public static final String  PATTERN_MODELHUB_USER_PHOTO_ALBUMS = "https?://[^/]+/([^/]+)/photos";
+    private static final String TYPE_PORNSTAR_VIDEOS_UPLOAD = "(?i)https?://[^/]+/pornstar/([^/]+)/videos/upload$";
+    private static final String TYPE_PORNSTAR_VIDEOS        = "(?i)https?://[^/]+/pornstar/([^/]+)/videos/?$";
+    private static final String TYPE_MODEL_VIDEOS           = "(?i)https?://[^/]+/model/([^/]+)/videos/?$";
+    private static final String TYPE_USER_FAVORITES         = "(?i)https?://[^/]+/users/([^/]+)/videos(/?|/favorites/?)$";
+    private static final String TYPE_USER_VIDEOS_PUBLIC     = "(?i)https?://[^/]+/users/([^/]+)/videos/public$";
+    private static final String TYPE_CHANNEL_VIDEOS         = "(?i)https?://[^/]+/channels/([^/]+)(/?|/videos/?)$";
 
     private String getCorrectedContentURL(final String url) throws MalformedURLException {
         final String preferredSubdomain = PornHubCom.getPreferredSubdomain(url);
@@ -166,8 +159,6 @@ public class PornHubComVideoCrawler extends PluginForDecrypt {
             PornHubCom.getFirstPageWithAccount(hosterPlugin, account, contenturl);
             handleErrorsAndCaptcha(this.br, account);
             return crawlAllGifsOfAUser(param, account);
-        } else if (contenturl.matches(PATTERN_MODELHUB_USER_PHOTO_ALBUMS)) {
-            return this.crawlAllPhotoAlbumsOfAUserModelhub(contenturl, account);
         } else if (contenturl.matches("(?i).*/photos$")) {
             return this.crawlAllPhotoAlbumsOfAUser(param, account);
         } else if (contenturl.matches("(?i).*/model/.*")) {
@@ -716,83 +707,13 @@ public class PornHubComVideoCrawler extends PluginForDecrypt {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (br.containsHTML("seeAllButton")) {
-            /* More/all albums are available on modelhub.com -> Let modelhub crawler do the job */
-            logger.info("Looks like more photo albums of this user are available on modelhub.com");
-            final String username = getUsernameFromURL(br);
-            if (username == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            return crawlAllPhotoAlbumsOfAUserModelhub("https://www.modelhub.com/" + username + "/photos", account);
-        } else {
-            final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-            final String[] photoAlbumURLs = br.getRegex("(/album/\\d+)").getColumn(0);
-            if (photoAlbumURLs == null || photoAlbumURLs.length == 0) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            for (final String photoAlbumURL : photoAlbumURLs) {
-                ret.add(this.createDownloadlink(br.getURL(photoAlbumURL).toString()));
-            }
-            return ret;
-        }
-    }
-
-    private ArrayList<DownloadLink> crawlAllPhotoAlbumsOfAUserModelhub(final String url, final Account account) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        PornHubCom.getPage(br, url);
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        final String username = getUsernameFromURL(url);
-        if (username == null) {
+        final String[] photoAlbumURLs = br.getRegex("(/album/\\d+)").getColumn(0);
+        if (photoAlbumURLs == null || photoAlbumURLs.length == 0) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final String[] jsPieces = br.getRegex("<script type=\"text/javascript\">(.*?)</script>").getColumn(0);
-        if (jsPieces == null || jsPieces.length == 0) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        for (final String jsPiece : jsPieces) {
-            final Regex photojsregex = new Regex(jsPiece, "PHOTOS_ARRAY_(\\d+) = (\\{.*?\\})\\s+var");
-            final String albumID = photojsregex.getMatch(0);
-            final String photojs = photojsregex.getMatch(1);
-            if (albumID == null) {
-                /* Skip non matching js snippets */
-                continue;
-            }
-            final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(photojs);
-            /* Find album title */
-            final Map<String, Object> photoIds = (Map<String, Object>) entries.get("photoIds");
-            String albumTitle = null;
-            final Iterator<Entry<String, Object>> iterator = photoIds.entrySet().iterator();
-            while (iterator.hasNext()) {
-                final Entry<String, Object> entry = iterator.next();
-                final Map<String, Object> photoInfo = (Map<String, Object>) entry.getValue();
-                final String title = (String) photoInfo.get("title");
-                if (title != null) {
-                    albumTitle = new Regex(title, "(?i)Photo from album \"(.+)\"").getMatch(0);
-                    if (albumTitle != null) {
-                        break;
-                    }
-                }
-            }
-            final FilePackage fp = FilePackage.getInstance();
-            if (albumTitle != null) {
-                fp.setName(username + " - " + albumID + " - " + albumTitle);
-            } else {
-                fp.setName(username + " - " + albumID);
-            }
-            final List<String> imageurls = (List<String>) entries.get("urls");
-            for (final String imageurl : imageurls) {
-                final DownloadLink image = this.createDownloadlink(imageurl);
-                final String nicerFilenameThanDefault = new Regex(imageurl, "(original_.+)$").getMatch(0);
-                if (nicerFilenameThanDefault != null) {
-                    image.setFinalFileName(nicerFilenameThanDefault);
-                }
-                image.setProperty(PornHubCom.PROPERTY_USERNAME, username);
-                image.setAvailable(true);
-                image._setFilePackage(fp);
-                ret.add(image);
-            }
+        for (final String photoAlbumURL : photoAlbumURLs) {
+            ret.add(this.createDownloadlink(br.getURL(photoAlbumURL).toString()));
         }
         return ret;
     }

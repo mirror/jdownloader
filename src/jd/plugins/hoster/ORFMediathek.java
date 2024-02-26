@@ -434,7 +434,7 @@ public class ORFMediathek extends PluginForHost {
         return "JDownloader's ORF Plugin helps downloading videos from on.orf.at. ORF provides different video qualities and types of media.";
     }
 
-    private static final String[] VIDEO_FORMATS = new String[] { "Multiple video chapters", "Single video (\"gapless\")" };
+    private static final String[] VIDEO_FORMATS = new String[] { "All formats", "Multiple video chapters", "Single video (\"gapless\")" };
 
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_SUBTITLES, "Download subtitle").setDefaultValue(Q_SUBTITLES_default));

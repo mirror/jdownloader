@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.gui.translate._GUI;
@@ -54,11 +55,11 @@ import jd.plugins.PluginForHost;
 public class NicoVideoJp extends PluginForHost {
     private static final String  CUSTOM_DATE               = "CUSTOM_DATE";
     private static final String  CUSTOM_FILENAME           = "CUSTOM_FILENAME";
-    private static final String  TYPE_NM                   = "https?://[^/]+/watch/nm\\d+";
-    private static final String  TYPE_SM                   = "https?://[^/]+/watch/sm\\d+";
-    private static final String  TYPE_SO                   = "https?://[^/]+/watch/so\\d+";
+    private static final String  TYPE_NM                   = "(?i)https?://[^/]+/watch/nm\\d+";
+    private static final String  TYPE_SM                   = "(?i)https?://[^/]+/watch/sm\\d+";
+    private static final String  TYPE_SO                   = "(?i)https?://[^/]+/watch/so\\d+";
     /* Other types may redirect to this type. This is the only type which is also downloadable without account (sometimes?). */
-    private static final String  TYPE_WATCH                = "https?://[^/]+/watch/\\d+";
+    private static final String  TYPE_WATCH                = "(?i)https?://[^/]+/watch/\\d+";
     private static final String  default_extension         = "mp4";
     private static final boolean RESUME                    = true;
     private static final int     MAXCHUNKS                 = 0;
@@ -91,11 +92,6 @@ public class NicoVideoJp extends PluginForHost {
 
     private String getFID(final DownloadLink link) {
         return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
-    }
-
-    @Override
-    public void init() {
-        super.init();
     }
 
     @Override
@@ -154,7 +150,7 @@ public class NicoVideoJp extends PluginForHost {
         String jsonapi = br.getRegex("data-api-data=\"([^\"]+)").getMatch(0);
         if (jsonapi != null) {
             jsonapi = jsonapi.replace("&quot;", "\"");
-            entries = JavaScriptEngineFactory.jsonToJavaMap(jsonapi);
+            entries = restoreFromString(jsonapi, TypeRef.MAP);
             final Map<String, Object> video = (Map<String, Object>) entries.get("video");
             final String description = (String) video.get("description");
             link.setProperty(PROPERTY_TITLE, Encoding.htmlDecode(video.get("title").toString()));
@@ -209,8 +205,15 @@ public class NicoVideoJp extends PluginForHost {
             throw new AccountRequiredException();
         } else if (br.containsHTML("(?)>\\s*Sorry, this video can only be viewed in the same region where it was uploaded")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "GEO-blocked");
+        } else if (entries == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final Map<String, Object> delivery = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "media/delivery");
+        if (delivery == null) {
+            /* 2024-02-26: New json and no possibility to get audio + video as one stream(?) */
+            // delivery = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "media/domand");
+            throw new PluginException(LinkStatus.ERROR_FATAL, "UNSUPPORTED_STREAMING_TYPE_HLS_SPLIT_AUDIO_VIDEO");
+        }
         final Map<String, Object> movie = (Map<String, Object>) delivery.get("movie");
         final List<Map<String, Object>> audios = (List<Map<String, Object>>) movie.get("audios");
         final List<Map<String, Object>> videos = (List<Map<String, Object>>) movie.get("videos");
@@ -229,17 +232,18 @@ public class NicoVideoJp extends PluginForHost {
         // final long expire_time = ((Number) entries.get("expire_time")).longValue();
         final String token = session.get("token").toString();
         final String service_user_id = session.get("serviceUserId").toString();
-        final Map<String, Object> tokenMap = JavaScriptEngineFactory.jsonToJavaMap(token);
+        final Map<String, Object> tokenMap = restoreFromString(token, TypeRef.MAP);
         final String recipe_id = tokenMap.get("recipe_id").toString();
         final String player_id = tokenMap.get("player_id").toString();
         // final Map<String, Object> auth_types = (Map<String, Object>) session.get("auth_types");
         final String postData = "{\"session\":{\"recipe_id\":\"" + recipe_id + "\",\"content_id\":\"out1\",\"content_type\":\"movie\",\"content_src_id_sets\":[{\"content_src_ids\":[{\"src_id_to_mux\":{\"video_src_ids\":" + sessionVideosStr + ",\"audio_src_ids\":" + sessionAudiosStr + "}},{\"src_id_to_mux\":{\"video_src_ids\":[\"" + videoID + "\"],\"audio_src_ids\":[\"" + audioID + "\"]}}]}],\"timing_constraint\":\"unlimited\",\"keep_method\":{\"heartbeat\":{\"lifetime\":120000}},\"protocol\":{\"name\":\"http\",\"parameters\":{\"http_parameters\":{\"parameters\":{\"hls_parameters\":{\"use_well_known_port\":\"" + booleanToYesNo((Boolean) apiInfo.get("isWellKnownPort")) + "\",\"use_ssl\":\"" + booleanToYesNo((Boolean) apiInfo.get("isSsl"))
                 + "\",\"transfer_preset\":\"\",\"segment_duration\":6000}}}}},\"content_uri\":\"\",\"session_operation_auth\":{\"session_operation_auth_by_signature\":{\"token\":\"" + token.replaceAll("\"", "\\\\\"") + "\",\"signature\":\"" + signature + "\"}},\"content_auth\":{\"auth_type\":\"ht2\",\"content_key_timeout\":600000,\"service_id\":\"nicovideo\",\"service_user_id\":\"" + service_user_id + "\"},\"client_info\":{\"player_id\":\"" + player_id + "\"},\"priority\":" + session.get("priority") + "}}";
-        br.getHeaders().put("Accept", "application/json");
-        br.getHeaders().put("Content-Type", "application/json");
-        br.getHeaders().put("Origin", "https://www." + this.getHost());
-        br.postPageRaw(apiURL + "?_format=json", postData);
-        final Map<String, Object> response = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        final Browser brc = br.cloneBrowser();
+        brc.getHeaders().put("Accept", "application/json");
+        brc.getHeaders().put("Content-Type", "application/json");
+        brc.getHeaders().put("Origin", "https://www." + this.getHost());
+        brc.postPageRaw(apiURL + "?_format=json", postData);
+        final Map<String, Object> response = restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.MAP);
         final Map<String, Object> data = (Map<String, Object>) response.get("data");
         final Map<String, Object> responseSession = (Map<String, Object>) data.get("session");
         final String streamURL = responseSession.get("content_uri").toString();

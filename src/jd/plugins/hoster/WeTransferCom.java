@@ -88,7 +88,7 @@ public class WeTransferCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         setBrowserExclusive();
         if (isTypeDownload(link)) {
-            br = prepBRWebsite(this.createNewBrowserInstance());
+            prepBRWebsite(br);
             final String[] dlinfo = link.getPluginPatternMatcher().replace("http://wetransferdecrypted/", "").split("/");
             final String id_main = dlinfo[0];
             final String security_hash = dlinfo[1];
@@ -96,10 +96,7 @@ public class WeTransferCom extends PluginForHost {
             if (security_hash == null || id_main == null || id_single == null) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            String referer = link.getStringProperty("referer"); // backward compatibility
-            if (referer == null) {
-                referer = link.getReferrerUrl();
-            }
+            final String referer = link.getReferrerUrl();
             if (referer == null) {
                 /* This should never happen */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -140,13 +137,13 @@ public class WeTransferCom extends PluginForHost {
             }
         } else {
             /* Boards - so far we only allow our users to download all contents of the added board as .zip. */
-            final String fid = this.getFID(link);
-            String token = this.getPluginConfig().getStringProperty("api_token", null);
+            final String fid = getFID(link);
+            String token = this.getPluginConfig().getStringProperty("api_token");
             int counter = 0;
             boolean authed = false;
             do {
                 /* Clear old headers and cookies each loop */
-                br = prepBRAPI(this.createNewBrowserInstance());
+                prepBRAPI(br);
                 try {
                     if (token == null) {
                         /* Only generate new token if needed */
@@ -213,7 +210,7 @@ public class WeTransferCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             /* Use website from now on */
-            br = prepBRWebsite(this.createNewBrowserInstance());
+            prepBRWebsite(br);
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             final String fid = this.getFID(link);
             final String action = String.format("https://boards.wetransfer.com/api/boards/%s/%s/download", fid, operation_version);

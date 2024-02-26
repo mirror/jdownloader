@@ -458,23 +458,6 @@ public class ChipDe extends PluginForHost {
         }
     }
 
-    private String applicationDownloadsGetDllink() {
-        String dllink = br.getRegex("Falls der Download nicht beginnt,\\&nbsp;<a class=\"b\" href=\"(http.*?)\"").getMatch(0);
-        if (dllink == null) {
-            dllink = br.getRegex("class=\"dl\\-btn\"><a href=\"(http.*?)\"").getMatch(0);
-        }
-        if (dllink == null) {
-            dllink = br.getRegex("</span></a></div><a href=\"(http.*?)\"").getMatch(0);
-        }
-        if (dllink == null) {
-            dllink = br.getRegex("var adtech_dl_url = \\'(https?://[^<>\"]*?)\\';").getMatch(0);
-        }
-        if (dllink == null) {
-            dllink = br.getRegex("(?:\"|\\')(https?://dl\\.cdn\\.chip\\.de/downloads/\\d+/.*?)(?:\"|\\')").getMatch(0);
-        }
-        return dllink;
-    }
-
     public static void accessURL(final Browser br, final String url) throws PluginException, IOException {
         URLConnectionAdapter con = null;
         try {

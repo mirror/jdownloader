@@ -434,14 +434,17 @@ public class OrfAt extends PluginForDecrypt {
                 }
             }
         }
-        final boolean preferGaplessVideo = cfg.getIntegerProperty(ORFMediathek.SETTING_SELECTED_VIDEO_FORMAT, ORFMediathek.SETTING_SELECTED_VIDEO_FORMAT_default) == 1;
+        final int videoFormatSettingInt = cfg.getIntegerProperty(ORFMediathek.SETTING_SELECTED_VIDEO_FORMAT, ORFMediathek.SETTING_SELECTED_VIDEO_FORMAT_default);
+        final boolean isCrawlGaplessAndVideoChapters = videoFormatSettingInt == 0;
+        final boolean isCrawlGaplessOnly = videoFormatSettingInt == 2;
         final boolean alreadyFoundGaplessProgressive = segments.size() == 1 && isProgressiveStreamAvailable;
+        final boolean gaplessNeeded = isCrawlGaplessAndVideoChapters || isCrawlGaplessOnly;
         final boolean crawlGapless;
         if (ret.isEmpty()) {
             /* Found nothing -> Try to cra */
             logger.info("Found nothing -> Trying to crawl gapless version as fallback");
             crawlGapless = true;
-        } else if (sourcesForGaplessVideo != null && !sourcesForGaplessVideo.isEmpty() && preferGaplessVideo && !alreadyFoundGaplessProgressive) {
+        } else if (sourcesForGaplessVideo != null && sourcesForGaplessVideo.size() > 0 && gaplessNeeded && !alreadyFoundGaplessProgressive) {
             logger.info("User prefers gapless and already crawled items don't looke like gapless");
             crawlGapless = true;
         } else {
@@ -451,7 +454,10 @@ public class OrfAt extends PluginForDecrypt {
         if (crawlGapless) {
             /* Gapless video handling */
             logger.info("Crawling gapless video streams");
-            ret.clear();
+            if (isCrawlGaplessOnly) {
+                /* Discard previously found results */
+                ret.clear();
+            }
             final String segmentID = "gapless";
             final List<DownloadLink> videoresults = new ArrayList<DownloadLink>();
             DownloadLink best = null;
@@ -535,7 +541,7 @@ public class OrfAt extends PluginForDecrypt {
                 thumbnail.setProperty(ORFMediathek.PROPERTY_DIRECTURL, thumbnailurlFromFirstSegment);
                 thisFinalResults.add(thumbnail);
             }
-            /* Add properties */
+            /* Add properties and add results to final list */
             for (final DownloadLink result : thisFinalResults) {
                 result.setProperty(ORFMediathek.PROPERTY_TITLE, mainVideoTitle);
                 result.setProperty(ORFMediathek.PROPERTY_TITLE, mainVideoTitle);

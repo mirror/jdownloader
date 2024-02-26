@@ -84,7 +84,7 @@ public class WeTransferComFolder extends PluginForDecrypt {
         if (recipient_id != null) {
             jsonMap.put("recipient_id", recipient_id);
         }
-        final String refererValue = this.br.getURL();
+        final String refererValue = br.getURL();
         final PostRequest post = new PostRequest(br.getURL(("/api/v4/transfers/" + id_main + "/prepare-download")));
         post.getHeaders().put("Accept", "application/json");
         post.getHeaders().put("Content-Type", "application/json");

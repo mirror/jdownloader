@@ -514,6 +514,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
             throw new IllegalArgumentException();
         }
         final String tweetID = tweet.get("id_str").toString();
+        dupeListForProfileCrawlerTweetIDs.add(tweetID);
         /* Debug code down below */
         // if (tweetID.equals("test")) {
         // logger.info("hit");
@@ -1439,24 +1440,22 @@ public class TwitterComCrawler extends PluginForDecrypt {
                 } else {
                     thisRoot = tweetResult;
                 }
-                Map<String, Object> tweetUser = (Map<String, Object>) JavaScriptEngineFactory.walkJson(thisRoot, "core/user_results/result/legacy");
-                Map<String, Object> tweet = (Map<String, Object>) thisRoot.get("legacy");
-                Map<String, Object> quoted_status = (Map<String, Object>) JavaScriptEngineFactory.walkJson(thisRoot, "quoted_status_result/result/legacy");
-                Map<String, Object> quotedUser = (Map<String, Object>) JavaScriptEngineFactory.walkJson(thisRoot, "quoted_status_result/result/core/user_results/result/legacy");
-                if (quoted_status != null && quotedUser != null) {
-                    /* 2024-02-21: Current Tweet is a reply to a quoted Tweet -> Return only quoted Tweet */
-                    tweet = quoted_status;
-                    tweetUser = quotedUser;
-                }
+                final Map<String, Object> tweetUser = (Map<String, Object>) JavaScriptEngineFactory.walkJson(thisRoot, "core/user_results/result/legacy");
+                final Map<String, Object> tweet = (Map<String, Object>) thisRoot.get("legacy");
+                final Map<String, Object> quoted_status = (Map<String, Object>) JavaScriptEngineFactory.walkJson(thisRoot, "quoted_status_result/result/legacy");
+                final Map<String, Object> quotedUser = (Map<String, Object>) JavaScriptEngineFactory.walkJson(thisRoot, "quoted_status_result/result/core/user_results/result/legacy");
                 final String tweetIDStr = tweet.get("id_str").toString();
-                if (!dupeListForProfileCrawlerTweetIDs.add(tweetIDStr)) {
-                    /* Skip dupes */
-                    continue;
-                } else if (singleTweetID != null && !StringUtils.equals(tweetIDStr, singleTweetID)) {
+                if (singleTweetID != null && !StringUtils.equals(tweetIDStr, singleTweetID) && tweetResults.size() > 1) {
+                    /* Fail-safe */
                     logger.info("Skipping tweetID because it does not match the one we're looking for: " + tweetIDStr);
                     continue;
                 }
                 final ArrayList<DownloadLink> thisTweetResults = crawlTweetMap(null, tweet, tweetUser, fp);
+                if (quoted_status != null && quotedUser != null) {
+                    /* 2024-02-21: Current Tweet is a reply to a quoted Tweet -> We need to crawl that quoted Tweet separately */
+                    final ArrayList<DownloadLink> thisQuotedTweetResults = crawlTweetMap(null, quoted_status, quotedUser, fp);
+                    thisTweetResults.addAll(thisQuotedTweetResults);
+                }
                 /* If we're crawling users' likes, we do not want to filter any Tweets since likes can contain items of any users. */
                 if (singleTweetID == null && !crawlUserLikes && !PluginJsonConfig.get(TwitterConfigInterface.class).isCrawlRetweetsV2()) {
                     /* Re-Tweet crawling is disabled: Skip all results of this Tweet if it is a Re-Tweet. */
