@@ -66,7 +66,7 @@ public class FaceBookComVideos extends PluginForHost {
 
     @Override
     public Browser createNewBrowserInstance() {
-        final Browser br = new Browser();
+        final Browser br = super.createNewBrowserInstance();
         FaceBookComGallery.prepBR(br);
         return br;
     }

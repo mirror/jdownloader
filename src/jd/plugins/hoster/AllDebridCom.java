@@ -87,7 +87,7 @@ public class AllDebridCom extends PluginForHost {
 
     @Override
     public Browser createNewBrowserInstance() {
-        final Browser br = new Browser();
+        final Browser br = super.createNewBrowserInstance();
         br.getHeaders().put("User-Agent", "JDownloader " + getVersion());
         br.setFollowRedirects(true);
         return br;

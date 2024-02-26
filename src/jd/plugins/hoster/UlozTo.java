@@ -70,7 +70,7 @@ public class UlozTo extends PluginForHost {
 
     @Override
     public Browser createNewBrowserInstance() {
-        final Browser br = new Browser();
+        final Browser br = super.createNewBrowserInstance();
         br.setCustomCharset("utf-8");
         br.setAllowedResponseCodes(new int[] { 400, 401, 410, 451 });
         br.setCookie(this.getHost(), "adblock_detected", "false");

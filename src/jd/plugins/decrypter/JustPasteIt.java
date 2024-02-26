@@ -40,7 +40,7 @@ public class JustPasteIt extends AbstractPastebinCrawler {
 
     @Override
     public Browser createNewBrowserInstance() {
-        final Browser br = new Browser();
+        final Browser br = super.createNewBrowserInstance();
         br.setFollowRedirects(true);
         br.setLoadLimit(3 * br.getLoadLimit());
         br.setAllowedResponseCodes(451);

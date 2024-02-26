@@ -80,7 +80,7 @@ public class RedditComCrawler extends PluginForDecrypt {
 
     @Override
     public Browser createNewBrowserInstance() {
-        final Browser br = new Browser();
+        final Browser br = super.createNewBrowserInstance();
         RedditCom.prepBRAPI(br);
         return br;
     }

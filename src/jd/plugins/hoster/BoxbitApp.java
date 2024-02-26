@@ -78,7 +78,7 @@ public class BoxbitApp extends PluginForHost {
 
     @Override
     public Browser createNewBrowserInstance() {
-        final Browser br = new Browser();
+        final Browser br = super.createNewBrowserInstance();
         br.setCookiesExclusive(true);
         br.getHeaders().put(HTTPConstants.HEADER_REQUEST_USER_AGENT, "JDownloader");
         br.getHeaders().put(HTTPConstants.HEADER_REQUEST_ACCEPT, "application/json");

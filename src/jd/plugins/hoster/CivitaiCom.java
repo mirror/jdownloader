@@ -41,7 +41,6 @@ import jd.plugins.PluginForHost;
 public class CivitaiCom extends PluginForHost {
     public CivitaiCom(PluginWrapper wrapper) {
         super(wrapper);
-        // this.enablePremium("");
     }
 
     @Override
@@ -79,12 +78,6 @@ public class CivitaiCom extends PluginForHost {
     private final Pattern PATTERN_IMAGE      = Pattern.compile("https?://[^/]+/images/(\\d+).*", Pattern.CASE_INSENSITIVE);
     private final String  PROPERTY_DIRECTURL = "directurl";
 
-    // private final boolean ACCOUNT_FREE_RESUME = true;
-    // private final int ACCOUNT_FREE_MAXCHUNKS = 0;
-    // private final int ACCOUNT_FREE_MAXDOWNLOADS = -1;
-    // private final boolean ACCOUNT_PREMIUM_RESUME = true;
-    // private final int ACCOUNT_PREMIUM_MAXCHUNKS = 0;
-    // private final int ACCOUNT_PREMIUM_MAXDOWNLOADS = -1;
     @Override
     public String getLinkID(final DownloadLink link) {
         final String fid = getFID(link);
@@ -116,6 +109,8 @@ public class CivitaiCom extends PluginForHost {
         br.getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.getHttpConnection().getResponseCode() == 503) {
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Error 503 service unavailable");
         }
         final String json = br.getRegex("type=\"application/json\"[^>]*>(\\{\"props.*?)</script>").getMatch(0);
         final Map<String, Object> entries = restoreFromString(json, TypeRef.MAP);
@@ -142,6 +137,7 @@ public class CivitaiCom extends PluginForHost {
         }
         final String directurlOriginal = br.getRegex("\"(https?://image\\.civitai\\.com/[^\"]+/original=true/[^\"]+)").getMatch(0);
         if (directurlOriginal != null) {
+            /* Best case: We can download the original file. */
             link.setProperty(PROPERTY_DIRECTURL, directurlOriginal);
         } else {
             /* 2023-09-11: Base URL hardcoded from: https://civitai.com/_next/static/chunks/pages/_app-191d571abe9dc30e.js */

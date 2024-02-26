@@ -82,7 +82,7 @@ public class RomHustler extends PluginForHost {
 
     @Override
     public Browser createNewBrowserInstance() {
-        final Browser br = new Browser();
+        final Browser br = super.createNewBrowserInstance();
         if (agent.get() == null) {
             agent.set(UserAgents.stringUserAgent());
         }

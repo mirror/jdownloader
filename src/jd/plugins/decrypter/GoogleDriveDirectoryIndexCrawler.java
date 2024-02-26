@@ -99,7 +99,7 @@ public class GoogleDriveDirectoryIndexCrawler extends PluginForDecrypt {
 
     @Override
     public Browser createNewBrowserInstance() {
-        final Browser br = new Browser();
+        final Browser br = super.createNewBrowserInstance();
         br.setFollowRedirects(true);
         br.setAllowedResponseCodes(new int[] { 500 });
         return br;

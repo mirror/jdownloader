@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
@@ -65,9 +66,9 @@ public class RapidoxPl extends PluginForHost {
 
     @Override
     public Browser createNewBrowserInstance() {
-        final Browser br = new Browser();
+        final Browser br = super.createNewBrowserInstance();
         br.setCookiesExclusive(true);
-        br.getHeaders().put("User-Agent", "JDownloader");
+        br.getHeaders().put(HTTPConstants.HEADER_REQUEST_USER_AGENT, "JDownloader");
         br.setCustomCharset("utf-8");
         br.setConnectTimeout(60 * 1000);
         br.setReadTimeout(60 * 1000);

@@ -28,7 +28,7 @@ import jd.plugins.hoster.DirectHTTP;
 public class PorncomixinfoNet extends PluginForDecrypt {
     @Override
     public Browser createNewBrowserInstance() {
-        final Browser br = new Browser();
+        final Browser br = super.createNewBrowserInstance();
         br.setFollowRedirects(true);
         return br;
     }

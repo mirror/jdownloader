@@ -51,7 +51,7 @@ public class AventertainmentsComCrawler extends PluginForDecrypt {
 
     @Override
     public Browser createNewBrowserInstance() {
-        final Browser br = new Browser();
+        final Browser br = super.createNewBrowserInstance();
         AventertainmentsCom.prepBR(br);
         return br;
     }

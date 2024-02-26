@@ -36,7 +36,7 @@ public class VideofloppyCom extends PluginForDecrypt {
 
     @Override
     public Browser createNewBrowserInstance() {
-        final Browser br = new Browser();
+        final Browser br = super.createNewBrowserInstance();
         br.setFollowRedirects(true);
         br.setAllowedResponseCodes(500);
         return br;

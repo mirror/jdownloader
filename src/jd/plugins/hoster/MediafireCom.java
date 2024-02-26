@@ -70,7 +70,7 @@ public class MediafireCom extends PluginForHost {
 
     @Override
     public Browser createNewBrowserInstance() {
-        final Browser br = new Browser();
+        final Browser br = super.createNewBrowserInstance();
         br.setFollowRedirects(true);
         br.setCustomCharset("utf-8");
         return br;

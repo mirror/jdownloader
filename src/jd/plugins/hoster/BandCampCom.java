@@ -58,7 +58,7 @@ public class BandCampCom extends PluginForHost {
 
     @Override
     public Browser createNewBrowserInstance() {
-        final Browser br = new Browser();
+        final Browser br = super.createNewBrowserInstance();
         BandCampComDecrypter.prepBR(br);
         return br;
     }

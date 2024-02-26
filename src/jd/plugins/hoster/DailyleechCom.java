@@ -26,6 +26,7 @@ import java.util.WeakHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.regex.Pattern;
 
+import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -54,7 +55,7 @@ import jd.plugins.components.MultiHosterManagement;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dailyleech.com" }, urls = { "" })
 public class DailyleechCom extends PluginForHost {
-    private static final String          PROTOCOL                  = "http://";
+    private static final String          PROTOCOL                  = "https://";
     /* Connection limits */
     private static final int             ACCOUNT_MAXDLS            = 8;
     private static final boolean         ACCOUNT_PREMIUM_RESUME    = true;
@@ -69,15 +70,15 @@ public class DailyleechCom extends PluginForHost {
 
     @Override
     public Browser createNewBrowserInstance() {
-        final Browser br = new Browser();
-        br.setCookiesExclusive(true);
+        final Browser br = super.createNewBrowserInstance();
         br.setFollowRedirects(true);
+        br.getHeaders().put(HTTPConstants.HEADER_REQUEST_USER_AGENT, "JDownloader");
         return br;
     }
 
     @Override
     public String getAGBLink() {
-        return "https://dailyleech.com/";
+        return PROTOCOL + getHost() + "/cbox/terms.php";
     }
 
     @Override
@@ -122,6 +123,7 @@ public class DailyleechCom extends PluginForHost {
         final String storedDirecturl = link.getStringProperty(directurlproperty);
         final String directurl;
         if (storedDirecturl != null) {
+            logger.info("Trying to re-use stored directurl: " + storedDirecturl);
             directurl = storedDirecturl;
         } else {
             directurl = this.getDllinkWebsite(link, account);
@@ -214,7 +216,7 @@ public class DailyleechCom extends PluginForHost {
             }
             final Form dlform = new Form();
             dlform.setMethod(MethodType.POST);
-            dlform.setAction("http://" + internalSubdomain + ".cbox.ws/box/index.php?boxid=" + boxid + "&boxtag=" + boxtag + "&sec=submit");
+            dlform.setAction(PROTOCOL + internalSubdomain + ".cbox.ws/box/index.php?boxid=" + boxid + "&boxtag=" + boxtag + "&sec=submit");
             /* The text "good_link" will indicate to the bot/chat that this file has been checked and is valid. */
             final String param_post = Encoding.urlEncode("[center] good_link " + downloadurlStr + " [br] Filename: " + link.getName() + " ([b][color=red]" + humanReadableFilesize + "[/color][/b]) [br] HashInfo: " + link.getHashInfo() + " [br] [b]Automatically added by JDownloader[/b] [br] [den]Checked by JDownloader[/center]");
             dlform.put("nme", username);
@@ -255,7 +257,7 @@ public class DailyleechCom extends PluginForHost {
                 }
                 if (this.isAbort()) {
                     logger.info("Stopping because: Aborted by user");
-                    break;
+                    throw new InterruptedException();
                 } else if (counter >= maxLoops) {
                     logger.info("Stopping because: Failed to find final downloadurl");
                     break;
@@ -348,7 +350,7 @@ public class DailyleechCom extends PluginForHost {
                     if (con != null) {
                         res = new String[] { possibleDownloadurl, con.getURL().toExternalForm(), element };
                     } else {
-                        logger.warning("Possible final downloadurl looks to be broken");
+                        logger.info("Possible final downloadurl looks to be broken: " + possibleDownloadurl);
                         invalidatedUrls.add(possibleDownloadurl);
                     }
                 } else {
@@ -468,7 +470,6 @@ public class DailyleechCom extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             final Browser brc = br.cloneBrowser();
-            brc.setFollowRedirects(true);
             con = brc.openRequestConnection(request);
             if (!looksLikeDownloadableContent(con)) {
                 brc.followConnection(true);
@@ -500,11 +501,10 @@ public class DailyleechCom extends PluginForHost {
         if (expireStr != null) {
             expire = TimeFormatter.getMilliSeconds(expireStr, "E',' dd MMM yyyy HH:mm:ss", Locale.ENGLISH);
         }
-        ArrayList<String> supportedHosts = new ArrayList<String>();
         if (expire > System.currentTimeMillis()) {
             account.setType(AccountType.PREMIUM);
             /* More simultaneous downloads are theoretically possibly but this script will then fail to find downloadlinks! */
-            ai.setValidUntil(expire);
+            ai.setValidUntil(expire, br);
             ai.setUnlimitedTraffic();
         } else {
             account.setType(AccountType.FREE);
@@ -513,8 +513,9 @@ public class DailyleechCom extends PluginForHost {
         }
         br.getPage("/hostsp/");
         final String[] hostlist = br.getRegex("domain=([^<>\"\\'/]+)\"").getColumn(0);
+        final ArrayList<String> supportedHosts = new ArrayList<String>();
         if (hostlist != null) {
-            supportedHosts = new ArrayList<String>(Arrays.asList(hostlist));
+            supportedHosts.addAll(Arrays.asList(hostlist));
         }
         ai.setMultiHostSupport(this, supportedHosts);
         return ai;
@@ -538,7 +539,7 @@ public class DailyleechCom extends PluginForHost {
             br.getPage(PROTOCOL + this.getHost() + "/cbox/cbox.php");
             if (isLoggedIn(br)) {
                 logger.info("Login via cached cookies successful");
-                account.saveCookies(br.getCookies(this.getHost()), "");
+                account.saveCookies(br.getCookies(br.getHost()), "");
                 return;
             } else {
                 logger.info("Login via cached cookies failed");
@@ -553,11 +554,17 @@ public class DailyleechCom extends PluginForHost {
         loginform.put("Email", Encoding.urlEncode(account.getUser()));
         loginform.put("Password", Encoding.urlEncode(account.getPass()));
         /* Login-Captcha seems to be always required. */
-        final String image = loginform.getRegex("(captcha_code_file\\.php\\?rand=\\d+)").getMatch(0);
-        if (image != null) {
+        final String captchaimageurl = loginform.getRegex("(captcha_code_file\\.php\\?rand=\\d+)").getMatch(0);
+        if (captchaimageurl != null) {
             final DownloadLink dummyLink = new DownloadLink(this, "Account", getHost(), "https://" + getHost(), true);
-            final String captcha = getCaptchaCode(image, dummyLink);
-            loginform.put("6_letters_code", Encoding.urlEncode(captcha));
+            String captcharesult = getCaptchaCode(captchaimageurl, dummyLink);
+            if (captcharesult != null) {
+                captcharesult = captcharesult.trim();
+            }
+            if (captcharesult == null || captcharesult.length() != 6) {
+                throw new PluginException(LinkStatus.ERROR_CAPTCHA, "Invalid captcha format");
+            }
+            loginform.put("6_letters_code", Encoding.urlEncode(captcharesult));
         }
         /*
          * Sending this form will always redirect us to the login page once again. We need to refresh this once to see if we're actually

@@ -122,7 +122,7 @@ public class DepositFiles extends antiDDoSForHost {
     }
 
     public Browser createNewBrowserInstance() {
-        final Browser br = new Browser();
+        final Browser br = super.createNewBrowserInstance();
         br.setFollowRedirects(true);
         return br;
     }
