@@ -327,9 +327,10 @@ public class TwitterComCrawler extends PluginForDecrypt {
 
     private String getGraphqlQueryID(final String operationName) throws IOException, PluginException {
         synchronized (graphqlQueryids) {
-            if (graphqlQueryids.isEmpty() || !graphqlQueryids.containsKey(operationName) || true) {
+            if (graphqlQueryids.isEmpty() || !graphqlQueryids.containsKey(operationName)) {
                 final Browser br = this.createNewBrowserInstance();
-                br.getPage("https://abs.twimg.com/responsive-web/client-web/api.b9f7c7ea.js");
+                /* URL last updated: 2024-02-23 */
+                br.getPage("https://abs.twimg.com/responsive-web/client-web/main.a2166cda.js");
                 final HashSet<String> operationNamesToCache = new HashSet<String>();
                 operationNamesToCache.add("UserByScreenName");
                 operationNamesToCache.add("UserMedia");
@@ -417,9 +418,9 @@ public class TwitterComCrawler extends PluginForDecrypt {
                 } finally {
                     final String bubbleNotificationTitle = "Tweet unavailable: " + tweetID;
                     if (tweetUnavailableReasonHumanReadableText != null) {
-                        displayBubblenotifyMessage(bubbleNotificationTitle, "Tween unavailable because: " + tweetUnavailableReasonHumanReadableText);
+                        displayBubblenotifyMessage(bubbleNotificationTitle, "Tweet unavailable because: " + tweetUnavailableReasonHumanReadableText);
                     } else {
-                        displayBubblenotifyMessage(bubbleNotificationTitle, "Tween unavailable because: API error: " + tweetUnavailableReasonInternal);
+                        displayBubblenotifyMessage(bubbleNotificationTitle, "Tweet unavailable because: API error: " + tweetUnavailableReasonInternal);
                     }
                 }
             }
@@ -1213,11 +1214,11 @@ public class TwitterComCrawler extends PluginForDecrypt {
             throw new IllegalArgumentException();
         }
         resetUglyGlobalVariables();
-        final String queryName;
+        final String mainQueryName;
         if (crawlUserLikes) {
-            queryName = "Likes";
+            mainQueryName = "Likes";
         } else {
-            queryName = "UserTweets";
+            mainQueryName = "UserTweets";
         }
         final Map<String, Object> user = getUserInfo(br, account, username);
         final Number statuses_count = (Number) user.get("statuses_count");
@@ -1230,9 +1231,32 @@ public class TwitterComCrawler extends PluginForDecrypt {
             // profileCrawlerTotalCrawledTweetsCount = this.preGivenNumberOfTotalWalkedThroughTweetsCount.intValue();
             profileCrawlerNextCursor = this.preGivenNextCursor;
         }
-        final ArrayList<DownloadLink> ret = crawlTweetsViaGraphqlAPI(queryName, param, user, account, crawlUserLikes);
-        final int totalFoundTweets = dupeListForProfileCrawlerTweetIDs.size();
         final String bubbleNotifyTitle = "Twitter profile " + username + " | ID: " + userID;
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> results1 = crawlTweetsViaGraphqlAPI(mainQueryName, param, user, account, crawlUserLikes);
+        ret.addAll(results1);
+        if (!crawlUserLikes && media_count != null && media_count.intValue() > 0) {
+            logger.info("Crawling remaining " + media_count + " media items from profile");
+            final boolean accountRequiredToCrawlUserMedia = true;
+            if (accountRequiredToCrawlUserMedia && account == null) {
+                /**
+                 * 2024-02-23: Account required to access: /<username>/media </br>
+                 * Without account, API will return an empty page.
+                 */
+                String text = media_count + " media items can't be crawled because the media tab can only be accessed by logged in users!";
+                text += "\nAdd- and enable a Twitter account to JD to be able to crawl such items.";
+                displayBubblenotifyMessage(bubbleNotifyTitle, text);
+            } else {
+                /* Reset most of all evil global variables */
+                profileCrawlerNextCursor = null;
+                profileCrawlerStopBecauseReachedUserDefinedMaxItemsLimit = false;
+                profileCrawlerSkippedResultsByMaxDate.clear();
+                profileCrawlerSkippedResultsByRetweet.clear();
+                final ArrayList<DownloadLink> results2 = crawlTweetsViaGraphqlAPI("UserMedia", param, user, account, crawlUserLikes);
+                ret.addAll(results2);
+            }
+        }
+        final int totalFoundTweets = dupeListForProfileCrawlerTweetIDs.size();
         if (ret.isEmpty()) {
             /* We found nothing -> Check why */
             final String bubbleNotifyTextEnding = "\r\nTotal number of Tweets in this profile: " + statuses_count;
@@ -1252,10 +1276,11 @@ public class TwitterComCrawler extends PluginForDecrypt {
                     displayBubblenotifyMessage(bubbleNotifyTitle, "Returning no results because:\r\nMost likely user has disabled tweet text crawler but this profile only contained text tweets.\r\nMinimum number of skipped possible Tweets: " + totalFoundTweets + bubbleNotifyTextEnding);
                 }
             }
-        } else if (statuses_count != null && totalFoundTweets < statuses_count.intValue()) {
+        } else if (statuses_count != null && totalFoundTweets < statuses_count.intValue() && profileCrawlerSkippedResultsByRetweet.isEmpty() && profileCrawlerSkippedResultsByMaxDate.isEmpty()) {
+            /* No items were skipped but also not all items were found -> Notify user */
             String text = "Some items may be missing!";
-            text += "\nTotal number of Tweets: " + statuses_count + " Crawled: " + totalFoundTweets;
-            text += "\nLogged in users can sometimes see more items than anonymous users.";
+            text += "\nTotal number of status items: " + statuses_count + " Crawled: " + totalFoundTweets;
+            text += "\nLogged in users can sometimes view more items than anonymous users.";
             displayBubblenotifyMessage(bubbleNotifyTitle, text);
         }
         return ret;
@@ -1267,8 +1292,6 @@ public class TwitterComCrawler extends PluginForDecrypt {
         final HashSet<String> cursorDupes = new HashSet<String>();
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         int page = 1;
-        /* Clear some global variables (Yes I know, ugly) */
-        dupeListForProfileCrawlerTweetIDs.clear();
         if (this.preGivenPageNumber != null && this.preGivenNumberOfTotalWalkedThroughTweetsCount != null && this.preGivenNextCursor != null) {
             // TODO: Review this
             /* Resume from last state */
@@ -1305,9 +1328,9 @@ public class TwitterComCrawler extends PluginForDecrypt {
                 variables.put("withBirdwatchNotes", false);
             }
             final UrlQuery query = new UrlQuery();
-            query.add("variables", Encoding.urlEncode(JSonStorage.serializeToJson(variables)));
-            query.add("features",
-                    "%7B%22rweb_lists_timeline_redesign_enabled%22%3Atrue%2C%22responsive_web_graphql_exclude_directive_enabled%22%3Atrue%2C%22verified_phone_label_enabled%22%3Afalse%2C%22creator_subscriptions_tweet_preview_api_enabled%22%3Atrue%2C%22responsive_web_graphql_timeline_navigation_enabled%22%3Atrue%2C%22responsive_web_graphql_skip_user_profile_image_extensions_enabled%22%3Afalse%2C%22tweetypie_unmention_optimization_enabled%22%3Atrue%2C%22responsive_web_edit_tweet_api_enabled%22%3Atrue%2C%22graphql_is_translatable_rweb_tweet_is_translatable_enabled%22%3Atrue%2C%22view_counts_everywhere_api_enabled%22%3Atrue%2C%22longform_notetweets_consumption_enabled%22%3Atrue%2C%22responsive_web_twitter_article_tweet_consumption_enabled%22%3Afalse%2C%22tweet_awards_web_tipping_enabled%22%3Afalse%2C%22freedom_of_speech_not_reach_fetch_enabled%22%3Atrue%2C%22standardized_nudges_misinfo%22%3Atrue%2C%22tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled%22%3Atrue%2C%22longform_notetweets_rich_text_read_enabled%22%3Atrue%2C%22longform_notetweets_inline_media_enabled%22%3Atrue%2C%22responsive_web_media_download_video_enabled%22%3Afalse%2C%22responsive_web_enhance_cards_enabled%22%3Afalse%7D");
+            query.addAndReplace("variables", Encoding.urlEncode(JSonStorage.serializeToJson(variables)));
+            query.addAndReplace("features",
+                    "%7B%22responsive_web_graphql_exclude_directive_enabled%22%3Atrue%2C%22verified_phone_label_enabled%22%3Afalse%2C%22creator_subscriptions_tweet_preview_api_enabled%22%3Atrue%2C%22responsive_web_graphql_timeline_navigation_enabled%22%3Atrue%2C%22responsive_web_graphql_skip_user_profile_image_extensions_enabled%22%3Afalse%2C%22c9s_tweet_anatomy_moderator_badge_enabled%22%3Atrue%2C%22tweetypie_unmention_optimization_enabled%22%3Atrue%2C%22responsive_web_edit_tweet_api_enabled%22%3Atrue%2C%22graphql_is_translatable_rweb_tweet_is_translatable_enabled%22%3Atrue%2C%22view_counts_everywhere_api_enabled%22%3Atrue%2C%22longform_notetweets_consumption_enabled%22%3Atrue%2C%22responsive_web_twitter_article_tweet_consumption_enabled%22%3Atrue%2C%22tweet_awards_web_tipping_enabled%22%3Afalse%2C%22freedom_of_speech_not_reach_fetch_enabled%22%3Atrue%2C%22standardized_nudges_misinfo%22%3Atrue%2C%22tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled%22%3Atrue%2C%22rweb_video_timestamps_enabled%22%3Atrue%2C%22longform_notetweets_rich_text_read_enabled%22%3Atrue%2C%22longform_notetweets_inline_media_enabled%22%3Atrue%2C%22responsive_web_enhance_cards_enabled%22%3Afalse%7D");
             final String url = API_BASE_GRAPHQL + "/" + queryID + "/" + queryName + "?" + query.toString();
             getPage(url);
             final Map<String, Object> entries = this.handleErrorsAPI(br);
@@ -1631,8 +1654,10 @@ public class TwitterComCrawler extends PluginForDecrypt {
             final List<Map<String, Object>> users = (List<Map<String, Object>>) responseO;
             user = users.get(0);
         } else {
+            br.setAllowedResponseCodes(400);
             final String queryID = this.getGraphqlQueryID("UserByScreenName");
-            br.getPage("https://api.twitter.com/graphql/" + queryID + "/UserByScreenName?variables=%7B%22screen_name%22%3A%22" + Encoding.urlEncode(username) + "%22%2C%22withSafetyModeUserFields%22%3Atrue%7D&features=%7B%22hidden_profile_likes_enabled%22%3Afalse%2C%22hidden_profile_subscriptions_enabled%22%3Atrue%2C%22responsive_web_graphql_exclude_directive_enabled%22%3Atrue%2C%22verified_phone_label_enabled%22%3Afalse%2C%22subscriptions_verification_info_is_identity_verified_enabled%22%3Afalse%2C%22subscriptions_verification_info_verified_since_enabled%22%3Atrue%2C%22highlights_tweets_tab_ui_enabled%22%3Atrue%2C%22creator_subscriptions_tweet_preview_api_enabled%22%3Atrue%2C%22responsive_web_graphql_skip_user_profile_image_extensions_enabled%22%3Afalse%2C%22responsive_web_graphql_timeline_navigation_enabled%22%3Atrue%7D&fieldToggles=%7B%22withAuxiliaryUserLabels%22%3Afalse%7D");
+            br.getPage("https://api.twitter.com/graphql/" + queryID + "/UserByScreenName?variables=%7B%22screen_name%22%3A%22" + PluginJSonUtils.escape(username)
+                    + "%22%2C%22withSafetyModeUserFields%22%3Atrue%7D&features=%7B%22hidden_profile_likes_enabled%22%3Atrue%2C%22hidden_profile_subscriptions_enabled%22%3Atrue%2C%22responsive_web_graphql_exclude_directive_enabled%22%3Atrue%2C%22verified_phone_label_enabled%22%3Afalse%2C%22subscriptions_verification_info_is_identity_verified_enabled%22%3Atrue%2C%22subscriptions_verification_info_verified_since_enabled%22%3Atrue%2C%22highlights_tweets_tab_ui_enabled%22%3Atrue%2C%22responsive_web_twitter_article_notes_tab_enabled%22%3Atrue%2C%22creator_subscriptions_tweet_preview_api_enabled%22%3Atrue%2C%22responsive_web_graphql_skip_user_profile_image_extensions_enabled%22%3Afalse%2C%22responsive_web_graphql_timeline_navigation_enabled%22%3Atrue%7D&fieldToggles=%7B%22withAuxiliaryUserLabels%22%3Afalse%7D");
             final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.getRequest().getHtmlCode());
             final Map<String, Object> userNew = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "data/user/result");
             final String userID = userNew.get("rest_id").toString();

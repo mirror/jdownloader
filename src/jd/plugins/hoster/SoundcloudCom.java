@@ -117,6 +117,7 @@ public class SoundcloudCom extends PluginForHost {
     public static final String   PROPERTY_duration_seconds                                             = "duration_seconds";
     public static final String   PROPERTY_QUALITY_sq                                                   = "sq";
     public static final String   PROPERTY_QUALITY_hq                                                   = "hq";
+    public static final String   PROPERTY_STATE                                                        = "state";
     /* Account properties */
     private final String         PROPERTY_ACCOUNT_oauthtoken                                           = "oauthtoken";
     public static final String   PROPERTY_ACCOUNT_userid                                               = "userid";
@@ -126,7 +127,7 @@ public class SoundcloudCom extends PluginForHost {
     /* API base URLs */
     public static final String   API_BASEv2                                                            = "https://api-v2.soundcloud.com";
     /* 2020-12-15: Website/API login is broken thus only cookie login is possible */
-    private static final boolean cookieLoginOnly                                                      = true;
+    private static final boolean cookieLoginOnly                                                       = true;
 
     public void correctDownloadLink(final DownloadLink link) {
         link.setPluginPatternMatcher(link.getPluginPatternMatcher().replace("soundclouddecrypted", "soundcloud"));
@@ -270,10 +271,15 @@ public class SoundcloudCom extends PluginForHost {
             resetThis();
             throw new PluginException(LinkStatus.ERROR_RETRY);
         }
-        final Map<String, Object> response = restoreFromString(br.toString(), TypeRef.MAP);
+        final Map<String, Object> response = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         final AvailableStatus status = checkStatusJson(this, link, response);
         if (status.equals(AvailableStatus.FALSE)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final String state = link.getStringProperty(PROPERTY_STATE);
+        if (!"finished".equals(state)) {
+            /* E.g. items which are still being processed and thus aren't streamable nor downloadable. */
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Item is not ready yet | Internal status: " + state);
         }
         /* "ALLOW" or "MONETIZE" = all good */
         final String songPolicy = (String) response.get("policy");
@@ -427,6 +433,7 @@ public class SoundcloudCom extends PluginForHost {
         link.setProperty(PROPERTY_url_username, user_permalink);
         final String formattedfilename = getFormattedFilename(link);
         link.setFinalFileName(formattedfilename);
+        link.setProperty(PROPERTY_STATE, track.get("state"));
         return AvailableStatus.TRUE;
     }
 

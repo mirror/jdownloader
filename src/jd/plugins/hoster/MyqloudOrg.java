@@ -223,7 +223,7 @@ public class MyqloudOrg extends XFileSharingProBasic {
              */
             /* 2020-03-11: Special */
             getPage(brc, "/dl?op=download_orig_pre&id=" + this.getFUIDFromURL(link) + "&mode=" + videoQualityStr + "&hash=" + videoHash);
-            if (brc.containsHTML(">\\s*Only Premium users can download files")) {
+            if (isPremiumOnly(brc)) {
                 /* 2020-11-12 */
                 requiresAccountToDownload = true;
                 throw new AccountRequiredException();
@@ -288,11 +288,23 @@ public class MyqloudOrg extends XFileSharingProBasic {
     }
 
     @Override
-    protected void checkErrorsLastResort(Browser br, final Account account) throws PluginException {
+    protected void checkErrorsLastResort(final Browser br, final Account account) throws PluginException {
         if (requiresAccountToDownload) {
             throw new AccountRequiredException();
         } else {
             super.checkErrorsLastResort(br, account);
+        }
+    }
+
+    @Override
+    public boolean isPremiumOnly(final Browser br) {
+        if (br.containsHTML(">\\s*Only Premium users can download files")) {
+            return true;
+        } else if (br.containsHTML(">\\s*Only Premium user can download this file")) {
+            /* 2024-02-23 */
+            return true;
+        } else {
+            return super.isPremiumOnly(br);
         }
     }
 

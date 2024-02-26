@@ -63,8 +63,6 @@ public class RecurbateCom extends PluginForHost {
     }
 
     /* DEV NOTES */
-    // Tags: Porn plugin
-    private final int          free_maxdownloads       = 1;
     public static final String PROPERTY_DATE           = "date";
     public static final String PROPERTY_DATE_ORIGINAL  = "date_original";
     public static final String PROPERTY_DATE_TIMESTAMP = "date_timestamp";
@@ -124,6 +122,16 @@ public class RecurbateCom extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "https://recurbate.com/terms";
+    }
+
+    @Override
+    public boolean isResumeable(final DownloadLink link, final Account account) {
+        return true;
+    }
+
+    public int getMaxChunks(final Account account) {
+        /* Max chunks for progressive / full-video downloads. */
+        return -2;
     }
 
     @Override
@@ -228,9 +236,6 @@ public class RecurbateCom extends PluginForHost {
         handleDownload(link, null);
     }
 
-    private final boolean RESUMABLE = true;
-    private final int     MAXCHUNKS = -2;
-
     public void handleDownload(final DownloadLink link, final Account account) throws Exception {
         final String directurlproperty;
         if (account != null) {
@@ -308,7 +313,7 @@ public class RecurbateCom extends PluginForHost {
                 dl = new HLSDownloader(link, br, dllink);
             } else {
                 /* HTTP download / progressive stream */
-                dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, RESUMABLE, MAXCHUNKS);
+                dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, this.isResumeable(link, account), this.getMaxChunks(account));
                 if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                     br.followConnection(true);
                     if (dl.getConnection().getResponseCode() == 403) {
@@ -425,7 +430,7 @@ public class RecurbateCom extends PluginForHost {
         if (plan != null) {
             if (plan.equalsIgnoreCase("Basic")) {
                 account.setType(AccountType.FREE);
-                account.setMaxSimultanDownloads(free_maxdownloads);
+                account.setMaxSimultanDownloads(this.getMaxSimultanFreeDownloadNum());
             } else {
                 /* "Premium" or "Ultimate" plan */
                 final String expire = br.getRegex("(?i)Expire on\\s*</div>\\s*<div class=\"col-sm-8\">\\s*([A-Za-z]+ \\d{1,2}, \\d{4})").getMatch(0);
@@ -470,7 +475,7 @@ public class RecurbateCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return free_maxdownloads;
+        return 1;
     }
 
     private void checkErrors(final Browser br, final DownloadLink link, final Account account) throws PluginException {
