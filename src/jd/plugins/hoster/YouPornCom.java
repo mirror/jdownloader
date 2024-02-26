@@ -155,9 +155,9 @@ public class YouPornCom extends PluginForHost {
         } else if (br.containsHTML("404 \\- Page Not Found<|id=\"title_404\"") || this.br.getHttpConnection().getResponseCode() == 404) {
             /* Invalid link */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (this.br.containsHTML("(?i)<div class='geo-blocked-content'>\\s*This video has been disabled")) {
+        } else if (br.containsHTML("(?i)<div class='geo-blocked-content'>\\s*This video has been disabled") || br.getURL().contains("/video-disabled")) {
             /* 2021-01-18 */
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Video has been disabled / flagged for review");
         } else if (this.br.containsHTML("(?i)<div class='geo-blocked-content'>\\s*This video has been removed by the uploader")) {
             /* 2021-01-18 */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

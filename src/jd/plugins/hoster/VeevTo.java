@@ -17,14 +17,22 @@ package jd.plugins.hoster;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
+import jd.parser.html.Form;
+import jd.parser.html.Form.MethodType;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class VeevTo extends XFileSharingProBasic {
@@ -103,5 +111,48 @@ public class VeevTo extends XFileSharingProBasic {
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
+    }
+
+    @Override
+    protected String getDllinkViaOfficialVideoDownloadNew(final Browser br, final DownloadLink link, final Account account, final boolean returnFilesize) throws Exception {
+        if (returnFilesize) {
+            logger.info("[FilesizeMode] Trying to find official video downloads");
+            return null;
+        }
+        final Form dlform = br.getFormbyActionRegex(".*/dl");
+        if (dlform == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final Form preForm = new Form();
+        preForm.setMethod(MethodType.POST);
+        preForm.put("op", "ae");
+        preForm.put("cmd", "aet");
+        preForm.put("t", "1");
+        preForm.put("e", "1");
+        preForm.put("kp38653", "");
+        preForm.put("n", "propellerads");
+        preForm.put("wc", "0");
+        preForm.put("h", "");
+        preForm.put("u", "25");
+        final Browser br2 = br.cloneBrowser();
+        submitForm(br2, preForm);
+        final Map<String, Object> entries = restoreFromString(br2.getRequest().getHtmlCode(), TypeRef.MAP);
+        if (!"success".equals(entries.get("status"))) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        // final CaptchaHelperHostPluginRecaptchaV2 rc2 = getCaptchaHelperHostPluginRecaptchaV2(this, br);
+        // final String rctoken = rc2.getToken();
+        // dlform.put("k", Encoding.urlEncode(rctoken));
+        this.handleRecaptchaV2(link, br, dlform);
+        br2.setFollowRedirects(false);
+        // submitForm(br2, dlform);
+        br2.submitForm(dlform);
+        final String dllink = br2.getRedirectLocation();
+        if (StringUtils.isEmpty(dllink)) {
+            logger.warning("Failed to find dllink via official video download");
+        } else {
+            logger.info("Successfully found dllink via official video download");
+        }
+        return dllink;
     }
 }

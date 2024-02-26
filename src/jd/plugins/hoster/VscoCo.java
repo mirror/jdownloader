@@ -240,23 +240,23 @@ public class VscoCo extends PluginForHost {
                 logger.info("Attempting cookie login");
                 String userAgentFromCookies = null;
                 if (userCookies != null) {
-                    br.setCookies(this.getHost(), userCookies);
+                    br.setCookies(userCookies);
                     userAgentFromCookies = userCookies.getUserAgent();
                 } else {
-                    br.setCookies(this.getHost(), cookies);
+                    br.setCookies(cookies);
                 }
                 final String lastUsedUserAgent = account.getStringProperty("useragent");
                 String useragent = null;
                 if (userAgentFromCookies != null) {
                     useragent = userAgentFromCookies;
-                } else if (userAgentFromConfig != null) {
-                    useragent = userAgentFromConfig;
                 } else if (lastUsedUserAgent != null) {
                     useragent = lastUsedUserAgent;
+                } else if (userAgentFromConfig != null) {
+                    useragent = userAgentFromConfig;
                 }
                 if (useragent != null) {
                     /* Special User-Agent value present: Set it and save it on account for later usage. */
-                    br.getHeaders().put("User-Agent", userAgentFromCookies);
+                    br.getHeaders().put("User-Agent", useragent);
                     account.setProperty("lastUsedUserAgent", useragent);
                 }
                 if (!force) {
@@ -312,8 +312,9 @@ public class VscoCo extends PluginForHost {
         }
     }
 
+    /** This only works on this page: https://vsco.co/user/account */
     private boolean isLoggedin(final Browser br) {
-        return br.containsHTML("TODO_THIS_DOESNT_WORK_YET");
+        return br.containsHTML(">\\s*Sign out");
     }
 
     @Override

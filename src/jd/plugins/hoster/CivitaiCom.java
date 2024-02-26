@@ -28,6 +28,7 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -73,10 +74,9 @@ public class CivitaiCom extends PluginForHost {
     }
 
     /* Connection stuff */
-    private final boolean FREE_RESUME        = true;
     private final int     FREE_MAXCHUNKS     = 0;
     private final int     FREE_MAXDOWNLOADS  = -1;
-    private final Pattern PATTERN_IMAGE      = Pattern.compile("(?i)https?://[^/]+/images/(\\d+).*");
+    private final Pattern PATTERN_IMAGE      = Pattern.compile("https?://[^/]+/images/(\\d+).*", Pattern.CASE_INSENSITIVE);
     private final String  PROPERTY_DIRECTURL = "directurl";
 
     // private final boolean ACCOUNT_FREE_RESUME = true;
@@ -97,6 +97,11 @@ public class CivitaiCom extends PluginForHost {
 
     private String getFID(final DownloadLink link) {
         return new Regex(link.getPluginPatternMatcher(), PATTERN_IMAGE).getMatch(0);
+    }
+
+    @Override
+    public boolean isResumeable(final DownloadLink link, final Account account) {
+        return true;
     }
 
     @Override
@@ -135,26 +140,30 @@ public class CivitaiCom extends PluginForHost {
         if (filesize != null) {
             link.setDownloadSize(filesize.longValue());
         }
-        /* 2023-09-11: Base URL hardcoded from: https://civitai.com/_next/static/chunks/pages/_app-191d571abe9dc30e.js */
-        final String baseURL = "https://image.civitai.com/xG1nkqKTMzGDvpLrqFT7WA/";
-        final String directurl = baseURL + imagemap.get("url") + "/width=" + metadata.get("width") + "/" + Encoding.urlEncode(filename);
-        link.setProperty(PROPERTY_DIRECTURL, directurl);
+        final String directurlOriginal = br.getRegex("\"(https?://image\\.civitai\\.com/[^\"]+/original=true/[^\"]+)").getMatch(0);
+        if (directurlOriginal != null) {
+            link.setProperty(PROPERTY_DIRECTURL, directurlOriginal);
+        } else {
+            /* 2023-09-11: Base URL hardcoded from: https://civitai.com/_next/static/chunks/pages/_app-191d571abe9dc30e.js */
+            final String baseURL = "https://image.civitai.com/xG1nkqKTMzGDvpLrqFT7WA/";
+            final String directurl = baseURL + imagemap.get("url") + "/width=" + metadata.get("width") + "/" + Encoding.urlEncode(filename);
+            link.setProperty(PROPERTY_DIRECTURL, directurl);
+        }
         return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        handleDownload(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+        handleDownload(link, FREE_MAXCHUNKS, "free_directlink");
     }
 
-    private void handleDownload(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+    private void handleDownload(final DownloadLink link, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         requestFileInformation(link);
         String dllink = link.getStringProperty(PROPERTY_DIRECTURL);
         if (StringUtils.isEmpty(dllink)) {
-            logger.warning("Failed to find final downloadurl");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Failed to find final downloadurl");
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, this.isResumeable(link, null), maxchunks);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             br.followConnection(true);
             if (dl.getConnection().getResponseCode() == 403) {

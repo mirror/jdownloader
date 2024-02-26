@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
@@ -102,8 +103,8 @@ public class PixivNetGallery extends PluginForDecrypt {
         Browser.setRequestIntervalLimitGlobal("pixiv.net", 750);
     }
 
-    private static final String TYPE_GALLERY = ".+/(?:member_illust\\.php\\?mode=[a-z]+\\&illust_id=|artworks/)(\\d+)";
-    private static Object       REQUEST_LOCK = new Object();
+    private static final Pattern PATTERN_GALLERY = Pattern.compile("(?i).+/(?:member_illust\\.php\\?mode=[a-z]+\\&illust_id=|artworks/)(\\d+)");
+    private static Object        REQUEST_LOCK    = new Object();
 
     private String getPage(final CryptedLink param, Browser br, String url) throws IOException, DecrypterRetryException {
         try {
@@ -135,11 +136,11 @@ public class PixivNetGallery extends PluginForDecrypt {
             hostplugin.login(account, false);
         }
         try {
-            String itemID = new Regex(param.getCryptedUrl(), "id=(\\d+)").getMatch(0);
+            String itemID = new Regex(param.getCryptedUrl(), "(?i)id=(\\d+)").getMatch(0);
             br.setFollowRedirects(true);
             String uploadDate = null;
-            if (param.getCryptedUrl().matches(TYPE_GALLERY)) {
-                itemID = new Regex(param.getCryptedUrl(), TYPE_GALLERY).getMatch(0);
+            if (new Regex(param.getCryptedUrl(), PATTERN_GALLERY).patternFind()) {
+                itemID = new Regex(param.getCryptedUrl(), PATTERN_GALLERY).getMatch(0);
                 if (itemID == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Failed to find galleryid");
                 }
@@ -244,7 +245,7 @@ public class PixivNetGallery extends PluginForDecrypt {
                 fp.addLinks(ret);
                 return ret;
             } else {
-                /* Decrypt user */
+                /* Crawl user */
                 if (itemID == null) {
                     /* 2020-01-27 */
                     itemID = new Regex(param.getCryptedUrl(), "users/(\\d+)").getMatch(0);
