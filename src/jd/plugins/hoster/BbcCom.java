@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.downloader.hls.M3U8Playlist;
@@ -25,6 +26,7 @@ import org.jdownloader.downloader.hls.M3U8Playlist;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -45,8 +47,15 @@ public class BbcCom extends PluginForHost {
     }
 
     @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.setFollowRedirects(true);
+        return br;
+    }
+
+    @Override
     public String getAGBLink() {
-        return "http://www.bbc.com/terms/";
+        return "https://www.bbc.com/terms/";
     }
 
     @Override
@@ -68,7 +77,7 @@ public class BbcCom extends PluginForHost {
     }
 
     public static boolean isVideo(final DownloadLink link) {
-        if (link.getPluginPatternMatcher().matches(TYPE_OLD) || link.getPluginPatternMatcher().contains(".m3u8")) {
+        if (link.getPluginPatternMatcher().matches(TYPE_OLD) || StringUtils.containsIgnoreCase(link.getPluginPatternMatcher(), ".m3u8")) {
             return true;
         } else {
             return false;
@@ -108,6 +117,7 @@ public class BbcCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
         /* 2022-07-14: Last revision with old handling: 45973 */
         if (link.getPluginPatternMatcher().matches(TYPE_OLD)) {
+            // TODO: Remove this
             final String vpID = new Regex(link.getPluginPatternMatcher(), "/([^/]+)$").getMatch(0);
             link.setProperty(PROPERTY_VIDEOID, vpID);
         }
@@ -157,7 +167,9 @@ public class BbcCom extends PluginForHost {
                 try {
                     con = br.openHeadConnection(directurl);
                     this.connectionErrorhandling(con);
-                    if (con.getCompleteContentLength() > 0) {
+                    if (con.isContentDecoded()) {
+                        link.setDownloadSize(con.getCompleteContentLength());
+                    } else {
                         link.setVerifiedFileSize(con.getCompleteContentLength());
                     }
                 } finally {
@@ -299,7 +311,7 @@ public class BbcCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return Integer.MAX_VALUE;
     }
 
     @Override

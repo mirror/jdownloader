@@ -684,7 +684,9 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
                     con = openAntiDDoSRequestConnection(brc, brc.createGetRequest(workaroundURL));
                 }
                 this.handleConnectionErrors(brc, con);
-                if (con.getCompleteContentLength() > 0) {
+                if (con.isContentDecoded()) {
+                    link.setDownloadSize(con.getCompleteContentLength());
+                } else {
                     link.setVerifiedFileSize(con.getCompleteContentLength());
                 }
                 this.dllink = con.getRequest().getUrl();
@@ -831,7 +833,9 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
                 try {
                     con = openAntiDDoSRequestConnection(br, br.createHeadRequest(dllink));
                     this.handleConnectionErrors(br, con);
-                    if (con.getCompleteContentLength() > 0) {
+                    if (con.isContentDecoded()) {
+                        link.setDownloadSize(con.getCompleteContentLength());
+                    } else {
                         link.setVerifiedFileSize(con.getCompleteContentLength());
                     }
                 } finally {

@@ -15,6 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
+import java.net.MalformedURLException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -40,6 +41,7 @@ import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.VscoCo;
@@ -120,7 +122,7 @@ public class VscoCoCrawler extends PluginForDecrypt {
         }
         final String json = br.getRegex("window\\.__PRELOADED_STATE__ = (\\{.*?\\})</script>").getMatch(0);
         final Map<String, Object> root = JavaScriptEngineFactory.jsonToJavaMap(json);
-        final String singleImageID = new Regex(br.getURL(), "https?://[^/]+/[^/]+/media/([a-f0-9]{24})").getMatch(0);
+        final String singleImageID = new Regex(br.getURL(), "(?i)https?://[^/]+/[^/]+/media/([a-f0-9]{24})").getMatch(0);
         if (singleImageID != null) {
             /* Crawl single image */
             final Map<String, Object> media = (Map<String, Object>) JavaScriptEngineFactory.walkJson(root, "medias/byId/" + singleImageID + "/media");
@@ -170,7 +172,7 @@ public class VscoCoCrawler extends PluginForDecrypt {
                     page++;
                     final UrlQuery query = new UrlQuery();
                     query.add("site_id", siteid);
-                    query.add("limit", "14");
+                    query.add("limit", Integer.toString(max_count_per_pagination_page));
                     query.add("cursor", Encoding.urlEncode(nextCursor));
                     ajax.getPage("/api/3.0/medias/profile?" + query.toString());
                     final Map<String, Object> entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(ajax.toString());
@@ -204,13 +206,23 @@ public class VscoCoCrawler extends PluginForDecrypt {
                                 url_content = Request.getLocation("//" + url_content, br.getRequest());
                             }
                             final String filename = username + "_" + media.get("_id") + getFileNameExtensionFromString(url_content, Boolean.TRUE.equals(isVideo) ? ".mp4" : ".jpg");
+                            String filenameFromURL = null;
+                            try {
+                                filenameFromURL = Plugin.getFileNameFromURL(url_content);
+                            } catch (MalformedURLException e) {
+                                e.printStackTrace();
+                            }
                             final DownloadLink link = this.createDownloadlink(url_content);
                             link.setContentUrl(media.get("permalink").toString());
-                            link.setFinalFileName(filename);
-                            link.setAvailable(true);
                             /* Set some Packagizer properties */
                             link.setProperty(PROPERTY_DATE, sd.format(new Date(((Number) media.get("upload_date")).longValue())));
                             link.setProperty(PROPERTY_DATE_CAPTURED, sd.format(new Date(((Number) media.get("capture_date_ms")).longValue())));
+                            if (filenameFromURL != null && VscoCo.isPreferOriginalFilenames()) {
+                                link.setName(filenameFromURL);
+                            } else {
+                                link.setFinalFileName(filename);
+                            }
+                            link.setAvailable(true);
                             if (Boolean.FALSE.equals(isVideo)) {
                                 final Map<String, Object> image_meta = (Map<String, Object>) media.get("image_meta");
                                 if (image_meta != null) {
@@ -284,19 +296,30 @@ public class VscoCoCrawler extends PluginForDecrypt {
                 url_content = Request.getLocation("//" + url_content, br.getRequest());
             }
             final String filename = username + "_" + media.get("id") + getFileNameExtensionFromString(url_content, Boolean.TRUE.equals(isVideo) ? ".mp4" : ".jpg");
+            String filenameFromURL = null;
+            try {
+                filenameFromURL = Plugin.getFileNameFromURL(url_content);
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+            }
             final DownloadLink link = this.createDownloadlink(url_content);
             link.setContentUrl(media.get("permalink").toString());
-            link.setFinalFileName(filename);
-            link.setAvailable(true);
             /* Set some Packagizer properties */
             link.setProperty(PROPERTY_DATE, sd.format(new Date(((Number) media.get("uploadDate")).longValue())));
             final Number captureDateMs = (Number) media.get("captureDateMs");
             if (captureDateMs != null) {
                 link.setProperty(PROPERTY_DATE_CAPTURED, sd.format(new Date(captureDateMs.longValue())));
             }
+            if (filenameFromURL != null && VscoCo.isPreferOriginalFilenames()) {
+                link.setName(filenameFromURL);
+            } else {
+                link.setFinalFileName(filename);
+            }
+            link.setAvailable(true);
             if (Boolean.FALSE.equals(isVideo)) {
                 final Map<String, Object> imageMeta = (Map<String, Object>) media.get("imageMeta");
                 if (imageMeta != null) {
+                    /* Filesize is not always given */
                     final Number filesize = (Number) imageMeta.get("fileSize");
                     if (filesize != null) {
                         link.setDownloadSize(filesize.longValue());

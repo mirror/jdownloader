@@ -18,10 +18,18 @@ package jd.plugins.hoster;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.storage.config.annotations.AboutConfig;
+import org.appwork.storage.config.annotations.DefaultEnumValue;
+import org.appwork.storage.config.annotations.DefaultOnNull;
+import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
+import org.appwork.storage.config.annotations.LabelInterface;
 import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
+import org.jdownloader.plugins.config.Order;
+import org.jdownloader.plugins.config.PluginConfigInterface;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -33,17 +41,23 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wetransfer.com", "boards.wetransfer.com" }, urls = { "https?://wetransferdecrypted/[a-f0-9]{46}/[a-f0-9]{4,12}/[a-f0-9]{46}", "https?://boards\\.wetransfer\\.com/board/[a-z0-9]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wetransfer.com" }, urls = { "https?://wetransferdecrypted/[a-f0-9]{46}/[a-f0-9]{4,12}/[a-f0-9]{46}|https?://(boards|collect)\\.wetransfer\\.com/board/[a-z0-9]+" })
 public class WeTransferCom extends PluginForHost {
     public WeTransferCom(final PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.setFollowRedirects(true);
+        return br;
+    }
+
+    @Override
     public String getAGBLink() {
-        return "http://wetransfer.info/terms/";
+        return "https://wetransfer.com/de-DE/explore/legal/terms";
     }
 
     @Override
@@ -53,188 +67,168 @@ public class WeTransferCom extends PluginForHost {
 
     public static Browser prepBRWebsite(final Browser br) {
         br.addAllowedResponseCodes(new int[] { 410, 503 });
-        br.setCookie("wetransfer.com", "wt_tandc", "20170208");
-        br.setFollowRedirects(true);
+        br.setCookie("wetransfer.com", "wt_tandc", "20240117%3A1");
+        br.setCookie("wetransfer.com", "wt_lang", "en");
         return br;
     }
 
-    private Browser prepBRAPI(final Browser br) {
+    public static Browser prepBRAPI(final Browser br) {
         br.getHeaders().put("User-Agent", "okhttp/3.12.0");
         br.setAllowedResponseCodes(new int[] { 401 });
         return br;
     }
 
-    private String              downloadurl     = null;
-    private boolean             isSingleZIP     = false;
-    public static final Object  LOCK            = new Object();
     /* 2019-09-30: https://play.google.com/store/apps/details?id=com.wetransfer.app.live */
-    private static final String API_BASE_AUTH   = "https://api.wetransfermobile.com/v1";
-    private static final String API_BASE_NORMAL = "https://api.wetransfermobile.com/v2";
-
-    private boolean isTypeDownload(final DownloadLink dl) {
-        return dl.getPluginPatternMatcher().matches("https?://wetransferdecrypted/[a-f0-9]{46}/[a-f0-9]{4,12}/[a-f0-9]{46}");
-    }
-
-    private String getFID(final DownloadLink link) {
-        if (isTypeDownload(link)) {
-            return link.getPluginPatternMatcher();
-        } else {
-            /* boards.wetransfer.com URL */
-            return new Regex(link.getPluginPatternMatcher(), "([a-z0-9]+)$").getMatch(0);
-        }
-    }
+    public static final String   API_BASE_AUTH        = "https://api.wetransfermobile.com/v1";
+    public static final String   API_BASE_NORMAL      = "https://api.wetransfermobile.com/v2";
+    private static final Pattern TYPE_DOWNLOAD        = Pattern.compile("https?://wetransferdecrypted/([a-f0-9]{46})/([a-f0-9]{4,12})/([a-f0-9]{46})");
+    public static final String   PROPERTY_DIRECT_LINK = "direct_link";
+    public static final String   PROPERTY_SINGLE_ZIP  = "single_zip";
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         setBrowserExclusive();
-        if (isTypeDownload(link)) {
-            prepBRWebsite(br);
-            final String[] dlinfo = link.getPluginPatternMatcher().replace("http://wetransferdecrypted/", "").split("/");
-            final String id_main = dlinfo[0];
-            final String security_hash = dlinfo[1];
-            final String id_single = dlinfo[2];
-            if (security_hash == null || id_main == null || id_single == null) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            final String referer = link.getReferrerUrl();
-            if (referer == null) {
-                /* This should never happen */
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            br.getPage(referer);
-            final String[] recipient_id = referer.replaceFirst("https?://[^/]+/+", "").split("/");
-            if (recipient_id == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            final String domain_user_id = br.getRegex("user\\s*:\\s*\\{\\s*\"key\"\\s*:\\s*\"(.*?)\"").getMatch(0);
-            final String csrfToken = br.getRegex("name\\s*=\\s*\"csrf-token\"\\s*content\\s*=\\s*\"(.*?)\"").getMatch(0);
-            final Map<String, Object> map = new HashMap<String, Object>();
-            map.put("security_hash", security_hash);
-            map.put("intent", "single_file");
-            map.put("file_ids", Arrays.asList(new String[] { id_single }));
-            if (recipient_id.length == 4) {
-                map.put("recipient_id", recipient_id[2]);
-            }
-            if (domain_user_id != null) {
-                map.put("domain_user_id", domain_user_id);
-            }
-            final PostRequest post = new PostRequest(br.getURL(("/api/v4/transfers/" + id_main + "/download")));
-            post.getHeaders().put("Accept", "application/json");
-            post.getHeaders().put("Content-Type", "application/json");
-            post.getHeaders().put("Origin", "https://wetransfer.com");
-            post.getHeaders().put("X-Requested-With", " XMLHttpRequest");
-            if (csrfToken != null) {
-                post.getHeaders().put("X-CSRF-Token", csrfToken);
-            }
-            post.setPostDataString(JSonStorage.toString(map));
-            br.getPage(post);
-            if ("invalid_transfer".equals(PluginJSonUtils.getJsonValue(br, "error"))) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            downloadurl = PluginJSonUtils.getJsonValue(br, "direct_link");
-            if (downloadurl == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-        } else {
-            /* Boards - so far we only allow our users to download all contents of the added board as .zip. */
-            final String fid = getFID(link);
-            String token = this.getPluginConfig().getStringProperty("api_token");
-            int counter = 0;
-            boolean authed = false;
-            do {
-                /* Clear old headers and cookies each loop */
-                prepBRAPI(br);
-                try {
-                    if (token == null) {
-                        /* Only generate new token if needed */
-                        synchronized (LOCK) {
-                            /*
-                             * 2019-09-30: E.g. {"device_token":
-                             * "wt-android-<hash-length-8>-<hash-length-4>-<hash-length-4>-<hash-length-4>-<hash-length-12>"}
-                             */
-                            br.postPageRaw(API_BASE_AUTH + "/authorize", "{\"device_token\":\"wt-android-\"}");
-                            token = PluginJSonUtils.getJson(br, "token");
-                            if (StringUtils.isEmpty(token)) {
-                                logger.warning("Failed to authorize");
-                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                            }
-                            /* Save token for to eventually re-use it later */
-                            this.getPluginConfig().setProperty("api_token", token);
-                        }
-                    }
-                    br.getHeaders().put("Authorization", "Bearer " + token);
-                    br.getPage(API_BASE_NORMAL + "/mobile/collections/" + fid);
-                    if (br.getHttpConnection().getResponseCode() == 401) {
-                        /* 2019-09-30 {"error":"Invalid JWT token : Signature Verification Error"} */
-                        token = null;
-                        continue;
-                    }
-                    authed = true;
-                    break;
-                } finally {
-                    counter++;
-                }
-            } while (counter <= 1);
-            if (!authed) {
-                logger.warning("Authorization error");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            } else if (br.getHttpConnection().getResponseCode() == 404) {
-                /* 2019-09-30 e.g. {"success":false,"message":"This collection does not exist","error_key":"board_deleted"} */
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.getRequest().getHtmlCode());
-            String filename = (String) entries.get("name");
-            final String filesize = PluginJSonUtils.getJson(br, "size");
-            if (StringUtils.isEmpty(filename)) {
-                /* Fallback */
-                filename = fid + ".zip";
-                isSingleZIP = true;
-            }
-            if (!StringUtils.isEmpty(filesize) && filesize.matches("\\d+")) {
-                link.setDownloadSize(Long.parseLong(filesize));
-            }
-            link.setFinalFileName(filename);
+        prepBRWebsite(br);
+        final Regex urlinfo = new Regex(link.getPluginPatternMatcher(), TYPE_DOWNLOAD);
+        final String folder_id = urlinfo.getMatch(0);
+        final String security_hash = urlinfo.getMatch(1);
+        final String file_id = urlinfo.getMatch(2);
+        if (security_hash == null || folder_id == null || file_id == null) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "One or multiple plugin properties are missing");
         }
+        final String refererurl = link.getReferrerUrl();
+        if (refererurl == null) {
+            /* This should never happen */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Referer property is missing");
+        }
+        br.getPage(refererurl);
+        final String[] recipient_id = refererurl.replaceFirst("https?://[^/]+/+", "").split("/");
+        if (recipient_id == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final String domain_user_id = br.getRegex("user\\s*:\\s*\\{\\s*\"key\"\\s*:\\s*\"(.*?)\"").getMatch(0);
+        final String csrfToken = br.getRegex("name\\s*=\\s*\"csrf-token\"\\s*content\\s*=\\s*\"(.*?)\"").getMatch(0);
+        final Map<String, Object> postdata = new HashMap<String, Object>();
+        postdata.put("security_hash", security_hash);
+        if (this.isSingleZip(link)) {
+            postdata.put("intent", "entire_transfer");
+        } else {
+            postdata.put("intent", "single_file");
+            postdata.put("file_ids", Arrays.asList(new String[] { file_id }));
+        }
+        if (recipient_id.length == 4) {
+            postdata.put("recipient_id", recipient_id[2]);
+        }
+        if (domain_user_id != null) {
+            postdata.put("domain_user_id", domain_user_id);
+        }
+        final PostRequest post = new PostRequest(br.getURL(("/api/v4/transfers/" + folder_id + "/download")));
+        post.getHeaders().put("Accept", "application/json");
+        post.getHeaders().put("Content-Type", "application/json");
+        post.getHeaders().put("Origin", "https://" + br.getHost());
+        post.getHeaders().put("X-Requested-With", " XMLHttpRequest");
+        if (csrfToken != null) {
+            post.getHeaders().put("X-CSRF-Token", csrfToken);
+        }
+        post.setPostDataString(JSonStorage.serializeToJson(postdata));
+        br.getPage(post);
+        final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+        final String error = (String) entries.get("error");
+        if (error != null) {
+            if (error.equalsIgnoreCase("invalid_transfer")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_FATAL, error);
+            }
+        }
+        link.setProperty(PROPERTY_DIRECT_LINK, entries.get("direct_link"));
         return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        requestFileInformation(link);
+        final String storedDirecturl = link.getStringProperty(PROPERTY_DIRECT_LINK);
+        String dllink = null;
+        if (storedDirecturl != null) {
+            logger.info("Trying to re-use stored directurl: " + storedDirecturl);
+        } else {
+            requestFileInformation(link);
+            dllink = link.getStringProperty(PROPERTY_DIRECT_LINK);
+            if (StringUtils.isEmpty(dllink)) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Failed to find final downloadurl");
+            }
+        }
         boolean resume = true;
         int maxChunks = -2;
-        if (!isTypeDownload(link) && StringUtils.isEmpty(this.downloadurl)) {
-            /* Key over which we can select the version of the file we want - usually the laters. Available in browser as key "latest" */
-            final String operation_version = PluginJSonUtils.getJson(br, "operation_version");
-            if (StringUtils.isEmpty(operation_version)) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            /* Use website from now on */
-            prepBRWebsite(br);
-            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            final String fid = this.getFID(link);
-            final String action = String.format("https://boards.wetransfer.com/api/boards/%s/%s/download", fid, operation_version);
-            br.postPageRaw(action, "{}");
-            this.downloadurl = PluginJSonUtils.getJson(br, "download_url");
-        }
+        final boolean isSingleZIP = this.isSingleZip(link);
         if (isSingleZIP) {
             resume = false;
             maxChunks = 1;
         }
-        if (StringUtils.isEmpty(this.downloadurl)) {
-            logger.warning("Failed to find final downloadurl");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, downloadurl, resume, maxChunks);
-        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            br.followConnection(true);
-            if (br.containsHTML("<title>Error while downloading your file")) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 5 * 60 * 1000l);
-            } else {
+        try {
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resume, maxChunks);
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                br.followConnection(true);
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
+            }
+        } catch (final Exception e) {
+            if (storedDirecturl != null) {
+                link.removeProperty(PROPERTY_DIRECT_LINK);
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Stored directurl expired", e);
+            } else {
+                throw e;
             }
         }
         dl.startDownload();
+    }
+
+    private boolean isSingleZip(final DownloadLink link) {
+        return link.getBooleanProperty(PROPERTY_SINGLE_ZIP, false);
+    }
+
+    @Override
+    public Class<? extends PluginConfigInterface> getConfigInterface() {
+        return WetransferConfig.class;
+    }
+
+    public static interface WetransferConfig extends PluginConfigInterface {
+        public static final TRANSLATION TRANSLATION = new TRANSLATION();
+
+        public static class TRANSLATION {
+            public String getCrawlMode_label() {
+                return "Crawl mode";
+            }
+        }
+
+        public static enum CrawlMode implements LabelInterface {
+            ZIP {
+                @Override
+                public String getLabel() {
+                    return "Add .zip only";
+                }
+            },
+            FILES_FOLDERS {
+                @Override
+                public String getLabel() {
+                    return "Add loose files & folders";
+                }
+            },
+            ALL {
+                @Override
+                public String getLabel() {
+                    return "Add loose files & folders AND .zip with all items";
+                }
+            };
+        }
+
+        @AboutConfig
+        @DefaultEnumValue("ZIP")
+        @Order(10)
+        @DescriptionForConfigEntry("Single .zip download is recommended. Loose file download may lave you with corrupted files or wrongly named .zip files.")
+        @DefaultOnNull
+        CrawlMode getCrawlMode();
+
+        void setCrawlMode(final CrawlMode mode);
     }
 
     @Override

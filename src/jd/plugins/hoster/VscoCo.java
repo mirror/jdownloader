@@ -30,6 +30,7 @@ import org.jdownloader.plugins.controller.LazyPlugin;
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
+import jd.config.SubConfiguration;
 import jd.controlling.linkcrawler.LinkCrawlerDeepInspector;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -179,8 +180,10 @@ public class VscoCo extends PluginForHost {
                     logger.info("Set best quality on first full linkcheck: " + bestQuality.getHeight() + "p");
                 }
             } else if (this.looksLikeDownloadableContent(con)) {
-                if (con.getCompleteContentLength() > 0) {
+                if (con.isContentDecoded()) {
                     link.setDownloadSize(con.getCompleteContentLength());
+                } else {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
                 }
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -368,10 +371,23 @@ public class VscoCo extends PluginForHost {
         link.removeProperty(PROPERTY_HLS_URL);
     }
 
-    private static final String SETTING_CUSTOM_USER_AGENT         = "custom_user_agent";
-    private static final String SETTING_CUSTOM_USER_AGENT_default = null;
+    public static final boolean isPreferOriginalFilenames() {
+        if (SubConfiguration.getConfig("vsco.co").getIntegerProperty(SETTING_FILENAME_SCHEME, SETTING_FILENAME_SCHEME_default) == 1) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    private static final String   SETTING_CUSTOM_USER_AGENT         = "custom_user_agent";
+    private static final String   SETTING_CUSTOM_USER_AGENT_default = null;
+    private static final String[] FILENAME_SCHEMES_LIST             = new String[] { "Plugin filenames", "Original/serverside filenames" };
+    public static final String    SETTING_FILENAME_SCHEME           = "filename_scheme";
+    public static final int       SETTING_FILENAME_SCHEME_default   = 0;
 
     private void setConfigElements() {
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), SETTING_FILENAME_SCHEME, FILENAME_SCHEMES_LIST, "Filename scheme").setDefaultValue(SETTING_FILENAME_SCHEME_default));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_TEXTFIELD, getPluginConfig(), SETTING_CUSTOM_USER_AGENT, "Custom User-Agent value").setDefaultValue(SETTING_CUSTOM_USER_AGENT_default));
     }
 }

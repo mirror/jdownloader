@@ -2693,14 +2693,14 @@ public abstract class YetiShareCore extends antiDDoSForHost {
         final Map<String, Object> jsonRoot = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         final Map<String, Object> data = (Map<String, Object>) jsonRoot.get("data");
         final String filename = (String) data.get("filename");
-        final Number filesize = (Number) data.get("fileSize");
+        final Number filesizeO = (Number) data.get("fileSize");
         final String file_status = data.get("file_status").toString();
         final String description = (String) data.get("description");
         if (!StringUtils.isEmpty(filename)) {
             link.setFinalFileName(filename);
         }
-        if (filesize != null) {
-            link.setVerifiedFileSize(filesize.longValue());
+        if (filesizeO != null) {
+            link.setVerifiedFileSize(filesizeO.longValue());
         }
         if (!StringUtils.isEmpty(description) && StringUtils.isEmpty(link.getComment())) {
             link.setComment(description);
