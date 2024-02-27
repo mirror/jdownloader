@@ -21,11 +21,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -42,6 +37,11 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.WeTransferCom;
 import jd.plugins.hoster.WeTransferCom.WetransferConfig;
 import jd.plugins.hoster.WeTransferCom.WetransferConfig.CrawlMode;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "wetransfer.com" }, urls = { WeTransferComFolder.patternShort + "|" + WeTransferComFolder.patternNormal })
 public class WeTransferComFolder extends PluginForDecrypt {
@@ -174,7 +174,10 @@ public class WeTransferComFolder extends PluginForDecrypt {
             }
         }
         final WetransferConfig cfg = PluginJsonConfig.get(WetransferConfig.class);
-        final CrawlMode mode = cfg.getCrawlMode();
+        CrawlMode mode = cfg.getCrawlMode2();
+        if (mode == null || CrawlMode.DEFAULT.equals(mode)) {
+            mode = WetransferConfig.DEFAULT_MODE;
+        }
         final DownloadLink zip = this.createDownloadlink(createDummylinkForHosterplugin(folder_id, security_hash, "ffffffffffffffffffffffffffffffffffffffffffffff"));
         final String zipFilename = (String) entries.get("recommended_filename");
         if (zipFilename != null) {

@@ -15,21 +15,20 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.security.DigestInputStream;
+import java.security.MessageDigest;
 import java.util.Arrays;
+import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.storage.config.annotations.AboutConfig;
-import org.appwork.storage.config.annotations.DefaultEnumValue;
-import org.appwork.storage.config.annotations.DefaultOnNull;
-import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
-import org.appwork.storage.config.annotations.LabelInterface;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.config.Order;
-import org.jdownloader.plugins.config.PluginConfigInterface;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -41,6 +40,27 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.download.DownloadLinkDownloadable;
+import jd.plugins.download.Downloadable;
+import jd.plugins.download.HashInfo;
+
+import org.appwork.shutdown.ShutdownController;
+import org.appwork.shutdown.ShutdownRequest;
+import org.appwork.shutdown.ShutdownVetoException;
+import org.appwork.shutdown.ShutdownVetoListener;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.storage.config.annotations.AboutConfig;
+import org.appwork.storage.config.annotations.DefaultEnumValue;
+import org.appwork.storage.config.annotations.DefaultOnNull;
+import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
+import org.appwork.storage.config.annotations.LabelInterface;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.HexFormatter;
+import org.jdownloader.controlling.FileStateManager;
+import org.jdownloader.controlling.FileStateManager.FILESTATE;
+import org.jdownloader.plugins.config.Order;
+import org.jdownloader.plugins.config.PluginConfigInterface;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wetransfer.com" }, urls = { "https?://wetransferdecrypted/[a-f0-9]{46}/[a-f0-9]{4,12}/[a-f0-9]{46}|https?://(boards|collect)\\.wetransfer\\.com/board/[a-z0-9]+" })
 public class WeTransferCom extends PluginForHost {
@@ -141,45 +161,193 @@ public class WeTransferCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FATAL, error);
             }
         }
-        link.setProperty(PROPERTY_DIRECT_LINK, entries.get("direct_link"));
-        return AvailableStatus.TRUE;
+        final String direct_link = (String) entries.get("direct_link");
+        if (StringUtils.isEmpty(direct_link)) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Failed to find final downloadurl");
+        } else {
+            link.setProperty(PROPERTY_DIRECT_LINK, direct_link);
+            return AvailableStatus.TRUE;
+        }
     }
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        final String storedDirecturl = link.getStringProperty(PROPERTY_DIRECT_LINK);
-        String dllink = null;
-        if (storedDirecturl != null) {
-            logger.info("Trying to re-use stored directurl: " + storedDirecturl);
+        String direct_link = link.getStringProperty(PROPERTY_DIRECT_LINK);
+        final boolean stored_direct_link = direct_link != null;
+        if (direct_link != null) {
+            logger.info("Trying to re-use stored directurl: " + direct_link);
         } else {
             requestFileInformation(link);
-            dllink = link.getStringProperty(PROPERTY_DIRECT_LINK);
-            if (StringUtils.isEmpty(dllink)) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Failed to find final downloadurl");
-            }
+            direct_link = link.getStringProperty(PROPERTY_DIRECT_LINK);
         }
-        boolean resume = true;
-        int maxChunks = -2;
-        final boolean isSingleZIP = this.isSingleZip(link);
-        if (isSingleZIP) {
+        final boolean resume;
+        final int maxChunks;
+        if (this.isSingleZip(link)) {
             resume = false;
             maxChunks = 1;
+        } else {
+            maxChunks = 1;
+            resume = false;
         }
         try {
-            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resume, maxChunks);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, direct_link, resume, maxChunks);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 br.followConnection(true);
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
             }
         } catch (final Exception e) {
-            if (storedDirecturl != null) {
-                link.removeProperty(PROPERTY_DIRECT_LINK);
+            if (stored_direct_link && link.removeProperty(PROPERTY_DIRECT_LINK)) {
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Stored directurl expired", e);
             } else {
                 throw e;
             }
         }
         dl.startDownload();
+        if (link.getLinkStatus().hasStatus(LinkStatus.FINISHED) && link.getDownloadCurrent() > 0) {
+            extract(link);
+        }
+    }
+
+    @Override
+    public List<File> listProcessFiles(DownloadLink link) {
+        final List<File> ret = super.listProcessFiles(link);
+        if (!this.isSingleZip(link)) {
+            final Regex urlinfo = new Regex(link.getPluginPatternMatcher(), TYPE_DOWNLOAD);
+            final String file_id = urlinfo.getMatch(2);
+            if (file_id != null) {
+                final File extractedFile = new File(new File(link.getFileOutput()).getParent(), file_id + ".extracted");
+                ret.add(extractedFile);
+            }
+        }
+        return ret;
+    }
+
+    @Override
+    public Downloadable newDownloadable(DownloadLink downloadLink, Browser br) {
+        return new DownloadLinkDownloadable(downloadLink) {
+            @Override
+            public void setFinalFileName(final String newfinalFileName) {
+                // filename header contains full path including parent directories -> only take filename part without parent directories
+                final String fileNameOnly = newfinalFileName == null ? null : newfinalFileName.replaceFirst("^(.+/)", "");
+                super.setFinalFileName(fileNameOnly);
+            }
+
+            @Override
+            public boolean isHashCheckEnabled() {
+                return false;
+            }
+        };
+    }
+
+    private void extract(final DownloadLink link) throws Exception {
+        final Regex urlinfo = new Regex(link.getPluginPatternMatcher(), TYPE_DOWNLOAD);
+        final String file_id = urlinfo.getMatch(2);
+        if (file_id == null) {
+            return;
+        } else if (isSingleZip(link)) {
+            return;
+        }
+        final File srcDst = new File(link.getFileOutput());
+        ZipFile zipFile = null;
+        try {
+            zipFile = new ZipFile(srcDst);
+        } catch (IOException e) {
+            logger.log(e);
+            return;
+        }
+        try {
+            ZipEntry zipEntry = null;
+            final Enumeration<? extends ZipEntry> zipEntries = zipFile.entries();
+            while (zipEntries.hasMoreElements()) {
+                if (zipEntry != null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "more than 1 entry in zip file!");
+                } else {
+                    zipEntry = zipEntries.nextElement();
+                }
+            }
+            if (zipEntry == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "no entry in zip file!");
+            }
+            final ShutdownVetoListener vetoListener = new ShutdownVetoListener() {
+                @Override
+                public void onShutdownVetoRequest(ShutdownRequest request) throws ShutdownVetoException {
+                    throw new ShutdownVetoException(getHost() + " extraction in progress:" + link.getName(), this);
+                }
+
+                @Override
+                public void onShutdownVeto(ShutdownRequest request) {
+                }
+
+                @Override
+                public void onShutdown(ShutdownRequest request) {
+                }
+
+                @Override
+                public long getShutdownVetoPriority() {
+                    return 0;
+                }
+            };
+            File extractedFile = new File(srcDst.getParent(), file_id + ".extracted");
+            if (!extractedFile.delete() && extractedFile.exists()) {
+                throw new IOException("Could not delete:" + extractedFile);
+            }
+            FileStateManager.getInstance().requestFileState(extractedFile, FILESTATE.WRITE_EXCLUSIVE, this);
+            ShutdownController.getInstance().addShutdownVetoListener(vetoListener);
+            try {
+                synchronized (getExtractionLock(link)) {
+                    DigestInputStream dis = null;
+                    final InputStream zis = zipFile.getInputStream(zipEntry);
+                    try {
+                        final FileOutputStream fos = new FileOutputStream(extractedFile);
+                        try {
+                            dis = new DigestInputStream(zis, MessageDigest.getInstance("SHA-256"));
+                            final byte[] buffer = new byte[2048 * 1024];
+                            while (true) {
+                                final int read = dis.read(buffer);
+                                if (read == -1) {
+                                    break;
+                                } else if (read > 0) {
+                                    fos.write(buffer, 0, read);
+                                }
+                            }
+                        } finally {
+                            fos.close();
+                        }
+                    } finally {
+                        zis.close();
+                    }
+                    zipFile.close();
+                    zipFile = null;
+                    if (!srcDst.delete() && srcDst.exists()) {
+                        throw new IOException("Could not delete:" + srcDst);
+                    } else {
+                        if (extractedFile.renameTo(srcDst)) {
+                            extractedFile = null;
+                            link.setVerifiedFileSize(srcDst.length());
+                            link.setHashInfo(HashInfo.parse(HexFormatter.byteArrayToHex(dis.getMessageDigest().digest()), true, true));
+                        } else {
+                            throw new IOException("Could not rename:" + extractedFile + " -> " + srcDst);
+                        }
+                    }
+                }
+            } finally {
+                ShutdownController.getInstance().removeShutdownVetoListener(vetoListener);
+                if (extractedFile != null) {
+                    extractedFile.delete();
+                }
+                FileStateManager.getInstance().releaseFileState(extractedFile, this);
+            }
+        } finally {
+            if (zipFile != null) {
+                zipFile.close();
+            }
+        }
+    }
+
+    private static Object GLOBAL_EXTRACTION_LOCK = new Object();
+
+    private Object getExtractionLock(final DownloadLink link) {
+        return GLOBAL_EXTRACTION_LOCK;
     }
 
     private boolean isSingleZip(final DownloadLink link) {
@@ -192,7 +360,8 @@ public class WeTransferCom extends PluginForHost {
     }
 
     public static interface WetransferConfig extends PluginConfigInterface {
-        public static final TRANSLATION TRANSLATION = new TRANSLATION();
+        public static final TRANSLATION TRANSLATION  = new TRANSLATION();
+        public static final CrawlMode   DEFAULT_MODE = CrawlMode.FILES_FOLDERS;
 
         public static class TRANSLATION {
             public String getCrawlMode_label() {
@@ -218,17 +387,23 @@ public class WeTransferCom extends PluginForHost {
                 public String getLabel() {
                     return "Add loose files & folders AND .zip with all items";
                 }
+            },
+            DEFAULT {
+                @Override
+                public String getLabel() {
+                    return "Default: " + DEFAULT_MODE.getLabel();
+                }
             };
         }
 
         @AboutConfig
-        @DefaultEnumValue("ZIP")
+        @DefaultEnumValue("DEFAULT")
         @Order(10)
         @DescriptionForConfigEntry("Single .zip download is recommended. Loose file download may lave you with corrupted files or wrongly named .zip files.")
         @DefaultOnNull
-        CrawlMode getCrawlMode();
+        CrawlMode getCrawlMode2();
 
-        void setCrawlMode(final CrawlMode mode);
+        void setCrawlMode2(final CrawlMode mode);
     }
 
     @Override
@@ -237,5 +412,6 @@ public class WeTransferCom extends PluginForHost {
 
     @Override
     public void resetDownloadlink(final DownloadLink link) {
+        link.removeProperty(PROPERTY_DIRECT_LINK);
     }
 }
