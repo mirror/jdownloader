@@ -1141,13 +1141,18 @@ public abstract class Plugin implements ActionListener {
         return challenges != null && challenges.size() > 0;
     }
 
+    protected void displayBubbleNotification(final String title, final String text) {
+        // TODO: Add functionality
+        displayBubbleNotification(title, text, new AbstractIcon(IconKey.ICON_INFO, 32));
+    }
+
     /**
      * Displays a BubbleNotification. </br>
      * Plugins which are expected to use this function should return LazyPlugin.FEATURE of type BUBBLE_NOTIFICATION. </br>
      * Any plugin can try to display a BubbleNotification but upper handling may decide not to display it depending on user settings. </br>
-     * Examples of Plugins using this functionality: RedditComCrawler, TwitterComCrawler
+     * Examples of Plugins using this functionality: RedditComCrawler, TwitterComCrawler, HighWayCore
      */
-    protected void displayBubbleNotification(final String title, final String text) {
+    protected void displayBubbleNotification(final String title, final String text, final Icon icon) {
         // TODO: Add functionality
     }
 }
