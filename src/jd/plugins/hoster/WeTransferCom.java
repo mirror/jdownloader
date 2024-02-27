@@ -30,20 +30,6 @@ import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-import jd.PluginWrapper;
-import jd.http.Browser;
-import jd.http.requests.PostRequest;
-import jd.parser.Regex;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
-import jd.plugins.download.DownloadLinkDownloadable;
-import jd.plugins.download.Downloadable;
-import jd.plugins.download.HashInfo;
-
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.shutdown.ShutdownVetoException;
@@ -62,7 +48,21 @@ import org.jdownloader.controlling.FileStateManager.FILESTATE;
 import org.jdownloader.plugins.config.Order;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wetransfer.com" }, urls = { "https?://wetransferdecrypted/[a-f0-9]{46}/[a-f0-9]{4,12}/[a-f0-9]{46}|https?://(boards|collect)\\.wetransfer\\.com/board/[a-z0-9]+" })
+import jd.PluginWrapper;
+import jd.http.Browser;
+import jd.http.requests.PostRequest;
+import jd.parser.Regex;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
+import jd.plugins.download.DownloadLinkDownloadable;
+import jd.plugins.download.Downloadable;
+import jd.plugins.download.HashInfo;
+
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wetransfer.com" }, urls = { "https?://wetransferdecrypted/[a-f0-9]{46}/[a-f0-9]{4,12}/[a-f0-9]{46}" })
 public class WeTransferCom extends PluginForHost {
     public WeTransferCom(final PluginWrapper wrapper) {
         super(wrapper);
@@ -94,16 +94,19 @@ public class WeTransferCom extends PluginForHost {
 
     public static Browser prepBRAPI(final Browser br) {
         br.getHeaders().put("User-Agent", "okhttp/3.12.0");
+        br.getHeaders().put("Accept", "application/json, text/plain, */*");
         br.setAllowedResponseCodes(new int[] { 401 });
         return br;
     }
 
     /* 2019-09-30: https://play.google.com/store/apps/details?id=com.wetransfer.app.live */
-    public static final String   API_BASE_AUTH        = "https://api.wetransfermobile.com/v1";
-    public static final String   API_BASE_NORMAL      = "https://api.wetransfermobile.com/v2";
-    private static final Pattern TYPE_DOWNLOAD        = Pattern.compile("https?://wetransferdecrypted/([a-f0-9]{46})/([a-f0-9]{4,12})/([a-f0-9]{46})");
-    public static final String   PROPERTY_DIRECT_LINK = "direct_link";
-    public static final String   PROPERTY_SINGLE_ZIP  = "single_zip";
+    public static final String   API_BASE_AUTH               = "https://api.wetransfermobile.com/v1";
+    public static final String   API_BASE_NORMAL             = "https://api.wetransfermobile.com/v2";
+    private static final Pattern TYPE_DOWNLOAD               = Pattern.compile("https?://wetransferdecrypted/([a-f0-9]{46})/([a-f0-9]{4,12})/([a-f0-9]{46})");
+    public static final String   PROPERTY_DIRECT_LINK        = "direct_link";
+    public static final String   PROPERTY_SINGLE_ZIP         = "single_zip";
+    public static final String   PROPERTY_COLLECTION_ID      = "collection_id";
+    public static final String   PROPERTY_COLLECTION_FILE_ID = "collection_file_id";
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
@@ -180,9 +183,10 @@ public class WeTransferCom extends PluginForHost {
             requestFileInformation(link);
             direct_link = link.getStringProperty(PROPERTY_DIRECT_LINK);
         }
+        final boolean isSingleZip = this.isSingleZip(link);
         final boolean resume;
         final int maxChunks;
-        if (this.isSingleZip(link)) {
+        if (isSingleZip) {
             resume = false;
             maxChunks = 1;
         } else {
@@ -203,7 +207,12 @@ public class WeTransferCom extends PluginForHost {
             }
         }
         dl.startDownload();
-        if (link.getLinkStatus().hasStatus(LinkStatus.FINISHED) && link.getDownloadCurrent() > 0) {
+        /**
+         * 2024-02-27: This website delivers single files as .zip files without .zip file-extension while all of them contain exactly one
+         * file. </br>
+         * The special handling down below corrects this by extracting such files.
+         */
+        if (!isSingleZip && link.getLinkStatus().hasStatus(LinkStatus.FINISHED) && link.getDownloadCurrent() > 0) {
             extract(link);
         }
     }
@@ -350,6 +359,10 @@ public class WeTransferCom extends PluginForHost {
         return GLOBAL_EXTRACTION_LOCK;
     }
 
+    /**
+     * Returns true if this file is a single .zip file containing all items of a wetransfer.com item. In most cases that .zip file will
+     * contain subfolders and files or at least 2 files.
+     */
     private boolean isSingleZip(final DownloadLink link) {
         return link.getBooleanProperty(PROPERTY_SINGLE_ZIP, false);
     }
@@ -364,7 +377,7 @@ public class WeTransferCom extends PluginForHost {
         public static final CrawlMode   DEFAULT_MODE = CrawlMode.FILES_FOLDERS;
 
         public static class TRANSLATION {
-            public String getCrawlMode_label() {
+            public String getCrawlMode2_label() {
                 return "Crawl mode";
             }
         }
