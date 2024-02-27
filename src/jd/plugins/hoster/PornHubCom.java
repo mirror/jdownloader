@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
 
 import javax.crypto.Cipher;
@@ -37,23 +36,6 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
-
-import org.appwork.storage.JSonMapperException;
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.ReflectionUtils;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.net.httpconnection.HTTPConnection;
-import org.appwork.utils.net.httpconnection.SSLSocketStreamOptions;
-import org.appwork.utils.net.httpconnection.SSLSocketStreamOptionsModifier;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.downloader.hls.M3U8Playlist;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.logging.LogController;
-import org.jdownloader.net.BCSSLSocketStreamFactory;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -86,6 +68,23 @@ import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.PornHubComVideoCrawler;
+
+import org.appwork.storage.JSonMapperException;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.ReflectionUtils;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.httpconnection.HTTPConnection;
+import org.appwork.utils.net.httpconnection.SSLSocketStreamOptions;
+import org.appwork.utils.net.httpconnection.SSLSocketStreamOptionsModifier;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.net.BCSSLSocketStreamFactory;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 @PluginDependencies(dependencies = { PornHubComVideoCrawler.class })
@@ -793,22 +792,13 @@ public class PornHubCom extends PluginForHost {
                     continue;
                 }
                 if (StringUtils.equalsIgnoreCase(format, "mp4")) {
-                    final boolean mp4WorkaroundState = MP4_WORKAROUND.get();
-                    final boolean supportAutoEnableMp4Workaround = false;
-                    if (!ENABLE_INTERNAL_MP4_PROGRESSIVE_SUPPORT) {
-                        plugin.getLogger().info("Skip unsupported progressive MP4: Disabled by developer");
-                        continue;
-                    } else if (!TRY_MP4.get()) {
-                        plugin.getLogger().info("Skip unsupported progressive MP4: Disabled by auto handling");
-                        continue;
-                    }
                     try {
                         final Browser brc = br.cloneBrowser();
                         brc.setFollowRedirects(true);
                         // no keep alive for this request
                         brc.getHeaders().put("Connection", "close");
                         brc.getPage(videoUrl);
-                        final List<HashMap<String, Object>> mp4Medias = plugin.restoreFromString(brc.toString(), TypeRef.LIST_HASHMAP);
+                        final List<Map<String, Object>> mp4Medias = (List<Map<String, Object>>) plugin.restoreFromString(brc.toString(), TypeRef.OBJECT);
                         if (mp4Medias.isEmpty()) {
                             plugin.getLogger().info("No MP4 media available for this item");
                             continue;
@@ -825,14 +815,6 @@ public class PornHubCom extends PluginForHost {
                     } catch (IOException ioe) {
                         plugin.getLogger().log(ioe);
                     } catch (final JSonMapperException jme) {
-                        /* TODO: 2023-11-15: Check if this old auto handling is still needed */
-                        if (!mp4WorkaroundState && supportAutoEnableMp4Workaround) {
-                            plugin.getLogger().info("Enable mp4 workaround");
-                            MP4_WORKAROUND.set(true);
-                        } else {
-                            plugin.getLogger().info("Disable mp4 support");
-                            TRY_MP4.set(false);
-                        }
                         plugin.getLogger().log(jme);
                         plugin.getLogger().info("Found invalid/broken mp4 progressive quality: " + videoUrl);
                     }
@@ -893,23 +875,6 @@ public class PornHubCom extends PluginForHost {
                     plugin.getLogger().info("Skipping unsupported media format: " + format);
                     continue;
                 }
-                /* TODO: 2023-11-15: Check if the code below is still needed. */
-                // final Boolean encrypted = mediaDefinition.get("encrypted") == null ? null : ((Boolean)
-                // mediaDefinition.get("encrypted")).booleanValue();
-                // if (encrypted == Boolean.TRUE) {
-                // final String decryptkey = (String) values.get("video_title");
-                // try {
-                // videoUrl = new BouncyCastleAESCounterModeDecrypt().decrypt(videoUrl, decryptkey, 256);
-                // } catch (Throwable t) {
-                // /* Fallback for stable version */
-                // videoUrl = AESCounterModeDecrypt(videoUrl, decryptkey, 256);
-                // }
-                // if (videoUrl != null && (videoUrl.startsWith("Error:") || !videoUrl.startsWith("http"))) {
-                // success = false;
-                // } else {
-                // success = true;
-                // }
-                // }
             }
         }
         if (qualities.isEmpty()) {
@@ -1270,8 +1235,8 @@ public class PornHubCom extends PluginForHost {
                 if (premiumExpired && isPremiumDomain(br.getHost())) {
                     /**
                      * Expired pornhub premium --> It should still be a valid free account --> We might need to access a special url which
-                     * redirects us to the pornhub free mainpage and sets the cookies. </br>
-                     * 2022-06-27: Old code but let's leave it in for now as we can't know if it is still needed.
+                     * redirects us to the pornhub free mainpage and sets the cookies. </br> 2022-06-27: Old code but let's leave it in for
+                     * now as we can't know if it is still needed.
                      */
                     logger.info("Expired premium --> Free account --> Trying to ensure that free login works");
                     final String pornhubMainpageCookieRedirectUrl = br.getRegex("\\'pornhubLink\\'\\s*?:\\s*?(?:\"|\\')(https?://(?:www\\.)?pornhub\\.(?:com|org)/[^<>\"\\']+)(?:\"|\\')").getMatch(0);
@@ -1319,8 +1284,7 @@ public class PornHubCom extends PluginForHost {
     }
 
     /**
-     * Checks login and sets account-type. </br>
-     * Expects browser instance to be logged in already (cookies need to be there).
+     * Checks login and sets account-type. </br> Expects browser instance to be logged in already (cookies need to be there).
      *
      * @throws Exception
      */
@@ -1586,15 +1550,7 @@ public class PornHubCom extends PluginForHost {
         }
     }
 
-    private static final AtomicBoolean MP4_WORKAROUND = new AtomicBoolean(false);
-    private static final AtomicBoolean TRY_MP4        = new AtomicBoolean(true);
-
     public static Browser prepBr(final Browser br) {
-        if (TRY_MP4.get() && MP4_WORKAROUND.get()) {
-            /* 2023-08-16: This doesn't work anymore! */
-            br.setCookie("http://pornhub.com/", "platform", "mac");
-            br.getHeaders().put("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/15.5 Safari/605.1.15");
-        }
         br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8");
         br.getHeaders().put("Accept-Language", "en-US,en;q=0.8,de;q=0.6");
         br.getHeaders().put("Accept-Charset", null);
