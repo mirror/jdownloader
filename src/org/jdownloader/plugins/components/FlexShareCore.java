@@ -285,6 +285,8 @@ public abstract class FlexShareCore extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 5 * 60 * 1000l);
         } else if (con.getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 5 * 60 * 1000l);
+        } else if (con.getResponseCode() == 503) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 503", 5 * 60 * 1000l);
         }
     }
 

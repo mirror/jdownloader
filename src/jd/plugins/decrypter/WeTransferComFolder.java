@@ -15,15 +15,16 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 
@@ -32,6 +33,7 @@ import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.http.requests.PostRequest;
 import jd.parser.Regex;
+import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DecrypterRetryException;
@@ -58,29 +60,37 @@ public class WeTransferComFolder extends PluginForDecrypt {
         return br;
     }
 
-    protected static final String patternShort           = "https?://(?:we\\.tl|shorturls\\.wetransfer\\.com|go\\.wetransfer\\.com)/([\\w\\-]+)";
-    protected static final String patternNormal          = "https?://(?:\\w+\\.)?wetransfer\\.com/downloads/(?:[a-f0-9]{46}/[a-f0-9]{46}/[a-f0-9]{4,12}|[a-f0-9]{46}/[a-f0-9]{4,12})";
-    protected static final String patternCollection      = "https?://(?:boards|collect)\\.wetransfer\\.com/board/([a-z0-9]+)";
-    // TODO: Add crawler support for boards
-    private static final Pattern  PATTERN_COLLECTION     = Pattern.compile("(?i)https?://(boards|collect)\\.wetransfer\\.com/board/([a-z0-9]+)");
-    private static Object         COLLECTION_OBTAIN_LOCK = new Object();
+    protected static final String patternShort                 = "https?://(?:we\\.tl|shorturls\\.wetransfer\\.com|go\\.wetransfer\\.com)/([\\w\\-]+)";
+    protected static final String patternNormal                = "https?://(?:\\w+\\.)?wetransfer\\.com/downloads/(?:[a-f0-9]{46}/[a-f0-9]{46}/[a-f0-9]{4,12}|[a-f0-9]{46}/[a-f0-9]{4,12})";
+    protected static final String patternCollection            = "https?://(?:boards|collect)\\.wetransfer\\.com/board/([a-z0-9]+)";
+    private static final Pattern  PATTERN_COLLECTION           = Pattern.compile("(?i)https?://(boards|collect)\\.wetransfer\\.com/board/([a-z0-9]+)");
+    private static Object         COLLECTION_OBTAIN_TOKEN_LOCK = new Object();
+
+    public static String getAPIToken(final Browser br) throws IOException, PluginException {
+        WeTransferCom.prepBRAPI(br);
+        /*
+         * 2019-09-30: E.g. {"device_token": "wt-android-<hash-length-8>-<hash-length-4>-<hash-length-4>-<hash-length-4>-<hash-length-12>"}
+         */
+        br.postPageRaw(WeTransferCom.API_BASE_AUTH + "/authorize", "{\"device_token\":\"wt-android-\"}");
+        final Map<String, Object> tokenResp = JSonStorage.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+        final String token = tokenResp.get("token").toString();
+        if (StringUtils.isEmpty(token)) {
+            /* Thi should never happen. */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        return tokenResp.get("token").toString();
+    }
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         String contenturl = param.getCryptedUrl();
         final Regex collection = new Regex(contenturl, patternCollection);
-        int offset = 20;
         if (collection.patternFind()) {
-            // TODO: Add support
-            final boolean unfinishedCodeAhead = true;
-            if (unfinishedCodeAhead || !DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
             final String collectionID = collection.getMatch(0);
             String token = null;
             boolean authed = false;
             int counter = 0;
-            synchronized (COLLECTION_OBTAIN_LOCK) {
+            synchronized (COLLECTION_OBTAIN_TOKEN_LOCK) {
                 token = this.getPluginConfig().getStringProperty("api_token");
                 do {
                     /* Clear old headers and cookies each loop */
@@ -88,22 +98,12 @@ public class WeTransferComFolder extends PluginForDecrypt {
                     WeTransferCom.prepBRAPI(br);
                     if (token == null) {
                         /* Only generate new token if needed */
-                        /*
-                         * 2019-09-30: E.g. {"device_token":
-                         * "wt-android-<hash-length-8>-<hash-length-4>-<hash-length-4>-<hash-length-4>-<hash-length-12>"}
-                         */
-                        br.postPageRaw(WeTransferCom.API_BASE_AUTH + "/authorize", "{\"device_token\":\"wt-android-\"}");
-                        final Map<String, Object> tokenResp = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
-                        token = tokenResp.get("token").toString();
-                        if (StringUtils.isEmpty(token)) {
-                            logger.warning("Failed to authorize");
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                        }
+                        token = getAPIToken(br);
                         /* Save token for to eventually re-use it later */
                         this.getPluginConfig().setProperty("api_token", token);
                     }
                     br.getHeaders().put("Authorization", "Bearer " + token);
-                    br.getPage(WeTransferCom.API_BASE_NORMAL + "/mobile/collections/" + collectionID + "?offset=" + offset);
+                    br.getPage(WeTransferCom.API_BASE_NORMAL + "/mobile/collections/" + collectionID);
                     if (counter >= 2) {
                         logger.info("Stopping because: Too many failed auth attempts");
                         break;
@@ -132,29 +132,57 @@ public class WeTransferComFolder extends PluginForDecrypt {
             if (total_items == 0) {
                 throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER, name);
             }
-            if (total_items > maxItemsPerPage) {
-                logger.warning("Cannot crawl more than " + maxItemsPerPage + " items because pagination hasn't been implemented and it is broken serverside");
-            }
+            final WeTransferCom hosterplugin = (WeTransferCom) this.getNewPluginForHostInstance(this.getHost());
+            List<Map<String, Object>> ressourcelist = (List<Map<String, Object>>) entries.get("items");
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(name);
             if (description != null) {
                 fp.setComment(description);
             }
-            final List<Map<String, Object>> ressourcelist = (List<Map<String, Object>>) entries.get("items");
-            for (final Map<String, Object> resource : ressourcelist) {
-                final String file_id = resource.get("id").toString();
-                final long filesize = ((Number) resource.get("size")).longValue();
-                final DownloadLink link = this.createDownloadlink(createDummylinkForHosterplugin("TODO", "TODO", file_id));
-                link.setFinalFileName(resource.get("name").toString());
-                link.setVerifiedFileSize(filesize);
-                link.setContentUrl(contenturl);
-                link.setAvailable(true);
-                link._setFilePackage(fp);
-                link.setProperty(WeTransferCom.PROPERTY_DIRECT_LINK, resource.get("download_url"));
-                link.setProperty(WeTransferCom.PROPERTY_COLLECTION_ID, resource.get("collection_id"));
-                link.setProperty(WeTransferCom.PROPERTY_COLLECTION_FILE_ID, resource.get("id"));
-                ret.add(link);
-            }
+            fp.setPackageKey("wetransfer://collection/" + collectionID);
+            int offset = 0;
+            final HashSet<String> dupes = new HashSet<String>();
+            do {
+                int numberofNewItems = 0;
+                for (final Map<String, Object> resource : ressourcelist) {
+                    final String fileID = resource.get("id").toString();
+                    if (!dupes.add(fileID)) {
+                        continue;
+                    }
+                    final long filesize = ((Number) resource.get("size")).longValue();
+                    final DownloadLink link = this.createDownloadlink("https://collect.wetransfer.com/board/" + collectionID + "/" + fileID);
+                    link.setDefaultPlugin(hosterplugin);
+                    link.setHost(hosterplugin.getHost());
+                    link.setFinalFileName(resource.get("name").toString());
+                    link.setVerifiedFileSize(filesize);
+                    link.setContentUrl(contenturl);
+                    link.setAvailable(true);
+                    link._setFilePackage(fp);
+                    link.setProperty(WeTransferCom.PROPERTY_DIRECT_LINK, resource.get("download_url"));
+                    link.setProperty(WeTransferCom.PROPERTY_DIRECT_LINK_EXPIRES_AT, resource.get("download_url_expires_at"));
+                    link.setProperty(WeTransferCom.PROPERTY_COLLECTION_ID, resource.get("collection_id"));
+                    link.setProperty(WeTransferCom.PROPERTY_COLLECTION_FILE_ID, resource.get("id"));
+                    ret.add(link);
+                    distribute(link);
+                    offset += 1;
+                    numberofNewItems++;
+                }
+                logger.info("Crawled offset " + offset + " | Found new items on this page: " + numberofNewItems + " | Found items so far: " + ret.size() + "/" + total_items);
+                if (ret.size() == total_items) {
+                    logger.info("Stopping because: Reached last page");
+                    break;
+                } else if (numberofNewItems < maxItemsPerPage) {
+                    logger.info("Stopping because: Current page contains less items than we expect to be on a full page");
+                    break;
+                } else if (this.isAbort()) {
+                    logger.info("Stopping because: Aborted by user");
+                    break;
+                } else {
+                    /* Continue to next page */
+                    br.getPage("/v2/mobile/collections/" + collectionID + "/items?offset=" + offset);
+                    ressourcelist = (List<Map<String, Object>>) restoreFromString(br.getRequest().getHtmlCode(), TypeRef.OBJECT);
+                }
+            } while (true);
         } else {
             WeTransferCom.prepBRWebsite(this.br);
             String shortID = new Regex(contenturl, patternShort).getMatch(0);
@@ -324,5 +352,10 @@ public class WeTransferComFolder extends PluginForDecrypt {
     @Override
     public int getMaxConcurrentProcessingInstances() {
         return 1;
+    }
+
+    @Override
+    public boolean hasCaptcha(CryptedLink link, Account acc) {
+        return false;
     }
 }
