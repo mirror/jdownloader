@@ -287,6 +287,10 @@ public abstract class PluginsC {
         return retLinks;
     }
 
+    /**
+     * Returns true if a user interaction in the form of a password-prompt can happen when processing this container. </br>
+     * Example: SFDL containers.
+     */
     protected boolean canBePasswordProtected() {
         return false;
     }
