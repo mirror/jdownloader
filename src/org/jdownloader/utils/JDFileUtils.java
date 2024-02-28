@@ -27,9 +27,6 @@ public class JDFileUtils extends Files {
         }
     }
 
-    /**
-     * @param f
-     */
     public static boolean isTrashSupported() {
         return supported;
     }

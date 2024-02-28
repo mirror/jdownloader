@@ -570,6 +570,9 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "No Traffic left" })
     String AccountController_updateAccountInfo_status_traffic_reached();
 
+    @Default(lngs = { "en" }, values = { "Ask if file should be deleted" })
+    String DeleteOption_ask();
+
     @Default(lngs = { "en" }, values = { "Don't delete any files" })
     String DeleteOption_no_delete();
 

@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins;
 
 import java.io.File;
@@ -22,10 +21,6 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import jd.controlling.linkcollector.LinkOriginDetails;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.nutils.Formatter;
 
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.uio.CloseReason;
@@ -44,23 +39,23 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.GeneralSettings;
-import org.jdownloader.settings.GeneralSettings.DeleteContainerAction;
+import org.jdownloader.settings.GeneralSettings.ContainerDeleteOption;
 import org.jdownloader.translate._JDT;
+import org.jdownloader.utils.JDFileUtils;
+
+import jd.controlling.linkcollector.LinkOriginDetails;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.nutils.Formatter;
 
 /**
  * Dies ist die Oberklasse für alle Plugins, die Containerdateien nutzen können
  *
  * @author astaldo/JD-Team
  */
-
 public abstract class PluginsC {
-
     private final Pattern  pattern;
-
     private final String   name;
-
     private final long     version;
-
     protected LogInterface logger = LogController.TRASH;
 
     public LogInterface getLogger() {
@@ -91,10 +86,8 @@ public abstract class PluginsC {
     public abstract PluginsC newPluginInstance();
 
     protected ArrayList<CrawledLink> cls             = new ArrayList<CrawledLink>();
-
     protected String                 md5;
     protected byte[]                 k;
-
     private boolean                  askFileDeletion = true;
     private final Matcher            matcher;
 
@@ -173,7 +166,7 @@ public abstract class PluginsC {
         try {
             if (askFileDeletion() == false) {
                 FileCreationManager.getInstance().delete(file, null);
-            } else if (cls.size() > 0 && askFileDeletion()) {
+            } else if (cls.size() > 0) {
                 switch (JsonConfig.create(GeneralSettings.class).getDeleteContainerFilesAfterAddingThemAction()) {
                 case ASK_FOR_DELETE:
                     final ConfirmDialog d = new ConfirmDialog(0, _JDT.T.AddContainerAction_delete_container_title(), _JDT.T.AddContainerAction_delete_container_msg(file.toString()), new AbstractIcon(IconKey.ICON_HELP, 32), _GUI.T.lit_yes(), _GUI.T.lit_no()) {
@@ -187,19 +180,26 @@ public abstract class PluginsC {
                     if (s.getCloseReason() == CloseReason.OK) {
                         FileCreationManager.getInstance().delete(file, null);
                         if (s.isDontShowAgainSelected()) {
-                            JsonConfig.create(GeneralSettings.class).setDeleteContainerFilesAfterAddingThemAction(DeleteContainerAction.DELETE);
+                            JsonConfig.create(GeneralSettings.class).setDeleteContainerFilesAfterAddingThemAction(ContainerDeleteOption.DELETE);
                         }
                     } else {
                         if (s.isDontShowAgainSelected()) {
-                            JsonConfig.create(GeneralSettings.class).setDeleteContainerFilesAfterAddingThemAction(DeleteContainerAction.DONT_DELETE);
+                            JsonConfig.create(GeneralSettings.class).setDeleteContainerFilesAfterAddingThemAction(ContainerDeleteOption.DONT_DELETE);
                         }
                     }
                     break;
                 case DELETE:
                     FileCreationManager.getInstance().delete(file, null);
                     break;
+                case RECYCLE:
+                    try {
+                        JDFileUtils.moveToTrash(file);
+                    } catch (IOException e) {
+                        logger.log(e);
+                        logger.info("Could not move file to recycle bin: " + file);
+                    }
+                    break;
                 case DONT_DELETE:
-
                 }
             }
         } catch (DialogNoAnswerException e) {
@@ -276,7 +276,6 @@ public abstract class PluginsC {
             /*
              * damn, something must have gone really really bad, lets keep the log
              */
-
             logger.log(e);
         }
         if (retLinks == null && showException) {
@@ -286,5 +285,9 @@ public abstract class PluginsC {
             logger.severe("ContainerPlugin out of date: " + this + " :" + getVersion());
         }
         return retLinks;
+    }
+
+    protected boolean canBePasswordProtected() {
+        return false;
     }
 }

@@ -1126,7 +1126,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                                             if (!DocumentExtensions.HTML.equals(extension.getSource()) && !DocumentExtensions.PHP.equals(extension.getSource())) {
                                                 filenameForPackagenameDerivation = fileName;
                                             } else {
-                                                final String tmpFileName = fileName.replaceFirst("\\.(html?|php)$", "");
+                                                final String tmpFileName = fileName.replaceFirst("(?i)\\.(html?|php)$", "");
                                                 final ExtensionsFilterInterface tmpExtension = CompiledFiletypeFilter.getExtensionsFilterInterface(Files.getExtension(tmpFileName));
                                                 if (tmpExtension != null) {
                                                     filenameForPackagenameDerivation = tmpFileName;

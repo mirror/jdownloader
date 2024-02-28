@@ -963,6 +963,7 @@ public class HLSDownloader extends DownloadInterface {
             br.setLoadLimit(Integer.MAX_VALUE);
             try {
                 ret = M3U8Playlist.loadM3U8(buildDownloadUrl(m3uUrl), br);
+                this.currentConnection = br.getHttpConnection();
                 return ret;
             } finally {
                 br.setLoadLimit(was);

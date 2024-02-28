@@ -538,10 +538,12 @@ public class OldRAFDownload extends DownloadInterface {
                  * TODO: Review this: Maybe don't correct filenames if they were forced by the user(?) On the other hand we may know which
                  * file-extension is the correct one. I'd do it like browsers do it and correct the file-extension.
                  */
+                /* Maybe only correct all file-types except for document file-types (otherwise .log may be renamed to .log.txt). */
                 /* Fix wrong file-extension */
-                final String ext = Plugin.getExtensionFromMimeTypeStatic(connection.getContentType());
-                if (ext != null) {
-                    this.downloadable.setFinalFileName(Plugin.getCorrectOrApplyFileNameExtension(this.downloadable.getName(), "." + ext));
+                // final String extCurrent = Plugin.getFileNameExtensionFromString(this.downloadable.getName());
+                final String extNew = Plugin.getExtensionFromMimeTypeStatic(connection.getContentType());
+                if (extNew != null) {
+                    this.downloadable.setFinalFileName(Plugin.getCorrectOrApplyFileNameExtension(this.downloadable.getName(), "." + extNew));
                 }
             }
             if (connection == null || !connection.isOK()) {

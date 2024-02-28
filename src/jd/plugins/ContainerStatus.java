@@ -13,7 +13,6 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins;
 
 import java.io.File;
@@ -23,18 +22,17 @@ import org.appwork.utils.formatter.StringFormatter;
 import org.jdownloader.logging.LogController;
 
 public class ContainerStatus {
-
-    public static final int STATUS_ABORT    = 1 << 3;
-    public static final int STATUS_FAILED   = 1 << 2;
-    public static final int STATUS_FINISHED = 1 << 1;
-    public static final int TODO            = 1 << 0;
+    public static final int STATUS_INVALID_PASSWORD = 1 << 4;
+    public static final int STATUS_ABORT            = 1 << 3;
+    public static final int STATUS_FAILED           = 1 << 2;
+    public static final int STATUS_FINISHED         = 1 << 1;
+    public static final int TODO                    = 1 << 0;
     private File            container;
-    private int             status          = TODO;
+    private int             status                  = TODO;
     private String          statusText;
     private int             latestStatus;
 
     public ContainerStatus() {
-
     }
 
     public ContainerStatus(File lc) {
@@ -52,7 +50,6 @@ public class ContainerStatus {
      * @return
      */
     public boolean hasStatus(int status) {
-
         return (this.status & status) > 0;
     }
 
@@ -98,9 +95,7 @@ public class ContainerStatus {
                         if (value == latestStatus) {
                             latest = "latest:" + field.getName() + "\r\n";
                             sb.append(StringFormatter.fillString(Integer.toBinaryString(value), "0", "", 32) + " |" + field.getName() + "\r\n");
-
                         } else {
-
                             sb.append(StringFormatter.fillString(Integer.toBinaryString(value), "0", "", 32) + " |" + field.getName() + "\r\n");
                         }
                     }
@@ -111,9 +106,7 @@ public class ContainerStatus {
                 }
             }
         }
-
         String ret = latest + sb;
-
         if (statusText != null) {
             ret += "StatusText: " + statusText + "\r\n";
         }

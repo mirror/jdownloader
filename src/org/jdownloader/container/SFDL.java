@@ -12,18 +12,26 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import javax.xml.parsers.DocumentBuilder;
 
+import org.appwork.storage.config.JsonConfig;
+import org.appwork.uio.CloseReason;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.XML;
+import org.appwork.utils.encoding.Base64;
+import org.jdownloader.gui.dialog.AskContainerPasswordDialog;
+import org.jdownloader.gui.dialog.AskContainerPasswordDialogInterface;
+import org.w3c.dom.Document;
+import org.w3c.dom.NodeList;
+
+import jd.controlling.container.ContainerConfig;
 import jd.controlling.linkcrawler.ArchiveInfo;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.parser.Regex;
 import jd.plugins.ContainerStatus;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.PluginException;
 import jd.plugins.PluginsC;
-
-import org.appwork.utils.XML;
-import org.appwork.utils.encoding.Base64;
-import org.w3c.dom.Document;
-import org.w3c.dom.NodeList;
 
 public class SFDL extends PluginsC {
     /* Documentation: https://github.com/n0ix/SFDL.NET/wiki/How-it-Works-(SFDL-File-documentation) */
@@ -36,7 +44,9 @@ public class SFDL extends PluginsC {
     }
 
     /* Debug-test filename scheme containing a title and file-password. */
-    public static final Pattern PATTERN_COMMON_FILENAME_SCHEME_WITH_PASSWORD = Pattern.compile("^([^\\{]+)\\{\\{(.*?)\\}\\}\\.sfdl$", Pattern.CASE_INSENSITIVE);
+    public static final Pattern         PATTERN_COMMON_FILENAME_SCHEME_WITH_PASSWORD = Pattern.compile("^([^\\{]+)\\{\\{(.*?)\\}\\}\\.sfdl$", Pattern.CASE_INSENSITIVE);
+    private final Object                PWLOCK                                       = new Object();
+    public static final ContainerConfig CFG                                          = JsonConfig.create(ContainerConfig.class);
 
     public ContainerStatus callDecryption(final File sfdlFile) {
         final ContainerStatus cs = new ContainerStatus(sfdlFile);
@@ -66,28 +76,60 @@ public class SFDL extends PluginsC {
             } else {
                 fp.setName(sfdlFile.getName());
             }
-            String password = null;
+            String validpassword = null;
             if (sdfl_Encrypted) {
                 logger.info("SFDL is password protected");
                 if (passwordFromFilename == null) {
                     throw new Exception("Password is not given in filename");
                 }
-                password = passwordFromFilename;
-                // TODO: Maybe use extraction password list here? Or a dedicated list?
-                String decodedValue = decrypt(sfdl_Host, password);
+                final List<String> pwlist = CFG.getSFDLPasswordList();
+                if (passwordFromFilename != null) {
+                    /* If password is given inside filename, try this one first. */
+                    pwlist.remove(passwordFromFilename);
+                    pwlist.add(0, passwordFromFilename);
+                }
+                String decodedValue = null;
+                if (pwlist.size() > 0) {
+                    for (final String pw : pwlist) {
+                        decodedValue = decrypt(sfdl_Host, pw);
+                        if (decodedValue != null) {
+                            validpassword = pw;
+                            break;
+                        }
+                    }
+                    if (validpassword == null) {
+                        logger.info("Failed to find valid password in passwordlist");
+                    }
+                }
                 if (decodedValue == null) {
-                    logger.info("Failed due to invalid password: " + password);
-                    // TODO: Add container state STATUS_INVALID_PASSWORD
-                    cs.setStatus(ContainerStatus.STATUS_FINISHED);
+                    /* Failed to find valid password in passwordlist -> Ask user */
+                    int counter = 0;
+                    do {
+                        final String pw = this.getUserInputContainerPassword(sfdlFile);
+                        if (pw != null) {
+                            decodedValue = decrypt(sfdl_Host, pw);
+                            if (decodedValue != null) {
+                                validpassword = pw;
+                                break;
+                            }
+                        }
+                        counter++;
+                    } while (counter <= 2);
+                }
+                if (decodedValue == null) {
+                    logger.info("Failed to find password");
+                    cs.setStatus(ContainerStatus.STATUS_INVALID_PASSWORD);
                     return cs;
                 }
+                /* Store valid password so we can re-use it next time an SFDL container is added. */
+                this.addPassword(validpassword);
                 sfdl_Host = decodedValue;
                 /* Decrypt all other values */
-                sfdl_Description = decrypt(sfdl_Description, password);
-                sfdl_Uploader = decrypt(sfdl_Uploader, password);
-                sfdl_Username = decrypt(sfdl_Username, password);
-                sfdl_Password = decrypt(sfdl_Password, password);
-                sfdl_DefaultPath = decrypt(sfdl_DefaultPath, password);
+                sfdl_Description = decrypt(sfdl_Description, validpassword);
+                sfdl_Uploader = decrypt(sfdl_Uploader, validpassword);
+                sfdl_Username = decrypt(sfdl_Username, validpassword);
+                sfdl_Password = decrypt(sfdl_Password, validpassword);
+                sfdl_DefaultPath = decrypt(sfdl_DefaultPath, validpassword);
                 if (sfdl_Username == null || sfdl_Password == null) {
                     // TODO: Not sure if this is necessary.
                     sfdl_Username = "anonymous";
@@ -102,7 +144,7 @@ public class SFDL extends PluginsC {
                 for (int i = 0; i < downloadFiles.getLength(); i++) {
                     String value = downloadFiles.item(i).getTextContent();
                     if (sdfl_Encrypted) {
-                        value = decrypt(value, password);
+                        value = decrypt(value, validpassword);
                     }
                     sfdl_BulkFolderPathArray.add(value);
                 }
@@ -112,7 +154,7 @@ public class SFDL extends PluginsC {
                 for (int i = 0; i < downloadFiles.getLength(); i++) {
                     String value = downloadFiles.item(i).getTextContent();
                     if (sdfl_Encrypted) {
-                        value = decrypt(value, password);
+                        value = decrypt(value, validpassword);
                     }
                     sfdl_FileListArray.add(value);
                     sfdl_FileSizeArray.add(Long.valueOf(fileSizes.item(i).getTextContent()).longValue());
@@ -128,7 +170,7 @@ public class SFDL extends PluginsC {
                 for (int i = 0; i < downloadFiles.getLength(); i++) {
                     String ftpFolderPath = downloadFiles.item(i).getTextContent();
                     if (sdfl_Encrypted) {
-                        ftpFolderPath = decrypt(ftpFolderPath, password);
+                        ftpFolderPath = decrypt(ftpFolderPath, validpassword);
                     }
                     String ftpurl = "ftp://";
                     if (sfdl_AuthRequired) {
@@ -151,7 +193,7 @@ public class SFDL extends PluginsC {
                 for (int i = 0; i < downloadFiles.getLength(); i++) {
                     String ftpFilePath = downloadFiles.item(i).getTextContent();
                     if (sdfl_Encrypted) {
-                        ftpFilePath = decrypt(ftpFilePath, password);
+                        ftpFilePath = decrypt(ftpFilePath, validpassword);
                     }
                     String ftpurl = "ftp://" + sfdl_Username;
                     if (sfdl_AuthRequired) {
@@ -168,7 +210,6 @@ public class SFDL extends PluginsC {
                         final long filesize = Long.valueOf(fileSizes.item(i).getTextContent()).longValue();
                         ftpfile.setDownloadSize(filesize);
                     }
-                    // TODO: Add setting for this
                     ftpfile.setAvailable(true);
                     ret.add(ftpfile);
                 }
@@ -189,6 +230,36 @@ public class SFDL extends PluginsC {
             logger.log(e);
             cs.setStatus(ContainerStatus.STATUS_FAILED);
             return cs;
+        }
+    }
+
+    /** Asks user for container password. */
+    public String getUserInputContainerPassword(final File file) throws PluginException {
+        // TODO: Maybe throw exception on abort
+        final AskContainerPasswordDialogInterface handle = UIOManager.I().show(AskContainerPasswordDialogInterface.class, new AskContainerPasswordDialog("Enter container password", "Enter password for container file: " + file.getName(), file));
+        if (handle.getCloseReason() == CloseReason.OK) {
+            final String password = handle.getText();
+            return password;
+        } else {
+            return null;
+        }
+    }
+
+    /** Adds valid SFDL container password to list of container passwords. */
+    public void addPassword(final String pw) {
+        if (StringUtils.isEmpty(pw)) {
+            return;
+        }
+        synchronized (PWLOCK) {
+            List<String> pwList = CFG.getSFDLPasswordList();
+            if (pwList == null) {
+                pwList = new ArrayList<String>();
+            }
+            /* avoid duplicates */
+            pwList.remove(pw);
+            /* Add valid password to first position */
+            pwList.add(0, pw);
+            CFG.setSFDLPasswordList(pwList);
         }
     }
 
@@ -230,6 +301,11 @@ public class SFDL extends PluginsC {
 
     @Override
     public boolean hideLinks() {
+        return true;
+    }
+
+    @Override
+    protected boolean canBePasswordProtected() {
         return true;
     }
 }

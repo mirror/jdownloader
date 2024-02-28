@@ -1,7 +1,5 @@
 package org.jdownloader.extensions.extraction;
 
-import jd.plugins.ExtensionConfigInterface;
-
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DefaultEnumValue;
@@ -13,6 +11,8 @@ import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.appwork.storage.config.annotations.SpinnerValidator;
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.settings.IfFileExistsAction;
+
+import jd.plugins.ExtensionConfigInterface;
 
 public interface ExtractionConfig extends ExtensionConfigInterface {
     @DefaultStringArrayValue(value = { "##Lines with XX are comments", "##Skip deep extraction of archives that contain binary files", ".*\\.exe", ".*\\.msi", ".*\\.bat", ".xbe", ".elf", ".sh" })
@@ -41,7 +41,7 @@ public interface ExtractionConfig extends ExtensionConfigInterface {
 
     @DefaultJsonObject("[]")
     @AboutConfig
-    @DescriptionForConfigEntry("A List of passwords for automatic extraction of password protected archives.")
+    @DescriptionForConfigEntry("A list of passwords for automatic extraction of password protected archives.")
     java.util.List<String> getPasswordList();
 
     void setPasswordList(java.util.List<String> list);
@@ -51,19 +51,19 @@ public interface ExtractionConfig extends ExtensionConfigInterface {
      *
      * @return
      */
-    @org.appwork.storage.config.annotations.DescriptionForConfigEntry("Only use subfolders if the archive ROOT contains at least *** files")
+    @DescriptionForConfigEntry("Only use subfolders if the archive ROOT contains at least *** files")
     @AboutConfig
     @DefaultIntValue(0)
     @SpinnerValidator(min = 0, max = 30)
     int getSubPathMinFilesTreshhold();
 
-    @org.appwork.storage.config.annotations.DescriptionForConfigEntry("Only use subfolders if the archive ROOT contains at least *** folders")
+    @DescriptionForConfigEntry("Only use subfolders if the archive ROOT contains at least *** folders")
     @AboutConfig
     @DefaultIntValue(0)
     @SpinnerValidator(min = 0, max = 30)
     int getSubPathMinFoldersTreshhold();
 
-    @org.appwork.storage.config.annotations.DescriptionForConfigEntry("Only use subfolders if the archive ROOT contains at least *** folders or folders")
+    @DescriptionForConfigEntry("Only use subfolders if the archive ROOT contains at least *** folders or folders")
     @AboutConfig
     @DefaultIntValue(2)
     @SpinnerValidator(min = 0, max = 30)
