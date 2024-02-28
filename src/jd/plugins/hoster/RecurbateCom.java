@@ -188,12 +188,15 @@ public class RecurbateCom extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String dateStr = br.getRegex("(?i)show recorded at (\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2})").getMatch(0);
+        String dateStr = br.getRegex("show recorded at (\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2})").getMatch(0);
         if (dateStr == null) {
-            dateStr = br.getRegex("(?i)show on (\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2})").getMatch(0);
+            dateStr = br.getRegex("show on (\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2})").getMatch(0);
         }
         setDate(link, dateStr);
-        String performer = br.getRegex("(?i)/performer/([^/\"<>]+)").getMatch(0);
+        String performer = br.getRegex("class=\"performer\"[^<]*href=\"/performer/([^\"]+)\"").getMatch(0);
+        if (performer == null) {
+            performer = br.getRegex("href=\"/performer/([^/\"]+)/similar\"[^>]*>\\s*See all similar recordings").getMatch(0);
+        }
         if (performer != null) {
             performer = Encoding.htmlDecode(performer).trim();
             link.setProperty(PROPERTY_USER, performer);
