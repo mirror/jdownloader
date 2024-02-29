@@ -79,9 +79,6 @@ public class SFDL extends PluginsC {
             String validpassword = null;
             if (sdfl_Encrypted) {
                 logger.info("SFDL is password protected");
-                if (passwordFromFilename == null) {
-                    throw new Exception("Password is not given in filename");
-                }
                 final List<String> pwlist = CFG.getSFDLPasswordList();
                 if (passwordFromFilename != null) {
                     /* If password is given inside filename, try this one first. */
@@ -93,6 +90,7 @@ public class SFDL extends PluginsC {
                     for (final String pw : pwlist) {
                         decodedValue = decrypt(sfdl_Host, pw);
                         if (decodedValue != null) {
+                            logger.info("Found valid password in passwordlist: " + pw);
                             validpassword = pw;
                             break;
                         }
@@ -109,8 +107,11 @@ public class SFDL extends PluginsC {
                         if (pw != null) {
                             decodedValue = decrypt(sfdl_Host, pw);
                             if (decodedValue != null) {
+                                logger.info("User entered valid password: " + pw);
                                 validpassword = pw;
                                 break;
+                            } else {
+                                logger.info("User entered invalid password: " + pw);
                             }
                         }
                         counter++;
