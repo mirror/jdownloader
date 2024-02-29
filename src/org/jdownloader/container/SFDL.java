@@ -251,10 +251,7 @@ public class SFDL extends PluginsC {
             return;
         }
         synchronized (PWLOCK) {
-            List<String> pwList = CFG.getSFDLPasswordList();
-            if (pwList == null) {
-                pwList = new ArrayList<String>();
-            }
+            final List<String> pwList = CFG.getSFDLPasswordList();
             /* avoid duplicates */
             pwList.remove(pw);
             /* Add valid password to first position */

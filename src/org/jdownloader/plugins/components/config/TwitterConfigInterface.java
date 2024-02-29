@@ -20,7 +20,6 @@ public interface TwitterConfigInterface extends PluginConfigInterface {
     final String                    text_CrawlURLsInsideTweetText                            = "Crawl URLs inside post text?\r\nWarning: This may result in endless crawling activity!";
     final String                    text_RegexWhitelistForCrawledUrlsInTweetText             = "RegEx whitelist for crawled URLs in tweet text e.g. '(?i).*(site\\.tld|site2\\.tld).*' [Empty = Allow all URLs]";
     final String                    text_CrawlVideoThumbnail                                 = "Crawl video thumbnail?";
-    final String                    text_PreferHLSVideoDownload                              = "Videos: Prefer HLS over http download?";
     final String                    text_GlobalRequestIntervalLimitApiTwitterComMilliseconds = "Define global request limit for api.twitter.com in milliseconds (0 = no limit)";
     final String                    text_GlobalRequestIntervalLimitTwimgComMilliseconds      = "Define global request limit for twimg.com in milliseconds (0 = no limit)";
     final String                    text_ProfileCrawlerWaittimeBetweenPaginationMilliseconds = "Profile crawler: Wait time between pagination requests in milliseconds";
@@ -64,7 +63,7 @@ public interface TwitterConfigInterface extends PluginConfigInterface {
         }
 
         public String getPreferHLSVideoDownload_label() {
-            return text_PreferHLSVideoDownload;
+            return "Videos: Prefer HLS over progressive download?\r\nWarning: Videos have no sound!";
         }
 
         public String getGlobalRequestIntervalLimitApiTwitterComMilliseconds_label() {
@@ -233,7 +232,7 @@ public interface TwitterConfigInterface extends PluginConfigInterface {
 
     @DefaultBooleanValue(false)
     @AboutConfig
-    @DescriptionForConfigEntry(text_PreferHLSVideoDownload)
+    @DescriptionForConfigEntry("Warning: videos may have no audio!")
     @Order(50)
     boolean isPreferHLSVideoDownload();
 

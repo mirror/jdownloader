@@ -8,6 +8,7 @@ import org.appwork.storage.config.annotations.CustomStorageName;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DefaultEnumValue;
 import org.appwork.storage.config.annotations.DefaultJsonObject;
+import org.appwork.storage.config.annotations.DefaultOnNull;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.appwork.storage.config.annotations.LabelInterface;
 import org.jdownloader.translate._JDT;
@@ -16,6 +17,7 @@ import org.jdownloader.translate._JDT;
 public interface ContainerConfig extends ConfigInterface {
     @AboutConfig
     @DefaultBooleanValue(true)
+    @DefaultOnNull
     @DescriptionForConfigEntry("If Enabled, JDownloader will save the linkgrabber list when you exit jd, and restore it on next startup")
     boolean isSaveLinkgrabberListEnabled();
 
@@ -50,12 +52,14 @@ public interface ContainerConfig extends ConfigInterface {
 
     @AboutConfig
     @DefaultEnumValue("DONT_DELETE")
+    @DefaultOnNull
     @DescriptionForConfigEntry("What Action should be performed after adding a container (DLC RSDF,METALINK,CCF,...)")
     ContainerDeleteOption getDeleteContainerFilesAfterAddingThemAction();
 
     void setDeleteContainerFilesAfterAddingThemAction(ContainerDeleteOption action);
 
     @DefaultJsonObject("[]")
+    @DefaultOnNull
     @AboutConfig
     @DescriptionForConfigEntry("A list of passwords for automatic handling of .SFDL FTP containers.")
     List<String> getSFDLPasswordList();

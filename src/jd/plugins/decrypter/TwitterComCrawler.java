@@ -24,12 +24,10 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
@@ -41,7 +39,6 @@ import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.Time;
 import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.net.URLHelper;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.notify.BasicNotify;
@@ -191,6 +188,12 @@ public class TwitterComCrawler extends PluginForDecrypt {
         return param.getCryptedUrl().replaceFirst("(?i)https?://(www\\.|mobile\\.)?twitter\\.com/", "https://" + this.getHost() + "/");
     }
 
+    public static enum ProfileCrawlMode {
+        ALL_ITEMS,
+        LIKES,
+        MEDIA
+    }
+
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, final ProgressController progress) throws Exception {
         this.resumeURL = param.getDownloadLink() != null ? param.getDownloadLink().getStringProperty(PROPERTY_RESUME_URL) : null;
@@ -251,12 +254,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
             final String tweetID = singletweet.getMatch(1);
             return this.crawlSingleTweet(account, username, tweetID);
         } else {
-            final String username = new Regex(contenturl, TYPE_USER_ALL).getMatch(0);
-            if (StringUtils.endsWithCaseInsensitive(contenturl, "/likes")) {
-                return this.crawlUser(param, account, username, true);
-            } else {
-                return this.crawlUser(param, account, username, false);
-            }
+            return this.crawlUser(param, account, contenturl);
         }
     }
 
@@ -379,7 +377,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
             /* Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dupeListForProfileCrawlerTweetIDs.clear();
+        this.resetUglyGlobalVariables();
         final boolean preferNewWay20230811 = true;
         if (preferNewWay20230811) {
             // final String queryID = this.getGraphqlQueryID("TweetResultByRestId");
@@ -894,13 +892,25 @@ public class TwitterComCrawler extends PluginForDecrypt {
         return formatTwitterDateFromDate(new Date(timestamp));
     }
 
-    private ArrayList<DownloadLink> crawlUser(final CryptedLink param, final Account account, final String username, final boolean crawlUserLikes) throws Exception {
+    private ArrayList<DownloadLink> crawlUser(final CryptedLink param, final Account account, final String contenturl) throws Exception {
+        final String username = new Regex(contenturl, TYPE_USER_ALL).getMatch(0);
         if (StringUtils.isEmpty(username)) {
             throw new IllegalArgumentException();
         }
-        if (crawlUserLikes && account == null) {
+        final ProfileCrawlMode mode;
+        if (contenturl.contains("/likes")) {
+            mode = ProfileCrawlMode.LIKES;
+        } else if (contenturl.contains("/media")) {
+            mode = ProfileCrawlMode.MEDIA;
+        } else {
+            mode = ProfileCrawlMode.ALL_ITEMS;
+        }
+        if (mode == ProfileCrawlMode.LIKES && account == null) {
             logger.info("Account required to crawl all liked items of a user");
             throw new DecrypterRetryException(RetryReason.NO_ACCOUNT, "ACCOUNT_REQUIRED_TO_CRAWL_LIKED_ITEMS_OF_PROFILE_" + username, "Account is required to crawl liked items of profiles.");
+        } else if (mode == ProfileCrawlMode.MEDIA && account == null) {
+            logger.info("Account required to crawl all media items of a user");
+            throw new DecrypterRetryException(RetryReason.NO_ACCOUNT, "ACCOUNT_REQUIRED_TO_CRAWL_MEDIA_ITEMS_OF_PROFILE_" + username, "Account is required to crawl media items of profiles.");
         }
         final String warningtextNoAccount = "You did not add a Twitter account to JDownloader or you've disabled it.\r\nAdd your twitter.com account under: Settings -> Account Manager -> Add";
         if (account == null) {
@@ -910,7 +920,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
         if (account == null && crawlRetweets) {
             displayBubblenotifyMessage("Profile crawler " + username + " | Warning", "Results may be incomplete!\r\nYou've enabled re-tweet crawling in twitter plugin settings.\r\nTwitter is sometimes hiding Re-Tweets when users are not logged in.\r\n" + warningtextNoAccount);
         }
-        return this.crawlUserViaGraphqlAPI(param, username, account, crawlUserLikes);
+        return this.crawlUserViaGraphqlAPI(param, username, account, mode);
     }
 
     private final String TWITTER_PROFILE_PACKAGE_KEY_PREFIX       = "twitterprofile://";
@@ -968,263 +978,27 @@ public class TwitterComCrawler extends PluginForDecrypt {
         }
     }
 
-    /**
-     * Crawls only tweets that were posted by the profile in given URL, no re-tweets!!! </br>
-     * 2024-02-07: Doesn't work anymore (API call returns blank page).
-     */
-    @Deprecated
-    private ArrayList<DownloadLink> crawlUserViaAPI(final String username, final boolean crawlUserLikes, final CryptedLink param, final Account account) throws Exception {
-        logger.info("Crawling user profile via API");
-        if (username == null) {
-            /* Developer mistake */
-            throw new IllegalArgumentException();
-        }
-        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        this.prepareAPI(br, account);
-        final Map<String, Object> user = this.getUserInfo(br, account, username);
-        final List<String> pinned_tweet_ids_str = (List<String>) user.get("pinned_tweet_ids_str");
-        final String userID = user.get("id_str").toString();
-        /* = number of tweets */
-        // final int tweet_count = ((Number) user.get("statuses_count")).intValue();
-        /* = number of tweets containing media (can be lower [ar also higher?] than "statuses_count") */
-        final int media_count = ((Number) user.get("media_count")).intValue();
-        /* Grab only content posted by user or grab everything from his timeline e.g. also re-tweets. */
-        final String content_type;
-        Integer maxCount = null;
-        final int expected_items_per_page = 20;
-        final UrlQuery query = new UrlQuery();
-        query.add("include_profile_interstitial_type", "1");
-        query.add("include_blocking", "1");
-        query.add("include_blocked_by", "1");
-        query.add("include_followed_by", "1");
-        query.add("include_want_retweets", "1");
-        query.add("include_mute_edge", "1");
-        query.add("include_can_dm", "1");
-        query.add("include_can_media_tag", "1");
-        query.add("skip_status", "1");
-        query.add("cards_platform", "Web-12");
-        query.add("include_cards", "1");
-        /* 2020-08-24: Not required anymore */
-        // query.add("include_composer_source", "true");
-        query.add("include_quote_count", "true");
-        query.add("c", "true");
-        query.add("include_reply_count", "1");
-        query.add("tweet_mode", "extended");
-        query.add("include_entities", "true");
-        query.add("include_user_entities", "true");
-        query.add("include_ext_media_color", "true");
-        query.add("include_ext_media_availability", "true");
-        query.add("include_ext_sensitive_media_warning", "true");
-        query.add("send_error_codes", "true");
-        query.add("simple_quoted_tweet", "true");
-        final boolean allowCrawlTweetsOfOtherUsers;
-        final FilePackage fp = FilePackage.getInstance();
-        if (crawlUserLikes) {
-            /* Crawl all liked items of a user */
-            logger.info("Crawling all liked items of user " + username);
-            content_type = "favorites";
-            final int favoritesCount = ((Number) user.get("favourites_count")).intValue();
-            if (favoritesCount == 0) {
-                ret.add(getDummyErrorProfileContainsNoLikedItems(username));
-                return ret;
-            }
-            maxCount = favoritesCount;
-            query.append("simple_quoted_tweets", "true", false);
-            query.append("sorted_by_time", "true", false);
-            fp.setName(username + " - likes");
-            fp.setPackageKey(TWITTER_PROFILE_LIKES_PACKAGE_KEY_PREFIX + userID);
-            allowCrawlTweetsOfOtherUsers = true;
-        } else {
-            logger.info("Crawling self posted media only from user: " + username);
-            if (media_count == 0) {
-                ret.add(getDummyErrorProfileContainsNoMediaItems(username));
-                return ret;
-            }
-            content_type = "media";
-            maxCount = media_count;
-            fp.setName(username);
-            fp.setPackageKey(TWITTER_PROFILE_PACKAGE_KEY_PREFIX + userID);
-            allowCrawlTweetsOfOtherUsers = false;
-        }
-        query.append("userId", userID, false);
-        query.append("count", expected_items_per_page + "", false);
-        query.append("ext", "mediaStats,cameraMoment", true);
-        final String addedURLWithoutParams = URLHelper.getUrlWithoutParams(param.getCryptedUrl());
-        final UrlQuery addedURLQuery = UrlQuery.parse(resumeURL);
-        int totalCrawledTweetsCount = 0;
-        int page = 1;
-        int numberofPagesInARowWithoutResult = 0;
-        final int maxNumberofPagesInARowWithoutResult = 5;
-        String nextCursor = null;
-        if (this.preGivenPageNumber != null && this.preGivenNumberOfTotalWalkedThroughTweetsCount != null && this.preGivenNextCursor != null) {
-            /* Resume from last state */
-            page = this.preGivenPageNumber.intValue();
-            totalCrawledTweetsCount = this.preGivenNumberOfTotalWalkedThroughTweetsCount.intValue();
-            nextCursor = this.preGivenNextCursor;
-        }
-        final TwitterConfigInterface cfg = PluginJsonConfig.get(TwitterConfigInterface.class);
-        final HashSet<String> cursorDupes = new HashSet<String>();
-        final String apiURL = API_BASE_v2 + "/timeline/" + content_type + "/" + userID + ".json";
-        tweetTimeline: do {
-            final UrlQuery thisquery = query;
-            if (!StringUtils.isEmpty(nextCursor)) {
-                thisquery.append("cursor", nextCursor, true);
-            }
-            getPage(apiURL + "?" + thisquery.toString());
-            handleErrorsAPI(this.br);
-            final Map<String, Object> root = JavaScriptEngineFactory.jsonToJavaMap(br.getRequest().getHtmlCode());
-            final Map<String, Object> globalObjects = (Map<String, Object>) root.get("globalObjects");
-            final Map<String, Object> users = (Map<String, Object>) globalObjects.get("users");
-            final List<Object> pagination_info = (List<Object>) JavaScriptEngineFactory.walkJson(root, "timeline/instructions/{0}/addEntries/entries");
-            final Map<String, Object> tweetMap = (Map<String, Object>) globalObjects.get("tweets");
-            final Iterator<Entry<String, Object>> iterator = tweetMap.entrySet().iterator();
-            Long lastCrawledTweetTimestamp = null;
-            final List<DownloadLink> allowedResults = new ArrayList<DownloadLink>();
-            boolean stopBecauseReachedUserDefinedMaxItemsLimit = false;
-            final HashSet<DownloadLink> skippedResultsByMaxDate = new HashSet<DownloadLink>();
-            int skippedTweetsByUsernameMismatch = 0;
-            while (iterator.hasNext()) {
-                final Map<String, Object> tweet = (Map<String, Object>) iterator.next().getValue();
-                final String tweetID = tweet.get("id").toString();
-                final String thisTweetUserID = tweet.get("user_id_str").toString();
-                final Map<String, Object> userWhoPostedThisTweet = (Map<String, Object>) users.get(thisTweetUserID);
-                if (!allowCrawlTweetsOfOtherUsers && !thisTweetUserID.equals(userID)) {
-                    /**
-                     * 2023-12-20: Some users got conversations or some strange other posts (ads?) inside their profiles which were not
-                     * posted by them. We want to skip those. </br>
-                     * Reference forum thread: https://board.jdownloader.org/showthread.php?t=94805 </br>
-                     * Example profile where this handling is relevant: https://twitter.com/ArcheWorld_NFT
-                     */
-                    logger.info("Skipping tweet of other user " + thisTweetUserID + " because we are currently only crawling Tweets of userID " + userID);
-                    skippedTweetsByUsernameMismatch++;
-                    continue;
-                }
-                final List<DownloadLink> thisResults = crawlTweetMap(username, tweet, userWhoPostedThisTweet, fp);
-                if (thisResults.isEmpty()) {
-                    logger.info("Found nothing for tweet: " + tweet);
-                    continue;
-                }
-                /* Set additional properties and determine date to be used as timestamp of last crawled tweet */
-                for (final DownloadLink thisTweetResult : thisResults) {
-                    /* Find timestamp of last added result. Ignore pinned tweets. */
-                    final String thisTweetID = thisTweetResult.getStringProperty(PROPERTY_TWEET_ID);
-                    if (thisTweetID == null) {
-                        continue;
-                    }
-                    if (pinned_tweet_ids_str != null && pinned_tweet_ids_str.contains(tweetID)) {
-                        thisTweetResult.setProperty(PROPERTY_PINNED_TWEET, true);
-                    } else {
-                        logger.info("Tweet used as source for last crawled Tweet timestamp: " + thisTweetID);
-                        lastCrawledTweetTimestamp = thisTweetResult.getLongProperty(PROPERTY_DATE_TIMESTAMP, -1);
-                    }
-                }
-                if (this.maxTweetsToCrawl != null && totalCrawledTweetsCount == this.maxTweetsToCrawl.intValue()) {
-                    stopBecauseReachedUserDefinedMaxItemsLimit = true;
-                    break;
-                } else if (this.crawlUntilTimestamp != null && lastCrawledTweetTimestamp != null && lastCrawledTweetTimestamp < crawlUntilTimestamp) {
-                    skippedResultsByMaxDate.addAll(thisResults);
-                } else {
-                    totalCrawledTweetsCount++;
-                    allowedResults.addAll(thisResults);
-                }
-            }
-            logger.info("Crawled page " + page + " | Tweets crawled so far: " + totalCrawledTweetsCount + "/" + maxCount.intValue() + " | Tweets skipped due to username mismatch: " + skippedTweetsByUsernameMismatch + " | last nextCursor = " + nextCursor);
-            distribute(allowedResults);
-            ret.addAll(allowedResults);
-            /* Check abort conditions */
-            if (stopBecauseReachedUserDefinedMaxItemsLimit) {
-                logger.info("Stopping because: Reached user defined max items count: " + maxTweetsToCrawl);
-                break tweetTimeline;
-            } else if (skippedResultsByMaxDate.size() > 0) {
-                logger.info("Stopping because: Last item age is older than user defined max age: " + this.maxTweetDateStr);
-                break tweetTimeline;
-            } else if (tweetMap.isEmpty()) {
-                logger.info("Current page (" + page + ") didn't contain any results --> Probably it contained only explicit content and we're lacking permissions to view that!");
-                numberofPagesInARowWithoutResult++;
-            } else {
-                numberofPagesInARowWithoutResult = 0;
-            }
-            if (tweetMap.size() < expected_items_per_page) {
-                /**
-                 * This can sometimes happen! </br>
-                 * We'll ignore this and let it run into our other fail-safe for when a page contains zero items.
-                 */
-                logger.info(String.format("Current page contained only %d of max. %d expected objects --> Reached the end?", tweetMap.size(), expected_items_per_page));
-                // break;
-            }
-            /* Done - now try to find string required to access next page. */
-            try {
-                final Map<String, Object> pagination_info_entries = (Map<String, Object>) pagination_info.get(pagination_info.size() - 1);
-                final String entryId = (String) pagination_info_entries.get("entryId");
-                if (!entryId.contains("cursor-bottom")) {
-                    logger.info("Stopping because: Found wrong cursor object --> Plugin probably needs update");
-                    break tweetTimeline;
-                }
-                nextCursor = (String) JavaScriptEngineFactory.walkJson(pagination_info_entries, "content/operation/cursor/value");
-                if (StringUtils.isEmpty(nextCursor)) {
-                    logger.info("Stopping because: Failed to find nextCursor");
-                    break tweetTimeline;
-                } else if (!cursorDupes.add(nextCursor)) {
-                    logger.info("Stopping because: We've already crawled current cursor: " + nextCursor);
-                    break tweetTimeline;
-                }
-            } catch (final Throwable e) {
-                logger.log(e);
-                logger.info("Stopping because: Failed to get nextCursor (Exception occured)");
-                break tweetTimeline;
-            }
-            if (numberofPagesInARowWithoutResult >= maxNumberofPagesInARowWithoutResult) {
-                logger.info("Stopping because: Reached max number of pages without result in a row [probably explicit content]: " + maxNumberofPagesInARowWithoutResult);
-                break tweetTimeline;
-            }
-            /* Continue to next page */
-            /** Store this information in URL so in case crawler fails, it will resume from previous position if user adds that URL. */
-            addedURLQuery.addAndReplace("page", Integer.toString(page));
-            addedURLQuery.addAndReplace("totalCrawledTweetsCount", Integer.toString(totalCrawledTweetsCount));
-            addedURLQuery.addAndReplace("nextCursor", Encoding.urlEncode(nextCursor));
-            this.resumeURL = addedURLWithoutParams + "?" + addedURLQuery.toString();
-            page++;
-            /* Wait before accessing next page. */
-            sleep(cfg.getProfileCrawlerWaittimeBetweenPaginationMilliseconds(), param);
-        } while (!this.isAbort());
-        logger.info("Done after " + page + " pages | last nextCursor = " + nextCursor);
-        if (ret.isEmpty()) {
-            logger.info("Found nothing --> Either user has no posts containing media or those can only be viewed by certain users or only when logged in (explicit content)");
-            if (account == null) {
-                throw new DecrypterRetryException(RetryReason.NO_ACCOUNT, "PROFILE_CONTAINS_ONLY_EXPLICIT_CONTENT_ACCOUNT_REQUIRED_" + username, "Profile " + username + " contains only explicit content which can only be viewed when logged in --> Add a twitter account to JDownloader and try again!");
-            } else {
-                ret.add(getDummyErrorProfileContainsNoDownloadableContent(username));
-            }
-        }
-        return ret;
-    }
-
     private void resetUglyGlobalVariables() {
         /* Clear some global variables (Yes I know, global variables are evil but this whole plugin is a mess so idk) */
         dupeListForProfileCrawlerTweetIDs.clear();
+        actuallyCrawledTweetIDs.clear();
         profileCrawlerNextCursor = null;
-        profileCrawlerStopBecauseReachedUserDefinedMaxItemsLimit = false;
         profileCrawlerSkippedResultsByMaxDate.clear();
+        profileCrawlerSkippedResultsByMaxitems.clear();
         profileCrawlerSkippedResultsByRetweet.clear();
     }
 
     /** Crawls all Tweets of a profile via GraphQL Web-API. */
-    private ArrayList<DownloadLink> crawlUserViaGraphqlAPI(final CryptedLink param, final String username, final Account account, final boolean crawlUserLikes) throws Exception {
+    private ArrayList<DownloadLink> crawlUserViaGraphqlAPI(final CryptedLink param, final String username, final Account account, final ProfileCrawlMode crawlmode) throws Exception {
         if (username == null) {
             /* Developer mistake */
             throw new IllegalArgumentException();
         }
         resetUglyGlobalVariables();
-        final String mainQueryName;
-        if (crawlUserLikes) {
-            mainQueryName = "Likes";
-        } else {
-            mainQueryName = "UserTweets";
-        }
         final Map<String, Object> user = getUserInfo(br, account, username);
-        final Number statuses_count = (Number) user.get("statuses_count");
-        // TODO: Make use of this to crawl all items from "/username/media"
-        final Number media_count = (Number) user.get("media_count");
+        final int statuses_count = ((Number) user.get("statuses_count")).intValue();
+        final int media_count = ((Number) user.get("media_count")).intValue();
+        final int favorite_count = ((Number) user.get("favourites_count")).intValue();
         final String userID = user.get("id_str").toString();
         if (this.preGivenPageNumber != null && this.preGivenNumberOfTotalWalkedThroughTweetsCount != null && this.preGivenNextCursor != null) {
             // TODO: Review this
@@ -1234,35 +1008,50 @@ public class TwitterComCrawler extends PluginForDecrypt {
         }
         final String bubbleNotifyTitle = "Twitter profile " + username + " | ID: " + userID;
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final ArrayList<DownloadLink> results1 = crawlTweetsViaGraphqlAPI(mainQueryName, param, user, account, crawlUserLikes);
-        ret.addAll(results1);
-        if (!crawlUserLikes && media_count != null && media_count.intValue() > 0) {
-            logger.info("Crawling remaining " + media_count + " media items from profile");
-            final boolean accountRequiredToCrawlUserMedia = true;
-            if (accountRequiredToCrawlUserMedia && account == null) {
-                /**
-                 * 2024-02-23: Account required to access: /<username>/media </br>
-                 * Without account, API will return an empty page.
-                 */
-                String text = media_count + " media items can't be crawled because the media tab can only be accessed by logged in users!";
-                text += "\nAdd- and enable a Twitter account to JD to be able to crawl such items.";
-                displayBubblenotifyMessage(bubbleNotifyTitle, text);
-            } else {
-                /* Reset most of all evil global variables */
-                profileCrawlerNextCursor = null;
-                profileCrawlerStopBecauseReachedUserDefinedMaxItemsLimit = false;
-                profileCrawlerSkippedResultsByMaxDate.clear();
-                profileCrawlerSkippedResultsByRetweet.clear();
-                final ArrayList<DownloadLink> results2 = crawlTweetsViaGraphqlAPI("UserMedia", param, user, account, crawlUserLikes);
-                ret.addAll(results2);
+        if (crawlmode == ProfileCrawlMode.LIKES) {
+            if (favorite_count == 0) {
+                displayBubblenotifyMessage("Profile crawler " + username + " | Warning", "You are trying to crawl all likes of this profile but it has no liked items.");
+                throw new DecrypterRetryException(RetryReason.EMPTY_PROFILE, "PROFILE_HAS_NO_LIKES_" + username, "You are trying to crawl all likes of this profile but it has no liked items.");
+            }
+            final ArrayList<DownloadLink> results = crawlTweetsViaGraphqlAPI("Likes", param, user, account, crawlmode);
+            ret.addAll(results);
+        } else if (crawlmode == ProfileCrawlMode.MEDIA) {
+            if (media_count == 0) {
+                displayBubblenotifyMessage("Profile crawler " + username + " | Warning", "You are trying to crawl all media items of this profile but it has no media items.");
+                throw new DecrypterRetryException(RetryReason.EMPTY_PROFILE, "PROFILE_HAS_NO_MEDIA_ITEMS_" + username, "You are trying to crawl all media items of this profile but it has no media items.");
+            }
+            final ArrayList<DownloadLink> results = crawlTweetsViaGraphqlAPI("UserMedia", param, user, account, crawlmode);
+            ret.addAll(results);
+        } else {
+            final ArrayList<DownloadLink> results1 = crawlTweetsViaGraphqlAPI("UserTweets", param, user, account, crawlmode);
+            ret.addAll(results1);
+            if (profileCrawlerSkippedResultsByMaxitems.size() == 0 && media_count > 0) {
+                logger.info("Crawling remaining " + media_count + " media items from profile");
+                if (account == null) {
+                    /**
+                     * 2024-02-23: Account required to access: /<username>/media </br>
+                     * Without account, API will return an empty page.
+                     */
+                    String text = media_count + " media items can't be crawled because the media tab can only be accessed by logged in users!";
+                    text += "\nAdd- and enable a Twitter account to JD to be able to crawl such items.";
+                    displayBubblenotifyMessage(bubbleNotifyTitle, text);
+                } else {
+                    /*
+                     * Crawl all media items. Reset global variables before since it can happen that the first few pages of the media tab
+                     * will contain items which we've already crawled.
+                     */
+                    resetUglyGlobalVariables();
+                    final ArrayList<DownloadLink> results2 = crawlTweetsViaGraphqlAPI("UserMedia", param, user, account, ProfileCrawlMode.MEDIA);
+                    ret.addAll(results2);
+                }
             }
         }
-        final int totalFoundTweets = dupeListForProfileCrawlerTweetIDs.size();
+        final int totalWalkedThroughTweets = dupeListForProfileCrawlerTweetIDs.size();
         if (ret.isEmpty()) {
             /* We found nothing -> Check why */
             final String bubbleNotifyTextEnding = "\r\nTotal number of Tweets in this profile: " + statuses_count;
-            if (totalFoundTweets == 0) {
-                if (statuses_count != null && statuses_count.intValue() > 0 && account == null) {
+            if (totalWalkedThroughTweets == 0) {
+                if (statuses_count > 0 && account == null) {
                     displayBubblenotifyMessage(bubbleNotifyTitle, "Returning no results because:\r\nAccount required to view Tweets of this profile." + bubbleNotifyTextEnding);
                     throw new AccountRequiredException();
                 } else {
@@ -1274,20 +1063,20 @@ public class TwitterComCrawler extends PluginForDecrypt {
                 if (profileCrawlerSkippedResultsByMaxDate.size() > 0) {
                     displayBubblenotifyMessage(bubbleNotifyTitle, "Returning no results because:\r\nAll existing elements have earlier timestamps than user defined max_date parameter " + maxTweetDateStr + ".\r\nMinimum number of skipped Tweets: " + profileCrawlerSkippedResultsByMaxDate.size() + bubbleNotifyTextEnding);
                 } else {
-                    displayBubblenotifyMessage(bubbleNotifyTitle, "Returning no results because:\r\nMost likely user has disabled tweet text crawler but this profile only contained text tweets.\r\nMinimum number of skipped possible Tweets: " + totalFoundTweets + bubbleNotifyTextEnding);
+                    displayBubblenotifyMessage(bubbleNotifyTitle, "Returning no results because:\r\nMost likely user has disabled tweet text crawler but this profile only contained text tweets.\r\nMinimum number of skipped possible Tweets: " + totalWalkedThroughTweets + bubbleNotifyTextEnding);
                 }
             }
-        } else if (statuses_count != null && totalFoundTweets < statuses_count.intValue() && profileCrawlerSkippedResultsByRetweet.isEmpty() && profileCrawlerSkippedResultsByMaxDate.isEmpty()) {
+        } else if (totalWalkedThroughTweets < statuses_count && profileCrawlerSkippedResultsByRetweet.isEmpty() && profileCrawlerSkippedResultsByMaxDate.isEmpty() && profileCrawlerSkippedResultsByMaxitems.isEmpty()) {
             /* No items were skipped but also not all items were found -> Notify user */
             String text = "Some items may be missing!";
-            text += "\nTotal number of status items: " + statuses_count + " Crawled: " + totalFoundTweets;
+            text += "\nTotal number of status items: " + statuses_count + " Crawled: " + totalWalkedThroughTweets;
             text += "\nLogged in users can sometimes view more items than anonymous users.";
             displayBubblenotifyMessage(bubbleNotifyTitle, text);
         }
         return ret;
     }
 
-    private ArrayList<DownloadLink> crawlTweetsViaGraphqlAPI(final String queryName, final CryptedLink param, final Map<String, Object> user, final Account account, final boolean crawlUserLikes) throws Exception {
+    private ArrayList<DownloadLink> crawlTweetsViaGraphqlAPI(final String queryName, final CryptedLink param, final Map<String, Object> user, final Account account, final ProfileCrawlMode mode) throws Exception {
         final String username = user.get("screen_name").toString();
         final String userID = user.get("id_str").toString();
         final HashSet<String> cursorDupes = new HashSet<String>();
@@ -1301,12 +1090,15 @@ public class TwitterComCrawler extends PluginForDecrypt {
             profileCrawlerNextCursor = this.preGivenNextCursor;
         }
         final FilePackage fp = FilePackage.getInstance();
-        if (crawlUserLikes) {
+        final boolean allowSkipRetweets;
+        if (mode == ProfileCrawlMode.LIKES) {
             fp.setName(username + " - likes");
             fp.setPackageKey(TWITTER_PROFILE_LIKES_PACKAGE_KEY_PREFIX + userID);
+            allowSkipRetweets = false;
         } else {
             fp.setName(username);
             fp.setPackageKey(TWITTER_PROFILE_PACKAGE_KEY_PREFIX + userID);
+            allowSkipRetweets = true;
         }
         final TwitterConfigInterface cfg = PluginJsonConfig.get(TwitterConfigInterface.class);
         final long waitBetweenPaginationRequestsMillis = cfg.getProfileCrawlerWaittimeBetweenPaginationMilliseconds();
@@ -1325,7 +1117,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
             variables.put("withVoice", true);
             variables.put("withV2Timeline", true);
             /* Not important */
-            if (crawlUserLikes) {
+            if (mode == ProfileCrawlMode.LIKES) {
                 variables.put("withBirdwatchNotes", false);
             }
             final UrlQuery query = new UrlQuery();
@@ -1336,12 +1128,13 @@ public class TwitterComCrawler extends PluginForDecrypt {
             getPage(url);
             final Map<String, Object> entries = this.handleErrorsAPI(br);
             final List<Map<String, Object>> timelineInstructions = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entries, "data/user/result/timeline_v2/timeline/instructions");
-            final int numberofTweetsCrawledBefore = dupeListForProfileCrawlerTweetIDs.size();
-            final List<DownloadLink> resultsThisPage = this.crawlUserProfileGraphqlTimelineInstructions(timelineInstructions, user, null, fp, crawlUserLikes);
-            final int numberofTweetsCrawledThisPage = dupeListForProfileCrawlerTweetIDs.size() - numberofTweetsCrawledBefore;
+            final int numberofTweetsWalkedThroughBefore = dupeListForProfileCrawlerTweetIDs.size();
+            final List<DownloadLink> resultsThisPage = this.crawlUserProfileGraphqlTimelineInstructions(timelineInstructions, user, null, fp, allowSkipRetweets);
+            final int numberofNewTweetsWalkedThroughThisPage = dupeListForProfileCrawlerTweetIDs.size() - numberofTweetsWalkedThroughBefore;
             ret.addAll(resultsThisPage);
             distribute(resultsThisPage);
-            logger.info("Crawled page " + page + " | Found new Tweets on this page: " + numberofTweetsCrawledThisPage + " | Tweets crawled so far: " + dupeListForProfileCrawlerTweetIDs.size() + " | nextCursor = " + profileCrawlerNextCursor + " | Skipped Re-Tweets: " + profileCrawlerSkippedResultsByRetweet.size() + " | Skipped Tweets via user defined max-date: " + profileCrawlerSkippedResultsByMaxDate.size());
+            logger.info("Crawled page " + page + " | Found new Tweets on this page: " + numberofNewTweetsWalkedThroughThisPage + " | Tweets walked through so far: " + dupeListForProfileCrawlerTweetIDs.size() + " | Tweets crawled and added so far: " + actuallyCrawledTweetIDs.size() + " | nextCursor = " + profileCrawlerNextCursor + " | Skipped Re-Tweets: " + profileCrawlerSkippedResultsByRetweet.size() + " | Skipped Tweets via user defined max-date: " + profileCrawlerSkippedResultsByMaxDate.size());
+            /* Check abort conditions */
             if (this.isAbort()) {
                 logger.info("Stopping because: Aborted by user");
                 break;
@@ -1351,11 +1144,11 @@ public class TwitterComCrawler extends PluginForDecrypt {
             } else if (!cursorDupes.add(profileCrawlerNextCursor)) {
                 logger.info("Stopping because: nextCursor value for  next page has already been crawled -> Reached end?");
                 break;
-            } else if (numberofTweetsCrawledThisPage == 0) {
+            } else if (numberofNewTweetsWalkedThroughThisPage == 0) {
                 /* Fail-safe */
                 logger.info("Stopping because: Failed to find any new Tweets on current page");
                 break;
-            } else if (profileCrawlerStopBecauseReachedUserDefinedMaxItemsLimit) {
+            } else if (profileCrawlerSkippedResultsByMaxitems.size() > 0) {
                 logger.info("Stopping because: Reached user defined max items count: " + maxTweetsToCrawl + " | Actually crawled: " + dupeListForProfileCrawlerTweetIDs.size());
                 break;
             } else if (profileCrawlerSkippedResultsByMaxDate.size() > 0) {
@@ -1386,15 +1179,17 @@ public class TwitterComCrawler extends PluginForDecrypt {
     /**
      * 2023-07-21: Time for some ugly codes: Public variables!
      */
-    private String                      profileCrawlerNextCursor                                 = null;
+    private String                      profileCrawlerNextCursor               = null;
     /*
      * Returns Twitter status IDs of all items that have been walked-through. This does not mean that those will actually be returned - they
      * can be filtered by user-settings. This variable mainly exists to prevent infinite loops.
      */
-    private HashSet<String>             dupeListForProfileCrawlerTweetIDs                        = new HashSet<String>();
-    private boolean                     profileCrawlerStopBecauseReachedUserDefinedMaxItemsLimit = false;
-    private final HashSet<DownloadLink> profileCrawlerSkippedResultsByMaxDate                    = new HashSet<DownloadLink>();
-    private final HashSet<DownloadLink> profileCrawlerSkippedResultsByRetweet                    = new HashSet<DownloadLink>();
+    private HashSet<String>             dupeListForProfileCrawlerTweetIDs      = new HashSet<String>();
+    /* List of tweetIDs which have not only been walked-through but were actually added to the list of final items. */
+    private HashSet<String>             actuallyCrawledTweetIDs                = new HashSet<String>();
+    private final HashSet<DownloadLink> profileCrawlerSkippedResultsByMaxDate  = new HashSet<DownloadLink>();
+    private final HashSet<DownloadLink> profileCrawlerSkippedResultsByMaxitems = new HashSet<DownloadLink>();
+    private final HashSet<DownloadLink> profileCrawlerSkippedResultsByRetweet  = new HashSet<DownloadLink>();
 
     private ArrayList<DownloadLink> crawlUserProfileGraphqlTimelineInstructions(final List<Map<String, Object>> timelineInstructions, final Map<String, Object> user, final String singleTweetID, final FilePackage fp, final boolean crawlUserLikes) throws Exception {
         final ArrayList<DownloadLink> allowedResults = new ArrayList<DownloadLink>();
@@ -1416,16 +1211,12 @@ public class TwitterComCrawler extends PluginForDecrypt {
             }
             final ArrayList<DownloadLink> thisResults = crawlTweets(timelineInstruction, user, singleTweetID, fp, crawlUserLikes);
             allowedResults.addAll(thisResults);
-            if (this.maxTweetsToCrawl != null && dupeListForProfileCrawlerTweetIDs.size() == this.maxTweetsToCrawl.intValue()) {
-                profileCrawlerStopBecauseReachedUserDefinedMaxItemsLimit = true;
-                break timelineInstructionsLoop;
-            }
         }
         return allowedResults;
     }
 
     /** Crawls all Tweets inside _any_ given Map. */
-    private ArrayList<DownloadLink> crawlTweets(final Map<String, Object> sourcemap, final Map<String, Object> user, final String singleTweetID, final FilePackage fp, final boolean crawlUserLikes) throws PluginException, MalformedURLException {
+    private ArrayList<DownloadLink> crawlTweets(final Map<String, Object> sourcemap, final Map<String, Object> user, final String singleTweetID, final FilePackage fp, final boolean allowSkipRetweets) throws PluginException, MalformedURLException {
         final String username = user != null ? user.get("screen_name").toString() : null;
         final List<Map<String, Object>> tweetResults = new ArrayList<Map<String, Object>>();
         final ArrayList<DownloadLink> allowedResults = new ArrayList<DownloadLink>();
@@ -1442,8 +1233,13 @@ public class TwitterComCrawler extends PluginForDecrypt {
                 }
                 final Map<String, Object> tweetUser = (Map<String, Object>) JavaScriptEngineFactory.walkJson(thisRoot, "core/user_results/result/legacy");
                 final Map<String, Object> tweet = (Map<String, Object>) thisRoot.get("legacy");
-                final Map<String, Object> quoted_status = (Map<String, Object>) JavaScriptEngineFactory.walkJson(thisRoot, "quoted_status_result/result/legacy");
-                final Map<String, Object> quotedUser = (Map<String, Object>) JavaScriptEngineFactory.walkJson(thisRoot, "quoted_status_result/result/core/user_results/result/legacy");
+                Map<String, Object> quoted_status = (Map<String, Object>) JavaScriptEngineFactory.walkJson(thisRoot, "quoted_status_result/result/legacy");
+                Map<String, Object> quotedUser = (Map<String, Object>) JavaScriptEngineFactory.walkJson(thisRoot, "quoted_status_result/result/core/user_results/result/legacy");
+                if (quoted_status == null || quotedUser == null) {
+                    quoted_status = (Map<String, Object>) JavaScriptEngineFactory.walkJson(thisRoot, "quoted_status_result/result/tweet/legacy");
+                    quotedUser = (Map<String, Object>) JavaScriptEngineFactory.walkJson(thisRoot, "quoted_status_result/result/tweet/core/user_results/result/legacy");
+                }
+                final boolean containsQuotedTweet = quoted_status != null && quotedUser != null;
                 final String tweetIDStr = tweet.get("id_str").toString();
                 if (singleTweetID != null && !StringUtils.equals(tweetIDStr, singleTweetID) && tweetResults.size() > 1) {
                     /* Fail-safe */
@@ -1451,13 +1247,12 @@ public class TwitterComCrawler extends PluginForDecrypt {
                     continue;
                 }
                 final ArrayList<DownloadLink> thisTweetResults = crawlTweetMap(null, tweet, tweetUser, fp);
-                if (quoted_status != null && quotedUser != null) {
+                if (containsQuotedTweet) {
                     /* 2024-02-21: Current Tweet is a reply to a quoted Tweet -> We need to crawl that quoted Tweet separately */
                     final ArrayList<DownloadLink> thisQuotedTweetResults = crawlTweetMap(null, quoted_status, quotedUser, fp);
                     thisTweetResults.addAll(thisQuotedTweetResults);
                 }
-                /* If we're crawling users' likes, we do not want to filter any Tweets since likes can contain items of any users. */
-                if (singleTweetID == null && !crawlUserLikes && !PluginJsonConfig.get(TwitterConfigInterface.class).isCrawlRetweetsV2()) {
+                if (singleTweetID == null && !containsQuotedTweet && allowSkipRetweets && !PluginJsonConfig.get(TwitterConfigInterface.class).isCrawlRetweetsV2()) {
                     /* Re-Tweet crawling is disabled: Skip all results of this Tweet if it is a Re-Tweet. */
                     boolean isRetweet = false;
                     boolean looksLikeRetweetOrIsItemFromOtherUser = false;
@@ -1502,12 +1297,15 @@ public class TwitterComCrawler extends PluginForDecrypt {
                 }
                 /* Check if we've reached any user defined limits */
                 if (this.crawlUntilTimestamp != null && crawledTweetTimestamp != null && crawledTweetTimestamp < crawlUntilTimestamp) {
+                    /* Skip */
                     profileCrawlerSkippedResultsByMaxDate.addAll(thisTweetResults);
-                } else if (this.maxTweetsToCrawl != null && dupeListForProfileCrawlerTweetIDs.size() == this.maxTweetsToCrawl.intValue()) {
-                    profileCrawlerStopBecauseReachedUserDefinedMaxItemsLimit = true;
-                    return allowedResults;
+                } else if (this.maxTweetsToCrawl != null && actuallyCrawledTweetIDs.size() == this.maxTweetsToCrawl.intValue()) {
+                    /* Skip */
+                    profileCrawlerSkippedResultsByMaxitems.addAll(thisTweetResults);
                 } else {
+                    /* Add */
                     allowedResults.addAll(thisTweetResults);
+                    actuallyCrawledTweetIDs.add(tweetIDStr);
                 }
             } else if (typename.equalsIgnoreCase("TweetTombstone")) {
                 dupeListForProfileCrawlerTweetIDs.add("TODO_FIXME_2024_02_20");
@@ -1554,10 +1352,10 @@ public class TwitterComCrawler extends PluginForDecrypt {
             // logger.info("hit");
             // }
             // }
-            final String rest_id = (String) map.get("rest_id");
-            if (rest_id != null && rest_id.equals("1759699103360135552")) {
-                logger.info("hit");
-            }
+            // final String rest_id = (String) map.get("rest_id");
+            // if (rest_id != null && rest_id.equals("TEST")) {
+            // logger.info("hit");
+            // }
             if (__typename != null && (__typename.equals("Tweet") || __typename.equals("TweetWithVisibilityResults")) && (tweetMap != null || legacyMap != null)) {
                 results.add(map);
             } else if (__typename != null && __typename.equals("TweetTombstone")) {

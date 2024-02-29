@@ -38,11 +38,11 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.logging.LogController;
-import org.jdownloader.settings.GeneralSettings;
-import org.jdownloader.settings.GeneralSettings.ContainerDeleteOption;
 import org.jdownloader.translate._JDT;
 import org.jdownloader.utils.JDFileUtils;
 
+import jd.controlling.container.ContainerConfig;
+import jd.controlling.container.ContainerConfig.ContainerDeleteOption;
 import jd.controlling.linkcollector.LinkOriginDetails;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.nutils.Formatter;
@@ -167,7 +167,7 @@ public abstract class PluginsC {
             if (askFileDeletion() == false) {
                 FileCreationManager.getInstance().delete(file, null);
             } else if (cls.size() > 0) {
-                switch (JsonConfig.create(GeneralSettings.class).getDeleteContainerFilesAfterAddingThemAction()) {
+                switch (JsonConfig.create(ContainerConfig.class).getDeleteContainerFilesAfterAddingThemAction()) {
                 case ASK_FOR_DELETE:
                     final ConfirmDialog d = new ConfirmDialog(0, _JDT.T.AddContainerAction_delete_container_title(), _JDT.T.AddContainerAction_delete_container_msg(file.toString()), new AbstractIcon(IconKey.ICON_HELP, 32), _GUI.T.lit_yes(), _GUI.T.lit_no()) {
                         @Override
@@ -180,11 +180,11 @@ public abstract class PluginsC {
                     if (s.getCloseReason() == CloseReason.OK) {
                         FileCreationManager.getInstance().delete(file, null);
                         if (s.isDontShowAgainSelected()) {
-                            JsonConfig.create(GeneralSettings.class).setDeleteContainerFilesAfterAddingThemAction(ContainerDeleteOption.DELETE);
+                            JsonConfig.create(ContainerConfig.class).setDeleteContainerFilesAfterAddingThemAction(ContainerDeleteOption.DELETE);
                         }
                     } else {
                         if (s.isDontShowAgainSelected()) {
-                            JsonConfig.create(GeneralSettings.class).setDeleteContainerFilesAfterAddingThemAction(ContainerDeleteOption.DONT_DELETE);
+                            JsonConfig.create(ContainerConfig.class).setDeleteContainerFilesAfterAddingThemAction(ContainerDeleteOption.DONT_DELETE);
                         }
                     }
                     break;
