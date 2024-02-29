@@ -109,11 +109,13 @@ public class LinknameCleaner {
         return ret;
     }
 
-    private static String replaceCharactersByMap(final String str, final Map<Pattern, String> forbiddenCharacterRegexReplaceMap) {
-        if (forbiddenCharacterRegexReplaceMap == null) {
-            return str;
+    private static String replaceCharactersByMap(final String input, final Map<Pattern, String> forbiddenCharacterRegexReplaceMap) {
+        if (input == null) {
+            return null;
+        } else if (forbiddenCharacterRegexReplaceMap == null) {
+            return input;
         }
-        String newstr = str;
+        String newstr = input;
         final Iterator<Entry<Pattern, String>> iterator = forbiddenCharacterRegexReplaceMap.entrySet().iterator();
         while (iterator.hasNext()) {
             final Entry<Pattern, String> entry = iterator.next();
@@ -134,7 +136,7 @@ public class LinknameCleaner {
             return newstr;
         } else {
             /* Fallback */
-            return str;
+            return input;
         }
     }
 
@@ -147,169 +149,23 @@ public class LinknameCleaner {
         return newfinalFileName;
     }
 
-    public static String cleanPackagenameNew(String name, boolean allowCleanup) {
+    public static String cleanPackagename(String name, boolean allowCleanup) {
         name = replaceCharactersByMap(name, PACKAGENAME_REPLACEMAP);
         name = replaceCharactersByMap(name, PACKAGENAME_REPLACEMAP_DEFAULT);
         /* if enabled, replace dots and _ with spaces and do further clean ups */
-        final boolean splitUpperLowerCase = false;
+        // final boolean splitUpperLowerCase = false;
         if (allowCleanup && org.jdownloader.settings.staticreferences.CFG_GENERAL.CLEAN_UP_PACKAGENAMES.isEnabled()) {
             StringBuilder sb = new StringBuilder();
             char[] cs = name.toCharArray();
             char lastChar = 'a';
             for (int i = 0; i < cs.length; i++) {
                 // splitFileNamesLikeThis to "split File Names Like This"
-                if (splitUpperLowerCase && i > 0 && Character.isUpperCase(cs[i]) && Character.isLowerCase(cs[i - 1])) {
-                    if (lastChar != ' ') {
-                        sb.append(' ');
-                    }
-                    lastChar = ' ';
-                }
-                switch (cs[i]) {
-                case '_':
-                case '.':
-                    if (lastChar != ' ') {
-                        sb.append(' ');
-                    }
-                    lastChar = ' ';
-                    break;
-                default:
-                    lastChar = cs[i];
-                    sb.append(cs[i]);
-                }
-            }
-            name = sb.toString();
-        }
-        return name.trim();
-    }
-
-    @Deprecated
-    public static String cleanPackagename(String name, boolean splitUpperLowerCase, boolean removeArchiveExtensions, final EXTENSION_SETTINGS extensionSettings, boolean allowCleanup) {
-        if (name == null) {
-            return null;
-        }
-        /*
-         * Basic cleanup: Remove typical invalid characters because in many cases the package name will be used as part of our download
-         * path.
-         */
-        // TODO: Remove this into the optional "CLEAN_UP_PACKAGENAMES" handling down below
-        name = replaceCharactersByMap(name, PACKAGENAME_REPLACEMAP);
-        name = replaceCharactersByMap(name, PACKAGENAME_REPLACEMAP_DEFAULT);
-        boolean extensionStilExists = true;
-        String before = name;
-        // final boolean removeArchiveExtensions = false;
-        if (removeArchiveExtensions) {
-            /** remove rar extensions */
-            for (Pattern Pat : rarPats) {
-                name = getNameMatch(name, Pat);
-                if (!before.equals(name)) {
-                    extensionStilExists = false;
-                    break;
-                }
-            }
-            if (extensionStilExists) {
-                /**
-                 * remove 7zip/zip and merge extensions
-                 */
-                before = name;
-                for (Pattern Pat : zipPats) {
-                    name = getNameMatch(name, Pat);
-                    if (!before.equals(name)) {
-                        extensionStilExists = false;
-                        break;
-                    }
-                }
-            }
-            if (extensionStilExists) {
-                /**
-                 * remove isz extensions
-                 */
-                before = name;
-                for (Pattern Pat : iszPats) {
-                    name = getNameMatch(name, Pat);
-                    if (!before.equals(name)) {
-                        extensionStilExists = false;
-                        break;
-                    }
-                }
-            }
-            if (extensionStilExists) {
-                before = name;
-                /* xtremsplit */
-                name = getNameMatch(name, pat17);
-                if (!before.equals(name)) {
-                    extensionStilExists = false;
-                }
-            }
-            if (extensionStilExists && ffsjPats != null) {
-                /**
-                 * FFSJ splitted files
-                 *
-                 */
-                before = name;
-                for (Pattern Pat : ffsjPats) {
-                    name = getNameMatch(name, Pat);
-                    if (!before.equalsIgnoreCase(name)) {
-                        extensionStilExists = false;
-                        break;
-                    }
-                }
-            }
-        }
-        String tmpname = cutNameMatch(name, pat13);
-        if (tmpname.length() > 3) {
-            name = tmpname;
-        }
-        /* remove extension */
-        if (EXTENSION_SETTINGS.REMOVE_ALL.equals(extensionSettings) || EXTENSION_SETTINGS.REMOVE_KNOWN.equals(extensionSettings)) {
-            while (true) {
-                final int lastPoint = name.lastIndexOf(".");
-                if (lastPoint <= 0) {
-                    break;
-                }
-                final int extLength = (name.length() - (lastPoint + 1));
-                final String ext = name.substring(lastPoint + 1);
-                final ExtensionsFilterInterface knownExt = CompiledFiletypeFilter.getExtensionsFilterInterface(ext);
-                if (knownExt != null && !ArchiveExtensions.NUM.equals(knownExt)) {
-                    /* make sure to cut off only known extensions */
-                    name = name.substring(0, lastPoint);
-                } else if (extLength <= 4 && EXTENSION_SETTINGS.REMOVE_ALL.equals(extensionSettings) && ext.matches("^[0-9a-zA-z]+$")) {
-                    /* make sure to cut off only known extensions */
-                    if (extensionStilExists) {
-                        name = name.substring(0, lastPoint);
-                    } else {
-                        break;
-                    }
-                } else {
-                    break;
-                }
-            }
-        }
-        /* remove ending ., - , _ */
-        int removeIndex = -1;
-        for (int i = name.length() - 1; i >= 0; i--) {
-            final char c = name.charAt(i);
-            if (c == ',' || c == '_' || c == '-') {
-                removeIndex = i;
-            } else {
-                break;
-            }
-        }
-        if (removeIndex > 0) {
-            name = name.substring(0, removeIndex);
-        }
-        /* if enabled, replace dots and _ with spaces and do further clean ups */
-        if (allowCleanup && org.jdownloader.settings.staticreferences.CFG_GENERAL.CLEAN_UP_PACKAGENAMES.isEnabled()) {
-            StringBuilder sb = new StringBuilder();
-            char[] cs = name.toCharArray();
-            char lastChar = 'a';
-            for (int i = 0; i < cs.length; i++) {
-                // splitFileNamesLikeThis to "split File Names Like This"
-                if (splitUpperLowerCase && i > 0 && Character.isUpperCase(cs[i]) && Character.isLowerCase(cs[i - 1])) {
-                    if (lastChar != ' ') {
-                        sb.append(' ');
-                    }
-                    lastChar = ' ';
-                }
+                // if (splitUpperLowerCase && i > 0 && Character.isUpperCase(cs[i]) && Character.isLowerCase(cs[i - 1])) {
+                // if (lastChar != ' ') {
+                // sb.append(' ');
+                // }
+                // lastChar = ' ';
+                // }
                 switch (cs[i]) {
                 case '_':
                 case '.':
@@ -330,13 +186,6 @@ public class LinknameCleaner {
 
     /** Derives package name out of given filename. */
     public static String derivePackagenameFromFilename(String name) {
-        /*
-         * Basic cleanup: Remove typical invalid characters because in many cases the package name will be used as part of our download
-         * path.
-         */
-        /* TODO: The two lines down below have been moved into cleanPackagenameNew. Check if this makes sense. */
-        // name = replaceCharactersByMap(name, PACKAGENAME_REPLACEMAP);
-        // name = replaceCharactersByMap(name, PACKAGENAME_REPLACEMAP_DEFAULT);
         boolean extensionStilExists = true;
         String before = name;
         {
@@ -403,6 +252,7 @@ public class LinknameCleaner {
             name = tmpname;
         }
         /* Remove other file extensions */
+        /* TODO: If needed, move this into a separate function and call it "filenameExtensionRemover" or similar. */
         {
             final EXTENSION_SETTINGS extensionSettings = EXTENSION_SETTINGS.REMOVE_ALL;
             if (EXTENSION_SETTINGS.REMOVE_ALL.equals(extensionSettings) || EXTENSION_SETTINGS.REMOVE_KNOWN.equals(extensionSettings)) {

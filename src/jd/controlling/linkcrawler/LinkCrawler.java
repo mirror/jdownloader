@@ -3026,7 +3026,7 @@ public class LinkCrawler {
                 }
                 fpi.setDestinationFolder(CrossSystem.fixPathSeparators(fp.getDownloadDirectory() + File.separator));
             }
-            final String name = LinknameCleaner.cleanPackagenameNew(fp.getName(), fp.isCleanupPackageName());
+            final String name = LinknameCleaner.cleanPackagename(fp.getName(), fp.isCleanupPackageName());
             if (StringUtils.isNotEmpty(name)) {
                 if (fpi == null && (fpi = link.getDesiredPackageInfo()) == null) {
                     fpi = new PackageInfo();

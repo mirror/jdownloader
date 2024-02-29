@@ -9,7 +9,6 @@ import javax.swing.JPopupMenu;
 
 import org.appwork.swing.components.ExtButton;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
-import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.os.CrossSystem;
@@ -145,14 +144,12 @@ public class DownloadFolderColumn extends ExtTextColumn<AbstractNode> {
             pkg.setExpanded(CFG_LINKCOLLECTOR.CFG.isPackageAutoExpanded());
             if (TYPE.NORMAL != p.getType()) {
                 final String packagename;
-                if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-                    packagename = LinknameCleaner.cleanPackagenameNew(object.getName(), true);
+                if (object instanceof AbstractPackageNode) {
+                    /* Package */
+                    packagename = LinknameCleaner.cleanPackagename(object.getName(), true);
                 } else {
-                    if (object instanceof AbstractPackageNode) {
-                        packagename = LinknameCleaner.cleanPackagename(object.getName(), false, false, LinknameCleaner.EXTENSION_SETTINGS.REMOVE_KNOWN, true);
-                    } else {
-                        packagename = LinknameCleaner.cleanPackagename(object.getName(), false, false, LinknameCleaner.EXTENSION_SETTINGS.REMOVE_ALL, true);
-                    }
+                    /* File */
+                    packagename = LinknameCleaner.derivePackagenameFromFilename(object.getName());
                 }
                 pkg.setName(packagename);
             } else {
