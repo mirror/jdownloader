@@ -31,10 +31,6 @@ public class CFG_GENERAL {
      **/
     public static final IntegerKeyHandler               DOWNLOAD_DESTINATION_HISTORY_LENGTH                              = SH.getKeyHandler("DownloadDestinationHistoryLength", IntegerKeyHandler.class);
     public static final EnumKeyHandler                  IF_FILE_EXISTS_ACTION                                            = SH.getKeyHandler("IfFileExistsAction", EnumKeyHandler.class);
-    /**
-     * What Action should be performed after adding a container (DLC RSDF,METALINK,CCF,...)
-     **/
-    public static final EnumKeyHandler                  DELETE_CONTAINER_FILES_AFTER_ADDING_THEM_ACTION                  = SH.getKeyHandler("DeleteContainerFilesAfterAddingThemAction", EnumKeyHandler.class);
     public static final BooleanKeyHandler               AUTO_OPEN_CONTAINER_AFTER_DOWNLOAD                               = SH.getKeyHandler("AutoOpenContainerAfterDownload", BooleanKeyHandler.class);
     /**
      * Force Jdownloader to always keep a certain amount of MB Diskspace free
