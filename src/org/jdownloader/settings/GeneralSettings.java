@@ -27,7 +27,6 @@ import org.appwork.utils.os.hardware.HardwareType;
 import org.appwork.utils.os.hardware.HardwareTypeInterface;
 import org.jdownloader.controlling.domainrules.DomainRule;
 import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.translate._JDT;
 
 import com.sun.jna.platform.win32.KnownFolders;
 
@@ -511,40 +510,6 @@ public interface GeneralSettings extends ConfigInterface {
     boolean isSaveLinkgrabberListEnabled();
 
     void setSaveLinkgrabberListEnabled(boolean b);
-
-    public static enum ContainerDeleteOption implements LabelInterface {
-        ASK_FOR_DELETE {
-            @Override
-            public String getLabel() {
-                return _JDT.T.DeleteOption_ask();
-            }
-        },
-        DONT_DELETE {
-            @Override
-            public String getLabel() {
-                return _JDT.T.DeleteOption_no_delete();
-            }
-        },
-        RECYCLE {
-            @Override
-            public String getLabel() {
-                return _JDT.T.DeleteOption_recycle();
-            }
-        },
-        DELETE {
-            @Override
-            public String getLabel() {
-                return _JDT.T.DeleteOption_final_delete();
-            }
-        };
-    }
-
-    @AboutConfig
-    @DefaultEnumValue("DONT_DELETE")
-    @DescriptionForConfigEntry("What Action should be performed after adding a container (DLC RSDF,METALINK,CCF,...)")
-    ContainerDeleteOption getDeleteContainerFilesAfterAddingThemAction();
-
-    void setDeleteContainerFilesAfterAddingThemAction(ContainerDeleteOption action);
 
     /**
      * TODO: Rename ON_DOWNLOAD_START to ON_DOWNLOAD_ATTEMPT once the following ticket is being worked on:

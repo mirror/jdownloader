@@ -55,13 +55,11 @@ import jd.plugins.components.MultiHosterManagement;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "dailyleech.com" }, urls = { "" })
 public class DailyleechCom extends PluginForHost {
-    private static final String          PROTOCOL                  = "https://";
+    private static final String          PROTOCOL       = "https://";
     /* Connection limits */
-    private static final int             ACCOUNT_MAXDLS            = 8;
-    private static final boolean         ACCOUNT_PREMIUM_RESUME    = true;
-    private static final int             ACCOUNT_PREMIUM_MAXCHUNKS = 1;
+    private static final int             ACCOUNT_MAXDLS = 8;
     /** This is the old project of proleech.link owner */
-    private static MultiHosterManagement mhm                       = new MultiHosterManagement("dailyleech.com");
+    private static MultiHosterManagement mhm            = new MultiHosterManagement("dailyleech.com");
 
     public DailyleechCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -74,6 +72,21 @@ public class DailyleechCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getHeaders().put(HTTPConstants.HEADER_REQUEST_USER_AGENT, "JDownloader");
         return br;
+    }
+
+    @Override
+    public boolean isResumeable(final DownloadLink link, final Account account) {
+        return true;
+    }
+
+    public int getMaxChunks(final Account account) {
+        /* Last updated: 2024-02-29 */
+        return -12;
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.MULTIHOST };
     }
 
     @Override
@@ -108,11 +121,6 @@ public class DailyleechCom extends PluginForHost {
     }
 
     @Override
-    public LazyPlugin.FEATURE[] getFeatures() {
-        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.MULTIHOST };
-    }
-
-    @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
         mhm.runCheck(account, link);
         login(account, false);
@@ -131,7 +139,7 @@ public class DailyleechCom extends PluginForHost {
                 mhm.handleErrorGeneric(account, link, "Failed to find final downloadurl", 50, 3 * 60 * 1000l);
             }
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, directurl, ACCOUNT_PREMIUM_RESUME, ACCOUNT_PREMIUM_MAXCHUNKS);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, directurl, this.isResumeable(link, account), this.getMaxChunks(account));
         try {
             if (!looksLikeDownloadableContent(dl.getConnection())) {
                 br.followConnection(true);

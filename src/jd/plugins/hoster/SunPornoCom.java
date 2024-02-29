@@ -17,6 +17,9 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -31,18 +34,19 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.components.SiteType.SiteTemplate;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sunporno.com" }, urls = { "https?://(www\\.)?(sunporno\\.com/videos/|embeds\\.sunporno\\.com/embed/)\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sunporno.com" }, urls = { "https?://(?:www\\.)?(sunporno\\.com/videos/|embeds\\.sunporno\\.com/embed/)\\d+" })
 public class SunPornoCom extends PluginForHost {
-    /* DEV NOTES */
-    /* Porn_plugin */
-    private String  dllink        = null;
-    private boolean server_issues = false;
+    private String dllink = null;
 
     public SunPornoCom(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.setFollowRedirects(true);
+        return br;
     }
 
     @Override
@@ -52,7 +56,7 @@ public class SunPornoCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.sunporno.com/pages/terms.html";
+        return "https://www." + getHost() + "/pages/terms.html";
     }
 
     @Override
@@ -76,34 +80,38 @@ public class SunPornoCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        return requestFileInformation(link, false);
+    }
+
+    private AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws IOException, PluginException {
+        final String extDefault = ".mp4";
+        final String videoid = this.getFID(link);
         if (!link.isNameSet()) {
-            link.setName(this.getFID(link) + ".mp4");
+            link.setName(videoid + extDefault);
         }
         dllink = null;
         this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.getPage("https://www." + this.getHost() + "/videos/" + getFID(link));
+        br.getPage("https://www." + this.getHost() + "/videos/" + videoid);
         if (br.getHttpConnection().getResponseCode() == 404 || br.getURL().contains("sunporno.com/404.php") || br.containsHTML("(>The file you have requested was not found on this server|<title>404</title>|This video has been deleted)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String betterDllink = null;
-        String filename = br.getRegex("class=\"block-headline-right\">[\t\n\r ]+<h2>(.*?)</h2>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<title>\\s*(.*?)\\s*(?:(\\s+\\(New.*?\\))?\\s+-\\s+Sunporno.*?)?</title>").getMatch(0);
+        String title = br.getRegex("class=\"block-headline-right\">[\t\n\r ]+<h2>(.*?)</h2>").getMatch(0);
+        if (title == null) {
+            title = br.getRegex("<title>\\s*(.*?)\\s*(?:(\\s+\\(New.*?\\))?\\s+-\\s+Sunporno.*?)?</title>").getMatch(0);
         }
-        if (filename == null) {
-            /* Fallback */
-            filename = this.getFID(link);
+        if (title != null) {
+            title = Encoding.htmlDecode(title).trim();
+            link.setFinalFileName(title + extDefault);
         }
-        dllink = br.getRegex("flashvars\\.video_url\\s*=\\s*'(https?://[^<>\"\\']+)';").getMatch(0);
+        dllink = br.getRegex("src:\"(https?://[^\"]+)\",type:\"video/mp4\",res:\"high\"").getMatch(0);
         if (dllink == null) {
-            dllink = br.getRegex("flashvars\\.video_alt_url\\s*=\\s*'(https?://[^<>\"\\']+)';").getMatch(0);
+            dllink = br.getRegex("src:\"(https?://[^\"]+)\",type:\"video/mp4\",res:\"low\"").getMatch(0);
         }
-        filename = filename.trim();
-        link.setFinalFileName(Encoding.htmlDecode(filename) + ".mp4");
-        if (!StringUtils.isEmpty(dllink)) {
+        if (!StringUtils.isEmpty(dllink) && !isDownload) {
+            final boolean doKeyHandling = false; // 2024-02-29: Not needed anymore
             final String key = new Regex(dllink, "(key=.+)").getMatch(0);
-            if (key != null) {
+            if (key != null && doKeyHandling) {
                 /* 2019-09-06: This might not be needed anymore */
                 /* Avoids 403 issues. */
                 this.br.getPage("//www.sunporno.com/?area=movieFilePather&callback=movieFileCallbackFunc&id=1135032&url=" + Encoding.urlEncode(key) + "&_=" + System.currentTimeMillis());
@@ -113,8 +121,6 @@ public class SunPornoCom extends PluginForHost {
                 }
             }
             final Browser br2 = br.cloneBrowser();
-            // In case the link redirects to the finallink
-            br2.setFollowRedirects(true);
             URLConnectionAdapter con = null;
             try {
                 con = br2.openHeadConnection(dllink);
@@ -126,12 +132,11 @@ public class SunPornoCom extends PluginForHost {
                     final String redirect_url = con.getRequest().getUrl();
                     con = br.openHeadConnection(redirect_url);
                 }
-                if (this.looksLikeDownloadableContent(con)) {
-                    if (con.getCompleteContentLength() > 0) {
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
-                    }
+                handleConnectionErrors(br2, con);
+                if (con.isContentDecoded()) {
+                    link.setDownloadSize(con.getCompleteContentLength());
                 } else {
-                    server_issues = true;
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
                 }
             } finally {
                 try {
@@ -145,18 +150,26 @@ public class SunPornoCom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
-        requestFileInformation(link);
-        if (server_issues) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
-        } else if (StringUtils.isEmpty(dllink)) {
+        requestFileInformation(link, true);
+        if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
-        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            br.followConnection(true);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
+        dl = jd.plugins.BrowserAdapter.openDownload(this.br, link, dllink, true, 0);
+        handleConnectionErrors(br, dl.getConnection());
         dl.startDownload();
+    }
+
+    private void handleConnectionErrors(final Browser br, final URLConnectionAdapter con) throws PluginException, IOException {
+        if (!this.looksLikeDownloadableContent(con)) {
+            br.followConnection(true);
+            if (con.getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+            } else if (con.getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Video broken?");
+            }
+        }
     }
 
     @Override
