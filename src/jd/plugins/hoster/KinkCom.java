@@ -28,7 +28,6 @@ import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
-import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
@@ -69,14 +68,10 @@ public class KinkCom extends PluginForHost {
     public LazyPlugin.FEATURE[] getFeatures() {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX, LazyPlugin.FEATURE.COOKIE_LOGIN_OPTIONAL };
     }
-
     /* DEV NOTES */
     // Tags: Porn plugin
     // protocol: no https
     // other:
-    /* Connection stuff */
-    private static final int maxchunks = 0;
-    private String           dllink    = null;
 
     @Override
     public String getAGBLink() {
@@ -86,6 +81,10 @@ public class KinkCom extends PluginForHost {
     @Override
     public boolean isResumeable(final DownloadLink link, final Account account) {
         return true;
+    }
+
+    public int getMaxChunks(final DownloadLink link, final Account account) {
+        return 0;
     }
 
     @Override
@@ -105,7 +104,7 @@ public class KinkCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException, InterruptedException {
         final Account acc = AccountController.getInstance().getValidAccount(this.getHost());
-        return requestFileInformation(link, acc);
+        return requestFileInformation(link, acc, false);
     }
 
     private String getDirectlinkProperty(final DownloadLink link, final Account account) {
@@ -116,7 +115,7 @@ public class KinkCom extends PluginForHost {
         }
     }
 
-    private AvailableStatus requestFileInformation(final DownloadLink link, final Account account) throws IOException, PluginException, InterruptedException {
+    private AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws IOException, PluginException, InterruptedException {
         final String extDefault = ".mp4";
         final String fid = this.getFID(link);
         if (!link.isNameSet()) {
@@ -125,7 +124,6 @@ public class KinkCom extends PluginForHost {
         if (account != null) {
             this.login(account, false);
         }
-        dllink = null;
         br.getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -137,6 +135,7 @@ public class KinkCom extends PluginForHost {
         } else {
             filetitle = fid;
         }
+        String directurl = null;
         if (account != null) {
             /* Look for "official" downloadlinks --> Find highest quality */
             int qualityMax = -1;
@@ -152,38 +151,40 @@ public class KinkCom extends PluginForHost {
                     if (Encoding.isHtmlEntityCoded(url)) {
                         url = Encoding.htmlDecode(url);
                     }
-                    this.dllink = url;
+                    directurl = url;
                 }
             }
-            logger.info("Chosen premium download quality: " + qualityMax + " -> " + dllink);
+            logger.info("Chosen premium download quality: " + qualityMax + " -> " + directurl);
         } else {
             /* Download trailer */
             String url = br.getRegex("data\\-type\\s*=\\s*\"trailer\\-src\" data\\-url\\s*=\\s*\"(https?://[^\"]+)\"").getMatch(0);
             if (Encoding.isHtmlEntityCoded(url)) {
                 url = Encoding.htmlDecode(url);
             }
-            dllink = url;
-            logger.info("Chosen trailer: " + dllink);
+            directurl = url;
+            logger.info("Chosen trailer: " + directurl);
         }
         filetitle = Encoding.htmlDecode(filetitle);
         filetitle = filetitle.trim();
         link.setFinalFileName(this.applyFilenameExtension(filetitle, extDefault));
-        if (!StringUtils.isEmpty(dllink) && !(Thread.currentThread() instanceof SingleDownloadController)) {
-            link.setProperty(this.getDirectlinkProperty(link, account), this.dllink);
-            URLConnectionAdapter con = null;
-            try {
-                final Browser brc = br.cloneBrowser();
-                con = brc.openHeadConnection(dllink);
-                handleConnectionErrors(brc, con);
-                if (con.isContentDecoded()) {
-                    link.setDownloadSize(con.getCompleteContentLength());
-                } else {
-                    link.setVerifiedFileSize(con.getCompleteContentLength());
-                }
-            } finally {
+        if (!StringUtils.isEmpty(directurl)) {
+            link.setProperty(this.getDirectlinkProperty(link, account), directurl);
+            if (!isDownload) {
+                URLConnectionAdapter con = null;
                 try {
-                    con.disconnect();
-                } catch (final Throwable e) {
+                    final Browser brc = br.cloneBrowser();
+                    con = brc.openHeadConnection(directurl);
+                    handleConnectionErrors(brc, con);
+                    if (con.isContentDecoded()) {
+                        link.setDownloadSize(con.getCompleteContentLength());
+                    } else {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
+                } finally {
+                    try {
+                        con.disconnect();
+                    } catch (final Throwable e) {
+                    }
                 }
             }
         }
@@ -203,7 +204,8 @@ public class KinkCom extends PluginForHost {
             logger.info("Re-using stored directurl: " + storedDirecturl);
             dllink = storedDirecturl;
         } else {
-            requestFileInformation(link, account);
+            requestFileInformation(link, account, true);
+            dllink = link.getStringProperty(directlinkproperty);
             if (StringUtils.isEmpty(dllink)) {
                 /* Display premiumonly message in this case */
                 if (account == null || Account.AccountType.FREE.equals(account.getType())) {
@@ -213,7 +215,7 @@ public class KinkCom extends PluginForHost {
             }
         }
         try {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, this.isResumeable(link, account), maxchunks);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, this.isResumeable(link, account), this.getMaxChunks(link, account));
             handleConnectionErrors(br, dl.getConnection());
         } catch (final Exception e) {
             if (storedDirecturl != null) {
@@ -234,7 +236,7 @@ public class KinkCom extends PluginForHost {
             } else if (con.getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             } else {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Final downloadurl did not lead to file");
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Video broken?");
             }
         }
     }
