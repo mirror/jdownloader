@@ -18,14 +18,23 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.http.Cookies;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
+import jd.parser.html.Form.MethodType;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -38,7 +47,10 @@ import jd.plugins.PluginForHost;
 public class TwojplikPl extends PluginForHost {
     public TwojplikPl(PluginWrapper wrapper) {
         super(wrapper);
-        // this.enablePremium("https://" + getHost() + "/odkryj-pelnie-mozliwosci");
+        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            /* 2024-03-01: Premium mode hasn't been implemented yet. */
+            this.enablePremium("https://" + getHost() + "/odkryj-pelnie-mozliwosci");
+        }
     }
 
     @Override
@@ -114,6 +126,99 @@ public class TwojplikPl extends PluginForHost {
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link);
         handleDownload(link, null);
+    }
+
+    private boolean login(final Account account, final boolean force) throws Exception {
+        synchronized (account) {
+            br.setFollowRedirects(true);
+            br.setCookiesExclusive(true);
+            final Cookies cookies = account.loadCookies("");
+            if (cookies != null) {
+                logger.info("Attempting cookie login");
+                this.br.setCookies(this.getHost(), cookies);
+                if (!force) {
+                    /* Don't validate cookies */
+                    return false;
+                }
+                br.getPage("https://" + this.getHost() + "/");
+                if (this.isLoggedin(br)) {
+                    logger.info("Cookie login successful");
+                    /* Refresh cookie timestamp */
+                    account.saveCookies(br.getCookies(br.getHost()), "");
+                    return true;
+                } else {
+                    logger.info("Cookie login failed");
+                    br.clearCookies(null);
+                }
+            }
+            logger.info("Performing full login");
+            br.getPage("https://" + this.getHost() + "/");
+            final Form loginform = new Form();
+            loginform.setMethod(MethodType.POST);
+            loginform.put("action", "fastLogin");
+            loginform.put("mail", Encoding.urlEncode(account.getUser()));
+            loginform.put("password", Encoding.urlEncode(account.getPass()));
+            br.submitForm(loginform);
+            if (br.getRequest().getHtmlCode().startsWith("{")) {
+                /* Login failed -> Json response with more information */
+                final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+                final String alertText = (String) entries.get("alertText");
+                if (alertText != null) {
+                    throw new AccountInvalidException(alertText);
+                } else {
+                    throw new AccountInvalidException();
+                }
+            }
+            /* Double-check if we're logged in */
+            if (!isLoggedin(br)) {
+                throw new AccountInvalidException();
+            }
+            account.saveCookies(br.getCookies(br.getHost()), "");
+            return true;
+        }
+    }
+
+    private boolean isLoggedin(final Browser br) {
+        return br.containsHTML("auth/logout");
+    }
+
+    @Override
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        final AccountInfo ai = new AccountInfo();
+        login(account, true);
+        // TODO
+        // String space = br.getRegex("").getMatch(0);
+        // if (space != null) {
+        // ai.setUsedSpace(space.trim());
+        // }
+        // if (br.containsHTML("")) {
+        // account.setType(AccountType.FREE);
+        // /* free accounts can still have captcha */
+        // account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
+        // account.setConcurrentUsePossible(false);
+        // } else {
+        // final String expire = br.getRegex("").getMatch(0);
+        // if (expire == null) {
+        // throw new AccountInvalidException();
+        // } else {
+        // ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH));
+        // }
+        // account.setType(AccountType.PREMIUM);
+        // account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+        // account.setConcurrentUsePossible(true);
+        // }
+        ai.setUnlimitedTraffic();
+        return ai;
+    }
+
+    @Override
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        handleDownload(link, account);
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return Integer.MAX_VALUE;
     }
 
     private void handleDownload(final DownloadLink link, final Account account) throws Exception, PluginException {

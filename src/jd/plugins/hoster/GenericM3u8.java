@@ -198,7 +198,7 @@ public class GenericM3u8 extends PluginForHost {
         final int videoHeight = link.getIntegerProperty(PROPERTY_HEIGHT, 0);
         final int bandwidth = link.getIntegerProperty(PROPERTY_BANDWIDTH, 0);
         /* 2024-02-16: Do not touch this "DEPRECATED_NAME_PROPERTY" handling for now! */
-        String name = link.getStringProperty(PRESET_NAME_PROPERTY, DEPRECATED_NAME_PROPERTY);
+        String name = link.getStringProperty(PRESET_NAME_PROPERTY, link.getStringProperty(DEPRECATED_NAME_PROPERTY));
         if (name == null) {
             name = link.isNameSet() ? link.getName() : getFileNameFromURL(new URL(link.getPluginPatternMatcher().replaceFirst("(?i)^m3u8s?", "https://")));
             /* .m3u8 is not a valid file extension and we don't want to have this in our filename */

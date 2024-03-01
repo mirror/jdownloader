@@ -75,9 +75,8 @@ public class KinkCom extends PluginForHost {
     // protocol: no https
     // other:
     /* Connection stuff */
-    private static final int maxchunks    = 0;
-    private static final int maxdownloads = -1;
-    private String           dllink       = null;
+    private static final int maxchunks = 0;
+    private String           dllink    = null;
 
     @Override
     public String getAGBLink() {
@@ -176,8 +175,10 @@ public class KinkCom extends PluginForHost {
                 final Browser brc = br.cloneBrowser();
                 con = brc.openHeadConnection(dllink);
                 handleConnectionErrors(brc, con);
-                if (con.getCompleteContentLength() > 0) {
+                if (con.isContentDecoded()) {
                     link.setDownloadSize(con.getCompleteContentLength());
+                } else {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
                 }
             } finally {
                 try {
@@ -427,7 +428,7 @@ public class KinkCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return maxdownloads;
+        return Integer.MAX_VALUE;
     }
 
     @Override
@@ -438,7 +439,7 @@ public class KinkCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return maxdownloads;
+        return Integer.MAX_VALUE;
     }
 
     @Override
