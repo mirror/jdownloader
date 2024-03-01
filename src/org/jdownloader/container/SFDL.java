@@ -29,6 +29,7 @@ import jd.controlling.linkcrawler.CrawledLink;
 import jd.parser.Regex;
 import jd.plugins.ContainerStatus;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginException;
 import jd.plugins.PluginsC;
@@ -45,7 +46,7 @@ public class SFDL extends PluginsC {
 
     /* Debug-test filename scheme containing a title and file-password. */
     public static final Pattern         PATTERN_COMMON_FILENAME_SCHEME_WITH_PASSWORD = Pattern.compile("^([^\\{]+)\\{\\{(.*?)\\}\\}\\.sfdl$", Pattern.CASE_INSENSITIVE);
-    private final Object                PWLOCK                                       = new Object();
+    private static final Object         PWLOCK                                       = new Object();
     public static final ContainerConfig CFG                                          = JsonConfig.create(ContainerConfig.class);
 
     public ContainerStatus callDecryption(final File sfdlFile) {
@@ -187,7 +188,7 @@ public class SFDL extends PluginsC {
                     ret.add(ftpfolder);
                 }
             } else {
-                /* FTP files(?) */
+                /* FTP files */
                 final NodeList downloadFiles = document.getElementsByTagName("FileFullPath");
                 final NodeList fileSizes = document.getElementsByTagName("FileSize");
                 logger.info("Found " + downloadFiles.getLength() + " FTP files");
@@ -206,12 +207,16 @@ public class SFDL extends PluginsC {
                     ftpurl += "@" + sfdl_Host + ":" + sfdl_Port;
                     ftpurl += ftpFilePath;
                     logger.info("Result: " + ftpurl);
-                    final DownloadLink ftpfile = new DownloadLink(ftpurl, true);
+                    final DownloadLink ftpfile = new DownloadLink(jd.plugins.hoster.Ftp.createURLForThisPlugin(ftpurl), true);
                     if (fileSizes.getLength() == downloadFiles.getLength()) {
                         final long filesize = Long.valueOf(fileSizes.item(i).getTextContent()).longValue();
                         ftpfile.setDownloadSize(filesize);
                     }
-                    ftpfile.setAvailable(true);
+                    // ftpfile.setAvailable(true);
+                    ftpfile.setAvailableStatus(AvailableStatus.UNCHECKABLE);
+                    if (fp != null) {
+                        ftpfile._setFilePackage(fp);
+                    }
                     ret.add(ftpfile);
                 }
             }

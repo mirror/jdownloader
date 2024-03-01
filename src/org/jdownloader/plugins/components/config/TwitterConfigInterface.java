@@ -194,6 +194,7 @@ public interface TwitterConfigInterface extends PluginConfigInterface {
     @DefaultEnumValue("AUTO")
     @Order(31)
     @DescriptionForConfigEntry("Define which API should be used when crawling single Tweets.")
+    /* TODO: 2024-03-02: Remove this setting as it is not needed anymore. */
     SingleTweetCrawlerMode getSingleTweetCrawlerCrawlMode();
 
     void setSingleTweetCrawlerCrawlMode(final SingleTweetCrawlerMode mode);

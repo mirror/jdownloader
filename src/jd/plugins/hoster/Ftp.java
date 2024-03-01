@@ -28,6 +28,11 @@ import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.appwork.utils.net.httpconnection.HTTPProxy;
+import org.appwork.utils.net.httpconnection.HTTPProxyException;
+import org.jdownloader.DomainInfo;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.controlling.linkcrawler.CheckableLink;
 import jd.controlling.linkcrawler.CrawledLink;
@@ -48,11 +53,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.SimpleFTPDownloadInterface;
-
-import org.appwork.utils.net.httpconnection.HTTPProxy;
-import org.appwork.utils.net.httpconnection.HTTPProxyException;
-import org.jdownloader.DomainInfo;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 // DEV NOTES:
 // - ftp filenames can contain & characters!
@@ -440,5 +440,9 @@ public class Ftp extends PluginForHost {
     @Override
     public Boolean siteTesterDisabled() {
         return Boolean.TRUE;
+    }
+
+    public static String createURLForThisPlugin(final String url) {
+        return url == null ? null : url.replaceFirst("^(?i)ftp://", "ftpviajd://");
     }
 }

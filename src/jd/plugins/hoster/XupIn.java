@@ -23,7 +23,9 @@ import org.appwork.utils.Regex;
 import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.RandomUserAgent;
+import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -64,6 +66,13 @@ public class XupIn extends PluginForHost {
     }
 
     @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.setFollowRedirects(true);
+        return br;
+    }
+
+    @Override
     public String getAGBLink() {
         return "https://www.xup.in/terms/";
     }
@@ -100,9 +109,10 @@ public class XupIn extends PluginForHost {
             }
         }
         this.setBrowserExclusive();
-        this.br.setFollowRedirects(true);
         br.getPage(link.getPluginPatternMatcher());
-        if (br.containsHTML("Datei existiert nicht") || this.br.getHttpConnection().getResponseCode() == 404) {
+        if (this.br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("Datei existiert nicht")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = null;
@@ -121,35 +131,36 @@ public class XupIn extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         link.setDownloadSize(SizeFormatter.getSize(filesize));
-        link.setName(filename.trim());
+        link.setName(Encoding.htmlDecode(filename).trim());
         return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
-        br.setDebug(true);
-        this.requestFileInformation(link);
+        requestFileInformation(link);
         br.getHeaders().put("User-Agent", RandomUserAgent.generate());
-        Form download = br.getForm(0);
-        if (download == null) {
+        Form dlform = br.getForm(0);
+        if (dlform == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         String passCode = null;
-        if (download.hasInputFieldByName("vpass")) {
+        if (dlform.hasInputFieldByName("vpass")) {
+            link.setPasswordProtected(Boolean.TRUE);
             if (link.getDownloadPassword() == null) {
                 passCode = getUserInput(null, link);
             } else {
                 /* Use saved password */
                 passCode = link.getDownloadPassword();
             }
-            download.put("vpass", passCode);
+            dlform.put("vpass", passCode);
         }
-        if (download.hasInputFieldByName("vchep")) {
+        final String captchafieldid = "vchep";
+        if (dlform.hasInputFieldByName(captchafieldid)) {
             final String code = this.getCaptchaCode("http://www0.xup.in/captcha.php", link);
-            download.put("vchep", code);
+            dlform.put(captchafieldid, code);
         }
-        download.remove(null);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, download);
+        dlform.remove(null);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlform);
         if (!looksLikeDownloadableContent(dl.getConnection())) {
             String page = br.followConnection(true);
             if (page.contains("richtige Passwort erneut ein")) {

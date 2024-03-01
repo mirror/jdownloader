@@ -48,7 +48,6 @@ import org.jdownloader.gui.notify.gui.AbstractNotifyWindow;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.plugins.components.config.TwitterConfigInterface;
 import org.jdownloader.plugins.components.config.TwitterConfigInterface.FilenameScheme;
-import org.jdownloader.plugins.components.config.TwitterConfigInterface.SingleTweetCrawlerMode;
 import org.jdownloader.plugins.components.config.TwitterConfigInterface.SingleTweetCrawlerTextCrawlMode;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
@@ -362,14 +361,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
             /* Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final TwitterConfigInterface cfg = PluginJsonConfig.get(TwitterConfigInterface.class);
-        final SingleTweetCrawlerMode mode = cfg.getSingleTweetCrawlerCrawlMode();
-        if (mode == SingleTweetCrawlerMode.NEW_API || mode == SingleTweetCrawlerMode.AUTO) {
-            return crawlSingleTweetViaGraphqlAPI(account, username, tweetID);
-        } else {
-            /* Old API/Auto mode */
-            return crawlSingleTweetViaOldAPI(account, tweetID);
-        }
+        return crawlSingleTweetViaGraphqlAPI(account, username, tweetID);
     }
 
     private ArrayList<DownloadLink> crawlSingleTweetViaGraphqlAPI(final Account account, final String username, final String tweetID) throws Exception {
@@ -455,15 +447,6 @@ public class TwitterComCrawler extends PluginForDecrypt {
     }
 
     /**
-     * Wrapper
-     *
-     * @throws PluginException
-     */
-    private ArrayList<DownloadLink> crawlTweetMap(final Map<String, Object> tweet) throws MalformedURLException, PluginException {
-        return crawlTweetMap(null, tweet, null, null);
-    }
-
-    /**
      * Crawls single media objects obtained via API.
      *
      * @throws MalformedURLException
@@ -533,13 +516,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
                 replyTextForFilename += "_reply";
             }
         }
-        if (fp != null) {
-            /* Assume that we're crawling a complete profile. */
-            final String profileDescription = (String) user.get("description");
-            if (StringUtils.isEmpty(fp.getComment()) && !StringUtils.isEmpty(profileDescription)) {
-                fp.setComment(profileDescription);
-            }
-        } else {
+        if (fp == null) {
             /* Assume that we're crawling a single tweet -> Set date + username as packagename. */
             fp = FilePackage.getInstance();
             fp.setName(formattedDate + "_" + username);
@@ -923,61 +900,6 @@ public class TwitterComCrawler extends PluginForDecrypt {
         return this.crawlUserViaGraphqlAPI(param, username, account, mode);
     }
 
-    private final String TWITTER_PROFILE_PACKAGE_KEY_PREFIX       = "twitterprofile://";
-    private final String TWITTER_PROFILE_LIKES_PACKAGE_KEY_PREFIX = "twitterprofile_likes://";
-
-    @Deprecated
-    /**
-     * 2023-07-13: Looks like twitter has disabled this API(?) </br>
-     * It e.g. returns: {"errors":[{"code":179,"message":"Sorry, you are not authorized to see this status."}]} ...even though user has the
-     * rights to view that tweet.
-     */
-    private ArrayList<DownloadLink> crawlSingleTweetViaOldAPI(final Account account, final String tweetID) throws Exception {
-        logger.info("Crawling Tweet via old API");
-        prepareAPI(this.br, account);
-        final boolean tryNewMethod = true; /* 2021-06-15 */
-        boolean looksLikeOfflineError34 = false;
-        if (tryNewMethod) {
-            br.getPage("https://api.twitter.com/1.1/statuses/show/" + tweetID + ".json?cards_platform=Web-12&include_reply_count=1&include_cards=1&include_user_entities=0&tweet_mode=extended");
-            try {
-                handleErrorsAPI(this.br);
-                final Map<String, Object> tweet = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
-                return crawlTweetMap(tweet);
-            } catch (final PluginException e) {
-                if (e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND && br.containsHTML("\"code\"\\s*:\\s*34")) {
-                    logger.log(e);
-                    /* Double-check down below. */
-                    logger.info("Tweet looks to be offline");
-                    looksLikeOfflineError34 = true;
-                } else {
-                    throw e;
-                }
-            }
-        }
-        br.getPage(API_BASE_v2 + "/timeline/conversation/" + tweetID + ".json?include_profile_interstitial_type=1&include_blocking=1&include_blocked_by=1&include_followed_by=1&include_want_retweets=1&include_mute_edge=1&include_can_dm=1&include_can_media_tag=1&skip_status=1&cards_platform=Web-12&include_cards=1&include_composer_source=true&include_ext_alt_text=true&include_reply_count=1&tweet_mode=extended&include_entities=true&include_user_entities=true&include_ext_media_color=true&include_ext_media_availability=true&send_error_codes=true&simple_quoted_tweets=true&count=20&ext=mediaStats%2CcameraMoment");
-        handleErrorsAPI(this.br);
-        final Map<String, Object> root = JavaScriptEngineFactory.jsonToJavaMap(br.getRequest().getHtmlCode());
-        final Map<String, Object> tweet = (Map<String, Object>) JavaScriptEngineFactory.walkJson(root, "globalObjects/tweets/" + tweetID);
-        if (tweet == null) {
-            if (looksLikeOfflineError34) {
-                /**
-                 * We're missing the permissions to view this content. </br>
-                 * Most likely it is age restricted content and (age verified) account is required.
-                 */
-                if (account == null) {
-                    logger.info("Looks like an account is required to crawl this thread");
-                } else {
-                    logger.info("Looks like given account is lacking permissions to view this tweet");
-                }
-                throw new AccountRequiredException();
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-        } else {
-            return crawlTweetMap(tweet);
-        }
-    }
-
     private void resetUglyGlobalVariables() {
         /* Clear some global variables (Yes I know, global variables are evil but this whole plugin is a mess so idk) */
         dupeListForProfileCrawlerTweetIDs.clear();
@@ -1008,22 +930,34 @@ public class TwitterComCrawler extends PluginForDecrypt {
         }
         final String bubbleNotifyTitle = "Twitter profile " + username + " | ID: " + userID;
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setAllowInheritance(true);
+        fp.setAllowMerge(true);
+        fp.setPackageKey("twitteruser://" + crawlmode.name());
+        final String profileDescription = (String) user.get("description");
+        if (!StringUtils.isEmpty(profileDescription)) {
+            fp.setComment(profileDescription);
+        }
         if (crawlmode == ProfileCrawlMode.LIKES) {
             if (favorite_count == 0) {
                 displayBubblenotifyMessage("Profile crawler " + username + " | Warning", "You are trying to crawl all likes of this profile but it has no liked items.");
                 throw new DecrypterRetryException(RetryReason.EMPTY_PROFILE, "PROFILE_HAS_NO_LIKES_" + username, "You are trying to crawl all likes of this profile but it has no liked items.");
             }
-            final ArrayList<DownloadLink> results = crawlTweetsViaGraphqlAPI("Likes", param, user, account, crawlmode);
+            fp.setName(username + " - likes");
+            final ArrayList<DownloadLink> results = crawlTweetsViaGraphqlAPI("Likes", param, user, account, crawlmode, fp);
             ret.addAll(results);
         } else if (crawlmode == ProfileCrawlMode.MEDIA) {
             if (media_count == 0) {
                 displayBubblenotifyMessage("Profile crawler " + username + " | Warning", "You are trying to crawl all media items of this profile but it has no media items.");
                 throw new DecrypterRetryException(RetryReason.EMPTY_PROFILE, "PROFILE_HAS_NO_MEDIA_ITEMS_" + username, "You are trying to crawl all media items of this profile but it has no media items.");
             }
-            final ArrayList<DownloadLink> results = crawlTweetsViaGraphqlAPI("UserMedia", param, user, account, crawlmode);
+            fp.setName(username + " - media");
+            final ArrayList<DownloadLink> results = crawlTweetsViaGraphqlAPI("UserMedia", param, user, account, crawlmode, fp);
             ret.addAll(results);
         } else {
-            final ArrayList<DownloadLink> results1 = crawlTweetsViaGraphqlAPI("UserTweets", param, user, account, crawlmode);
+            /* Crawl all items of user + all media items */
+            fp.setName(username);
+            final ArrayList<DownloadLink> results1 = crawlTweetsViaGraphqlAPI("UserTweets", param, user, account, crawlmode, fp);
             ret.addAll(results1);
             if (profileCrawlerSkippedResultsByMaxitems.size() == 0 && media_count > 0) {
                 logger.info("Crawling remaining " + media_count + " media items from profile");
@@ -1041,7 +975,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
                      * will contain items which we've already crawled.
                      */
                     resetUglyGlobalVariables();
-                    final ArrayList<DownloadLink> results2 = crawlTweetsViaGraphqlAPI("UserMedia", param, user, account, ProfileCrawlMode.MEDIA);
+                    final ArrayList<DownloadLink> results2 = crawlTweetsViaGraphqlAPI("UserMedia", param, user, account, ProfileCrawlMode.MEDIA, fp);
                     ret.addAll(results2);
                 }
             }
@@ -1076,8 +1010,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
         return ret;
     }
 
-    private ArrayList<DownloadLink> crawlTweetsViaGraphqlAPI(final String queryName, final CryptedLink param, final Map<String, Object> user, final Account account, final ProfileCrawlMode mode) throws Exception {
-        final String username = user.get("screen_name").toString();
+    private ArrayList<DownloadLink> crawlTweetsViaGraphqlAPI(final String queryName, final CryptedLink param, final Map<String, Object> user, final Account account, final ProfileCrawlMode mode, final FilePackage fp) throws Exception {
         final String userID = user.get("id_str").toString();
         final HashSet<String> cursorDupes = new HashSet<String>();
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
@@ -1089,15 +1022,10 @@ public class TwitterComCrawler extends PluginForDecrypt {
             // profileCrawlerTotalCrawledTweetsCount = this.preGivenNumberOfTotalWalkedThroughTweetsCount.intValue();
             profileCrawlerNextCursor = this.preGivenNextCursor;
         }
-        final FilePackage fp = FilePackage.getInstance();
         final boolean allowSkipRetweets;
         if (mode == ProfileCrawlMode.LIKES) {
-            fp.setName(username + " - likes");
-            fp.setPackageKey(TWITTER_PROFILE_LIKES_PACKAGE_KEY_PREFIX + userID);
             allowSkipRetweets = false;
         } else {
-            fp.setName(username);
-            fp.setPackageKey(TWITTER_PROFILE_PACKAGE_KEY_PREFIX + userID);
             allowSkipRetweets = true;
         }
         final TwitterConfigInterface cfg = PluginJsonConfig.get(TwitterConfigInterface.class);
@@ -1193,7 +1121,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
 
     private ArrayList<DownloadLink> crawlUserProfileGraphqlTimelineInstructions(final List<Map<String, Object>> timelineInstructions, final Map<String, Object> user, final String singleTweetID, final FilePackage fp, final boolean crawlUserLikes) throws Exception {
         final ArrayList<DownloadLink> allowedResults = new ArrayList<DownloadLink>();
-        timelineInstructionsLoop: for (final Map<String, Object> timelineInstruction : timelineInstructions) {
+        for (final Map<String, Object> timelineInstruction : timelineInstructions) {
             final String timelineInstructionType = timelineInstruction.get("type").toString();
             if (timelineInstructionType.equals("TimelineAddEntries")) {
                 final List<Map<String, Object>> timelineEntries = (List<Map<String, Object>>) timelineInstruction.get("entries");
