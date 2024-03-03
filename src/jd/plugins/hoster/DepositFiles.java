@@ -942,6 +942,10 @@ public class DepositFiles extends antiDDoSForHost {
         String directurl = (String) data.get("download_url");
         if (StringUtils.isEmpty(directurl)) {
             /* This should never happen. */
+            data = (Map<String, Object>) data.get("data");
+            if (data != null && "Guest".equals(data.get("mode"))) {
+                throw new AccountUnavailableException("Account not in use-VPN/Proxy blocked?", 15 * 60 * 1000l);
+            }
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Bad API response: Failed to find final downloadurl");
         }
         directurl = adjustProtocol(directurl);
