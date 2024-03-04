@@ -10,18 +10,6 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import jd.SecondLevelLaunch;
-import jd.controlling.AccountController;
-import jd.controlling.AccountControllerEvent;
-import jd.controlling.AccountControllerListener;
-import jd.controlling.downloadcontroller.AccountCache;
-import jd.controlling.downloadcontroller.AccountCache.CachedAccount;
-import jd.controlling.downloadcontroller.DownloadSession;
-import jd.gui.swing.jdgui.views.settings.panels.accountmanager.orderpanel.dialog.EditHosterRuleDialog;
-import jd.plugins.Account;
-import jd.plugins.DownloadLink;
-import jd.plugins.PluginForHost;
-
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
@@ -47,6 +35,18 @@ import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.plugins.controller.host.PluginFinder;
 import org.jdownloader.settings.advanced.AdvancedConfigManager;
+
+import jd.SecondLevelLaunch;
+import jd.controlling.AccountController;
+import jd.controlling.AccountControllerEvent;
+import jd.controlling.AccountControllerListener;
+import jd.controlling.downloadcontroller.AccountCache;
+import jd.controlling.downloadcontroller.AccountCache.CachedAccount;
+import jd.controlling.downloadcontroller.DownloadSession;
+import jd.gui.swing.jdgui.views.settings.panels.accountmanager.orderpanel.dialog.EditHosterRuleDialog;
+import jd.plugins.Account;
+import jd.plugins.DownloadLink;
+import jd.plugins.PluginForHost;
 
 public class HosterRuleController implements AccountControllerListener {
     private static final HosterRuleController INSTANCE = new HosterRuleController();
@@ -234,7 +234,7 @@ public class HosterRuleController implements AccountControllerListener {
             @Override
             protected Void run() throws RuntimeException {
                 if (loadedRules != null) {
-                    for (AccountUsageRule hr : loadedRules) {
+                    for (final AccountUsageRule hr : loadedRules) {
                         validateRule(hr);
                     }
                 }
@@ -314,7 +314,7 @@ public class HosterRuleController implements AccountControllerListener {
         });
     }
 
-    protected void validateRule(AccountUsageRule hr) {
+    protected void validateRule(final AccountUsageRule hr) {
         final String host = hr.getHoster();
         final Set<Account> accounts = new HashSet<Account>();
         AccountGroup defaultAccountGroup = null;
@@ -360,6 +360,7 @@ public class HosterRuleController implements AccountControllerListener {
             }
         }
         hr.getAccounts().removeAll(removeAccountGroups);
+        boolean isRuleForMultihoster = false;
         for (final Account acc : AccountController.getInstance().list(host)) {
             if (accounts.add(acc)) {
                 final AccountReference ar = new AccountReference(acc);
@@ -369,6 +370,15 @@ public class HosterRuleController implements AccountControllerListener {
                 }
                 defaultAccountGroup.getChildren().add(ar);
             }
+            if (acc.getAccountInfo() != null && acc.getAccountInfo().getMultiHostSupport() != null) {
+                isRuleForMultihoster = true;
+            }
+        }
+        if (isRuleForMultihoster) {
+            // TODO: Maybe auto-delete such invalid rules
+            logger.info("Disable rule for host " + host + " because: Rules for multihosters are not allowed");
+            hr.setEnabled(false);
+            return;
         }
         final List<Account> multiAccs = AccountController.getInstance().getMultiHostAccounts(host);
         if (multiAccs != null) {

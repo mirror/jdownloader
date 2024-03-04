@@ -8,10 +8,6 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 
-import jd.controlling.AccountController;
-import jd.plugins.Account;
-import jd.plugins.AccountInfo;
-
 import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
@@ -22,6 +18,10 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.AbstractAddAction;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
+
+import jd.controlling.AccountController;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
 
 public class NewRuleAction extends AbstractAddAction {
     /**
@@ -34,19 +34,21 @@ public class NewRuleAction extends AbstractAddAction {
     }
 
     public void actionPerformed(ActionEvent e) {
-        ArrayList<DomainInfo> list = getAvailableDomainInfoList();
-        // only one rule per hoster
-        for (AccountUsageRule aur : HosterRuleController.getInstance().list()) {
+        final ArrayList<DomainInfo> list = getAvailableDomainInfoList();
+        /* Allow only one rule per hoster -> Remove items from list which a rule already exists for. */
+        final HosterRuleController hrc = HosterRuleController.getInstance();
+        for (AccountUsageRule aur : hrc.list()) {
             list.remove(DomainInfo.getInstance(aur.getHoster()));
         }
-        ChooseHosterDialog d = new ChooseHosterDialog(_GUI.T.NewRuleAction_actionPerformed_choose_hoster_message(), list.toArray(new DomainInfo[] {}));
+        final ChooseHosterDialog d = new ChooseHosterDialog(_GUI.T.NewRuleAction_actionPerformed_choose_hoster_message(), list.toArray(new DomainInfo[] {}));
         try {
             Dialog.getInstance().showDialog(d);
             final DomainInfo di = d.getSelectedItem();
             if (di != null) {
+                /* Add rule for selected item. */
                 final AccountUsageRule rule = new AccountUsageRule(di.getTld());
                 rule.setEnabled(true);
-                HosterRuleController.getInstance().add(rule);
+                hrc.add(rule);
             }
         } catch (DialogClosedException e1) {
             e1.printStackTrace();
@@ -55,14 +57,22 @@ public class NewRuleAction extends AbstractAddAction {
         }
     }
 
+    /** Returns list of possible domains which an AccountUsageRule can be added for. */
     protected ArrayList<DomainInfo> getAvailableDomainInfoList() {
         final HashSet<DomainInfo> domains = new HashSet<DomainInfo>();
-        for (Account acc : AccountController.getInstance().list()) {
+        final HashSet<String> multihosterDomains = new HashSet<String>();
+        for (final Account acc : AccountController.getInstance().list()) {
             final AccountInfo ai = acc.getAccountInfo();
             if (ai != null) {
                 final List<String> supportedHosts = ai.getMultiHostSupport();
                 if (supportedHosts != null) {
+                    final String thisMultihosterDomain = acc.getHoster();
+                    multihosterDomains.add(acc.getHoster());
                     for (final String supportedHost : supportedHosts) {
+                        if (supportedHost.equals(thisMultihosterDomain)) {
+                            /* Multihoster supports its own domain -> Impossible */
+                            continue;
+                        }
                         final LazyHostPlugin plg = HostPluginController.getInstance().get(supportedHost);
                         if (plg != null) {
                             domains.add(DomainInfo.getInstance(plg.getHost()));
@@ -73,13 +83,23 @@ public class NewRuleAction extends AbstractAddAction {
         }
         final Collection<LazyHostPlugin> plugins = HostPluginController.getInstance().list();
         for (final LazyHostPlugin plugin : plugins) {
-            if (plugin.isPremium()) {
+            /**
+             * Collect domains of all plugins which: </br>
+             * - Support premium download/account </br>
+             * - Are not a multihoster </br>
+             * Some multihosters do support downloading their own selfhosted files in account mode but this is the exception. </br>
+             * Examples: high-way.me, premiumize.me
+             */
+            if (!plugin.isPremium()) {
+                continue;
+            } else if (multihosterDomains.contains(plugin.getHost())) {
+                continue;
+            } else {
                 domains.add(DomainInfo.getInstance(plugin.getHost()));
             }
         }
         final ArrayList<DomainInfo> lst = new ArrayList<DomainInfo>(domains);
         Collections.sort(lst, new Comparator<DomainInfo>() {
-
             @Override
             public int compare(DomainInfo o1, DomainInfo o2) {
                 return o1.getTld().compareTo(o2.getTld());
@@ -92,5 +112,4 @@ public class NewRuleAction extends AbstractAddAction {
     public String getTooltipText() {
         return _GUI.T.NewRuleAction_getTooltipText_tt_();
     }
-
 }
