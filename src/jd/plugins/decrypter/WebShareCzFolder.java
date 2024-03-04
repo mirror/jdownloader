@@ -131,7 +131,7 @@ public class WebShareCzFolder extends PluginForDecrypt {
                 logger.info("Stopping because: Aborted by user");
                 break;
             } else if (numberofNewItemsThisPage < maxItemsPerPage) {
-                logger.info("Stopping because: Current page contains less items than full page pagination");
+                logger.info("Stopping because: Current page contains less items than full page pagination -> Reached end?");
                 break;
             } else {
                 /* Continue to next page */

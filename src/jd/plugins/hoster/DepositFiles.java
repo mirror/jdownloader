@@ -942,10 +942,12 @@ public class DepositFiles extends antiDDoSForHost {
         String directurl = (String) root_data.get("download_url");
         if (StringUtils.isEmpty(directurl)) {
             /* This should never happen. */
-            if (root_data != null && "Guest".equals(root_data.get("mode"))) {
+            if ("Guest".equals(root_data.get("mode"))) {
+                /* API response looks like free/anonymous download mode although we're supposed to be in premium mode */
                 throw new AccountUnavailableException("Account not in use-VPN/Proxy blocked?", 15 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Bad API response: Failed to find final downloadurl");
             }
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Bad API response: Failed to find final downloadurl");
         }
         directurl = adjustProtocol(directurl);
         dl = new jd.plugins.BrowserAdapter().openDownload(br, link, directurl, resume, maxchunks);

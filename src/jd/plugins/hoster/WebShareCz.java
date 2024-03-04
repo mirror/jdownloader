@@ -92,7 +92,7 @@ public class WebShareCz extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://webshare.cz/podminky.php";
+        return "https://" + getHost() + "/podminky.php";
     }
 
     @Override
@@ -117,7 +117,7 @@ public class WebShareCz extends PluginForHost {
     private String getFID(final DownloadLink link) {
         String fid = new Regex(link.getPluginPatternMatcher(), "(?i)/file/([A-Za-z0-9]+)").getMatch(0);
         if (fid == null) {
-            fid = new Regex(link.getPluginPatternMatcher(), "https?://[^/]+/([A-Za-z0-9]{10})").getMatch(0);
+            fid = new Regex(link.getPluginPatternMatcher(), "(?i)https?://[^/]+/([A-Za-z0-9]{10})").getMatch(0);
             if (fid == null) {
                 try {
                     fid = UrlQuery.parse(link.getPluginPatternMatcher()).get("fhash");
@@ -176,6 +176,7 @@ public class WebShareCz extends PluginForHost {
         final UrlQuery query = new UrlQuery();
         query.add("ident", getFID(link));
         if (pwhash != null) {
+            /* Password has been requested before and the password-hash we got should grant us access. */
             query.add("password", pwhash);
         }
         query.add("wst", "");
@@ -221,8 +222,40 @@ public class WebShareCz extends PluginForHost {
         if (account != null) {
             this.login(account, false);
         }
-        pwProtectedErrorhandling(link);
-        final String pwhash = link.getStringProperty(PROPERTY_DOWNLOAD_PASSWORD_HASH);
+        String pwhash = null;
+        if (link.isPasswordProtected()) {
+            final String fileid = this.getFID(link);
+            final UrlQuery query1 = new UrlQuery();
+            query1.add("ident", Encoding.urlEncode(fileid));
+            query1.add("maybe_removed", "1");
+            query1.add("wst", "");
+            br.postPage("https://" + getHost() + "/api/file_password_salt/", query1);
+            final String salt = this.getXMLtagValue("salt");
+            if (StringUtils.isEmpty(salt)) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            String passCode = link.getDownloadPassword();
+            if (passCode == null) {
+                passCode = getUserInput("Password?", link);
+            }
+            pwhash = JDHash.getSHA1(crypt_md5(passCode.getBytes("UTF-8"), salt));
+            final UrlQuery query2 = new UrlQuery();
+            query2.add("ident", Encoding.urlEncode(fileid));
+            query2.add("password", pwhash);
+            query2.add("wst", "");
+            br.postPage("/api/verify_file_password/", query2);
+            final String correctPW = this.getXMLtagValue("correct");
+            if ("1".equals(correctPW)) {
+                logger.info("User entered correct password: " + passCode);
+                link.setDownloadPassword(passCode);
+                link.setProperty(PROPERTY_DOWNLOAD_PASSWORD_HASH, pwhash);
+            } else {
+                /* Nullify potentially stored password as it is invalid. */
+                logger.info("User entered incorrect password: " + passCode);
+                invalidateLastStoredDownloadPassword(link);
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
+            }
+        }
         final UrlQuery query = new UrlQuery();
         query.add("ident", getFID(link));
         if (pwhash != null) {
@@ -250,44 +283,6 @@ public class WebShareCz extends PluginForHost {
             }
         }
         dl.startDownload();
-    }
-
-    private void pwProtectedErrorhandling(final DownloadLink link) throws PluginException, IOException, NoSuchAlgorithmException {
-        if (!link.isPasswordProtected()) {
-            /* Do nothing */
-            return;
-        }
-        final String fileid = this.getFID(link);
-        final UrlQuery query1 = new UrlQuery();
-        query1.add("ident", Encoding.urlEncode(fileid));
-        query1.add("maybe_removed", "1");
-        query1.add("wst", "");
-        br.postPage("https://" + getHost() + "/api/file_password_salt/", query1);
-        final String salt = this.getXMLtagValue("salt");
-        if (StringUtils.isEmpty(salt)) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        String passCode = link.getDownloadPassword();
-        if (passCode == null) {
-            passCode = getUserInput("Password?", link);
-        }
-        final String downloadpasswordhash = JDHash.getSHA1(crypt_md5(passCode.getBytes("UTF-8"), salt));
-        final UrlQuery query2 = new UrlQuery();
-        query2.add("ident", Encoding.urlEncode(fileid));
-        query2.add("password", downloadpasswordhash);
-        query2.add("wst", "");
-        br.postPage("/api/verify_file_password/", query2);
-        final String correctPW = this.getXMLtagValue("correct");
-        if ("1".equals(correctPW)) {
-            logger.info("User entered correct password: " + passCode);
-            link.setDownloadPassword(passCode);
-            link.setProperty(PROPERTY_DOWNLOAD_PASSWORD_HASH, downloadpasswordhash);
-        } else {
-            /* Nullify potentially stored password as it is invalid. */
-            logger.info("User entered incorrect password: " + passCode);
-            invalidateLastStoredDownloadPassword(link);
-            throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
-        }
     }
 
     private void invalidateLastStoredDownloadPassword(final DownloadLink link) {
@@ -340,11 +335,11 @@ public class WebShareCz extends PluginForHost {
                     /* Do not verify cookies */
                     return;
                 }
-                br.postPage("https://" + this.getHost() + "/api/user_data/", "wst=" + getToken(account));
+                br.postPage("https://" + getHost() + "/api/user_data/", "wst=" + getLoginToken(account));
                 final String status = getXMLtagValue("status");
                 if (StringUtils.equalsIgnoreCase(status, "OK")) {
                     logger.info("Cookie login successful");
-                    account.saveCookies(this.br.getCookies(this.getHost()), "");
+                    account.saveCookies(br.getCookies(getHost()), "");
                     return;
                 } else {
                     logger.info("Cookie login failed");
@@ -383,7 +378,7 @@ public class WebShareCz extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         login(account, true);
         if (!br.getURL().contains("/api/user_data/")) {
-            br.postPage("/api/user_data/", "wst=" + getToken(account));
+            br.postPage("/api/user_data/", "wst=" + getLoginToken(account));
         }
         final String status = getXMLtagValue("status");
         if (!StringUtils.equalsIgnoreCase(status, "OK")) {
@@ -403,7 +398,7 @@ public class WebShareCz extends PluginForHost {
             if (ai.getTrafficLeft() > 0) {
                 account.setType(AccountType.PREMIUM);
                 account.setConcurrentUsePossible(true);
-                account.setMaxSimultanDownloads(20);
+                account.setMaxSimultanDownloads(getMaxSimultanPremiumDownloadNum());
                 statustext = account.getType().getLabel() + " | User with credits";
             } else {
                 /* Free account or expired premium account */
@@ -417,7 +412,7 @@ public class WebShareCz extends PluginForHost {
             ai.setUnlimitedTraffic();
             account.setType(AccountType.PREMIUM);
             account.setConcurrentUsePossible(true);
-            account.setMaxSimultanDownloads(20);
+            account.setMaxSimultanDownloads(getMaxSimultanPremiumDownloadNum());
             statustext = "VIP User";
         }
         statustext += " | Points: " + getXMLtagValue("points");
@@ -430,8 +425,13 @@ public class WebShareCz extends PluginForHost {
         this.handleDownload(link, account);
     }
 
-    private String getToken(final Account account) {
+    private String getLoginToken(final Account account) {
         return account.getStringProperty("token");
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return Integer.MAX_VALUE;
     }
 
     /*
