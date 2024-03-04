@@ -914,12 +914,12 @@ public class UlozTo extends PluginForHost {
     }
 
     public AccountInfo fetchAccountInfoWebsite(final Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
         loginWebsite(account, true);
         String trafficleftStr = br.getRegex("data-remaining-credit=\"([^\"]+)").getMatch(0);
         if (trafficleftStr == null) {
             trafficleftStr = br.getRegex("class=\"t-credit-amount\"[^>]*>([^<]+)").getMatch(0);
         }
+        final AccountInfo ai = new AccountInfo();
         ai.setTrafficRefill(false);
         long trafficleft = -1;
         if (trafficleftStr != null) {

@@ -896,22 +896,22 @@ public class DepositFiles extends antiDDoSForHost {
         }
         apiGetPage(API_BASE + "/download/file?" + query.toString());
         final String errorPasswordProtected = "FileIsPasswordProtected";
-        Map<String, Object> entries = this.handleErrorsApi(link, account, errorPasswordProtected);
-        if (errorPasswordProtected.equalsIgnoreCase((String) entries.get("error"))) {
+        Map<String, Object> root = this.handleErrorsApi(link, account, errorPasswordProtected);
+        if (errorPasswordProtected.equalsIgnoreCase((String) root.get("error"))) {
             /* File is password protected */
             link.setPasswordProtected(true);
             passCode = getUserInput("Password?", link);
             query.addAndReplace("file_password", Encoding.urlEncode(passCode));
             apiGetPage(API_BASE + "/download/file?" + query.toString());
-            entries = this.handleErrorsApi(link, account);
+            root = this.handleErrorsApi(link, account);
             /* No exception? User must have entered correct password. */
             link.setDownloadPassword(passCode);
         }
-        Map<String, Object> data = (Map<String, Object>) entries.get("data");
+        Map<String, Object> root_data = (Map<String, Object>) root.get("data");
         if (account.getType() == AccountType.FREE) {
-            final String mode = (String) data.get("mode");
-            final Number delay = (Number) data.get("delay");
-            final String dlToken = (String) data.get("download_token");
+            final String mode = (String) root_data.get("mode");
+            final Number delay = (Number) root_data.get("delay");
+            final String dlToken = (String) root_data.get("download_token");
             if (delay == null && StringUtils.isEmpty(mode) && StringUtils.isEmpty(dlToken)) {
                 /* This should never happen. */
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Bad API response");
@@ -935,15 +935,14 @@ public class DepositFiles extends antiDDoSForHost {
                 // query.add("response", "null");
                 query.add("download_token", Encoding.urlEncode(dlToken));
                 apiGetPage(API_BASE + "/download/file?" + query.toString());
-                entries = handleErrorsApi(link, account);
-                data = (Map<String, Object>) entries.get("data");
+                root = handleErrorsApi(link, account);
+                root_data = (Map<String, Object>) root.get("data");
             }
         }
-        String directurl = (String) data.get("download_url");
+        String directurl = (String) root_data.get("download_url");
         if (StringUtils.isEmpty(directurl)) {
             /* This should never happen. */
-            data = (Map<String, Object>) data.get("data");
-            if (data != null && "Guest".equals(data.get("mode"))) {
+            if (root_data != null && "Guest".equals(root_data.get("mode"))) {
                 throw new AccountUnavailableException("Account not in use-VPN/Proxy blocked?", 15 * 60 * 1000l);
             }
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Bad API response: Failed to find final downloadurl");

@@ -207,11 +207,13 @@ public class KinkCom extends PluginForHost {
             requestFileInformation(link, account, true);
             dllink = link.getStringProperty(directlinkproperty);
             if (StringUtils.isEmpty(dllink)) {
-                /* Display premiumonly message in this case */
-                if (account == null || Account.AccountType.FREE.equals(account.getType())) {
-                    logger.info("Failed to download trailer");
+                if (account != null && AccountType.PREMIUM.equals(account.getType())) {
+                    /* This should never happen. */
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                } else {
+                    /* This should never happen but maybe not all videos have a trailer available. */
+                    throw new AccountRequiredException("Failed to download trailer -> Add a premium account and try again");
                 }
-                throw new AccountRequiredException();
             }
         }
         try {

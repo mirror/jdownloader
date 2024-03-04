@@ -117,7 +117,7 @@ public class TwitterCom extends PluginForHost {
         return link.getHost().equalsIgnoreCase(plugin.getHost());
     }
 
-    private final String                  TYPE_DIRECT                                            = "(?i)https?://[a-z0-9]+\\.twimg\\.com/.+";
+    public static final Pattern           TYPE_DIRECT                                            = Pattern.compile("(?i)https?://[a-z0-9]+\\.twimg\\.com/.+");
     public static final String            TYPE_VIDEO_DIRECT                                      = "(?i)https?://amp\\.twimg\\.com/v/.+";
     public static final String            TYPE_VIDEO_VMAP                                        = "(?i)^https?://.*\\.vmap$";
     public static final Pattern           TYPE_VIDEO_EMBED                                       = Pattern.compile("(?i)https?://[^/]+/i/videos/tweet/(\\d+)");
@@ -226,12 +226,12 @@ public class TwitterCom extends PluginForHost {
     }
 
     public AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
+        String filenameFromHeader = null;
         if (isText(link)) {
             if (StringUtils.isEmpty(getTweetText(link))) {
                 /* This should never happen! */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            TwitterComCrawler.setFormattedFilename(link);
         } else {
             prepBR(this.br);
             /* Most items will come from crawler. */
@@ -241,9 +241,9 @@ public class TwitterCom extends PluginForHost {
             if (link.getPluginPatternMatcher().matches(TYPE_VIDEO_DIRECT) || link.getPluginPatternMatcher().matches(TYPE_VIDEO_VMAP)) {
                 /* 2022-02-02: Old handling, rarely used e.g. for: https://video.twimg.com/amplify_video/vmap/<videoID>.vmap */
                 br.getPage(link.getPluginPatternMatcher());
-                if (this.br.getHttpConnection().getResponseCode() == 403) {
+                if (br.getHttpConnection().getResponseCode() == 403) {
                     throw new AccountRequiredException();
-                } else if (this.br.getHttpConnection().getResponseCode() == 404) {
+                } else if (br.getHttpConnection().getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
                 if (link.getPluginPatternMatcher().matches(TYPE_VIDEO_VMAP)) {
@@ -251,16 +251,15 @@ public class TwitterCom extends PluginForHost {
                     vmap_url = link.getPluginPatternMatcher();
                 } else {
                     /* Videolink was added by user or decrypter. */
-                    vmap_url = this.br.getRegex("name=\"twitter:amplify:vmap\" content=\"(https?://[^<>\"]*?\\.vmap)\"").getMatch(0);
+                    vmap_url = br.getRegex("name=\"twitter:amplify:vmap\" content=\"(https?://[^<>\"]*?\\.vmap)\"").getMatch(0);
                 }
                 if (StringUtils.isEmpty(vmap_url)) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                } else {
-                    this.br.getPage(vmap_url);
-                    this.dllink = regexVideoVmapHighestQualityURL(this.br);
-                    if (StringUtils.isEmpty(dllink)) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
+                }
+                br.getPage(vmap_url);
+                this.dllink = regexVideoVmapHighestQualityURL(br);
+                if (StringUtils.isEmpty(dllink)) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             } else if (isVideo(link)) {
                 this.dllink = getStoredVideoDirecturl(link);
@@ -411,7 +410,6 @@ public class TwitterCom extends PluginForHost {
                         }
                     }
                 }
-                TwitterComCrawler.setFormattedFilename(link);
             } else {
                 /* Image */
                 // TYPE_DIRECT - jpg/png/mp4
@@ -430,7 +428,6 @@ public class TwitterCom extends PluginForHost {
                 } else {
                     dllink = link.getPluginPatternMatcher();
                 }
-                TwitterComCrawler.setFormattedFilename(link);
             }
             if (!StringUtils.isEmpty(dllink)) {
                 if (dllink.contains(".m3u8")) {
@@ -481,19 +478,16 @@ public class TwitterCom extends PluginForHost {
                                 link.setVerifiedFileSize(con.getCompleteContentLength());
                             }
                         }
-                        if (!link.isNameSet()) {
-                            /* Last chance: Set filename by URL */
-                            String filenameFromHeader = getFileNameFromHeader(con);
-                            if (filenameFromHeader != null) {
-                                filenameFromHeader = Encoding.htmlDecode(filenameFromHeader).replace(":orig", "").trim();
-                                if (tweetID != null && !filenameFromHeader.contains(tweetID)) {
-                                    filenameFromHeader = tweetID + "_" + filenameFromHeader;
-                                }
-                                final String ext = getExtensionFromMimeType(con.getContentType());
-                                if (ext != null) {
-                                    filenameFromHeader = applyFilenameExtension(filenameFromHeader, "." + ext);
-                                }
-                                link.setFinalFileName(filenameFromHeader);
+                        filenameFromHeader = getFileNameFromHeader(con);
+                        if (filenameFromHeader != null) {
+                            /* Do some corrections */
+                            filenameFromHeader = Encoding.htmlDecode(filenameFromHeader).replace(":orig", "").trim();
+                            if (tweetID != null && !filenameFromHeader.contains(tweetID)) {
+                                filenameFromHeader = tweetID + "_" + filenameFromHeader;
+                            }
+                            final String ext = getExtensionFromMimeType(con.getContentType());
+                            if (ext != null) {
+                                filenameFromHeader = applyFilenameExtension(filenameFromHeader, "." + ext);
                             }
                         }
                     } finally {
@@ -503,6 +497,13 @@ public class TwitterCom extends PluginForHost {
                     }
                 }
             }
+        }
+        final String tweetID = link.getStringProperty(TwitterComCrawler.PROPERTY_TWEET_ID);
+        if (tweetID != null) {
+            /* Item from crawler which shall contain all information needed to set custom filenames. */
+            TwitterComCrawler.setFormattedFilename(link);
+        } else if (filenameFromHeader != null) {
+            link.setFinalFileName(filenameFromHeader);
         }
         return AvailableStatus.TRUE;
     }

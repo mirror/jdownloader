@@ -788,7 +788,11 @@ public class TwitterComCrawler extends PluginForDecrypt {
             replyTextForFilename += "_reply";
         }
         final String username = link.getStringProperty(PROPERTY_USERNAME);
-        final String directurl = link.getStringProperty(TwitterCom.PROPERTY_DIRECTURL);
+        String directurl = link.getStringProperty(TwitterCom.PROPERTY_DIRECTURL);
+        if (new Regex(link.getPluginPatternMatcher(), TwitterCom.TYPE_DIRECT).patternFind()) {
+            /* Single added direct-URLs do not have the direct-URL set as a property. */
+            directurl = link.getPluginPatternMatcher();
+        }
         final String relatedOriginalFilename = link.getStringProperty(PROPERTY_RELATED_ORIGINAL_FILENAME);
         String originalFilename = null;
         if (directurl != null) {

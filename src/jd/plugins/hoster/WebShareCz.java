@@ -17,6 +17,7 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -25,6 +26,7 @@ import java.util.List;
 import org.appwork.utils.Hash;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.plugins.components.config.WebshareCzConfig;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 
@@ -52,6 +54,14 @@ public class WebShareCz extends PluginForHost {
         this.enablePremium("https://webshare.cz/#/vip-benefits");
     }
 
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.setCustomCharset("utf-8");
+        br.setFollowRedirects(true);
+        return br;
+    }
+
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
@@ -75,7 +85,7 @@ public class WebShareCz extends PluginForHost {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:[a-z0-9]+\\.)?" + buildHostsPatternPart(domains) + "/(\\?fhash=[A-Za-z0-9]+|[A-Za-z0-9]{10}|(#/)?file/[a-z0-9]+)");
+            ret.add("https?://(?:[a-z0-9]+\\.)?" + buildHostsPatternPart(domains) + "/(\\?fhash=[A-Za-z0-9]+|[A-Za-z0-9]{10}|(#/)?file/[A-Za-z0-9]+(/[^/]+)?)");
         }
         return ret.toArray(new String[0]);
     }
@@ -105,23 +115,81 @@ public class WebShareCz extends PluginForHost {
     }
 
     private String getFID(final DownloadLink link) {
-        return new Regex(link.getPluginPatternMatcher(), "([A-Za-z0-9]+)/?$").getMatch(0);
+        String fid = new Regex(link.getPluginPatternMatcher(), "(?i)/file/([A-Za-z0-9]+)").getMatch(0);
+        if (fid == null) {
+            fid = new Regex(link.getPluginPatternMatcher(), "https?://[^/]+/([A-Za-z0-9]{10})").getMatch(0);
+            if (fid == null) {
+                try {
+                    fid = UrlQuery.parse(link.getPluginPatternMatcher()).get("fhash");
+                } catch (final MalformedURLException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        return fid;
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.setCustomCharset("utf-8");
-        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-        br.postPage("https://" + this.getHost() + "/api/file_info/", "wst=&ident=" + getFID(link));
-        if (br.containsHTML("(?i)<status>FATAL</status>")) {
-            /*
-             * E.g. <response><status>FATAL</status><code>FILE_INFO_FATAL_1</code><message>File not
-             * found.</message><app_version>29</app_version></response>
-             */
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+    public boolean isResumeable(final DownloadLink link, final Account account) {
+        final AccountType type = account != null ? account.getType() : null;
+        if (AccountType.FREE.equals(type)) {
+            /* Free Account */
+            return true;
+        } else if (AccountType.PREMIUM.equals(type) || AccountType.LIFETIME.equals(type)) {
+            /* Premium account */
+            return true;
+        } else {
+            /* Free(anonymous) and unknown account type */
+            return false;
         }
+    }
+
+    public int getMaxChunks(final DownloadLink link, final Account account) {
+        final AccountType type = account != null ? account.getType() : null;
+        if (AccountType.PREMIUM.equals(type)) {
+            /* Premium account */
+            return 0;
+        } else {
+            /* Free(anonymous) and unknown account type */
+            return 1;
+        }
+    }
+
+    private final String ERROR_FILE_INFO_WRONG_PASSWORD  = "FILE_INFO_FATAL_2";
+    private final String PROPERTY_DOWNLOAD_PASSWORD_HASH = "downloadpasswordhash";
+
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        final String fileID = getFID(link);
+        if (!link.isNameSet()) {
+            String fallbackFilename = new Regex(link.getPluginPatternMatcher(), "(?i)/file/[^/]+/([^/]+)").getMatch(0);
+            if (fallbackFilename != null) {
+                /* Make it prettier. It often ends with "-<fileExtension>" -> Fix that */
+                fallbackFilename = fallbackFilename.replaceFirst("(?i)-([a-z0-9]+)$", ".$1");
+                link.setName(fallbackFilename);
+            } else {
+                link.setName(fileID);
+            }
+        }
+        br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+        final String pwhash = link.getStringProperty(PROPERTY_DOWNLOAD_PASSWORD_HASH);
+        final UrlQuery query = new UrlQuery();
+        query.add("ident", getFID(link));
+        if (pwhash != null) {
+            query.add("password", pwhash);
+        }
+        query.add("wst", "");
+        br.postPage("https://" + this.getHost() + "/api/file_info/", query);
+        if (br.containsHTML(ERROR_FILE_INFO_WRONG_PASSWORD)) {
+            /* File is online but we can't view any file information as we do not have the password or the one we got is wrong. */
+            /*
+             * 2024-03-04: <response><status>FATAL</status><code>FILE_INFO_FATAL_2</code><message>Incorrect
+             * password.</message><app_version>30</app_version></response>
+             */
+            link.setPasswordProtected(true);
+            return AvailableStatus.TRUE;
+        }
+        this.checkErrorsAPI(br, link);
         final String description = getXMLtagValue("description");
         final String filename = getXMLtagValue("name");
         final String filesize = getXMLtagValue("size");
@@ -145,22 +213,38 @@ public class WebShareCz extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        this.handleDownload(link, null);
+    }
+
+    public void handleDownload(final DownloadLink link, final Account account) throws Exception, PluginException {
         requestFileInformation(link);
+        if (account != null) {
+            this.login(account, false);
+        }
         pwProtectedErrorhandling(link);
-        br.postPage("/api/file_link/", "wst=&ident=" + getFID(link));
+        final String pwhash = link.getStringProperty(PROPERTY_DOWNLOAD_PASSWORD_HASH);
+        final UrlQuery query = new UrlQuery();
+        query.add("ident", getFID(link));
+        if (pwhash != null) {
+            query.add("password", pwhash);
+        }
+        query.add("wst", "");
+        br.postPage("/api/file_link/", query);
         final String dllink = getXMLtagValue("link");
         if (dllink == null) {
-            checkErrorsAPI(br);
+            checkErrorsAPI(br, link);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, this.isResumeable(link, account), this.getMaxChunks(link, account));
         if (!looksLikeDownloadableContent(dl.getConnection())) {
             br.followConnection();
-            checkErrorsAPI(br);
+            checkErrorsAPI(br, link);
             if (br.containsHTML("(?i)(>\\s*Požadovaný soubor nebyl nalezen|>\\s*Requested file not found)")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else if (br.getURL().contains("error=")) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
+            }
+            final String errorMsgFromURL = UrlQuery.parse(br.getURL()).get("error");
+            if (errorMsgFromURL != null) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error: " + errorMsgFromURL);
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -168,18 +252,62 @@ public class WebShareCz extends PluginForHost {
         dl.startDownload();
     }
 
-    private void pwProtectedErrorhandling(final DownloadLink link) throws PluginException {
-        if (link.isPasswordProtected()) {
-            throw new PluginException(LinkStatus.ERROR_FATAL, "Password protected URLs are not yet supported please contact JDownloader support");
+    private void pwProtectedErrorhandling(final DownloadLink link) throws PluginException, IOException, NoSuchAlgorithmException {
+        if (!link.isPasswordProtected()) {
+            /* Do nothing */
+            return;
+        }
+        final String fileid = this.getFID(link);
+        final UrlQuery query1 = new UrlQuery();
+        query1.add("ident", Encoding.urlEncode(fileid));
+        query1.add("maybe_removed", "1");
+        query1.add("wst", "");
+        br.postPage("https://" + getHost() + "/api/file_password_salt/", query1);
+        final String salt = this.getXMLtagValue("salt");
+        if (StringUtils.isEmpty(salt)) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        String passCode = link.getDownloadPassword();
+        if (passCode == null) {
+            passCode = getUserInput("Password?", link);
+        }
+        final String downloadpasswordhash = JDHash.getSHA1(crypt_md5(passCode.getBytes("UTF-8"), salt));
+        final UrlQuery query2 = new UrlQuery();
+        query2.add("ident", Encoding.urlEncode(fileid));
+        query2.add("password", downloadpasswordhash);
+        query2.add("wst", "");
+        br.postPage("/api/verify_file_password/", query2);
+        final String correctPW = this.getXMLtagValue("correct");
+        if ("1".equals(correctPW)) {
+            logger.info("User entered correct password: " + passCode);
+            link.setDownloadPassword(passCode);
+            link.setProperty(PROPERTY_DOWNLOAD_PASSWORD_HASH, downloadpasswordhash);
+        } else {
+            /* Nullify potentially stored password as it is invalid. */
+            logger.info("User entered incorrect password: " + passCode);
+            invalidateLastStoredDownloadPassword(link);
+            throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
         }
     }
 
-    private void checkErrorsAPI(final Browser br) throws PluginException {
+    private void invalidateLastStoredDownloadPassword(final DownloadLink link) {
+        link.setDownloadPassword(null);
+        link.removeProperty(PROPERTY_DOWNLOAD_PASSWORD_HASH);
+    }
+
+    private void checkErrorsAPI(final Browser br, final DownloadLink link) throws PluginException {
         final String status = getXMLtagValue(br, "status");
         final String code = getXMLtagValue(br, "code");
         final String message = getXMLtagValue(br, "message");
         if (StringUtils.equalsIgnoreCase(status, "FATAL") && !StringUtils.isEmpty(code) && !StringUtils.isEmpty(message)) {
-            if (code.equalsIgnoreCase("FILE_LINK_FATAL_4")) {
+            link.setDownloadPassword(null);
+            if (code.equalsIgnoreCase("FILE_INFO_FATAL_1")) {
+                /* File is offline */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (code.equalsIgnoreCase(ERROR_FILE_INFO_WRONG_PASSWORD) || code.equalsIgnoreCase("FILE_LINK_FATAL_3")) {
+                this.invalidateLastStoredDownloadPassword(link);
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
+            } else if (code.equalsIgnoreCase("FILE_LINK_FATAL_4")) {
                 /*
                  * <response><status>FATAL</status><code>FILE_LINK_FATAL_4</code><message>File temporarily
                  * unavailable.</message><app_version>29</app_version></response>
@@ -207,7 +335,7 @@ public class WebShareCz extends PluginForHost {
             final Cookies cookies = account.loadCookies("");
             if (cookies != null) {
                 logger.info("Attempting cookie login");
-                this.br.setCookies(this.getHost(), cookies);
+                br.setCookies(cookies);
                 if (!force) {
                     /* Do not verify cookies */
                     return;
@@ -225,16 +353,10 @@ public class WebShareCz extends PluginForHost {
                 }
             }
             logger.info("Performing full login");
-            br.setFollowRedirects(false);
             br.postPage("https://" + this.getHost() + "/api/salt/", "username_or_email=" + Encoding.urlEncode(account.getUser()) + "&wst=");
-            final String lang = System.getProperty("user.language");
-            final String salt = br.getRegex("<salt>([^<]*?)</salt>").getMatch(0);
-            if (salt == null) {
-                if ("de".equalsIgnoreCase(lang)) {
-                    throw new AccountInvalidException("\r\nUngültige E-Mail Adresse oder Benutzername!");
-                } else {
-                    throw new AccountInvalidException("\r\nInvalid E-Mail or username!");
-                }
+            final String salt = this.getXMLtagValue("salt");
+            if (StringUtils.isEmpty(salt)) {
+                throw new AccountInvalidException("\r\nInvalid E-Mail or username!");
             }
             final String password = JDHash.getSHA1(crypt_md5(account.getPass().getBytes("UTF-8"), salt));
             final String digest = Hash.getMD5(account.getUser() + ":Webshare:" + account.getPass());
@@ -245,11 +367,7 @@ public class WebShareCz extends PluginForHost {
              */
             br.postPage("/api/login/", "username_or_email=" + Encoding.urlEncode(account.getUser()) + "&password=" + password + "&digest=" + digest + "&keep_logged_in=1&wst=");
             if (br.containsHTML("<code>LOGIN_FATAL_\\d+</code>")) {
-                if ("de".equalsIgnoreCase(lang)) {
-                    throw new AccountInvalidException("\r\nUngültiges Passwort!\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!");
-                } else {
-                    throw new AccountInvalidException("\r\nInvalid password!\r\nQuick help:\r\nYou're sure that the password you entered is correct?\r\nIf your password contains special characters, change it (remove them) and try again!");
-                }
+                throw new AccountInvalidException();
             }
             final String token = getXMLtagValue("token");
             if (StringUtils.isEmpty(token)) {
@@ -257,7 +375,7 @@ public class WebShareCz extends PluginForHost {
             }
             account.setProperty("token", token);
             br.setCookie(br.getHost(), "wst", token);
-            account.saveCookies(this.br.getCookies(this.getHost()), "");
+            account.saveCookies(br.getCookies(br.getHost()), "");
         }
     }
 
@@ -309,25 +427,7 @@ public class WebShareCz extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        requestFileInformation(link);
-        pwProtectedErrorhandling(link);
-        login(account, false);
-        final boolean isPremium = AccountType.PREMIUM.equals(account.getType());
-        br.postPage("https://" + this.getHost() + "/api/file_link/", "ident=" + this.getFID(link) + "&wst=" + getToken(account));
-        final String dllink = getXMLtagValue("link");
-        if (StringUtils.isEmpty(dllink)) {
-            checkErrorsAPI(br);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        /* Only premium users can resume stopped downloads. */
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, isPremium, isPremium ? 0 : 1);
-        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            logger.warning("The final dllink seems not to be a file!");
-            br.followConnection();
-            checkErrorsAPI(br);
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
+        this.handleDownload(link, account);
     }
 
     private String getToken(final Account account) {

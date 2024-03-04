@@ -1146,22 +1146,23 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
     }
 
     protected URL_TYPE getURLType(final String url) {
-        if (url != null) {
-            if (isImagehoster() && url.matches("(?i)^https?://[^/]+/(?:th|i)/\\d+/([a-z0-9]{12}).*")) {
-                return URL_TYPE.IMAGE;
-            } else if (this.supportsShortURLs() && url.matches("(?i)^https?://[^/]+/d/([a-z0-9]+).*")) {
-                return URL_TYPE.SHORT;
-            } else if (url.matches("(?i)^https?://[^/]+/d/([a-z0-9]{12}).*")) {
-                return URL_TYPE.OFFICIAL_VIDEO_DOWNLOAD;
-            } else if (url.matches("(?i)^https?://[^/]+/([a-z0-9]{12}).*")) {
-                return URL_TYPE.NORMAL;
-            } else if (url.matches("(?i)^https?://[^/]+/file/([a-z0-9]{12}).*")) {
-                return URL_TYPE.FILE;
-            } else if (url.matches("(?i)^https?://[A-Za-z0-9\\-\\.:]+/embed-([a-z0-9]{12}).*") || url.matches("(?i)^https?://[A-Za-z0-9\\-\\.:]+/e/([a-z0-9]{12}).*")) {
-                return URL_TYPE.EMBED_VIDEO;
-            } else {
-                logger.info("Unknown URL_TYPE: " + url);
-            }
+        if (url == null) {
+            return null;
+        }
+        if (isImagehoster() && url.matches("(?i)^https?://[^/]+/(?:th|i)/\\d+/([a-z0-9]{12}).*")) {
+            return URL_TYPE.IMAGE;
+        } else if (this.supportsShortURLs() && url.matches("(?i)^https?://[^/]+/d/([a-z0-9]+).*")) {
+            return URL_TYPE.SHORT;
+        } else if (url.matches("(?i)^https?://[^/]+/d/([a-z0-9]{12}).*")) {
+            return URL_TYPE.OFFICIAL_VIDEO_DOWNLOAD;
+        } else if (url.matches("(?i)^https?://[^/]+/([a-z0-9]{12}).*")) {
+            return URL_TYPE.NORMAL;
+        } else if (url.matches("(?i)^https?://[^/]+/file/([a-z0-9]{12}).*")) {
+            return URL_TYPE.FILE;
+        } else if (url.matches("(?i)^https?://[A-Za-z0-9\\-\\.:]+/embed-([a-z0-9]{12}).*") || url.matches("(?i)^https?://[A-Za-z0-9\\-\\.:]+/e/([a-z0-9]{12}).*")) {
+            return URL_TYPE.EMBED_VIDEO;
+        } else {
+            logger.info("Unknown URL_TYPE: " + url);
         }
         return null;
     }
