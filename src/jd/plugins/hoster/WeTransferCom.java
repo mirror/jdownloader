@@ -30,6 +30,21 @@ import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
+import jd.PluginWrapper;
+import jd.http.Browser;
+import jd.http.requests.PostRequest;
+import jd.parser.Regex;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
+import jd.plugins.decrypter.WeTransferComFolder;
+import jd.plugins.download.DownloadLinkDownloadable;
+import jd.plugins.download.Downloadable;
+import jd.plugins.download.HashInfo;
+
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownRequest;
 import org.appwork.shutdown.ShutdownVetoException;
@@ -47,21 +62,6 @@ import org.jdownloader.controlling.FileStateManager;
 import org.jdownloader.controlling.FileStateManager.FILESTATE;
 import org.jdownloader.plugins.config.Order;
 import org.jdownloader.plugins.config.PluginConfigInterface;
-
-import jd.PluginWrapper;
-import jd.http.Browser;
-import jd.http.requests.PostRequest;
-import jd.parser.Regex;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
-import jd.plugins.decrypter.WeTransferComFolder;
-import jd.plugins.download.DownloadLinkDownloadable;
-import jd.plugins.download.Downloadable;
-import jd.plugins.download.HashInfo;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "wetransfer.com" }, urls = { "https?://wetransferdecrypted/[a-f0-9]{46}/[a-f0-9]{4,12}/[a-f0-9]{46}" })
 public class WeTransferCom extends PluginForHost {
@@ -254,8 +254,7 @@ public class WeTransferCom extends PluginForHost {
         dl.startDownload();
         /**
          * 2024-02-27: This website delivers single files as .zip files without .zip file-extension while all of them contain exactly one
-         * file. </br>
-         * The special handling down below corrects this by extracting such files.
+         * file. </br> The special handling down below corrects this by extracting such files.
          */
         if (!isSingleZip && link.getLinkStatus().hasStatus(LinkStatus.FINISHED) && link.getDownloadCurrent() > 0) {
             extract(link);
@@ -335,13 +334,14 @@ public class WeTransferCom extends PluginForHost {
                 } else {
                     ZipEntry checkZipEntry = zipFile.getEntry(fileName);
                     if (checkZipEntry != null) {
-                        logger.info("Full matching ZipEntry found:" + checkZipEntry.getName());
+                        logger.info("Extract!Full matching ZipEntry found:" + checkZipEntry.getName());
                         zipEntry = checkZipEntry;
                     } else if ((checkZipEntry = zipFile.getEntry(fileName.replaceFirst("^(.+/)", ""))) != null) {
-                        logger.info("Filename only matching ZipEntry found:" + checkZipEntry.getName());
+                        logger.info("Extract!Filename only matching ZipEntry found:" + checkZipEntry.getName());
                         zipEntry = checkZipEntry;
                     } else {
-                        logger.info("Single ZipEntry found:" + zipEntry.getName());
+                        logger.info("Skip!No matching ZipEntry found:" + zipEntry.getName());
+                        return;
                     }
                 }
             }
