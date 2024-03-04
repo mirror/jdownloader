@@ -22,6 +22,8 @@ import java.util.ArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.swing.Icon;
+
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.uio.CloseReason;
 import org.appwork.uio.ConfirmDialogInterface;
@@ -35,6 +37,10 @@ import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.jdownloader.controlling.FileCreationManager;
 import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.notify.BasicNotify;
+import org.jdownloader.gui.notify.BubbleNotify;
+import org.jdownloader.gui.notify.BubbleNotify.AbstractNotifyWindowFactory;
+import org.jdownloader.gui.notify.gui.AbstractNotifyWindow;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.logging.LogController;
@@ -153,7 +159,15 @@ public abstract class PluginsC {
             }
             try {
                 final ContainerStatus cs = callDecryption(file);
-                if (cs != null && cs.isStatus(ContainerStatus.STATUS_FINISHED) && isDeleteContainer(source, file)) {
+                if (cs == null) {
+                    logger.warning("WTF ContainerStatus null was returned");
+                }
+                if (cs.isStatus(ContainerStatus.STATUS_FAILED)) {
+                    this.displayBubbleNotification("Invalid container", "Processing the following container failed for unknown reasons:\n" + file.getAbsolutePath(), new AbstractIcon(IconKey.ICON_ADDCONTAINER, 32));
+                } else if (cs.isStatus(ContainerStatus.STATUS_INVALID_PASSWORD)) {
+                    this.displayBubbleNotification("Invalid container password", "Processing the following container failed because the supplied passwords were incorrect:\n" + file.getAbsolutePath(), new AbstractIcon(IconKey.ICON_ADDCONTAINER, 32));
+                } else if (cs.isStatus(ContainerStatus.STATUS_FINISHED) && isDeleteContainer(source, file)) {
+                    this.displayBubbleNotification("Successfully crawled container", "The following container has been processed successfully:\n" + file.getAbsolutePath(), new AbstractIcon(IconKey.ICON_ADDCONTAINER, 32));
                     deleteContainer(source, file);
                 }
             } catch (Throwable e) {
@@ -190,19 +204,23 @@ public abstract class PluginsC {
                     break;
                 case DELETE:
                     FileCreationManager.getInstance().delete(file, null);
+                    this.displayBubbleNotification("Deleted container file", "The following container file has been deleted:\n" + file.getAbsolutePath(), new AbstractIcon(IconKey.ICON_ADDCONTAINER, 32));
                     break;
                 case RECYCLE:
                     try {
                         JDFileUtils.moveToTrash(file);
+                        this.displayBubbleNotification("Moved container file to trash", "The following processed container file has been moved to trash:\n" + file.getAbsolutePath(), new AbstractIcon(IconKey.ICON_ADDCONTAINER, 32));
                     } catch (IOException e) {
                         logger.log(e);
                         logger.info("Could not move file to recycle bin: " + file);
+                        this.displayBubbleNotification("Failed to move processed container file to trash", "Failed to move the following processed container file to trash:\n" + file.getAbsolutePath(), new AbstractIcon(IconKey.ICON_ADDCONTAINER, 32));
                     }
                     break;
                 case DONT_DELETE:
                 }
             }
-        } catch (DialogNoAnswerException e) {
+        } catch (final DialogNoAnswerException e) {
+            /* Do nothing */
             logger.log(e);
         }
     }
@@ -251,26 +269,25 @@ public abstract class PluginsC {
             setCurrentLink(source);
             /* extract filename from url */
             final String sourceURL = new Regex(source.getURL(), "(file:/.+)").getMatch(0);
-            if (sourceURL != null) {
-                // workaround for authorities in file uris
-                final String currentURI = sourceURL.replaceFirst("file:///?", "file:///");
-                final File file = new File(new URI(currentURI));
-                if (file != null && file.exists() && file.isFile()) {
-                    final CrawledLink origin = source.getOriginLink();
-                    if (origin != null && !StringUtils.containsIgnoreCase(origin.getURL(), "file:/")) {
-                        askFileDeletion = false;
-                    } else if (origin != null) {
-                        final String originURL = new Regex(origin.getURL(), "(file:/.+)").getMatch(0);
-                        if (originURL != null && !sourceURL.equalsIgnoreCase(originURL)) {
-                            logger.fine("Do not ask - just delete: " + origin.getURL());
-                            askFileDeletion = false;
-                        }
-                    }
-                    initContainer(source, file, null);
-                    retLinks = getContainedDownloadlinks();
-                }
-            } else {
+            if (sourceURL == null) {
                 throw new Throwable("Invalid Container: " + source.getURL());
+            }
+            // workaround for authorities in file uris
+            final String currentURI = sourceURL.replaceFirst("file:///?", "file:///");
+            final File file = new File(new URI(currentURI));
+            if (file != null && file.exists() && file.isFile()) {
+                final CrawledLink origin = source.getOriginLink();
+                if (origin != null && !StringUtils.containsIgnoreCase(origin.getURL(), "file:/")) {
+                    askFileDeletion = false;
+                } else if (origin != null) {
+                    final String originURL = new Regex(origin.getURL(), "(file:/.+)").getMatch(0);
+                    if (originURL != null && !sourceURL.equalsIgnoreCase(originURL)) {
+                        logger.fine("Do not ask - just delete: " + origin.getURL());
+                        askFileDeletion = false;
+                    }
+                }
+                initContainer(source, file, null);
+                retLinks = getContainedDownloadlinks();
             }
         } catch (Throwable e) {
             /*
@@ -293,5 +310,19 @@ public abstract class PluginsC {
      */
     protected boolean canBePasswordProtected() {
         return false;
+    }
+
+    protected void displayBubbleNotification(final String title, final String text) {
+        // TODO: Add functionality
+        displayBubbleNotification(title, text, new AbstractIcon(IconKey.ICON_INFO, 32));
+    }
+
+    protected void displayBubbleNotification(final String title, final String text, final Icon icon) {
+        BubbleNotify.getInstance().show(new AbstractNotifyWindowFactory() {
+            @Override
+            public AbstractNotifyWindow<?> buildAbstractNotifyWindow() {
+                return new BasicNotify(title, text, icon);
+            }
+        });
     }
 }

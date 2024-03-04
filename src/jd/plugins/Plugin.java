@@ -67,6 +67,10 @@ import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.dialog.AskForUserAndPasswordDialog;
 import org.jdownloader.gui.dialog.AskUsernameAndPasswordDialogInterface;
+import org.jdownloader.gui.notify.BasicNotify;
+import org.jdownloader.gui.notify.BubbleNotify;
+import org.jdownloader.gui.notify.BubbleNotify.AbstractNotifyWindowFactory;
+import org.jdownloader.gui.notify.gui.AbstractNotifyWindow;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.UserIOProgress;
@@ -1142,7 +1146,6 @@ public abstract class Plugin implements ActionListener {
     }
 
     protected void displayBubbleNotification(final String title, final String text) {
-        // TODO: Add functionality
         displayBubbleNotification(title, text, new AbstractIcon(IconKey.ICON_INFO, 32));
     }
 
@@ -1153,6 +1156,11 @@ public abstract class Plugin implements ActionListener {
      * Examples of Plugins using this functionality: RedditComCrawler, TwitterComCrawler, HighWayCore
      */
     protected void displayBubbleNotification(final String title, final String text, final Icon icon) {
-        // TODO: Add functionality
+        BubbleNotify.getInstance().show(new AbstractNotifyWindowFactory() {
+            @Override
+            public AbstractNotifyWindow<?> buildAbstractNotifyWindow() {
+                return new BasicNotify(title, text, icon);
+            }
+        });
     }
 }

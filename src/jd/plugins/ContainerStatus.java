@@ -53,7 +53,7 @@ public class ContainerStatus {
         return (this.status & status) > 0;
     }
 
-    public boolean isStatus(int status) {
+    public boolean isStatus(final int status) {
         return this.status == status;
     }
 
