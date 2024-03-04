@@ -29,6 +29,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 import jd.PluginWrapper;
+import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Cookie;
 import jd.http.Cookies;
@@ -55,13 +56,15 @@ import jd.utils.JDUtilities;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class UlozTo extends PluginForHost {
-    private static final String  QUICKDOWNLOAD                = "(?i)https?://[^/]+/quickDownload/\\d+";
+    private static final String  QUICKDOWNLOAD                  = "(?i)https?://[^/]+/quickDownload/\\d+";
     /* 2017-01-02: login API seems to be broken --> Use website as workaround */
-    private static final boolean use_login_api                = false;
+    private static final boolean use_login_api                  = false;
     /* note: CAN NOT be negative or zero! (ie. -1 or 0) Otherwise math sections fail. .:. use [1-20] */
-    private static AtomicInteger totalMaxSimultanFreeDownload = new AtomicInteger(20);
+    private static AtomicInteger totalMaxSimultanFreeDownload   = new AtomicInteger(20);
     /* don't touch the following! */
-    private static AtomicInteger freeRunning                  = new AtomicInteger(0);
+    private static AtomicInteger freeRunning                    = new AtomicInteger(0);
+    /** 2024-03-04: Account required otherwise all files will be displayed as offline. */
+    private final boolean        ACCOUNT_REQUIRED_FOR_LINKCHECK = true;
 
     public UlozTo(PluginWrapper wrapper) {
         super(wrapper);
@@ -86,6 +89,11 @@ public class UlozTo extends PluginForHost {
         } else {
             return super.getLinkID(link);
         }
+    }
+
+    @Override
+    public boolean isResumeable(final DownloadLink link, final Account account) {
+        return true;
     }
 
     private String getFID(final DownloadLink link) {
@@ -168,7 +176,8 @@ public class UlozTo extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         synchronized (freeRunning) {
-            return requestFileInformation(link, null, false);
+            final Account account = ACCOUNT_REQUIRED_FOR_LINKCHECK ? AccountController.getInstance().getValidAccount(this.getHost()) : null;
+            return requestFileInformation(link, account, false);
         }
     }
 
@@ -193,6 +202,9 @@ public class UlozTo extends PluginForHost {
                 link.setName(fid);
             }
         }
+        if (ACCOUNT_REQUIRED_FOR_LINKCHECK && account == null) {
+            throw new AccountRequiredException();
+        }
         if (account != null) {
             login(account, false);
         }
@@ -207,7 +219,7 @@ public class UlozTo extends PluginForHost {
         if (directDownloadURL != null) {
             link.setProperty(getDownloadModeDirectlinkProperty(account), directDownloadURL);
             return AvailableStatus.TRUE;
-        } else if (this.isPrivateFile(br)) {
+        } else if (isPrivateFile(br)) {
             /* File is online but we can't get any information about the file. */
             return AvailableStatus.TRUE;
         }
@@ -220,9 +232,9 @@ public class UlozTo extends PluginForHost {
         } else if (handleLimitExceeded(link, br, isDownload)) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Limit exceeded");
         }
-        final boolean passwordProtected = this.isPasswordProtected(br);
+        final boolean passwordProtected = isPasswordProtected(br);
         link.setPasswordProtected(passwordProtected);
-        if (!passwordProtected && !this.br.containsHTML("class=\"jsFileTitle[^\"]*")) {
+        if (!passwordProtected && !br.containsHTML("class=\"jsFileTitle[^\"]*")) {
             /* Seems like whatever url the user added, it is not a downloadurl. */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -230,21 +242,7 @@ public class UlozTo extends PluginForHost {
         if (filename == null) {
             filename = br.getRegex("itemprop=\"name\" content=\"([^\"]+)").getMatch(0);
         }
-        // For video links
-        String filesize = br.getRegex("<span id=\"fileSize\">(\\d{2}:\\d{2}(:\\d{2})? \\| )?(\\d+(\\.\\d{2})? [A-Za-z]{1,5})</span>").getMatch(2);
-        if (filesize == null) {
-            filesize = br.getRegex("id=\"fileVideo\".+class=\"fileSize\">\\d{2}:\\d{2} \\| ([^<>\"]*?)</span>").getMatch(0);
-            if (filesize == null) {
-                filesize = br.getRegex("(?i)<span>\\s*Velikost\\s*</span>([^<>\"]+)<").getMatch(0);
-                // For file links
-                if (filesize == null) {
-                    filesize = br.getRegex("<span id=\"fileSize\">.*?\\|([^<>]*?)</span>").getMatch(0); // 2015-08-08
-                    if (filesize == null) {
-                        filesize = br.getRegex("<span id=\"fileSize\">([^<>\"]*?)</span>").getMatch(0);
-                    }
-                }
-            }
-        }
+        String filesize = br.getRegex("<i class=\"fi fi-database\"[^>]*></i> <span>[^<]*</span>([^<]+)</li>").getMatch(0);
         if (filename != null) {
             filename = Encoding.htmlDecode(filename).trim();
             /* Remove some stuff that is present for streams such as " | on-line video | Ulož.to Disk" or " | on-line video". */
@@ -384,7 +382,7 @@ public class UlozTo extends PluginForHost {
             if (contentURL.matches(QUICKDOWNLOAD)) {
                 throw new AccountRequiredException();
             }
-            this.checkErrors(br, link, account);
+            checkErrors(br, link, account);
             if (AvailableStatus.UNCHECKABLE.equals(status)) {
                 /* TODO: 2020-08-28 Check if this is still required at this place */
                 final Form form = br.getFormbyActionRegex("limit-exceeded");
@@ -540,7 +538,7 @@ public class UlozTo extends PluginForHost {
                     if (StringUtils.isEmpty(dllink)) {
                         break;
                     }
-                    dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, true, 1);
+                    dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, this.isResumeable(link, account), 1);
                     if (this.looksLikeDownloadableContent(dl.getConnection())) {
                         captcha_failed = false;
                         break;
@@ -550,7 +548,7 @@ public class UlozTo extends PluginForHost {
                         br.clearCookies(br.getHost());
                         dllink = handleDownloadUrl(link, true);
                         if (dllink != null) {
-                            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, true, 1);
+                            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, this.isResumeable(link, account), 1);
                             if (this.looksLikeDownloadableContent(dl.getConnection())) {
                                 captcha_failed = false;
                                 break;
@@ -572,7 +570,7 @@ public class UlozTo extends PluginForHost {
             }
         }
         if (dl == null) {
-            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, true, 1);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, this.isResumeable(link, account), 1);
         }
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             logger.warning("The finallink doesn't seem to be a file: " + dllink);
@@ -735,7 +733,7 @@ public class UlozTo extends PluginForHost {
                 }
             }
             /* 2023-07-21: Max chunks tested = 9 */
-            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, true, -9);
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, this.isResumeable(link, account), -9);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 br.followConnection();
                 this.checkErrors(br, link, account);
@@ -758,6 +756,7 @@ public class UlozTo extends PluginForHost {
             /* Premium account -> No captchas expected */
             return false;
         } else {
+            /* Free or free account -> Captcha can be needed to download. */
             return true;
         }
     }
@@ -775,7 +774,7 @@ public class UlozTo extends PluginForHost {
                 if (br.containsHTML("ERROR")) {
                     throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
                 }
-                final String trafficleft = br.toString().trim();
+                final String trafficleft = br.getRequest().getHtmlCode().trim();
                 if (trafficleft != null) {
                     ai.setTrafficLeft(SizeFormatter.getSize(trafficleft + " KB"));
                 }
@@ -788,7 +787,7 @@ public class UlozTo extends PluginForHost {
                 }
                 throw e;
             } finally {
-                setBasicAuthHeader(account);
+                setBasicAuthHeader(br, account);
             }
         }
     }
@@ -802,8 +801,7 @@ public class UlozTo extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML("dla_backend/uloz\\.to\\.overloaded\\.html")) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free slots available", 10 * 60 * 1000l);
-        }
-        if (br.containsHTML("(?i)The file is not available at this moment, please, try it later")) {
+        } else if (br.containsHTML("(?i)The file is not available at this moment, please, try it later")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "The file is not available at this moment, please, try it later", 15 * 60 * 1000l);
         }
         if (account != null && br.containsHTML("Pro rychlé stažení") || br.containsHTML("You do not have  enough") || br.containsHTML("Nie masz wystarczającego")) {
@@ -812,7 +810,7 @@ public class UlozTo extends PluginForHost {
     }
 
     private void checkGeoBlocked(final Browser br, final Account account) throws PluginException {
-        if (StringUtils.endsWithCaseInsensitive(br.getURL(), "/blocked") || br.containsHTML("<title>Error 451")) {
+        if (StringUtils.endsWithCaseInsensitive(br.getURL(), "/blocked") || br.containsHTML("<title>\\s*Error 451")) {
             if (account != null) {
                 throw new AccountUnavailableException("Geoblocked", 5 * 60 * 1000l);
             } else {
@@ -823,49 +821,45 @@ public class UlozTo extends PluginForHost {
 
     private void loginWebsite(final Account account, final boolean force) throws Exception {
         synchronized (account) {
-            try {
-                setBrowserExclusive();
-                br.setFollowRedirects(true);
-                final Cookies cookies = account.loadCookies("");
-                if (cookies != null) {
-                    this.br.setCookies(this.getHost(), cookies);
-                    this.br.getPage("https://" + account.getHoster());
-                    checkGeoBlocked(br, account);
-                    handleAgeRestrictedRedirects();
-                    if (isLoggedIn(br)) {
-                        logger.info("Cookie login successful");
-                        /* Re-new cookie timestamp */
-                        account.saveCookies(br.getCookies(br.getHost()), "");
-                        return;
-                    } else {
-                        logger.info("Cookie login failed");
-                    }
-                }
-                logger.info("Performing full login");
-                this.br.getPage("https://" + account.getHoster() + "/login");
+            setBrowserExclusive();
+            br.setFollowRedirects(true);
+            final Cookies cookies = account.loadCookies("");
+            if (cookies != null) {
+                br.setCookies(cookies);
+                br.getPage("https://" + account.getHoster());
                 checkGeoBlocked(br, account);
                 handleAgeRestrictedRedirects();
-                final Form loginform = br.getFormbyKey("username");
-                if (loginform == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                if (loginform.hasInputFieldByName("remember")) {
-                    loginform.remove("remember");
-                }
-                loginform.put("remember", "on");
-                loginform.put("username", Encoding.urlEncode(account.getUser()));
-                loginform.put("password", Encoding.urlEncode(account.getPass()));
-                br.submitForm(loginform);
-                if (!isLoggedIn(br)) {
-                    throw new AccountInvalidException();
-                }
-                account.saveCookies(br.getCookies(account.getHoster()), "");
-            } catch (final PluginException e) {
-                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                if (isLoggedIn(br)) {
+                    logger.info("Cookie login successful");
+                    /* Renew cookie timestamp */
+                    account.saveCookies(br.getCookies(br.getHost()), "");
+                    return;
+                } else {
+                    logger.info("Cookie login failed");
+                    br.clearCookies(null);
                     account.clearCookies("");
                 }
-                throw e;
             }
+            logger.info("Performing full login");
+            this.br.getPage("https://" + account.getHoster() + "/login");
+            checkGeoBlocked(br, account);
+            handleAgeRestrictedRedirects();
+            final Form loginform = br.getFormbyKey("username");
+            if (loginform == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            final String keyremember = "remember";
+            if (loginform.hasInputFieldByName(keyremember)) {
+                loginform.remove(keyremember);
+            }
+            loginform.put("remember", "on");
+            loginform.put("username", Encoding.urlEncode(account.getUser()));
+            loginform.put("password", Encoding.urlEncode(account.getPass()));
+            br.submitForm(loginform);
+            if (!isLoggedIn(br)) {
+                throw new AccountInvalidException();
+            }
+            account.saveCookies(br.getCookies(br.getHost()), "");
         }
     }
 
@@ -885,8 +879,8 @@ public class UlozTo extends PluginForHost {
         }
     }
 
-    private void setBasicAuthHeader(final Account account) {
-        this.br.getHeaders().put("Authorization", "Basic " + Encoding.Base64Encode(account.getUser() + ":" + account.getPass()));
+    void setBasicAuthHeader(final Browser br, final Account account) {
+        br.getHeaders().put("Authorization", "Basic " + Encoding.Base64Encode(account.getUser() + ":" + account.getPass()));
     }
 
     private void login(final Account account, final boolean force) throws Exception {
