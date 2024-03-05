@@ -49,6 +49,9 @@ public class YoutubeClipData {
     public int                                duration                 = -1;
     public String                             channelID                = null;
     public long                               dateUploaded             = -1;
+    public Boolean                            isLiveNow                = null;
+    public long                               dateLivestreamStart      = -1;
+    public long                               dateLivestreamEnd        = -1;
     public String                             userGooglePlusID         = null;
     public VideoVariant                       bestVideoItag            = null;
     public Map<YoutubeITAG, StreamCollection> streams;
@@ -172,6 +175,8 @@ public class YoutubeClipData {
             dest.user_alternative = user_alternative;
             dest.bestVideoItag = bestVideoItag;
             dest.datePublished = datePublished;
+            dest.dateLivestreamStart = dateLivestreamStart;
+            dest.dateLivestreamEnd = dateLivestreamEnd;
             dest.userGooglePlusID = userGooglePlusID;
             dest.channelID = channelID;
             dest.duration = duration;
@@ -217,6 +222,8 @@ public class YoutubeClipData {
         setValue(dest, YoutubeHelper.YT_CHANNEL_ID, channelID);
         setValue(dest, YoutubeHelper.YT_DURATION, duration);
         setValue(dest, YoutubeHelper.YT_DATE_UPLOAD, dateUploaded);
+        setValue(dest, YoutubeHelper.YT_DATE_LIVESTREAM_START, dateLivestreamStart);
+        setValue(dest, YoutubeHelper.YT_DATE_LIVESTREAM_END, dateLivestreamEnd);
         setValue(dest, YoutubeHelper.YT_VIEWS, views);
         dest.getTempProperties().setProperty(YoutubeHelper.YT_DESCRIPTION, description);
         dest.getTempProperties().setProperty(YoutubeHelper.YT_DESCRIPTION_ALTERNATIVE, description_alternative);

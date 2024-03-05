@@ -36,23 +36,6 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
-import jd.controlling.AccountController;
-import jd.controlling.accountchecker.AccountCheckerThread;
-import jd.controlling.proxy.ProxyController;
-import jd.controlling.proxy.SingleBasicProxySelectorImpl;
-import jd.http.Browser;
-import jd.http.Browser.BrowserException;
-import jd.http.Request;
-import jd.http.StaticProxySelector;
-import jd.http.URLConnectionAdapter;
-import jd.http.requests.GetRequest;
-import jd.nutils.encoding.Encoding;
-import jd.parser.html.Form;
-import jd.plugins.Account;
-import jd.plugins.DownloadLink;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
@@ -117,6 +100,23 @@ import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
+import jd.controlling.AccountController;
+import jd.controlling.accountchecker.AccountCheckerThread;
+import jd.controlling.proxy.ProxyController;
+import jd.controlling.proxy.SingleBasicProxySelectorImpl;
+import jd.http.Browser;
+import jd.http.Browser.BrowserException;
+import jd.http.Request;
+import jd.http.StaticProxySelector;
+import jd.http.URLConnectionAdapter;
+import jd.http.requests.GetRequest;
+import jd.nutils.encoding.Encoding;
+import jd.parser.html.Form;
+import jd.plugins.Account;
+import jd.plugins.DownloadLink;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+
 public class YoutubeHelper {
     static {
         final YoutubeConfig cfg = PluginJsonConfig.get(YoutubeConfig.class);
@@ -148,6 +148,8 @@ public class YoutubeHelper {
     public static final String  YT_CHANNEL_SIZE                            = "YT_CHANNEL_SIZE";
     public static final String  YT_DURATION                                = "YT_DURATION";
     public static final String  YT_DATE_UPLOAD                             = "YT_DATE_UPDATE";
+    public static final String  YT_DATE_LIVESTREAM_START                   = "YT_DATE_LIVESTREAM_START";
+    public static final String  YT_DATE_LIVESTREAM_END                     = "YT_DATE_LIVESTREAM_END";
     public static final String  YT_GOOGLE_PLUS_ID                          = "YT_GOOGLE_PLUS_ID";
     public static final String  YT_VIEWS                                   = "YT_VIEWS";
     private Browser             br;
@@ -177,7 +179,7 @@ public class YoutubeHelper {
     // public Map<String, YoutubeBasicVariant> getVariantsMap() {
     // return variantsMap;
     // }
-    public static final List<YoutubeReplacer> REPLACER                         = new ArrayList<YoutubeReplacer>();
+    public static final List<YoutubeReplacer> REPLACER = new ArrayList<YoutubeReplacer>();
     static {
         REPLACER.add(new YoutubeReplacer("GROUP") {
             @Override
@@ -799,7 +801,6 @@ public class YoutubeHelper {
 
             @Override
             protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
-                // date
                 DateFormat formatter = null;
                 if (StringUtils.isNotEmpty(mod)) {
                     try {
@@ -814,7 +815,75 @@ public class YoutubeHelper {
                 final long timestamp = link.getLongProperty(YoutubeHelper.YT_DATE, -1);
                 if (timestamp > 0) {
                     final String ret = formatter.format(timestamp);
-                    helper.logger.info(" Youtube Replace Date " + mod + " - " + timestamp + " > " + ret);
+                    helper.logger.info(" Youtube Replace DATE_PUBLISH " + mod + " - " + timestamp + " > " + ret);
+                    return ret;
+                } else {
+                    return "";
+                }
+            }
+
+            @Override
+            public DataOrigin[] getDataOrigins() {
+                return new DataOrigin[] { DataOrigin.YT_SINGLE_VIDEO };
+            }
+        });
+        REPLACER.add(new YoutubeReplacer("DATE_LIVESTREAM_START") {
+            @Override
+            public String getDescription() {
+                return _GUI.T.YoutubeHelper_getDescription_date_livestream_start();
+            }
+
+            @Override
+            protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
+                DateFormat formatter = null;
+                if (StringUtils.isNotEmpty(mod)) {
+                    try {
+                        formatter = new SimpleDateFormat(mod, TranslationFactory.getDesiredLocale());
+                    } catch (Throwable e) {
+                        helper.logger.log(e);
+                    }
+                }
+                if (formatter == null) {
+                    formatter = DateFormat.getDateInstance(DateFormat.LONG, TranslationFactory.getDesiredLocale());
+                }
+                final long timestamp = link.getLongProperty(YoutubeHelper.YT_DATE_LIVESTREAM_START, -1);
+                if (timestamp > 0) {
+                    final String ret = formatter.format(timestamp);
+                    helper.logger.info(" Youtube Replace DATE_LIVESTREAM_START " + mod + " - " + timestamp + " > " + ret);
+                    return ret;
+                } else {
+                    return "";
+                }
+            }
+
+            @Override
+            public DataOrigin[] getDataOrigins() {
+                return new DataOrigin[] { DataOrigin.YT_SINGLE_VIDEO };
+            }
+        });
+        REPLACER.add(new YoutubeReplacer("DATE_LIVESTREAM_END") {
+            @Override
+            public String getDescription() {
+                return _GUI.T.YoutubeHelper_getDescription_date_livestream_start();
+            }
+
+            @Override
+            protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
+                DateFormat formatter = null;
+                if (StringUtils.isNotEmpty(mod)) {
+                    try {
+                        formatter = new SimpleDateFormat(mod, TranslationFactory.getDesiredLocale());
+                    } catch (Throwable e) {
+                        helper.logger.log(e);
+                    }
+                }
+                if (formatter == null) {
+                    formatter = DateFormat.getDateInstance(DateFormat.LONG, TranslationFactory.getDesiredLocale());
+                }
+                final long timestamp = link.getLongProperty(YoutubeHelper.YT_DATE_LIVESTREAM_END, -1);
+                if (timestamp > 0) {
+                    final String ret = formatter.format(timestamp);
+                    helper.logger.info(" Youtube Replace DATE_LIVESTREAM_END " + mod + " - " + timestamp + " > " + ret);
                     return ret;
                 } else {
                     return "";
@@ -1097,32 +1166,32 @@ public class YoutubeHelper {
             }
         });
     }
-    public static final String                YT_TITLE                         = "YT_TITLE";
-    public static final String                YT_TITLE_ALTERNATIVE             = "YT_TITLE_ALTERNATIVE";
-    public static final String                YT_CATEGORY                      = "YT_CATEGORY";
-    public static final String                YT_ID                            = "YT_ID";
-    public static final String                YT_CHANNEL_TITLE                 = "YT_CHANNEL";
-    public static final String                YT_CHANNEL_TITLE_ALTERNATIVE     = "YT_CHANNEL_ALTERNATIVE";
-    public static final String                YT_DATE                          = "YT_DATE";
-    public static final String                YT_VARIANTS                      = "YT_VARIANTS";
-    public static final String                YT_VARIANT                       = "YT_VARIANT";
+    public static final String  YT_TITLE                         = "YT_TITLE";
+    public static final String  YT_TITLE_ALTERNATIVE             = "YT_TITLE_ALTERNATIVE";
+    public static final String  YT_CATEGORY                      = "YT_CATEGORY";
+    public static final String  YT_ID                            = "YT_ID";
+    public static final String  YT_CHANNEL_TITLE                 = "YT_CHANNEL";
+    public static final String  YT_CHANNEL_TITLE_ALTERNATIVE     = "YT_CHANNEL_ALTERNATIVE";
+    public static final String  YT_DATE                          = "YT_DATE";
+    public static final String  YT_VARIANTS                      = "YT_VARIANTS";
+    public static final String  YT_VARIANT                       = "YT_VARIANT";
     /**
      * @deprecated use {@link #YT_VARIANT_INFO}
      */
-    public static final String                YT_STREAMURL_VIDEO               = "YT_STREAMURL_VIDEO";
+    public static final String  YT_STREAMURL_VIDEO               = "YT_STREAMURL_VIDEO";
     /**
      * @deprecated use {@link #YT_VARIANT_INFO}
      */
-    public static final String                YT_STREAMURL_AUDIO               = "YT_STREAMURL_AUDIO";
+    public static final String  YT_STREAMURL_AUDIO               = "YT_STREAMURL_AUDIO";
     /**
      * @deprecated use {@link #YT_VARIANT_INFO}
      */
-    public static final String                YT_STREAMURL_VIDEO_SEGMENTS      = "YT_STREAMURL_VIDEO_SEGMENTS";
+    public static final String  YT_STREAMURL_VIDEO_SEGMENTS      = "YT_STREAMURL_VIDEO_SEGMENTS";
     /**
      * @deprecated use {@link #YT_VARIANT_INFO}
      */
-    public static final String                YT_STREAMURL_AUDIO_SEGMENTS      = "YT_STREAMURL_AUDIO_SEGMENTS";
-    private static final String               REGEX_HLSMPD_FROM_JSPLAYER_SETUP = "\"hlsvp\"\\s*:\\s*(\".*?\")";
+    public static final String  YT_STREAMURL_AUDIO_SEGMENTS      = "YT_STREAMURL_AUDIO_SEGMENTS";
+    private static final String REGEX_HLSMPD_FROM_JSPLAYER_SETUP = "\"hlsvp\"\\s*:\\s*(\".*?\")";
 
     private static String handleRule(String s, final String line) throws PluginException {
         final String method = new Regex(line, "\\.([\\w\\d]+?)\\(\\s*\\)").getMatch(0);
@@ -1576,6 +1645,7 @@ public class YoutubeHelper {
         parseDescription(vid);
         parsePublishedDate(vid);
         parseUploadedDate(vid);
+        parseLivestreamInformation(vid);
         parseChannelID(vid);
         parseDuration(vid);
         parseChannelTitle(vid);
@@ -1636,6 +1706,27 @@ public class YoutubeHelper {
             vid.dateUploaded = getUploadedDateFromMaps();
         }
         return vid.dateUploaded;
+    }
+
+    protected void parseLivestreamInformation(YoutubeClipData vid) {
+        Map<String, Object> map = getYtInitialPlayerResponse();
+        if (map != null) {
+            final Map<String, Object> liveBroadcastDetails = (Map<String, Object>) JavaScriptEngineFactory.walkJson(map, "microformat/playerMicroformatRenderer/liveBroadcastDetails");
+            if (liveBroadcastDetails != null) {
+                vid.isLiveNow = (Boolean) liveBroadcastDetails.get("isLiveNow");
+                final String startTimestampStr = (String) liveBroadcastDetails.get("startTimestamp");
+                if (startTimestampStr != null) {
+                    vid.dateLivestreamStart = TimeFormatter.getMilliSeconds(startTimestampStr, "yyyy-MM-dd'T'HH:mm:ssXXX", Locale.US);
+                }
+                final String endTimestampStr = (String) liveBroadcastDetails.get("endTimestamp");
+                if (endTimestampStr != null) {
+                    vid.dateLivestreamEnd = TimeFormatter.getMilliSeconds(endTimestampStr, "yyyy-MM-dd'T'HH:mm:ssXXX", Locale.US);
+                }
+            }
+        }
+        if (vid.dateUploaded <= 0) {
+            vid.dateUploaded = getUploadedDateFromMaps();
+        }
     }
 
     protected String parseChannelID(YoutubeClipData vid) {
@@ -3262,7 +3353,7 @@ public class YoutubeHelper {
         formattedFilename = replaceVariables(link, formattedFilename);
         final String playlistID = link.getStringProperty(YoutubeHelper.YT_PLAYLIST_ID);
         final int playlistPosition = link.getIntegerProperty(YoutubeHelper.YT_PLAYLIST_POSITION, -1);
-        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && playlistID != null && playlistPosition != -1) {
+        if (cfg.isPlaylistItemsIncludePlaylistPositionAtBeginningOfFilenames() && playlistID != null && playlistPosition != -1) {
             formattedFilename = playlistPosition + "." + formattedFilename;
         }
         return formattedFilename;

@@ -634,6 +634,13 @@ public interface YoutubeConfig extends PluginConfigInterface {
     void setVideoFilenamePattern(String name);
 
     @AboutConfig
+    @DescriptionForConfigEntry("If enabled, playlist position will be added to the beginning of all filenames regardless of the customizes filename patterns.")
+    @DefaultBooleanValue(false)
+    boolean isPlaylistItemsIncludePlaylistPositionAtBeginningOfFilenames();
+
+    void setPlaylistItemsIncludePlaylistPositionAtBeginningOfFilenames(boolean b);
+
+    @AboutConfig
     @DefaultBooleanValue(false)
     @DescriptionForConfigEntry("Preload 200kb and use FFProbe to detect the actual Audio Bitrate.")
     boolean isDoExtendedAudioBitrateLookupEnabled();
