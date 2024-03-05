@@ -507,7 +507,10 @@ public class TwitterComCrawler extends PluginForDecrypt {
         final String created_at = tweet.get("created_at").toString();
         final long timestamp = getTimestampTwitterDate(created_at);
         final String formattedDate = formatTwitterDateFromTimestamp(timestamp);
-        final String tweetText = (String) tweet.get("full_text");
+        String tweetText = (String) tweet.get("full_text");
+        if (tweetText != null) {
+            tweetText = Encoding.htmlOnlyDecode(tweetText).trim();
+        }
         final boolean isReplyToOtherTweet = tweet.get("in_reply_to_status_id_str") != null;
         String replyTextForFilename = "";
         if (isReplyToOtherTweet) {

@@ -428,14 +428,18 @@ public class NicoVideoJp extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     private String getFormattedFilename(final DownloadLink link) throws ParseException {
-        final String extension = link.getStringProperty("extension", default_extension);
-        final String videoid = this.getFID(link);
-        String title = link.getStringProperty(PROPERTY_TITLE, null);
         final SubConfiguration cfg = SubConfiguration.getConfig(this.getHost());
         String formattedFilename = cfg.getStringProperty(CUSTOM_FILENAME, defaultCustomFilename);
         if (StringUtils.isEmpty(formattedFilename)) {
             /* Fallback */
             formattedFilename = defaultCustomFilename;
+        }
+        final String extension = link.getStringProperty("extension", default_extension);
+        final String videoid = this.getFID(link);
+        String title = link.getStringProperty(PROPERTY_TITLE);
+        if (StringUtils.isEmpty(title) && !formattedFilename.contains("*videoid*")) {
+            /* Fallback for a very rare case where the video title is empty. */
+            title = videoid;
         }
         String dateStr = link.getStringProperty(PROPERTY_DATE_ORIGINAL);
         final String channelName = link.getStringProperty("channel", "");

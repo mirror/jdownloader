@@ -85,12 +85,13 @@ public class OrfAt extends PluginForDecrypt {
     }
 
     private final String                                      PATTERN_TYPE_OLD      = "(?i)https?://tvthek\\.orf\\.at/(?:index\\.php/)?(?:programs?|topic|profile)/.+";
-    private final String                                      PATTERN_BROADCAST_OLD = "(?i)https?://([a-z0-9]+)\\.orf\\.at/(?:player|programm)/(\\d+)/([a-zA-Z0-9]+)";
-    private final String                                      PATTERN_BROADCAST_NEW = "(?i)https?://radiothek\\.orf\\.at/([a-z0-9]+)/(\\d+)/([a-zA-Z0-9]+)";
-    private final String                                      PATTERN_ARTICLE       = "(?i)https?://([a-z0-9]+)\\.orf\\.at/artikel/(\\d+)/([a-zA-Z0-9]+)";
-    private final String                                      PATTERN_PODCAST       = "(?i)https?://[^/]+/podcasts?/([a-z0-9]+)/([A-Za-z0-9\\-]+)(/([a-z0-9\\-]+))?";
-    private final String                                      PATTERN_COLLECTION    = "(?i)^(https?://.*(?:/collection|podcast/highlights))/(\\d+)(/(\\d+)(/[a-z0-9\\-]+)?)?";
-    private final String                                      PATTERN_VIDEO         = "(?i)^https?://[^/]+/program/(\\w+)/(\\w+)\\.html";
+    private final String                                      PATTERN_BROADCAST_OLD = "(?i)https?://([a-z0-9]+)\\.orf\\.at/(?:player|programm)/(\\d+)/([a-zA-Z0-9]+).*";
+    private final String                                      PATTERN_BROADCAST_NEW = "(?i)https?://radiothek\\.orf\\.at/([a-z0-9]+)/(\\d+)/([a-zA-Z0-9]+).*";
+    private final String                                      PATTERN_BROADCAST_2   = "(?i)https://[^/]+/radio/([a-z0-9]+)/sendung/(\\d+)/([\\w\\-]+).*";
+    private final String                                      PATTERN_ARTICLE       = "(?i)https?://([a-z0-9]+)\\.orf\\.at/artikel/(\\d+)/([a-zA-Z0-9]+).*";
+    private final String                                      PATTERN_PODCAST       = "(?i)https?://[^/]+/podcasts?/([a-z0-9]+)/([A-Za-z0-9\\-]+)(/([a-z0-9\\-]+))?.*";
+    private final String                                      PATTERN_COLLECTION    = "(?i)^(https?://.*(?:/collection|podcast/highlights))/(\\d+)(/(\\d+)(/[a-z0-9\\-]+)?)?.*";
+    private final String                                      PATTERN_VIDEO         = "(?i)^https?://[^/]+/program/(\\w+)/(\\w+)\\.html.*";
     private final String                                      API_BASE              = "https://audioapi.orf.at";
     private final String                                      PROPERTY_SLUG         = "slug";
     /* E.g. https://radiothek.orf.at/ooe --> "ooe" --> Channel == "oe2o" */
@@ -120,6 +121,9 @@ public class OrfAt extends PluginForDecrypt {
 
     @Override
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        Regex broadcastOld = null;
+        Regex broadcastNew = null;
+        Regex broadcast2 = null;
         if (param.getCryptedUrl().matches(PATTERN_TYPE_OLD)) {
             return this.crawlOrfmediathekOld(param);
         } else if (param.getCryptedUrl().matches("(?i)https?://on\\.orf\\.at/.+")) {
@@ -130,13 +134,25 @@ public class OrfAt extends PluginForDecrypt {
             return this.crawlCollection(param);
         } else if (param.getCryptedUrl().matches(PATTERN_PODCAST)) {
             return this.crawlPodcast(param);
-        } else if (param.getCryptedUrl().matches(PATTERN_BROADCAST_OLD) || param.getCryptedUrl().matches(PATTERN_BROADCAST_NEW)) {
-            return crawlProgramm(param);
+        } else if ((broadcastOld = new Regex(param.getCryptedUrl(), PATTERN_BROADCAST_OLD)).patternFind()) {
+            final String broadCastID = broadcastOld.getMatch(2);
+            final String broadcastDay = broadcastOld.getMatch(1);
+            final String domainID = broadcastOld.getMatch(0);
+            return crawlProgramm(domainID, broadCastID, broadcastDay);
+        } else if ((broadcastNew = new Regex(param.getCryptedUrl(), PATTERN_BROADCAST_NEW)).patternFind()) {
+            final String broadCastID = broadcastNew.getMatch(2);
+            final String broadcastDay = broadcastNew.getMatch(1);
+            final String domainID = broadcastNew.getMatch(0);
+            return crawlProgramm(domainID, broadCastID, broadcastDay);
+        } else if ((broadcast2 = new Regex(param.getCryptedUrl(), PATTERN_BROADCAST_2)).patternFind()) {
+            final String domainID = broadcast2.getMatch(0);
+            final String broadcastID = broadcast2.getMatch(1);
+            return crawlBroadcast(domainID, broadcastID);
         } else if (param.getCryptedUrl().matches(PATTERN_VIDEO)) {
             return crawlVideo(param);
         } else {
             /* Unsupported URL -> Developer mistake */
-            logger.info("Unsupported URL:" + param);
+            logger.info("Unsupported URL: " + param);
             return new ArrayList<DownloadLink>(0);
         }
     }
@@ -964,7 +980,7 @@ public class OrfAt extends PluginForDecrypt {
             /* This should never happen but for sure users could modify added URLs and render them invalid. */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         final Map<String, Object> payload = (Map<String, Object>) entries.get("payload");
         final String station = payload.get("station").toString();
         final String podcastSlug = payload.get("slug").toString();
@@ -1033,22 +1049,6 @@ public class OrfAt extends PluginForDecrypt {
         return ret;
     }
 
-    private ArrayList<DownloadLink> crawlProgramm(final CryptedLink param) throws Exception {
-        final String broadCastID;
-        final String broadcastDay;
-        final String domainID;
-        if (param.getCryptedUrl().matches(PATTERN_BROADCAST_OLD)) {
-            broadCastID = new Regex(param.getCryptedUrl(), PATTERN_BROADCAST_OLD).getMatch(2);
-            broadcastDay = new Regex(param.getCryptedUrl(), PATTERN_BROADCAST_OLD).getMatch(1);
-            domainID = new Regex(param.getCryptedUrl(), PATTERN_BROADCAST_OLD).getMatch(0);
-        } else {
-            broadCastID = new Regex(param.getCryptedUrl(), PATTERN_BROADCAST_NEW).getMatch(2);
-            broadcastDay = new Regex(param.getCryptedUrl(), PATTERN_BROADCAST_NEW).getMatch(1);
-            domainID = new Regex(param.getCryptedUrl(), PATTERN_BROADCAST_NEW).getMatch(0);
-        }
-        return crawlProgramm(domainID, broadCastID, broadcastDay);
-    }
-
     private ArrayList<DownloadLink> crawlProgramm(final String domainID, final String broadcastID, final String broadcastDay) throws Exception {
         if (broadcastID == null || broadcastDay == null || domainID == null || domainID.length() < 3) {
             /* Developer mistake */
@@ -1080,7 +1080,7 @@ public class OrfAt extends PluginForDecrypt {
         final Map<String, Object> loopstream = (Map<String, Object>) channelInfo.get("loopstream");
         br.setAllowedResponseCodes(410);
         br.getPage(API_BASE + "/" + domainIDCorrected + "/api/json/current/broadcast/" + broadcastID + "/" + broadcastDay + "?_s=" + System.currentTimeMillis());
-        final Map<String, Object> response = restoreFromString(br.toString(), TypeRef.MAP);
+        final Map<String, Object> response = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         if (br.getHttpConnection().getResponseCode() == 410 || "Broadcast is no longer available".equals(response.get("message"))) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
