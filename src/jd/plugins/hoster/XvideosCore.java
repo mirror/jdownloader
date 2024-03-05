@@ -68,14 +68,15 @@ public abstract class XvideosCore extends PluginForHost {
 
     @Override
     public String getPluginContentURL(final DownloadLink link) {
-        /* TODO: Add plugin setting for this. */
-        final boolean exposeDirecturlToUser = false;
-        final String directurl = link.getStringProperty(PROPERTY_LAST_USED_DIRECTURL);
-        if (exposeDirecturlToUser && directurl != null) {
-            return directurl;
-        } else {
-            return super.getPluginContentURL(link);
-        }
+        // TODO: 2024-03-05: Make use of the code below once next CORE-update has been released
+        // final String directurl = link.getStringProperty(PROPERTY_LAST_USED_DIRECTURL);
+        // final Class<? extends XvideosComConfigCore> cfi = this.getConfigInterface();
+        // if (cfi != null && PluginJsonConfig.get(cfi).isPluginContentURLExposeDirecturls() && directurl != null) {
+        // return directurl;
+        // } else {
+        // return super.getPluginContentURL(link);
+        // }
+        return super.getPluginContentURL(link);
     }
 
     @Override
