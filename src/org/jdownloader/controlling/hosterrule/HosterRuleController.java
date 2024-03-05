@@ -32,6 +32,7 @@ import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.plugins.controller.host.PluginFinder;
 import org.jdownloader.settings.advanced.AdvancedConfigManager;
@@ -370,15 +371,9 @@ public class HosterRuleController implements AccountControllerListener {
                 }
                 defaultAccountGroup.getChildren().add(ar);
             }
-            if (acc.getAccountInfo() != null && acc.getAccountInfo().getMultiHostSupport() != null) {
+            if (acc.getPlugin().hasFeature(FEATURE.MULTIHOST)) {
                 isRuleForMultihoster = true;
             }
-        }
-        if (isRuleForMultihoster) {
-            // TODO: Maybe auto-delete such invalid rules
-            logger.info("Disable rule for host " + host + " because: Rules for multihosters are not allowed");
-            hr.setEnabled(false);
-            return;
         }
         final List<Account> multiAccs = AccountController.getInstance().getMultiHostAccounts(host);
         if (multiAccs != null) {
@@ -401,6 +396,12 @@ public class HosterRuleController implements AccountControllerListener {
             defaultNoAccountGroup = new AccountGroup(_GUI.T.HosterRuleController_validateRule_free());
             defaultNoAccountGroup.getChildren().add(new FreeAccountReference(host));
             hr.getAccounts().add(defaultNoAccountGroup);
+        }
+        if (isRuleForMultihoster) {
+            // TODO: Maybe auto-delete such invalid rules
+            logger.info("Disable rule for host " + host + " because: Rules for multihosters are not allowed");
+            hr.setEnabled(false);
+            return;
         }
     }
 

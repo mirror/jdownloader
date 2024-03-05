@@ -16,6 +16,7 @@ import org.jdownloader.controlling.hosterrule.AccountUsageRule;
 import org.jdownloader.controlling.hosterrule.HosterRuleController;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.components.AbstractAddAction;
+import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 
@@ -61,21 +62,27 @@ public class NewRuleAction extends AbstractAddAction {
     protected ArrayList<DomainInfo> getAvailableDomainInfoList() {
         final HashSet<DomainInfo> domains = new HashSet<DomainInfo>();
         final HashSet<String> multihosterDomains = new HashSet<String>();
+        /* Collect domains of all multihoster accounts which the user currently has. */
         for (final Account acc : AccountController.getInstance().list()) {
-            final AccountInfo ai = acc.getAccountInfo();
-            if (ai != null) {
-                final List<String> supportedHosts = ai.getMultiHostSupport();
-                if (supportedHosts != null) {
-                    final String thisMultihosterDomain = acc.getHoster();
-                    multihosterDomains.add(acc.getHoster());
-                    for (final String supportedHost : supportedHosts) {
-                        if (supportedHost.equals(thisMultihosterDomain)) {
-                            /* Multihoster supports its own domain -> Impossible */
-                            continue;
-                        }
-                        final LazyHostPlugin plg = HostPluginController.getInstance().get(supportedHost);
-                        if (plg != null) {
-                            domains.add(DomainInfo.getInstance(plg.getHost()));
+            if (acc.getPlugin().hasFeature(FEATURE.MULTIHOST)) {
+                final String thisMultihosterDomain = acc.getHoster();
+                multihosterDomains.add(thisMultihosterDomain);
+                final AccountInfo ai = acc.getAccountInfo();
+                if (ai != null) {
+                    final List<String> supportedHosts = ai.getMultiHostSupport();
+                    if (supportedHosts != null) {
+                        for (final String supportedHost : supportedHosts) {
+                            if (multihosterDomains.contains(supportedHost)) {
+                                /*
+                                 * Multihoster supports its own domain or domains of other multihosters -> Exclude those domains from usage
+                                 * rule selection
+                                 */
+                                continue;
+                            }
+                            final LazyHostPlugin plg = HostPluginController.getInstance().get(supportedHost);
+                            if (plg != null) {
+                                domains.add(DomainInfo.getInstance(plg.getHost()));
+                            }
                         }
                     }
                 }
@@ -86,7 +93,7 @@ public class NewRuleAction extends AbstractAddAction {
             /**
              * Collect domains of all plugins which: </br>
              * - Support premium download/account </br>
-             * - Are not a multihoster </br>
+             * - and: Are not a multihoster </br>
              * Some multihosters do support downloading their own selfhosted files in account mode but this is the exception. </br>
              * Examples: high-way.me, premiumize.me
              */
@@ -98,6 +105,7 @@ public class NewRuleAction extends AbstractAddAction {
                 domains.add(DomainInfo.getInstance(plugin.getHost()));
             }
         }
+        /* Sort our unsorted results. */
         final ArrayList<DomainInfo> lst = new ArrayList<DomainInfo>(domains);
         Collections.sort(lst, new Comparator<DomainInfo>() {
             @Override
