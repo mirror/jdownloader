@@ -2006,7 +2006,7 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
     }
 
     /** Returns user selected stream quality. -1 = BEST/default */
-    private final int getPreferredStreamQuality() {
+    protected final int getPreferredStreamQuality() {
         final Class<? extends KVSConfig> cfgO = this.getConfigInterface();
         if (cfgO != null) {
             final KVSConfig cfg = PluginJsonConfig.get(cfgO);
