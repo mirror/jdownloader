@@ -15,12 +15,18 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jdownloader.plugins.components.config.KVSConfig;
+import org.jdownloader.plugins.components.config.KVSConfigRule34videoCom;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class XfreehdCom extends KernelVideoSharingComV2 {
@@ -62,5 +68,28 @@ public class XfreehdCom extends KernelVideoSharingComV2 {
     @Override
     protected String generateContentURL(final String host, final String fuid, final String urlTitle) {
         return generateContentURLDefaultVideosPattern(host, fuid, urlTitle);
+    }
+
+    @Override
+    public Class<? extends KVSConfig> getConfigInterface() {
+        /* TODO: Change to KVSConfigXfreehdCom once next CORE-update is released. */
+        // return KVSConfigXfreehdCom.class;
+        return KVSConfigRule34videoCom.class;
+    }
+
+    @Override
+    protected String getDllink(final DownloadLink link, final Browser br) throws PluginException, IOException {
+        final int userSelectedQuality = this.getPreferredStreamQuality();
+        final String urlsd = br.getRegex("src=\"(https?://[^\"]+)\" title=\"SD\" [^>]*/>").getMatch(0);
+        final String urlhd = br.getRegex("src=\"(https?://[^\"]+)\" title=\"HD\" [^>]*/>").getMatch(0);
+        if (userSelectedQuality != -1 && userSelectedQuality < 720 && urlsd != null) {
+            /* Try to get SD quality */
+            return urlsd;
+        } else if (urlhd != null) {
+            return urlhd;
+        } else {
+            /* Fallback */
+            return super.getDllink(link, br);
+        }
     }
 }
