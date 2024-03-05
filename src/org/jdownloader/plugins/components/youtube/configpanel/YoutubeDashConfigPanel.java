@@ -102,12 +102,12 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
         }
 
         @Override
-        protected String getLabel(List<Type> list) {
+        protected String getLabel(final List<Type> list) {
             if (list.size() == 0) {
                 return super.getLabel(list);
             }
-            StringBuilder sb = new StringBuilder();
-            HashSet<String> dupes = new HashSet<String>();
+            final StringBuilder sb = new StringBuilder();
+            final HashSet<String> dupes = new HashSet<String>();
             for (int i = 0; i < list.size(); i++) {
                 String name = (variantToName(list.get(i), false));
                 if (!dupes.add(name)) {
@@ -148,7 +148,7 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
         // return new Double(o2.getQualityRating()).compareTo(new Double(o1.getQualityRating()));
         // }
         // };
-        ArrayList<AbstractVariantWrapper> sorted = new ArrayList<AbstractVariantWrapper>();
+        final ArrayList<AbstractVariantWrapper> sorted = new ArrayList<AbstractVariantWrapper>();
         for (AbstractVariant v : AbstractVariant.listVariants()) {
             sorted.add(new AbstractVariantWrapper(v));
         }
@@ -321,6 +321,7 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
         addPair(_GUI.T.YoutubeDashConfigPanel_YoutubeDashConfigPanel_filename_pattern_image(), null, null, new TextInput(CFG_YOUTUBE.IMAGE_FILENAME_PATTERN));
         addPair(_GUI.T.YoutubeDashConfigPanel_YoutubeDashConfigPanel_filename_pattern_subtitle(), null, null, new TextInput(CFG_YOUTUBE.SUBTITLE_FILENAME_PATTERN));
         addPair(_GUI.T.YoutubeDashConfigPanel_YoutubeDashConfigPanel_filename_pattern_description(), null, null, new TextInput(CFG_YOUTUBE.DESCRIPTION_FILENAME_PATTERN));
+        addPair(_GUI.T.YoutubeDashConfigPanel_YoutubeDashConfigPanel_PlaylistItemsIncludePlaylistPositionAtBeginningOfFilenames(), null, new Checkbox(cf._getStorageHandler().getKeyHandler("PlaylistItemsIncludePlaylistPositionAtBeginningOfFilenames", BooleanKeyHandler.class)));
         updateBest();
     }
 
