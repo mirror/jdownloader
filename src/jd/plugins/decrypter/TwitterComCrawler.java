@@ -446,322 +446,6 @@ public class TwitterComCrawler extends PluginForDecrypt {
         }
     }
 
-    /**
-     * Crawls single media objects obtained via API.
-     *
-     * @throws MalformedURLException
-     * @throws PluginException
-     */
-    private ArrayList<DownloadLink> crawlTweetMap(String username, Map<String, Object> tweet, Map<String, Object> user, FilePackage fp) throws MalformedURLException, PluginException {
-        final TwitterConfigInterface cfg = PluginJsonConfig.get(TwitterConfigInterface.class);
-        // final Boolean retweetedBoolean = (Boolean) tweet.get("retweeted");
-        Map<String, Object> retweeted_status = (Map<String, Object>) tweet.get("retweeted_status");
-        Map<String, Object> retweetUser = null;
-        if (retweeted_status == null) {
-            /* 2023-10-16 */
-            retweeted_status = (Map<String, Object>) JavaScriptEngineFactory.walkJson(tweet, "retweeted_status_result/result/legacy");
-            /* Get map of user who tweeted that re-tweet originally. This can differ from the user who re-tweeted the main tweet. */
-            if (retweeted_status != null) {
-                retweetUser = (Map<String, Object>) JavaScriptEngineFactory.walkJson(tweet, "retweeted_status_result/result/core/user_results/result/legacy");
-                if (retweetUser == null) {
-                    /* This should never happen */
-                    logger.warning("Failed to find map of re-tweet user: Possible plugin failure");
-                }
-            }
-            if (retweeted_status == null) {
-                /* 2024-02-20 */
-                retweeted_status = (Map<String, Object>) JavaScriptEngineFactory.walkJson(tweet, "retweeted_status_result/result/tweet/legacy");
-                retweetUser = (Map<String, Object>) JavaScriptEngineFactory.walkJson(tweet, "retweeted_status_result/result/tweet/core/user_results/result/legacy");
-            }
-        }
-        boolean isRetweet = false;
-        final Object userInContextOfTweet = tweet.get("user");
-        if (retweeted_status != null && !retweeted_status.isEmpty()) {
-            /*
-             * Content of tweet is in this if whole tweet is a retweet. Also fields of "root map" of tweet can be truncated then e.g. text
-             * of tweet in "full_text" is not the full text then.
-             */
-            tweet = retweeted_status;
-            user = retweetUser;
-            isRetweet = true;
-        } else if (userInContextOfTweet != null) {
-            /**
-             * Prefer this as our user object. </br>
-             * It's only included when adding single tweets.
-             */
-            user = (Map<String, Object>) userInContextOfTweet;
-        }
-        if (user == null) {
-            throw new IllegalArgumentException();
-        }
-        final String tweetID = tweet.get("id_str").toString();
-        dupeListForProfileCrawlerTweetIDs.add(tweetID);
-        /* Debug code down below */
-        // if (tweetID.equals("test")) {
-        // logger.info("hit");
-        // }
-        if (username == null) {
-            username = user.get("screen_name").toString();
-        }
-        final List<String> pinned_tweet_ids_str = (List<String>) user.get("pinned_tweet_ids_str");
-        final String created_at = tweet.get("created_at").toString();
-        final long timestamp = getTimestampTwitterDate(created_at);
-        final String formattedDate = formatTwitterDateFromTimestamp(timestamp);
-        String tweetText = (String) tweet.get("full_text");
-        if (tweetText != null) {
-            tweetText = Encoding.htmlOnlyDecode(tweetText).trim();
-        }
-        final boolean isReplyToOtherTweet = tweet.get("in_reply_to_status_id_str") != null;
-        String replyTextForFilename = "";
-        if (isReplyToOtherTweet) {
-            /* Mark filenames of tweet-replies if wished by user. */
-            if (cfg.isMarkTweetRepliesViaFilename()) {
-                replyTextForFilename += "_reply";
-            }
-        }
-        if (fp == null) {
-            /* Assume that we're crawling a single tweet -> Set date + username as packagename. */
-            fp = FilePackage.getInstance();
-            fp.setName(formattedDate + "_" + username);
-            if (!StringUtils.isEmpty(tweetText)) {
-                fp.setComment(tweetText);
-            }
-        }
-        final ArrayList<DownloadLink> retMedia = new ArrayList<DownloadLink>();
-        final String urlToTweet = createTwitterPostURL(username, tweetID);
-        fp.setAllowInheritance(true);
-        fp.setAllowMerge(true);
-        /*
-         * mediasExtended can contasin image items + video items. medias can contain additional image items that are not inside
-         * mediasExtended.
-         */
-        final List<Map<String, Object>> mediasExtended = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(tweet, "extended_entities/media");
-        final List<Map<String, Object>> medias = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(tweet, "entities/media");
-        final String vmapURL = (String) JavaScriptEngineFactory.walkJson(tweet, "card/binding_values/amplify_url_vmap/string_value");
-        final List<List<Map<String, Object>>> mediaLists = new ArrayList<List<Map<String, Object>>>();
-        if (mediasExtended != null && mediasExtended.size() > 0) {
-            mediaLists.add(mediasExtended);
-        }
-        if (medias != null && medias.size() > 0) {
-            mediaLists.add(medias);
-        }
-        int mediaIndex = 0;
-        int videoIndex = 0;
-        if (mediaLists.size() > 0) {
-            final List<String> mediaTypesVideo = Arrays.asList(new String[] { "animated_gif", "video" });
-            final String mediaTypePhoto = "photo";
-            final Map<String, DownloadLink> mediaResultMap = new LinkedHashMap<String, DownloadLink>();
-            final Set<String> videoIDs = new HashSet<String>();
-            for (final List<Map<String, Object>> mediaList : mediaLists) {
-                for (final Map<String, Object> media : mediaList) {
-                    final String mediaType = media.get("type").toString();
-                    final String mediaIDStr = media.get("id_str").toString();
-                    final String keyForMap = mediaType + "_" + mediaIDStr;
-                    if (mediaResultMap.containsKey(keyForMap)) {
-                        continue;
-                    }
-                    final DownloadLink dl;
-                    if (mediaTypesVideo.contains(mediaType)) {
-                        videoIDs.add(mediaIDStr);
-                        /* Animated_gif will usually only have one .mp4 version available with bitrate "0". */
-                        int highestBitrate = -1;
-                        final List<Map<String, Object>> videoVariants = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(media, "video_info/variants");
-                        String streamURL = null;
-                        String hlsMaster = null;
-                        for (final Map<String, Object> videoVariant : videoVariants) {
-                            final String content_type = (String) videoVariant.get("content_type");
-                            if (content_type.equalsIgnoreCase("video/mp4")) {
-                                final int bitrate = ((Number) videoVariant.get("bitrate")).intValue();
-                                if (bitrate > highestBitrate) {
-                                    highestBitrate = bitrate;
-                                    streamURL = (String) videoVariant.get("url");
-                                }
-                            } else if (content_type.equalsIgnoreCase("application/x-mpegURL")) {
-                                hlsMaster = (String) videoVariant.get("url");
-                            } else {
-                                logger.info("Skipping unsupported video content_type: " + content_type);
-                            }
-                        }
-                        if (StringUtils.isEmpty(streamURL)) {
-                            /* This should never happen */
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                        }
-                        dl = this.createDownloadlink(createVideourlSpecific(username, tweetID, (videoIndex + 1)));
-                        dl.setProperty(PROPERTY_TYPE, TYPE_VIDEO);
-                        dl.setProperty(PROPERTY_BITRATE, highestBitrate);
-                        dl.setProperty(TwitterCom.PROPERTY_DIRECTURL, streamURL);
-                        if (!StringUtils.isEmpty(hlsMaster)) {
-                            dl.setProperty(TwitterCom.PROPERTY_DIRECTURL_hls_master, hlsMaster);
-                        }
-                        dl.setProperty(PROPERTY_VIDEO_DIRECT_URLS_ARE_AVAILABLE_VIA_API_EXTENDED_ENTITY, true);
-                        videoIndex++;
-                    } else if (mediaType.equals(mediaTypePhoto)) {
-                        // if (!cfg.isCrawlVideoThumbnail() && foundVideos.contains(tweetID)) {
-                        // // do not grab video thumbnail
-                        // continue;
-                        // }
-                        String photoURL = (String) media.get("media_url"); /* Also available as "media_url_https" */
-                        if (StringUtils.isEmpty(photoURL)) {
-                            photoURL = (String) media.get("media_url_https");
-                        }
-                        if (StringUtils.isEmpty(photoURL)) {
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                        }
-                        dl = this.createDownloadlink(photoURL);
-                        dl.setProperty(PROPERTY_TYPE, TYPE_PHOTO);
-                        dl.setProperty(TwitterCom.PROPERTY_DIRECTURL, photoURL);
-                    } else {
-                        /* Unknown type -> This should never happen! */
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unknown media type:" + mediaType);
-                    }
-                    dl.setAvailable(true);
-                    dl.setProperty(PROPERTY_MEDIA_INDEX, mediaIndex);
-                    dl.setProperty(PROPERTY_MEDIA_COUNT, mediasExtended.size());
-                    dl.setProperty(PROPERTY_MEDIA_ID, media.get("id_str"));
-                    mediaResultMap.put(keyForMap, dl);
-                    mediaIndex += 1;
-                }
-            }
-            if (!cfg.isCrawlVideoThumbnail()) {
-                /* Remove video thumbnails from results as user doesn't want video thumbnails. */
-                int numberofSkippedVideoThumbnails = 0;
-                for (final String videoMediaIDStr : videoIDs) {
-                    final String keyForMap = mediaTypePhoto + "_" + videoMediaIDStr;
-                    if (mediaResultMap.remove(keyForMap) != null) {
-                        numberofSkippedVideoThumbnails++;
-                    }
-                }
-                if (numberofSkippedVideoThumbnails > 0) {
-                    logger.info("Skipped thumbnails: " + numberofSkippedVideoThumbnails);
-                }
-            }
-            /* Add results to list to be returned later. */
-            retMedia.addAll(mediaResultMap.values());
-        }
-        /* Check for fallback video source if no video item has been found until now. */
-        if (videoIndex == 0 && !StringUtils.isEmpty(vmapURL)) {
-            /* Fallback handling for very old (???) content */
-            /* Expect such URLs which our host plugin can handle: https://video.twimg.com/amplify_video/vmap/<numbers>.vmap */
-            final DownloadLink singleVideo = this.createDownloadlink(vmapURL);
-            final String finalFilename = formattedDate + "_" + username + "_" + tweetID + replyTextForFilename + ".mp4";
-            singleVideo.setFinalFileName(finalFilename);
-            singleVideo.setProperty(PROPERTY_VIDEO_DIRECT_URLS_ARE_AVAILABLE_VIA_API_EXTENDED_ENTITY, false);
-            singleVideo.setProperty(PROPERTY_MEDIA_INDEX, 0);
-            singleVideo.setProperty(PROPERTY_TYPE, TYPE_VIDEO);
-            singleVideo.setAvailable(true);
-            retMedia.add(singleVideo);
-        }
-        final ArrayList<DownloadLink> retInternal = new ArrayList<DownloadLink>();
-        int itemsSkippedDueToPluginSettings = 0;
-        DownloadLink text = null;
-        final ArrayList<DownloadLink> retExternal = new ArrayList<DownloadLink>();
-        if (!StringUtils.isEmpty(tweetText)) {
-            final String[] urlsInPostText = HTMLParser.getHttpLinks(tweetText, br.getURL());
-            if (cfg.isCrawlURLsInsideTweetText() && urlsInPostText.length > 0) {
-                final ArrayList<String> skippedUrls = new ArrayList<String>();
-                final String whitelistRegexStr = cfg.getRegexWhitelistForCrawledUrlsInTweetText();
-                Pattern whitelistPattern = null;
-                if (!StringUtils.isEmpty(whitelistRegexStr)) {
-                    try {
-                        whitelistPattern = Pattern.compile(whitelistRegexStr.trim(), Pattern.CASE_INSENSITIVE);
-                    } catch (final PatternSyntaxException pse) {
-                        logger.info("User entered invalid whitelist regex, ignoring it. Regex: " + whitelistRegexStr);
-                    }
-                }
-                for (final String url : urlsInPostText) {
-                    if (whitelistPattern == null || new Regex(url, whitelistPattern).matches()) {
-                        retExternal.add(this.createDownloadlink(url));
-                    } else {
-                        skippedUrls.add(url);
-                    }
-                }
-                if (skippedUrls.size() > 0) {
-                    String logtext = "Skipped URLs due du users' whitelist pattern: ";
-                    if (skippedUrls.size() == urlsInPostText.length) {
-                        logtext += "ALL";
-                    } else {
-                        logtext += skippedUrls;
-                    }
-                    logger.info(logtext);
-                }
-            } else if (urlsInPostText != null) {
-                /* All URLs were skipped. */
-                itemsSkippedDueToPluginSettings += urlsInPostText.length;
-            }
-            /* Crawl Tweet as text if wanted by user or if tweet contains only text. */
-            final SingleTweetCrawlerTextCrawlMode mode = cfg.getSingleTweetCrawlerTextCrawlMode();
-            if (mode == SingleTweetCrawlerTextCrawlMode.AUTO || mode == SingleTweetCrawlerTextCrawlMode.ALWAYS || (mode == SingleTweetCrawlerTextCrawlMode.ONLY_IF_NO_MEDIA_IS_AVAILABLE && retMedia.isEmpty())) {
-                /*
-                 * Determine last found original filename now/here because after collecting those items we're removing non-thumbnails if not
-                 * wanted by user so this is the only place to determine the last used original filename.
-                 */
-                String lastFoundOriginalFilename = null;
-                for (final DownloadLink result : retMedia) {
-                    final String directurl = result.getStringProperty(TwitterCom.PROPERTY_DIRECTURL);
-                    if (directurl != null) {
-                        final String originalFilename = getFilenameFromURL(directurl);
-                        if (originalFilename != null) {
-                            lastFoundOriginalFilename = originalFilename;
-                        }
-                    }
-                }
-                text = this.createDownloadlink(urlToTweet);
-                text.setProperty(PROPERTY_RELATED_ORIGINAL_FILENAME, lastFoundOriginalFilename);
-                try {
-                    text.setDownloadSize(tweetText.getBytes("UTF-8").length);
-                } catch (final UnsupportedEncodingException ignore) {
-                    ignore.printStackTrace();
-                }
-                text.setProperty(PROPERTY_MEDIA_INDEX, 0);
-                text.setProperty(PROPERTY_TYPE, TYPE_TEXT);
-                text.setAvailable(true);
-                // text.setEnabled(false);
-                retInternal.add(text);
-            } else {
-                itemsSkippedDueToPluginSettings++;
-            }
-        }
-        retInternal.addAll(retMedia);
-        /* Add remaining plugin properties */
-        final boolean isPinnedTweet = pinned_tweet_ids_str != null && pinned_tweet_ids_str.contains(tweetID);
-        for (final DownloadLink dl : retInternal) {
-            /* Add additional properties */
-            dl.setContentUrl(urlToTweet);
-            dl.setProperty(PROPERTY_USERNAME, username);
-            dl.setProperty(PROPERTY_USER_ID, tweet.get("user_id_str"));
-            dl.setProperty(PROPERTY_TWEET_ID, tweetID);
-            dl.setProperty(PROPERTY_DATE, formattedDate);
-            dl.setProperty(PROPERTY_DATE_TIMESTAMP, timestamp);
-            if (!StringUtils.isEmpty(tweetText)) {
-                dl.setProperty(PROPERTY_TWEET_TEXT, tweetText);
-            }
-            if (isReplyToOtherTweet) {
-                dl.setProperty(PROPERTY_REPLY, true);
-            }
-            if (isRetweet) {
-                dl.setProperty(PROPERTY_RETWEET, true);
-            }
-            if (isPinnedTweet) {
-                dl.setProperty(PROPERTY_PINNED_TWEET, true);
-            }
-            /* Set filename which gets created based on user settings and previously set properties. */
-            setFormattedFilename(dl);
-        }
-        final ArrayList<DownloadLink> retAll = new ArrayList<DownloadLink>();
-        retAll.addAll(retInternal);
-        retAll.addAll(retExternal);
-        fp.addLinks(retAll);
-        /* Logger just in case nothing was added. */
-        if (retMedia.isEmpty()) {
-            if (itemsSkippedDueToPluginSettings == 0) {
-                logger.info("Failed to find any crawlable content in tweet: " + tweetID);
-            } else {
-                logger.info("Failed to find any crawlable content because of user settings. Crawlable but skipped " + itemsSkippedDueToPluginSettings + " item(s) due to users' plugin settings.");
-            }
-        }
-        return retAll;
-    }
-
     private static String getFilenameFromURL(final String url) {
         try {
             return Plugin.getFileNameFromURL(url);
@@ -1166,67 +850,69 @@ public class TwitterComCrawler extends PluginForDecrypt {
                 } else {
                     thisRoot = tweetResult;
                 }
-                final Map<String, Object> tweetUser = (Map<String, Object>) JavaScriptEngineFactory.walkJson(thisRoot, "core/user_results/result/legacy");
-                final Map<String, Object> tweet = (Map<String, Object>) thisRoot.get("legacy");
-                Map<String, Object> quoted_status = (Map<String, Object>) JavaScriptEngineFactory.walkJson(thisRoot, "quoted_status_result/result/legacy");
-                Map<String, Object> quotedUser = (Map<String, Object>) JavaScriptEngineFactory.walkJson(thisRoot, "quoted_status_result/result/core/user_results/result/legacy");
-                if (quoted_status == null || quotedUser == null) {
-                    quoted_status = (Map<String, Object>) JavaScriptEngineFactory.walkJson(thisRoot, "quoted_status_result/result/tweet/legacy");
-                    quotedUser = (Map<String, Object>) JavaScriptEngineFactory.walkJson(thisRoot, "quoted_status_result/result/tweet/core/user_results/result/legacy");
+                Map<String, Object> quoted_status = (Map<String, Object>) JavaScriptEngineFactory.walkJson(thisRoot, "quoted_status_result/result/tweet");
+                if (quoted_status == null) {
+                    quoted_status = (Map<String, Object>) JavaScriptEngineFactory.walkJson(thisRoot, "quoted_status_result/result");
                 }
-                final boolean containsQuotedTweet = quoted_status != null && quotedUser != null;
-                final String tweetIDStr = tweet.get("id_str").toString();
-                if (singleTweetID != null && !StringUtils.equals(tweetIDStr, singleTweetID) && tweetResults.size() > 1) {
-                    /* Fail-safe */
-                    logger.info("Skipping tweetID because it does not match the one we're looking for: " + tweetIDStr);
-                    continue;
-                }
-                final ArrayList<DownloadLink> thisTweetResults = crawlTweetMap(null, tweet, tweetUser, fp);
+                final boolean containsQuotedTweet = quoted_status != null;
+                final ArrayList<DownloadLink> thisTweetResults = crawlTweetMap(null, thisRoot, fp);
                 if (containsQuotedTweet) {
                     /* 2024-02-21: Current Tweet is a reply to a quoted Tweet -> We need to crawl that quoted Tweet separately */
-                    final ArrayList<DownloadLink> thisQuotedTweetResults = crawlTweetMap(null, quoted_status, quotedUser, fp);
+                    final ArrayList<DownloadLink> thisQuotedTweetResults = crawlTweetMap(null, quoted_status, fp);
                     thisTweetResults.addAll(thisQuotedTweetResults);
                 }
-                if (singleTweetID == null && !containsQuotedTweet && allowSkipRetweets && !PluginJsonConfig.get(TwitterConfigInterface.class).isCrawlRetweetsV2()) {
-                    /* Re-Tweet crawling is disabled: Skip all results of this Tweet if it is a Re-Tweet. */
-                    boolean isRetweet = false;
-                    boolean looksLikeRetweetOrIsItemFromOtherUser = false;
-                    for (final DownloadLink tweetresult : thisTweetResults) {
-                        if (tweetresult.hasProperty(PROPERTY_RETWEET)) {
-                            isRetweet = true;
-                            break;
-                        }
-                        /*
-                         * Tweets from other users than the one we are crawling now are either Retweets or Tweets which are part of Tweet
-                         * comments/replies. Typicall if a user does not want to have Retweets we want to filter such items too.
-                         */
-                        final String tweetUsername = tweetresult.getStringProperty(PROPERTY_USERNAME);
-                        if (tweetresult.hasProperty(PROPERTY_RETWEET)) {
-                            isRetweet = true;
-                            break;
-                        } else if (username != null && !tweetUsername.equals(username)) {
-                            looksLikeRetweetOrIsItemFromOtherUser = true;
-                            break;
-                        }
+                /* Evaluate results */
+                final HashSet<String> thisRetweetIDs = new HashSet<String>();
+                final HashSet<String> thisTweetItemsFromOtherUsers = new HashSet<String>();
+                final HashSet<String> thisAllTweetIDs = new HashSet<String>();
+                for (final DownloadLink tweetresult : thisTweetResults) {
+                    final String thisTweetID = tweetresult.getStringProperty(PROPERTY_TWEET_ID);
+                    if (thisTweetID == null) {
+                        continue;
                     }
-                    if (isRetweet || looksLikeRetweetOrIsItemFromOtherUser) {
-                        logger.info("Skipping Retweet: " + tweetIDStr + " | isRetweet=" + isRetweet + " | looksLikeRetweetOrIsItemFromOtherUser=" + looksLikeRetweetOrIsItemFromOtherUser);
+                    thisAllTweetIDs.add(thisTweetID);
+                    /*
+                     * Tweets from other users than the one we are crawling now are either Retweets or Tweets which are part of Tweet
+                     * comments/replies. Typicall if a user does not want to have Retweets we want to filter such items too.
+                     */
+                    final String tweetUsername = tweetresult.getStringProperty(PROPERTY_USERNAME);
+                    if (tweetresult.hasProperty(PROPERTY_RETWEET)) {
+                        thisRetweetIDs.add(thisTweetID);
+                    } else if (username != null && !tweetUsername.equals(username)) {
+                        thisTweetItemsFromOtherUsers.add(thisTweetID);
+                    }
+                }
+                /* Check some skip conditions */
+                if (singleTweetID != null && tweetResults.size() > 1 && !thisAllTweetIDs.contains(singleTweetID)) {
+                    /* Fail-safe */
+                    logger.info("Single Tweet filter: Skipping the following results because they do not contain the item we are looking for: " + tweetResults);
+                    continue;
+                } else if (singleTweetID == null && !containsQuotedTweet && allowSkipRetweets && !PluginJsonConfig.get(TwitterConfigInterface.class).isCrawlRetweetsV2()) {
+                    /* Re-Tweet crawling is disabled: Skip all results of this Tweet if it is a Re-Tweet. */
+                    if (thisRetweetIDs.size() > 0 || thisTweetItemsFromOtherUsers.size() > 0) {
+                        logger.info("Retweet filter: Skipping Retweet(s): " + thisRetweetIDs.toString());
+                        logger.info("Retweet filter: Skipping Tweet items from other users: " + thisTweetItemsFromOtherUsers.toString());
                         for (final DownloadLink tweetresult : thisTweetResults) {
                             profileCrawlerSkippedResultsByRetweet.add(tweetresult);
                         }
                         continue;
                     }
                 }
+                /* Determine timestamp of "last Tweet". */
                 Long crawledTweetTimestamp = null;
                 for (final DownloadLink thisTweetResult : thisTweetResults) {
                     /* Find timestamp of last added result. Ignore pinned Tweets. */
-                    if (!thisTweetResult.hasProperty(PROPERTY_TWEET_ID)) {
+                    final String thisTweetD = thisTweetResult.getStringProperty(PROPERTY_TWEET_ID);
+                    final boolean isPinnedTweet = thisTweetResult.getBooleanProperty(PROPERTY_PINNED_TWEET, false);
+                    if (thisTweetD == null) {
                         /* Skip items which would not go into Twitter hosterplugin such as crawled external URLs inside post-text. */
                         continue;
-                    }
-                    if (!thisTweetResult.getBooleanProperty(PROPERTY_PINNED_TWEET, false)) {
+                    } else if (isPinnedTweet) {
+                        /* Ignore pinned items */
+                        continue;
+                    } else {
                         /* Find date of last crawled Tweet. */
-                        logger.info("Tweet used as source for last crawled Tweet timestamp: " + tweetIDStr);
+                        logger.info("Tweet used as source for last crawled Tweet timestamp: " + thisTweetD);
                         crawledTweetTimestamp = thisTweetResult.getLongProperty(PROPERTY_DATE_TIMESTAMP, -1);
                     }
                 }
@@ -1240,7 +926,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
                 } else {
                     /* Add */
                     allowedResults.addAll(thisTweetResults);
-                    actuallyCrawledTweetIDs.add(tweetIDStr);
+                    actuallyCrawledTweetIDs.addAll(thisAllTweetIDs);
                 }
             } else if (typename.equalsIgnoreCase("TweetTombstone")) {
                 dupeListForProfileCrawlerTweetIDs.add("TODO_FIXME_2024_02_20");
@@ -1270,6 +956,313 @@ public class TwitterComCrawler extends PluginForDecrypt {
             }
         }
         return allowedResults;
+    }
+
+    /**
+     * Crawls single media objects obtained via API.
+     *
+     * @throws MalformedURLException
+     * @throws PluginException
+     *
+     * @param username:
+     *            Pre given username (only needed if we know in beforehand that all Tweet items we will process belong to one user).
+     */
+    private ArrayList<DownloadLink> crawlTweetMap(String username, Map<String, Object> thisRoot, FilePackage fp) throws MalformedURLException, PluginException {
+        final TwitterConfigInterface cfg = PluginJsonConfig.get(TwitterConfigInterface.class);
+        Map<String, Object> retweetRootMap = (Map<String, Object>) JavaScriptEngineFactory.walkJson(thisRoot, "legacy/retweeted_status");
+        if (retweetRootMap == null) {
+            /* Check if this is a Retweet */
+            retweetRootMap = (Map<String, Object>) JavaScriptEngineFactory.walkJson(thisRoot, "legacy/retweeted_status_result/result/tweet");
+            if (retweetRootMap == null) {
+                retweetRootMap = (Map<String, Object>) JavaScriptEngineFactory.walkJson(thisRoot, "legacy/retweeted_status_result/result");
+            }
+        }
+        boolean isRetweet = false;
+        if (retweetRootMap != null && !retweetRootMap.isEmpty()) {
+            /*
+             * We have a Retweet -> Replace root map with the one of the retweet
+             */
+            thisRoot = retweetRootMap;
+            isRetweet = true;
+        }
+        final Map<String, Object> tweet = (Map<String, Object>) thisRoot.get("legacy");
+        final Map<String, Object> user = (Map<String, Object>) JavaScriptEngineFactory.walkJson(thisRoot, "core/user_results/result/legacy");
+        if (user == null) {
+            throw new IllegalArgumentException();
+        }
+        final String tweetID = tweet.get("id_str").toString();
+        dupeListForProfileCrawlerTweetIDs.add(tweetID);
+        /* Commented out debug code down below */
+        // if (tweetID.equals("test")) {
+        // logger.info("hit");
+        // }
+        if (username == null) {
+            username = user.get("screen_name").toString();
+        }
+        final List<String> pinned_tweet_ids_str = (List<String>) user.get("pinned_tweet_ids_str");
+        final String created_at = tweet.get("created_at").toString();
+        final long timestamp = getTimestampTwitterDate(created_at);
+        final String formattedDate = formatTwitterDateFromTimestamp(timestamp);
+        /* Some premium accounts can post longer text Tweets. The full text of such Tweets is stored at a different place. */
+        final String extraLongTweetText = (String) JavaScriptEngineFactory.walkJson(thisRoot, "note_tweet/note_tweet_results/result/text");
+        String tweetText = null;
+        if (!StringUtils.isEmpty(extraLongTweetText)) {
+            tweetText = extraLongTweetText;
+        } else {
+            tweetText = (String) tweet.get("full_text");
+        }
+        if (tweetText != null) {
+            tweetText = sanitizeTweetText(tweetText);
+        }
+        final boolean isReplyToOtherTweet = tweet.get("in_reply_to_status_id_str") != null;
+        String replyTextForFilename = "";
+        if (isReplyToOtherTweet) {
+            /* Mark filenames of tweet-replies if wished by user. */
+            if (cfg.isMarkTweetRepliesViaFilename()) {
+                replyTextForFilename += "_reply";
+            }
+        }
+        if (fp == null) {
+            /* Assume that we're crawling a single tweet -> Set date + username as packagename. */
+            fp = FilePackage.getInstance();
+            fp.setName(formattedDate + "_" + username);
+            if (!StringUtils.isEmpty(tweetText)) {
+                fp.setComment(tweetText);
+            }
+        }
+        final ArrayList<DownloadLink> retMedia = new ArrayList<DownloadLink>();
+        final String urlToTweet = createTwitterPostURL(username, tweetID);
+        fp.setAllowInheritance(true);
+        fp.setAllowMerge(true);
+        /*
+         * mediasExtended can contasin image items + video items. medias can contain additional image items that are not inside
+         * mediasExtended.
+         */
+        final List<Map<String, Object>> mediasExtended = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(tweet, "extended_entities/media");
+        final List<Map<String, Object>> medias = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(tweet, "entities/media");
+        final String vmapURL = (String) JavaScriptEngineFactory.walkJson(tweet, "card/binding_values/amplify_url_vmap/string_value");
+        final List<List<Map<String, Object>>> mediaLists = new ArrayList<List<Map<String, Object>>>();
+        if (mediasExtended != null && mediasExtended.size() > 0) {
+            mediaLists.add(mediasExtended);
+        }
+        if (medias != null && medias.size() > 0) {
+            mediaLists.add(medias);
+        }
+        int mediaIndex = 0;
+        int videoIndex = 0;
+        if (mediaLists.size() > 0) {
+            final List<String> mediaTypesVideo = Arrays.asList(new String[] { "animated_gif", "video" });
+            final String mediaTypePhoto = "photo";
+            final Map<String, DownloadLink> mediaResultMap = new LinkedHashMap<String, DownloadLink>();
+            final Set<String> videoIDs = new HashSet<String>();
+            for (final List<Map<String, Object>> mediaList : mediaLists) {
+                for (final Map<String, Object> media : mediaList) {
+                    final String mediaType = media.get("type").toString();
+                    final String mediaIDStr = media.get("id_str").toString();
+                    final String keyForMap = mediaType + "_" + mediaIDStr;
+                    if (mediaResultMap.containsKey(keyForMap)) {
+                        continue;
+                    }
+                    final DownloadLink dl;
+                    if (mediaTypesVideo.contains(mediaType)) {
+                        videoIDs.add(mediaIDStr);
+                        /* Animated_gif will usually only have one .mp4 version available with bitrate "0". */
+                        int highestBitrate = -1;
+                        final List<Map<String, Object>> videoVariants = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(media, "video_info/variants");
+                        String streamURL = null;
+                        String hlsMaster = null;
+                        for (final Map<String, Object> videoVariant : videoVariants) {
+                            final String content_type = (String) videoVariant.get("content_type");
+                            if (content_type.equalsIgnoreCase("video/mp4")) {
+                                final int bitrate = ((Number) videoVariant.get("bitrate")).intValue();
+                                if (bitrate > highestBitrate) {
+                                    highestBitrate = bitrate;
+                                    streamURL = (String) videoVariant.get("url");
+                                }
+                            } else if (content_type.equalsIgnoreCase("application/x-mpegURL")) {
+                                hlsMaster = (String) videoVariant.get("url");
+                            } else {
+                                logger.info("Skipping unsupported video content_type: " + content_type);
+                            }
+                        }
+                        if (StringUtils.isEmpty(streamURL)) {
+                            /* This should never happen */
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
+                        dl = this.createDownloadlink(createVideourlSpecific(username, tweetID, (videoIndex + 1)));
+                        dl.setProperty(PROPERTY_TYPE, TYPE_VIDEO);
+                        dl.setProperty(PROPERTY_BITRATE, highestBitrate);
+                        dl.setProperty(TwitterCom.PROPERTY_DIRECTURL, streamURL);
+                        if (!StringUtils.isEmpty(hlsMaster)) {
+                            dl.setProperty(TwitterCom.PROPERTY_DIRECTURL_hls_master, hlsMaster);
+                        }
+                        dl.setProperty(PROPERTY_VIDEO_DIRECT_URLS_ARE_AVAILABLE_VIA_API_EXTENDED_ENTITY, true);
+                        videoIndex++;
+                    } else if (mediaType.equals(mediaTypePhoto)) {
+                        // if (!cfg.isCrawlVideoThumbnail() && foundVideos.contains(tweetID)) {
+                        // // do not grab video thumbnail
+                        // continue;
+                        // }
+                        String photoURL = (String) media.get("media_url"); /* Also available as "media_url_https" */
+                        if (StringUtils.isEmpty(photoURL)) {
+                            photoURL = (String) media.get("media_url_https");
+                        }
+                        if (StringUtils.isEmpty(photoURL)) {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
+                        dl = this.createDownloadlink(photoURL);
+                        dl.setProperty(PROPERTY_TYPE, TYPE_PHOTO);
+                        dl.setProperty(TwitterCom.PROPERTY_DIRECTURL, photoURL);
+                    } else {
+                        /* Unknown type -> This should never happen! */
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unknown media type:" + mediaType);
+                    }
+                    dl.setAvailable(true);
+                    dl.setProperty(PROPERTY_MEDIA_INDEX, mediaIndex);
+                    dl.setProperty(PROPERTY_MEDIA_COUNT, mediasExtended.size());
+                    dl.setProperty(PROPERTY_MEDIA_ID, media.get("id_str"));
+                    mediaResultMap.put(keyForMap, dl);
+                    mediaIndex += 1;
+                }
+            }
+            if (!cfg.isCrawlVideoThumbnail()) {
+                /* Remove video thumbnails from results as user doesn't want video thumbnails. */
+                int numberofSkippedVideoThumbnails = 0;
+                for (final String videoMediaIDStr : videoIDs) {
+                    final String keyForMap = mediaTypePhoto + "_" + videoMediaIDStr;
+                    if (mediaResultMap.remove(keyForMap) != null) {
+                        numberofSkippedVideoThumbnails++;
+                    }
+                }
+                if (numberofSkippedVideoThumbnails > 0) {
+                    logger.info("Skipped thumbnails: " + numberofSkippedVideoThumbnails);
+                }
+            }
+            /* Add results to list to be returned later. */
+            retMedia.addAll(mediaResultMap.values());
+        }
+        /* Check for fallback video source if no video item has been found until now. */
+        if (videoIndex == 0 && !StringUtils.isEmpty(vmapURL)) {
+            /* Fallback handling for very old (???) content */
+            /* Expect such URLs which our host plugin can handle: https://video.twimg.com/amplify_video/vmap/<numbers>.vmap */
+            final DownloadLink singleVideo = this.createDownloadlink(vmapURL);
+            final String finalFilename = formattedDate + "_" + username + "_" + tweetID + replyTextForFilename + ".mp4";
+            singleVideo.setFinalFileName(finalFilename);
+            singleVideo.setProperty(PROPERTY_VIDEO_DIRECT_URLS_ARE_AVAILABLE_VIA_API_EXTENDED_ENTITY, false);
+            singleVideo.setProperty(PROPERTY_MEDIA_INDEX, 0);
+            singleVideo.setProperty(PROPERTY_TYPE, TYPE_VIDEO);
+            singleVideo.setAvailable(true);
+            retMedia.add(singleVideo);
+        }
+        final ArrayList<DownloadLink> retInternal = new ArrayList<DownloadLink>();
+        int itemsSkippedDueToPluginSettings = 0;
+        DownloadLink text = null;
+        final ArrayList<DownloadLink> retExternal = new ArrayList<DownloadLink>();
+        if (!StringUtils.isEmpty(tweetText)) {
+            final String[] urlsInPostText = HTMLParser.getHttpLinks(tweetText, br.getURL());
+            if (cfg.isCrawlURLsInsideTweetText() && urlsInPostText.length > 0) {
+                final ArrayList<String> skippedUrls = new ArrayList<String>();
+                final String whitelistRegexStr = cfg.getRegexWhitelistForCrawledUrlsInTweetText();
+                Pattern whitelistPattern = null;
+                if (!StringUtils.isEmpty(whitelistRegexStr)) {
+                    try {
+                        whitelistPattern = Pattern.compile(whitelistRegexStr.trim(), Pattern.CASE_INSENSITIVE);
+                    } catch (final PatternSyntaxException pse) {
+                        logger.info("User entered invalid whitelist regex, ignoring it. Regex: " + whitelistRegexStr);
+                    }
+                }
+                for (final String url : urlsInPostText) {
+                    if (whitelistPattern == null || new Regex(url, whitelistPattern).patternFind()) {
+                        retExternal.add(this.createDownloadlink(url));
+                    } else {
+                        skippedUrls.add(url);
+                    }
+                }
+                if (skippedUrls.size() > 0) {
+                    String logtext = "Skipped URLs due du users' whitelist pattern: ";
+                    if (skippedUrls.size() == urlsInPostText.length) {
+                        logtext += "ALL";
+                    } else {
+                        logtext += skippedUrls;
+                    }
+                    logger.info(logtext);
+                }
+            } else if (urlsInPostText != null) {
+                /* All URLs were skipped. */
+                itemsSkippedDueToPluginSettings += urlsInPostText.length;
+            }
+            /* Crawl Tweet as text if wanted by user or if Tweet contains only text. */
+            final SingleTweetCrawlerTextCrawlMode mode = cfg.getSingleTweetCrawlerTextCrawlMode();
+            if (mode == SingleTweetCrawlerTextCrawlMode.AUTO || mode == SingleTweetCrawlerTextCrawlMode.ALWAYS || (mode == SingleTweetCrawlerTextCrawlMode.ONLY_IF_NO_MEDIA_IS_AVAILABLE && retMedia.isEmpty())) {
+                /*
+                 * Determine last found original filename now/here because after collecting those items we're removing non-thumbnails if not
+                 * wanted by user so this is the only place to determine the last used original filename.
+                 */
+                String lastFoundOriginalFilename = null;
+                for (final DownloadLink result : retMedia) {
+                    final String directurl = result.getStringProperty(TwitterCom.PROPERTY_DIRECTURL);
+                    if (directurl != null) {
+                        final String originalFilename = getFilenameFromURL(directurl);
+                        if (originalFilename != null) {
+                            lastFoundOriginalFilename = originalFilename;
+                        }
+                    }
+                }
+                text = this.createDownloadlink(urlToTweet);
+                text.setProperty(PROPERTY_RELATED_ORIGINAL_FILENAME, lastFoundOriginalFilename);
+                try {
+                    text.setDownloadSize(tweetText.getBytes("UTF-8").length);
+                } catch (final UnsupportedEncodingException ignore) {
+                    ignore.printStackTrace();
+                }
+                text.setProperty(PROPERTY_MEDIA_INDEX, 0);
+                text.setProperty(PROPERTY_TYPE, TYPE_TEXT);
+                text.setAvailable(true);
+                // text.setEnabled(false);
+                retInternal.add(text);
+            } else {
+                itemsSkippedDueToPluginSettings++;
+            }
+        }
+        retInternal.addAll(retMedia);
+        /* Add remaining plugin properties */
+        final boolean isPinnedTweet = pinned_tweet_ids_str != null && pinned_tweet_ids_str.contains(tweetID);
+        for (final DownloadLink dl : retInternal) {
+            /* Add additional properties */
+            dl.setContentUrl(urlToTweet);
+            dl.setProperty(PROPERTY_USERNAME, username);
+            dl.setProperty(PROPERTY_USER_ID, tweet.get("user_id_str"));
+            dl.setProperty(PROPERTY_TWEET_ID, tweetID);
+            dl.setProperty(PROPERTY_DATE, formattedDate);
+            dl.setProperty(PROPERTY_DATE_TIMESTAMP, timestamp);
+            if (!StringUtils.isEmpty(tweetText)) {
+                dl.setProperty(PROPERTY_TWEET_TEXT, tweetText);
+            }
+            if (isReplyToOtherTweet) {
+                dl.setProperty(PROPERTY_REPLY, true);
+            }
+            if (isRetweet) {
+                dl.setProperty(PROPERTY_RETWEET, true);
+            }
+            if (isPinnedTweet) {
+                dl.setProperty(PROPERTY_PINNED_TWEET, true);
+            }
+            /* Set filename which gets created based on user settings and previously set properties. */
+            setFormattedFilename(dl);
+        }
+        final ArrayList<DownloadLink> retAll = new ArrayList<DownloadLink>();
+        retAll.addAll(retInternal);
+        retAll.addAll(retExternal);
+        fp.addLinks(retAll);
+        if (retMedia.isEmpty()) {
+            if (itemsSkippedDueToPluginSettings == 0) {
+                /* Tweet contains only text */
+                logger.info("Failed to find any crawlable media content in Tweet: " + tweetID);
+            } else {
+                logger.info("Failed to find any crawlable content in Tweet " + tweetID + " because of user settings. Crawlable but skipped " + itemsSkippedDueToPluginSettings + " item(s) due to users' plugin settings.");
+            }
+        }
+        return retAll;
     }
 
     /** Lazy recursive function which will find app tweet-maps in any given map. */
@@ -1412,24 +1405,12 @@ public class TwitterComCrawler extends PluginForDecrypt {
         return ret;
     }
 
-    private DownloadLink getDummyErrorProfileContainsNoLikedItems(final String username) {
-        final DownloadLink dummy = this.createOfflinelink(createTwitterProfileURLLikes(username), "PROFILE_CONTAINS_NO_LIKES_" + username, "The profile " + username + " does not contain any liked items.");
-        return dummy;
-    }
-
-    private DownloadLink getDummyErrorProfileContainsNoTweets(final String username) {
-        final DownloadLink dummy = this.createOfflinelink(createTwitterProfileURL(username), "PROFILE_CONTAINS_NO_TWEETS_" + username, "The profile " + username + " does not contain any tweets.");
-        return dummy;
-    }
-
-    private DownloadLink getDummyErrorProfileContainsNoMediaItems(final String username) {
-        final DownloadLink dummy = this.createOfflinelink(createTwitterProfileURL(username), "PROFILE_CONTAINS_NO_MEDIA_ITEMS_" + username, "The profile " + username + " does not contain any tweets containing media items.");
-        return dummy;
-    }
-
-    private DownloadLink getDummyErrorProfileContainsNoDownloadableContent(final String username) {
-        final DownloadLink dummy = this.createOfflinelink(createTwitterProfileURL(username), "PROFILE_CONTAINS_NO_DOWNLOADABLE_CONTENT_" + username, "The profile " + username + " does not appear to contain any downloadable content. Check your twitter plugin settings maybe you've turned off some of the crawlable content.");
-        return dummy;
+    public static String sanitizeTweetText(final String text) {
+        if (text == null) {
+            return null;
+        } else {
+            return Encoding.htmlOnlyDecode(text).trim();
+        }
     }
 
     /**

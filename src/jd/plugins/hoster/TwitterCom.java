@@ -565,7 +565,8 @@ public class TwitterCom extends PluginForHost {
 
     /** Returns text of this tweet. Can be null as not all tweets have a post-text! */
     private String getTweetText(final DownloadLink link) {
-        return link.getStringProperty(TwitterComCrawler.PROPERTY_TWEET_TEXT);
+        final String tweetText = link.getStringProperty(TwitterComCrawler.PROPERTY_TWEET_TEXT);
+        return TwitterComCrawler.sanitizeTweetText(tweetText);
     }
 
     private static String regexVideoVmapHighestQualityURL(final Browser br) {
