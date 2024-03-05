@@ -21,13 +21,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -41,6 +41,13 @@ import jd.plugins.PluginForHost;
 public class LiteroticaCom extends PluginForHost {
     public LiteroticaCom(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.setFollowRedirects(true);
+        return br;
     }
 
     @Override
@@ -71,9 +78,6 @@ public class LiteroticaCom extends PluginForHost {
         }
         return ret.toArray(new String[0]);
     }
-
-    /* Connection stuff */
-    private static final int FREE_MAXDOWNLOADS = 20;
 
     @Override
     public String getLinkID(final DownloadLink link) {
@@ -130,7 +134,7 @@ public class LiteroticaCom extends PluginForHost {
         int maxPages = -1;
         do {
             pageCounter++;
-            logger.info("Crawling page: " + pageCounter + " / " + maxPages);
+            logger.info("Crawling page: " + pageCounter + "/" + maxPages);
             br.getPage("https://" + this.getHost() + "/api/3/stories/" + contentID + "?params=%7B%22contentPage%22%3A" + pageCounter + "%7D");
             if (br.getHttpConnection().getResponseCode() == 404) {
                 if (pageCounter == 1) {
@@ -169,6 +173,9 @@ public class LiteroticaCom extends PluginForHost {
         link.setVerifiedFileSize(dest.length());
         /* Set progress to finished - the "download" is complete. */
         link.getLinkStatus().setStatus(LinkStatus.FINISHED);
+        // TODO: 2024-03-05: Make use of the code below once next CORE-update has been released
+        // dl = new TextDownloader(this, link, sb.toString());
+        // dl.startDownload();
     }
 
     @Override
@@ -178,7 +185,7 @@ public class LiteroticaCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return FREE_MAXDOWNLOADS;
+        return Integer.MAX_VALUE;
     }
 
     @Override
