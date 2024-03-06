@@ -100,7 +100,7 @@ public class GoogleDrive extends PluginForHost {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "drive.google.com", "docs.google.com" });
+        ret.add(new String[] { "drive.google.com", "docs.google.com", "drive.usercontent.google.com" });
         return ret;
     }
 
@@ -135,6 +135,7 @@ public class GoogleDrive extends PluginForHost {
             String regex = "https?://" + buildHostsPatternPart(domains) + "/(?:";
             regex += "(?:leaf|open)\\?([^<>\"/]+)?id=[A-Za-z0-9\\-_]+.*";
             regex += "|(?:u/\\d+/)?uc(?:\\?|.*?&)id=[A-Za-z0-9\\-_]+.*";
+            regex += "|download\\?id=[A-Za-z0-9\\-_]+.*";
             regex += "|(?:a/[a-zA-z0-9\\.]+/)?(?:file|document)/d/[A-Za-z0-9\\-_]+.*";
             regex += ")";
             /*
@@ -177,6 +178,7 @@ public class GoogleDrive extends PluginForHost {
     private final String          PATTERN_FILE                                   = "(?i)https?://.*/file/d/([a-zA-Z0-9\\-_]+).*";
     private final String          PATTERN_FILE_OLD                               = "(?i)https?://[^/]+/(?:leaf|open)\\?([^<>\"/]+)?id=([A-Za-z0-9\\-_]+).*";
     private final String          PATTERN_FILE_DOWNLOAD_PAGE                     = "(?i)https?://[^/]+/(?:u/\\d+/)?uc(?:\\?|.*?&)id=([A-Za-z0-9\\-_]+).*";
+    private final String          PATTERN_DRIVE_USERCONTENT_DOWNLOAD             = "(?i)https?://[^/]+/download\\?id=([A-Za-z0-9\\-_]+).*";
     private final String          PATTERN_VIDEO_STREAM                           = "(?i)https?://video\\.google\\.com/get_player\\?docid=([A-Za-z0-9\\-_]+)";
     /* Developer: Do not touch this!! You need to know what you're doing!! */
     private final boolean         canHandleGoogleSpecialCaptcha                  = false;
@@ -238,6 +240,8 @@ public class GoogleDrive extends PluginForHost {
                 return new Regex(link.getPluginPatternMatcher(), PATTERN_FILE_OLD).getMatch(0);
             } else if (link.getPluginPatternMatcher().matches(PATTERN_FILE_DOWNLOAD_PAGE)) {
                 return new Regex(link.getPluginPatternMatcher(), PATTERN_FILE_DOWNLOAD_PAGE).getMatch(0);
+            } else if (link.getPluginPatternMatcher().matches(PATTERN_DRIVE_USERCONTENT_DOWNLOAD)) {
+                return new Regex(link.getPluginPatternMatcher(), PATTERN_DRIVE_USERCONTENT_DOWNLOAD).getMatch(0);
             } else {
                 logger.warning("Developer mistake!! URL with unknown pattern:" + link.getPluginPatternMatcher());
                 return null;
@@ -387,7 +391,7 @@ public class GoogleDrive extends PluginForHost {
         queryFile.appendEncoded("key", getAPIKey());
         br.getPage(GoogleDrive.API_BASE + "/files/" + fid + "?" + queryFile.toString());
         this.handleErrorsAPI(this.br, link, null);
-        final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
+        final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         parseFileInfoAPIAndWebsiteWebAPI(this, JsonSchemeType.API, link, true, true, true, entries);
         return AvailableStatus.TRUE;
     }
@@ -1662,7 +1666,7 @@ public class GoogleDrive extends PluginForHost {
          */
         List<Map<String, Object>> errors = null;
         try {
-            final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
+            final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
             errors = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entries, "error/errors");
         } catch (final Exception ignore) {
             /* Did not get the expected json response */
@@ -1919,7 +1923,7 @@ public class GoogleDrive extends PluginForHost {
             refreshTokenQuery.appendEncoded("grant_type", refresh_token);
             refreshTokenQuery.appendEncoded("refresh_token", refresh_token);
             br.postPage("https://oauth2.googleapis.com/token", refreshTokenQuery);
-            entries = restoreFromString(br.toString(), TypeRef.MAP);
+            entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
             access_token = (String) entries.get("access_token");
             auth_expires_in = ((Number) entries.get("expires_in")).intValue();
             if (StringUtils.isEmpty(access_token)) {
@@ -1945,7 +1949,7 @@ public class GoogleDrive extends PluginForHost {
          */
         deviceCodeQuery.appendEncoded("scope", "https://www.googleapis.com/auth/drive.file");
         br.postPage("https://oauth2.googleapis.com/device/code", deviceCodeQuery);
-        entries = restoreFromString(br.toString(), TypeRef.MAP);
+        entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         final String device_code = (String) entries.get("device_code");
         final String user_code = (String) entries.get("user_code");
         final int user_code_expires_in = ((Number) entries.get("expires_in")).intValue();
@@ -1968,7 +1972,7 @@ public class GoogleDrive extends PluginForHost {
             do {
                 Thread.sleep(interval * 1000l);
                 br.postPage("https://oauth2.googleapis.com/token", pollingQuery);
-                entries = restoreFromString(br.toString(), TypeRef.MAP);
+                entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
                 if (entries.containsKey("error")) {
                     logger.info("User hasn't yet confirmed auth");
                     continue;
@@ -2068,9 +2072,6 @@ public class GoogleDrive extends PluginForHost {
     }
 
     private void removeQuotaReachedFlags(final DownloadLink link, final Account account, final boolean isStream) {
-        // if(isStream) {
-        //
-        // }
         if (account != null) {
             link.removeProperty(PROPERTY_TIMESTAMP_QUOTA_REACHED_ACCOUNT);
             return;
