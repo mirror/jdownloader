@@ -1078,7 +1078,7 @@ public class LinkCrawler {
         return null;
     }
 
-    protected URLConnectionAdapter openCrawlDeeperConnection(final LinkCrawlerGeneration generation, final LogInterface logger, final LinkCrawlerRule matchingRule, Browser br, CrawledLink source) throws Exception {
+    protected URLConnectionAdapter openCrawlDeeperConnection(final LinkCrawlerGeneration generation, final LogInterface logger, final LinkCrawlerRule matchingRule, final Browser br, final CrawledLink source) throws Exception {
         final LazyCrawlerPlugin lazyC = getDeepCrawlingPlugin();
         if (lazyC == null) {
             throw new UpdateRequiredClassNotFoundException("could not find 'LinkCrawlerDeepHelper' crawler plugin");
@@ -1181,7 +1181,7 @@ public class LinkCrawler {
         } else {
             startURL = request.getURL().toString();
         }
-        final DownloadLink link = new DownloadLink(null, null, "DirectHTTP", "directhttp://" + startURL, true);
+        final DownloadLink link = new DownloadLink(null, null, "DirectHTTP", DirectHTTP.createURLForThisPlugin(startURL), true);
         final String cookie = con.getRequestProperty("Cookie");
         if (StringUtils.isNotEmpty(cookie)) {
             link.setProperty(DirectHTTP.PROPERTY_COOKIES, cookie);
@@ -1307,9 +1307,10 @@ public class LinkCrawler {
                 } else {
                     logger = LogController.getFastPluginLogger("LinkCrawlerDeep." + CrossSystem.alleviatePathParts(source.getHost()));
                 }
+                processedLinksCounter.incrementAndGet();
                 try {
-                    processedLinksCounter.incrementAndGet();
                     if (StringUtils.startsWithCaseInsensitive(source.getURL(), "file:/")) {
+                        /* Crawl file contents */
                         // file:/ -> not authority -> all fine
                         // file://xy/ -> xy authority -> java.lang.IllegalArgumentException: URI has an authority component
                         // file:/// -> empty authority -> all fine
@@ -1327,33 +1328,61 @@ public class LinkCrawler {
                                     forwardCrawledLinkInfos(source, fileContentLink, lm, sourceURLs, singleDest);
                                 }
                                 crawl(generation, fileContentLinks);
+                            } else {
+                                logger.info("Failed to find any results in file: " + file.getAbsolutePath());
                             }
+                        } else {
+                            logger.info("Invalid file path: " + file.getAbsolutePath());
                         }
                     } else {
+                        /* Crawl URL */
                         br = new Browser();
                         br.setLogger(logger);
                         if (matchingRule != null && matchingRule.isLogging()) {
+                            /* Enable logging if allowed by MatchingRule. */
                             br.setVerbose(true);
                             br.setDebug(true);
                         }
                         final URLConnectionAdapter connection = openCrawlDeeperConnection(generation, logger, matchingRule, br, source);
                         final CrawledLink deeperSource;
                         final String[] sourceURLs;
-                        if (StringUtils.equals(connection.getRequest().getUrl(), source.getURL())) {
+                        final String redirectHere = connection.getRequest().getLocation();
+                        // TODO: Implement correct redirect handling, see: https://svn.jdownloader.org/issues/90407
+                        if (redirectHere != null && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                            /* Redirect to URL which is supported by another plugin */
+                            deeperSource = crawledLinkFactorybyURL(redirectHere);
+                            forwardCrawledLinkInfos(source, deeperSource, lm, getAndClearSourceURLs(source), true);
+                            sourceURLs = getAndClearSourceURLs(deeperSource);
+                        } else if (StringUtils.equals(connection.getRequest().getUrl(), source.getURL())) {
+                            /* No redirect -> Same URL */
                             deeperSource = source;
                             sourceURLs = getAndClearSourceURLs(source);
                         } else {
+                            /* Different URL */
                             deeperSource = crawledLinkFactorybyURL(connection.getRequest().getUrl());
                             forwardCrawledLinkInfos(source, deeperSource, lm, getAndClearSourceURLs(source), true);
                             sourceURLs = getAndClearSourceURLs(deeperSource);
                         }
-                        if (matchingRule != null && LinkCrawlerRule.RULE.FOLLOWREDIRECT.equals(matchingRule.getRule())) {
+                        final LinkCrawlerDeepInspector lDeepInspector = getDeepInspector();
+                        if (redirectHere != null) {
+                            /* Redirect to URL which can be handled by plugin */
+                            br.disconnect();
+                            final ArrayList<CrawledLink> pluginSupportedLinks = new ArrayList<CrawledLink>();
+                            pluginSupportedLinks.add(deeperSource);
+                            crawl(generation, pluginSupportedLinks);
+                        } else if (lDeepInspector.looksLikeDownloadableContent(connection)) {
+                            /* Direct downloadable content */
+                            br.disconnect();
+                            final CrawledLink directLink = createDirectHTTPCrawledLink(deeperSource, br.getRequest(), connection);
+                            final ArrayList<CrawledLink> directLinks = new ArrayList<CrawledLink>();
+                            directLinks.add(directLink);
+                            crawl(generation, directLinks);
+                        } else if (matchingRule != null && LinkCrawlerRule.RULE.FOLLOWREDIRECT.equals(matchingRule.getRule())) {
                             br.disconnect();
                             final ArrayList<CrawledLink> followRedirectLinks = new ArrayList<CrawledLink>();
                             followRedirectLinks.add(deeperSource);
                             crawl(generation, followRedirectLinks);
                         } else {
-                            final LinkCrawlerDeepInspector lDeepInspector = getDeepInspector();
                             final List<CrawledLink> inspectedLinks;
                             try {
                                 inspectedLinks = lDeepInspector.deepInspect(this, generation, br, connection, deeperSource);
@@ -1398,6 +1427,7 @@ public class LinkCrawler {
                                                 clone.setFollowRedirects(false);
                                                 final Request request = clone.createFormRequest(form);
                                                 final URLConnectionAdapter con = clone.openRequestConnection(request);
+                                                /* TODO: 2023-10-11: Make use of openCrawlDeeperConnection here(?) */
                                                 final String redirect = con.getRequest().getLocation();
                                                 if (redirect != null) {
                                                     clone.followConnection();
