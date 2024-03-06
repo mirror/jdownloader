@@ -59,6 +59,10 @@ import jd.nutils.Formatter;
  * @author astaldo/JD-Team
  */
 public abstract class PluginsC {
+    /*
+     * 2024-03-06: TODO: Add translation strings for BubbleNotifications once it is clear that these notifications will stay in here as they
+     * are.
+     */
     private final Pattern  pattern;
     private final String   name;
     private final long     version;
