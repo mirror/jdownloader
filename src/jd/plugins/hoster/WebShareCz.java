@@ -219,8 +219,10 @@ public class WebShareCz extends PluginForHost {
 
     public void handleDownload(final DownloadLink link, final Account account) throws Exception, PluginException {
         requestFileInformation(link);
+        String wst = "";
         if (account != null) {
             this.login(account, false);
+            wst = this.getLoginToken(account);
         }
         String pwhash = null;
         if (link.isPasswordProtected()) {
@@ -228,7 +230,7 @@ public class WebShareCz extends PluginForHost {
             final UrlQuery query1 = new UrlQuery();
             query1.add("ident", Encoding.urlEncode(fileid));
             query1.add("maybe_removed", "1");
-            query1.add("wst", "");
+            query1.add("wst", Encoding.urlEncode(wst));
             br.postPage("https://" + getHost() + "/api/file_password_salt/", query1);
             final String salt = this.getXMLtagValue("salt");
             if (StringUtils.isEmpty(salt)) {
@@ -242,7 +244,7 @@ public class WebShareCz extends PluginForHost {
             final UrlQuery query2 = new UrlQuery();
             query2.add("ident", Encoding.urlEncode(fileid));
             query2.add("password", pwhash);
-            query2.add("wst", "");
+            query2.add("wst", Encoding.urlEncode(wst));
             br.postPage("/api/verify_file_password/", query2);
             final String correctPW = this.getXMLtagValue("correct");
             if ("1".equals(correctPW)) {
@@ -261,7 +263,7 @@ public class WebShareCz extends PluginForHost {
         if (pwhash != null) {
             query.add("password", pwhash);
         }
-        query.add("wst", "");
+        query.add("wst", Encoding.urlEncode(wst));
         br.postPage("/api/file_link/", query);
         final String dllink = getXMLtagValue("link");
         if (dllink == null) {

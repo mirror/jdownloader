@@ -579,15 +579,6 @@ public class TwitterCom extends PluginForHost {
         return videourl;
     }
 
-    public static String regexTwitterVideo(final String source) {
-        String finallink = PluginJSonUtils.getJson(source, "video_url");
-        // String finallink = new Regex(source, "video_url\\&quot;:\\&quot;(https:[^<>\"]*?\\.mp4)\\&").getMatch(0);
-        // if (finallink != null) {
-        // finallink = finallink.replace("\\", "");
-        // }
-        return finallink;
-    }
-
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         handleDownload(link, null);
@@ -674,10 +665,10 @@ public class TwitterCom extends PluginForHost {
             }
             /* Save timestamp of failed streaming type which enables us to dynamically retry via other streaming method. */
             link.setProperty(failproperty, System.currentTimeMillis());
-            if (allowVideoStreamingTypeFallback == false) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errorText, 5 * 60 * 1000);
-            } else {
+            if (allowVideoStreamingTypeFallback) {
                 throw new PluginException(LinkStatus.ERROR_RETRY, errorText + " | Try again with streaming type: " + retryStreamTypeText);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errorText, 5 * 60 * 1000);
             }
         }
     }

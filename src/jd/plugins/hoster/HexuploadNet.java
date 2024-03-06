@@ -20,7 +20,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
 import org.appwork.utils.Regex;
 import org.appwork.utils.Time;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
@@ -63,18 +62,6 @@ public class HexuploadNet extends XFileSharingProBasic {
     @Override
     public Browser prepBrowser(final Browser prepBr, final String host) {
         super.prepBrowser(prepBr, host);
-        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-            prepBr.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
-            prepBr.getHeaders().put("sec-ch-ua", "\"Not_A Brand\";v=\"8\", \"Chromium\";v=\"120\", \"Google Chrome\";v=\"120\"");
-            prepBr.getHeaders().put("sec-ch-ua-mobile", "?0");
-            prepBr.getHeaders().put("sec-ch-ua-platform", "\"Windows\"");
-            prepBr.getHeaders().put("Accept", "*/*");
-            prepBr.getHeaders().put("sec-fetch-site", "same-origin");
-            prepBr.getHeaders().put("sec-fetch-mode", "cors");
-            prepBr.getHeaders().put("sec-fetch-dest", "empty");
-            prepBr.getHeaders().put("Origin", "https://hexload.com");
-            // prepBr.setCookie(getMainPage(), "lang", "german");
-        }
         return prepBr;
     }
 

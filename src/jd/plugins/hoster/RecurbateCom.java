@@ -54,7 +54,7 @@ import jd.plugins.PluginForHost;
 public class RecurbateCom extends PluginForHost {
     public RecurbateCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("https://recurbate.com/signup");
+        this.enablePremium("https://" + getHost() + "/signup");
     }
 
     @Override
@@ -88,7 +88,7 @@ public class RecurbateCom extends PluginForHost {
 
     @Override
     public String rewriteHost(final String host) {
-        /* 2023-11-20: Main domain has changed from recurbate.com to recurbate.me */
+        /* Their main domain is frequently changing. */
         return this.rewriteHost(getPluginDomains(), host);
     }
 

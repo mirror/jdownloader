@@ -372,6 +372,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
         this.resetUglyGlobalVariables();
         final boolean preferNewWay20230811 = true;
         if (preferNewWay20230811) {
+            /* 2023-08-11 */
             // final String queryID = this.getGraphqlQueryID("TweetResultByRestId");
             this.prepareAPI(br, account);
             final String queryID = "0hWvDhmW8YQ-S_ib3azIrw";
@@ -380,6 +381,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
             final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
             final ArrayList<DownloadLink> thisResults = crawlTweets(entries, null, tweetID, null, false);
             if (thisResults.isEmpty()) {
+                final String bubbleNotificationTitle = "Tweet unavailable: " + tweetID;
                 /*
                  * Tweet does exist but is unavailable or does not exist anymore or is only accessible for logged in users (NSFW blocked).
                  */
@@ -389,6 +391,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
                 final Map<String, Object> tweetUnavailableMap = recursiveFindTweetUnavailableMap(entries);
                 if (tweetUnavailableMap == null) {
                     /* No results and we don't know why */
+                    displayBubblenotifyMessage(bubbleNotificationTitle, "Failed to crawl this Tweet for unknown reasons.");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 final String tweetUnavailableReasonInternal = tweetUnavailableMap.get("reason").toString();
@@ -406,7 +409,6 @@ public class TwitterComCrawler extends PluginForDecrypt {
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     }
                 } finally {
-                    final String bubbleNotificationTitle = "Tweet unavailable: " + tweetID;
                     if (tweetUnavailableReasonHumanReadableText != null) {
                         displayBubblenotifyMessage(bubbleNotificationTitle, "Tweet unavailable because: " + tweetUnavailableReasonHumanReadableText);
                     } else {
@@ -631,7 +633,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
         }
         if (crawlmode == ProfileCrawlMode.LIKES) {
             if (favorite_count == 0) {
-                displayBubblenotifyMessage("Profile crawler " + username + " | Warning", "You are trying to crawl all likes of this profile but it has no liked items.");
+                displayBubblenotifyMessage(bubbleNotifyTitle, "Warning!\nYou are trying to crawl all likes of this profile but it has no liked items.");
                 throw new DecrypterRetryException(RetryReason.EMPTY_PROFILE, "PROFILE_HAS_NO_LIKES_" + username, "You are trying to crawl all likes of this profile but it has no liked items.");
             }
             fp.setName(username + " - likes");
@@ -639,7 +641,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
             ret.addAll(results);
         } else if (crawlmode == ProfileCrawlMode.MEDIA) {
             if (media_count == 0) {
-                displayBubblenotifyMessage("Profile crawler " + username + " | Warning", "You are trying to crawl all media items of this profile but it has no media items.");
+                displayBubblenotifyMessage(bubbleNotifyTitle, "Warning!\nYou are trying to crawl all media items of this profile but it has no media items.");
                 throw new DecrypterRetryException(RetryReason.EMPTY_PROFILE, "PROFILE_HAS_NO_MEDIA_ITEMS_" + username, "You are trying to crawl all media items of this profile but it has no media items.");
             }
             fp.setName(username + " - media");
@@ -811,7 +813,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
     private final HashSet<DownloadLink> profileCrawlerSkippedResultsByRetweet  = new HashSet<DownloadLink>();
 
     private ArrayList<DownloadLink> crawlUserProfileGraphqlTimelineInstructions(final List<Map<String, Object>> timelineInstructions, final Map<String, Object> user, final String singleTweetID, final FilePackage fp, final boolean crawlUserLikes) throws Exception {
-        final ArrayList<DownloadLink> allowedResults = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         for (final Map<String, Object> timelineInstruction : timelineInstructions) {
             final String timelineInstructionType = timelineInstruction.get("type").toString();
             if (timelineInstructionType.equals("TimelineAddEntries")) {
@@ -829,9 +831,9 @@ public class TwitterComCrawler extends PluginForDecrypt {
                 }
             }
             final ArrayList<DownloadLink> thisResults = crawlTweets(timelineInstruction, user, singleTweetID, fp, crawlUserLikes);
-            allowedResults.addAll(thisResults);
+            ret.addAll(thisResults);
         }
-        return allowedResults;
+        return ret;
     }
 
     /** Crawls all Tweets inside _any_ given Map. */

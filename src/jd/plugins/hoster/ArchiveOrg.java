@@ -25,7 +25,6 @@ import java.util.Map.Entry;
 
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.storage.TypeRef;
-import org.appwork.utils.Files;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.Time;
@@ -59,6 +58,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.ArchiveOrgCrawler;
@@ -95,7 +95,6 @@ public class ArchiveOrg extends PluginForHost {
     }
 
     /* Connection stuff */
-    private final int                                     MAXDOWNLOADS                                    = -1;
     private final String                                  PROPERTY_DOWNLOAD_SERVERSIDE_BROKEN             = "download_serverside_broken";
     public static final String                            PROPERTY_BOOK_ID                                = "book_id";
     public static final String                            PROPERTY_BOOK_SUB_PREFIX                        = "book_sub_prefix";
@@ -114,6 +113,9 @@ public class ArchiveOrg extends PluginForHost {
     public static final String                            PROPERTY_TITLE                                  = "title";
     public static final String                            PROPERTY_ARTIST                                 = "artist";
     public static final String                            PROPERTY_TIMESTAMP_FROM_API_LAST_MODIFIED       = "timestamp_from_api_last_modified";
+    public static final String                            PROPERTY_FILETYPE                               = "filetype";
+    public static final String                            FILETYPE_AUDIO                                  = "audio";
+    public static final String                            FILETYPE_VIDEO                                  = "video";
     private final String                                  PROPERTY_ACCOUNT_TIMESTAMP_BORROW_LIMIT_REACHED = "timestamp_borrow_limit_reached";
     private static HashMap<String, ArchiveOrgLendingInfo> bookBorrowSessions                              = new HashMap<String, ArchiveOrgLendingInfo>();
 
@@ -151,7 +153,11 @@ public class ArchiveOrg extends PluginForHost {
                     setFinalFilename(link, filenameFromHeader);
                 }
                 if (con.getCompleteContentLength() > 0) {
-                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                    if (con.isContentDecoded()) {
+                        link.setDownloadSize(con.getCompleteContentLength());
+                    } else {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
                 }
                 return AvailableStatus.TRUE;
             } finally {
@@ -172,9 +178,17 @@ public class ArchiveOrg extends PluginForHost {
             return;
         }
         final int playlistPosition = link.getIntegerProperty(PROPERTY_PLAYLIST_POSITION, -1);
-        final String fileExtension = Files.getExtension(originalFilename);
+        String fileExtension = Plugin.getFileNameExtensionFromString(originalFilename);
+        if (fileExtension.startsWith(".")) {
+            fileExtension = fileExtension.substring(1);
+        }
         final ExtensionsFilterInterface fileType = CompiledFiletypeFilter.getExtensionsFilterInterface(fileExtension);
-        final boolean isAudio = CompiledFiletypeFilter.AudioExtensions.MP3.isSameExtensionGroup(fileType);
+        boolean isAudio = CompiledFiletypeFilter.AudioExtensions.MP3.isSameExtensionGroup(fileType);
+        final String filetype = link.getStringProperty(PROPERTY_FILETYPE, null);
+        if (StringUtils.equals(filetype, FILETYPE_AUDIO)) {
+            /* Especially important for edge case: Playlist files with wrong file-extension such as ".mo3" instead of ".mp3". */
+            isAudio = true;
+        }
         // final boolean isVideo = CompiledFiletypeFilter.VideoExtensions.MP4.isSameExtensionGroup(fileType);
         if (playlistPosition != -1) {
             final int playlistSize = link.getIntegerProperty(PROPERTY_PLAYLIST_SIZE, -1);
@@ -260,7 +274,7 @@ public class ArchiveOrg extends PluginForHost {
                 return archiveOrgBookPageNumber;
             } else {
                 /* Legacy handling for older items */
-                final String pageStr = new Regex(link.getContentUrl(), ".*/page/n?(\\d+)").getMatch(0);
+                final String pageStr = new Regex(link.getContentUrl(), "(?i).*/page/n?(\\d+)").getMatch(0);
                 if (pageStr != null) {
                     return Integer.parseInt(pageStr) - 1;
                 } else {
@@ -530,7 +544,7 @@ public class ArchiveOrg extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return MAXDOWNLOADS;
+        return Integer.MAX_VALUE;
     }
 
     public void login(final Account account, final boolean force) throws Exception {
@@ -568,7 +582,7 @@ public class ArchiveOrg extends PluginForHost {
                 final Cookies cookies = account.loadCookies("");
                 if (cookies != null) {
                     logger.info("Attempting cookie login");
-                    br.setCookies(account.getHoster(), cookies);
+                    br.setCookies(cookies);
                     if (!force) {
                         /* Do not check cookies */
                         return;
@@ -818,7 +832,7 @@ public class ArchiveOrg extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return MAXDOWNLOADS;
+        return Integer.MAX_VALUE;
     }
 
     @Override

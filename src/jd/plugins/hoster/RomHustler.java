@@ -104,6 +104,20 @@ public class RomHustler extends PluginForHost {
         }
     }
 
+    @Override
+    public boolean isResumeable(final DownloadLink link, final Account account) {
+        return true;
+    }
+
+    public int getMaxChunks(final DownloadLink link, final Account account) {
+        if (account != null && AccountType.PREMIUM.equals(account.getType())) {
+            return -10;
+        } else {
+            // Last updated: 2024-03-06
+            return 1;
+        }
+    }
+
     private static AtomicReference<String> agent                       = new AtomicReference<String>();
     public static final String             PROPERTY_MAIN_CONTENT_URL   = "decrypterLink";
     public static final String             PROPERTY_PARTS_OVERVIEW_URL = "part_overview_url";
@@ -214,18 +228,18 @@ public class RomHustler extends PluginForHost {
         }
         boolean skipWaittime = true;
         if (!skipWaittime) {
-            int wait = 8;
-            final String waittime = br.getRegex("start=\"(\\d+)\"></span>").getMatch(0);
-            if (waittime != null) {
-                wait = Integer.parseInt(waittime);
+            int waitseconds = 8;
+            final String waitsecondsStr = br.getRegex("start=\"(\\d+)\"></span>").getMatch(0);
+            if (waitsecondsStr != null) {
+                waitseconds = Integer.parseInt(waitsecondsStr);
             }
-            sleep(wait * 1001l, link);
+            sleep(waitseconds * 1001l, link);
         }
         final String directurl = matchingPart.getStringProperty(PROPERTY_DIRECTURL);
         if (StringUtils.isEmpty(directurl) || !directurl.startsWith("http") || directurl.length() > 500) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, directurl, true, account != null && AccountType.PREMIUM.equals(account.getType()) ? -10 : -4);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, directurl, this.isResumeable(link, account), account != null && AccountType.PREMIUM.equals(account.getType()) ? -10 : -4);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             br.followConnection(true);
             if (dl.getConnection().getResponseCode() == 503) {
@@ -236,7 +250,7 @@ public class RomHustler extends PluginForHost {
         }
         final String filename = getFileNameFromHeader(dl.getConnection());
         if (filename != null) {
-            link.setFinalFileName(Encoding.htmlDecode(filename));
+            link.setFinalFileName(Encoding.htmlDecode(filename).trim());
         }
         dl.startDownload();
     }
