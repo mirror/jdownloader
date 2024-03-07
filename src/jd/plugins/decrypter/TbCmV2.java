@@ -603,9 +603,10 @@ public class TbCmV2 extends PluginForDecrypt {
                             formattedPackagename = r.replace(formattedPackagename, this.helper, dummy);
                         }
                         if (!StringUtils.isEmpty(formattedPackagename)) {
+                            /* Formatted result is valid -> Use it */
                             channelOrPlaylistPackage.setName(formattedPackagename);
                         } else {
-                            /* Fallback */
+                            /* Formatted result is invalid -> Fallback */
                             logger.info("Invalid result of formattedPackagename -> Fallback to defaults");
                             final String playlistTitle = (String) globalPropertiesForDownloadLink.get(YoutubeHelper.YT_PLAYLIST_TITLE);
                             final String channelName = (String) globalPropertiesForDownloadLink.get(YoutubeHelper.YT_CHANNEL_TITLE);
@@ -631,6 +632,18 @@ public class TbCmV2 extends PluginForDecrypt {
                         final String playlistDescription = (String) globalPropertiesForDownloadLink.get(YoutubeHelper.YT_PLAYLIST_DESCRIPTION);
                         if (playlistDescription != null) {
                             channelOrPlaylistPackage.setComment(playlistDescription);
+                        }
+                        /*
+                         * Set package key if possible so that should the user stop the crawl process and crawl the same item again, new
+                         * items will end up in the same package.
+                         */
+                        if (this.playlistID != null) {
+                            channelOrPlaylistPackage.setPackageKey("ytplaylist://" + this.playlistID);
+                        } else if (this.channelID != null) {
+                            /* User and channel are basically the same, we just prefer to use the channelID if it is given. */
+                            channelOrPlaylistPackage.setPackageKey("ytchannel://" + this.channelID);
+                        } else if (this.userName != null) {
+                            channelOrPlaylistPackage.setPackageKey("ytuser://" + this.userName);
                         }
                     }
                 }
@@ -1061,6 +1074,7 @@ public class TbCmV2 extends PluginForDecrypt {
                     fp.setName(fpName);
                     // let the packagizer merge several packages that have the same name
                     fp.setAllowMerge(true);
+                    fp.setPackageKey("ytvideo://" + clip.videoID);
                     fp.add(ret);
                 }
             }

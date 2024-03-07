@@ -406,7 +406,7 @@ public interface YoutubeConfig extends PluginConfigInterface {
 
     @AboutConfig
     @DefaultOnNull
-    @DefaultStringValue("*USERNAME*")
+    @DefaultStringValue("*CHANNEL_NAME*")
     String getPackagePatternForChannels();
 
     void setPackagePatternForChannels(String pattern);

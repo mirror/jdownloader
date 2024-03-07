@@ -713,7 +713,7 @@ public class YoutubeHelper {
                 return new DataOrigin[] { DataOrigin.YT_SINGLE_VIDEO };
             }
         });
-        REPLACER.add(new YoutubeReplacer("CHANNEL", "CHANNELNAME") {
+        REPLACER.add(new YoutubeReplacer("CHANNEL", "CHANNELNAME", "CHANNEL_NAME") {
             @Override
             protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
                 return link.getStringProperty(YoutubeHelper.YT_CHANNEL_TITLE, "");

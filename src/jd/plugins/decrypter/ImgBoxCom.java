@@ -28,7 +28,10 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.hoster.DirectHTTP;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgbox.com" }, urls = { "https?://(www\\.)?imgbox\\.com/(g/)?[A-Za-z0-9]+" })
 public class ImgBoxCom extends PluginForDecrypt {
@@ -46,36 +49,31 @@ public class ImgBoxCom extends PluginForDecrypt {
     private static final String INVALIDLINKS   = "https?://(www\\.)?imgbox\\.com/(help|login|privacy|register|tos|images|dmca|gallery|assets)";
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
-        if (parameter.matches(INVALIDLINKS)) {
-            logger.info("Link invalid: " + parameter);
-            return decryptedLinks;
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final String contenturl = param.getCryptedUrl();
+        if (contenturl.matches(INVALIDLINKS)) {
+            logger.info("Link invalid: " + contenturl);
+            return ret;
         }
         br.setFollowRedirects(true);
-        br.getPage(parameter);
+        br.getPage(contenturl);
         if (br.containsHTML(">The page you (are|were) looking for") || br.getURL().contains("imgbox.com/login")) {
-            final DownloadLink offline = createDownloadlink("directhttp://" + parameter);
-            offline.setAvailable(false);
-            offline.setProperty("offline", true);
-            decryptedLinks.add(offline);
-            return decryptedLinks;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (parameter.matches(GALLERYLINK)) {
+        if (contenturl.matches(GALLERYLINK)) {
             if (br.containsHTML("The specified gallery could not be found") || br.containsHTML("(?!\\d+)0 images</h1>")) {
-                logger.info("Link offline: " + parameter);
-                return decryptedLinks;
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             String fpName = br.getRegex("<h1 style=\"padding\\-left:15px;\">(.*?)</h1>").getMatch(0);
             if (fpName == null) {
                 fpName = br.getRegex("<h1>([^<>\"]+)- \\d+ images(?:\\s+images)?</h1>").getMatch(0);
             }
             if (fpName == null) {
-                fpName = "imgbox.com gallery " + new Regex(parameter, "imgbox\\.com/g/(.+)").getMatch(0);
+                fpName = "imgbox.com gallery " + new Regex(contenturl, "imgbox\\.com/g/(.+)").getMatch(0);
             }
             final String[] uids = br.getRegex("(?i)<a href=(\"|')/([a-zA-Z0-9]+)\\1><img alt=(\"|')\\2[^'\"]*\\3").getColumn(1);
             if (uids == null || uids.length == 0) {
-                logger.warning("Decrypter broken for link: " + parameter);
+                logger.warning("Decrypter broken for link: " + contenturl);
                 return null;
             }
             FilePackage fp = null;
@@ -84,33 +82,25 @@ public class ImgBoxCom extends PluginForDecrypt {
                 fp.setName(Encoding.htmlDecode(fpName.trim()));
             }
             for (final String uid : uids) {
-                try {
-                    if (this.isAbort()) {
-                        logger.info("Decryption aborted...");
-                        return decryptedLinks;
-                    }
-                } catch (final Throwable e) {
-                    // Not available in old 0.9.581 Stable
-                }
                 final DownloadLink dl = createDownloadlink("http://imgbox.com/" + uid);
                 if (fp != null) {
                     fp.add(dl);
                 }
-                decryptedLinks.add(dl);
+                ret.add(dl);
             }
         } else {
             if (br.containsHTML(PICTUREOFFLINE)) {
-                logger.info("Link offline: " + parameter);
-                return decryptedLinks;
+                logger.info("Link offline: " + contenturl);
+                return ret;
             }
             final DownloadLink dl = decryptSingle();
             if (dl == null) {
-                logger.warning("Decrypter broken for link: " + parameter);
+                logger.warning("Decrypter broken for link: " + contenturl);
                 return null;
             }
-            decryptedLinks.add(dl);
+            ret.add(dl);
         }
-        return decryptedLinks;
+        return ret;
     }
 
     private DownloadLink decryptSingle() {
@@ -118,7 +108,7 @@ public class ImgBoxCom extends PluginForDecrypt {
         if (finallink == null) {
             return null;
         }
-        final DownloadLink ret = createDownloadlink("directhttp://" + Encoding.htmlDecode(finallink));
+        final DownloadLink ret = createDownloadlink(DirectHTTP.createURLForThisPlugin(Encoding.htmlDecode(finallink)));
         final String imageContainer = br.getRegex("class\\s*=\\s*\"image-container\"[^>]*>\\s*(.*?)\\s*</div>").getMatch(0);
         final String title = new Regex(imageContainer, "title\\s*=\\s*\"(.*?)\"").getMatch(0);
         if (StringUtils.isNotEmpty(title)) {
@@ -127,7 +117,7 @@ public class ImgBoxCom extends PluginForDecrypt {
         return ret;
     }
 
-    /* NO OVERRIDE!! */
+    @Override
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }

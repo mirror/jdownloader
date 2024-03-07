@@ -239,7 +239,7 @@ public class RomHustler extends PluginForHost {
         if (StringUtils.isEmpty(directurl) || !directurl.startsWith("http") || directurl.length() > 500) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, directurl, this.isResumeable(link, account), account != null && AccountType.PREMIUM.equals(account.getType()) ? -10 : -4);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, directurl, this.isResumeable(link, account), this.getMaxChunks(link, account));
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             br.followConnection(true);
             if (dl.getConnection().getResponseCode() == 503) {

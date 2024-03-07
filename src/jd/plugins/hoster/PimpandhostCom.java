@@ -15,13 +15,18 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
+
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -29,10 +34,31 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pimpandhost.com" }, urls = { "https?://(?:www\\.)?pimpandhost\\.com/image/\\d+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "pimpandhost.com" }, urls = { "https?://(?:www\\.)?pimpandhost\\.com/image/(\\d+)" })
 public class PimpandhostCom extends PluginForHost {
     public PimpandhostCom(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.setFollowRedirects(true);
+        return br;
+    }
+
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return "pimpandhost_com://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
     @Override
@@ -45,32 +71,37 @@ public class PimpandhostCom extends PluginForHost {
     // protocol: no https
     // other:
     /* Extension which will be used if no correct extension is found */
-    private static final String  default_extension = ".jpg";
+    private static final String default_extension = ".jpg";
     /* Connection stuff */
-    private static final boolean free_resume       = true;
-    private static final int     free_maxchunks    = 0;
-    private static final int     free_maxdownloads = -1;
-    private String               dllink            = null;
-    private boolean              server_issues     = false;
+    private static final int    free_maxchunks    = 0;
+    private String              dllink            = null;
+
+    @Override
+    public boolean isResumeable(final DownloadLink link, final Account account) {
+        return true;
+    }
 
     @Override
     public String getAGBLink() {
-        return "http://pimpandhost.com/site/tos";
+        return "https://" + getHost() + "/site/tos";
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        return requestFileInformation(link, false);
+    }
+
+    private AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
         dllink = null;
-        server_issues = false;
         this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
-        if (br.getHttpConnection().getResponseCode() == 404 || this.br.containsHTML("Image not found")) {
+        br.getPage(link.getPluginPatternMatcher());
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("Image not found")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String url_filename = new Regex(link.getDownloadURL(), "/(.*)$").getMatch(0);
-        final String filesize = this.br.getRegex(">Size: ([^<>\"]+)<").getMatch(0);
+        final String url_filename = new Regex(link.getPluginPatternMatcher(), "/(.*)$").getMatch(0);
+        final String filesize = this.br.getRegex(">\\s*Size: ([^<>\"]+)<").getMatch(0);
         String filename = br.getRegex("<title>\\s*([^<>\"]+)(\\s*\\|\\s*pimpandhost\\.com)?</title>").getMatch(0);
         if (filename == null) {
             filename = url_filename;
@@ -81,7 +112,7 @@ public class PimpandhostCom extends PluginForHost {
         if (br.containsHTML("<h4>Album\\s*'.*?'\\s*is protected with password</h4>")) {
             // don't know password to implement support
             link.setName(filename);
-            throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported feature");
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Password protected items are not yet supported  | Contact JDownloader support");
         }
         /* Maybe required to get highest quality: br.getPage("http://pimpandhost.com/image/" + picID + "-original.html"); */
         dllink = br.getRegex("<img[^>]*?class=\"normal\"[^>]*?src=\"(https?[^<>\"]+)\"").getMatch(0);
@@ -98,20 +129,20 @@ public class PimpandhostCom extends PluginForHost {
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
+        link.setFinalFileName(filename);
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
             link.setName(filename);
-        } else if (dllink != null) {
+        } else if (dllink != null && !isDownload) {
             dllink = Encoding.htmlDecode(dllink);
-            link.setFinalFileName(filename);
             URLConnectionAdapter con = null;
             try {
                 con = br.openHeadConnection(dllink);
-                if (!con.getContentType().contains("html")) {
-                    link.setDownloadSize(con.getLongContentLength());
-                    link.setProperty("directlink", dllink);
+                handleConnectionErrors(br, con);
+                if (con.isContentDecoded()) {
+                    link.setDownloadSize(con.getCompleteContentLength());
                 } else {
-                    server_issues = true;
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
                 }
             } finally {
                 try {
@@ -119,41 +150,37 @@ public class PimpandhostCom extends PluginForHost {
                 } catch (final Throwable e) {
                 }
             }
-        } else {
-            /* We cannot be sure whether we have the correct extension or not! */
-            link.setName(filename);
         }
         return AvailableStatus.TRUE;
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        if (server_issues) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
-        } else if (dllink == null) {
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
+        if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLink, dllink, free_resume, free_maxchunks);
-        if (dl.getConnection().getContentType().contains("html")) {
-            if (dl.getConnection().getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-            }
-            br.followConnection();
-            try {
-                dl.getConnection().disconnect();
-            } catch (final Throwable e) {
-            }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, this.isResumeable(link, null), free_maxchunks);
+        handleConnectionErrors(br, dl.getConnection());
         dl.startDownload();
+    }
+
+    private void handleConnectionErrors(final Browser br, final URLConnectionAdapter con) throws PluginException, IOException {
+        if (!this.looksLikeDownloadableContent(con)) {
+            br.followConnection(true);
+            if (con.getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+            } else if (con.getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Video broken?");
+            }
+        }
     }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return free_maxdownloads;
+        return Integer.MAX_VALUE;
     }
 
     @Override

@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
@@ -27,7 +28,6 @@ import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -36,7 +36,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
@@ -47,14 +46,21 @@ public class TnaFlixCom extends PluginForHost {
     }
 
     @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.setFollowRedirects(true);
+        return br;
+    }
+
+    @Override
     public LazyPlugin.FEATURE[] getFeatures() {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
     }
 
     private static final String  ALLOW_MULTIHOST_USAGE           = "ALLOW_MULTIHOST_USAGE";
     private static final boolean default_allow_multihoster_usage = false;
-    private static final String  TYPE_NORMAL                     = "https?://[^/]+/(view_video\\.php\\?viewkey=[a-z0-9]+|.*?video\\d+)";
-    private static final String  TYPE_embed                      = "https?://[^/]*?player\\.[^/]+/video/(\\d+)";
+    private static final String  TYPE_NORMAL                     = "(?i)https?://[^/]+/(view_video\\.php\\?viewkey=[a-z0-9]+|.*?video\\d+)";
+    private static final String  TYPE_embed                      = "(?i)https?://[^/]*?player\\.[^/]+/video/(\\d+)";
     private static final String  TYPE_embedding_player           = ".+/embedding_player/embedding_feed\\.php\\?viewkey=([a-z0-9]+)";
 
     public static String[] getAnnotationNames() {
@@ -135,14 +141,8 @@ public class TnaFlixCom extends PluginForHost {
         return 18;
     }
 
-    @SuppressWarnings("deprecation")
-    public void correctDownloadLink(final DownloadLink link) {
-        final String urlpart = new Regex(link.getDownloadURL(), "https?://(?:www\\.)?(.+)").getMatch(0);
-        link.setUrlDownload("https://www." + urlpart);
-    }
-
     private String getURLName(final DownloadLink link) {
-        String urlname = new Regex(link.getPluginPatternMatcher(), "https?://[^/]+/.*/([^/]+)/video\\d+$").getMatch(0);
+        String urlname = new Regex(link.getPluginPatternMatcher(), "(?i)https?://[^/]+/.*/([^/]+)/video\\d+$").getMatch(0);
         if (urlname == null) {
             /* Fallback */
             urlname = this.getViewkey(link.getPluginPatternMatcher());
@@ -152,18 +152,21 @@ public class TnaFlixCom extends PluginForHost {
         return urlname;
     }
 
+    private String getContentURL(final DownloadLink link) {
+        if (link.getPluginPatternMatcher().matches(TYPE_embedding_player)) {
+            /* Convert embed urls --> Original urls */
+            return link.getPluginPatternMatcher().replaceFirst("(?i)http://", "https://").replace("embedding_player/embedding_feed", "view_video");
+        } else {
+            return link.getPluginPatternMatcher();
+        }
+    }
+
     @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
-        br.setFollowRedirects(true);
         br.setCookie("https://" + link.getHost(), "content_filter2", "type%3Dstraight%26filter%3Dcams");
         br.setCookie("https://" + link.getHost(), "content_filter3", "type%3Dstraight%2Ctranny%2Cgay%26filter%3Dcams");
-        if (link.getDownloadURL().matches(TYPE_embedding_player)) {
-            /* Convert embed urls --> Original urls */
-            link.setUrlDownload(link.getDownloadURL().replace("http://", "https://").replace("embedding_player/embedding_feed", "view_video"));
-            link.setContentUrl(link.getDownloadURL());
-        }
         String filename = null;
         final String videoid_type_2 = this.getVideoID(link.getPluginPatternMatcher());
         if (videoid_type_2 != null) {
@@ -175,7 +178,7 @@ public class TnaFlixCom extends PluginForHost {
             // if (mp4download) {
             // }
         } else {
-            br.getPage(link.getDownloadURL());
+            br.getPage(this.getContentURL(link));
             if (br.containsHTML("class=\"errorPage page404\"|> This video is set to private") || this.br.getHttpConnection().getResponseCode() == 404 || this.br.getURL().length() < 30) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
@@ -209,78 +212,26 @@ public class TnaFlixCom extends PluginForHost {
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
         String vkey = this.getViewkey(link.getPluginPatternMatcher());
-        final String videoid = this.getVideoID(link.getPluginPatternMatcher());
-        String ajax_old_flv_downloadurl = null;
-        if (videoid != null) {
-            /*
-             * 2019-06-11: Ajax handling - we need to find- and access the original URL else we will not be able to get all required
-             * information.
-             */
-            if (vkey == null) {
-                vkey = PluginJSonUtils.getJson(br, "vkey");
-            }
-            if (StringUtils.isEmpty(vkey) || vkey.equals("null")) {
-                vkey = null;
-            }
-            ajax_old_flv_downloadurl = PluginJSonUtils.getJsonValue(this.br, "flv");
-            final String original_url = PluginJSonUtils.getJson(br, "link");
-            if (original_url != null && videoid != null && original_url.contains(videoid)) {
-                br.getPage(original_url);
-            }
+        String videoid = this.getVideoID(link.getPluginPatternMatcher());
+        if (videoid == null) {
+            videoid = this.getVideoID(br.getURL());
         }
         if (vkey == null) {
             vkey = this.br.getRegex("id=\"vkey\" type=\"hidden\" value=\"([A-Za-z0-9]+)\"").getMatch(0);
         }
-        final String nkey = this.br.getRegex("id=\"nkey\" type=\"hidden\" value=\"([^<>\"]+)\"").getMatch(0);
+        // final String nkey = this.br.getRegex("id=\"nkey\" type=\"hidden\" value=\"([^<>\"]+)\"").getMatch(0);
         /* This link doesn't have quality choice: https://www.tnaflix.com/view_video.php?viewkey=b5a6fcf68b48e6dd6734 */
-        /* This may sometimes return 403 - avoid it if possible! */
-        String dllink1 = br.getRegex("itemprop=\"contentUrl\" content=\"([^\"<>]+)\"").getMatch(0);
         /* This may sometimes return 403 - avoid it if possible! */
         String download = br.getRegex("<div class=\"playlist_listing\" data-loaded=\"true\">(.*?)</div>").getMatch(0);
         if (download == null) {
             /* This may sometimes return 403 - avoid it if possible! */
             download = br.getRegex("download href=\"((https?:)?//[^<>\"]+)\"").getMatch(0);
         }
-        String configLink = br.getRegex("addVariable\\(\\'config\\', \\'(http.*?)\\'").getMatch(0);
-        if (configLink == null) {
-            configLink = br.getRegex("flashvars.config.*?escape\\(.*?(cdn.*?)\"").getMatch(0);
-        }
-        if (configLink == null && vkey != null && videoid != null && nkey != null) {
-            configLink = "https://cdn-fck.tnaflix.com/tnaflix/" + vkey + ".fid?key=" + nkey + "&VID=" + videoid + "&nomp4=1&catID=0&rollover=1&startThumb=30&embed=0&utm_source=0&multiview=0&premium=1&country=0user=0&vip=1&cd=0&ref=0&alpha";
-        }
-        if (configLink == null && download == null && dllink1 == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
         String dllink = null;
-        if (configLink != null) {
-            if (!configLink.startsWith("http")) {
-                configLink = Encoding.htmlDecode("http://" + configLink);
-            }
-            br.getPage(configLink);
-            if (this.br.getHttpConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error: 'Config file is not correct'", 30 * 60 * 1000l);
-            }
-            final String[] qualities = { "1080p", "720p", "480p", "360p", "240p", "144p" };
-            for (final String quality : qualities) {
-                dllink = br.getRegex(quality + "</res>\\s*<videolink>(http://.*?)</videoLink>").getMatch(0);
-                if (dllink == null) {
-                    dllink = this.br.getRegex(quality + "</res>\\s*<videoLink>(?:<\\!\\[CDATA\\[)?([^<>\"]+)(?:\\]\\]>)?</videoLink>").getMatch(0);
-                }
-                if (dllink != null) {
-                    break;
-                }
-            }
-            if (dllink == null) {
-                /* Fallback for videos with only one quality */
-                dllink = this.br.getRegex("<videoLink>(?:<\\!\\[CDATA\\[)?([^<>\"]+)(?:\\]\\]>)?</videoLink>").getMatch(0);
-            }
-            if (StringUtils.isNotEmpty(dllink)) {
-                dllink = br.getURL(dllink).toString();
-            }
-        } else if (download != null) {
+        if (download != null) {
             /* Official download */
             if (StringUtils.isNotEmpty(dllink)) {
-                dllink = br.getURL(dllink).toString();
+                dllink = br.getURL(dllink).toExternalForm();
             } else {
                 final String[] qualities = { "720", "480", "360", "240", "144" };
                 for (final String quality : qualities) {
@@ -292,36 +243,29 @@ public class TnaFlixCom extends PluginForHost {
             }
         }
         if (dllink == null) {
-            dllink = br.getRegex("<file>(http://.*?)</file>").getMatch(0);
-        }
-        if (dllink == null) {
-            dllink = br.getRegex("<videolink>(http://.*?)</videoLink>").getMatch(0);
-        }
-        if (dllink == null) {
-            /* 2019-06-11 */
-            dllink = br.getRegex("<videoLinkDownload><\\!\\[CDATA\\[([^<>\"\\[\\]]+)\\]\\]></videoLinkDownload>").getMatch(0);
-        }
-        if (dllink == null && ajax_old_flv_downloadurl != null) {
-            logger.info("Fallback to ajax method");
-            dllink = ajax_old_flv_downloadurl;
-            if (StringUtils.isNotEmpty(dllink)) {
-                dllink = br.getURL(dllink).toString();
+            if (videoid == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-        }
-        if (dllink == null) {
-            /* This may sometimes return 403 - avoid it if possible! */
-            dllink = dllink1;
+            br.getPage("https://" + getHost() + "/ajax/video-player/" + videoid);
+            final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+            final String html = entries.get("html").toString();
+            final String[] qualities = new Regex(html, "(https?://[^\"]+)\" type=\"video/mp4").getColumn(0);
+            int bestHeight = -1;
+            for (final String quality : qualities) {
+                final String heightStr = new Regex(quality, "(\\d+)p\\.mp4").getMatch(0);
+                int height = -1;
+                if (heightStr != null) {
+                    height = Integer.parseInt(heightStr);
+                }
+                if (dllink == null || height > bestHeight) {
+                    bestHeight = height;
+                    dllink = quality;
+                }
+            }
         }
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dllink = Encoding.htmlDecode(dllink);
-        Browser brc = br.cloneBrowser();
-        brc.getHeaders().put(OPEN_RANGE_REQUEST);
-        final URLConnectionAdapter con = brc.openHeadConnection(dllink);
-        final long fileSize = con.getCompleteContentLength();
-        con.disconnect();
-        link.setVerifiedFileSize(fileSize);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -2);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             br.followConnection(true);

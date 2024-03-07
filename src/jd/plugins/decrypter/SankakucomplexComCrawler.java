@@ -28,6 +28,7 @@ import org.jdownloader.plugins.config.PluginJsonConfig;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
@@ -43,6 +44,13 @@ import jd.plugins.hoster.SankakucomplexCom;
 public class SankakucomplexComCrawler extends PluginForDecrypt {
     public SankakucomplexComCrawler(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.setFollowRedirects(true);
+        return br;
     }
 
     public static List<String[]> getPluginDomains() {
@@ -79,10 +87,10 @@ public class SankakucomplexComCrawler extends PluginForDecrypt {
         return ret.toArray(new String[0]);
     }
 
-    private final String       TYPE_BOOK       = "https?://[^/]+/([a-z]{2})/books/(\\d+)";
-    private final String       TYPE_TAGS_BOOK  = "https?://[^/]+/([a-z]{2})\\?tags=pool:(\\d+)";
-    private final String       TYPE_TAGS_BOOKS = "https?://[^/]+/([a-z0-9]{2})/books\\?tags=(.+)";
-    private final String       TYPE_TAGS_POSTS = "https?://[^/]+/([a-z]{2})\\?tags=([^&]+)";
+    private final String       TYPE_BOOK       = "(?i)https?://[^/]+/([a-z]{2})/books/(\\d+)";
+    private final String       TYPE_TAGS_BOOK  = "(?i)https?://[^/]+/([a-z]{2})\\?tags=pool:(\\d+)";
+    private final String       TYPE_TAGS_BOOKS = "(?i)https?://[^/]+/([a-z0-9]{2})/books\\?tags=(.+)";
+    private final String       TYPE_TAGS_POSTS = "(?i)https?://[^/]+/([a-z]{2})\\?tags=([^&]+)";
     public static final String API_BASE        = "https://capi-v2.sankakucomplex.com";
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
@@ -122,7 +130,6 @@ public class SankakucomplexComCrawler extends PluginForDecrypt {
         query.add("tags", tagsUrlEncoded);
         int page = 1;
         do {
-            br.setFollowRedirects(true);
             br.getPage(API_BASE + "/posts/keyset?" + query.toString());
             final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
             final Map<String, Object> meta = (Map<String, Object>) entries.get("meta");
@@ -191,7 +198,6 @@ public class SankakucomplexComCrawler extends PluginForDecrypt {
         query.add("pool_type", "0");
         int page = 1;
         do {
-            br.setFollowRedirects(true);
             br.getPage(API_BASE + "/pools/keyset?" + query.toString());
             final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
             final Map<String, Object> meta = (Map<String, Object>) entries.get("meta");
@@ -242,7 +248,6 @@ public class SankakucomplexComCrawler extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        br.setFollowRedirects(true);
         br.getPage(API_BASE + "/pools/" + bookID + "?lang=" + languageFromURL + "&includes[]=series&exceptStatuses[]=deleted");
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

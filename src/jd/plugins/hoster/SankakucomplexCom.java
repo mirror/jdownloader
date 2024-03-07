@@ -20,6 +20,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.components.config.SankakucomplexComConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -39,14 +45,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.decrypter.SankakucomplexComCrawler;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.components.config.SankakucomplexComConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sankakucomplex.com" }, urls = { "https?://(?:www\\.)?(?:beta|chan|idol)\\.sankakucomplex\\.com/(?:[a-z]{2}/)?post/show/(\\d+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sankakucomplex.com" }, urls = { "https?://(?:beta|chan|idol|www)\\.sankakucomplex\\.com/(?:[a-z]{2}/)?(?:post/show|posts)/([A-Za-z0-9]+)" })
 public class SankakucomplexCom extends antiDDoSForHost {
     public SankakucomplexCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -109,7 +108,7 @@ public class SankakucomplexCom extends antiDDoSForHost {
     }
 
     private AvailableStatus requestFileInformationWebsite(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
-        final String fileID = new Regex(link.getPluginPatternMatcher(), "(\\d+)$").getMatch(0);
+        final String fileID = this.getFID(link);
         if (!link.isNameSet()) {
             link.setName(fileID);
         }
@@ -123,7 +122,7 @@ public class SankakucomplexCom extends antiDDoSForHost {
         if (account != null) {
             this.login(account, false);
         }
-        getPage("https://chan.sankakucomplex.com/post/show/" + this.getFID(link));
+        getPage("https://chan.sankakucomplex.com/post/show/" + fileID);
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(?i)<title>\\s*404: Page Not Found\\s*<")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -182,7 +181,9 @@ public class SankakucomplexCom extends antiDDoSForHost {
                 try {
                     con = br2.openHeadConnection(dllink);
                     if (this.looksLikeDownloadableContent(con)) {
-                        if (con.getCompleteContentLength() > 0) {
+                        if (con.isContentDecoded()) {
+                            link.setDownloadSize(con.getCompleteContentLength());
+                        } else {
                             link.setVerifiedFileSize(con.getCompleteContentLength());
                         }
                     } else {
@@ -200,7 +201,7 @@ public class SankakucomplexCom extends antiDDoSForHost {
     }
 
     private AvailableStatus requestFileInformationAPI(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
-        final String fileID = new Regex(link.getPluginPatternMatcher(), "(\\d+)$").getMatch(0);
+        final String fileID = this.getFID(link);
         if (!link.isNameSet()) {
             link.setName(fileID);
         }
@@ -213,11 +214,11 @@ public class SankakucomplexCom extends antiDDoSForHost {
         if (account != null) {
             this.login(account, false);
         }
-        getPage(SankakucomplexComCrawler.API_BASE + "/posts?lang=de&page=1&limit=1&tags=id_range:" + this.getFID(link));
+        getPage(SankakucomplexComCrawler.API_BASE + "/posts?lang=de&page=1&limit=1&tags=id_range:" + fileID);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final List<Object> ressourcelist = restoreFromString(br.toString(), TypeRef.LIST);
+        final List<Object> ressourcelist = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.LIST);
         if (ressourcelist.isEmpty()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
