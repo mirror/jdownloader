@@ -40,6 +40,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.SiteType.SiteTemplate;
+import jd.plugins.hoster.DirectHTTP;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "HTTPDirectoryCrawler" }, urls = { "" })
 public class GenericHTTPDirectoryIndexCrawler extends PluginForDecrypt {
@@ -103,7 +104,7 @@ public class GenericHTTPDirectoryIndexCrawler extends PluginForDecrypt {
      *
      * @throws DecrypterRetryException
      */
-    protected ArrayList<DownloadLink> parseHTTPDirectory(final CryptedLink param, final Browser br) throws IOException, PluginException, DecrypterRetryException {
+    public ArrayList<DownloadLink> parseHTTPDirectory(final CryptedLink param, final Browser br) throws IOException, PluginException, DecrypterRetryException {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String path = this.getCurrentDirectoryPath(br);
         /* Path should always be given! */
@@ -167,7 +168,7 @@ public class GenericHTTPDirectoryIndexCrawler extends PluginForDecrypt {
             return dlfolder;
         } else {
             /* File */
-            final DownloadLink dlfile = new DownloadLink(null, null, "DirectHTTP", "directhttp://" + url, true);
+            final DownloadLink dlfile = new DownloadLink(null, null, "DirectHTTP", DirectHTTP.createURLForThisPlugin(url), true);
             /* Obtain filename from URL as displayed name may be truncated. */
             String name = url.substring(url.lastIndexOf("/") + 1);
             if (Encoding.isUrlCoded(name)) {

@@ -1,10 +1,24 @@
 package jd.plugins.decrypter;
 
-import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.uio.CloseReason;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.URLHelper;
+import org.appwork.utils.swing.dialog.LoginDialog;
+import org.appwork.utils.swing.dialog.LoginDialogInterface;
+import org.jdownloader.auth.AuthenticationController;
+import org.jdownloader.auth.AuthenticationInfo;
+import org.jdownloader.auth.AuthenticationInfo.Type;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.translate._JDT;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -29,25 +43,10 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.uio.CloseReason;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.net.URLHelper;
-import org.appwork.utils.swing.dialog.LoginDialog;
-import org.appwork.utils.swing.dialog.LoginDialogInterface;
-import org.jdownloader.auth.AuthenticationController;
-import org.jdownloader.auth.AuthenticationInfo;
-import org.jdownloader.auth.AuthenticationInfo.Type;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
-import org.jdownloader.translate._JDT;
+import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "linkcrawlerdeephelper" }, urls = { "" })
-public class LinkCrawlerDeepHelper extends antiDDoSForDecrypt implements LinkCrawlerDeepHelperInterface {
+public class LinkCrawlerDeepHelper extends PluginForDecrypt implements LinkCrawlerDeepHelperInterface {
     public LinkCrawlerDeepHelper(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -58,7 +57,7 @@ public class LinkCrawlerDeepHelper extends antiDDoSForDecrypt implements LinkCra
     }
 
     @Override
-    public URLConnectionAdapter openConnection(LinkCrawlerRule matchingRule, Browser br, CrawledLink source) throws Exception {
+    public URLConnectionAdapter openConnection(final LinkCrawlerRule matchingRule, Browser br, CrawledLink source) throws Exception {
         br.addAllowedResponseCodes(500);
         final String sourceURL = source.getURL();
         final List<String[]> setCookies = matchingRule != null ? LinkCrawler.getLinkCrawlerRuleCookies(matchingRule.getId()) : null;
@@ -102,14 +101,16 @@ public class LinkCrawlerDeepHelper extends antiDDoSForDecrypt implements LinkCra
         return ret;
     }
 
-    protected URLConnectionAdapter openCrawlDeeperConnection(Browser br, CrawledLink source, int round) throws Exception {
-        final HashSet<String> loopAvoid = new HashSet<String>();
+    /** Connection handling with basic authentication handling. */
+    protected URLConnectionAdapter openCrawlDeeperConnection(final Browser br, CrawledLink source, int round) throws Exception {
         if (round == 0) {
             final CrawledLink sourceLink = source.getSourceLink();
             if (sourceLink != null && StringUtils.startsWithCaseInsensitive(sourceLink.getURL(), "http")) {
+                /* Use current link as referer */
                 br.setCurrentURL(sourceLink.getURL());
             }
         }
+        final HashSet<String> loopAvoid = new HashSet<String>();
         Request request = new GetRequest(source.getURL());
         loopAvoid.add(request.getUrl());
         URLConnectionAdapter connection = null;
@@ -158,11 +159,12 @@ public class LinkCrawlerDeepHelper extends antiDDoSForDecrypt implements LinkCra
                     br.followConnection(true);
                 }
                 br.setCustomAuthenticationFactory(authenticationFactory);
-                connection = openAntiDDoSRequestConnection(br, request);
+                connection = br.openRequestConnection(request);
                 if (connection.getResponseCode() == 401 || connection.getResponseCode() == 403) {
                     if (connection.getHeaderField(HTTPConstants.HEADER_RESPONSE_WWW_AUTHENTICATE) == null) {
                         return openCrawlDeeperConnection(source, br, connection, round);
                     } else {
+                        /* Invalid or missing auth */
                         continue authLoop;
                     }
                 } else if (connection.isOK()) {
@@ -173,10 +175,12 @@ public class LinkCrawlerDeepHelper extends antiDDoSForDecrypt implements LinkCra
             }
             final String location = request.getLocation();
             if (location != null) {
+                /* Redirect */
                 br.followConnection(true);
                 if (loopAvoid.add(location) == false) {
                     return openCrawlDeeperConnection(source, br, connection, round);
                 } else {
+                    /* Continue */
                     request = br.createRedirectFollowingRequest(request);
                 }
             } else {
@@ -187,24 +191,17 @@ public class LinkCrawlerDeepHelper extends antiDDoSForDecrypt implements LinkCra
     }
 
     protected URLConnectionAdapter openCrawlDeeperConnection(CrawledLink source, Browser br, URLConnectionAdapter urlConnection, int round) throws Exception {
-        if (urlConnection != null && getCrawler().getDeepInspector().looksLikeDownloadableContent(urlConnection)) {
+        if (round > 2) {
+            /* Prevent infinite loop */
             return urlConnection;
-        } else if (round <= 2 && urlConnection != null) {
+        }
+        if (urlConnection != null && getCrawler().getDeepInspector().looksLikeDownloadableContent(urlConnection)) {
+            /* Looks like downloadable file -> Do not load connection. */
+            return urlConnection;
+        } else {
             if (round < 2 && (urlConnection.isOK() || urlConnection.getResponseCode() == 404) && br != null && !br.getCookies(br.getBaseURL()).isEmpty()) {
-                final Cookies cookies = br.getCookies(br.getBaseURL());
-                for (final Cookie cookie : cookies.getCookies()) {
-                    /* Check for special Incapsula antiDdosCookie */
-                    if (StringUtils.contains(cookie.getKey(), "incap_ses")) {
-                        try {
-                            Thread.sleep(2000);
-                        } catch (InterruptedException e) {
-                            urlConnection.disconnect();
-                            throw new IOException(e);
-                        }
-                        break;
-                    }
-                }
                 if (round < 1) {
+                    /* First round */
                     br.setCurrentURL(source.getURL());
                 } else {
                     br.setCurrentURL(URLHelper.parseLocation(new URL(source.getURL()), "/"));
@@ -214,6 +211,7 @@ public class LinkCrawlerDeepHelper extends antiDDoSForDecrypt implements LinkCra
             }
             final LinkCollectingJob job = source.getSourceJob();
             if (job != null && job.getCustomSourceUrl() != null) {
+                /* Sets custom referer header */
                 br.setCurrentURL(job.getCustomSourceUrl());
                 urlConnection.disconnect();
                 return openCrawlDeeperConnection(br, source, round + 1);
