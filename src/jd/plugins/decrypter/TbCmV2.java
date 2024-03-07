@@ -113,6 +113,7 @@ import jd.utils.locale.JDL;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class TbCmV2 extends PluginForDecrypt {
+    /* Shorted wait time between requests when JDownloader is run in IDE to allow for faster debugging. */
     private static final int DDOS_WAIT_MAX        = Application.isJared(null) ? 1000 : 10;
     private static final int DDOS_INCREASE_FACTOR = 15;
 
@@ -638,6 +639,7 @@ public class TbCmV2 extends PluginForDecrypt {
                          * items will end up in the same package.
                          */
                         if (this.playlistID != null) {
+                            /* Playlist or profile crawled as playlist. */
                             channelOrPlaylistPackage.setPackageKey("ytplaylist://" + this.playlistID);
                         } else if (this.channelID != null) {
                             /* User and channel are basically the same, we just prefer to use the channelID if it is given. */

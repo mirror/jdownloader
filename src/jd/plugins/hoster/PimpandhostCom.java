@@ -66,10 +66,6 @@ public class PimpandhostCom extends PluginForHost {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.IMAGE_HOST };
     }
 
-    /* DEV NOTES */
-    // Tags:
-    // protocol: no https
-    // other:
     /* Extension which will be used if no correct extension is found */
     private static final String default_extension = ".jpg";
     /* Connection stuff */
@@ -94,47 +90,56 @@ public class PimpandhostCom extends PluginForHost {
     private AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
         dllink = null;
         this.setBrowserExclusive();
+        if (!link.isNameSet()) {
+            link.setName(this.getFID(link) + default_extension);
+        }
         br.getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML("Image not found")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String url_filename = new Regex(link.getPluginPatternMatcher(), "/(.*)$").getMatch(0);
+        final String titleFromURL = new Regex(link.getPluginPatternMatcher(), "/(.*)$").getMatch(0);
         final String filesize = this.br.getRegex(">\\s*Size: ([^<>\"]+)<").getMatch(0);
-        String filename = br.getRegex("<title>\\s*([^<>\"]+)(\\s*\\|\\s*pimpandhost\\.com)?</title>").getMatch(0);
-        if (filename == null) {
-            filename = url_filename;
+        String filename = br.getRegex("data-filename=\"([^\"]+)").getMatch(0);
+        if (filename == null && titleFromURL != null) {
+            /* Fallback */
+            filename = titleFromURL.replace("-", " ").trim();
         }
-        filename = Encoding.htmlDecode(filename);
-        filename = filename.trim();
+        if (filename != null) {
+            filename = Encoding.htmlDecode(filename);
+            filename = filename.trim();
+        }
         // could be password protected
-        if (br.containsHTML("<h4>Album\\s*'.*?'\\s*is protected with password</h4>")) {
+        if (br.containsHTML("<h4>\\s*Album\\s*'.*?'\\s*is protected with password\\s*</h4>")) {
             // don't know password to implement support
             link.setName(filename);
             throw new PluginException(LinkStatus.ERROR_FATAL, "Password protected items are not yet supported  | Contact JDownloader support");
         }
-        /* Maybe required to get highest quality: br.getPage("http://pimpandhost.com/image/" + picID + "-original.html"); */
-        dllink = br.getRegex("<img[^>]*?class=\"normal\"[^>]*?src=\"(https?[^<>\"]+)\"").getMatch(0);
+        /* Alternative way to get highest quality: br.getPage("http://pimpandhost.com/image/" + picID + "-original.html"); */
+        dllink = br.getRegex("data-src=\"([^\"]+)").getMatch(0);
         if (dllink == null) {
-            dllink = br.getRegex("<img[^>]*?class=\"normal\"[^>]*?src=\"(//[^<>\"]+)\"").getMatch(0);
+            dllink = br.getRegex("<img[^>]*?class=\"normal\"[^>]*?src=\"(https?[^<>\"]+)\"").getMatch(0);
+            if (dllink == null) {
+                dllink = br.getRegex("<img[^>]*?class=\"normal\"[^>]*?src=\"(//[^<>\"]+)\"").getMatch(0);
+            }
         }
         final String ext;
         if (dllink != null) {
-            dllink = br.getURL(dllink).toString();
             ext = getFileNameExtensionFromString(dllink, default_extension);
         } else {
             ext = default_extension;
         }
-        if (!filename.endsWith(ext)) {
-            filename += ext;
+        if (filename != null) {
+            if (!filename.endsWith(ext)) {
+                filename += ext;
+            }
+            link.setFinalFileName(filename);
         }
-        link.setFinalFileName(filename);
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
             link.setName(filename);
         } else if (dllink != null && !isDownload) {
-            dllink = Encoding.htmlDecode(dllink);
             URLConnectionAdapter con = null;
             try {
                 con = br.openHeadConnection(dllink);

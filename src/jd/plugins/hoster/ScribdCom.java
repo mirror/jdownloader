@@ -76,6 +76,13 @@ public class ScribdCom extends PluginForHost {
     }
 
     @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.setFollowRedirects(true);
+        return br;
+    }
+
+    @Override
     public LazyPlugin.FEATURE[] getFeatures() {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.COOKIE_LOGIN_ONLY };
     }
@@ -100,13 +107,17 @@ public class ScribdCom extends PluginForHost {
     }
 
     @Override
+    public boolean isResumeable(final DownloadLink link, final Account account) {
+        return false;
+    }
+
+    @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException, InterruptedException {
         prepFreeBrowser(this.br);
         return requestFileInformation(link, false);
     }
 
     public AvailableStatus requestFileInformation(final DownloadLink link, final boolean checkViaJson) throws IOException, PluginException, InterruptedException {
-        br.setFollowRedirects(false);
         // final boolean checkViaJson = !link.getPluginPatternMatcher().matches(TYPE_AUDIO);
         String title = null;
         String description = null;
@@ -122,7 +133,6 @@ public class ScribdCom extends PluginForHost {
             if (token == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            br.setFollowRedirects(true);
             br.getPage("https://www." + this.getHost() + "/scepub/" + fid + "/book_metadata.json?token=" + token);
             title = PluginJSonUtils.getJson(br, "title");
         } else {
@@ -131,19 +141,9 @@ public class ScribdCom extends PluginForHost {
                 br.getPage(link.getPluginPatternMatcher());
                 counter400++;
             } while (counter400 <= 5 && br.getHttpConnection().getResponseCode() == 400);
-            for (int i = 0; i <= 5; i++) {
-                String newurl = br.getRedirectLocation();
-                if (newurl != null) {
-                    if (newurl.contains("/removal/") || newurl.contains("/deleted/")) {
-                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    }
-                    link.setPluginPatternMatcher(newurl);
-                    br.getPage(link.getPluginPatternMatcher());
-                } else {
-                    break;
-                }
-            }
-            if (br.getHttpConnection().getResponseCode() == 400) {
+            if (br.getURL().contains("/removal/") || br.getURL().contains("/deleted/")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (br.getHttpConnection().getResponseCode() == 400) {
                 logger.info("Server returns error 400");
                 return AvailableStatus.UNCHECKABLE;
             } else if (br.getHttpConnection().getResponseCode() == 410) {
@@ -163,22 +163,27 @@ public class ScribdCom extends PluginForHost {
                 if (json1 != null) {
                     /* Type 1 */
                     json_type = 1;
-                    entries = JavaScriptEngineFactory.jsonToJavaMap(json1);
+                    entries = restoreFromString(json1, TypeRef.MAP);
                     is_audiobook = ((Boolean) entries.get("is_audiobook")).booleanValue();
                     title = (String) entries.get("title");
                     description = (String) entries.get("description");
                 } else if (json2 != null) {
                     /* Type 2 */
                     json_type = 2;
-                    entries = JavaScriptEngineFactory.jsonToJavaMap(json2);
+                    entries = restoreFromString(json2, TypeRef.MAP);
                     is_audiobook = ((Boolean) entries.get("is_audiobook")).booleanValue();
                     title = (String) entries.get("document_title");
                     description = (String) entries.get("document_description");
                     is_deleted = ((Boolean) JavaScriptEngineFactory.walkJson(entries, "document/deleted")).booleanValue();
                 } else {
                     json_type = 3;
-                    entries = JavaScriptEngineFactory.jsonToJavaMap(json3);
-                    entries = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "page/word_document");
+                    entries = restoreFromString(json3, TypeRef.MAP);
+                    Map<String, Object> docmap = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "page/word_document");
+                    if (docmap == null) {
+                        /* 2024-03-07 */
+                        docmap = (Map<String, Object>) entries.get("wordDocument");
+                    }
+                    entries = docmap;
                     title = (String) entries.get("title");
                     // final boolean show_archive_paywall = ((Boolean) entries.get("show_archive_paywall")).booleanValue();
                 }
@@ -192,7 +197,7 @@ public class ScribdCom extends PluginForHost {
         }
         if (StringUtils.isEmpty(title)) {
             /* Fallback */
-            title = new Regex(br.getURL(), "/document/\\d+/([^/]+)").getMatch(0); // url slug
+            title = new Regex(br.getURL(), "/" + fid + "/([^/]+)").getMatch(0); // url slug
             if (title == null) {
                 title = fid;
             }
@@ -418,7 +423,7 @@ public class ScribdCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FATAL, "Audiobooks cannot be downloaded yet!");
         }
         final String[] downloadInfo = getDllink(parameter, account, is_audiobook);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, parameter, downloadInfo[0], false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, parameter, downloadInfo[0], this.isResumeable(parameter, account), 1);
         if (dl.getConnection().getContentType().contains("html")) {
             br.followConnection();
             /* Assume that our current account type = free and the file is not downloadable */
@@ -432,7 +437,6 @@ public class ScribdCom extends PluginForHost {
         synchronized (account) {
             br.setCookiesExclusive(true);
             prepBRGeneral(br);
-            br.setFollowRedirects(true);
             final boolean allowCookieLoginOnly = true; // 2023-11-13
             final Cookies cookies = account.loadCookies("");
             final Cookies userCookies = account.loadUserCookies();
@@ -555,7 +559,6 @@ public class ScribdCom extends PluginForHost {
         }
         // final String scribdsession = getSpecifiedCookie(this.br, "_scribd_session");
         // final String scribdexpire = getSpecifiedCookie(this.br, "_scribd_expire");
-        br.setFollowRedirects(true);
         br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
         br.getHeaders().put("Accept", "*/*");
         // xmlbrowser.setCookie("http://" + this.getHost(), "_scribd_session", scribdsession);
@@ -575,7 +578,7 @@ public class ScribdCom extends PluginForHost {
          */
         String formatToDownload = null;
         br.getPage("https://www." + this.getHost() + "/doc-page/download-receipt-modal-props/" + fileId);
-        Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
+        Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         entries = (Map<String, Object>) entries.get("document");
         String firstAvailableFormat = null;
         final List<Object> ressourcelist = (List<Object>) entries.get("formats");
@@ -631,25 +634,25 @@ public class ScribdCom extends PluginForHost {
         }
         String[] dlinfo = new String[2];
         dlinfo[1] = formatToDownload;
-        br.setFollowRedirects(false);
-        br.getPage("/document_downloads/" + fileId + "?extension=" + dlinfo[1]);
-        if (br.containsHTML("Sorry, downloading this document in the requested format has been disallowed")) {
+        final Browser brc = br.cloneBrowser();
+        brc.setFollowRedirects(false);
+        brc.getPage("/document_downloads/" + fileId + "?extension=" + dlinfo[1]);
+        if (brc.containsHTML("Sorry, downloading this document in the requested format has been disallowed")) {
             throw new PluginException(LinkStatus.ERROR_FATAL, dlinfo[1] + " format is not available for this file!");
-        }
-        if (br.containsHTML("You do not have access to download this document|Invalid document format")) {
+        } else if (brc.containsHTML("You do not have access to download this document|Invalid document format")) {
             /* This will usually go along with response 403. */
             if (account != null) {
                 logger.info("This file might not be downloadable at all");
             }
             throw new AccountRequiredException("This file can only be downloaded by premium users");
         }
-        dlinfo[0] = br.getRedirectLocation();
+        dlinfo[0] = brc.getRedirectLocation();
         if (dlinfo[0] == null) {
             /* 2020-07-20: */
             // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            if (br.toString().length() <= 100) {
+            if (brc.getRequest().getHtmlCode().length() <= 100) {
                 /* 2020-07-20: E.g. errormessage: All download limits exceeded from your IP (123.123.123.123). */
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, br.toString());
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Website-error: " + brc.getRequest().getHtmlCode());
             } else {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to find final downloadurl");
             }
