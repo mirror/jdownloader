@@ -154,23 +154,17 @@ public class LinkCrawlerDeepHelper extends PluginForDecrypt implements LinkCrawl
                     return super.retry(authentication, browser, request);
                 }
             });
-            authLoop: for (AuthenticationFactory authenticationFactory : authenticationFactories) {
+            authloop: for (AuthenticationFactory authenticationFactory : authenticationFactories) {
                 if (connection != null) {
                     br.followConnection(true);
                 }
                 br.setCustomAuthenticationFactory(authenticationFactory);
                 connection = br.openRequestConnection(request);
-                if (connection.getResponseCode() == 401 || connection.getResponseCode() == 403) {
-                    if (connection.getHeaderField(HTTPConstants.HEADER_RESPONSE_WWW_AUTHENTICATE) == null) {
-                        return openCrawlDeeperConnection(source, br, connection, round);
-                    } else {
-                        /* Invalid or missing auth */
-                        continue authLoop;
-                    }
-                } else if (connection.isOK()) {
-                    break authLoop;
+                if ((connection.getResponseCode() == 401 || connection.getResponseCode() == 403) && connection.getHeaderField(HTTPConstants.HEADER_RESPONSE_WWW_AUTHENTICATE) != null) {
+                    /* Invalid or missing auth */
+                    continue authloop;
                 } else {
-                    return openCrawlDeeperConnection(source, br, connection, round);
+                    break authloop;
                 }
             }
             final String location = request.getLocation();
