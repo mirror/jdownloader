@@ -318,6 +318,7 @@ public class CompiledFiletypeFilter {
 
     public static enum AudioExtensions implements CompiledFiletypeExtension {
         AC3,
+        MO3, // proprietary format developed by "Un4seen Developments": https://www.un4seen.com/mo3.html
         MP3,
         WMA,
         AAC,
