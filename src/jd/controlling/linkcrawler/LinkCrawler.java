@@ -1582,10 +1582,10 @@ public class LinkCrawler {
                             /* Check if http directory crawler would return results for current item */
                             ArrayList<DownloadLink> httpDirectoryResults = null;
                             try {
-                                final LazyCrawlerPlugin lazyC = getDeepCrawlingPlugin();
-                                if (lazyC == null) {
-                                    throw new UpdateRequiredClassNotFoundException("could not find 'LinkCrawlerDeepHelper' crawler plugin");
-                                }
+                                // final LazyCrawlerPlugin lazyC = getDeepCrawlingPlugin();
+                                // if (lazyC == null) {
+                                // throw new UpdateRequiredClassNotFoundException("could not find 'LinkCrawlerDeepHelper' crawler plugin");
+                                // }
                                 final LazyCrawlerPlugin lazyHttpDirectoryCrawler = this.getLazyGenericHttpDirectoryCrawlerPlugin();
                                 final GenericHTTPDirectoryIndexCrawler httpDirectoryCrawler = (GenericHTTPDirectoryIndexCrawler) lazyHttpDirectoryCrawler.newInstance(getPluginClassLoaderChild());
                                 httpDirectoryResults = httpDirectoryCrawler.parseHTTPDirectory(null, br);
