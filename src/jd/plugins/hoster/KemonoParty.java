@@ -75,7 +75,7 @@ public class KemonoParty extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "https://kemono.su";
+        return "https://" + getHost() + "/contact";
     }
 
     private static List<String[]> getPluginDomains() {

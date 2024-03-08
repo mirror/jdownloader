@@ -350,7 +350,7 @@ public class YoutubeHelper {
                 return new DataOrigin[] { DataOrigin.YT_SINGLE_VIDEO };
             }
         });
-        REPLACER.add(new YoutubeReplacer("VIDEOID", "ID") {
+        REPLACER.add(new YoutubeReplacer("VIDEOID", "VIDEO_ID", "ID") {
             @Override
             public String getDescription() {
                 return _GUI.T.YoutubeHelper_getDescription_id();

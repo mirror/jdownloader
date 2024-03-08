@@ -186,7 +186,6 @@ public class ArchiveOrg extends PluginForHost {
         boolean isAudio = CompiledFiletypeFilter.AudioExtensions.MP3.isSameExtensionGroup(fileType);
         final String filetype = link.getStringProperty(PROPERTY_FILETYPE, null);
         if (StringUtils.equals(filetype, FILETYPE_AUDIO)) {
-            /* Especially important for edge case: Playlist files with wrong file-extension such as ".mo3" instead of ".mp3". */
             isAudio = true;
         }
         // final boolean isVideo = CompiledFiletypeFilter.VideoExtensions.MP4.isSameExtensionGroup(fileType);

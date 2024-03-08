@@ -1076,7 +1076,7 @@ public class TbCmV2 extends PluginForDecrypt {
                     fp.setName(fpName);
                     // let the packagizer merge several packages that have the same name
                     fp.setAllowMerge(true);
-                    fp.setPackageKey("ytvideo://" + clip.videoID);
+                    // fp.setPackageKey("ytvideo://" + clip.videoID);
                     fp.add(ret);
                 }
             }

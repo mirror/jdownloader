@@ -137,12 +137,12 @@ public class GenericHTTPDirectoryIndexCrawler extends PluginForDecrypt {
                 throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER, "EMPTY_FOLDER_" + path);
             }
             for (final String[] finfo : filesAndFolders) {
-                final DownloadLink downloadLink = parseEntry(DirectoryListingMode.APACHE, br, finfo);
-                downloadLink.setRelativeDownloadFolderPath(path);
+                final DownloadLink link = parseEntry(DirectoryListingMode.APACHE, br, finfo);
+                link.setRelativeDownloadFolderPath(path);
                 if (fp != null) {
-                    downloadLink._setFilePackage(fp);
+                    link._setFilePackage(fp);
                 }
-                ret.add(downloadLink);
+                ret.add(link);
             }
         }
         return ret;
@@ -193,7 +193,7 @@ public class GenericHTTPDirectoryIndexCrawler extends PluginForDecrypt {
         }
     }
 
-    /** Returns html-DECODED directory path. */
+    /** Returns url-decoded directory path. */
     protected String getCurrentDirectoryPath(final Browser br) {
         String path = br.getRegex("(?i)<(?:title|h1)>Index of (/[^<]+)</(?:title|h1)>").getMatch(0);
         if (path == null) {
