@@ -350,7 +350,7 @@ public interface YoutubeConfig extends PluginConfigInterface {
     }
 
     @AboutConfig
-    @DescriptionForConfigEntry("Define in which order items of crawled channels should be added.")
+    @DescriptionForConfigEntry("Define in which order items of crawled channels should roughtly be added. This has no influence on the final sort order in the linkgrabber! It only has an influence on what is roughly crawled first.")
     @DefaultEnumValue("AUTO")
     YoutubeConfig.ChannelCrawlerSortMode getChannelCrawlerPreferredSortMode();
 

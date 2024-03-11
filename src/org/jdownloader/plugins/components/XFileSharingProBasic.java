@@ -982,7 +982,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
                         link.setFinalFileName(filenameFromURL);
                     }
                 }
-                storeDirecturl(link, account, con.getURL().toString());
+                storeDirecturl(link, account, con.getURL().toExternalForm());
                 return true;
             } else {
                 br.followConnection();
@@ -2847,7 +2847,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
             final Request request = br.getRequest();
             String correctedBR = correctedBrowserRequestMap.get(request);
             if (correctedBR == null) {
-                correctedBR = br.toString();
+                correctedBR = br.getRequest().getHtmlCode();
                 final ArrayList<String> regexStuff = getCleanupHTMLRegexes();
                 // remove custom rules first!!! As html can change because of generic cleanup rules.
                 /* generic cleanup */
@@ -2881,7 +2881,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
             if (ret != null) {
                 return ret;
             } else {
-                return br.toString();
+                return br.getRequest().getHtmlCode();
             }
         }
     }
@@ -4358,7 +4358,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
         /* buttons or sites that are only available for logged in users */
         // remove script tags
         // remove comments, eg ddl.to just comment some buttons/links for expired cookies/non logged in
-        final String htmlWithoutScriptTagsAndComments = brc.toString().replaceAll("(?s)(<script.*?</script>)", "").replaceAll("(?s)(<!--.*?-->)", "");
+        final String htmlWithoutScriptTagsAndComments = brc.getRequest().getHtmlCode().replaceAll("(?s)(<script.*?</script>)", "").replaceAll("(?s)(<!--.*?-->)", "");
         final String ahrefPattern = "<a[^<]*href\\s*=\\s*\"[^\"]*";
         /**
          * Test cases </br>
@@ -4876,7 +4876,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
                     brc.setAllowedResponseCodes(400);
                     brc.getPage(url.getProtocol() + "://" + url.getHost() + ":" + url.getPort() + "/");
                     if (brc.getHttpConnection().getResponseCode() == 400 && brc.containsHTML("The plain HTTP request was sent to HTTPS port")) {
-                        final String ret = url.toString().replaceFirst("(?i)^(http://)", "https://");
+                        final String ret = url.toExternalForm().replaceFirst("(?i)^(http://)", "https://");
                         logger.info("fixProtocol downloadlink = " + dllink + "->" + ret);
                         return ret;
                     }
@@ -4984,7 +4984,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
                  * Save directurl before download-attempt as it should be valid even if it e.g. fails because of server issue 503 (= too
                  * many connections) --> Should work fine after the next try.
                  */
-                storeDirecturl(link, account, dl.getConnection().getURL().toString());
+                storeDirecturl(link, account, dl.getConnection().getURL().toExternalForm());
                 handleDownloadErrors(dl.getConnection(), link, account);
                 try {
                     fixFilename(dl.getConnection(), link);

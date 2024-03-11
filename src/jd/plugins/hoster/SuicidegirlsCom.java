@@ -18,6 +18,13 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.Locale;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.logging2.LogInterface;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -37,13 +44,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.logging2.LogInterface;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "suicidegirls.com" }, urls = { "http://suicidegirlsdecrypted/\\d+|https?://(?:www\\.)?suicidegirls\\.com/videos/\\d+/[A-Za-z0-9\\-_]+/" })
 public class SuicidegirlsCom extends PluginForHost {
     public SuicidegirlsCom(PluginWrapper wrapper) {
@@ -52,27 +52,31 @@ public class SuicidegirlsCom extends PluginForHost {
     }
 
     @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        prepBR(br);
+        return br;
+    }
+
+    @Override
     public String getAGBLink() {
         return "https://www.suicidegirls.com/legal/";
     }
 
     /* Linktypes */
-    private static final String  TYPE_DECRYPTED               = "http://suicidegirlsdecrypted/\\d+";
-    private static final String  TYPE_VIDEO                   = "https?://(?:www\\.)?suicidegirls\\.com/videos/(\\d+)/[A-Za-z0-9\\-_]+/";
+    private static final String  TYPE_DECRYPTED            = "http://suicidegirlsdecrypted/\\d+";
+    private static final String  TYPE_VIDEO                = "(?i)https?://(?:www\\.)?suicidegirls\\.com/videos/(\\d+)/[A-Za-z0-9\\-_]+/";
     /* Properties */
-    public static final String   PROPERTY_DIRECTURL           = "directlink";
-    public static final String   PROPERTY_IMAGE_NAME          = "imageName";
+    public static final String   PROPERTY_DIRECTURL        = "directlink";
+    public static final String   PROPERTY_IMAGE_NAME       = "imageName";
     /* Connection stuff */
-    private static final boolean FREE_RESUME                  = false;
-    private static final int     FREE_MAXCHUNKS               = 1;
-    private static final int     FREE_MAXDOWNLOADS            = 20;
-    private static final boolean ACCOUNT_FREE_RESUME          = true;
-    private static final int     ACCOUNT_FREE_MAXCHUNKS       = 0;
-    private static final int     ACCOUNT_FREE_MAXDOWNLOADS    = 20;
-    private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
-    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
-    private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-    private String               dllink                       = null;
+    private static final boolean FREE_RESUME               = false;
+    private static final int     FREE_MAXCHUNKS            = 1;
+    private static final boolean ACCOUNT_FREE_RESUME       = true;
+    private static final int     ACCOUNT_FREE_MAXCHUNKS    = 0;
+    private static final boolean ACCOUNT_PREMIUM_RESUME    = true;
+    private static final int     ACCOUNT_PREMIUM_MAXCHUNKS = 0;
+    private String               dllink                    = null;
 
     @Override
     public String getLinkID(final DownloadLink link) {
@@ -106,15 +110,14 @@ public class SuicidegirlsCom extends PluginForHost {
     }
 
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        br = new Browser();
-        final Account account = login(br);
-        if (account == null) {
-            prepBR(br);
-        }
-        return requestFileInformation(link, account);
+        final Account account = AccountController.getInstance().getValidAccount(getHost());
+        return requestFileInformation(link, account, false);
     }
 
-    public AvailableStatus requestFileInformation(final DownloadLink link, final Account account) throws Exception {
+    public AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
+        if (account != null) {
+            this.login(account, false);
+        }
         String filename = null;
         if (link.getPluginPatternMatcher().matches(TYPE_VIDEO)) {
             final String videoID = new Regex(link.getPluginPatternMatcher(), TYPE_VIDEO).getMatch(0);
@@ -130,7 +133,7 @@ public class SuicidegirlsCom extends PluginForHost {
             filename = br.getRegex("<h2 class=\"title\">(?:SuicideGirls:\\s*)?([^<>\"]*?)</h2>").getMatch(0);
             if (filename == null) {
                 /* Fallback to url-filename */
-                filename = new Regex(link.getPluginPatternMatcher(), "suicidegirls\\.com/videos/\\d+/([A-Za-z0-9\\-_]+)/").getMatch(0);
+                filename = new Regex(link.getPluginPatternMatcher(), "(?i)/videos/\\d+/([A-Za-z0-9\\-_]+)/").getMatch(0);
             }
             filename = Encoding.htmlDecode(filename).trim();
             filename += ".mp4";
@@ -138,7 +141,8 @@ public class SuicidegirlsCom extends PluginForHost {
             filename = link.getStringProperty(PROPERTY_IMAGE_NAME);
             dllink = link.getStringProperty(PROPERTY_DIRECTURL);
         }
-        if (dllink != null && !dllink.contains(".m3u8")) {
+        link.setName(filename);
+        if (!StringUtils.containsIgnoreCase(dllink, ".m3u8") && !isDownload) {
             URLConnectionAdapter con = null;
             try {
                 con = br.openHeadConnection(dllink);
@@ -146,7 +150,11 @@ public class SuicidegirlsCom extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
                 if (con.getCompleteContentLength() > 0) {
-                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                    if (con.isContentDecoded()) {
+                        link.setDownloadSize(con.getCompleteContentLength());
+                    } else {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
                 }
                 if (filename == null) {
                     filename = getFileNameFromHeader(con);
@@ -158,8 +166,6 @@ public class SuicidegirlsCom extends PluginForHost {
                 } catch (final Throwable e) {
                 }
             }
-        } else {
-            link.setName(filename);
         }
         if (link.getFinalFileName() == null && filename != null) {
             link.setFinalFileName(filename);
@@ -169,7 +175,7 @@ public class SuicidegirlsCom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        requestFileInformation(link);
+        requestFileInformation(link, null, true);
         doFree(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
@@ -215,76 +221,69 @@ public class SuicidegirlsCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return FREE_MAXDOWNLOADS;
+        return Integer.MAX_VALUE;
     }
 
     public void login(final Account account, final boolean validateCookies) throws Exception {
         synchronized (account) {
-            try {
-                prepBR(br);
-                br.setCookiesExclusive(true);
-                final Cookies cookies = account.loadCookies("");
-                if (cookies != null) {
-                    br.setCookies(this.getHost(), cookies);
-                    if (!validateCookies) {
-                        logger.info("Trust cookies without checking");
-                        return;
-                    }
-                    logger.info("Checking login cookies");
-                    // do a test
-                    br.getPage("https://www." + this.getHost() + "/member/account/");
-                    if (br.containsHTML(">Log Out<")) {
-                        logger.info("Successfully logged in via cookies");
-                        account.saveCookies(br.getCookies(br.getHost()), "");
-                        return;
-                    } else {
-                        logger.info("Cookie login failed");
-                        br = prepBR(new Browser());
-                    }
+            prepBR(br);
+            br.setCookiesExclusive(true);
+            final Cookies cookies = account.loadCookies("");
+            if (cookies != null) {
+                br.setCookies(this.getHost(), cookies);
+                if (!validateCookies) {
+                    logger.info("Trust cookies without checking");
+                    return;
                 }
-                logger.info("Performing full login");
-                br.getPage("https://www." + this.getHost());
-                final Form loginform = br.getFormbyProperty("id", "login-form");
-                if (loginform == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                logger.info("Checking login cookies");
+                // do a test
+                br.getPage("https://www." + this.getHost() + "/member/account/");
+                if (isLoggedin(br)) {
+                    logger.info("Successfully logged in via cookies");
+                    account.saveCookies(br.getCookies(br.getHost()), "");
+                    return;
+                } else {
+                    logger.info("Cookie login failed");
+                    br.clearCookies(null);
+                    account.clearCookies("");
                 }
-                // login can contain recaptchav2
-                if (loginform.containsHTML("g-recaptcha") && loginform.containsHTML("data-sitekey")) {
-                    final DownloadLink dlinkbefore = this.getDownloadLink();
-                    if (dlinkbefore == null) {
-                        this.setDownloadLink(new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true));
-                    }
-                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br) {
-                        @Override
-                        public String getSiteKey() {
-                            return getSiteKey(loginform.getHtmlCode());
-                        };
-                    }.getToken();
-                    loginform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-                    if (dlinkbefore != null) {
-                        this.setDownloadLink(dlinkbefore);
-                    }
-                }
-                loginform.put("username", Encoding.urlEncode(account.getUser()));
-                loginform.put("password", Encoding.urlEncode(account.getPass()));
-                br.submitForm(loginform);
-                final String msg = PluginJSonUtils.getJsonValue(br, "message");
-                /* 2020-10-19: E.g. {"message":"Invalid username or password.","code":"invalid_credentials"} */
-                // br.postPage("", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" +
-                // Encoding.urlEncode(account.getPass()));
-                if (!StringUtils.isEmpty(msg)) {
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
-                }
-                account.saveCookies(br.getCookies(br.getHost()), "");
-            } catch (final PluginException e) {
-                account.clearCookies("");
-                throw e;
             }
+            logger.info("Performing full login");
+            br.getPage("https://www." + this.getHost());
+            final Form loginform = br.getFormbyProperty("id", "login-form");
+            if (loginform == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            // login can contain recaptchav2
+            if (loginform.containsHTML("g-recaptcha") && loginform.containsHTML("data-sitekey")) {
+                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br) {
+                    @Override
+                    public String getSiteKey() {
+                        return getSiteKey(loginform.getHtmlCode());
+                    };
+                }.getToken();
+                loginform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+            }
+            loginform.put("username", Encoding.urlEncode(account.getUser()));
+            loginform.put("password", Encoding.urlEncode(account.getPass()));
+            br.submitForm(loginform);
+            final String msg = PluginJSonUtils.getJsonValue(br, "message");
+            /* 2020-10-19: E.g. {"message":"Invalid username or password.","code":"invalid_credentials"} */
+            // br.postPage("", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" +
+            // Encoding.urlEncode(account.getPass()));
+            if (!StringUtils.isEmpty(msg)) {
+                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+            }
+            account.saveCookies(br.getCookies(br.getHost()), "");
         }
+    }
+
+    private boolean isLoggedin(final Browser br) {
+        return br.containsHTML(">\\s*Log Out\\s*<");
     }
 
     @Override
@@ -295,7 +294,7 @@ public class SuicidegirlsCom extends PluginForHost {
             br.getPage("https://www." + this.getHost() + "/member/account/");
         }
         ai.setUnlimitedTraffic();
-        String expire = br.getRegex("YOUR ACCOUNT IS CLOSING IN <a>(\\d+ weeks?, \\d+ days?)<").getMatch(0);
+        String expire = br.getRegex("YOUR ACCOUNT IS CLOSING IN\\s*<a>(\\d+ weeks?, \\d+ days?)<").getMatch(0);
         long expire_long = -1;
         if (expire != null) {
             final Regex info = new Regex(expire, "(\\d+) weeks?, (\\d+) days?");
@@ -311,12 +310,12 @@ public class SuicidegirlsCom extends PluginForHost {
         if (expire_long > -1) {
             ai.setValidUntil(expire_long);
             account.setType(AccountType.PREMIUM);
-            account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+            account.setMaxSimultanDownloads(getMaxSimultanPremiumDownloadNum());
             account.setConcurrentUsePossible(true);
         } else {
             // free account
             account.setType(AccountType.FREE);
-            account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
+            account.setMaxSimultanDownloads(getMaxSimultanFreeDownloadNum());
             account.setConcurrentUsePossible(false);
         }
         return ai;
@@ -325,7 +324,7 @@ public class SuicidegirlsCom extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         login(account, false);
-        requestFileInformation(link, account);
+        requestFileInformation(link, account, true);
         if (account.getType() == AccountType.FREE) {
             doFree(link, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
         } else {
@@ -374,10 +373,15 @@ public class SuicidegirlsCom extends PluginForHost {
     }
 
     public Browser prepBR(final Browser br) {
+        br.setFollowRedirects(true);
         br.setCookie(this.getHost(), "burlesque_ad_closed", "True");
         br.setCookie(this.getHost(), "django_language", "en");
-        br.setFollowRedirects(true);
         return br;
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return Integer.MAX_VALUE;
     }
 
     @Override

@@ -142,7 +142,12 @@ public class CivitaiCom extends PluginForHost {
         if (filesize != null) {
             link.setDownloadSize(filesize.longValue());
         }
-        final String directurlOriginal = br.getRegex("\"(https?://image\\.civitai\\.com/[^\"]+/original=true/[^\"]+)").getMatch(0);
+        /**
+         * 2024-03-11: Important: Do not open up the regex for original image too much or you run into risk of accidentally downloading the
+         * wrong image, see: </br>
+         * https://board.jdownloader.org/showthread.php?t=95419
+         */
+        final String directurlOriginal = br.getRegex("class=\"mantine-it6rft\" src=\"(https?://image\\.civitai\\.com/[^\"]+/original=true/[^\"]+)").getMatch(0);
         if (directurlOriginal != null) {
             /* Best case: We can download the original file. */
             link.setProperty(PROPERTY_DIRECTURL, directurlOriginal);

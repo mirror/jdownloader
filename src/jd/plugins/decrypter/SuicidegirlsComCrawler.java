@@ -23,6 +23,7 @@ import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.AccountRequiredException;
@@ -40,6 +41,13 @@ import jd.plugins.hoster.SuicidegirlsCom;
 public class SuicidegirlsComCrawler extends PluginForDecrypt {
     public SuicidegirlsComCrawler(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.setFollowRedirects(true);
+        return br;
     }
 
     private static final String TYPE_ALBUM = "https?://(?:www\\.)?suicidegirls\\.com/(?:girls|members)/[A-Za-z0-9\\-_]+/album/\\d+/[A-Za-z0-9\\-_]+/";
@@ -61,6 +69,10 @@ public class SuicidegirlsComCrawler extends PluginForDecrypt {
         } else if (size < 10000000) {
             return 7;
         } else {
+            /*
+             * 2023-03-11: This whole function can be replaced by StringUtils.getPadLength but I'm leaving it here just because of the
+             * djmakinera comment lol
+             */
             return 8;// hello djmakinera
         }
     }
@@ -71,15 +83,15 @@ public class SuicidegirlsComCrawler extends PluginForDecrypt {
         final boolean loggedin = ((jd.plugins.hoster.SuicidegirlsCom) plugin).login(br) != null;
         ((jd.plugins.hoster.SuicidegirlsCom) plugin).prepBR(br);
         br.setFollowRedirects(true);
-        br.getPage(param.getCryptedUrl());
+        final String contenturl = param.getCryptedUrl().replaceFirst("(?i)http://", "https://");
+        br.getPage(contenturl);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final ArrayList<String> dupecheck = new ArrayList<String>();
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         if (br.containsHTML("class=\"album-join-message\"")) {
-            logger.info("User added member-only url but has no (valid) account");
-            return decryptedLinks;
+            throw new AccountRequiredException();
         }
         final Regex urlinfo = new Regex(param.getCryptedUrl(), "(girls|members)/([A-Za-z0-9\\-_]+)/");
         final String member_type = urlinfo.getMatch(0);
@@ -112,7 +124,7 @@ public class SuicidegirlsComCrawler extends PluginForDecrypt {
                 dl.setAvailable(true);
                 dl.setContentUrl(directlink);
                 dl.setMimeHint(CompiledFiletypeFilter.ImageExtensions.BMP);
-                decryptedLinks.add(dl);
+                ret.add(dl);
             }
         } else {
             /* TYPE_USER */
@@ -124,7 +136,7 @@ public class SuicidegirlsComCrawler extends PluginForDecrypt {
             do {
                 if (this.isAbort()) {
                     logger.info("Decryption aborted by user");
-                    return decryptedLinks;
+                    return ret;
                 }
                 addedlinks = 0;
                 if (addedlinks_total > 0) {
@@ -142,21 +154,21 @@ public class SuicidegirlsComCrawler extends PluginForDecrypt {
                     final String final_album_url = "https://www." + this.getHost() + singleLink;
                     if (!dupecheck.contains(final_album_url)) {
                         dupecheck.add(final_album_url);
-                        decryptedLinks.add(createDownloadlink(final_album_url));
+                        ret.add(createDownloadlink(final_album_url));
                         addedlinks++;
                         addedlinks_total++;
                     }
                 }
             } while (addedlinks >= max_entries_per_page);
-            if (decryptedLinks.size() == 0) {
+            if (ret.size() == 0) {
                 return null;
             }
         }
         if (fpName != null) {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName.trim()));
-            fp.addLinks(decryptedLinks);
+            fp.addLinks(ret);
         }
-        return decryptedLinks;
+        return ret;
     }
 }
