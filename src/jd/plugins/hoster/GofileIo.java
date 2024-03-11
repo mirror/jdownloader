@@ -16,6 +16,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -38,6 +39,7 @@ import jd.config.ConfigEntry;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.http.requests.GetRequest;
+import jd.http.requests.PostRequest;
 import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -107,14 +109,17 @@ public class GofileIo extends PluginForHost {
                 if (token == null) {
                     /* 2024-01-26 */
                     token = brc.getRegex("fetchData\\.wt\\s*(?::|=)\\s*\"(.*?)\"").getMatch(0);
+                    if (token == null) {
+                        /* 2024-03-11 */
+                        token = brc.getRegex("wt\\s*:\\s*\"([^\"]+)").getMatch(0);
+                    }
                 }
                 if (StringUtils.isEmpty(token)) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                } else {
-                    WEBSITE_TOKEN.set(token);
-                    WEBSITE_TOKEN_TIMESTAMP.set(Time.systemIndependentCurrentJVMTimeMillis());
-                    return token;
                 }
+                WEBSITE_TOKEN.set(token);
+                WEBSITE_TOKEN_TIMESTAMP.set(Time.systemIndependentCurrentJVMTimeMillis());
+                return token;
             }
         }
     }
@@ -128,21 +133,29 @@ public class GofileIo extends PluginForHost {
                 token = existingToken;
             } else {
                 final Browser brc = br.cloneBrowser();
-                final GetRequest req = brc.createGetRequest("https://api." + plugin.getHost() + "/createAccount");
-                req.getHeaders().put(new HTTPHeader(HTTPConstants.HEADER_REQUEST_ORIGIN, "https://" + plugin.getHost()));
-                req.getHeaders().put(new HTTPHeader(HTTPConstants.HEADER_REQUEST_REFERER, "https://" + plugin.getHost()));
-                brc.getPage(req);
-                final Map<String, Object> response = JSonStorage.restoreFromString(brc.toString(), TypeRef.MAP);
+                final boolean usePOST = true;
+                if (usePOST) {
+                    /* 2024-03-11: New */
+                    final PostRequest req = brc.createJSonPostRequest("https://api." + plugin.getHost() + "/accounts", new HashMap<String, Object>());
+                    req.getHeaders().put(new HTTPHeader(HTTPConstants.HEADER_REQUEST_ORIGIN, "https://" + plugin.getHost()));
+                    req.getHeaders().put(new HTTPHeader(HTTPConstants.HEADER_REQUEST_REFERER, "https://" + plugin.getHost()));
+                    brc.getPage(req);
+                } else {
+                    final GetRequest req = brc.createGetRequest("https://api." + plugin.getHost() + "/createAccount");
+                    req.getHeaders().put(new HTTPHeader(HTTPConstants.HEADER_REQUEST_ORIGIN, "https://" + plugin.getHost()));
+                    req.getHeaders().put(new HTTPHeader(HTTPConstants.HEADER_REQUEST_REFERER, "https://" + plugin.getHost()));
+                    brc.getPage(req);
+                }
+                final Map<String, Object> response = JSonStorage.restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.MAP);
                 if (!"ok".equalsIgnoreCase(response.get("status").toString())) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 token = JavaScriptEngineFactory.walkJson(response, "data/token").toString();
                 if (StringUtils.isEmpty(token)) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                } else {
-                    TOKEN.set(token);
-                    TOKEN_TIMESTAMP.set(Time.systemIndependentCurrentJVMTimeMillis());
                 }
+                TOKEN.set(token);
+                TOKEN_TIMESTAMP.set(Time.systemIndependentCurrentJVMTimeMillis());
             }
             br.setCookie(plugin.getHost(), "accountToken", token);
             return token;
@@ -178,6 +191,7 @@ public class GofileIo extends PluginForHost {
             /* This should never happen! */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        /* TODO: 2024-03-11: Use crawler plugin to be able to remove all the duplicated code down below. */
         final UrlQuery query = new UrlQuery();
         query.add("contentId", folderID);
         query.add("token", Encoding.urlEncode(token));
@@ -196,7 +210,7 @@ public class GofileIo extends PluginForHost {
                 /* E.g. first try and password is available from when user added folder via crawler. */
                 query.addAndReplace("password", JDHash.getSHA256(link.getDownloadPassword()));
             }
-            final GetRequest req = br.createGetRequest("https://api." + this.getHost() + "/getContent?" + query.toString());
+            final GetRequest req = br.createGetRequest("https://api." + this.getHost() + "/contents/" + folderID + "?" + query.toString());
             req.getHeaders().put(new HTTPHeader(HTTPConstants.HEADER_REQUEST_ORIGIN, "https://" + this.getHost()));
             req.getHeaders().put(new HTTPHeader(HTTPConstants.HEADER_REQUEST_REFERER, "https://" + this.getHost()));
             brc.getPage(req);
@@ -239,9 +253,13 @@ public class GofileIo extends PluginForHost {
             final String internalFileID = link.getStringProperty(PROPERTY_INTERNAL_FILEID);
             final String shortFileID = getShortFileIDFromURL(link);
             final Map<String, Object> data = (Map<String, Object>) response.get("data");
-            final Map<String, Map<String, Object>> files = (Map<String, Map<String, Object>>) data.get("contents");
+            Map<String, Map<String, Object>> files = (Map<String, Map<String, Object>>) data.get("contents");
             if (files == null || files.isEmpty()) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            if (files == null) {
+                /* 2024-03-11 */
+                files = (Map<String, Map<String, Object>>) data.get("children");
             }
             Map<String, Object> result = null;
             Map<String, Object> resultByShortFileID = null;
@@ -277,18 +295,21 @@ public class GofileIo extends PluginForHost {
                 final Browser br2 = br.cloneBrowser();
                 br2.setFollowRedirects(true);
                 con = br2.openHeadConnection(dllink);
-                if (this.looksLikeDownloadableContent(con)) {
-                    if (con.getCompleteContentLength() > 0) {
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
-                    }
-                    final String serverFilename = Plugin.getFileNameFromDispositionHeader(con);
-                    if (serverFilename != null) {
-                        link.setFinalFileName(serverFilename);
-                    }
-                    return dllink;
-                } else {
+                if (!this.looksLikeDownloadableContent(con)) {
                     throw new IOException();
                 }
+                if (con.getCompleteContentLength() > 0) {
+                    if (con.isContentDecoded()) {
+                        link.setDownloadSize(con.getCompleteContentLength());
+                    } else {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
+                }
+                final String serverFilename = Plugin.getFileNameFromDispositionHeader(con);
+                if (serverFilename != null) {
+                    link.setFinalFileName(serverFilename);
+                }
+                return dllink;
             } catch (final Exception e) {
                 logger.log(e);
                 return null;

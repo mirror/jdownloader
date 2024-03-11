@@ -76,10 +76,11 @@ public class WorkuploadComFolder extends PluginForDecrypt {
                 throw new DecrypterException(DecrypterException.PASSWORD);
             }
         }
-        String foldername = br.getRegex("<td>Archivname[^<]*</td><td>([^<]+)").getMatch(0);
-        final String[] htmls = br.getRegex("<div class=\"frame\">.*?class=\"filedownload\"").getColumn(-1);
-        if (htmls == null || htmls.length == 0) {
-            if (br.containsHTML(folderID + "\\s*0\\.00 B")) {
+        final boolean looksLikeBrokenOrOfflineFolder = br.containsHTML(folderID + "\\s*0\\.00 B");
+        String foldername = br.getRegex("<td>\\s*Archivname[^<]*</td><td>([^<]+)").getMatch(0);
+        final String tablehtml = br.getRegex("<table[^>]*>(.*?)</table>").getMatch(0);
+        if (tablehtml == null) {
+            if (looksLikeBrokenOrOfflineFolder) {
                 /**
                  * 2023-12-01: Broken/offline item e.g. https://workupload.com/archive/2WvJvPpS </br>
                  * -> Folder with single 0kb file linking to itself
@@ -89,34 +90,53 @@ public class WorkuploadComFolder extends PluginForDecrypt {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        for (final String singleHTML : htmls) {
-            final String url = new Regex(singleHTML, "(/file/[^\"]+)").getMatch(0);
-            String filename = new Regex(singleHTML, "class=\"filename[^\"]*?\">\\s*?<p>([^<>\"]+)<").getMatch(0);
-            if (filename == null) {
-                filename = new Regex(singleHTML, "class=\"filecontent\"[^>]*data-content=\"([^\"]+)\"").getMatch(0);
+        final String[] htmls = tablehtml.split("</tr>");
+        if (htmls != null && htmls.length > 0) {
+            for (final String singleHTML : htmls) {
+                final String url = new Regex(singleHTML, "(/file/[^\"]+)").getMatch(0);
+                String filename = new Regex(singleHTML, "class=\"filename[^\"]*?\">\\s*?<p>([^<>\"]+)<").getMatch(0);
+                if (filename == null) {
+                    filename = new Regex(singleHTML, "class=\"filecontent\"[^>]*data-content=\"([^\"]+)\"").getMatch(0);
+                    if (filename == null) {
+                        /* 2024-03-11 */
+                        filename = new Regex(singleHTML, "class=\"vertical-middle td-overflow\"><b>([^<]+)</b>").getMatch(0);
+                    }
+                }
+                String filesize = new Regex(singleHTML, "class=\"filesize[^\"]*?\">([^<>\"]+)<").getMatch(0);
+                if (filesize == null) {
+                    /* 2024-03-11 */
+                    filesize = new Regex(singleHTML, "class=\"vertical-middle text-right\">\\s*(\\d+[^<]+)</td>").getMatch(0);
+                }
+                if (url == null) {
+                    logger.warning("Skipping invalid html snippet: " + singleHTML);
+                    continue;
+                }
+                final DownloadLink dl = createDownloadlink(br.getURL(url).toExternalForm());
+                if (filename != null) {
+                    filename = Encoding.htmlDecode(filename).trim();
+                    dl.setName(filename);
+                } else {
+                    logger.warning("Filename regex failed");
+                }
+                if (filesize != null) {
+                    dl.setDownloadSize(SizeFormatter.getSize(filesize));
+                } else {
+                    logger.warning("Filesize regex failed");
+                }
+                if (passCode != null) {
+                    /* All single files are protected with the same password. */
+                    dl.setDownloadPassword(passCode, true);
+                }
+                dl.setAvailable(true);
+                ret.add(dl);
             }
-            final String filesize = new Regex(singleHTML, "class=\"filesize[^\"]*?\">([^<>\"]+)<").getMatch(0);
-            if (url == null) {
-                logger.warning("Skipping invalid html snippet: " + singleHTML);
-                continue;
-            }
-            final DownloadLink dl = createDownloadlink(br.getURL(url).toExternalForm());
-            if (filename != null) {
-                dl.setName(filename);
+        }
+        if (ret.isEmpty()) {
+            if (looksLikeBrokenOrOfflineFolder) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else {
-                logger.warning("Filename regex failed");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            if (filesize != null) {
-                dl.setDownloadSize(SizeFormatter.getSize(filesize));
-            } else {
-                logger.warning("Filesize regex failed");
-            }
-            if (passCode != null) {
-                /* All single files are protected with the same password. */
-                dl.setDownloadPassword(passCode, true);
-            }
-            dl.setAvailable(true);
-            ret.add(dl);
         }
         final FilePackage fp = FilePackage.getInstance();
         if (foldername != null) {

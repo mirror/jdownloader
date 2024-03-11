@@ -247,7 +247,7 @@ public class LibGenCrawler extends PluginForDecrypt {
                     /* This is the better packagename! */
                     title = book.getName();
                 }
-                if (urls.length > 0) {
+                if (urls != null && urls.length > 0) {
                     for (final String url : urls) {
                         if (this.canHandle(url) && url.contains(md5)) {
                             ret.add(createDownloadlink(url));

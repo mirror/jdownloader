@@ -115,7 +115,7 @@ public class AdultempireCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return Integer.MAX_VALUE;
     }
 
     public boolean login(final Account account, final boolean force) throws Exception {
@@ -134,7 +134,7 @@ public class AdultempireCom extends PluginForHost {
                 if (this.isLoggedin(br)) {
                     logger.info("Cookie login successful");
                     /* Refresh cookie timestamp */
-                    account.saveCookies(this.br.getCookies(br.getHost()), "");
+                    account.saveCookies(br.getCookies(br.getHost()), "");
                     return true;
                 } else {
                     logger.info("Cookie login failed");

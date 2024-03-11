@@ -179,7 +179,7 @@ public class ArchiveOrg extends PluginForHost {
         }
         final int playlistPosition = link.getIntegerProperty(PROPERTY_PLAYLIST_POSITION, -1);
         String fileExtension = Plugin.getFileNameExtensionFromString(originalFilename);
-        if (fileExtension.startsWith(".")) {
+        if (fileExtension != null && fileExtension.startsWith(".")) {
             fileExtension = fileExtension.substring(1);
         }
         final ExtensionsFilterInterface fileType = CompiledFiletypeFilter.getExtensionsFilterInterface(fileExtension);

@@ -84,7 +84,7 @@ public class TwojplikPl extends PluginForHost {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/([A-Z0-9\\-]+)/([^/#\\?]+)");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/([A-Z0-9\\-]+)(/([^/#\\?]+))?");
         }
         return ret.toArray(new String[0]);
     }
@@ -111,11 +111,21 @@ public class TwojplikPl extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        if (!link.isNameSet()) {
+            final Regex urlinfo = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks());
+            final String fileid = urlinfo.getMatch(0);
+            final String filenameFromURL = urlinfo.getMatch(2);
+            if (filenameFromURL != null) {
+                link.setName(Encoding.htmlDecode(filenameFromURL).trim());
+            } else {
+                link.setName(fileid);
+            }
+        }
         br.getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filesize = br.getRegex("File Size:<br> ([^<>\"]+)<").getMatch(0);
+        String filesize = br.getRegex("File Size:\\s*<br> ([^<>\"]+)<").getMatch(0);
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
         }

@@ -53,11 +53,11 @@ public class GoFileIoCrawler extends PluginForDecrypt {
                 }
                 query.addAndReplace("password", JDHash.getSHA256(passCode));
             }
-            final GetRequest req = br.createGetRequest("https://api." + this.getHost() + "/getContent?" + query.toString());
+            final GetRequest req = br.createGetRequest("https://api." + this.getHost() + "/contents/" + folderID + "?" + query.toString());
             req.getHeaders().put(new HTTPHeader(HTTPConstants.HEADER_REQUEST_ORIGIN, "https://" + this.getHost()));
             req.getHeaders().put(new HTTPHeader(HTTPConstants.HEADER_REQUEST_REFERER, "https://" + this.getHost()));
             brc.getPage(req);
-            response = restoreFromString(brc.toString(), TypeRef.MAP);
+            response = restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.MAP);
             if ("error-passwordRequired".equals(response.get("status")) || "error-passwordWrong".equals(response.get("status"))) {
                 passwordRequired = true;
                 passwordCorrect = false;
@@ -110,7 +110,11 @@ public class GoFileIoCrawler extends PluginForDecrypt {
             fp.setName(path);
         }
         final String parentFolderShortID = data.get("code").toString();
-        final Map<String, Map<String, Object>> files = (Map<String, Map<String, Object>>) data.get("contents");
+        Map<String, Map<String, Object>> files = (Map<String, Map<String, Object>>) data.get("contents");
+        if (files == null) {
+            /* 2024-03-11 */
+            files = (Map<String, Map<String, Object>>) data.get("children");
+        }
         for (final Entry<String, Map<String, Object>> item : files.entrySet()) {
             final Map<String, Object> entry = item.getValue();
             final String type = (String) entry.get("type");
