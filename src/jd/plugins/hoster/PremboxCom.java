@@ -23,6 +23,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.ConditionalSkipReasonException;
+import org.jdownloader.plugins.WaitingSkipReason;
+import org.jdownloader.plugins.WaitingSkipReason.CAUSE;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -40,13 +47,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.ConditionalSkipReasonException;
-import org.jdownloader.plugins.WaitingSkipReason;
-import org.jdownloader.plugins.WaitingSkipReason.CAUSE;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "prembox.com" }, urls = { "" })
 public class PremboxCom extends PluginForHost {
@@ -485,47 +485,48 @@ public class PremboxCom extends PluginForHost {
                 errorDescription = errorDescriptionList.get(0);
             }
         }
-        if (!success) {
-            if (error.equalsIgnoreCase("loginFailed") || error.equalsIgnoreCase("invalidLoginOrPassword")) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-            } else if (error.equalsIgnoreCase("fileNotFound")) {
-                /* 2017-04-24: Do not trust their 'File not found' errormessage! */
-                mhm.handleErrorGeneric(account, this.getDownloadLink(), "api_dummy_file_not_found", 10);
-            } else if (error.equalsIgnoreCase("invalidAccount")) {
+        if (success) {
+            /* No error */
+            return;
+        }
+        if (error.equalsIgnoreCase("loginFailed") || error.equalsIgnoreCase("invalidLoginOrPassword")) {
+            throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+        } else if (error.equalsIgnoreCase("fileNotFound")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (error.equalsIgnoreCase("invalidAccount")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Cannot download this file with this account", 3 * 60 * 1000l);
+        } else if (error.equalsIgnoreCase("invalidUrl")) {
+            if (StringUtils.containsIgnoreCase(errorDescription, "File size cannot be lower than")) {
+                /* 2017-05-04 */
+                /* E.g. {"success":false,"error":"invalidUrl","errorDescr":["File size cannot be lower than 8 KB",""]} */
+                /* --> Skip this URL but do not disable the complete host! */
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Cannot download this file with this account", 3 * 60 * 1000l);
-            } else if (error.equalsIgnoreCase("invalidUrl")) {
-                if (StringUtils.containsIgnoreCase(errorDescription, "File size cannot be lower than")) {
-                    /* 2017-05-04 */
-                    /* E.g. {"success":false,"error":"invalidUrl","errorDescr":["File size cannot be lower than 8 KB",""]} */
-                    /* --> Skip this URL but do not disable the complete host! */
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Cannot download this file with this account", 3 * 60 * 1000l);
-                } else if (StringUtils.containsIgnoreCase(errorDescription, "Maximum supported file size in direct download mode is")) {
-                    /* 2021-09-16: Typically "Maximum supported file size in direct download mode is 15 GB" */
-                    if (this.getDownloadLink().hasProperty(PROPERTY_ENFORCE_CLOUD_DOWNLOAD)) {
-                        /* This should never happen! */
-                        mhm.putError(account, this.getDownloadLink(), 5 * 60 * 1000l, errorDescription);
-                    } else {
-                        /* 2021-09-16: Workaround for API design flaw. */
-                        this.getDownloadLink().setProperty(PROPERTY_ENFORCE_CLOUD_DOWNLOAD, true);
-                        throw new PluginException(LinkStatus.ERROR_RETRY, "Retry with cloud download instead of direct download");
-                    }
+            } else if (StringUtils.containsIgnoreCase(errorDescription, "Maximum supported file size in direct download mode is")) {
+                /* 2021-09-16: Typically "Maximum supported file size in direct download mode is 15 GB" */
+                if (this.getDownloadLink().hasProperty(PROPERTY_ENFORCE_CLOUD_DOWNLOAD)) {
+                    /* This should never happen! */
+                    mhm.putError(account, this.getDownloadLink(), 5 * 60 * 1000l, errorDescription);
                 } else {
-                    mhm.putError(account, this.getDownloadLink(), 3 * 60 * 1000l, "Host unsupported ?!");
+                    /* 2021-09-16: Workaround for API design flaw. */
+                    this.getDownloadLink().setProperty(PROPERTY_ENFORCE_CLOUD_DOWNLOAD, true);
+                    throw new PluginException(LinkStatus.ERROR_RETRY, "Retry with cloud download instead of direct download");
                 }
-            } else if (error.equalsIgnoreCase("tooManyConcurrentDownloads")) {
-                throw new AccountUnavailableException("Too many concurrent downloads with this account", 30 * 1000l);
-            } else if (error.equalsIgnoreCase("notPossibleToDownload")) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Cannot download this file with this account at the moment", 3 * 60 * 1000l);
-            } else if (error.equalsIgnoreCase("emptyUrl") || error.equalsIgnoreCase("tooLongUrl")) {
-                /* This one should never happen! */
-                mhm.handleErrorGeneric(account, this.getDownloadLink(), "Empty or too long URL", 10);
             } else {
-                logger.info("Unknown error happened: " + error);
-                if (this.getDownloadLink() == null) {
-                    throw new AccountUnavailableException(error, 5 * 60 * 1000l);
-                } else {
-                    mhm.handleErrorGeneric(account, this.getDownloadLink(), error, 50);
-                }
+                mhm.putError(account, this.getDownloadLink(), 3 * 60 * 1000l, "Host unsupported ?!");
+            }
+        } else if (error.equalsIgnoreCase("tooManyConcurrentDownloads")) {
+            throw new AccountUnavailableException("Too many concurrent downloads with this account", 30 * 1000l);
+        } else if (error.equalsIgnoreCase("notPossibleToDownload")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Cannot download this file with this account at the moment", 3 * 60 * 1000l);
+        } else if (error.equalsIgnoreCase("emptyUrl") || error.equalsIgnoreCase("tooLongUrl")) {
+            /* This one should never happen! */
+            mhm.handleErrorGeneric(account, this.getDownloadLink(), "Empty or too long URL", 10);
+        } else {
+            logger.info("Unknown error happened: " + error);
+            if (this.getDownloadLink() == null) {
+                throw new AccountUnavailableException(error, 5 * 60 * 1000l);
+            } else {
+                mhm.handleErrorGeneric(account, this.getDownloadLink(), error, 50);
             }
         }
     }

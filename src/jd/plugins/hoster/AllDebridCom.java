@@ -534,7 +534,7 @@ public class AllDebridCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, message, 30 * 1000l);
         } else if (code.equalsIgnoreCase("LINK_DOWN")) {
             /* URL is offline according to multihoster --> Do not trust this error --> Skip to next download candidate instead! */
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Untrusted offline error", 5 * 60 * 1000l);
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (code.equalsIgnoreCase("LINK_PASS_PROTECTED")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "URL is password protected", 5 * 60 * 1000l);
         } else if (code.equalsIgnoreCase("LINK_HOST_UNAVAILABLE")) {

@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
@@ -259,7 +260,7 @@ public class VscoCo extends PluginForHost {
                 }
                 if (useragent != null) {
                     /* Special User-Agent value present: Set it and save it on account for later usage. */
-                    br.getHeaders().put("User-Agent", useragent);
+                    br.getHeaders().put(HTTPConstants.HEADER_REQUEST_USER_AGENT, useragent);
                     account.setProperty("lastUsedUserAgent", useragent);
                 }
                 if (!force) {

@@ -230,7 +230,7 @@ public class OkRu extends PluginForHost {
         }
         if (title != null) {
             title = Encoding.htmlDecode(title).trim();
-            link.setFinalFileName(this.correctOrApplyFileNameExtension(title, extDefault));
+            link.setFinalFileName(title + extDefault);
         }
         // final String url_quality = new Regex(dllink, "(st.mq=\\d+)").getMatch(0);
         // if (url_quality != null) {
@@ -248,12 +248,14 @@ public class OkRu extends PluginForHost {
             try {
                 con = br.openHeadConnection(dllink);
                 handleConnectionErrors(br, con);
-                if (con.getCompleteContentLength() > 0) {
+                if (con.isContentDecoded()) {
+                    link.setDownloadSize(con.getCompleteContentLength());
+                } else {
                     link.setVerifiedFileSize(con.getCompleteContentLength());
                 }
                 final String ext = Plugin.getExtensionFromMimeTypeStatic(con.getContentType());
                 if (ext != null) {
-                    link.setFinalFileName(this.correctOrApplyFileNameExtension(title, "." + ext));
+                    link.setFinalFileName(title + extDefault);
                 }
             } finally {
                 try {
@@ -305,7 +307,7 @@ public class OkRu extends PluginForHost {
     }
 
     public static boolean offlineBecauseOfDMCA(final Browser br) {
-        return br.containsHTML(">Video has been blocked due to author's rights infingement<|>The video is blocked<|>Group, where this video was posted, has not been found");
+        return br.containsHTML(">\\s*Video has been blocked due to author's rights infingement\\s*<|>\\s*The video is blocked\\s*<|>\\s*Group, where this video was posted, has not been found");
     }
 
     @Override
@@ -378,52 +380,46 @@ public class OkRu extends PluginForHost {
 
     public boolean login(final Account account, final boolean force) throws Exception {
         synchronized (account) {
-            try {
-                br.setFollowRedirects(true);
-                br.setCookiesExclusive(true);
-                prepBR(this.br);
-                final Cookies cookies = account.loadCookies("");
-                if (cookies != null) {
-                    logger.info("Attempting cookie login");
-                    this.br.setCookies(this.getHost(), cookies);
-                    if (!force) {
-                        logger.info("Trust cookies without login");
-                        return false;
-                    }
-                    br.getPage("https://" + this.getHost() + "/");
-                    if (isLoggedin(br)) {
-                        logger.info("Cookie login successful");
-                        /* Refresh cookie timestamp */
-                        account.saveCookies(this.br.getCookies(this.getHost()), "");
-                        return true;
-                    } else {
-                        logger.info("Cookie login failed");
-                        br.clearCookies(br.getHost());
-                    }
+            br.setFollowRedirects(true);
+            br.setCookiesExclusive(true);
+            prepBR(this.br);
+            final Cookies cookies = account.loadCookies("");
+            if (cookies != null) {
+                logger.info("Attempting cookie login");
+                this.br.setCookies(this.getHost(), cookies);
+                if (!force) {
+                    logger.info("Trust cookies without login");
+                    return false;
                 }
-                logger.info("Performing full login");
-                br.getPage("https://" + this.getHost());
-                final Form loginform = br.getFormbyActionRegex(".*AnonymLogin.*");
-                if (loginform == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                loginform.put("st.email", Encoding.urlEncode(account.getUser()));
-                loginform.put("st.password", Encoding.urlEncode(account.getPass()));
-                if (loginform.hasInputFieldByName("st.st.flashVer")) {
-                    loginform.put("st.st.flashVer", "0.0.0");
-                }
-                br.submitForm(loginform);
-                if (!isLoggedin(br)) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-                account.saveCookies(this.br.getCookies(this.getHost()), "");
-                return true;
-            } catch (final PluginException e) {
-                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                br.getPage("https://" + this.getHost() + "/");
+                if (isLoggedin(br)) {
+                    logger.info("Cookie login successful");
+                    /* Refresh cookie timestamp */
+                    account.saveCookies(this.br.getCookies(this.getHost()), "");
+                    return true;
+                } else {
+                    logger.info("Cookie login failed");
+                    br.clearCookies(null);
                     account.clearCookies("");
                 }
-                throw e;
             }
+            logger.info("Performing full login");
+            br.getPage("https://" + this.getHost());
+            final Form loginform = br.getFormbyActionRegex(".*AnonymLogin.*");
+            if (loginform == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            loginform.put("st.email", Encoding.urlEncode(account.getUser()));
+            loginform.put("st.password", Encoding.urlEncode(account.getPass()));
+            if (loginform.hasInputFieldByName("st.st.flashVer")) {
+                loginform.put("st.st.flashVer", "0.0.0");
+            }
+            br.submitForm(loginform);
+            if (!isLoggedin(br)) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+            account.saveCookies(this.br.getCookies(this.getHost()), "");
+            return true;
         }
     }
 
