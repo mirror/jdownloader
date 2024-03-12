@@ -16,10 +16,10 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
@@ -30,7 +30,6 @@ import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.Time;
 import org.appwork.utils.net.HTTPHeader;
-import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -40,10 +39,10 @@ import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.http.requests.GetRequest;
 import jd.http.requests.PostRequest;
-import jd.nutils.JDHash;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
+import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -51,6 +50,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.decrypter.GoFileIoCrawler;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "gofile.io" }, urls = { "" })
 public class GofileIo extends PluginForHost {
@@ -73,7 +73,6 @@ public class GofileIo extends PluginForHost {
     }
 
     /* Connection stuff */
-    private static final boolean       FREE_RESUME                                                  = true;
     private static final int           FREE_MAXCHUNKS                                               = -2;
     private static final String        PROPERTY_DANGEROUS_FILE                                      = "dangerous_file";
     private static final String        PROPERTY_DIRECTURL                                           = "directurl";
@@ -85,9 +84,18 @@ public class GofileIo extends PluginForHost {
     /* Don't touch the following! */
     private static final AtomicInteger freeRunning                                                  = new AtomicInteger(0);
 
-    /** TODO: Implement official API once available: https://gofile.io/?t=api . The "API" used here is only their website. */
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public boolean isResumeable(final DownloadLink link, final Account account) {
+        return true;
+    }
+
+    /**
+     * TODO: Implement official API once available: https://gofile.io/?t=api . The "API" used here is only their website.
+     *
+     * @throws Exception
+     */
+    @Override
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         return this.requestFileInformation(link, false);
     }
 
@@ -124,7 +132,7 @@ public class GofileIo extends PluginForHost {
         }
     }
 
-    public static String getToken(final Plugin plugin, final Browser br) throws IOException, PluginException {
+    public static String getAndSetToken(final Plugin plugin, final Browser br) throws IOException, PluginException {
         synchronized (TOKEN) {
             final String existingToken = TOKEN.get();
             String token = null;
@@ -133,8 +141,8 @@ public class GofileIo extends PluginForHost {
                 token = existingToken;
             } else {
                 final Browser brc = br.cloneBrowser();
-                final boolean usePOST = true;
-                if (usePOST) {
+                final boolean usePOSTRequest = true;
+                if (usePOSTRequest) {
                     /* 2024-03-11: New */
                     final PostRequest req = brc.createJSonPostRequest("https://api." + plugin.getHost() + "/accounts", new HashMap<String, Object>());
                     req.getHeaders().put(new HTTPHeader(HTTPConstants.HEADER_REQUEST_ORIGIN, "https://" + plugin.getHost()));
@@ -176,11 +184,11 @@ public class GofileIo extends PluginForHost {
         }
     }
 
-    public AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         /* 2021-11-30: Token cookie is even needed to check directURLs! */
-        final String token = getToken(this, this.br);
+        getAndSetToken(this, br);
         final boolean allowDirecturlLinkcheck = true;
         if (allowDirecturlLinkcheck && this.checkDirectLink(link, PROPERTY_DIRECTURL) != null) {
             logger.info("Availablecheck via directurl complete");
@@ -191,100 +199,30 @@ public class GofileIo extends PluginForHost {
             /* This should never happen! */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        /* TODO: 2024-03-11: Use crawler plugin to be able to remove all the duplicated code down below. */
-        final UrlQuery query = new UrlQuery();
-        query.add("contentId", folderID);
-        query.add("token", Encoding.urlEncode(token));
-        query.add("wt", getWebsiteToken(this, br));
-        String passCode = null;
-        boolean passwordCorrect = true;
-        boolean passwordRequired = false;
-        int attempt = 0;
-        final Browser brc = br.cloneBrowser();
-        Map<String, Object> response = null;
-        do {
-            if (passwordRequired) {
-                passCode = getUserInput("Password?", link);
-                query.addAndReplace("password", JDHash.getSHA256(passCode));
-            } else if (link.getDownloadPassword() != null) {
-                /* E.g. first try and password is available from when user added folder via crawler. */
-                query.addAndReplace("password", JDHash.getSHA256(link.getDownloadPassword()));
-            }
-            final GetRequest req = br.createGetRequest("https://api." + this.getHost() + "/contents/" + folderID + "?" + query.toString());
-            req.getHeaders().put(new HTTPHeader(HTTPConstants.HEADER_REQUEST_ORIGIN, "https://" + this.getHost()));
-            req.getHeaders().put(new HTTPHeader(HTTPConstants.HEADER_REQUEST_REFERER, "https://" + this.getHost()));
-            brc.getPage(req);
-            response = restoreFromString(brc.toString(), TypeRef.MAP);
-            if ("error-passwordRequired".equals(response.get("status")) || "error-passwordWrong".equals(response.get("status"))) {
-                if (!isDownload) {
-                    /*
-                     * Do not ask for passwords during linkcheck! Also we now know that the folder is online but we can't know if the file
-                     * we want still exists!
-                     */
-                    return AvailableStatus.UNCHECKABLE;
-                }
-                passwordRequired = true;
-                passwordCorrect = false;
-                attempt += 1;
-                if (attempt >= 3) {
-                    logger.info("Password retry attempt exhausted");
-                    break;
-                } else {
-                    continue;
-                }
-            } else {
-                passwordCorrect = true;
+        /* Re-crawl folder item in order to obtain a fresh direct-downloadable URL. */
+        final GoFileIoCrawler crawler = (GoFileIoCrawler) this.getNewPluginForDecryptInstance(this.getHost());
+        final CryptedLink cl = new CryptedLink(this.getPluginContentURL(link));
+        /* Make sure that user is not asked for password again if we already know it. */
+        cl.setDecrypterPassword(link.getDownloadPassword());
+        final ArrayList<DownloadLink> crawlerResults = crawler.decryptIt(cl, null);
+        DownloadLink freshLink = null;
+        for (final DownloadLink result : crawlerResults) {
+            if (StringUtils.equals(this.getLinkID(link), this.getLinkID(result))) {
+                freshLink = result;
                 break;
             }
-        } while (!this.isAbort());
-        if (passwordRequired && !passwordCorrect) {
-            link.setDownloadPassword(null);
-            throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
         }
-        /* Save for the next time. */
-        if (passCode != null) {
-            link.setDownloadPassword(passCode);
+        if (freshLink == null) {
+            /* File must have been deleted from folder */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if ("ok".equals(response.get("status"))) {
-            /*
-             * fileID is needed to find the correct files if multiple ones are in a 'folder'. If this is not available we most likely only
-             * have a single file.
-             */
-            final String internalFileID = link.getStringProperty(PROPERTY_INTERNAL_FILEID);
-            final String shortFileID = getShortFileIDFromURL(link);
-            final Map<String, Object> data = (Map<String, Object>) response.get("data");
-            Map<String, Map<String, Object>> files = (Map<String, Map<String, Object>>) data.get("contents");
-            if (files == null || files.isEmpty()) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            if (files == null) {
-                /* 2024-03-11 */
-                files = (Map<String, Map<String, Object>>) data.get("children");
-            }
-            Map<String, Object> result = null;
-            Map<String, Object> resultByShortFileID = null;
-            for (Entry<String, Map<String, Object>> file : files.entrySet()) {
-                final String id = file.getKey();
-                final Map<String, Object> map = file.getValue();
-                if (id.equals(internalFileID)) {
-                    result = map;
-                    break;
-                } else if (shortFileID != null && id.startsWith(shortFileID)) {
-                    resultByShortFileID = map;
-                }
-            }
-            if (result == null && resultByShortFileID != null) {
-                logger.info("Using resultByShortFileID");
-                result = resultByShortFileID;
-            }
-            if (result == null) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else {
-                parseFileInfo(link, result);
-                return AvailableStatus.TRUE;
-            }
+        /* Set property of fresh directurl. */
+        link.setProperty(PROPERTY_DIRECTURL, freshLink.getProperty(PROPERTY_DIRECTURL));
+        /* Set password we got from our crawler results just in case it has changed. */
+        if (freshLink.getDownloadPassword() != null) {
+            link.setDownloadPassword(freshLink.getDownloadPassword());
         }
-        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        return AvailableStatus.TRUE;
     }
 
     private String checkDirectLink(final DownloadLink link, final String property) {
@@ -370,13 +308,13 @@ public class GofileIo extends PluginForHost {
     private void handleDownload(final DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link, true);
         final boolean isDangerousFile = link.getBooleanProperty(PROPERTY_DANGEROUS_FILE, false);
-        final String downloadURL = link.getStringProperty(PROPERTY_DIRECTURL, null);
+        final String directurl = link.getStringProperty(PROPERTY_DIRECTURL, null);
         if (isDangerousFile && !this.getPluginConfig().getBooleanProperty(SETTING_ALLOW_DOWNLOAD_OF_FILES_FLAGGED_AS_MALICIOUS, default_SETTING_ALLOW_DOWNLOAD_OF_FILES_FLAGGED_AS_MALICIOUS)) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "This file was flagged as to contain malicious software by " + this.getHost() + "!");
-        } else if (StringUtils.isEmpty(downloadURL)) {
+        } else if (StringUtils.isEmpty(directurl)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, downloadURL, FREE_RESUME, FREE_MAXCHUNKS);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, directurl, this.isResumeable(link, null), FREE_MAXCHUNKS);
         if (!looksLikeDownloadableContent(dl.getConnection())) {
             br.followConnection(true);
             if (br.getURL().matches("(?i)https?://[^/]+/d/[a-f0-9\\-]+")) {

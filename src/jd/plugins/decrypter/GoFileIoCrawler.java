@@ -34,7 +34,7 @@ public class GoFileIoCrawler extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final Browser brc = br.cloneBrowser();
-        final String token = GofileIo.getToken(this, brc);
+        final String token = GofileIo.getAndSetToken(this, brc);
         final String folderID = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
         final UrlQuery query = new UrlQuery();
         query.add("contentId", folderID);
@@ -45,10 +45,11 @@ public class GoFileIoCrawler extends PluginForDecrypt {
         boolean passwordRequired = false;
         int attempt = 0;
         Map<String, Object> response = null;
+        Map<String, Object> response_data = null;
         do {
             if (passwordRequired || passCode != null) {
                 /* Pre-given password was wrong -> Ask user for password */
-                if (attempt > 0) {
+                if (attempt > 0 || passCode == null) {
                     passCode = getUserInput("Password?", param);
                 }
                 query.addAndReplace("password", JDHash.getSHA256(passCode));
@@ -58,9 +59,12 @@ public class GoFileIoCrawler extends PluginForDecrypt {
             req.getHeaders().put(new HTTPHeader(HTTPConstants.HEADER_REQUEST_REFERER, "https://" + this.getHost()));
             brc.getPage(req);
             response = restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.MAP);
-            if ("error-passwordRequired".equals(response.get("status")) || "error-passwordWrong".equals(response.get("status"))) {
+            response_data = (Map<String, Object>) response.get("data");
+            final String passwordStatus = (String) response_data.get("passwordStatus");
+            if (passwordStatus != null && (passwordStatus.equalsIgnoreCase("passwordRequired") || passwordStatus.equalsIgnoreCase("passwordWrong"))) {
                 passwordRequired = true;
                 passwordCorrect = false;
+                passCode = null;
                 attempt += 1;
                 if (attempt >= 3) {
                     break;
@@ -87,8 +91,7 @@ public class GoFileIoCrawler extends PluginForDecrypt {
             }
         }
         PluginForHost hosterplugin = null;
-        final Map<String, Object> data = (Map<String, Object>) response.get("data");
-        String currentFolderName = (String) data.get("name");
+        String currentFolderName = (String) response_data.get("name");
         if (currentFolderName.matches("^quickUpload_.+") || currentFolderName.equals(folderID)) {
             /* Invalid value */
             currentFolderName = null;
@@ -109,11 +112,11 @@ public class GoFileIoCrawler extends PluginForDecrypt {
             fp = FilePackage.getInstance();
             fp.setName(path);
         }
-        final String parentFolderShortID = data.get("code").toString();
-        Map<String, Map<String, Object>> files = (Map<String, Map<String, Object>>) data.get("contents");
+        final String parentFolderShortID = response_data.get("code").toString();
+        Map<String, Map<String, Object>> files = (Map<String, Map<String, Object>>) response_data.get("contents");
         if (files == null) {
             /* 2024-03-11 */
-            files = (Map<String, Map<String, Object>>) data.get("children");
+            files = (Map<String, Map<String, Object>>) response_data.get("children");
         }
         for (final Entry<String, Map<String, Object>> item : files.entrySet()) {
             final Map<String, Object> entry = item.getValue();

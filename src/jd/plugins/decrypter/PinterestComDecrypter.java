@@ -26,7 +26,6 @@ import java.util.Map.Entry;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.URLEncode;
 import org.jdownloader.gui.IconKey;
@@ -122,9 +121,10 @@ public class PinterestComDecrypter extends PluginForDecrypt {
         } else if (new Regex(url, TYPE_BOARD_SECTION).patternFind()) {
             return this.crawlSection(param);
         } else {
-            if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            if (true) {
                 return crawlAllOtherItems(param.getCryptedUrl());
             } else {
+                /* TODO: Remove this code after 06/2024. */
                 return crawlBoardPINs(param.getCryptedUrl());
             }
         }
@@ -139,9 +139,6 @@ public class PinterestComDecrypter extends PluginForDecrypt {
      * WORK IN PROGRESS
      */
     private ArrayList<DownloadLink> crawlAllOtherItems(final String contenturl) throws Exception {
-        if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-            return null;
-        }
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.getPage(contenturl);
         if (br.getHttpConnection().getResponseCode() == 404) {

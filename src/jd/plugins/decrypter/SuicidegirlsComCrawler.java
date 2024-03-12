@@ -50,8 +50,8 @@ public class SuicidegirlsComCrawler extends PluginForDecrypt {
         return br;
     }
 
-    private static final String TYPE_ALBUM = "https?://(?:www\\.)?suicidegirls\\.com/(?:girls|members)/[A-Za-z0-9\\-_]+/album/\\d+/[A-Za-z0-9\\-_]+/";
-    private static final String TYPE_USER  = "https?://(?:www\\.)?suicidegirls\\.com/(?:girls|members)/[A-Za-z0-9\\-_]+/";
+    private static final String TYPE_ALBUM = "(?i)https?://(?:www\\.)?suicidegirls\\.com/(?:girls|members)/[A-Za-z0-9\\-_]+/album/\\d+/[A-Za-z0-9\\-_]+/";
+    private static final String TYPE_USER  = "(?i)https?://(?:www\\.)?suicidegirls\\.com/(?:girls|members)/[A-Za-z0-9\\-_]+/";
 
     private final int padLength(final int size) {
         if (size < 10) {
@@ -101,7 +101,7 @@ public class SuicidegirlsComCrawler extends PluginForDecrypt {
             fpName = br.getRegex("<h2 class=\"title\">([^<>\"]*?)</h2>").getMatch(0);
             if (fpName == null) {
                 /* Fallback to url-packagename */
-                fpName = new Regex(param.getCryptedUrl(), "([A-Za-z0-9\\-_]+)/$").getMatch(0);
+                fpName = br._getURL().toExternalForm();
             }
             fpName = username + " - " + fpName;
             final String[] links = br.getRegex("<li class=\"photo-container\" id=\"thumb-\\d+\" data-index=\"\\d+\"[^>]*>\\s*<a href=\"(http[^<>\"]*?)\"").getColumn(0);
@@ -113,7 +113,8 @@ public class SuicidegirlsComCrawler extends PluginForDecrypt {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             int imageIndex = 1;
-            for (final String directlink : links) {
+            for (String directlink : links) {
+                directlink = Encoding.htmlOnlyDecode(directlink);
                 final DownloadLink dl = this.createDownloadlink("http://suicidegirlsdecrypted/" + System.currentTimeMillis() + new Random().nextInt(1000000000));
                 final String extension = getFileNameExtensionFromURL(directlink, ".jpg");
                 final String imageName = String.format(Locale.US, "%0" + padLength(links.length) + "d", imageIndex++) + "_" + fpName + extension;

@@ -27,6 +27,7 @@ import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -38,6 +39,13 @@ import jd.plugins.PluginForHost;
 public class SexCakeCom extends PluginForHost {
     public SexCakeCom(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.setFollowRedirects(true);
+        return br;
     }
 
     @Override
@@ -54,7 +62,7 @@ public class SexCakeCom extends PluginForHost {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "sex-cake.com", "xnxxvideos.win", "fuckonly.fans" });
+        ret.add(new String[] { "sex-cake.com", "xnxxvideos.win", "fuckonly.fans", "bluevideos.com", "filmexnxx.net", "futaiuri.cc", "lupoxxx.com", "peliculasxnxx.com", "pornoxnxx.video", "pompini.org", "lupoxxx.com", "pornhubfilme.gratis", "qorno.video", "rubias19.red", "sexyfilm.blue", "redporn.video", "voglioporno.gratis", "xnxxvideos.gratis", "xxx-haus.net", "xxxbucetas.net" });
         return ret;
     }
 
@@ -95,6 +103,11 @@ public class SexCakeCom extends PluginForHost {
     }
 
     @Override
+    public boolean isResumeable(final DownloadLink link, final Account account) {
+        return true;
+    }
+
+    @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         return requestFileInformation(link, false);
     }
@@ -105,7 +118,6 @@ public class SexCakeCom extends PluginForHost {
         final String title = Encoding.htmlDecode(urlSlug).replace("-", " ").trim();
         link.setFinalFileName(title + ".mp4");
         this.setBrowserExclusive();
-        br.setFollowRedirects(true);
         br.getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -117,7 +129,11 @@ public class SexCakeCom extends PluginForHost {
                 con = br.openHeadConnection(this.dllink);
                 handleConnectionErrors(br, con);
                 if (con.getCompleteContentLength() > 0) {
-                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                    if (con.isContentDecoded()) {
+                        link.setDownloadSize(con.getCompleteContentLength());
+                    } else {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
                 }
             } finally {
                 try {
@@ -135,7 +151,7 @@ public class SexCakeCom extends PluginForHost {
         if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(this.br, link, dllink, free_resume, free_maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(this.br, link, dllink, this.isResumeable(link, null), free_maxchunks);
         handleConnectionErrors(br, dl.getConnection());
         dl.startDownload();
     }

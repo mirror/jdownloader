@@ -400,15 +400,8 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
             }
         }
         if (ret.isEmpty()) {
-            final boolean useScrapingAPIForCollections = !titleSlug.startsWith("@");
-            if (useScrapingAPIForCollections) {
-                logger.info("Crawling collections...");
-                final ArrayList<DownloadLink> collectionResults = searchViaScrapeAPI(br, "collection:" + titleSlug, -1);
-                if (collectionResults.isEmpty()) {
-                    throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER, "EMPTY_COLLECTION_" + titleSlug);
-                }
-                ret.addAll(collectionResults);
-            } else {
+            final boolean isUserProfile = titleSlug.startsWith("@");
+            if (isUserProfile) {
                 // 2023-06-05: user cannot be scraped via API yet
                 logger.info("Crawling user...");
                 /* Website */
@@ -481,6 +474,13 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                         throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER, "EMPTY_COLLECTION_" + titleSlug);
                     }
                 }
+            } else {
+                logger.info("Crawling collections...");
+                final ArrayList<DownloadLink> collectionResults = crawlViaScrapeAPI(br, "collection:" + titleSlug, -1);
+                if (collectionResults.isEmpty()) {
+                    throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER, "EMPTY_COLLECTION_" + titleSlug);
+                }
+                ret.addAll(collectionResults);
             }
         }
         return ret;
@@ -496,13 +496,14 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         final UrlQuery query = UrlQuery.parse(param.getCryptedUrl());
         String searchQuery = query.get("query");
         if (searchQuery != null) {
+            /* Gets encoded later -> Needs to be decoded here. */
             searchQuery = Encoding.htmlDecode(searchQuery).trim();
         }
         if (StringUtils.isEmpty(searchQuery)) {
             /* User supplied invalid URL. */
             throw new DecrypterRetryException(RetryReason.FILE_NOT_FOUND, "INVALID_SEARCH_QUERY");
         }
-        final ArrayList<DownloadLink> searchResults = searchViaScrapeAPI(br, searchQuery, maxResults);
+        final ArrayList<DownloadLink> searchResults = crawlViaScrapeAPI(br, searchQuery, maxResults);
         if (searchResults.isEmpty()) {
             throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER, "NO_SEARCH_RESULTS_FOR_QUERY_" + searchQuery);
         }
@@ -510,10 +511,12 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
     }
 
     /** API: Docs: https://archive.org/help/aboutsearch.htm */
-    private ArrayList<DownloadLink> searchViaScrapeAPI(final Browser br, final String searchTerm, final int maxResultsLimit) throws Exception {
+    private ArrayList<DownloadLink> crawlViaScrapeAPI(final Browser br, final String searchTerm, final int maxResultsLimit) throws Exception {
         if (StringUtils.isEmpty(searchTerm)) {
+            /* Developer mistake */
             throw new IllegalArgumentException();
         } else if (maxResultsLimit == 0) {
+            /* Developer mistake */
             throw new IllegalArgumentException();
         }
         logger.info("Searching for: " + searchTerm + " | maxResultsLimit = " + maxResultsLimit);
@@ -525,6 +528,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         query.add("q", Encoding.urlEncode(searchTerm));
         final int maxNumberofItemsPerPageForThisRun;
         if (maxResultsLimit == -1) {
+            /* -1 means unlimited -> Use internal hardcoded limit. */
             maxNumberofItemsPerPageForThisRun = maxNumberofItemsPerPage;
         } else if (maxResultsLimit <= minNumberofItemsPerPage) {
             maxNumberofItemsPerPageForThisRun = minNumberofItemsPerPage;
