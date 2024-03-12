@@ -58,9 +58,13 @@ public class CompiledFiletypeFilter {
         return ret;
     }
 
-    public static ExtensionsFilterInterface getExtensionsFilterInterface(final String fileExtension) {
+    public static ExtensionsFilterInterface getExtensionsFilterInterface(String fileExtension) {
         if (fileExtension == null) {
             return null;
+        }
+        /* Correct given file-extension if it starts with dot. */
+        if (fileExtension.startsWith(".")) {
+            fileExtension = fileExtension.substring(1);
         }
         for (final ExtensionsFilterInterface extension : EXTENSIONSFILTERINTERFACES) {
             final Pattern pattern = extension.getPattern();

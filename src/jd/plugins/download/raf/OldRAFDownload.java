@@ -40,6 +40,9 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter.DocumentExtensions;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ExtensionsFilterInterface;
 import org.jdownloader.plugins.DownloadPluginProgress;
 import org.jdownloader.plugins.HashCheckPluginProgress;
 import org.jdownloader.plugins.SkipReason;
@@ -98,7 +101,8 @@ public class OldRAFDownload extends DownloadInterface {
     private boolean                                 resumedDownload;
 
     /**
-     * Gibt die Anzahl der Chunks an die dieser Download verwenden soll. Chunks koennen nur vor dem Downloadstart gesetzt werden!
+     * Returns how many chunks can be used to download this file. </br>
+     * Chunks can only be set prior to start of the download.
      */
     public void setChunkNum(int num) {
         if (num <= 0) {
@@ -118,7 +122,7 @@ public class OldRAFDownload extends DownloadInterface {
     }
 
     /**
-     * Ist resume aktiv?
+     * Resume allowed or not?
      */
     public boolean isRangeRequestSupported() {
         return resume;
@@ -533,16 +537,56 @@ public class OldRAFDownload extends DownloadInterface {
                 }
             }
             /* Now check if we are allowed to fix the filename extension. Filenames from URL can have the wrong extension! */
-            if (filenameFromContentDispositionHeader == null && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            correctFileExtensionLastResort: if (filenameFromContentDispositionHeader == null && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
                 /**
                  * TODO: Review this: Maybe don't correct filenames if they were forced by the user(?) On the other hand we may know which
                  * file-extension is the correct one. I'd do it like browsers do it and correct the file-extension.
                  */
                 /* Maybe only correct all file-types except for document file-types (otherwise .log may be renamed to .log.txt). */
                 /* Fix wrong file-extension */
-                // final String extCurrent = Plugin.getFileNameExtensionFromString(this.downloadable.getName());
                 final String extNew = Plugin.getExtensionFromMimeTypeStatic(connection.getContentType());
-                if (extNew != null) {
+                if (extNew == null) {
+                    /* No possible extension found -> We can't correct an existing file extension. */
+                    break correctFileExtensionLastResort;
+                }
+                final String extCurrent = Plugin.getFileNameExtensionFromString(this.downloadable.getName());
+                boolean correctFileExtension;
+                final boolean correctFileExtensionDependingOnCurrentExtension = true;
+                if (correctFileExtensionDependingOnCurrentExtension && extCurrent != null) {
+                    /**
+                     * This attempt is trying to not correct all file types in order to prevent bad corrections. </br>
+                     * Examples for stupid corrections: </br>
+                     * .log -> .log.txt </br>
+                     * .html -> .txt or .html.txt
+                     */
+                    // boolean isPlaintextFileType = false;
+                    // if (extCurrent.matches("(?i)\\.?(txt|xml|html)")) {
+                    // isPlaintextFileType = true;
+                    // }
+                    boolean currentIsDocumentFileType = false;
+                    boolean newIsDocumentFileType = false;
+                    // final boolean isUnknownFileType;
+                    final ExtensionsFilterInterface fileTypeCurrent = CompiledFiletypeFilter.getExtensionsFilterInterface(extCurrent);
+                    final ExtensionsFilterInterface fileTypeNew = CompiledFiletypeFilter.getExtensionsFilterInterface(extNew);
+                    for (final ExtensionsFilterInterface efi : DocumentExtensions.values()) {
+                        if (fileTypeCurrent != null && fileTypeCurrent.isSameExtensionGroup(efi)) {
+                            currentIsDocumentFileType = true;
+                            // break;
+                        }
+                        if (fileTypeNew != null && fileTypeNew.isSameExtensionGroup(efi)) {
+                            newIsDocumentFileType = true;
+                        }
+                    }
+                    if (fileTypeCurrent == null && newIsDocumentFileType) {
+                        /* Do not allow to correct "unknown" file type to document/plaintext. */
+                        correctFileExtension = false;
+                    } else {
+                        correctFileExtension = true;
+                    }
+                } else {
+                    correctFileExtension = true;
+                }
+                if (correctFileExtension) {
                     this.downloadable.setFinalFileName(Plugin.getCorrectOrApplyFileNameExtension(this.downloadable.getName(), "." + extNew));
                 }
             }
