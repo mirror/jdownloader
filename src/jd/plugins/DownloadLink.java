@@ -762,7 +762,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         if (StringUtils.isEmpty(fileName)) {
             removeProperty(PROPERTY_CUSTOM_LOCALFILENAMEAPPEND);
         } else {
-            fileName = this.fixFilename(fileName, false);
+            fileName = this.fixFilename(fileName);
             this.setProperty(PROPERTY_CUSTOM_LOCALFILENAMEAPPEND, fileName);
         }
         cachedName = null;
@@ -1597,11 +1597,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     protected String fixFilename(final String filename) {
-        return fixFilename(filename, true);
-    }
-
-    protected String fixFilename(String filename, final boolean removeLeadingHidingDot) {
-        return LinknameCleaner.cleanFilename(filename, removeLeadingHidingDot);
+        return LinknameCleaner.cleanFilename(filename);
     }
 
     /**

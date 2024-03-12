@@ -3,6 +3,16 @@ package jd.controlling.linkcrawler;
 import java.util.Iterator;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.DomainInfo;
+import org.jdownloader.controlling.Priority;
+import org.jdownloader.controlling.UniqueAlltimeID;
+import org.jdownloader.controlling.filter.FilterRule;
+import org.jdownloader.controlling.packagizer.PackagizerController;
+import org.jdownloader.extensions.extraction.BooleanStatus;
+import org.jdownloader.myjdownloader.client.json.AvailableLinkState;
+import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
+
 import jd.controlling.linkcollector.LinkCollectingInformation;
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkOriginDetails;
@@ -17,16 +27,6 @@ import jd.plugins.DownloadLinkProperty;
 import jd.plugins.LinkInfo;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.DomainInfo;
-import org.jdownloader.controlling.Priority;
-import org.jdownloader.controlling.UniqueAlltimeID;
-import org.jdownloader.controlling.filter.FilterRule;
-import org.jdownloader.controlling.packagizer.PackagizerController;
-import org.jdownloader.extensions.extraction.BooleanStatus;
-import org.jdownloader.myjdownloader.client.json.AvailableLinkState;
-import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
 
 public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>, CheckableLink, AbstractNodeNotifier, Iterable<CrawledLink> {
     private static enum PROPERTY {
@@ -368,7 +368,7 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
     }
 
     protected String fixFilename(final String filename) {
-        return LinknameCleaner.cleanFilename(filename, true);
+        return LinknameCleaner.cleanFilename(filename);
     }
 
     /* returns unmodified name variable */

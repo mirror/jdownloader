@@ -140,12 +140,12 @@ public class LinknameCleaner {
         }
     }
 
-    public static String cleanFilename(final String filename, final boolean removeLeadingHidingDot) {
+    public static String cleanFilename(final String filename) {
         String newfinalFileName = filename;
         newfinalFileName = replaceCharactersByMap(filename, FILENAME_REPLACEMAP);
         /* We can never know how users alter the setting so let's do one more round with our default replace map. */
         newfinalFileName = replaceCharactersByMap(filename, FILENAME_REPLACEMAP_DEFAULT);
-        newfinalFileName = CrossSystem.alleviatePathParts(newfinalFileName, removeLeadingHidingDot);
+        newfinalFileName = CrossSystem.alleviatePathParts(newfinalFileName, false);
         return newfinalFileName;
     }
 

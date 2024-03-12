@@ -89,7 +89,7 @@ public class DLCFactory extends D {
         if (nodes != null && nodes.size() > 0) {
             if (nodes.size() == 1) {
                 final String name = nodes.get(0).getName();
-                return LinknameCleaner.cleanFilename(name, true) + ".dlc";
+                return LinknameCleaner.cleanFilename(name) + ".dlc";
             } else {
                 for (AbstractPackageChildrenNode node : nodes) {
                     final AbstractPackageNode parent = ((AbstractPackageNode) nodes.get(0).getParentNode());

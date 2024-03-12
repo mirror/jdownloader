@@ -397,7 +397,6 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
                     watchDog.localFileCheck(this, new ExceptionRunnable() {
                         @Override
                         public void run() throws Exception {
-                            /* TODO: 2023-11-21: Update this so that name of part file is never longer than name of target file. */
                             final File partFile = new File(downloadLink.getFileOutput() + ".part");
                             final long doneSize = Math.max((partFile.exists() ? partFile.length() : 0l), downloadLink.getView().getBytesLoaded());
                             final long remainingSize = downloadLink.getView().getBytesTotal() - Math.max(0, doneSize);
