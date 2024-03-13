@@ -957,7 +957,7 @@ public abstract class YetiShareCore extends antiDDoSForHost {
          * Save directurl before download-attempt as it should be valid even if it e.g. fails because of server issue 503 (= too many
          * connections) --> Should work fine after the next try.
          */
-        link.setProperty(getDownloadModeDirectlinkProperty(account), dl.getConnection().getURL().toString());
+        link.setProperty(getDownloadModeDirectlinkProperty(account), dl.getConnection().getURL().toExternalForm());
         try {
             checkResponseCodeErrors(dl.getConnection());
         } catch (final PluginException e) {
@@ -2801,7 +2801,7 @@ public abstract class YetiShareCore extends antiDDoSForHost {
          * Save directurl before download-attempt as it should be valid even if it e.g. fails because of server issue 503 (= too many
          * connections) --> Should work fine after the next try.
          */
-        link.setProperty(directlinkproperty, con.getURL().toString());
+        link.setProperty(directlinkproperty, con.getURL().toExternalForm());
         try {
             checkResponseCodeErrors(con);
         } catch (final PluginException e) {

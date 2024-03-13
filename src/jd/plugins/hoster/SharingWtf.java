@@ -21,16 +21,20 @@ import java.util.List;
 
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.components.YetiShareCore;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
@@ -260,6 +264,43 @@ public class SharingWtf extends YetiShareCore {
         } else {
             logger.info("NOT attempting embed workaround");
             super.handleDownloadWebsite(link, account);
+        }
+    }
+
+    @Override
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        if (account.getType() == AccountType.PREMIUM) {
+            checkDirectLink(link, account);
+            if (this.dl == null) {
+                this.loginWebsite(account, false);
+                getPage(this.getContentURL(link));
+                this.checkErrors(br, link, account);
+                final Form dlform = br.getFormbyKey("verify");
+                // final String rcKey = br.getRegex("grecaptcha\\.execute\\('([^']+)'").getMatch(0);
+                if (dlform.containsHTML("g-recaptcha-response")) {
+                    /* 2024-03-13: Captcha required for premium downloads */
+                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                    dlform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                }
+                dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlform, this.isResumeable(link, account), this.getMaxChunks(account));
+            }
+            final String directlinkproperty = getDownloadModeDirectlinkProperty(account);
+            final URLConnectionAdapter con = dl.getConnection();
+            /*
+             * Save directurl before download-attempt as it should be valid even if it e.g. fails because of server issue 503 (= too many
+             * connections) --> Should work fine after the next try.
+             */
+            link.setProperty(directlinkproperty, con.getURL().toExternalForm());
+            checkResponseCodeErrors(con);
+            if (!looksLikeDownloadableContent(con)) {
+                br.followConnection(true);
+                checkErrors(br, link, account);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Final downloadurl did not lead to downloadable content");
+            }
+            dl.setFilenameFix(isContentDispositionFixRequired(dl, con, link));
+            dl.startDownload();
+        } else {
+            super.handlePremium(link, account);
         }
     }
 }
