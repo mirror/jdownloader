@@ -578,7 +578,7 @@ public class PremiumTo extends UseNet {
                 }
                 /* Check if that URL has already been downloaded to their cloud. */
                 br.getPage(API_BASE_STORAGE + "/check.php?" + query.toString() + "&url=" + urlUrlEncoded);
-                final Map<String, Object> resp = handleErrorsAPI(link, account, false);
+                final Map<String, Object> resp = handleErrorsAPI(link, account, true);
                 final String status = (String) resp.get("Status");
                 /* 2019-11-11: "Canceled" = URL has been added to Storage before but was deleted e.g. by user --> Add it again */
                 if ("Not in queue".equalsIgnoreCase(status) || "Canceled".equalsIgnoreCase(status)) {
@@ -628,12 +628,11 @@ public class PremiumTo extends UseNet {
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 br.followConnection(true);
                 if (dl.getConnection().getResponseCode() == 404) {
-                    /* File offline */
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 3 * 60 * 1000);
                 } else if (dl.getConnection().getResponseCode() == 420) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 420", 3 * 60 * 1000);
                 } else {
-                    this.handleErrorsAPI(link, account, false);
+                    this.handleErrorsAPI(link, account, true);
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown error", 3 * 60 * 1000);
                 }
             }

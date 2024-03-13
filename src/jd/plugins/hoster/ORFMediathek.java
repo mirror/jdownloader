@@ -44,51 +44,52 @@ import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "orf.at" }, urls = { "" })
 public class ORFMediathek extends PluginForHost {
-    private static final String TYPE_AUDIO                            = "(?i)https?://ooe\\.orf\\.at/radio/stories/(\\d+)/";
+    private static final String TYPE_AUDIO                                     = "(?i)https?://ooe\\.orf\\.at/radio/stories/(\\d+)/";
     /* Variables related to plugin settings */
-    public static final String  Q_SUBTITLES                           = "Q_SUBTITLES";
-    public static final boolean Q_SUBTITLES_default                   = true;
-    public static final String  Q_THUMBNAIL                           = "Q_THUMBNAIL";
-    public static final boolean Q_THUMBNAIL_default                   = true;
-    public static final String  Q_BEST                                = "Q_BEST_2";
-    public static final boolean Q_BEST_default                        = true;
-    public static final String  Q_VERYLOW                             = "Q_VERYLOW";
-    public static final boolean Q_VERYLOW_default                     = true;
-    public static final String  Q_LOW                                 = "Q_LOW";
-    public static final boolean Q_LOW_default                         = true;
-    public static final String  Q_MEDIUM                              = "Q_MEDIUM";
-    public static final boolean Q_MEDIUM_default                      = true;
-    public static final String  Q_HIGH                                = "Q_HIGH";
-    public static final boolean Q_HIGH_default                        = true;
-    public static final String  Q_VERYHIGH                            = "Q_VERYHIGH";
-    public static final boolean Q_VERYHIGH_default                    = true;
-    public static final String  PROGRESSIVE_STREAM                    = "PROGRESSIVE_STREAM";
-    public static final boolean PROGRESSIVE_STREAM_default            = true;
-    public static final String  HLS_STREAM                            = "HLS_STREAM_2024_02_22";
-    public static final boolean HLS_STREAM_default                    = false;
-    public static final String  HDS_STREAM                            = "HDS_STREAM_2024_02_22";
-    public static final boolean HDS_STREAM_default                    = false;
-    public final static String  SETTING_SELECTED_VIDEO_FORMAT         = "selected_video_format";
-    public static final int     SETTING_SELECTED_VIDEO_FORMAT_default = 0;
-    public static final String  SETTING_ENABLE_FAST_CRAWL             = "enable_fast_crawl";
-    public static final boolean SETTING_ENABLE_FAST_CRAWL_default     = true;
+    public static final String  Q_SUBTITLES                                    = "Q_SUBTITLES";
+    public static final boolean Q_SUBTITLES_default                            = true;
+    public static final String  Q_THUMBNAIL                                    = "Q_THUMBNAIL";
+    public static final boolean Q_THUMBNAIL_default                            = true;
+    public static final String  Q_BEST                                         = "Q_BEST_2";
+    public static final boolean Q_BEST_default                                 = true;
+    public static final String  Q_VERYLOW                                      = "Q_VERYLOW";
+    public static final boolean Q_VERYLOW_default                              = true;
+    public static final String  Q_LOW                                          = "Q_LOW";
+    public static final boolean Q_LOW_default                                  = true;
+    public static final String  Q_MEDIUM                                       = "Q_MEDIUM";
+    public static final boolean Q_MEDIUM_default                               = true;
+    public static final String  Q_HIGH                                         = "Q_HIGH";
+    public static final boolean Q_HIGH_default                                 = true;
+    public static final String  Q_VERYHIGH                                     = "Q_VERYHIGH";
+    public static final boolean Q_VERYHIGH_default                             = true;
+    public static final String  PROGRESSIVE_STREAM                             = "PROGRESSIVE_STREAM";
+    public static final boolean PROGRESSIVE_STREAM_default                     = true;
+    public static final String  HLS_STREAM                                     = "HLS_STREAM_2024_02_22";
+    public static final boolean HLS_STREAM_default                             = false;
+    public static final String  HDS_STREAM                                     = "HDS_STREAM_2024_02_22";
+    public static final boolean HDS_STREAM_default                             = false;
+    public final static String  SETTING_SELECTED_VIDEO_FORMAT                  = "selected_video_format";
+    public static final int     SETTING_SELECTED_VIDEO_FORMAT_default          = 0;
+    public static final String  SETTING_ENABLE_FAST_CRAWL                      = "enable_fast_crawl";
+    public static final boolean SETTING_ENABLE_FAST_CRAWL_default              = true;
     /* DownloadLink properties */
-    public static final String  PROPERTY_TITLE                        = "title";
-    public static final String  PROPERTY_VIDEO_POSITION               = "video_position";
-    public static final String  PROPERTY_VIDEO_POSITION_MAX           = "video_position_max";
-    public static final String  PROPERTY_INTERNAL_QUALITY             = "directQuality";
-    public static final String  PROPERTY_STREAMING_TYPE               = "streamingType";
-    public static final String  PROPERTY_CONTENT_TYPE                 = "contentType";
-    public static final String  PROPERTY_QUALITY_HUMAN_READABLE       = "directFMT";
-    public static final String  PROPERTY_SEGMENT_ID                   = "segment_id";
-    public static final String  PROPERTY_VIDEO_ID                     = "video_id";
-    public static final String  PROPERTY_DELIVERY                     = "delivery";
-    public static final String  PROPERTY_DIRECTURL                    = "directURL";
-    public static final String  PROPERTY_SOURCEURL                    = "mainlink";
-    public static final String  PROPERTY_AGE_RESTRICTED               = "age_restricted";
-    public static String        CONTENT_TYPE_IMAGE                    = "image";
-    public static String        CONTENT_TYPE_SUBTITLE                 = "subtitle";
-    public static String        CONTENT_TYPE_VIDEO                    = "video";
+    public static final String  PROPERTY_TITLE                                 = "title";
+    public static final String  PROPERTY_VIDEO_POSITION                        = "video_position";
+    public static final String  PROPERTY_VIDEO_POSITION_MAX                    = "video_position_max";
+    public static final String  PROPERTY_INTERNAL_QUALITY                      = "directQuality";
+    public static final String  PROPERTY_STREAMING_TYPE                        = "streamingType";
+    public static final String  PROPERTY_CONTENT_TYPE                          = "contentType";
+    public static final String  PROPERTY_QUALITY_HUMAN_READABLE                = "directFMT";
+    public static final String  PROPERTY_SEGMENT_ID                            = "segment_id";
+    public static final String  PROPERTY_VIDEO_ID                              = "video_id";
+    public static final String  PROPERTY_DELIVERY                              = "delivery";
+    public static final String  PROPERTY_DIRECTURL                             = "directURL";
+    public static final String  PROPERTY_SOURCEURL                             = "mainlink";
+    public static final String  PROPERTY_AGE_RESTRICTED                        = "age_restricted";
+    public static final String  PROPERTY_AGE_RESTRICTED_LAST_RECRAWL_TIMESTAMP = "age_restricted_last_recrawl_timestamp";
+    public static String        CONTENT_TYPE_IMAGE                             = "image";
+    public static String        CONTENT_TYPE_SUBTITLE                          = "subtitle";
+    public static String        CONTENT_TYPE_VIDEO                             = "video";
 
     public ORFMediathek(PluginWrapper wrapper) {
         super(wrapper);
@@ -214,7 +215,9 @@ public class ORFMediathek extends PluginForHost {
 
     private void handleURLBasedErrors(final Browser br, final DownloadLink link) throws PluginException {
         if (isAgeRestrictedByCurrentTime(br.getURL())) {
-            // Account.setNextDayAsTempTimeout
+            if (System.currentTimeMillis() - link.getLongProperty(PROPERTY_AGE_RESTRICTED_LAST_RECRAWL_TIMESTAMP, 0) < 10 * 60 * 1000) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Jugendschutz-Recrawl fehlgeschlagen", 10 * 60 * 1000l);
+            }
             /*
              * E.g. progressive:
              * https://apasfpd.sf.apa.at/gp/online/14ed5a0157632458580f9bc7bfd1feba/1708297200/Jugendschutz0600b2000_Q8C.mp4

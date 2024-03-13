@@ -23,6 +23,25 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.storage.config.annotations.AboutConfig;
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.views.downloads.columns.ETAColumn;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.plugins.PluginTaskID;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings.SIZEUNIT;
+import org.jdownloader.settings.staticreferences.CFG_GUI;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -45,25 +64,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginProgress;
 import jd.plugins.components.MultiHosterManagement;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.storage.config.annotations.AboutConfig;
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.views.downloads.columns.ETAColumn;
-import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.plugins.PluginTaskID;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-import org.jdownloader.settings.GraphicalUserInterfaceSettings.SIZEUNIT;
-import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 /**
  *
@@ -124,8 +124,8 @@ public class LinkSnappyCom extends PluginForHost {
     }
 
     /**
-     * Defines max. waittime for cached downloads after last serverside progress change. </br> Longer time than this and progress of
-     * serverside download did not change --> Abort
+     * Defines max. waittime for cached downloads after last serverside progress change. </br>
+     * Longer time than this and progress of serverside download did not change --> Abort
      */
     private final int    CACHE_WAIT_THRESHOLD     = 10 * 60000;
     private final String PROPERTY_DIRECTURL       = "linksnappycomdirectlink";
@@ -174,7 +174,8 @@ public class LinkSnappyCom extends PluginForHost {
     }
 
     /**
-     * Only call this for download-requests of files, hosted on linksnappy!! </br> Do not call this in handleMultiHost!!
+     * Only call this for download-requests of files, hosted on linksnappy!! </br>
+     * Do not call this in handleMultiHost!!
      */
     private void handleConnectionErrors(final Browser br, final DownloadLink link, final URLConnectionAdapter con) throws Exception {
         if (!this.looksLikeDownloadableContent(con)) {
@@ -504,8 +505,8 @@ public class LinkSnappyCom extends PluginForHost {
                     wrongPasswordAttempts += 1;
                     passCode = getUserInput("Password?", link);
                     /**
-                     * Do not reset initial password.</br> Multihosters are prone to error - we do not want to remove the users' initial
-                     * manually typed in PW!
+                     * Do not reset initial password.</br>
+                     * Multihosters are prone to error - we do not want to remove the users' initial manually typed in PW!
                      */
                     // link.setDownloadPassword(null);
                     continue;
@@ -556,9 +557,10 @@ public class LinkSnappyCom extends PluginForHost {
         dl.setFilenameFix(true);
         if (this.dl.startDownload()) {
             /**
-             * Check if user wants JD to clear serverside download history in linksnappy account after each successful download. </br> Also
-             * make sure we get no exception as our download was successful. </br> NOTE: Even failed downloads will appear in the download
-             * history - but they will also be cleared once there is one successful download.
+             * Check if user wants JD to clear serverside download history in linksnappy account after each successful download. </br>
+             * Also make sure we get no exception as our download was successful. </br>
+             * NOTE: Even failed downloads will appear in the download history - but they will also be cleared once there is one successful
+             * download.
              */
             if (PluginJsonConfig.get(LinkSnappyComConfig.class).isClearDownloadHistoryEnabled()) {
                 logger.info("Clearing download history");
@@ -683,7 +685,7 @@ public class LinkSnappyCom extends PluginForHost {
                  */
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "URL format not supported by multihoster " + this.getHost());
             } else if (new Regex(errormsg, "(?i)File not found").matches()) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Untrusted error 'file not found' by multihoster " + this.getHost());
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else if (new Regex(errormsg, "(?i)Your Account has Expired").matches()) {
                 /*
                  * 2019-09-03 "{"status": "ERROR", "error": "Your Account has Expired, Please <a
@@ -808,7 +810,8 @@ public class LinkSnappyCom extends PluginForHost {
     }
 
     /**
-     * Checks login status by available cookies. </br> Works for website- and API.
+     * Checks login status by available cookies. </br>
+     * Works for website- and API.
      */
     private boolean isLoggedin(final Browser br) {
         return br.getCookie(this.getHost(), "Auth", Cookies.NOTDELETEDPATTERN) != null && br.getCookie(this.getHost(), "username", Cookies.NOTDELETEDPATTERN) != null;

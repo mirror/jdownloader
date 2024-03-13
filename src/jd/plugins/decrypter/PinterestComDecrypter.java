@@ -184,7 +184,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
                      */
                     final ArrayList<DownloadLink> sectionPINsResult = this.crawlSections(boardDescription, boardID, boardName, br, contenturl);
                     for (final DownloadLink result : sectionPINsResult) {
-                        final String pinStr = new Regex(result.getPluginPatternMatcher(), "/pin/(\\d+)").getMatch(0);
+                        final String pinStr = new Regex(result.getPluginPatternMatcher(), "(?i)/pin/(\\d+)").getMatch(0);
                         if (pinStr != null) {
                             boardSectionsPIN_IDs.add(pinStr);
                         }
@@ -556,6 +556,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
         return externalURL;
     }
 
+    /** Crawls a section for CryptedLink items which have properties set which are needed to crawl a section (new method 2024). */
     private ArrayList<DownloadLink> crawlSection(final CryptedLink param) throws Exception {
         final String url = param.getCryptedUrl();
         final Regex boardSectionRegex = new Regex(url, TYPE_BOARD_SECTION);
@@ -629,9 +630,9 @@ public class PinterestComDecrypter extends PluginForDecrypt {
                 /* Looks as if we've reached the end */
                 logger.info("Stopping because: Reached end");
                 break;
-            } else if (numberofNewItemsThisPage < maxPINsPerRequest) {
+            } else if (numberofNewItemsThisPage == 0) {
                 /* Fail safe */
-                logger.info("Stopping because: Reached end(?)");
+                logger.info("Stopping because: Current page did not contain any new items");
                 break;
             } else {
                 /* Load next page */
@@ -856,7 +857,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
         postDataOptions.put("add_vase", true);
         postDataOptions.put("board_id", boardID);
         postDataOptions.put("field_set_key", "react_grid_pin");
-        postDataOptions.put("filter_section_pins", true);
+        postDataOptions.put("filter_section_pins", false);
         postDataOptions.put("is_react", true);
         postDataOptions.put("prepend", false);
         postDataOptions.put("page_size", maxItemsPerPage);
@@ -945,14 +946,10 @@ public class PinterestComDecrypter extends PluginForDecrypt {
             final List<Map<String, Object>> sections = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(sectionsData, "resource_response/data");
             int sectionCounter = 1;
             for (final Map<String, Object> entries : sections) {
-                final String section_title = (String) entries.get("title");
+                final String section_title = entries.get("title").toString();
                 // final String sectionSlug = (String) entries.get("slug");
-                final long section_total_pin_count = JavaScriptEngineFactory.toLong(entries.get("pin_count"), 0);
-                final String sectionID = (String) entries.get("id");
-                if (StringUtils.isEmpty(section_title) || sectionID == null || section_total_pin_count == 0) {
-                    /* Skip invalid entries and empty sections */
-                    continue;
-                }
+                // final long section_total_pin_count = ((Number) entries.get("pin_count")).longValue();
+                final String sectionID = entries.get("id").toString();
                 logger.info("Crawling section " + sectionCounter + " of " + sections.size() + " --> ID = " + sectionID);
                 final FilePackage fp = FilePackage.getInstance();
                 fp.setName(username + " - " + boardName + " - " + section_title);

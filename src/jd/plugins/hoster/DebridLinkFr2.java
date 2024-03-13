@@ -492,7 +492,7 @@ public class DebridLinkFr2 extends PluginForHost {
             } else if ("accountLocked".equals(error)) {
                 throw new AccountUnavailableException("Account locked", 30 * 60 * 1001l);
             } else if ("fileNotFound".equals(error)) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Untrusted error 'file not found'", 5 * 60 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else if ("notDebrid".equals(error)) {
                 mhm.putError(account, link, 2 * 60 * 1000l, "Disabled filehost: server error notDebrid");
             } else if ("disabledHost".equals(error)) {

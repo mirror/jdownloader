@@ -955,7 +955,7 @@ public abstract class HighWayCore extends UseNet {
                 /* Temp. error try again later */
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, msg, retrySeconds * 1000l);
             case 9:
-                /* File not found --> Do not trust this error whenever a multihoster is answering with it */
+                /* File is offline */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             case 10:
                 /* Host is not supported or not supported for free account users */

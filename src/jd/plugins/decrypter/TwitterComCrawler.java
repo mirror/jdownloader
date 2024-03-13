@@ -601,6 +601,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
         profileCrawlerSkippedResultsByMaxDate.clear();
         profileCrawlerSkippedResultsByMaxitems.clear();
         profileCrawlerSkippedResultsByRetweet.clear();
+        numberofSkippedDeadTweets = 0;
     }
 
     /** Crawls all Tweets of a profile via GraphQL Web-API. */
@@ -754,7 +755,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
             final int numberofNewTweetsWalkedThroughThisPage = dupeListForProfileCrawlerTweetIDs.size() - numberofTweetsWalkedThroughBefore;
             ret.addAll(resultsThisPage);
             distribute(resultsThisPage);
-            logger.info("Crawled page " + page + " | Found new Tweets on this page: " + numberofNewTweetsWalkedThroughThisPage + " | Tweets walked through so far: " + dupeListForProfileCrawlerTweetIDs.size() + " | Tweets crawled and added so far: " + actuallyCrawledTweetIDs.size() + " | nextCursor = " + profileCrawlerNextCursor + " | Skipped Re-Tweets: " + profileCrawlerSkippedResultsByRetweet.size() + " | Skipped Tweets via user defined max-date: " + profileCrawlerSkippedResultsByMaxDate.size());
+            logger.info("Crawled page " + page + " | Found new Tweets on this page: " + numberofNewTweetsWalkedThroughThisPage + " | Tweets walked through so far: " + dupeListForProfileCrawlerTweetIDs.size() + " | Tweets crawled and added so far: " + actuallyCrawledTweetIDs.size() + " | nextCursor = " + profileCrawlerNextCursor + " | Skipped Re-Tweets: " + profileCrawlerSkippedResultsByRetweet.size() + " | Skipped Tweets via user defined max-date: " + profileCrawlerSkippedResultsByMaxDate.size() + " | Skipped dead Tweets so far: " + this.numberofSkippedDeadTweets);
             /* Check abort conditions */
             if (this.isAbort()) {
                 logger.info("Stopping because: Aborted by user");
@@ -811,6 +812,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
     private final HashSet<DownloadLink> profileCrawlerSkippedResultsByMaxDate  = new HashSet<DownloadLink>();
     private final HashSet<DownloadLink> profileCrawlerSkippedResultsByMaxitems = new HashSet<DownloadLink>();
     private final HashSet<DownloadLink> profileCrawlerSkippedResultsByRetweet  = new HashSet<DownloadLink>();
+    private long                        numberofSkippedDeadTweets              = 0;                          // Counts TweetTombstone items
 
     private ArrayList<DownloadLink> crawlUserProfileGraphqlTimelineInstructions(final List<Map<String, Object>> timelineInstructions, final Map<String, Object> user, final String singleTweetID, final FilePackage fp, final boolean crawlUserLikes) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
@@ -856,7 +858,9 @@ public class TwitterComCrawler extends PluginForDecrypt {
                 if (quoted_status == null) {
                     quoted_status = (Map<String, Object>) JavaScriptEngineFactory.walkJson(thisRoot, "quoted_status_result/result");
                 }
-                final boolean containsQuotedTweet = quoted_status != null;
+                /* If this is null, the quoted Tweet does not exist anymore. */
+                final Map<String, Object> quoted_status_tombstone = quoted_status != null ? (Map<String, Object>) quoted_status.get("tombstone") : null;
+                final boolean containsQuotedTweet = quoted_status != null && quoted_status_tombstone == null;
                 final ArrayList<DownloadLink> thisTweetResults = crawlTweetMap(null, thisRoot, fp);
                 if (containsQuotedTweet) {
                     /* 2024-02-21: Current Tweet is a reply to a quoted Tweet -> We need to crawl that quoted Tweet separately */
@@ -931,27 +935,8 @@ public class TwitterComCrawler extends PluginForDecrypt {
                     actuallyCrawledTweetIDs.addAll(thisAllTweetIDs);
                 }
             } else if (typename.equalsIgnoreCase("TweetTombstone")) {
-                dupeListForProfileCrawlerTweetIDs.add("TODO_FIXME_2024_02_20");
-                /* TODO: Check if this handling is working */
-                /* 18+ content. We can find the ID of that tweet but we can't know the name of the user who posted it. */
-                if (true) {
-                    // 2024-02-08: TODO: Fix this
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                // final String entryId = timelineEntry.get("entryId").toString();
-                // final String thisTweetID = new Regex(entryId, "tweet-(\\d+)").getMatch(0);
-                // if (thisTweetID == null) {
-                // throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                // }
-                // final DownloadLink link = this.createDownloadlink("https://" + this.getHost() + "/unknowntwitteruser/status/" +
-                // thisTweetID);
-                // link._setFilePackage(fp);
-                // allowedResults.add(link);
-                // profileCrawlerTotalCrawledTweetsCount++;
-                // if (this.maxTweetsToCrawl != null && profileCrawlerTotalCrawledTweetsCount == this.maxTweetsToCrawl.intValue()) {
-                // profileCrawlerStopBecauseReachedUserDefinedMaxItemsLimit = true;
-                // break timelineInstructionsLoop;
-                // }
+                /* Dead Tweet without more information -> Count that. */
+                this.numberofSkippedDeadTweets += 1;
             } else {
                 logger.info("Skipping unsupported tweetResult __typename: " + typename);
                 continue;
@@ -1289,7 +1274,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
             if (__typename != null && (__typename.equals("Tweet") || __typename.equals("TweetWithVisibilityResults")) && (tweetMap != null || legacyMap != null)) {
                 results.add(map);
             } else if (__typename != null && __typename.equals("TweetTombstone")) {
-                // TODO: Check if this still exists
+                /* Dead/deleted Tweet */
                 results.add(map);
             } else {
                 for (final Map.Entry<String, Object> entry : map.entrySet()) {
