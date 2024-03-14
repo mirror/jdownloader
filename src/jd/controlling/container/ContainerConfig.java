@@ -62,7 +62,7 @@ public interface ContainerConfig extends ConfigInterface {
     @DefaultOnNull
     @AboutConfig
     @DescriptionForConfigEntry("A list of passwords for automatic handling of .SFDL FTP containers.")
-    List<String> getSFDLPasswordList();
+    List<String> getSFDLContainerPasswordList();
 
-    void setSFDLPasswordList(List<String> list);
+    void setSFDLContainerPasswordList(List<String> list);
 }

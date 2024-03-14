@@ -80,7 +80,7 @@ public class SFDL extends PluginsC {
             String validpassword = null;
             if (sdfl_Encrypted) {
                 logger.info("SFDL is password protected");
-                final List<String> pwlist = CFG.getSFDLPasswordList();
+                final List<String> pwlist = CFG.getSFDLContainerPasswordList();
                 if (passwordFromFilename != null) {
                     /* If password is given inside filename, try this one first. */
                     pwlist.remove(passwordFromFilename);
@@ -257,12 +257,12 @@ public class SFDL extends PluginsC {
             return;
         }
         synchronized (PWLOCK) {
-            final List<String> pwList = CFG.getSFDLPasswordList();
+            final List<String> pwList = CFG.getSFDLContainerPasswordList();
             /* avoid duplicates */
             pwList.remove(pw);
             /* Add valid password to first position */
             pwList.add(0, pw);
-            CFG.setSFDLPasswordList(pwList);
+            CFG.setSFDLContainerPasswordList(pwList);
         }
     }
 
