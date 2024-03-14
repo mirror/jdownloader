@@ -21,11 +21,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -38,6 +33,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class CivitaiCom extends PluginForHost {
@@ -145,8 +144,7 @@ public class CivitaiCom extends PluginForHost {
         }
         /**
          * 2024-03-11: Important: Do not open up the regex for original image too much or you run into risk of accidentally downloading the
-         * wrong image, see: </br>
-         * https://board.jdownloader.org/showthread.php?t=95419
+         * wrong image, see: </br> https://board.jdownloader.org/showthread.php?t=95419
          */
         final String directurlOriginal = br.getRegex("class=\"mantine-it6rft\" src=\"(https?://image\\.civitai\\.com/[^\"]+/original=true/[^\"]+)").getMatch(0);
         if (directurlOriginal != null) {
@@ -172,13 +170,14 @@ public class CivitaiCom extends PluginForHost {
         if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Failed to find final downloadurl");
         }
-        final String widthValue = new Regex(dllink, "(/width=\\d+)/").getMatch(0);
-        if (widthValue != null && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-            /* Special: Removing the 'width' part does in some cases grant us access to download the original image. */
-            final String modifiedOriginalURL = dllink.replace(widthValue, "");
-            logger.info("Trying to download original image via modified URL: " + "TODO");
+        final String widthValue = new Regex(dllink, "(/width=\\d+[^/]*/)").getMatch(0);
+        if (widthValue != null) {
+            /* Special: Replace the 'width' part with 'original=true does in some cases grant us access to download the original image. */
+            final String modifiedOriginalURL = dllink.replace(widthValue, "/original=true/");
+            logger.info("Trying to download original image via modified URL: " + modifiedOriginalURL);
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, modifiedOriginalURL, this.isResumeable(link, null), maxchunks);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                br.followConnection(true);
                 logger.info("Failed to download original image with trick -> Download normal image");
                 dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, this.isResumeable(link, null), maxchunks);
             }
