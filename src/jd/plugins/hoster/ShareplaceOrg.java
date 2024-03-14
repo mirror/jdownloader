@@ -78,7 +78,7 @@ public class ShareplaceOrg extends YetiShareCore {
         return ret.toArray(new String[0]);
     }
 
-    private final String PATTERN_OLD = "https?://[^/]+/\\?(?:d=)?([\\w]+)(/.*?)?";
+    private final String PATTERN_OLD = "(?i)https?://[^/]+/\\?(?:d=)?([\\w]+)(/.*?)?";
 
     @Override
     protected String getContentURL(final DownloadLink link) {
@@ -147,26 +147,24 @@ public class ShareplaceOrg extends YetiShareCore {
         br.setCustomCharset("UTF-8");
         br.setFollowRedirects(true);
         getPage(this.getContentURL(link));
-        if (!this.br.getURL().contains(fid)) {
+        final String correctedBR = correctHTML_OLD(this.br);
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (!this.br.getURL().contains(fid)) {
             /* E.g. redirect to mainpage or errorpage. */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (new Regex(correctedBR, "(?i)Your requested file is not found").patternFind()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String iframe = br.getRegex("<frame name=\"main\" src=\"(.*?)\">").getMatch(0);
         if (iframe != null) {
             getPage(iframe);
         }
-        final String correctedBR = correctHTML_OLD(this.br);
-        if (new Regex(correctedBR, "(?i)Your requested file is not found").matches() || !br.containsHTML("(?i)Filename\\s*:\\s*<")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        String filename = new Regex(correctedBR, "Filename:</font></b>(.*?)<b><br>").getMatch(0);
-        String filesize = br.getRegex("Filesize.*?b>(.*?)<b>").getMatch(0);
+        String filename = new Regex(correctedBR, "Filename:\\s*</font></b>(.*?)<b>\\s*<br>").getMatch(0);
         if (StringUtils.isEmpty(filename)) {
             filename = br.getRegex("<title>(.*?)</title>").getMatch(0);
         }
-        if (filesize == null) {
-            filesize = br.getRegex("File.*?size.*?:.*?</b>(.*?)<b><br>").getMatch(0);
-        }
+        String filesize = br.getRegex("Filesize:\\s*</font></b>([^<]+)<b>").getMatch(0);
         if (!StringUtils.isEmpty(filename)) {
             /* Let's check if we can trust the results ... */
             filename = Encoding.htmlDecode(filename).trim();
@@ -193,7 +191,7 @@ public class ShareplaceOrg extends YetiShareCore {
             /* Old website version version didn't have any (premium) accounts. */
             handleFreeOLD(link);
         } else {
-            super.handleFree(link);
+            super.handlePremium(link, account);
         }
     }
 
@@ -283,6 +281,7 @@ public class ShareplaceOrg extends YetiShareCore {
                     result = crap + result;
                 }
                 try {
+                    /* Validate url */
                     new URL(result);
                 } catch (Exception e) {
                     logger.log(e);
@@ -360,7 +359,7 @@ public class ShareplaceOrg extends YetiShareCore {
             return -2;
         } else if (account != null && account.getType() == AccountType.PREMIUM) {
             /* Premium account */
-            return -2;
+            return 0;
         } else {
             /* Free(anonymous) and unknown account type */
             return -2;
@@ -378,6 +377,6 @@ public class ShareplaceOrg extends YetiShareCore {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return 1;
+        return 10;
     }
 }

@@ -17,6 +17,7 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -26,7 +27,6 @@ import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
-import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -76,10 +76,7 @@ public class StreamableCom extends PluginForHost {
         return ret.toArray(new String[0]);
     }
 
-    /* Connection stuff */
-    private static final boolean FREE_RESUME       = true;
-    private static final int     FREE_MAXCHUNKS    = 0;
-    private static final int     FREE_MAXDOWNLOADS = 20;
+    private static final String PROPERTY_DIRECTLINK = "directlink";
 
     @Override
     public String getLinkID(final DownloadLink link) {
@@ -97,9 +94,10 @@ public class StreamableCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        final String extDefault = ".mp4";
         if (!link.isNameSet()) {
             /* Fallback */
-            link.setName(this.getFID(link) + ".mp4");
+            link.setName(this.getFID(link) + extDefault);
         }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -110,38 +108,157 @@ public class StreamableCom extends PluginForHost {
         } else if (br.getHttpConnection().getResponseCode() == 410) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String json = br.getRegex("var videoObject =\\s*(\\{.+\\});").getMatch(0);
-        if (json == null) {
+        Map<String, Object> videomap1 = null;
+        Map<String, Object> videomap2 = null;
+        final String[] jsons = br.getRegex("<script>self\\.__next_f\\.push\\((.*?)\\)</script>").getColumn(0);
+        if (jsons != null && jsons.length > 0) {
+            for (final String json : jsons) {
+                final Object object = JSonStorage.restoreFromString(json, TypeRef.OBJECT);
+                if (object instanceof LinkedList) {
+                    final LinkedList<Object> list = (LinkedList<Object>) object;
+                    for (final Object item : list) {
+                        if (!(item instanceof String)) {
+                            continue;
+                        }
+                        String itemstr = item.toString();
+                        itemstr = itemstr.replaceFirst("^f:", "");
+                        if (itemstr.startsWith("{") || itemstr.startsWith("[")) {
+                            final Object obj = restoreFromString(itemstr, TypeRef.OBJECT);
+                            if (videomap1 == null) {
+                                videomap1 = (Map<String, Object>) this.findVideomap1(obj);
+                            }
+                            if (videomap2 == null) {
+                                videomap2 = (Map<String, Object>) this.findVideomap2(obj, "NOT_NEEDED");
+                            }
+                        }
+                    }
+                } else if (object instanceof List) {
+                    if (true) {
+                        // Unfinished/unneeded code
+                        continue;
+                    }
+                    final ArrayList<Object> list = (ArrayList<Object>) object;
+                    for (final Object item : list) {
+                        // System.out.print(item);
+                    }
+                }
+                if (videomap1 != null && videomap2 != null) {
+                    break;
+                }
+            }
+        }
+        if (videomap1 == null && videomap2 == null) {
             /* E.g. if user adds non-video URLs such as: https://streamable.com/login */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final Map<String, Object> entries = restoreFromString(json, TypeRef.MAP);
-        String filename = (String) entries.get("title");
-        final long filesize = ((Number) entries.get("size")).longValue();
-        if (!StringUtils.isEmpty(filename)) {
-            filename = Encoding.htmlDecode(filename).trim();
-            link.setFinalFileName(filename + ".mp4");
+        String title = null;
+        String directurl = null;
+        if (videomap2 != null) {
+            /* This map contains more information */
+            title = videomap2.get("title").toString();
+            final Map<String, Object> files = (Map<String, Object>) videomap2.get("files");
+            final Map<String, Object> files_mp4 = (Map<String, Object>) files.get("mp4");
+            final long filesize = ((Number) files_mp4.get("size")).longValue();
+            if (filesize > 0) {
+                link.setDownloadSize(filesize);
+                /* Do NOT set verifiedFilesize here - this one isn't safe! */
+            }
+            directurl = files_mp4.get("url").toString();
+        } else {
+            title = videomap1.get("name").toString();
+            directurl = videomap1.get("contentUrl").toString();
         }
-        if (filesize > 0) {
-            link.setDownloadSize(filesize);
-            /* Do NOT set verifiedFilesize here - this one isn't safe! */
+        title = title.replaceFirst("(?i) \\| Streamable$", "");
+        link.setFinalFileName(title + extDefault);
+        if (directurl != null) {
+            directurl = br.getURL(directurl).toExternalForm();
+            link.setProperty(PROPERTY_DIRECTLINK, directurl);
         }
         return AvailableStatus.TRUE;
     }
 
-    @Override
-    public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        requestFileInformation(link);
-        doFree(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+    private Object findVideomap1(final Object o) {
+        if (o instanceof Map) {
+            final Map<String, Object> entrymap = (Map<String, Object>) o;
+            if (entrymap.containsKey("@context")) {
+                return entrymap;
+            }
+            for (final Map.Entry<String, Object> entry : entrymap.entrySet()) {
+                // final String key = entry.getKey();
+                final Object value = entry.getValue();
+                if (value instanceof List || value instanceof Map) {
+                    final Object ret = findVideomap1(value);
+                    if (ret != null) {
+                        return ret;
+                    }
+                }
+            }
+            return null;
+        } else if (o instanceof List) {
+            final List<Object> array = (List) o;
+            for (final Object arrayo : array) {
+                if (arrayo instanceof List || arrayo instanceof Map) {
+                    final Object res = findVideomap1(arrayo);
+                    if (res != null) {
+                        return res;
+                    }
+                }
+            }
+            return null;
+        } else {
+            return null;
+        }
     }
 
-    private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        final String dllink = br.getRegex("property=\"og:video:secure_url\" content=\"(https://[^<>\"]+)").getMatch(0);
+    private Object findVideomap2(final Object o, final String videoid) {
+        if (videoid == null) {
+            return null;
+        }
+        if (o instanceof Map) {
+            final Map<String, Object> entrymap = (Map<String, Object>) o;
+            if (entrymap.containsKey("shortcode") && entrymap.containsKey("width")) {
+                return entrymap;
+            }
+            for (final Map.Entry<String, Object> entry : entrymap.entrySet()) {
+                // final String key = entry.getKey();
+                final Object value = entry.getValue();
+                if (value instanceof List || value instanceof Map) {
+                    final Object ret = findVideomap2(value, videoid);
+                    if (ret != null) {
+                        return ret;
+                    }
+                }
+            }
+            return null;
+        } else if (o instanceof List) {
+            final List<Object> array = (List) o;
+            for (final Object arrayo : array) {
+                if (arrayo instanceof List || arrayo instanceof Map) {
+                    final Object res = findVideomap2(arrayo, videoid);
+                    if (res != null) {
+                        return res;
+                    }
+                }
+            }
+            return null;
+        } else {
+            return null;
+        }
+    }
+
+    @Override
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        handleDownload(link);
+    }
+
+    private void handleDownload(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
+        final String dllink = link.getStringProperty(PROPERTY_DIRECTLINK);
         if (StringUtils.isEmpty(dllink)) {
             logger.warning("Failed to find final downloadurl");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, this.isResumeable(link, null), 0);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             br.followConnection(true);
             if (dl.getConnection().getResponseCode() == 403) {
@@ -152,7 +269,6 @@ public class StreamableCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
         dl.startDownload();
     }
 
@@ -163,7 +279,7 @@ public class StreamableCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return FREE_MAXDOWNLOADS;
+        return Integer.MAX_VALUE;
     }
 
     @Override

@@ -172,15 +172,20 @@ public class TiktokComCrawler extends PluginForDecrypt {
         final DownloadLink link = param.getDownloadLink();
         final boolean forceAPI = link != null ? link.getBooleanProperty(TiktokCom.PROPERTY_FORCE_API, false) : false;
         if (TiktokCom.getDownloadMode() == MediaCrawlMode.API || forceAPI) {
-            return this.crawlSingleMediaAPI(contenturl, null, forceAPI, forceGrabAll);
+            try {
+                return this.crawlSingleMediaAPI(contenturl, null, forceAPI, forceGrabAll);
+            } catch (final JSonMapperException jme) {
+                /* Most likely API has answered with empty page. */
+                logger.info("Attempting website fallback in API mode");
+                return crawlSingleMediaWebsite(hostPlg, contenturl, null, forceGrabAll);
+            }
         } else {
             try {
                 return crawlSingleMediaWebsite(hostPlg, contenturl, null, forceGrabAll);
             } catch (final PluginException e) {
+                logger.info("Attempting API fallback in website mode");
                 if (e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND && br.containsHTML("\"(?:status_msg|message)\"\\s*:\\s*\"Something went wrong\"")) {
-                    final ArrayList<DownloadLink> results = this.crawlSingleMediaAPI(contenturl, null, true, forceGrabAll);
-                    logger.info("Auto fallback to API worked fine");
-                    return results;
+                    return this.crawlSingleMediaAPI(contenturl, null, true, forceGrabAll);
                 } else {
                     throw e;
                 }

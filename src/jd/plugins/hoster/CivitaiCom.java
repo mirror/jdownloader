@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.regex.Pattern;
 
 import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
@@ -171,7 +172,20 @@ public class CivitaiCom extends PluginForHost {
         if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Failed to find final downloadurl");
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, this.isResumeable(link, null), maxchunks);
+        final String widthValue = new Regex(dllink, "(/width=\\d+)/").getMatch(0);
+        if (widthValue != null && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            /* Special: Removing the 'width' part does in some cases grant us access to download the original image. */
+            final String modifiedOriginalURL = dllink.replace(widthValue, "");
+            logger.info("Trying to download original image via modified URL: " + "TODO");
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, modifiedOriginalURL, this.isResumeable(link, null), maxchunks);
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                logger.info("Failed to download original image with trick -> Download normal image");
+                dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, this.isResumeable(link, null), maxchunks);
+            }
+        } else {
+            /* Download the URL we have */
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, this.isResumeable(link, null), maxchunks);
+        }
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             br.followConnection(true);
             if (dl.getConnection().getResponseCode() == 403) {
