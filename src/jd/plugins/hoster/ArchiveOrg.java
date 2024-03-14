@@ -118,6 +118,7 @@ public class ArchiveOrg extends PluginForHost {
      * beginning of the filenames!
      */
     public static final String                            PROPERTY_FILETYPE                               = "filetype";
+    public static final String                            PROPERTY_IS_PART_OF_PLAYLIST                    = "is_part_of_playlist";
     public static final String                            FILETYPE_AUDIO                                  = "audio";
     public static final String                            FILETYPE_VIDEO                                  = "video";
     private final String                                  PROPERTY_ACCOUNT_TIMESTAMP_BORROW_LIMIT_REACHED = "timestamp_borrow_limit_reached";
@@ -186,14 +187,16 @@ public class ArchiveOrg extends PluginForHost {
         if (fileExtension != null && fileExtension.startsWith(".")) {
             fileExtension = fileExtension.substring(1);
         }
-        final ExtensionsFilterInterface fileType = CompiledFiletypeFilter.getExtensionsFilterInterface(fileExtension);
-        boolean isAudio = CompiledFiletypeFilter.AudioExtensions.MP3.isSameExtensionGroup(fileType);
+        final ExtensionsFilterInterface fileTypeByExtension = fileExtension != null ? CompiledFiletypeFilter.getExtensionsFilterInterface(fileExtension) : null;
+        boolean isAudio = fileTypeByExtension != null ? CompiledFiletypeFilter.AudioExtensions.MP3.isSameExtensionGroup(fileTypeByExtension) : false;
+        boolean isVideo = fileTypeByExtension != null ? CompiledFiletypeFilter.VideoExtensions.MP4.isSameExtensionGroup(fileTypeByExtension) : false;
         final String filetype = link.getStringProperty(PROPERTY_FILETYPE, null);
         if (StringUtils.equals(filetype, FILETYPE_AUDIO)) {
             isAudio = true;
+        } else if (StringUtils.equals(filetype, FILETYPE_VIDEO)) {
+            isVideo = true;
         }
-        // final boolean isVideo = CompiledFiletypeFilter.VideoExtensions.MP4.isSameExtensionGroup(fileType);
-        if (playlistPosition != -1) {
+        if (playlistPosition != -1 && (isAudio || isVideo)) {
             final int playlistSize = link.getIntegerProperty(PROPERTY_PLAYLIST_SIZE, -1);
             final int padLength = StringUtils.getPadLength(playlistSize);
             final String positionFormatted = StringUtils.formatByPadLength(padLength, playlistPosition);

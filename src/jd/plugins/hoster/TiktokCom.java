@@ -176,7 +176,11 @@ public class TiktokCom extends PluginForHost {
     /* API related stuff */
     public static final String API_CLIENT                                     = "trill";
     public static final String API_AID                                        = "1180";
-    public static final String API_BASE                                       = "https://api16-normal-c-useast1a.tiktokv.com/aweme/v1";
+    /**
+     * Values used in the past: </br>
+     * Until 2024-03-14: api16-normal-c-useast1a.tiktokv.com
+     */
+    public static final String API_BASE                                       = "https://api22-normal-c-useast2a.tiktokv.com/aweme/v1";
     public static final String API_VERSION_NAME                               = "25.6.2";
     public static final String API_VERSION_CODE                               = "250602";
     private final String       PROPERTY_ACCOUNT_HAS_SHOWN_DOWNLOAD_MODE_HINT  = "has_shown_download_mode_hint";
@@ -269,7 +273,11 @@ public class TiktokCom extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Broken media file?", 10 * 60 * 1000l);
                 }
                 if (con.getCompleteContentLength() > 0) {
-                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                    if (con.isContentDecoded()) {
+                        link.setDownloadSize(con.getCompleteContentLength());
+                    } else {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
                 }
                 missingDateFilenameLastResortHandling(link, con);
             } finally {

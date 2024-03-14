@@ -359,7 +359,7 @@ public class ShareplaceOrg extends YetiShareCore {
             return -2;
         } else if (account != null && account.getType() == AccountType.PREMIUM) {
             /* Premium account */
-            return 0;
+            return -10;
         } else {
             /* Free(anonymous) and unknown account type */
             return -2;

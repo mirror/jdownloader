@@ -140,13 +140,17 @@ public class PinterestComDecrypter extends PluginForDecrypt {
      * WORK IN PROGRESS
      */
     private ArrayList<DownloadLink> crawlAllOtherItems(final String contenturl) throws Exception {
-        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        /* Login whenever possible to be able to crawl private pinterest boards. */
+        final Account account = AccountController.getInstance().getValidAccount(this.getHost());
+        if (account != null) {
+            final PinterestCom hostPlugin = (PinterestCom) this.getNewPluginForHostInstance(this.getHost());
+            hostPlugin.login(account, false);
+        }
         br.getPage(contenturl);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        /* TODO: Check if login is needed at all */
-        // final boolean loggedin = getUserLogin(false);
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String json = br.getRegex("<script id=\"__PWS_DATA__\" type=\"application/json\">(\\{.*?)</script>").getMatch(0);
         final Map<String, Object> root = restoreFromString(json, TypeRef.MAP);
         final Map<String, Object> initialReduxState = (Map<String, Object>) JavaScriptEngineFactory.walkJson(root, "props/initialReduxState");
@@ -731,22 +735,6 @@ public class PinterestComDecrypter extends PluginForDecrypt {
             }
         }
         return null;
-    }
-
-    /** Log in the account of the hostplugin */
-    private boolean getUserLogin(final boolean force) throws Exception {
-        final PluginForHost hostPlugin = this.getNewPluginForHostInstance(this.getHost());
-        final Account aa = AccountController.getInstance().getValidAccount(hostPlugin);
-        if (aa == null) {
-            logger.warning("There is no account available, stopping...");
-            return false;
-        }
-        try {
-            ((jd.plugins.hoster.PinterestCom) hostPlugin).login(aa, force);
-        } catch (final PluginException e) {
-            return false;
-        }
-        return true;
     }
 
     private void prepAPIBRCrawler(final Browser br) throws PluginException {

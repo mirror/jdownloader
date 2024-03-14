@@ -464,8 +464,16 @@ public class TiktokComCrawler extends PluginForDecrypt {
             return new ArrayList<DownloadLink>();
         }
         if (PluginJsonConfig.get(TiktokConfig.class).getProfileCrawlMode() == ProfileCrawlMode.API) {
-            return crawlProfileAPI(param, contenturl);
+            /* API mode with website-fallback */
+            try {
+                return crawlProfileAPI(param, contenturl);
+            } catch (final JSonMapperException jme) {
+                /* Most likely API has answered with empty page. */
+                logger.info("Attempting website fallback in API mode");
+                return crawlProfileWebsite(param, contenturl);
+            }
         } else {
+            /* Website mode (without API fallback) */
             return crawlProfileWebsite(param, contenturl);
         }
     }
@@ -505,6 +513,7 @@ public class TiktokComCrawler extends PluginForDecrypt {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final TiktokConfig cfg = PluginJsonConfig.get(TiktokConfig.class);
         FilePackage fp = null;
+        Exception websiteFailureException = null;
         try {
             /* First try the "hard" way */
             String json = br.getRegex("window\\['SIGI_STATE'\\]\\s*=\\s*(\\{.*?\\});").getMatch(0);
@@ -518,6 +527,9 @@ public class TiktokComCrawler extends PluginForDecrypt {
             // preferredImageFileExtension = ".webp";
             // }
             final Map<String, Object> entries = restoreFromString(json, TypeRef.MAP);
+            if (entries == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             final Map<String, Map<String, Object>> itemModule = (Map<String, Map<String, Object>>) entries.get("ItemModule");
             final Map<String, Object> userPost = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "ItemList/user-post");
             final List<Map<String, Object>> preloadList = (List<Map<String, Object>>) userPost.get("preloadList");
@@ -556,9 +568,10 @@ public class TiktokComCrawler extends PluginForDecrypt {
             }
         } catch (final Exception ignore) {
             logger.log(ignore);
+            websiteFailureException = ignore;
         }
         if (ret.isEmpty()) {
-            /* Last chance fallback */
+            /* Super old code: Last chance fallback */
             logger.warning("Fallback to last resort plain html handling");
             final String[] videoIDs = br.getRegex(usernameSlug + "/video/(\\d+)\"").getColumn(0);
             for (final String videoID : videoIDs) {
@@ -572,6 +585,13 @@ public class TiktokComCrawler extends PluginForDecrypt {
                     this.displayBubblenotifyMessage("Stopping because: Reached user defined max items limit: " + cfg.getProfileCrawlerMaxItemsLimit(), "Stopping because: Reached user defined max items limit: " + cfg.getProfileCrawlerMaxItemsLimit());
                     return ret;
                 }
+            }
+        }
+        if (ret.isEmpty()) {
+            if (websiteFailureException != null) {
+                throw websiteFailureException;
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
         return ret;
@@ -742,13 +762,7 @@ public class TiktokComCrawler extends PluginForDecrypt {
         final TiktokCom hosterplugin = (TiktokCom) this.getNewPluginForHostInstance(this.getHost());
         do {
             TiktokCom.accessAPI(br, "/aweme/post", query);
-            Map<String, Object> entries = null;
-            try {
-                entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
-            } catch (final JSonMapperException e) {
-                logger.warning("Invalid API response");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
+            final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
             final List<Map<String, Object>> mediaitems = (List<Map<String, Object>>) entries.get("aweme_list");
             if (mediaitems == null) {
                 /* Profile does not exist. */

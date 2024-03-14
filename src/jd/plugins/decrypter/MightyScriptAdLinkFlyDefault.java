@@ -41,6 +41,8 @@ public class MightyScriptAdLinkFlyDefault extends MightyScriptAdLinkFly {
     }
 
     private static final String[]     domains                    = { "shorts-link.com", "easy4earn.com", "linkat4all.com", "shrtz.me", "ctkings.com", "linksad.net", "paylink.pro", "123link.pro", "donia2link.com", "cutpaid.com", "shortadz.org", "itiurl.co", "shortli.net", "cutearn.ca", "icutit.ca", "cut-one.com", "cll.press", "link-zero.com", "linktor.io", "cash4url.com", "cashat.net", "123short.com", "skip-url.me", "msms4.com", "empireshort.com", "loadurl.com", "cutt.us.com", "arabdollar.com", "shortenow.com", "best3link.com", "solo-link.com", "best5link.com", "lkky.co", "win4cut.com", "adlink.guru", "ibly.co", "urle.co", "mitly.us", "zlshorte.net", "igram.im", "gram.im", "adbilty.me", "linclik.com", "oke.io", "pnd.tl", "met.bz", "urlcloud.us", "clik.pw", "z2i.com", "fant1asy.com",
+            /** btcut.io domains */
+            "psa.btcut.io", "btcut.io",
             /** pwrpa.cc domains */
             "pwrpa.cc",
             /** 2023-09-11: tmearn.com domains */

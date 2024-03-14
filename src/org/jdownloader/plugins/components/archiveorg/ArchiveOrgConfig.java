@@ -15,8 +15,8 @@ import org.jdownloader.plugins.config.Type;
 @PluginHost(host = "archive.org", type = Type.CRAWLER)
 public interface ArchiveOrgConfig extends PluginConfigInterface {
     final String                    text_FileCrawlerCrawlOnlyOriginalVersions                    = "File crawler: Download only original versions of files?";
-    final String                    text_FileCrawlerCrawlArchiveView                             = "File crawler: Also crawl archive view?";
-    final String                    text_FileCrawlerCrawlMetadataFiles                           = "File crawler: Also crawl metadata files (typically .xml, .sqlite files)?";
+    final String                    text_FileCrawlerCrawlArchiveView                             = "File crawler: Include archive view?";
+    final String                    text_FileCrawlerCrawlMetadataFiles                           = "File crawler: Include metadata files (typically .xml & .sqlite files)?";
     final String                    text_PlaylistFilenameScheme                                  = "Playlist filename scheme";
     final String                    text_BookImageQuality                                        = "Book image quality (0 = highest, 10 = lowest)";
     final String                    text_BookCrawlMode                                           = "Book crawl mode";
