@@ -18,9 +18,13 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.Regex;
+import jd.parser.html.Form;
+import jd.parser.html.InputField;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountUnavailableException;
@@ -28,8 +32,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class FastfileCc extends XFileSharingProBasic {
@@ -145,6 +147,61 @@ public class FastfileCc extends XFileSharingProBasic {
             return dllink.replaceFirst("(?i)http://", "https://");
         } else {
             return null;
+        }
+    }
+
+    @Override
+    public boolean loginWebsite(final DownloadLink downloadLink, final Account account, final boolean validateCookies) throws Exception {
+        try {
+            return super.loginWebsite(downloadLink, account, validateCookies);
+        } catch (final PluginException e) {
+            if (br.containsHTML("n order to protect your privacy, your account has been blocked")) {
+                throw new AccountUnavailableException("Your account has been blocked temporarily", 30 * 60 * 1000);
+            }
+            Form twoFAForm = null;
+            final String formKey2FA = "code";
+            final Form[] forms = br.getForms();
+            for (final Form form : forms) {
+                final InputField twoFAField = form.getInputField(formKey2FA);
+                if (twoFAField != null) {
+                    twoFAForm = form;
+                    break;
+                }
+            }
+            if (twoFAForm == null) {
+                /* Login failed */
+                throw e;
+            }
+            logger.info("2FA code required");
+            final DownloadLink dl_dummy;
+            if (this.getDownloadLink() != null) {
+                dl_dummy = this.getDownloadLink();
+            } else {
+                dl_dummy = new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true);
+            }
+            String twoFACode = getUserInput("Enter 2-Factor authentication code you received via email", dl_dummy);
+            if (twoFACode != null) {
+                twoFACode = twoFACode.trim();
+            }
+            if (twoFACode == null || !twoFACode.matches("\\d{6}")) {
+                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                    throw new AccountUnavailableException("\r\nUngültiges Format der 2-faktor-Authentifizierung!", 1 * 60 * 1000l);
+                } else {
+                    throw new AccountUnavailableException("\r\nInvalid 2-factor-authentication code format!", 1 * 60 * 1000l);
+                }
+            }
+            logger.info("Submitting 2FA code");
+            twoFAForm.put(formKey2FA, twoFACode);
+            this.submitForm(twoFAForm);
+            if (!this.br.getURL().contains("?op=my_account")) {
+                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                    throw new AccountUnavailableException("\r\nUngültiger 2-faktor-Authentifizierungscode!", 1 * 60 * 1000l);
+                } else {
+                    throw new AccountUnavailableException("\r\nInvalid 2-factor-authentication code!", 1 * 60 * 1000l);
+                }
+            }
+            account.saveCookies(br.getCookies(br.getHost()), "");
+            return true;
         }
     }
 

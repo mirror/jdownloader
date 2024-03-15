@@ -354,7 +354,7 @@ public class DdownloadCom extends XFileSharingProBasic {
                     throw new AccountUnavailableException("\r\nInvalid 2-factor-authentication code!", 1 * 60 * 1000l);
                 }
             }
-            account.saveCookies(br.getCookies(getMainPage()), "");
+            account.saveCookies(br.getCookies(br.getHost()), "");
             return true;
         }
     }

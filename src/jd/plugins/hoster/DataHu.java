@@ -20,6 +20,14 @@ import java.util.ArrayList;
 import java.util.Locale;
 import java.util.Map;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.storage.simplejson.JSonUtils;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -35,15 +43,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.storage.simplejson.JSonUtils;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "data.hu" }, urls = { "https?://(?:www\\.)?data.hu/get/(\\d+)/([^<>\"/%]+)" })
 public class DataHu extends antiDDoSForHost {
@@ -143,7 +142,7 @@ public class DataHu extends antiDDoSForHost {
                     sb.append("%2C");
                 }
                 this.getAPISafe(API_BASE + "?act=check_download_links&links=" + sb.toString());
-                final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
+                final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
                 final Map<String, Object> link_info = (Map<String, Object>) entries.get("link_info");
                 for (final DownloadLink link : links) {
                     final Map<String, Object> info = (Map<String, Object>) link_info.get(link.getPluginPatternMatcher());
@@ -213,7 +212,7 @@ public class DataHu extends antiDDoSForHost {
         AccountInfo ai = new AccountInfo();
         this.setBrowserExclusive();
         login(account);
-        final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
+        final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         final String type = entries.get("type").toString();
         if (!"premium".equalsIgnoreCase(type)) {
             if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
