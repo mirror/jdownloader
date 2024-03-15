@@ -38,7 +38,7 @@ public class HifToShortlinks extends PluginForDecrypt {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "hif.to", "hil.to", "hitf.to", "hitf.cc", "htfl.net", "trbbt.net", "turb.pw" });
+        ret.add(new String[] { "hif.to", "hil.to", "hitf.to", "hitf.cc", "htfl.net", "trbbt.net", "turb.pw", "tbit.to" });
         return ret;
     }
 

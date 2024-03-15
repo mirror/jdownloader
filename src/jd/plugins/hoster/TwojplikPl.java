@@ -15,18 +15,20 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -47,15 +49,13 @@ import jd.plugins.PluginForHost;
 public class TwojplikPl extends PluginForHost {
     public TwojplikPl(PluginWrapper wrapper) {
         super(wrapper);
-        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-            /* 2024-03-01: Premium mode hasn't been implemented yet. */
-            this.enablePremium("https://" + getHost() + "/odkryj-pelnie-mozliwosci");
-        }
+        this.enablePremium("https://" + getHost() + "/odkryj-pelnie-mozliwosci");
     }
 
     @Override
     public Browser createNewBrowserInstance() {
         final Browser br = super.createNewBrowserInstance();
+        br.getHeaders().put("User-Agent", "JDownloader");
         br.setFollowRedirects(true);
         return br;
     }
@@ -109,7 +109,11 @@ public class TwojplikPl extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        return requestFileInformation(link, null);
+    }
+
+    private AvailableStatus requestFileInformation(final DownloadLink link, final Account account) throws Exception {
         this.setBrowserExclusive();
         if (!link.isNameSet()) {
             final Regex urlinfo = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks());
@@ -120,6 +124,9 @@ public class TwojplikPl extends PluginForHost {
             } else {
                 link.setName(fileid);
             }
+        }
+        if (account != null) {
+            this.login(account, false);
         }
         br.getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 404) {
@@ -165,6 +172,7 @@ public class TwojplikPl extends PluginForHost {
             br.getPage("https://" + this.getHost() + "/");
             final Form loginform = new Form();
             loginform.setMethod(MethodType.POST);
+            loginform.setAction("/auth/login");
             loginform.put("action", "fastLogin");
             loginform.put("mail", Encoding.urlEncode(account.getUser()));
             loginform.put("password", Encoding.urlEncode(account.getPass()));
@@ -194,30 +202,24 @@ public class TwojplikPl extends PluginForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        final AccountInfo ai = new AccountInfo();
         login(account, true);
-        // TODO
-        // String space = br.getRegex("").getMatch(0);
-        // if (space != null) {
-        // ai.setUsedSpace(space.trim());
-        // }
-        // if (br.containsHTML("")) {
-        // account.setType(AccountType.FREE);
-        // /* free accounts can still have captcha */
-        // account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
-        // account.setConcurrentUsePossible(false);
-        // } else {
-        // final String expire = br.getRegex("").getMatch(0);
-        // if (expire == null) {
-        // throw new AccountInvalidException();
-        // } else {
-        // ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH));
-        // }
-        // account.setType(AccountType.PREMIUM);
-        // account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
-        // account.setConcurrentUsePossible(true);
-        // }
-        ai.setUnlimitedTraffic();
+        br.getPage("/panel");
+        final AccountInfo ai = new AccountInfo();
+        final String expire = br.getRegex("(\\d{1,2}\\.\\d{1,2}\\.\\d{4}, \\d{2}:\\d{2})").getMatch(0);
+        if (expire != null) {
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd.MM.yyyy HH:mm", Locale.ENGLISH));
+            account.setType(AccountType.PREMIUM);
+        } else {
+            account.setType(AccountType.FREE);
+        }
+        // TODO: This is a very bad RegEx
+        String trafficleftStr = br.getRegex(">\\s*Twój transfer dzienny\\s*</span></p>.*?<p style=\"color:#ffbb44;font-weight: 900;\">([^<]+)</p>").getMatch(0);
+        if (trafficleftStr != null) {
+            trafficleftStr = trafficleftStr.replace(",", ".");
+            ai.setTrafficLeft(SizeFormatter.getSize(trafficleftStr));
+        } else {
+            ai.setUnlimitedTraffic();
+        }
         return ai;
     }
 
@@ -232,21 +234,36 @@ public class TwojplikPl extends PluginForHost {
     }
 
     private void handleDownload(final DownloadLink link, final Account account) throws Exception, PluginException {
-        throw new AccountRequiredException();
+        if (account == null) {
+            throw new AccountRequiredException();
+        } else if (account.getType() != AccountType.PREMIUM) {
+            throw new AccountRequiredException();
+        }
+        final String dllink = br.getRegex("class=\"download-url-input\"[^>]*value=\"(https?://[^\"]+)").getMatch(0);
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (StringUtils.isEmpty(dllink)) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(this.br, link, dllink, true, 0);
+        final URLConnectionAdapter con = dl.getConnection();
+        if (!this.looksLikeDownloadableContent(con)) {
+            br.followConnection(true);
+            if (con.getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+            } else if (con.getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File broken?");
+            }
+        }
+        dl.startDownload();
     }
 
     @Override
     public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
-        if (acc == null) {
-            /* no account, yes we can expect captcha */
-            return true;
-        } else if (acc.getType() == AccountType.FREE) {
-            /* Free accounts can have captchas */
-            return true;
-        } else {
-            /* Premium accounts do not have captchas */
-            return false;
-        }
+        return false;
     }
 
     @Override

@@ -153,26 +153,37 @@ public class StreamableCom extends PluginForHost {
         }
         String title = null;
         String directurl = null;
+        boolean looksLikeOffline = false;
         if (videomap2 != null) {
             /* This map contains more information */
-            title = videomap2.get("title").toString();
+            title = (String) videomap2.get("title");
             final Map<String, Object> files = (Map<String, Object>) videomap2.get("files");
-            final Map<String, Object> files_mp4 = (Map<String, Object>) files.get("mp4");
-            final long filesize = ((Number) files_mp4.get("size")).longValue();
-            if (filesize > 0) {
-                link.setDownloadSize(filesize);
-                /* Do NOT set verifiedFilesize here - this one isn't safe! */
+            if (files != null) {
+                final Map<String, Object> files_mp4 = (Map<String, Object>) files.get("mp4");
+                final long filesize = ((Number) files_mp4.get("size")).longValue();
+                if (filesize > 0) {
+                    link.setDownloadSize(filesize);
+                    /* Do NOT set verifiedFilesize here - this one isn't safe! */
+                }
+                directurl = files_mp4.get("url").toString();
+            } else {
+                looksLikeOffline = true;
             }
-            directurl = files_mp4.get("url").toString();
         } else {
             title = videomap1.get("name").toString();
             directurl = videomap1.get("contentUrl").toString();
         }
-        title = title.replaceFirst("(?i) \\| Streamable$", "");
-        link.setFinalFileName(title + extDefault);
+        if (!StringUtils.isEmpty(title)) {
+            title = title.replaceFirst("(?i) \\| Streamable$", "");
+            link.setFinalFileName(title + extDefault);
+        }
         if (directurl != null) {
             directurl = br.getURL(directurl).toExternalForm();
             link.setProperty(PROPERTY_DIRECTLINK, directurl);
+        }
+        /* Check here because title of offline videos might still be available. */
+        if (directurl == null && looksLikeOffline) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         return AvailableStatus.TRUE;
     }

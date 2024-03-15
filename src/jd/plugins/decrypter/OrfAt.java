@@ -211,6 +211,7 @@ public class OrfAt extends PluginForDecrypt {
             fp.setComment(description);
         }
         fp.setPackageKey("orfmediathek://video/" + contentIDSlashPlaylistIDSlashVideoID);
+        final boolean has_active_youth_protection = ((Boolean) entries.get("has_active_youth_protection")).booleanValue();
         final SubConfiguration cfg = SubConfiguration.getConfig("orf.at");
         final ORFMediathek hosterplugin = (ORFMediathek) this.getNewPluginForHostInstance("orf.at");
         final Map<String, Long> qualityIdentifierToFilesizeMapGLOBAL = new HashMap<String, Long>();
@@ -232,7 +233,6 @@ public class OrfAt extends PluginForDecrypt {
         }
         final Map<String, Object> gapless_subtitlemap = (Map<String, Object>) _embedded.get("subtitle");
         final String gapless_subtitleurl = gapless_subtitlemap != null ? (String) gapless_subtitlemap.get("srt_url") : null;
-        boolean isCurrentlyAgeRestricted = false;
         String thumbnailurlFromFirstSegment = null;
         final boolean settingPreferBestVideo = cfg != null ? cfg.getBooleanProperty(ORFMediathek.Q_BEST, ORFMediathek.Q_BEST_default) : false;
         final boolean settingEnableFastCrawl = cfg != null ? cfg.getBooleanProperty(ORFMediathek.SETTING_ENABLE_FAST_CRAWL, ORFMediathek.SETTING_ENABLE_FAST_CRAWL_default) : true;
@@ -314,7 +314,7 @@ public class OrfAt extends PluginForDecrypt {
                         isProgressiveStreamAvailable = true;
                     }
                     final String fmtHumanReadable = humanReadableQualityIdentifier(fmt.toUpperCase(Locale.ENGLISH).trim());
-                    filesizeCheck: if (selectedQualities.contains(fmtHumanReadable) && isProgressive && !settingEnableFastCrawl && !qualityIdentifierToFilesizeMap.containsKey(fmtHumanReadable) && !isCurrentlyAgeRestricted) {
+                    filesizeCheck: if (selectedQualities.contains(fmtHumanReadable) && isProgressive && !settingEnableFastCrawl && !qualityIdentifierToFilesizeMap.containsKey(fmtHumanReadable) && !has_active_youth_protection) {
                         logger.info("Checking progressive URL to find filesize: " + url_directlink_video);
                         URLConnectionAdapter con = null;
                         try {
@@ -324,23 +324,14 @@ public class OrfAt extends PluginForDecrypt {
                                 logger.info("Skipping broken progressive video quality: " + url_directlink_video);
                                 continue;
                             }
-                            if (ORFMediathek.isAgeRestrictedByCurrentTime(con.getURL().toExternalForm())) {
-                                /*
-                                 * Video-segment is valid but we can't use the filesize by header as it is currently age-restricted so we
-                                 * are being served y dummy-video.
-                                 */
-                                isCurrentlyAgeRestricted = true;
-                                logger.info("This item is currently age restricted");
-                            } else {
-                                final long filesize = con.getCompleteContentLength();
-                                if (filesize > 0) {
-                                    qualityIdentifierToFilesizeMap.put(fmtHumanReadable, filesize);
-                                    final Long filesizeSumForAllSegmentsOfThisQuality = qualityIdentifierToFilesizeMapGLOBAL.get(fmtHumanReadable);
-                                    if (filesizeSumForAllSegmentsOfThisQuality != null) {
-                                        qualityIdentifierToFilesizeMapGLOBAL.put(fmtHumanReadable, filesizeSumForAllSegmentsOfThisQuality + filesize);
-                                    } else {
-                                        qualityIdentifierToFilesizeMapGLOBAL.put(fmtHumanReadable, filesize);
-                                    }
+                            final long filesize = con.getCompleteContentLength();
+                            if (filesize > 0) {
+                                qualityIdentifierToFilesizeMap.put(fmtHumanReadable, filesize);
+                                final Long filesizeSumForAllSegmentsOfThisQuality = qualityIdentifierToFilesizeMapGLOBAL.get(fmtHumanReadable);
+                                if (filesizeSumForAllSegmentsOfThisQuality != null) {
+                                    qualityIdentifierToFilesizeMapGLOBAL.put(fmtHumanReadable, filesizeSumForAllSegmentsOfThisQuality + filesize);
+                                } else {
+                                    qualityIdentifierToFilesizeMapGLOBAL.put(fmtHumanReadable, filesize);
                                 }
                             }
                         } catch (final Exception e) {
@@ -585,7 +576,7 @@ public class OrfAt extends PluginForDecrypt {
                 result.setContentUrl(sourceurl);
                 result.setProperty(ORFMediathek.PROPERTY_VIDEO_ID, contentIDSlashPlaylistIDSlashVideoID);
                 result.setProperty(ORFMediathek.PROPERTY_SOURCEURL, sourceurl);
-                if (isCurrentlyAgeRestricted) {
+                if (has_active_youth_protection) {
                     result.setProperty(ORFMediathek.PROPERTY_AGE_RESTRICTED, true);
                 }
                 result.setFinalFileName(ORFMediathek.getFormattedVideoFilename(result));

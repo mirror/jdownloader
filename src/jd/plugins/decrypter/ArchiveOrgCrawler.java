@@ -33,6 +33,7 @@ import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.URLEncode;
 import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.net.URLHelper;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.plugins.components.archiveorg.ArchiveOrgConfig;
 import org.jdownloader.plugins.components.archiveorg.ArchiveOrgConfig.BookCrawlMode;
@@ -209,7 +210,8 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
             /* Developer mistake */
             throw new IllegalArgumentException();
         }
-        final String path = new URL(url).getPath().replaceFirst("(?i)^/download/", "/");
+        final String urlWithoutParams = URLHelper.getUrlWithoutParams(url);
+        final String path = new URL(urlWithoutParams).getPath().replaceFirst("(?i)^/download/", "/");
         final String[] pathSegments = path.split("/");
         final String identifier = pathSegments[1];
         final boolean allowCheckForDirecturl = true;
@@ -1073,9 +1075,12 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
     }
 
     /** Work in progress, see https://archive.org/metadata/<identifier> */
-    private ArrayList<DownloadLink> crawlMetadataJsonV2(final String identifier, final String sourceurl) throws Exception {
+    private ArrayList<DownloadLink> crawlMetadataJsonV2(final String identifier, String sourceurl) throws Exception {
         if (StringUtils.isEmpty(identifier)) {
             throw new IllegalArgumentException();
+        }
+        if (sourceurl != null) {
+            sourceurl = URLHelper.getUrlWithoutParams(sourceurl);
         }
         /* The following request will return an empty map if the given identifier is invalid. */
         br.getPage("https://archive.org/metadata/" + Encoding.urlEncode(identifier));
@@ -1158,6 +1163,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                 continue;
             }
             /* Find path- and filename */
+            /* Relative path to this file including identifier as root folder. */
             String thisPath;
             String filename = null;
             if (pathWithFilename.contains("/")) {
@@ -1185,13 +1191,8 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                 thisPath = identifier;
                 filename = pathWithFilename;
             }
-            final Object sizeO = filemap.get("size");
-            final Object trackO = filemap.get("track");
-            int audioTrackPosition = -1;
-            if (trackO != null) {
-                audioTrackPosition = Integer.parseInt(trackO.toString());
-            }
-            // TODO: Make use of this
+            final Object fileSizeO = filemap.get("size");
+            final Object audioTrackPositionO = filemap.get("track");
             String url = "https://archive.org/download/" + identifier;
             if (pathWithFilename.startsWith("/")) {
                 url += URLEncode.encodeURIComponent(pathWithFilename);
@@ -1199,14 +1200,16 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                 url += "/" + URLEncode.encodeURIComponent(pathWithFilename);
             }
             // final String directurl = "https://" + server + dir + "/" + URLEncode.encodeURIComponent(pathWithFilename);
-            final DownloadLink file = new DownloadLink(null, null, null, url, true);
+            final DownloadLink file = this.createDownloadlink(url);
             file.setProperty(ArchiveOrg.PROPERTY_ARTIST, filemap.get("artist")); // Optional field
             file.setProperty(ArchiveOrg.PROPERTY_TITLE, filemap.get("title")); // Optional field
-            if (sizeO != null) {
-                if (sizeO instanceof Number) {
-                    file.setVerifiedFileSize(((Number) sizeO).longValue());
+            file.setProperty(ArchiveOrg.PROPERTY_ARTIST, filemap.get("artist")); // optional field
+            file.setProperty(ArchiveOrg.PROPERTY_GENRE, filemap.get("genre")); // optional field
+            if (fileSizeO != null) {
+                if (fileSizeO instanceof Number) {
+                    file.setVerifiedFileSize(((Number) fileSizeO).longValue());
                 } else {
-                    file.setVerifiedFileSize(Long.parseLong(sizeO.toString()));
+                    file.setVerifiedFileSize(Long.parseLong(fileSizeO.toString()));
                 }
             }
             final String crc32 = (String) filemap.get("crc32");
@@ -1236,9 +1239,9 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                 fpmap.put(thisPath, fp);
             }
             file._setFilePackage(fp);
-            if (audioTrackPosition != -1) {
+            if (audioTrackPositionO != null) {
                 /* Track position given -> Item must be part of a playlist. */
-                file.setProperty(ArchiveOrg.PROPERTY_PLAYLIST_POSITION, audioTrackPosition);
+                file.setProperty(ArchiveOrg.PROPERTY_PLAYLIST_POSITION, Integer.parseInt(audioTrackPositionO.toString()));
                 /* Add item to list of playlist results. */
                 playlistItems.add(file);
             }

@@ -940,7 +940,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
                 final String sectionID = entries.get("id").toString();
                 logger.info("Crawling section " + sectionCounter + " of " + sections.size() + " --> ID = " + sectionID);
                 final FilePackage fp = FilePackage.getInstance();
-                fp.setName(username + " - " + boardName + " - " + section_title);
+                fp.setName(username + " - " + boardName + " - " + Encoding.htmlDecode(section_title));
                 fp.setPackageKey("pinterest://board/" + boardID + "/section/" + sectionID);
                 ret.addAll(crawlSection(ajax, source_url, boardID, sectionID, fp));
                 sectionCounter += 1;

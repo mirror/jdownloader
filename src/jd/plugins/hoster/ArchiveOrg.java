@@ -112,6 +112,7 @@ public class ArchiveOrg extends PluginForHost {
     public static final String                            PROPERTY_PLAYLIST_SIZE                          = "playlist_size";
     public static final String                            PROPERTY_TITLE                                  = "title";
     public static final String                            PROPERTY_ARTIST                                 = "artist";
+    public static final String                            PROPERTY_GENRE                                  = "genre";
     public static final String                            PROPERTY_TIMESTAMP_FROM_API_LAST_MODIFIED       = "timestamp_from_api_last_modified";
     /*
      * Important: Only set this for audio/video playlists! If this is set && a playlist-position is given that will be added to the

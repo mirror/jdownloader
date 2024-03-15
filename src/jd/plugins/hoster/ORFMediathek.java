@@ -23,7 +23,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.TimeZone;
 
-import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.downloader.hds.HDSDownloader;
 import org.jdownloader.downloader.hls.HLSDownloader;
@@ -186,6 +185,7 @@ public class ORFMediathek extends PluginForHost {
                 /* Invalid item (this should never happen!). */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
+            checkUrlForAgeProtection(link, dllink);
             try {
                 con = br2.openHeadConnection(dllink);
                 handleConnectionErrors(br2, link, con);
@@ -218,13 +218,27 @@ public class ORFMediathek extends PluginForHost {
     }
 
     private void handleURLBasedErrors(final Browser br, final DownloadLink link) throws Exception {
-        if (isAgeRestrictedByCurrentTime(br.getURL())) {
-            if (System.currentTimeMillis() - link.getLongProperty(PROPERTY_AGE_RESTRICTED_LAST_RECRAWL_TIMESTAMP, 0) < 10 * 60 * 1000) {
+        checkUrlForAgeProtection(link, br.getURL());
+        final String errortextGeoBlocked1 = "Error 403: GEO-blocked content or video temporarily unavailable via this streaming method. Check your orf.at plugin settings.";
+        final String errortextGeoBlocked2 = "GEO-blocked";
+        if (br.getHttpConnection().getResponseCode() == 403) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, errortextGeoBlocked1);
+        } else if (StringUtils.containsIgnoreCase(br.getURL(), "geoprotection_")) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, errortextGeoBlocked2);
+        } else if (StringUtils.containsIgnoreCase(br.getURL(), "nicht_verfuegbar_hr")) {
+            /* 2023-11-27 */
+            throw new PluginException(LinkStatus.ERROR_FATAL, errortextGeoBlocked2);
+        }
+    }
+
+    private void checkUrlForAgeProtection(final DownloadLink link, final String url) throws Exception {
+        if (isAgeRestrictedByCurrentTime(url)) {
+            if (System.currentTimeMillis() - link.getLongProperty(PROPERTY_AGE_RESTRICTED_LAST_RECRAWL_TIMESTAMP, 0) < 30 * 60 * 1000) {
                 /**
                  * Recrawl has just happened and we were still unable to download the item :( </br>
                  * This should never happen!
                  */
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Jugendschutz-Recrawl fehlgeschlagen", 10 * 60 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Jugendschutz-Recrawl fehlgeschlagen Grund 1", 10 * 60 * 1000l);
             }
             /*
              * E.g. progressive:
@@ -242,61 +256,48 @@ public class ORFMediathek extends PluginForHost {
             c.set(c.SECOND, 0);
             final long tsLater = c.getTimeInMillis();
             final long timeUntilLater = tsLater - System.currentTimeMillis();
-            final boolean videoShouldBeAvailable;
-            final long waitMillisUntilVideoIsAvailable;
-            if (timeUntilLater > 0) {
-                waitMillisUntilVideoIsAvailable = timeUntilLater;
-                videoShouldBeAvailable = false;
-            } else {
-                /**
-                 * This should never happen. Either server time is wrong/offset or user has wrong local OS time. </br>
-                 * Video should already be available -> Wait static wait time
-                 */
-                waitMillisUntilVideoIsAvailable = 30 * 60 * 1000;
-                videoShouldBeAvailable = true;
-            }
             link.setProperty(ORFMediathek.PROPERTY_AGE_RESTRICTED, true);
-            if (videoShouldBeAvailable && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-                /* Re-crawl item in order to find a fresh streaming URL which should enable us to download the item. */
-                final OrfAt crawler = (OrfAt) this.getNewPluginForDecryptInstance(this.getHost());
-                if (link.getContainerUrl() == null || !crawler.canHandle(link.getContainerUrl())) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                /* Hack to force crawler to crawl all items regardless of user configuration. */
-                crawler.cfg = null;
-                DownloadLink freshItem = null;
-                final ArrayList<DownloadLink> results = crawler.decryptIt(new CryptedLink(link.getContainerUrl()), null);
-                final String thisLinkID = this.getLinkID(link);
-                for (final DownloadLink result : results) {
-                    if (StringUtils.equals(this.getLinkID(result), thisLinkID)) {
-                        freshItem = result;
-                        break;
-                    }
-                }
-                if (freshItem == null) {
-                    /* Video version we are looking for doesn't exist anymore -> Item offline? Should be a very rare case. */
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
-                final String freshDirecturl = freshItem.getStringProperty(PROPERTY_DIRECTURL);
-                if (StringUtils.isEmpty(freshDirecturl)) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                link.setProperty(PROPERTY_DIRECTURL, freshDirecturl);
-                throw new PluginException(LinkStatus.ERROR_RETRY, "Retry after Jugenschutz recrawl");
-            } else {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Dieses Video ist im Sinne des Jugendschutzes nur von 20.00 bis 6.00 Uhr verfügbar.", waitMillisUntilVideoIsAvailable);
+            if (timeUntilLater > 0) {
+                /* Video can't be played yet. */
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Dieses Video ist im Sinne des Jugendschutzes nur von 20.00 bis 6.00 Uhr verfügbar.", timeUntilLater);
             }
-        } else {
-            final String errortextGeoBlocked1 = "Error 403: GEO-blocked content or video temporarily unavailable via this streaming method. Check your orf.at plugin settings.";
-            final String errortextGeoBlocked2 = "GEO-blocked";
-            if (br.getHttpConnection().getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_FATAL, errortextGeoBlocked1);
-            } else if (StringUtils.containsIgnoreCase(br.getURL(), "geoprotection_")) {
-                throw new PluginException(LinkStatus.ERROR_FATAL, errortextGeoBlocked2);
-            } else if (StringUtils.containsIgnoreCase(br.getURL(), "nicht_verfuegbar_hr")) {
-                /* 2023-11-27 */
-                throw new PluginException(LinkStatus.ERROR_FATAL, errortextGeoBlocked2);
+            /*
+             * Video should be available -> Re-crawl item in order to find a fresh streaming URL which should enable us to download the
+             * item.
+             */
+            final String sourceurl = link.getStringProperty(PROPERTY_SOURCEURL);
+            final OrfAt crawler = (OrfAt) this.getNewPluginForDecryptInstance(this.getHost());
+            if (sourceurl == null || !crawler.canHandle(sourceurl)) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            /* Hack to force crawler to crawl all items regardless of user configuration. */
+            crawler.cfg = null;
+            DownloadLink freshItem = null;
+            final ArrayList<DownloadLink> results = crawler.decryptIt(new CryptedLink(sourceurl), null);
+            link.setProperty(PROPERTY_AGE_RESTRICTED_LAST_RECRAWL_TIMESTAMP, System.currentTimeMillis());
+            final String thisLinkID = this.getLinkID(link);
+            for (final DownloadLink result : results) {
+                if (StringUtils.equals(this.getLinkID(result), thisLinkID)) {
+                    freshItem = result;
+                    break;
+                }
+            }
+            if (freshItem == null) {
+                /* Video version we are looking for doesn't exist anymore -> Item offline? Should be a very rare case. */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            final String oldDirecturl = link.getStringProperty(PROPERTY_DIRECTURL);
+            final String freshDirecturl = freshItem.getStringProperty(PROPERTY_DIRECTURL);
+            if (StringUtils.isEmpty(freshDirecturl)) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            } else if (freshDirecturl.equals(oldDirecturl)) {
+                /* This should never happen */
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Jugendschutz-Recrawl fehlgeschlagen Grund 2", 10 * 60 * 1000l);
+            }
+            /* Set fresh directurl which can be used to download this item. */
+            link.setProperty(PROPERTY_DIRECTURL, freshDirecturl);
+            /* Trigger retry of this item - this time the download should work. */
+            throw new PluginException(LinkStatus.ERROR_RETRY, "Retry after Jugenschutz recrawl");
         }
     }
 
@@ -307,11 +308,6 @@ public class ORFMediathek extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link, true);
-        download(link);
-    }
-
-    @SuppressWarnings("deprecation")
-    private void download(final DownloadLink link) throws Exception {
         final String dllink = link.getStringProperty(PROPERTY_DIRECTURL);
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
