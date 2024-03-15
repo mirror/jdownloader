@@ -82,6 +82,9 @@ public class ArchiveOrg extends PluginForHost {
 
     @Override
     public String getLinkID(final DownloadLink link) {
+        // if (isAudioPlaylistItem(link)) {
+        // return super.getLinkID(link) + "_audio_playlist_item";
+        // }
         if (this.isBook(link)) {
             return this.getHost() + "://" + this.getBookID(link) + "/" + this.getBookSubPrefix(link) + "/" + this.getBookPageIndexNumber(link);
         } else {
@@ -119,7 +122,6 @@ public class ArchiveOrg extends PluginForHost {
      * beginning of the filenames!
      */
     public static final String                            PROPERTY_FILETYPE                               = "filetype";
-    public static final String                            PROPERTY_IS_PART_OF_PLAYLIST                    = "is_part_of_playlist";
     public static final String                            FILETYPE_AUDIO                                  = "audio";
     public static final String                            FILETYPE_VIDEO                                  = "video";
     private final String                                  PROPERTY_ACCOUNT_TIMESTAMP_BORROW_LIMIT_REACHED = "timestamp_borrow_limit_reached";
@@ -175,6 +177,15 @@ public class ArchiveOrg extends PluginForHost {
         return AvailableStatus.UNCHECKABLE;
     }
 
+    private boolean isAudioPlaylistItem(final DownloadLink link) {
+        final String filetype = link.getStringProperty(PROPERTY_FILETYPE, null);
+        if (StringUtils.equals(filetype, FILETYPE_AUDIO) && link.getRelativeDownloadFolderPath() == null) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     /**
      * Use this whenever you wnt to set a filename especially if there is a chance that the item is part of an audio playlist or a video
      * streaming item.
@@ -197,7 +208,7 @@ public class ArchiveOrg extends PluginForHost {
         } else if (StringUtils.equals(filetype, FILETYPE_VIDEO)) {
             isVideo = true;
         }
-        if (playlistPosition != -1 && (isAudio || isVideo)) {
+        if (playlistPosition != -1 && (isAudio || isVideo) && link.getRelativeDownloadFolderPath() == null) {
             final int playlistSize = link.getIntegerProperty(PROPERTY_PLAYLIST_SIZE, -1);
             final int padLength = StringUtils.getPadLength(playlistSize);
             final String positionFormatted = StringUtils.formatByPadLength(padLength, playlistPosition);
@@ -806,35 +817,34 @@ public class ArchiveOrg extends PluginForHost {
     public boolean looksLikeDownloadableContent(final URLConnectionAdapter con, final boolean isOfficialDownloadurl) {
         if (super.looksLikeDownloadableContent(con)) {
             return true;
-        } else {
-            if (con.getResponseCode() == 200 || con.getResponseCode() == 206) {
-                if (isOfficialDownloadurl) {
-                    /**
-                     * It's an official downloadurl but they're not necessarily sending a Content-Disposition header so checks down below
-                     * could e.g. fail for .html files. </br>
-                     */
+        }
+        if (con.getResponseCode() == 200 || con.getResponseCode() == 206) {
+            if (isOfficialDownloadurl) {
+                /**
+                 * It's an official downloadurl but they're not necessarily sending a Content-Disposition header so checks down below could
+                 * e.g. fail for .html files. </br>
+                 */
+                return true;
+            } else if (StringUtils.containsIgnoreCase(con.getURL().getPath(), ".xml")) {
+                /* 2021-02-15: Special handling for .xml files */
+                return StringUtils.containsIgnoreCase(con.getContentType(), "xml");
+            } else if (con.getURL().getPath().matches("(?i).*\\.(txt|log)$")) {
+                /* 2021-05-03: Special handling for .txt files */
+                return StringUtils.containsIgnoreCase(con.getContentType(), "text/plain");
+            } else if (StringUtils.containsIgnoreCase(con.getURL().getPath(), ".html")) {
+                /* 2023-02-13: Special handling for .html files */
+                return StringUtils.containsIgnoreCase(con.getContentType(), "html") || StringUtils.containsIgnoreCase(con.getContentType(), "text/plain");
+            } else {
+                /* MimeType file-extension and extension at the end of the URL are the same -> Also accept as downloadable content. */
+                final String extension = getExtensionFromMimeType(con.getContentType());
+                if (StringUtils.endsWithCaseInsensitive(con.getURL().getPath(), "." + extension)) {
                     return true;
-                } else if (StringUtils.containsIgnoreCase(con.getURL().getPath(), ".xml")) {
-                    /* 2021-02-15: Special handling for .xml files */
-                    return StringUtils.containsIgnoreCase(con.getContentType(), "xml");
-                } else if (con.getURL().getPath().matches("(?i).*\\.(txt|log)$")) {
-                    /* 2021-05-03: Special handling for .txt files */
-                    return StringUtils.containsIgnoreCase(con.getContentType(), "text/plain");
-                } else if (StringUtils.containsIgnoreCase(con.getURL().getPath(), ".html")) {
-                    /* 2023-02-13: Special handling for .html files */
-                    return StringUtils.containsIgnoreCase(con.getContentType(), "html") || StringUtils.containsIgnoreCase(con.getContentType(), "text/plain");
                 } else {
-                    /* MimeType file-extension and extension at the end of the URL are the same -> Also accept as downloadable content. */
-                    final String extension = getExtensionFromMimeType(con.getContentType());
-                    if (StringUtils.endsWithCaseInsensitive(con.getURL().getPath(), "." + extension)) {
-                        return true;
-                    } else {
-                        return false;
-                    }
+                    return false;
                 }
             }
-            return false;
         }
+        return false;
     }
 
     @Override

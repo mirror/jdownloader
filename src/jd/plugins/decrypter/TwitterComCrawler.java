@@ -1292,6 +1292,10 @@ public class TwitterComCrawler extends PluginForDecrypt {
                 for (final Map.Entry<String, Object> entry : map.entrySet()) {
                     // final String key = entry.getKey();
                     final Object value = entry.getValue();
+                    if (value instanceof String && value.toString().startsWith("promoted-tweet")) {
+                        // Skip ads / "fake-tweets"
+                        return;
+                    }
                     if (value instanceof List || value instanceof Map) {
                         recursiveFindTweetMaps(value, results);
                     }

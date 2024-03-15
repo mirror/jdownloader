@@ -212,8 +212,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         }
         final String urlWithoutParams = URLHelper.getUrlWithoutParams(url);
         final String path = new URL(urlWithoutParams).getPath().replaceFirst("(?i)^/download/", "/");
-        final String[] pathSegments = path.split("/");
-        final String identifier = pathSegments[1];
+        final String identifier = getIdentifierFromURL(url);
         final boolean allowCheckForDirecturl = true;
         if (path.contains("/") && allowCheckForDirecturl) {
             /**
@@ -269,6 +268,10 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         }
     }
 
+    public static String getIdentifierFromURL(final String url) {
+        return new Regex(url, "/(?:details|download|metadata)/([A-Za-z0-9\\-_]{5,})").getMatch(0);
+    }
+
     /** Crawls all files from "/download/..." URLs. */
     @Deprecated
     private ArrayList<DownloadLink> crawlFiles(final String contenturl) throws Exception {
@@ -288,9 +291,13 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
     }
 
     private ArrayList<DownloadLink> crawlDetails(final Browser br, final CryptedLink param) throws Exception {
-        final String urlWithoutParams = br._getURL().getPath();
+        final String urlWithoutParams = URLHelper.getUrlWithoutParams(br._getURL());
+        final String identifier = getIdentifierFromURL(br._getURL().toExternalForm());
+        // TODO: Get rid of 'titleSlug' during refactoring
         final String titleSlug = new Regex(urlWithoutParams, "(?i)/details/([^/]+)").getMatch(0);
-        if (titleSlug == null) {
+        if (identifier == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else if (titleSlug == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final String downloadurl = br.getURL("/download/" + titleSlug).toExternalForm();
@@ -298,8 +305,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
             /* 2020-09-29: Rare case: Download browser emulated games */
             return this.crawlXML(br.getURL(), br, titleSlug);
         }
-        final ArrayList<DownloadLink> playlistVideoStreams = new ArrayList<DownloadLink>();
-        final ArchiveOrgConfig cfg = PluginJsonConfig.get(ArchiveOrgConfig.class);
+        final ArrayList<DownloadLink> playlistItems = new ArrayList<DownloadLink>();
         final String videoJson = br.getRegex("class=\"js-tv3-init\"[^>]*value='(\\{.*?\\})").getMatch(0);
         if (videoJson != null) {
             /* 2022-10-31: Example: https://archive.org/details/MSNBCW_20211108_030000_Four_Seasons_Total_Documentary */
@@ -317,7 +323,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                 ArchiveOrg.setFinalFilename(video, slug + ".mp4");
                 video.setAvailable(true);
                 video._setFilePackage(fp);
-                playlistVideoStreams.add(video);
+                playlistItems.add(video);
                 position++;
             }
         }
@@ -374,22 +380,22 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
             }
             if (audioPlaylistItemsDetailed.size() == ressourcelist.size()) {
                 logger.info("Found valid detailed audio information");
-                playlistVideoStreams.addAll(audioPlaylistItemsDetailed);
+                playlistItems.addAll(audioPlaylistItemsDetailed);
             } else {
                 logger.info("Failed to obtain detailed audio information");
-                playlistVideoStreams.addAll(audioPlaylistItemsSimple);
+                playlistItems.addAll(audioPlaylistItemsSimple);
             }
         }
         final String downloadlinkToAllFilesDownload = br.getRegex("(?i)href=\"(/download/[^\"]*?)\">\\s*SHOW ALL").getMatch(0);
+        final ArchiveOrgConfig cfg = PluginJsonConfig.get(ArchiveOrgConfig.class);
         final PlaylistCrawlMode playlistCrawlMode = cfg.getPlaylistCrawlMode();
-        if (playlistVideoStreams.size() > 0 && playlistCrawlMode == PlaylistCrawlMode.PLAYLIST_ONLY) {
-            /* Check whether user only wants to have playlist items only or more/all. */
+        if (playlistCrawlMode == PlaylistCrawlMode.PLAYLIST_ONLY && playlistItems.size() > 0) {
             logger.info("Returning streaming items ONLY");
-            return playlistVideoStreams;
+            return playlistItems;
         }
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         if (downloadlinkToAllFilesDownload == null || playlistCrawlMode == PlaylistCrawlMode.PLAYLIST_AND_FILES) {
-            ret.addAll(playlistVideoStreams);
+            ret.addAll(playlistItems);
         }
         if (downloadlinkToAllFilesDownload != null) {
             /* This link will go back into this crawler to find all individual downloadlinks. */
@@ -406,14 +412,14 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
             }
         }
         if (ret.isEmpty()) {
-            final boolean isUserProfile = titleSlug.startsWith("@");
+            final boolean isUserProfile = identifier.startsWith("@");
             if (isUserProfile) {
-                return this.crawlProfile(titleSlug, br.getURL());
+                return this.crawlProfile(identifier, br.getURL());
             } else {
                 logger.info("Crawling collections...");
-                final ArrayList<DownloadLink> collectionResults = crawlViaScrapeAPI(br, "collection:" + titleSlug, -1);
+                final ArrayList<DownloadLink> collectionResults = crawlViaScrapeAPI(br, "collection:" + identifier, -1);
                 if (collectionResults.isEmpty()) {
-                    throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER, "EMPTY_COLLECTION_" + titleSlug);
+                    throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER, "EMPTY_COLLECTION_" + identifier);
                 }
                 ret.addAll(collectionResults);
             }
@@ -1079,9 +1085,6 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         if (StringUtils.isEmpty(identifier)) {
             throw new IllegalArgumentException();
         }
-        if (sourceurl != null) {
-            sourceurl = URLHelper.getUrlWithoutParams(sourceurl);
-        }
         /* The following request will return an empty map if the given identifier is invalid. */
         br.getPage("https://archive.org/metadata/" + Encoding.urlEncode(identifier));
         final Map<String, Object> root = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
@@ -1093,6 +1096,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         }
         String desiredSubpathDecoded = null;
         if (sourceurl != null) {
+            sourceurl = URLHelper.getUrlWithoutParams(sourceurl);
             final String fullpath = new URL(sourceurl).getPath();
             /* JSON metadata will always contain all files but in this case we only want to get all files in a specific subfolder. */
             final String[] urlParts = fullpath.split("/");
@@ -1112,7 +1116,6 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
             }
         }
         final ArrayList<DownloadLink> originalItems = new ArrayList<DownloadLink>();
-        final ArrayList<DownloadLink> metadataItems = new ArrayList<DownloadLink>();
         final ArrayList<DownloadLink> playlistItems = new ArrayList<DownloadLink>();
         final ArrayList<DownloadLink> desiredSubpathItems = new ArrayList<DownloadLink>();
         final ArrayList<DownloadLink> miscItems = new ArrayList<DownloadLink>();
@@ -1144,6 +1147,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
             final boolean isOriginal = source.equalsIgnoreCase("original");
             final boolean isMetadata = StringUtils.equalsIgnoreCase(format, "metadata");
             final boolean isArchiveViewSupported = false; // TODO: Check this
+            // final Object originalO = filemap.get("original");
             // TODO: Test with a "private" item (= downloadable only for logged in users)
             /* Boolean as string */
             final boolean isAccountRequiredForDownload = StringUtils.equalsIgnoreCase((String) filemap.get("private"), "true");
@@ -1252,9 +1256,6 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
             if (isOriginal) {
                 originalItems.add(file);
             }
-            if (isMetadata) {
-                metadataItems.add(file);
-            }
             /* Add items to list of all results. */
             ret.add(file);
             miscItems.add(file);
@@ -1280,7 +1281,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         final PlaylistCrawlMode playlistCrawlMode = cfg.getPlaylistCrawlMode();
         if (playlistItems.size() > 0) {
             /* Add some additional properties for playlist items */
-            final boolean isAudioPlaylist = mediatype.equalsIgnoreCase("audio");
+            // final boolean isAudioPlaylist = mediatype.equalsIgnoreCase("audio");
             final int playlistSize = playlistItems.size();
             final FilePackage playlistpackage = FilePackage.getInstance();
             final String metadataTitle = (String) root_metadata.get("");
@@ -1293,12 +1294,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
             for (final DownloadLink file : ret) {
                 /* Playlist size can only be determined after first loop -> Set that property here. */
                 file.setProperty(ArchiveOrg.PROPERTY_PLAYLIST_SIZE, playlistSize);
-                if (isAudioPlaylist) {
-                    file.setProperty(ArchiveOrg.PROPERTY_FILETYPE, ArchiveOrg.FILETYPE_AUDIO);
-                } else {
-                    file.setProperty(ArchiveOrg.PROPERTY_FILETYPE, ArchiveOrg.FILETYPE_VIDEO);
-                }
-                file.setProperty(ArchiveOrg.PROPERTY_IS_PART_OF_PLAYLIST, true);
+                file.setProperty(ArchiveOrg.PROPERTY_FILETYPE, ArchiveOrg.FILETYPE_AUDIO);
                 /*
                  * We want all items to go into one package (and most likely to be downloaded into the same folder) so we need to remove the
                  * previously set relative path information.
@@ -1314,9 +1310,10 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         if (crawlOriginalFilesOnly && originalItems.size() > 0) {
             /* Return only original items */
             return originalItems;
+        } else {
+            /* Return all items */
+            return ret;
         }
-        /* Return all items */
-        return ret;
     }
 
     /** Returns all uploads of a profile. */

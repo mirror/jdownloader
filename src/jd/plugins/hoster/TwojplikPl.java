@@ -15,6 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -27,6 +28,8 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -57,6 +60,16 @@ public class TwojplikPl extends PluginForHost {
     }
 
     @Override
+    public FEATURE[] getFeatures() {
+        return new FEATURE[] { LazyPlugin.FEATURE.FAVICON };
+    }
+
+    @Override
+    public Object getFavIcon(String host) throws IOException {
+        return "https://jd2.twojplik.pl/assets/images/favicon-2/favicon.ico";
+    }
+
+    @Override
     public Browser createNewBrowserInstance() {
         final Browser br = super.createNewBrowserInstance();
         br.getHeaders().put("User-Agent", "JDownloader");
@@ -72,7 +85,7 @@ public class TwojplikPl extends PluginForHost {
     private static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "twojplik.pl" });
+        ret.add(new String[] { "twojplik.pl", "plik.to" });
         return ret;
     }
 
@@ -217,43 +230,23 @@ public class TwojplikPl extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    private AvailableStatus requestFileInformationWebsite(final DownloadLink link, final Account account) throws Exception {
-        this.setBrowserExclusive();
-        setWeakFilename(link);
-        if (account != null) {
-            this.loginWebsite(account, false);
-        }
-        br.getPage(link.getPluginPatternMatcher());
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        String filesize = br.getRegex("File Size\\s*:\\s*<br> ([^<>\"]+)<").getMatch(0);
-        if (filesize != null) {
-            link.setDownloadSize(SizeFormatter.getSize(filesize));
-        }
-        return AvailableStatus.TRUE;
-    }
-
     private void setWeakFilename(final DownloadLink link) {
-        if (!link.isNameSet()) {
-            final Regex urlinfo = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks());
-            final String fileid = urlinfo.getMatch(0);
-            final String filenameFromURL = urlinfo.getMatch(2);
-            if (filenameFromURL != null) {
-                link.setName(Encoding.htmlDecode(filenameFromURL).trim());
-            } else {
-                link.setName(fileid);
-            }
+        if (link.isNameSet()) {
+            return;
+        }
+        final Regex urlinfo = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks());
+        final String fileid = urlinfo.getMatch(0);
+        final String filenameFromURL = urlinfo.getMatch(2);
+        if (filenameFromURL != null) {
+            link.setName(Encoding.htmlDecode(filenameFromURL).trim());
+        } else {
+            link.setName(fileid);
         }
     }
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         handleDownload(link, null);
-    }
-
-    private boolean isLoggedinWebsite(final Browser br) {
-        return br.containsHTML("auth/logout");
     }
 
     @Override
@@ -267,21 +260,27 @@ public class TwojplikPl extends PluginForHost {
 
     public AccountInfo fetchAccountInfoAPI(final Account account) throws Exception {
         final Map<String, Object> usermap = loginAPI(account, true);
-        final Map<String, Object> premiuminfo = (Map<String, Object>) usermap.get("premium");
         final AccountInfo ai = new AccountInfo();
-        if (premiuminfo != null) {
-            account.setType(AccountType.PREMIUM);
-            ai.setValidUntil(((Number) premiuminfo.get("expireTime")).longValue() * 1000);
-            ai.setTrafficLeft(((Number) premiuminfo.get("transferLeft")).longValue());
-            ai.setTrafficMax(((Number) premiuminfo.get("transferLimit")).longValue());
-            ai.setStatus(premiuminfo.get("name").toString());
-        } else {
-            account.setType(AccountType.FREE);
-            ai.setTrafficLeft(0);
-            /* 2024-03-15: Free users can't download anything atm. */
-            ai.setExpired(true);
-        }
+        fillAccountInfo(account, ai, usermap);
         return ai;
+    }
+
+    private void fillAccountInfo(final Account account, final AccountInfo ai, final Map<String, Object> usermap) {
+        synchronized (account) {
+            final Map<String, Object> premiuminfo = (Map<String, Object>) usermap.get("premium");
+            if (premiuminfo != null) {
+                account.setType(AccountType.PREMIUM);
+                ai.setValidUntil(((Number) premiuminfo.get("expireTime")).longValue() * 1000);
+                ai.setTrafficLeft(((Number) premiuminfo.get("transferLeft")).longValue());
+                ai.setTrafficMax(((Number) premiuminfo.get("transferLimit")).longValue());
+                ai.setStatus(premiuminfo.get("name").toString());
+            } else {
+                account.setType(AccountType.FREE);
+                ai.setTrafficLeft(0);
+                /* 2024-03-15: Free users can't download anything atm. */
+                ai.setExpired(true);
+            }
+        }
     }
 
     private Map<String, Object> loginAPI(final Account account, final boolean force) throws Exception {
@@ -306,6 +305,7 @@ public class TwojplikPl extends PluginForHost {
                     logger.info("Successfully logged in via session key");
                     return data;
                 } catch (final Throwable e) {
+                    logger.log(e);
                     logger.info("Looks like session has expired");
                     account.removeProperty(PROPERTY_ACCOUNT_SESSION_KEY);
                 }
@@ -328,6 +328,131 @@ public class TwojplikPl extends PluginForHost {
             // }
             account.setProperty(PROPERTY_ACCOUNT_SESSION_KEY, sessionkey);
             return user;
+        }
+    }
+
+    @Override
+    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
+        handleDownload(link, account);
+    }
+
+    @Override
+    public int getMaxSimultanPremiumDownloadNum() {
+        return 5; // 5 = temp max value 2024-03-15: RE admin
+    }
+
+    protected static String getDownloadModeDirectlinkProperty(final Account account) {
+        final AccountType type = account != null ? account.getType() : null;
+        if (AccountType.FREE.equals(type)) {
+            /* Free Account */
+            return "freelink2";
+        } else if (AccountType.PREMIUM.equals(type) || AccountType.LIFETIME.equals(type)) {
+            /* Premium account */
+            return "premlink";
+        } else {
+            /* Free(anonymous) and unknown account type */
+            return "freelink";
+        }
+    }
+
+    private void handleDownload(final DownloadLink link, final Account account) throws Exception, PluginException {
+        if (USE_API) {
+            handleDownloadAPI(link, account);
+        } else {
+            handleDownloadWebsite(link, account);
+        }
+    }
+
+    private void handleDownloadAPI(final DownloadLink link, final Account account) throws Exception, PluginException {
+        if (account == null) {
+            throw new AccountRequiredException();
+        } else if (account.getType() != AccountType.PREMIUM) {
+            throw new AccountRequiredException();
+        }
+        final String directurlproperty = getDownloadModeDirectlinkProperty(account);
+        final String storedDirecturl = link.getStringProperty(directurlproperty);
+        final String dllink;
+        if (storedDirecturl != null) {
+            dllink = storedDirecturl;
+        } else {
+            final UrlQuery query = new UrlQuery();
+            query.add("fileCode", Encoding.urlEncode(this.getFID(link)));
+            query.add("sessionKey", Encoding.urlEncode(account.getStringProperty(PROPERTY_ACCOUNT_SESSION_KEY)));
+            br.postPage(this.getApiBase() + "/file/getDirectlink", query);
+            final Map<String, Object> data = (Map<String, Object>) checkErrorsAPI(br, link, account);
+            /*
+             * This API is returning the account information for each download call -> We can set this on our Account object to have a more
+             * updated account information.
+             */
+            final Map<String, Object> user = (Map<String, Object>) data.get("user");
+            if (user != null) {
+                synchronized (account) {
+                    AccountInfo ai = account.getAccountInfo();
+                    if (ai == null) {
+                        ai = new AccountInfo();
+                    }
+                    this.fillAccountInfo(account, ai, user);
+                    account.setAccountInfo(ai);
+                }
+            }
+            final Map<String, Object> file = (Map<String, Object>) data.get("file");
+            dllink = file.get("directlink").toString();
+        }
+        try {
+            dl = jd.plugins.BrowserAdapter.openDownload(this.br, link, dllink, this.isResumeable(link, account), 1);
+            final URLConnectionAdapter con = dl.getConnection();
+            if (!this.looksLikeDownloadableContent(con)) {
+                br.followConnection(true);
+                if (con.getResponseCode() == 403) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 5 * 60 * 1000l);
+                } else if (con.getResponseCode() == 404) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 5 * 60 * 1000l);
+                } else if (con.getResponseCode() == 500) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 500", 5 * 60 * 1000l);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File broken?");
+                }
+            }
+        } catch (final Exception e) {
+            if (storedDirecturl != null) {
+                link.removeProperty(directurlproperty);
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Stored directurl expired", e);
+            } else {
+                throw e;
+            }
+        }
+        if (storedDirecturl == null) {
+            link.setProperty(directurlproperty, dl.getConnection().getURL().toExternalForm());
+        }
+        dl.startDownload();
+    }
+
+    private Object checkErrorsAPI(final Browser br, final DownloadLink link, final Account account) throws PluginException {
+        Map<String, Object> entries = null;
+        try {
+            entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+        } catch (final JSonMapperException e) {
+            if (link != null) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Invalid API response", 60 * 1000l);
+            } else {
+                throw new AccountUnavailableException("Invalid API response", 60 * 1000);
+            }
+        }
+        final Object dataO = entries.get("data");
+        if (Boolean.TRUE.equals(entries.get("status"))) {
+            /* No error */
+            return dataO;
+        }
+        final String errormsg = entries.get("alertText").toString();
+        if (errormsg.matches("(?i).*File not found.*")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else {
+            /* Unknown error */
+            if (link == null) {
+                throw new AccountUnavailableException(errormsg, 1 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errormsg, 1 * 60 * 1000l);
+            }
         }
     }
 
@@ -403,87 +528,25 @@ public class TwojplikPl extends PluginForHost {
         }
     }
 
-    @Override
-    public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        handleDownload(link, account);
+    private AvailableStatus requestFileInformationWebsite(final DownloadLink link, final Account account) throws Exception {
+        this.setBrowserExclusive();
+        setWeakFilename(link);
+        if (account != null) {
+            this.loginWebsite(account, false);
+        }
+        br.getPage(link.getPluginPatternMatcher());
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        String filesize = br.getRegex("File Size\\s*:\\s*<br> ([^<>\"]+)<").getMatch(0);
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
+        return AvailableStatus.TRUE;
     }
 
-    @Override
-    public int getMaxSimultanPremiumDownloadNum() {
-        return Integer.MAX_VALUE;
-    }
-
-    protected static String getDownloadModeDirectlinkProperty(final Account account) {
-        final AccountType type = account != null ? account.getType() : null;
-        if (AccountType.FREE.equals(type)) {
-            /* Free Account */
-            return "freelink2";
-        } else if (AccountType.PREMIUM.equals(type) || AccountType.LIFETIME.equals(type)) {
-            /* Premium account */
-            return "premlink";
-        } else {
-            /* Free(anonymous) and unknown account type */
-            return "freelink";
-        }
-    }
-
-    private void handleDownload(final DownloadLink link, final Account account) throws Exception, PluginException {
-        if (USE_API) {
-            handleDownloadAPI(link, account);
-        } else {
-            handleDownloadWebsite(link, account);
-        }
-    }
-
-    private void handleDownloadAPI(final DownloadLink link, final Account account) throws Exception, PluginException {
-        if (account == null) {
-            throw new AccountRequiredException();
-        } else if (account.getType() != AccountType.PREMIUM) {
-            throw new AccountRequiredException();
-        }
-        final String directurlproperty = getDownloadModeDirectlinkProperty(account);
-        final String storedDirecturl = link.getStringProperty(directurlproperty);
-        final String dllink;
-        if (storedDirecturl != null) {
-            dllink = storedDirecturl;
-        } else {
-            final UrlQuery query = new UrlQuery();
-            query.add("fileCode", Encoding.urlEncode(this.getFID(link)));
-            query.add("sessionKey", Encoding.urlEncode(account.getStringProperty(PROPERTY_ACCOUNT_SESSION_KEY)));
-            br.postPage(this.getApiBase() + "/file/getDirectlink", query);
-            final Map<String, Object> data = (Map<String, Object>) checkErrorsAPI(br, link, account);
-            // TODO: Make use of the user object here - it is always here so we can use it to set account data before each download-attempt
-            // final Map<String, Object> user = (Map<String, Object>) data.get("user");
-            final Map<String, Object> file = (Map<String, Object>) data.get("file");
-            dllink = file.get("directlink").toString();
-        }
-        try {
-            dl = jd.plugins.BrowserAdapter.openDownload(this.br, link, dllink, this.isResumeable(link, account), 1);
-            final URLConnectionAdapter con = dl.getConnection();
-            if (!this.looksLikeDownloadableContent(con)) {
-                br.followConnection(true);
-                if (con.getResponseCode() == 403) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 5 * 60 * 1000l);
-                } else if (con.getResponseCode() == 404) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 5 * 60 * 1000l);
-                } else if (con.getResponseCode() == 500) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 500", 5 * 60 * 1000l);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File broken?");
-                }
-            }
-        } catch (final Exception e) {
-            if (storedDirecturl != null) {
-                link.removeProperty(directurlproperty);
-                throw new PluginException(LinkStatus.ERROR_RETRY, "Stored directurl expired", e);
-            } else {
-                throw e;
-            }
-        }
-        if (storedDirecturl == null) {
-            link.setProperty(directurlproperty, dl.getConnection().getURL().toExternalForm());
-        }
-        dl.startDownload();
+    private boolean isLoggedinWebsite(final Browser br) {
+        return br.containsHTML("auth/logout");
     }
 
     private void handleDownloadWebsite(final DownloadLink link, final Account account) throws Exception, PluginException {
@@ -499,7 +562,7 @@ public class TwojplikPl extends PluginForHost {
         if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(this.br, link, dllink, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(this.br, link, dllink, true, 1);
         final URLConnectionAdapter con = dl.getConnection();
         if (!this.looksLikeDownloadableContent(con)) {
             br.followConnection(true);
@@ -512,30 +575,6 @@ public class TwojplikPl extends PluginForHost {
             }
         }
         dl.startDownload();
-    }
-
-    private Object checkErrorsAPI(final Browser br, final DownloadLink link, final Account account) throws PluginException {
-        Map<String, Object> entries = null;
-        try {
-            entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
-        } catch (final JSonMapperException e) {
-            if (link != null) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Invalid API response", 60 * 1000l);
-            } else {
-                throw new AccountUnavailableException("Invalid API response", 60 * 1000);
-            }
-        }
-        final Object dataO = entries.get("data");
-        if (Boolean.TRUE.equals(entries.get("status"))) {
-            /* No error */
-            return dataO;
-        }
-        final String errormsg = entries.get("alertText").toString();
-        if (link == null) {
-            throw new AccountUnavailableException(errormsg, 1 * 60 * 1000l);
-        } else {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errormsg, 1 * 60 * 1000l);
-        }
     }
 
     @Override
