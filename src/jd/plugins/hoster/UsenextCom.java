@@ -7,18 +7,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.net.URLHelper;
-import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
-import org.jdownloader.plugins.components.usenet.UsenetServer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-import org.jdownloader.settings.GraphicalUserInterfaceSettings.SIZEUNIT;
-import org.jdownloader.settings.staticreferences.CFG_GUI;
-
 import jd.PluginWrapper;
 import jd.controlling.proxy.AbstractProxySelectorImpl;
 import jd.http.Browser;
@@ -33,6 +21,18 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.net.URLHelper;
+import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
+import org.jdownloader.plugins.components.usenet.UsenetServer;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings.SIZEUNIT;
+import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "usenext.com" }, urls = { "" })
 public class UsenextCom extends UseNet {
@@ -55,8 +55,8 @@ public class UsenextCom extends UseNet {
     public void update(final DownloadLink downloadLink, final Account account, long bytesTransfered) throws PluginException {
         final UsenetServer server = getLastUsedUsenetServer();
         /**
-         * If the "flatrate domain" is in use, do not substract traffic from users' account. </br>
-         * Only substract traffic if no domain is given or a non-flatrate domain is given.
+         * If the "flatrate domain" is in use, do not substract traffic from users' account. </br> Only substract traffic if no domain is
+         * given or a non-flatrate domain is given.
          */
         if (server == null || !StringUtils.equalsIgnoreCase(FLATRATE_DOMAIN, server.getHost())) {
             super.update(downloadLink, account, bytesTransfered);
@@ -85,13 +85,15 @@ public class UsenextCom extends UseNet {
             }
         }
         String unit = (String) map.get("unitResourceStringKey");
-        if (StringUtils.contains(unit, "GIGA") || StringUtils.equals(unit, "UNX_UNIT_GIGABYTES")) {
+        if (StringUtils.contains(unit, "GIGA") || StringUtils.equals(unit, "UNX_UNIT_GIGABYTES") || StringUtils.equals(unit, "UNIT_GIGABYTES")) {
             unit = "GB";
-        } else if (StringUtils.contains(unit, "MEGA")) {
+        } else if (StringUtils.contains(unit, "KILO") || StringUtils.equals(unit, "UNX_UNIT_KILOBYTES") || StringUtils.equals(unit, "UNIT_KILOBYTES")) {
+            unit = "KB";
+        } else if (StringUtils.contains(unit, "MEGA") || StringUtils.equals(unit, "UNX_UNIT_MEGABYTES") || StringUtils.equals(unit, "UNIT_MEGABYTES")) {
             unit = "MB";
-        } else if (StringUtils.contains(unit, "TERA")) {
+        } else if (StringUtils.contains(unit, "TERA") || StringUtils.equals(unit, "UNX_UNIT_TERABYTES") || StringUtils.equals(unit, "UNIT_TERABYTES")) {
             unit = "TB";
-        } else if (StringUtils.equals(unit, "UNX_UNIT_BYTES")) {
+        } else if (StringUtils.equals(unit, "UNX_UNIT_BYTES") || StringUtils.equals(unit, "UNIT_BYTES")) {
             unit = "B";
         } else {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "unsupported:" + unit);
@@ -148,8 +150,10 @@ public class UsenextCom extends UseNet {
         /* At this point login was successful and all that's left to do is to obtain account information. */
         final String api_url = "https://janus.usenext.com";
         account.saveCookies(br.getCookies(br.getHost()), "");
-        final PostRequest postRequest = br.createJSonPostRequest(URLHelper.parseLocation(new URL(api_url), "/graphql"),
-                "{\"operationName\":\"DashboardInformation\",\"variables\":{},\"query\":\"query DashboardInformation {\\n  radiusData {\\n    volume {\\n      remaining\\n      total\\n      unitResourceStringKey\\n    }\\n    extraBoost {\\n      remaining\\n      total\\n      unitResourceStringKey\\n    }\\n  }\\n  cancellationInformation {\\n    isContractLocked\\n    hasWithdrawableCancellation\\n    isServiceDenied\\n    isInCancellationPeriod\\n    cancellationProcess {\\n      createDate\\n    }\\n  }\\n  currentServiceRoundUpgradeData {\\n    hasPendingUpgrade\\n    isLastUpgrade\\n    accountingPeriod {\\n      remaining\\n      total\\n      unitResourceStringKey\\n    }\\n  }\\n  serviceInformation {\\n    currentServiceRound {\\n      currEndDate\\n      startDate\\n      article {\\n        id\\n        name\\n        articleTypeId\\n        priceNet\\n        priceGross\\n        volumeGb\\n        runtime\\n        runtimeUnit\\n      }\\n      invoice {\\n        id\\n        createDate\\n        uuid\\n        invoiceStatePaths {\\n          invoiceStateId\\n          isCurrent\\n        }\\n      }\\n    }\\n    nextServiceRoundBeginDate\\n    nextArticle {\\n      id\\n      name\\n      articleTypeId\\n      priceNet\\n      priceGross\\n      volumeGb\\n      runtime\\n      runtimeUnit\\n    }\\n  }\\n}\\n\"}");
+        final PostRequest postRequest = br
+                .createJSonPostRequest(
+                        URLHelper.parseLocation(new URL(api_url), "/graphql"),
+                        "{\"operationName\":\"DashboardInformation\",\"variables\":{},\"query\":\"query DashboardInformation {\\n  radiusData {\\n    volume {\\n      remaining\\n      total\\n      unitResourceStringKey\\n    }\\n    extraBoost {\\n      remaining\\n      total\\n      unitResourceStringKey\\n    }\\n  }\\n  cancellationInformation {\\n    isContractLocked\\n    hasWithdrawableCancellation\\n    isServiceDenied\\n    isInCancellationPeriod\\n    cancellationProcess {\\n      createDate\\n    }\\n  }\\n  currentServiceRoundUpgradeData {\\n    hasPendingUpgrade\\n    isLastUpgrade\\n    accountingPeriod {\\n      remaining\\n      total\\n      unitResourceStringKey\\n    }\\n  }\\n  serviceInformation {\\n    currentServiceRound {\\n      currEndDate\\n      startDate\\n      article {\\n        id\\n        name\\n        articleTypeId\\n        priceNet\\n        priceGross\\n        volumeGb\\n        runtime\\n        runtimeUnit\\n      }\\n      invoice {\\n        id\\n        createDate\\n        uuid\\n        invoiceStatePaths {\\n          invoiceStateId\\n          isCurrent\\n        }\\n      }\\n    }\\n    nextServiceRoundBeginDate\\n    nextArticle {\\n      id\\n      name\\n      articleTypeId\\n      priceNet\\n      priceGross\\n      volumeGb\\n      runtime\\n      runtimeUnit\\n    }\\n  }\\n}\\n\"}");
         postRequest.getHeaders().put("x-ui-language", "en-US");
         postRequest.getHeaders().put("Origin", "https://www." + br.getHost());
         br.setCurrentURL("https://www." + br.getHost() + "/");
