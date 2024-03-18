@@ -20,23 +20,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.net.PublicSuffixList;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2.TYPE;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.downloader.hls.M3U8Playlist;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.components.config.XvideosComConfigCore;
-import org.jdownloader.plugins.components.config.XvideosComConfigCore.PreferredHLSQuality;
-import org.jdownloader.plugins.components.config.XvideosComConfigCore.PreferredHTTPQuality;
-import org.jdownloader.plugins.components.config.XvideosComConfigCore.PreferredOfficialDownloadQuality;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -60,6 +43,27 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.PublicSuffixList;
+import org.appwork.utils.net.httpconnection.HTTPConnection;
+import org.appwork.utils.net.httpconnection.SSLSocketStreamOptions;
+import org.appwork.utils.net.httpconnection.SSLSocketStreamOptionsModifier;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2.TYPE;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.net.BCSSLSocketStreamFactory;
+import org.jdownloader.plugins.components.config.XvideosComConfigCore;
+import org.jdownloader.plugins.components.config.XvideosComConfigCore.PreferredHLSQuality;
+import org.jdownloader.plugins.components.config.XvideosComConfigCore.PreferredHTTPQuality;
+import org.jdownloader.plugins.components.config.XvideosComConfigCore.PreferredOfficialDownloadQuality;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public abstract class XvideosCore extends PluginForHost {
     public XvideosCore(PluginWrapper wrapper) {
@@ -82,6 +86,30 @@ public abstract class XvideosCore extends PluginForHost {
     @Override
     public LazyPlugin.FEATURE[] getFeatures() {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX, LazyPlugin.FEATURE.COOKIE_LOGIN_OPTIONAL };
+    }
+
+    public static void setSSLSocketStreamOptions(Browser br) {
+        br.setSSLSocketStreamOptions(new SSLSocketStreamOptionsModifier() {
+            @Override
+            public SSLSocketStreamOptions modify(SSLSocketStreamOptions sslSocketStreamOptions, HTTPConnection httpConnection) {
+                final SSLSocketStreamOptions ret = new SSLSocketStreamOptions(sslSocketStreamOptions) {
+                    public org.appwork.utils.net.httpconnection.SSLSocketStreamFactory getSSLSocketStreamFactory() {
+                        return new BCSSLSocketStreamFactory();
+                    };
+                };
+                ret.getDisabledCipherSuites().clear();
+                ret.getCustomFactorySettings().add("JSSE_TLS1.3_ENABLED");
+                ret.getCustomFactorySettings().add("BC_TLS1.3_ENABLED");
+                return ret;
+            }
+        });
+    }
+
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser ret = super.createNewBrowserInstance();
+        setSSLSocketStreamOptions(ret);
+        return ret;
     }
 
     /**
@@ -145,11 +173,14 @@ public abstract class XvideosCore extends PluginForHost {
     protected String getVideoidFromURL(final String url) {
         if (url == null) {
             return null;
-        }
-        if (url.matches(type_embed)) {
+        } else if (url.matches(type_embed)) {
             return new Regex(url, type_embed).getMatch(0);
         } else if (url.matches(type_normal)) {
             return new Regex(url, type_normal).getMatch(0);
+        } else if (url.matches(type_normal_dot)) {
+            return new Regex(url, type_normal_dot).getMatch(0);
+        } else if (url.matches(type_normal_dash)) {
+            return new Regex(url, type_normal_dash).getMatch(0);
         } else if (url.matches(type_special1)) {
             return new Regex(url, type_special1).getMatch(0);
         } else if (url.matches(type_special2)) {
@@ -188,26 +219,27 @@ public abstract class XvideosCore extends PluginForHost {
         }
     }
 
-    private static final String type_normal                     = "https?://[^/]+/video(\\d+)(/(.+))?$";
+    /* xvideos.com */
+    protected static final String type_normal                     = "(?i)https?://[^/]+/video(\\d+)(/(.+))?$";
+    protected static final String type_normal_dot                 = "(?i)https?://[^/]+/video\\.([a-z0-9\\-]+)(.*?/[^/]+)?$";
     /* xnxx.gold */
-    private static final String type_normal_2                   = "https?://[^/]+/video-([a-z0-9\\-]+)(/[^/]+)?$";                          // xnxx.com
-                                                                                                                                            // and
-                                                                                                                                            // xnxx.gold
-    private static final String type_embed                      = "https?://[^/]+/embedframe/(\\d+)";
-    private static final String type_special1                   = "https?://[^/]+/[^/]+/upload/[^/]+/(\\d+)/([^/]+)";
-    private static final String type_special2                   = "https?://[^/]+/[^/]+/(upload|pornstar|model)/([a-z0-9\\-\\_]+)/(\\d+).*";
-    private static final String NOCHUNKS                        = "NOCHUNKS";
-    private String              streamURL                       = null;
-    private HlsContainer        hlsContainer                    = null;
-    public static final String  PROPERTY_USERNAME               = "username";
-    private static final String PROPERTY_TAGS                   = "tags";
-    private static final String PROPERTY_VIDEOID                = "videoid";
-    private static final String PROPERTY_LAST_USED_DIRECTURL    = "last_used_directurl";
-    private final String        PROPERTY_ACCOUNT_PREMIUM_DOMAIN = "premium_domain";
+    protected static final String type_normal_dash                = "(?i)https?://[^/]+/video-([a-z0-9\\-]+)(/[^/]+)?$";                          // xnxx.com&
+    // xnxx.gold
+    protected static final String type_embed                      = "(?i)https?://[^/]+/embedframe/(\\d+)";
+    protected static final String type_special1                   = "(?i)https?://[^/]+/[^/]+/upload/[^/]+/(\\d+)/([^/]+)";
+    protected static final String type_special2                   = "(?i)https?://[^/]+/[^/]+/(upload|pornstar|model)/([a-z0-9\\-\\_]+)/(\\d+).*";
+    protected static final String NOCHUNKS                        = "NOCHUNKS";
+    private String                streamURL                       = null;
+    private HlsContainer          hlsContainer                    = null;
+    public static final String    PROPERTY_USERNAME               = "username";
+    private static final String   PROPERTY_TAGS                   = "tags";
+    private static final String   PROPERTY_VIDEOID                = "videoid";
+    private static final String   PROPERTY_LAST_USED_DIRECTURL    = "last_used_directurl";
+    private final String          PROPERTY_ACCOUNT_PREMIUM_DOMAIN = "premium_domain";
 
     protected String getContentURL(final DownloadLink link) {
         String url = link.getPluginPatternMatcher();
-        if (!url.matches(type_normal) && !url.matches(type_normal_2)) {
+        if (!url.matches(type_normal) && !url.matches(type_normal_dash) && !url.matches(type_normal_dot)) {
             final String normalContentURL = buildNormalContentURL(link);
             if (normalContentURL != null) {
                 url = normalContentURL;
@@ -253,7 +285,11 @@ public abstract class XvideosCore extends PluginForHost {
                 con = br2.openHeadConnection(url);
                 if (this.looksLikeDownloadableContent(con)) {
                     if (con.getCompleteContentLength() > 0 && setFilesize) {
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                        if (con.isContentDecoded()) {
+                            link.setDownloadSize(con.getCompleteContentLength());
+                        } else {
+                            link.setVerifiedFileSize(con.getCompleteContentLength());
+                        }
                     }
                     return true;
                 } else {
@@ -306,9 +342,8 @@ public abstract class XvideosCore extends PluginForHost {
         final boolean useLanguageSwitcherHandling = true;
         if (useLanguageSwitcherHandling) {
             /**
-             * Use this to prefer English language. </br>
-             * 2021-07-07: Not yet required - only in crawler plugin: Seems like they set the language for the main website/video overview
-             * based on IP and for single videos, default is English(?)
+             * Use this to prefer English language. </br> 2021-07-07: Not yet required - only in crawler plugin: Seems like they set the
+             * language for the main website/video overview based on IP and for single videos, default is English(?)
              */
             disableAutoTranslation(this, Browser.getHost(contentURL), br);
         }
@@ -391,10 +426,9 @@ public abstract class XvideosCore extends PluginForHost {
             final String hlsMaster = br.getRegex("setVideoHLS\\('(.*?)'\\)").getMatch(0);
             /**
              * 2021-01-27: This website can "shadow ban" users who download "too much". They will then deliver all videos in 240p only. This
-             * is an attempt to detect this.</br>
-             * See also: https://board.jdownloader.org/showthread.php?t=86587 </br>
-             * Do not check when premium account is given because it usually allows official downloads so downloads will work fine even if
-             * HLS streaming is not available.
+             * is an attempt to detect this.</br> See also: https://board.jdownloader.org/showthread.php?t=86587 </br> Do not check when
+             * premium account is given because it usually allows official downloads so downloads will work fine even if HLS streaming is
+             * not available.
              */
             final boolean lowQualityBlockDetected = StringUtils.isEmpty(hlsMaster) && (account == null || account.getType() != AccountType.PREMIUM) && config != null && config.isTryToRecognizeLimit() && isDownload;
             if (config == null || config.isPreferHLSStreamDownload()) {
@@ -445,8 +479,8 @@ public abstract class XvideosCore extends PluginForHost {
             }
             /**
              * 2022-09-08: Looks like HLS is available up to 1080p while official downloads are only available for up to 360p (?). </br>
-             * Tested with a free xvideos.com account. </br>
-             * If official download was >= HLS/stream download it would make sense to prefer this over stream download.
+             * Tested with a free xvideos.com account. </br> If official download was >= HLS/stream download it would make sense to prefer
+             * this over stream download.
              */
             String videoURL = null;
             if (account != null) {
@@ -943,8 +977,8 @@ public abstract class XvideosCore extends PluginForHost {
     }
 
     /**
-     * Only use this when on this page: https://www.domain.tld/account/premium </br>
-     * 2021-03-08: Free users cannot even view the account panel so checking for any elements in there is good enough as premium indicator!
+     * Only use this when on this page: https://www.domain.tld/account/premium </br> 2021-03-08: Free users cannot even view the account
+     * panel so checking for any elements in there is good enough as premium indicator!
      *
      * @throws Exception
      */

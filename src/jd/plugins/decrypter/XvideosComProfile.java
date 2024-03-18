@@ -24,12 +24,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -50,6 +44,12 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.XvideosCom;
 import jd.plugins.hoster.XvideosCore;
+
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class XvideosComProfile extends PluginForDecrypt {
@@ -186,14 +186,14 @@ public class XvideosComProfile extends PluginForDecrypt {
         String nextpage = null;
         final Set<String> dupeList = new HashSet<String>();
         do {
-            final String[] urls = br.getRegex("\"(/video\\d+/[^<>\"]+)").getColumn(0);
+            final String[] urls = br.getRegex("\"(/video[^/]*/[^<>\"]+)").getColumn(0);
             int foundOnPage = 0;
             for (String url : urls) {
-                final String videoID = new Regex(url, "/video(.*?)/").getMatch(0);
+                final String videoID = new Regex(url, "/video([^/]*)/").getMatch(0);
                 if (dupeList.add(videoID)) {
                     foundOnPage++;
                     url = br.getURL(url).toString();
-                    final String urlTitle = new Regex(url, "/video\\d+/([^/\\?]+)").getMatch(0);
+                    final String urlTitle = new Regex(url, "/video[^/]*/([^/\\?]+)").getMatch(0);
                     final DownloadLink dl = this.createDownloadlink(url);
                     /* Save http requests */
                     dl.setAvailable(true);
@@ -248,12 +248,12 @@ public class XvideosComProfile extends PluginForDecrypt {
         String nextpage = null;
         final Set<String> dupeList = new HashSet<String>();
         do {
-            final String[] urls = br.getRegex("(/video\\d+/[^<>\"\\']+)").getColumn(0);
+            final String[] urls = br.getRegex("(/video[^/]*/[^<>\"\\']+)").getColumn(0);
             for (String url : urls) {
-                final String videoID = new Regex(url, "/video(.*?)/").getMatch(0);
+                final String videoID = new Regex(url, "/video([^/]*)/").getMatch(0);
                 if (dupeList.add(videoID)) {
                     url = br.getURL(url).toString();
-                    final String urlTitle = new Regex(url, "/video\\d+/([^/\\?]+)").getMatch(0);
+                    final String urlTitle = new Regex(url, "/video[^/]*/([^/\\?]+)").getMatch(0);
                     final DownloadLink dl = this.createDownloadlink(url);
                     /* Save http requests by pre-setting online status */
                     dl.setAvailable(true);
@@ -455,14 +455,14 @@ public class XvideosComProfile extends PluginForDecrypt {
             }
             /* Unescape json */
             br.getRequest().setHtmlCode(PluginJSonUtils.unescape(br.getRequest().getHtmlCode()));
-            final String[] links = br.getRegex("(/video\\d+/[^\"]+)").getColumn(0);
+            final String[] links = br.getRegex("(/video[^/]*/[^\"]+)").getColumn(0);
             if (links == null || links.length == 0) {
                 logger.info("Stopping because: Failed to find anything on current page");
                 break;
             }
             decryptedLinksNum = links.length;
             for (String singleLink : links) {
-                final Regex urlRegex = new Regex(singleLink, "/video(\\d+)/([^\"]+)");
+                final Regex urlRegex = new Regex(singleLink, "/video([^/]*)/([^\"]+)");
                 final String videoID = urlRegex.getMatch(0);
                 /* Only add new URLs */
                 if (!dupeList.contains(videoID)) {

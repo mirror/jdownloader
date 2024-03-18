@@ -459,6 +459,11 @@ public class BCSSLSocketStreamFactory implements SSLSocketStreamFactory {
                 return options.addRetryReason("(Reset)enable TLS1.3");
             }
         }
+        // always check for TLS1.3
+        if (options.getCustomFactorySettings().add(TLS13_ENABLED)) {
+            // retry with TLS1.3 enabled
+            return options.addRetryReason("(Retry)Enable TLS1.3");
+        }
         return null;
     }
 
