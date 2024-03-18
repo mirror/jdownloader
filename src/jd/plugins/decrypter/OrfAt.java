@@ -12,14 +12,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
@@ -36,6 +28,14 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.DirectHTTP;
 import jd.plugins.hoster.ORFMediathek;
+
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class OrfAt extends PluginForDecrypt {
@@ -101,10 +101,10 @@ public class OrfAt extends PluginForDecrypt {
     private final String                                      PROPERTY_SLUG         = "slug";
     /* E.g. https://radiothek.orf.at/ooe --> "ooe" --> Channel == "oe2o" */
     private static LinkedHashMap<String, Map<String, Object>> CHANNEL_CACHE         = new LinkedHashMap<String, Map<String, Object>>() {
-                                                                                        protected boolean removeEldestEntry(Map.Entry<String, Map<String, Object>> eldest) {
-                                                                                            return size() > 50;
-                                                                                        };
-                                                                                    };
+        protected boolean removeEldestEntry(Map.Entry<String, Map<String, Object>> eldest) {
+            return size() > 50;
+        };
+    };
     public SubConfiguration                                   cfg                   = null;
 
     /** Wrapper for podcast URLs containing md5 file-hashes inside URL. */
@@ -527,7 +527,7 @@ public class OrfAt extends PluginForDecrypt {
                 }
             }
             final List<DownloadLink> videoSelectedResults = new ArrayList<DownloadLink>();
-            if (settingPreferBestVideo) {
+            if (settingPreferBestVideo && best != null) {
                 videoSelectedResults.add(best);
             } else {
                 if (selectedVideoQualities.size() > 0) {
