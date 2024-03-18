@@ -173,12 +173,14 @@ public class GoogleDriveCrawler extends PluginForDecrypt {
 
     /** Extracts folderID from given URL. */
     private String getFolderID(final String url) {
-        if (url.matches(TYPE_FOLDER_NORMAL)) {
-            return new Regex(url, TYPE_FOLDER_NORMAL).getMatch(0);
-        } else if (url.matches(TYPE_FOLDER_CURRENT)) {
-            return new Regex(url, TYPE_FOLDER_CURRENT).getMatch(0);
+        Regex folderregex = new Regex(url, TYPE_FOLDER_NORMAL);
+        if (folderregex.patternFind()) {
+            return folderregex.getMatch(0);
+        } else if ((folderregex = new Regex(url, TYPE_FOLDER_CURRENT)).patternFind()) {
+            return folderregex.getMatch(0);
         } else {
-            return new Regex(url, "id=([^\\&=]+)").getMatch(0);
+            folderregex = new Regex(url, "(?:\\?|\\&)id=([^\\&=]+)");
+            return folderregex.getMatch(0);
         }
     }
 

@@ -48,6 +48,13 @@ public class ImageFapCrawler extends PluginForDecrypt {
     }
 
     @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.setFollowRedirects(true);
+        return br;
+    }
+
+    @Override
     public void init() {
         ImageFap.setRequestIntervalLimitGlobal();
     }
@@ -75,7 +82,6 @@ public class ImageFapCrawler extends PluginForDecrypt {
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        br.setFollowRedirects(true);
         ImageFap.prepBR(this.br);
         String contenturl = param.getCryptedUrl();
         final Map<String, String> dupes = new HashMap<String, String>();
@@ -84,7 +90,6 @@ public class ImageFapCrawler extends PluginForDecrypt {
         if (oid != null) {
             /** organizerID link **/
             int pageIndex = 0;
-            br.setFollowRedirects(true);
             do {
                 getPage(br, "https://www." + this.getHost() + "/organizer/" + oid + "/?page=" + (pageIndex > 0 ? Integer.toString(pageIndex) : ""));
                 pageIndex++;
@@ -113,7 +118,6 @@ public class ImageFapCrawler extends PluginForDecrypt {
             final boolean userGallery = StringUtils.containsIgnoreCase(contenturl, "usergallery.php");
             final boolean favoriteGallery = StringUtils.containsIgnoreCase(contenturl, "showfavorites.php");
             int pageIndex = 0;
-            br.setFollowRedirects(true);
             do {
                 if (userGallery) {
                     getPage(this.br, "https://www." + this.getHost() + "/usergallery.php?userid=" + userID + "&folderid=" + folderID + "&page=" + (pageIndex > 0 ? Integer.toString(pageIndex) : ""));
@@ -145,7 +149,6 @@ public class ImageFapCrawler extends PluginForDecrypt {
             } while (true);
             return ret;
         } else if (userID != null) {
-            br.setFollowRedirects(true);
             getPage(this.br, contenturl);
             final String galleries[] = br.getRegex("((usergallery|showfavorites)\\.php\\?userid=\\d+&folderid=-?\\d+)").getColumn(0);
             if (galleries != null) {
@@ -159,151 +162,137 @@ public class ImageFapCrawler extends PluginForDecrypt {
                 }
             }
             return ret;
-        } else {
-            if (contenturl.matches(type_invalid)) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if (contenturl.matches(type_invalid)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final Regex singlephoto = new Regex(contenturl, "(?i)https?://[^/]+/photo/(\\d+)");
+        if (singlephoto.patternFind()) {
+            /* Single photo */
+            final String photoID = singlephoto.getMatch(0);
+            final DownloadLink link = new DownloadLink(hosterplugin, this.getHost(), contenturl + "/");
+            link.setProperty(ImageFap.PROPERTY_PHOTO_ID, photoID);
+            ret.add(link);
+            return ret;
+        }
+        /* Gallery */
+        /* view=2 -> "One page" view -> More images on each page */
+        final UrlQuery query = UrlQuery.parse(contenturl);
+        String galleryIDStr = new Regex(contenturl, "(?:pictures|gallery)/(\\d+)/?").getMatch(0);
+        if (galleryIDStr == null) {
+            galleryIDStr = query.get("gid");
+        }
+        contenturl = URLHelper.getUrlWithoutParams(contenturl);
+        /* Change to "One Page View" */
+        query.addAndReplace("view", "2");
+        /* Overwrite possibly given page parameter. This is important! */
+        query.addAndReplace("page", "0");
+        /* Build new contenturl with changed/corrected parameters. */
+        contenturl = contenturl + "?" + query.toString();
+        getPage(this.br, contenturl);
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("(?i)>\\s*This gallery has been flagged")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.getURL().contains("/404.php")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML(">\\s*Could not find gallery")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        // First find all the information we need (name of the gallery, name of
+        // the galleries author)
+        String galleryName = ImageFap.getGalleryName(br, null, false);
+        if (galleryName == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        String authorsName = ImageFap.getUserName(br, null, false);
+        galleryName = Encoding.htmlDecode(galleryName).trim();
+        authorsName = Encoding.htmlDecode(authorsName).trim();
+        if (galleryIDStr == null) {
+            galleryIDStr = br.getRegex("\"galleryid_input\"\\s*value\\s*=\\s*\"(\\d+)").getMatch(0);
+        }
+        if (galleryIDStr == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        query.addAndReplace("gid", galleryIDStr);
+        int counter = 1;
+        final DecimalFormat df = new DecimalFormat("0000");
+        final HashSet<String> incompleteOriginalFilenameWorkaround = new HashSet<String>();
+        final FilePackage fp = FilePackage.getInstance();
+        fp.setName(authorsName + " - " + galleryName + " - " + galleryIDStr);
+        final String baseURL = URLHelper.getUrlWithoutParams(br._getURL());
+        int maxPage = this.findMaxPage(br);
+        int page = 0;
+        while (!this.isAbort()) {
+            final String info[][] = br.getRegex("<span id=\"img_(\\d+)_desc\">.*?<font face=verdana color=\"#000000\"><i>([^<>\"]*?)</i>").getMatches();
+            if (info == null || info.length == 0) {
+                if (ret.size() > 0) {
+                    logger.info("Stopping because: Current page contains no items -> Possibly buggy website with error 'Gallery not found' on last page");
+                    break;
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
-            final Regex singlephoto = new Regex(contenturl, "(?i)https?://[^/]+/photo/(\\d+)");
-            if (singlephoto.patternFind()) {
-                /* Single photo */
-                final String photoID = singlephoto.getMatch(0);
-                final DownloadLink link = new DownloadLink(hosterplugin, this.getHost(), contenturl + "/");
-                link.setProperty(ImageFap.PROPERTY_PHOTO_ID, photoID);
-                ret.add(link);
-            } else {
-                /* Gallery */
-                /* view=2 -> "One page" view -> More images on each page */
-                String galleryIDStr = new Regex(contenturl, "(?:pictures|gallery)/(\\d+)/?").getMatch(0);
-                if (galleryIDStr == null) {
-                    galleryIDStr = new Regex(contenturl, "gallery\\.php\\?p?gid=(\\d+)").getMatch(0);
-                }
-                contenturl = contenturl.replaceAll("view\\=[0-9]+", "view=2");
-                if (new Regex(contenturl, "(?i)imagefap\\.com/gallery\\.php\\?pgid=").matches()) {
-                    /**
-                     * Workaround to get all images on one page for private galleries (site buggy)
-                     */
-                    getPage(this.br, "https://www." + this.getHost() + "/gallery.php?view=2");
-                } else if (!contenturl.contains("view=2")) {
-                    contenturl = addParameter(contenturl, "view=2");
-                    contenturl = addParameter(contenturl, "gid=" + galleryIDStr);
-                }
-                getPage(this.br, contenturl);
-                if (br.containsHTML("(?i)>\\s*This gallery has been flagged")) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
-                if (br.getRedirectLocation() != null) {
-                    if (br.getRedirectLocation().contains("/pictures/")) {
-                        contenturl = br.getRedirectLocation();
-                        contenturl = addParameter(contenturl, "view=2");
-                        logger.info("New parameter is set: " + contenturl);
-                        getPage(this.br, contenturl);
+            int numberofNewItems = 0;
+            final String pageURL = br.getURL();
+            for (final String elements[] : info) {
+                final String orderID = df.format(counter);
+                final String photoID = elements[0];
+                final String dupePage = dupes.put(photoID, pageURL);
+                if (dupePage == null) {
+                    final DownloadLink link = new DownloadLink(hosterplugin, this.getHost(), generateSinglePhotoURL(photoID));
+                    link._setFilePackage(fp);
+                    String original_filename = Encoding.htmlDecode(elements[1]).trim();
+                    if (!incompleteOriginalFilenameWorkaround.add(original_filename) || original_filename.matches(".*[\\.]{2,}$")) {
+                        // some filenames are incomplete and end with ...
+                        // this workaround removes ... and adds orderID
+                        original_filename = original_filename.replaceFirst("([\\.]{2,})$", "") + "_" + orderID + ".jpg";
+                        link.setProperty(ImageFap.PROPERTY_INCOMPLETE_FILENAME, original_filename);
                     } else {
-                        logger.warning("Getting unknown redirect page");
-                        getPage(this.br, br.getRedirectLocation());
+                        link.setProperty(ImageFap.PROPERTY_ORIGINAL_FILENAME, original_filename);
                     }
+                    link.setProperty(ImageFap.PROPERTY_ORDER_ID, orderID);
+                    link.setProperty(ImageFap.PROPERTY_PHOTO_ID, photoID);
+                    link.setProperty(ImageFap.PROPERTY_ALBUM_ID, galleryIDStr);
+                    link.setProperty(ImageFap.PROPERTY_PHOTO_PAGE_NUMBER, page);
+                    link.setProperty(ImageFap.PROPERTY_PHOTO_GALLERY_TITLE, galleryName);
+                    link.setProperty(ImageFap.PROPERTY_USERNAME, authorsName);
+                    link.setProperty(ImageFap.PROPERTY_PHOTO_INDEX, (counter - 1));
+                    link.setName(ImageFap.getFormattedFilename(link));
+                    link.setAvailable(true);
+                    ret.add(link);
+                    distribute(link);
+                    counter++;
+                    numberofNewItems++;
                 }
-                if (br.getURL().contains("/404.php") || br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">\\s*Could not find gallery")) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                } else if (br.getRedirectLocation() != null && br.getRedirectLocation().contains("/404.php")) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            if (page == maxPage) {
+                /**
+                 * Find new max page value if it looks like we're currently on the last page. </br>
+                 * E.g. if we are on page one, highest page number we can see is 10 even though the item may have 20+ pages.
+                 */
+                final int maxPageValueOfCurrentPage = findMaxPage(br);
+                if (maxPageValueOfCurrentPage > maxPage) {
+                    logger.info("Found new maxPage value: old: " + maxPage + " --> New: " + maxPageValueOfCurrentPage);
+                    maxPage = maxPageValueOfCurrentPage;
                 }
-                // First find all the information we need (name of the gallery, name of
-                // the galleries author)
-                String galleryName = ImageFap.getGalleryName(br, null, false);
-                if (galleryName == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                String authorsName = ImageFap.getUserName(br, null, false);
-                galleryName = Encoding.htmlDecode(galleryName).trim();
-                authorsName = Encoding.htmlDecode(authorsName).trim();
-                int counter = 1;
-                final DecimalFormat df = new DecimalFormat("0000");
-                final HashSet<String> incompleteOriginalFilenameWorkaround = new HashSet<String>();
-                if (galleryIDStr == null) {
-                    galleryIDStr = br.getRegex("\"galleryid_input\"\\s*value\\s*=\\s*\"(\\d+)").getMatch(0);
-                }
-                if (galleryIDStr == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                final FilePackage fp = FilePackage.getInstance();
-                fp.setName(authorsName + " - " + galleryName + " - " + galleryIDStr);
-                final String baseURL = URLHelper.getUrlWithoutParams(br._getURL());
-                final String firstPageViewParam = new Regex(br.getURL(), "(?i)view=(\\d)").getMatch(0);
-                final UrlQuery query = new UrlQuery();
-                query.add("gid", galleryIDStr);
-                query.add("view", firstPageViewParam != null ? firstPageViewParam : "0");
-                int maxPage = this.findMaxPage(br);
-                for (int page = 0; page <= maxPage; page++) {
-                    if (page > 0) {
-                        query.addAndReplace("page", Integer.toString(page));
-                        getPage(this.br, baseURL + "?" + query.toString());
-                    }
-                    final String info[][] = br.getRegex("<span id=\"img_(\\d+)_desc\">.*?<font face=verdana color=\"#000000\"><i>([^<>\"]*?)</i>").getMatches();
-                    if (info == null || info.length == 0) {
-                        if (ret.size() > 0) {
-                            logger.info("Stopping because: Current page contains no items -> Possibly buggy website with error 'Gallery not found' on last page");
-                            break;
-                        } else {
-                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                        }
-                    }
-                    if (page == maxPage) {
-                        /**
-                         * Find new max page value if it looks like we're currently on the last page. </br>
-                         * E.g. if we are on page one, highest page number we can see is 10 even though the item may have 20+ pages.
-                         */
-                        final int maxPageValueOfCurrentPage = findMaxPage(br);
-                        if (maxPageValueOfCurrentPage > maxPage) {
-                            logger.info("Found new maxPage value: old: " + maxPage + " --> New: " + maxPageValueOfCurrentPage);
-                            maxPage = maxPageValueOfCurrentPage;
-                        }
-                    }
-                    int numberofNewItems = 0;
-                    final String pageURL = br.getURL();
-                    for (final String elements[] : info) {
-                        final String orderID = df.format(counter);
-                        final String photoID = elements[0];
-                        final String dupePage = dupes.put(photoID, pageURL);
-                        if (dupePage == null) {
-                            final DownloadLink link = new DownloadLink(hosterplugin, this.getHost(), generateSinglePhotoURL(photoID));
-                            link._setFilePackage(fp);
-                            String original_filename = Encoding.htmlDecode(elements[1]).trim();
-                            if (!incompleteOriginalFilenameWorkaround.add(original_filename) || original_filename.matches(".*[\\.]{2,}$")) {
-                                // some filenames are incomplete and end with ...
-                                // this workaround removes ... and adds orderID
-                                original_filename = original_filename.replaceFirst("([\\.]{2,})$", "") + "_" + orderID + ".jpg";
-                                link.setProperty(ImageFap.PROPERTY_INCOMPLETE_FILENAME, original_filename);
-                            } else {
-                                link.setProperty(ImageFap.PROPERTY_ORIGINAL_FILENAME, original_filename);
-                            }
-                            link.setProperty(ImageFap.PROPERTY_ORDER_ID, orderID);
-                            link.setProperty(ImageFap.PROPERTY_PHOTO_ID, photoID);
-                            link.setProperty(ImageFap.PROPERTY_ALBUM_ID, galleryIDStr);
-                            link.setProperty(ImageFap.PROPERTY_PHOTO_PAGE_NUMBER, page);
-                            link.setProperty(ImageFap.PROPERTY_PHOTO_GALLERY_TITLE, galleryName);
-                            link.setProperty(ImageFap.PROPERTY_USERNAME, authorsName);
-                            link.setProperty(ImageFap.PROPERTY_PHOTO_INDEX, (counter - 1));
-                            link.setName(ImageFap.getFormattedFilename(link));
-                            link.setAvailable(true);
-                            ret.add(link);
-                            distribute(link);
-                            counter++;
-                            numberofNewItems++;
-                        }
-                    }
-                    logger.info("Crawled page: " + page + "/" + maxPage + " | Found items so far: " + ret.size());
-                    if (page == maxPage) {
-                        logger.info("Stopping because: Reached last page: " + maxPage);
-                        break;
-                    } else if (numberofNewItems == 0) {
-                        /* Additiona lfail-safe */
-                        logger.info("Stopping because: Failed to find new items on current page");
-                        break;
-                    } else if (isAbort()) {
-                        logger.info("Stopping because: Aborted by user");
-                        break;
-                    }
-                }
+            }
+            logger.info("Crawled page: " + page + "/" + maxPage + " | Found items so far: " + ret.size());
+            if (page == maxPage) {
+                logger.info("Stopping because: Reached last page: " + maxPage);
+                break;
+            } else if (numberofNewItems == 0) {
+                /* Additional fail-safe */
+                logger.info("Stopping because: Failed to find new items on current page");
+                break;
+            } else if (isAbort()) {
+                logger.info("Stopping because: Aborted by user");
+                break;
+            } else {
+                /* Continue to next page */
+                page++;
+                query.addAndReplace("page", Integer.toString(page));
+                getPage(this.br, baseURL + "?" + query.toString());
             }
         }
         return ret;

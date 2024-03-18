@@ -1116,7 +1116,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
             }
         }
         final ArrayList<DownloadLink> originalItems = new ArrayList<DownloadLink>();
-        final ArrayList<DownloadLink> playlistItems = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> audioPlaylistItems = new ArrayList<DownloadLink>();
         final ArrayList<DownloadLink> desiredSubpathItems = new ArrayList<DownloadLink>();
         final ArrayList<DownloadLink> miscItems = new ArrayList<DownloadLink>();
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
@@ -1138,7 +1138,8 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         final boolean crawlArchiveView = cfg.isFileCrawlerCrawlArchiveView();
         final boolean crawlMetadataFiles = cfg.isFileCrawlerCrawlMetadataFiles();
         logger.info("Crawling all files below path: " + sourceurl);
-        final List<String> skippedItems = new ArrayList<String>();
+        final List<String> skippedItemsFilepaths = new ArrayList<String>();
+        final List<List<String>> originalFilesLists = new ArrayList<List<String>>();
         for (final Map<String, Object> filemap : filemaps) {
             final String source = filemap.get("source").toString(); // "original", "derivative" or "metadata"
             final String format = (String) filemap.get("format");
@@ -1159,11 +1160,11 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
             /* Check some skip conditions */
             if (isOldVersion) {
                 /* Skip old elements. */
-                skippedItems.add(pathWithFilename);
+                skippedItemsFilepaths.add(pathWithFilename);
                 continue;
             } else if (isMetadata && !crawlMetadataFiles) {
                 /* Only include metadata in downloads if wished by the user. */
-                skippedItems.add(pathWithFilename);
+                skippedItemsFilepaths.add(pathWithFilename);
                 continue;
             }
             /* Find path- and filename */
@@ -1247,7 +1248,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                 /* Track position given -> Item must be part of a playlist. */
                 file.setProperty(ArchiveOrg.PROPERTY_PLAYLIST_POSITION, Integer.parseInt(audioTrackPositionO.toString()));
                 /* Add item to list of playlist results. */
-                playlistItems.add(file);
+                audioPlaylistItems.add(file);
             }
             if (desiredSubpathDecoded != null && pathWithFilename.startsWith(desiredSubpathDecoded)) {
                 /* Add item to list of results which match our given subpath. */
@@ -1264,11 +1265,15 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
             // final DownloadLink archiveViewURL = createDownloadlink(url + "/");
             // ret.add(archiveViewURL);
             // }
+            final Object original = filemap.get("original");
+            if (original instanceof List && isAccountRequiredForDownload) {
+                originalFilesLists.add((List<String>) original);
+            }
         }
         /* Log skipped results */
-        if (skippedItems.size() > 0) {
-            logger.info("Skipped items: " + skippedItems.size());
-            logger.info(skippedItems.toString());
+        if (skippedItemsFilepaths.size() > 0) {
+            logger.info("Skipped items: " + skippedItemsFilepaths.size());
+            logger.info(skippedItemsFilepaths.toString());
         }
         if (desiredSubpathDecoded != null) {
             /* Return only links below desired subpath if desired subpath is available. */
@@ -1277,20 +1282,36 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
             }
             return desiredSubpathItems;
         }
-        // final ArrayList<DownloadLink> selectedItems = new ArrayList<DownloadLink>();
+        /* Handle playlist related stuff */
+        final FilePackage playlistpackage = FilePackage.getInstance();
+        final String metadataTitle = (String) root_metadata.get("title");
+        if (!StringUtils.isEmpty(metadataTitle)) {
+            playlistpackage.setName(metadataTitle);
+        } else {
+            /* Fallback */
+            playlistpackage.setName(identifier);
+        }
+        /* Build video Stream playlist if needed */
+        final ArrayList<DownloadLink> videoPlaylistItems = new ArrayList<DownloadLink>();
         final PlaylistCrawlMode playlistCrawlMode = cfg.getPlaylistCrawlMode();
-        if (playlistItems.size() > 0) {
+        if (StringUtils.equalsIgnoreCase(mediatype, "movies") && originalFilesLists.size() == 1) {
+            /* Video "playlist" handling */
+            final List<String> thisVideoSegments = originalFilesLists.get(0);
+            // TODO: Add functionality / make this work
+            int offsetSeconds = 0;
+            final int stepSeconds = 60;
+            /* Video can't be officially downloaded but it can be streamed in segments of X seconds each -> Generate those stream-links */
+            for (int counter = 0; counter < thisVideoSegments.size(); counter++) {
+                final String directurl = "http://archive.org/download/" + identifier + "/" + identifier + ".mp4?t=" + offsetSeconds + "/" + (offsetSeconds + stepSeconds) + "&ignore=x.mp4";
+                System.out.println(directurl);
+                final DownloadLink video = this.createDownloadlink(directurl);
+                // ret.add(video);
+                offsetSeconds += stepSeconds;
+            }
+        } else if (audioPlaylistItems.size() > 0) {
             /* Add some additional properties for playlist items */
             // final boolean isAudioPlaylist = mediatype.equalsIgnoreCase("audio");
-            final int playlistSize = playlistItems.size();
-            final FilePackage playlistpackage = FilePackage.getInstance();
-            final String metadataTitle = (String) root_metadata.get("");
-            if (!StringUtils.isEmpty(metadataTitle)) {
-                playlistpackage.setName(metadataTitle);
-            } else {
-                /* Fallback */
-                playlistpackage.setName(identifier);
-            }
+            final int playlistSize = audioPlaylistItems.size();
             for (final DownloadLink file : ret) {
                 /* Playlist size can only be determined after first loop -> Set that property here. */
                 file.setProperty(ArchiveOrg.PROPERTY_PLAYLIST_SIZE, playlistSize);
@@ -1303,8 +1324,8 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                 ArchiveOrg.setFinalFilename(file, file.getName());
             }
             if (playlistCrawlMode == PlaylistCrawlMode.PLAYLIST_ONLY) {
-                playlistpackage.addLinks(playlistItems);
-                return playlistItems;
+                playlistpackage.addLinks(audioPlaylistItems);
+                return audioPlaylistItems;
             }
         }
         if (crawlOriginalFilesOnly && originalItems.size() > 0) {
