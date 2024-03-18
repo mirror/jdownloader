@@ -41,6 +41,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
 
 import org.appwork.exceptions.WTFException;
+import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
@@ -859,7 +860,7 @@ public class ProxyController implements ProxySelectorInterface {
         try {
             final SelectedProxy selectedProxy = getSelectedProxy(request.getProxy());
             if (selectedProxy != null && selector == selectedProxy.getSelector()) {
-                final List<String> proxyAuths = request.getHttpConnection().getHeaderFields("proxy-authenticate");
+                final List<String> proxyAuths = request.getHttpConnection().getHeaderFields(HTTPConstants.HEADER_RESPONSE_PROXY_AUTHORIZATION);
                 return updateProxy(selectedProxy, request.getProxy(), proxyAuths, new URL(request.getUrl()), retryCounter);
             }
         } catch (Throwable e) {
