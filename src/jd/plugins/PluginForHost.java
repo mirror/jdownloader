@@ -2208,6 +2208,18 @@ public abstract class PluginForHost extends Plugin {
     }
 
     @Override
+    public boolean isHandlingMultipleHosts() {
+        try {
+            // TODO: create/use Feature for this
+            final Method method = this.getClass().getMethod("getHost", new Class[] { DownloadLink.class, Account.class, boolean.class });
+            final boolean ret = method.getDeclaringClass() != PluginForHost.class;
+            return ret;
+        } catch (Throwable e) {
+        }
+        return super.isHandlingMultipleHosts();
+    }
+
+    @Override
     public String getCrawlerLoggerID(CrawledLink link) {
         return getHost() + "_" + getLazyP().getClassName();
     }
