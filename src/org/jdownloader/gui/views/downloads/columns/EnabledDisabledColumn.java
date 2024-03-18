@@ -60,18 +60,16 @@ public class EnabledDisabledColumn extends ExtIconColumn<AbstractNode> {
              * @return 1,0,-1 depending on output of sort
              */
             private final int sortPackages(final AbstractPackageNode o1, final AbstractPackageNode o2) {
-                int h1 = 0;
-                int h2 = 0;
+                int o1Enabled = 0;
+                int o2Enabled = 0;
                 ModifyLock lock = o1.getModifyLock();
                 boolean readL = lock.readLock();
                 try {
                     for (Object link : o1.getChildren()) {
-                        if (!((AbstractNode) link).isEnabled()) {
-                            h1 = -1;
-                        } else {
-                            h1 = 1;
+                        if (((AbstractNode) link).isEnabled()) {
+                            o1Enabled = 1;
+                            break;
                         }
-                        break;
                     }
                 } finally {
                     lock.readUnlock(readL);
@@ -80,17 +78,15 @@ public class EnabledDisabledColumn extends ExtIconColumn<AbstractNode> {
                 readL = lock.readLock();
                 try {
                     for (Object link : o2.getChildren()) {
-                        if (!((AbstractNode) link).isEnabled()) {
-                            h2 = -1;
-                        } else {
-                            h2 = 1;
+                        if (((AbstractNode) link).isEnabled()) {
+                            o2Enabled = 1;
+                            break;
                         }
-                        break;
                     }
                 } finally {
                     lock.readUnlock(readL);
                 }
-                return finalDecision(h1, h2);
+                return finalDecision(o1Enabled, o2Enabled);
             }
 
             /**
