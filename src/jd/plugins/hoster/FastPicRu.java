@@ -19,8 +19,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -33,6 +31,8 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.StringUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class FastPicRu extends PluginForHost {
@@ -75,7 +75,7 @@ public class FastPicRu extends PluginForHost {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/view/([^<>\"]+)\\.html");
+            ret.add("https?://(?:www\\.|i\\d+\\.)?" + buildHostsPatternPart(domains) + "/(?:(?:full)?view/.*?_?([^<>\"/]+)\\.html|big/[^/]+/[^/]+/[^/]+/_?([a-f0-9]{32}\\.[A-Za-z]+[^\"]*))");
         }
         return ret.toArray(new String[0]);
     }
@@ -91,7 +91,11 @@ public class FastPicRu extends PluginForHost {
     }
 
     private String getFID(final DownloadLink link) {
-        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+        String ret = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+        if (ret == null) {
+            ret = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(1);
+        }
+        return ret;
     }
 
     @Override
@@ -120,7 +124,11 @@ public class FastPicRu extends PluginForHost {
                 con = br.openHeadConnection(this.dllink);
                 handleConnectionErrors(br, con);
                 if (con.getCompleteContentLength() > 0) {
-                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                    if (con.isContentDecoded()) {
+                        link.setDownloadSize(con.getCompleteContentLength());
+                    } else {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
                 }
                 final String ext = Plugin.getExtensionFromMimeTypeStatic(con.getContentType());
                 if (ext != null) {
