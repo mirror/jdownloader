@@ -37,8 +37,8 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class GelbooruCom extends PluginForHost {
-    public GelbooruCom(PluginWrapper wrapper) {
+public class Rule34Us extends PluginForHost {
+    public Rule34Us(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -57,7 +57,7 @@ public class GelbooruCom extends PluginForHost {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "gelbooru.com" });
+        ret.add(new String[] { "rule34.us" });
         return ret;
     }
 
@@ -77,7 +77,7 @@ public class GelbooruCom extends PluginForHost {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/index\\.php\\?page=post\\&s=view\\&id=(\\d+)");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/index\\.php\\?r=posts/view\\&id=(\\d+)");
         }
         return ret.toArray(new String[0]);
     }
@@ -86,7 +86,7 @@ public class GelbooruCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "https://" + getHost() + "/tos.php";
+        return "https://" + getHost() + "/index.php?r=dmca/index";
     }
 
     @Override
@@ -117,7 +117,7 @@ public class GelbooruCom extends PluginForHost {
         dllink = null;
         this.setBrowserExclusive();
         br.setCookie(getHost(), "fringeBenefits", "yup");
-        final String extDefault = ".jpg";
+        final String extDefault = ".png";
         final String fid = this.getFID(link);
         if (!link.isNameSet()) {
             link.setName(fid + extDefault);
@@ -128,30 +128,11 @@ public class GelbooruCom extends PluginForHost {
         } else if (!this.br.getURL().contains(fid)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String title = br.getRegex("(?i)<title>([^<>\"]+) - Image View -.*?</title>").getMatch(0);
-        if (title != null && false) {
-            // filename can be too long
-            title = fid + "_" + title;
-        } else {
-            title = fid;
-        }
-        dllink = br.getRegex("<a href=\"([^<>\"\\']+)\"[^<>]+>Original image</a>").getMatch(0);
+        /* 2024-03-18: Title = file_id */
+        String title = fid;
+        dllink = br.getRegex("<a href=\"(https?://[^\"]+)\"><li class=\"character-tag\"").getMatch(0);
         if (dllink == null) {
-            dllink = br.getRegex("\"(https?[^<>\"]+)\" id=\"image\"").getMatch(0);
-            if (dllink == null) {
-                dllink = br.getRegex("(gelbooru\\.com//images/[^<>\"]+)\"").getMatch(0);
-            }
-            if (dllink == null) {
-                /* 2017-02-18 */
-                String imglink = br.getRegex("Resize image.*?<a href=(\"|'|)(.*?)\\1").getMatch(1);
-                if (imglink == null) {
-                    imglink = br.getRegex("<img alt=.*?src=(\"|'|)(.*?)\\1").getMatch(1);
-                }
-            }
-            if (dllink == null) {
-                // can be a video!
-                dllink = br.getRegex("<\\s*source\\s+[^>]*src\\s*=\\s*(\"|'|)(.*?)\\1").getMatch(1);
-            }
+            dllink = br.getRegex("(https?://img\\d+\\.[^/]+/images/[^\"\\']+)").getMatch(0);
         }
         if (title != null) {
             title = Encoding.htmlDecode(title).trim();

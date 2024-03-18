@@ -872,12 +872,49 @@ public class TwitterComCrawler extends PluginForDecrypt {
                 }
                 /* If this is null, the quoted Tweet does not exist anymore. */
                 final Map<String, Object> quoted_status_tombstone = quoted_status != null ? (Map<String, Object>) quoted_status.get("tombstone") : null;
+                Map<String, Object> retweetRootMap = (Map<String, Object>) JavaScriptEngineFactory.walkJson(thisRoot, "legacy/retweeted_status");
+                if (retweetRootMap == null) {
+                    retweetRootMap = (Map<String, Object>) JavaScriptEngineFactory.walkJson(thisRoot, "legacy/retweeted_status_result/result/tweet");
+                    if (retweetRootMap == null) {
+                        retweetRootMap = (Map<String, Object>) JavaScriptEngineFactory.walkJson(thisRoot, "legacy/retweeted_status_result/result");
+                    }
+                }
                 final boolean containsQuotedTweet = quoted_status != null && quoted_status_tombstone == null;
                 final ArrayList<DownloadLink> thisTweetResults = crawlTweetMap(null, thisRoot, fp);
                 if (containsQuotedTweet) {
                     /* 2024-02-21: Current Tweet is a reply to a quoted Tweet -> We need to crawl that quoted Tweet separately */
                     final ArrayList<DownloadLink> thisQuotedTweetResults = crawlTweetMap(null, quoted_status, fp);
                     thisTweetResults.addAll(thisQuotedTweetResults);
+                } else if (retweetRootMap != null) {
+                    /* Retweet: Crawl Retweet and replace results of original Tweet with Retweet results. */
+                    final ArrayList<DownloadLink> thisRetweetResults = crawlTweetMap(null, retweetRootMap, fp);
+                    /* Find a suitable source Tweet item to inherit properties from. */
+                    DownloadLink anySourceTweetItem = null;
+                    for (final DownloadLink sourceTweetItem : thisTweetResults) {
+                        if (sourceTweetItem.hasProperty(PROPERTY_TWEET_ID)) {
+                            anySourceTweetItem = sourceTweetItem;
+                            break;
+                        }
+                    }
+                    final String[] inheritProperties = new String[] { PROPERTY_USERNAME, PROPERTY_USER_ID, PROPERTY_DATE, PROPERTY_DATE_TIMESTAMP, PROPERTY_MEDIA_COUNT, PROPERTY_TWEET_ID };
+                    for (final DownloadLink retweetResult : thisRetweetResults) {
+                        if (!retweetResult.hasProperty(PROPERTY_TWEET_ID)) {
+                            /* Skip external items such as crawled http URLs. */
+                            continue;
+                        }
+                        /* Mark Retweets as such. */
+                        retweetResult.setProperty(PROPERTY_RETWEET, true);
+                        /* Set source Tweet properties on this Retweet results. */
+                        for (final String inheritProperty : inheritProperties) {
+                            final Object propertyObj = anySourceTweetItem.getProperty(inheritProperty);
+                            if (propertyObj != null) {
+                                retweetResult.setProperty("source_" + inheritProperty, propertyObj);
+                            }
+                        }
+                    }
+                    /* Delete source Tweet results so we will only return the Retweet result here. */
+                    thisTweetResults.clear();
+                    thisTweetResults.addAll(thisRetweetResults);
                 }
                 /* Evaluate results */
                 final HashSet<String> thisRetweetIDs = new HashSet<String>();
@@ -931,7 +968,11 @@ public class TwitterComCrawler extends PluginForDecrypt {
                     } else {
                         /* Find date of last crawled Tweet. */
                         logger.info("Tweet used as source for last crawled Tweet timestamp: " + thisTweetD);
-                        crawledTweetTimestamp = thisTweetResult.getLongProperty(PROPERTY_DATE_TIMESTAMP, -1);
+                        /* If we got a Re-Tweet we want to use the date of the source Tweet here. */
+                        crawledTweetTimestamp = thisTweetResult.getLongProperty("source_" + PROPERTY_DATE_TIMESTAMP, -1);
+                        if (crawledTweetTimestamp == -1) {
+                            crawledTweetTimestamp = thisTweetResult.getLongProperty(PROPERTY_DATE_TIMESTAMP, -1);
+                        }
                     }
                 }
                 /* Check if we've reached any user defined limits */
@@ -966,24 +1007,10 @@ public class TwitterComCrawler extends PluginForDecrypt {
      * @param username:
      *            Pre given username (only needed if we know in beforehand that all Tweet items we will process belong to one user).
      */
-    private ArrayList<DownloadLink> crawlTweetMap(String username, Map<String, Object> thisRoot, FilePackage fp) throws MalformedURLException, PluginException {
+    private ArrayList<DownloadLink> crawlTweetMap(String username, final Map<String, Object> thisRoot, FilePackage fp) throws MalformedURLException, PluginException {
         final TwitterConfigInterface cfg = PluginJsonConfig.get(TwitterConfigInterface.class);
-        Map<String, Object> retweetRootMap = (Map<String, Object>) JavaScriptEngineFactory.walkJson(thisRoot, "legacy/retweeted_status");
-        if (retweetRootMap == null) {
-            /* Check if this is a Retweet */
-            retweetRootMap = (Map<String, Object>) JavaScriptEngineFactory.walkJson(thisRoot, "legacy/retweeted_status_result/result/tweet");
-            if (retweetRootMap == null) {
-                retweetRootMap = (Map<String, Object>) JavaScriptEngineFactory.walkJson(thisRoot, "legacy/retweeted_status_result/result");
-            }
-        }
-        boolean isRetweet = false;
-        if (retweetRootMap != null && !retweetRootMap.isEmpty()) {
-            /*
-             * We have a Retweet -> Replace root map with the one of the retweet
-             */
-            thisRoot = retweetRootMap;
-            isRetweet = true;
-        }
+        String sourceTweetID = null;
+        long sourceTweetTimestamp = -1;
         final Map<String, Object> tweet = (Map<String, Object>) thisRoot.get("legacy");
         final Map<String, Object> user = (Map<String, Object>) JavaScriptEngineFactory.walkJson(thisRoot, "core/user_results/result/legacy");
         if (user == null) {
@@ -1239,9 +1266,6 @@ public class TwitterComCrawler extends PluginForDecrypt {
             }
             if (isReplyToOtherTweet) {
                 dl.setProperty(PROPERTY_REPLY, true);
-            }
-            if (isRetweet) {
-                dl.setProperty(PROPERTY_RETWEET, true);
             }
             if (isPinnedTweet) {
                 dl.setProperty(PROPERTY_PINNED_TWEET, true);

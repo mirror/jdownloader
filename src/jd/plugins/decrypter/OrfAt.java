@@ -12,6 +12,14 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
@@ -20,6 +28,8 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
@@ -28,14 +38,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.DirectHTTP;
 import jd.plugins.hoster.ORFMediathek;
-
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class OrfAt extends PluginForDecrypt {
@@ -101,10 +103,10 @@ public class OrfAt extends PluginForDecrypt {
     private final String                                      PROPERTY_SLUG         = "slug";
     /* E.g. https://radiothek.orf.at/ooe --> "ooe" --> Channel == "oe2o" */
     private static LinkedHashMap<String, Map<String, Object>> CHANNEL_CACHE         = new LinkedHashMap<String, Map<String, Object>>() {
-        protected boolean removeEldestEntry(Map.Entry<String, Map<String, Object>> eldest) {
-            return size() > 50;
-        };
-    };
+                                                                                        protected boolean removeEldestEntry(Map.Entry<String, Map<String, Object>> eldest) {
+                                                                                            return size() > 50;
+                                                                                        };
+                                                                                    };
     public SubConfiguration                                   cfg                   = null;
 
     /** Wrapper for podcast URLs containing md5 file-hashes inside URL. */
@@ -314,15 +316,20 @@ public class OrfAt extends PluginForDecrypt {
                         isProgressiveStreamAvailable = true;
                     }
                     final String fmtHumanReadable = humanReadableQualityIdentifier(fmt.toUpperCase(Locale.ENGLISH).trim());
-                    filesizeCheck: if (selectedQualities.contains(fmtHumanReadable) && isProgressive && !settingEnableFastCrawl && !qualityIdentifierToFilesizeMap.containsKey(fmtHumanReadable) && !has_active_youth_protection) {
+                    progressiveStreamFilesizeCheck: if (selectedQualities.contains(fmtHumanReadable) && isProgressive && !settingEnableFastCrawl && !qualityIdentifierToFilesizeMap.containsKey(fmtHumanReadable) && !has_active_youth_protection) {
                         logger.info("Checking progressive URL to find filesize: " + url_directlink_video);
                         URLConnectionAdapter con = null;
+                        boolean isGeoBlocked = false;
                         try {
                             final Browser brc = br.cloneBrowser();
                             con = brc.openHeadConnection(url_directlink_video);
                             if (!this.looksLikeDownloadableContent(con)) {
                                 logger.info("Skipping broken progressive video quality: " + url_directlink_video);
                                 continue;
+                            } else if (ORFMediathek.isGeoBlocked(con.getURL().toExternalForm())) {
+                                /* Item is GEO-blocked */
+                                isGeoBlocked = true;
+                                throw new DecrypterRetryException(RetryReason.GEO);
                             }
                             final long filesize = con.getCompleteContentLength();
                             if (filesize > 0) {
@@ -335,7 +342,12 @@ public class OrfAt extends PluginForDecrypt {
                                 }
                             }
                         } catch (final Exception e) {
-                            logger.log(e);
+                            if (isGeoBlocked) {
+                                throw e;
+                            } else {
+                                /* Ignore Exception */
+                                logger.log(e);
+                            }
                         } finally {
                             try {
                                 con.disconnect();
@@ -478,6 +490,7 @@ public class OrfAt extends PluginForDecrypt {
                 /* Discard previously found results */
                 ret.clear();
             }
+            // TODO: 2024-03-18: Add auto falback to progressive video chapters if user prefers gapless && gapless is HLS split audio/video.
             final String segmentID = "gapless";
             final List<DownloadLink> videoresults = new ArrayList<DownloadLink>();
             DownloadLink best = null;
@@ -485,6 +498,10 @@ public class OrfAt extends PluginForDecrypt {
             for (final Map<String, Object> hlssource : sources_hls) {
                 final String hlsMaster = hlssource.get("src").toString();
                 br.getPage(hlsMaster);
+                if (ORFMediathek.isGeoBlocked(br.getURL())) {
+                    /* Item is GEO-blocked */
+                    throw new DecrypterRetryException(RetryReason.GEO);
+                }
                 int heigthMax = 0;
                 final List<HlsContainer> hlscontainers = HlsContainer.getHlsQualities(br);
                 for (final HlsContainer hlscontainer : hlscontainers) {
@@ -518,6 +535,14 @@ public class OrfAt extends PluginForDecrypt {
                 /* Only add first item for now as the others look to be duplicates. */
                 break;
             }
+            if (videoresults.isEmpty()) {
+                /**
+                 * All possible results were skipped? -> This should never happen / very very rare case. </br>
+                 * Either all available video resolutions are unsupported resolutions or GEO-blocked detection failed or something super
+                 * unexpected happened.
+                 */
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             /* Now decide which qualities we want to return. */
             final List<DownloadLink> selectedVideoQualities = new ArrayList<DownloadLink>();
             for (final DownloadLink videoresult : videoresults) {
@@ -527,7 +552,7 @@ public class OrfAt extends PluginForDecrypt {
                 }
             }
             final List<DownloadLink> videoSelectedResults = new ArrayList<DownloadLink>();
-            if (settingPreferBestVideo && best != null) {
+            if (settingPreferBestVideo) {
                 videoSelectedResults.add(best);
             } else {
                 if (selectedVideoQualities.size() > 0) {

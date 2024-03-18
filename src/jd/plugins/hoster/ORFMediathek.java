@@ -223,16 +223,13 @@ public class ORFMediathek extends PluginForHost {
         final String errortextGeoBlocked2 = "GEO-blocked";
         if (br.getHttpConnection().getResponseCode() == 403) {
             throw new PluginException(LinkStatus.ERROR_FATAL, errortextGeoBlocked1);
-        } else if (StringUtils.containsIgnoreCase(br.getURL(), "geoprotection_")) {
-            throw new PluginException(LinkStatus.ERROR_FATAL, errortextGeoBlocked2);
-        } else if (StringUtils.containsIgnoreCase(br.getURL(), "nicht_verfuegbar_hr")) {
-            /* 2023-11-27 */
+        } else if (isGeoBlocked(br.getURL())) {
             throw new PluginException(LinkStatus.ERROR_FATAL, errortextGeoBlocked2);
         }
     }
 
     private void checkUrlForAgeProtection(final DownloadLink link, final String url) throws Exception {
-        if (isAgeRestrictedByCurrentTime(url)) {
+        if (isAgeRestricted(url)) {
             if (System.currentTimeMillis() - link.getLongProperty(PROPERTY_AGE_RESTRICTED_LAST_RECRAWL_TIMESTAMP, 0) < 30 * 60 * 1000) {
                 /**
                  * Recrawl has just happened and we were still unable to download the item :( </br>
@@ -301,8 +298,19 @@ public class ORFMediathek extends PluginForHost {
         }
     }
 
-    public static boolean isAgeRestrictedByCurrentTime(final String url) {
+    public static boolean isAgeRestricted(final String url) {
         return StringUtils.containsIgnoreCase(url, "/Jugendschutz");
+    }
+
+    public static boolean isGeoBlocked(final String url) {
+        if (StringUtils.containsIgnoreCase(url, "geoprotection_")) {
+            return true;
+        } else if (StringUtils.containsIgnoreCase(url, "nicht_verfuegbar_hr")) {
+            /* 2023-11-27 */
+            return true;
+        } else {
+            return false;
+        }
     }
 
     @Override
