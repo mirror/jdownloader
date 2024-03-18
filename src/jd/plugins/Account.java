@@ -24,6 +24,12 @@ import java.util.TimeZone;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import jd.config.Property;
+import jd.controlling.AccountController;
+import jd.http.Browser;
+import jd.http.Cookie;
+import jd.http.Cookies;
+
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.SimpleMapper;
 import org.appwork.storage.TypeRef;
@@ -35,12 +41,6 @@ import org.jdownloader.controlling.UniqueAlltimeID;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 import org.jdownloader.translate._JDT;
-
-import jd.config.Property;
-import jd.controlling.AccountController;
-import jd.http.Browser;
-import jd.http.Cookie;
-import jd.http.Cookies;
 
 public class Account extends Property {
     private static final String VALID_UNTIL              = "VALID_UNTIL";
@@ -268,9 +268,9 @@ public class Account extends Property {
     }
 
     /**
-     * Set this to true to indicate that changing the IP address will also reset this accounts' limits. </br>
-     * Most of all services will store the limits on account (+ IP) but some will only rely on the IP thus allowing users to reset account
-     * limits by changing their IP.
+     * Set this to true to indicate that changing the IP address will also reset this accounts' limits. </br> Most of all services will
+     * store the limits on account (+ IP) but some will only rely on the IP thus allowing users to reset account limits by changing their
+     * IP.
      */
     public void setAllowReconnectToResetLimits(final boolean b) {
         /* 2022-07-19: TODO: Dummy function, see: https://svn.jdownloader.org/issues/87351 */
@@ -735,26 +735,23 @@ public class Account extends Property {
     public boolean equals(final Account account) {
         if (account == null) {
             return false;
-        }
-        if (account == this) {
+        } else if (account == this) {
             return true;
-        }
-        if (!StringUtils.equals(getHoster(), account.getHoster())) {
+        } else if (!StringUtils.equals(getHoster(), account.getHoster())) {
             // different hoster
             return false;
-        }
-        if (!StringUtils.equals(getUser(), account.getUser())) {
+        } else if (!StringUtils.equals(getUser(), account.getUser())) {
             // different user names
             return false;
         } else if (StringUtils.isNotEmpty(getUser())) {
             // same none null username
             return true;
-        }
-        if (!StringUtils.equals(getPass(), account.getPass())) {
+        } else if (!StringUtils.equals(getPass(), account.getPass())) {
             // different passwords
             return false;
+        } else {
+            return true;
         }
-        return true;
     }
 
     public boolean isMultiHost() {

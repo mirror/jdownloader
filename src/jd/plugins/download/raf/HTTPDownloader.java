@@ -503,7 +503,7 @@ public class HTTPDownloader extends DownloadInterface implements FileBytesCacheF
                 }
                 if (verifiedFileSize >= 0) {
                     if (contentRange[2] == verifiedFileSize) {
-                        logger.info("Strange Response: verifiedFileSize does match contentRange/Length!");
+                        logger.info("Strange Response: verifiedFileSize(" + verifiedFileSize + ") does match contentRange/Length(" + contentRange[2] + ")!");
                     } else {
                         if (connection.getResponseCode() == 200 || connection.getResponseCode() == 206) {
                             logger.severe("Invalid Response: verifiedFileSize(" + verifiedFileSize + ") does not match contentRange/Length(" + contentRange[2] + ")!");

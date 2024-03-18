@@ -28,6 +28,22 @@ import java.util.Locale;
 import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
 
+import jd.controlling.accountchecker.AccountChecker;
+import jd.controlling.accountchecker.AccountCheckerThread;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.WarnLevel;
+import jd.http.Browser;
+import jd.http.BrowserSettingsThread;
+import jd.nutils.encoding.Encoding;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountError;
+import jd.plugins.Account.AccountPropertyChangeHandler;
+import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
+import jd.plugins.AccountProperty;
+import jd.plugins.PluginForHost;
+
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.shutdown.ShutdownController;
 import org.appwork.shutdown.ShutdownEvent;
@@ -57,33 +73,17 @@ import org.jdownloader.plugins.controller.host.PluginFinder;
 import org.jdownloader.settings.AccountData;
 import org.jdownloader.settings.AccountSettings;
 
-import jd.controlling.accountchecker.AccountChecker;
-import jd.controlling.accountchecker.AccountCheckerThread;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.WarnLevel;
-import jd.http.Browser;
-import jd.http.BrowserSettingsThread;
-import jd.nutils.encoding.Encoding;
-import jd.plugins.Account;
-import jd.plugins.Account.AccountError;
-import jd.plugins.Account.AccountPropertyChangeHandler;
-import jd.plugins.Account.AccountType;
-import jd.plugins.AccountInfo;
-import jd.plugins.AccountProperty;
-import jd.plugins.PluginForHost;
-
 public class AccountController implements AccountControllerListener, AccountPropertyChangeHandler {
     private static final long                                                    serialVersionUID = -7560087582989096645L;
     private final HashMap<String, List<Account>>                                 ACCOUNTS;
     private final HashMap<String, List<Account>>                                 MULTIHOSTER_ACCOUNTS;
     private static AccountController                                             INSTANCE         = new AccountController();
     private final Eventsender<AccountControllerListener, AccountControllerEvent> broadcaster      = new Eventsender<AccountControllerListener, AccountControllerEvent>() {
-                                                                                                      @Override
-                                                                                                      protected void fireEvent(final AccountControllerListener listener, final AccountControllerEvent event) {
-                                                                                                          listener.onAccountControllerEvent(event);
-                                                                                                      }
-                                                                                                  };
+        @Override
+        protected void fireEvent(final AccountControllerListener listener, final AccountControllerEvent event) {
+            listener.onAccountControllerEvent(event);
+        }
+    };
 
     public Eventsender<AccountControllerListener, AccountControllerEvent> getEventSender() {
         return broadcaster;
@@ -580,23 +580,6 @@ public class AccountController implements AccountControllerListener, AccountProp
         return list(null);
     }
 
-    /* do we have accounts for this host */
-    public boolean hasAccounts(final String host) {
-        if (host != null) {
-            synchronized (AccountController.this) {
-                final List<Account> ret = ACCOUNTS.get(host.toLowerCase(Locale.ENGLISH));
-                if (ret != null && ret.size() > 0) {
-                    for (final Account acc : ret) {
-                        if (acc.isValid() && acc.getPlugin() != null) {
-                            return true;
-                        }
-                    }
-                }
-            }
-        }
-        return false;
-    }
-
     public int getAccountsSize(final String host) {
         if (host != null) {
             synchronized (AccountController.this) {
@@ -626,13 +609,29 @@ public class AccountController implements AccountControllerListener, AccountProp
             if (account.getHoster() != null) {
                 Account existingAccount = null;
                 synchronized (AccountController.this) {
-                    existingAccount = this.getExistingAccount(account);
-                    /* 2021-11-25: TODO: Lowercase required? Host names should be unique already! */
                     final String host = account.getHoster().toLowerCase(Locale.ENGLISH);
                     List<Account> accs = ACCOUNTS.get(host);
                     if (accs == null) {
                         accs = new ArrayList<Account>();
                         ACCOUNTS.put(host, accs);
+                    }
+                    final boolean hasUsername = StringUtils.isNotEmpty(account.getUser());
+                    for (final Account acc : accs) {
+                        if (acc == account) {
+                            existingAccount = acc;
+                            break;
+                        } else if (hasUsername && StringUtils.equals(acc.getUser(), account.getUser()) && StringUtils.equals(acc.getPass(), account.getPass())) {
+                            existingAccount = acc;
+                            break;
+                        }
+                    }
+                    if (existingAccount == null && hasUsername) {
+                        for (final Account acc : accs) {
+                            if (StringUtils.equals(acc.getUser(), account.getUser())) {
+                                existingAccount = acc;
+                                break;
+                            }
+                        }
                     }
                     if (existingAccount == null) {
                         /* No existing account found -> Add this account to list of accounts. */
@@ -791,25 +790,6 @@ public class AccountController implements AccountControllerListener, AccountProp
         }
     }
 
-    /** Checks if given account already exists. */
-    public Account getExistingAccount(final Account account) {
-        if (account == null || account.getHoster() == null) {
-            return null;
-        }
-        synchronized (AccountController.this) {
-            final String host = account.getHoster().toLowerCase(Locale.ENGLISH);
-            List<Account> accs = ACCOUNTS.get(host);
-            if (accs != null) {
-                for (final Account acc : accs) {
-                    if (acc.equals(account)) {
-                        return acc;
-                    }
-                }
-            }
-        }
-        return null;
-    }
-
     /** Checks if account with expected properties exists. */
     public boolean hasAccount(final String host, final Boolean isEnabled, final Boolean isValid, final Boolean isPremium, final Boolean isExpired) {
         if (StringUtils.isEmpty(host)) {
@@ -822,14 +802,11 @@ public class AccountController implements AccountControllerListener, AccountProp
                     if (account.getPlugin() != null) {
                         if (isEnabled != null && isEnabled != account.isEnabled()) {
                             continue;
-                        }
-                        if (isValid != null && isValid != (account.getError() == null)) {
+                        } else if (isValid != null && isValid != (account.getError() == null)) {
                             continue;
-                        }
-                        if (isPremium != null && isPremium != AccountType.PREMIUM.equals(account.getType())) {
+                        } else if (isPremium != null && isPremium != AccountType.PREMIUM.equals(account.getType())) {
                             continue;
-                        }
-                        if (isExpired != null) {
+                        } else if (isExpired != null) {
                             final AccountInfo ai = account.getAccountInfo();
                             if (ai != null) {
                                 final long validUntilTimeStamp = ai.getValidUntil();
