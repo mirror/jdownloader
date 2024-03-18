@@ -33,7 +33,6 @@ import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.Application;
-import org.appwork.utils.DebugMode;
 import org.appwork.utils.Exceptions;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
@@ -537,7 +536,7 @@ public class OldRAFDownload extends DownloadInterface {
                 }
             }
             /* Now check if we are allowed to fix the filename extension. Filenames from URL can have the wrong extension! */
-            correctFileExtensionLastResort: if (filenameFromContentDispositionHeader == null && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            correctFileExtensionLastResort: if (filenameFromContentDispositionHeader == null) {
                 /**
                  * TODO: Review this: Maybe don't correct filenames if they were forced by the user(?) On the other hand we may know which
                  * file-extension is the correct one. I'd do it like browsers do it and correct the file-extension.
@@ -578,12 +577,17 @@ public class OldRAFDownload extends DownloadInterface {
                         }
                     }
                     if (fileTypeCurrent == null && newIsDocumentFileType) {
-                        /* Do not allow to correct "unknown" file type to document/plaintext. */
+                        /**
+                         * We do now know the current filetype but the "new filetype" would be a document -> Do not allow to correct
+                         * "unknown" file type to document/plaintext. </br>
+                         * This also prevents correction of for example .log -> .log.txt.
+                         */
                         correctFileExtension = false;
                     } else {
                         correctFileExtension = true;
                     }
                 } else {
+                    /* No current file extension given -> Add new file extension */
                     correctFileExtension = true;
                 }
                 if (correctFileExtension) {

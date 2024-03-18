@@ -38,7 +38,6 @@ import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
-import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.event.Eventsender;
 import org.appwork.utils.logging2.LogInterface;
@@ -642,27 +641,16 @@ public class AccountController implements AccountControllerListener, AccountProp
                     }
                 }
                 if (existingAccount != null) {
-                    if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-                        /* Update password of existing account */
-                        if (!StringUtils.equals(existingAccount.getPass(), account.getPass())) {
-                            existingAccount.setPass(account.getPass(), forceAccountCheckOnPropertyChange);
-                        }
-                        // reuse properties and accountInfos from new account
-                        existingAccount.setError(null, -1, null, forceAccountCheckOnPropertyChange);
-                        existingAccount.setAccountInfo(account.getAccountInfo());
-                        existingAccount.setProperties(account.getProperties());
-                        existingAccount.setEnabled(true, forceAccountCheckOnPropertyChange);
-                        getEventSender().fireEvent(new AccountControllerEvent(this, AccountControllerEvent.Types.ACCOUNT_CHECKED, existingAccount));
-                    } else {
-                        if (!existingAccount.isEnabled() || existingAccount.getError() != null) {
-                            // reuse properties and accountInfos from new account
-                            existingAccount.setError(null, -1, null);
-                            existingAccount.setAccountInfo(account.getAccountInfo());
-                            existingAccount.setProperties(account.getProperties());
-                            existingAccount.setEnabled(true);
-                            getEventSender().fireEvent(new AccountControllerEvent(this, AccountControllerEvent.Types.ACCOUNT_CHECKED, existingAccount));
-                        }
+                    /* Update password of existing account */
+                    if (!StringUtils.equals(existingAccount.getPass(), account.getPass())) {
+                        existingAccount.setPass(account.getPass(), forceAccountCheckOnPropertyChange);
                     }
+                    // reuse properties and accountInfos from new account
+                    existingAccount.setError(null, -1, null, forceAccountCheckOnPropertyChange);
+                    existingAccount.setAccountInfo(account.getAccountInfo());
+                    existingAccount.setProperties(account.getProperties());
+                    existingAccount.setEnabled(true, forceAccountCheckOnPropertyChange);
+                    getEventSender().fireEvent(new AccountControllerEvent(this, AccountControllerEvent.Types.ACCOUNT_CHECKED, existingAccount));
                 } else {
                     this.broadcaster.fireEvent(new AccountControllerEvent(this, AccountControllerEvent.Types.ADDED, account));
                 }
