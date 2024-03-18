@@ -617,24 +617,24 @@ public class AccountController implements AccountControllerListener, AccountProp
                 accs = new ArrayList<Account>();
                 ACCOUNTS.put(host, accs);
             }
-            final boolean hasUsername = StringUtils.isNotEmpty(account.getUser());
+            final String hasUsername = StringUtils.isNotEmpty(account.getUser()) ? account.getUser() : null;
             for (final Account acc : accs) {
                 if (acc == account) {
                     existingAccount = acc;
                     break;
-                } else if (hasUsername && StringUtils.equals(acc.getUser(), account.getUser()) && StringUtils.equals(acc.getPass(), account.getPass())) {
+                } else if (hasUsername != null && StringUtils.equals(hasUsername, account.getUser()) && StringUtils.equals(acc.getPass(), account.getPass())) {
                     /* Check for same user + pw. */
                     existingAccount = acc;
                     break;
                 }
             }
-            if (existingAccount == null && hasUsername) {
+            if (existingAccount == null && hasUsername != null) {
                 /*
                  * Check for same username only --> Username is supposed to be unique so this should also be a safe method of finding an
                  * existing same account.
                  */
                 for (final Account acc : accs) {
-                    if (StringUtils.equals(acc.getUser(), account.getUser())) {
+                    if (StringUtils.equals(hasUsername, account.getUser())) {
                         existingAccount = acc;
                         break;
                     }
