@@ -19,11 +19,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -37,6 +32,10 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
+
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class TnaFlixCom extends PluginForHost {
@@ -168,33 +167,31 @@ public class TnaFlixCom extends PluginForHost {
         br.setCookie("https://" + link.getHost(), "content_filter2", "type%3Dstraight%26filter%3Dcams");
         br.setCookie("https://" + link.getHost(), "content_filter3", "type%3Dstraight%2Ctranny%2Cgay%26filter%3Dcams");
         String filename = null;
-        final String videoid_type_2 = this.getVideoID(link.getPluginPatternMatcher());
-        if (videoid_type_2 != null) {
-            /* 2019-06-11: New: Ajax-linkcheck, old handling should not get used anymore! */
-            br.getPage("https://dyn." + Browser.getHost(link.getPluginPatternMatcher(), false) + "/ajax/info.php?action=video&vid=" + videoid_type_2);
-            final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
-            filename = (String) entries.get("title");
-            // final boolean mp4download = ((Boolean) entries.get("mp4download")).booleanValue();
-            // if (mp4download) {
-            // }
-        } else {
-            br.getPage(this.getContentURL(link));
-            if (br.containsHTML("class=\"errorPage page404\"|> This video is set to private") || this.br.getHttpConnection().getResponseCode() == 404 || this.br.getURL().length() < 30) {
+        br.getPage(this.getContentURL(link));
+        if (br.containsHTML("class=\"errorPage page404\"|> This video is set to private") || this.br.getHttpConnection().getResponseCode() == 404 || this.br.getURL().length() < 30) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final String redirect = br.getRedirectLocation();
+        if (redirect != null) {
+            if (redirect.contains("errormsg=true")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            final String redirect = br.getRedirectLocation();
-            if (redirect != null) {
-                if (redirect.contains("errormsg=true")) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
-                if (redirect.contains("video")) {
-                    link.setUrlDownload(br.getRedirectLocation());
-                }
-                br.getPage(redirect);
+            if (redirect.contains("video")) {
+                link.setUrlDownload(br.getRedirectLocation());
             }
-            filename = br.getRegex("<title>([^<>]*?) \\- TNAFlix Porn Videos</title>").getMatch(0);
+            br.getPage(redirect);
+        }
+        filename = br.getRegex("<title>([^<>]*?) \\- TNAFlix Porn Videos</title>").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("<meta property=\"og:title\" content=\"([^<>]*?)\"").getMatch(0);
             if (filename == null) {
-                filename = br.getRegex("<meta property=\"og:title\" content=\"([^<>]*?)\"").getMatch(0);
+                String videoid = this.getVideoID(link.getPluginPatternMatcher());
+                if (videoid == null) {
+                    videoid = this.getVideoID(br.getURL());
+                }
+                if (videoid != null) {
+                    filename = br.getRegex("video" + videoid + "\"[^>]*target[^>]*>\\s*(.*?)\\s*<").getMatch(0);
+                }
             }
         }
         if (StringUtils.isEmpty(filename)) {
