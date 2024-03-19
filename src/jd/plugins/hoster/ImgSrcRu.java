@@ -298,7 +298,7 @@ public class ImgSrcRu extends PluginForHost {
             String password = link.getDownloadPassword();
             if (password == null) {
                 password = getUserInput("Enter password for link:", link);
-                if (password == null || password.equals("")) {
+                if (StringUtils.isEmpty(password)) {
                     logger.info("User abored/entered blank password");
                     throw new PluginException(LinkStatus.ERROR_FATAL);
                 }
@@ -319,7 +319,11 @@ public class ImgSrcRu extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return Integer.MAX_VALUE;
+        /*
+         * 2024-03-19: Our set request-interval limit make it impossible anyways to effectively download a large amount of items at the same
+         * time.
+         */
+        return 3;
     }
 
     @Override

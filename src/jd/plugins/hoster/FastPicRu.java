@@ -20,12 +20,15 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.http.requests.GetRequest;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -33,8 +36,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.StringUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class FastPicRu extends PluginForHost {
@@ -46,12 +47,9 @@ public class FastPicRu extends PluginForHost {
     // Tags:
     // protocol: no https
     // other:
-    /* Connection stuff */
-    private static final boolean free_resume       = true;
     /* We're only downloading small files so 1 chunk is enough. */
-    private static final int     free_maxchunks    = 1;
-    private static final int     free_maxdownloads = -1;
-    private String               dllink            = null;
+    private static final int free_maxchunks = 1;
+    private String           dllink         = null;
 
     @Override
     public String getAGBLink() {
@@ -98,6 +96,11 @@ public class FastPicRu extends PluginForHost {
             ret = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(1);
         }
         return ret;
+    }
+
+    @Override
+    public boolean isResumeable(final DownloadLink link, final Account account) {
+        return true;
     }
 
     @Override
@@ -177,13 +180,13 @@ public class FastPicRu extends PluginForHost {
         if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, this.isResumeable(link, null), free_maxchunks);
         handleConnectionErrors(br, dl.getConnection());
         dl.startDownload();
     }
 
     private void handleConnectionErrors(final Browser br, final URLConnectionAdapter con) throws PluginException, IOException {
-        if (con.getURL().toString().contains("/not_found.gif")) {
+        if (con.getURL().toExternalForm().contains("/not_found.gif")) {
             /* https://static.fastpic.org/not_found.gif */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -201,7 +204,7 @@ public class FastPicRu extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return free_maxdownloads;
+        return Integer.MAX_VALUE;
     }
 
     @Override

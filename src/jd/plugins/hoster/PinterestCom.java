@@ -141,9 +141,9 @@ public class PinterestCom extends PluginForHost {
             /* We want the full URL. */
             redirect = br.getURL(redirect).toString();
         }
-        if (!br.getURL().matches(PinterestComDecrypter.TYPE_PIN)) {
+        if (!new Regex(br.getURL(), PinterestComDecrypter.PATTERN_PIN).patternFind()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (redirect != null && redirect.matches(PinterestComDecrypter.TYPE_PIN) && !redirect.contains(pinID)) {
+        } else if (redirect != null && new Regex(redirect, PinterestComDecrypter.PATTERN_PIN).patternFind() && !redirect.contains(pinID)) {
             final String newPinID = getPinID(redirect);
             logger.info("Old pinID: " + pinID + " | New pinID: " + newPinID + " | New URL: " + redirect);
             link.setPluginPatternMatcher(redirect);
@@ -339,7 +339,7 @@ public class PinterestCom extends PluginForHost {
             if (br.getHttpConnection().getResponseCode() != 200 || br.getCookie(br.getHost(), "_pinterest_sess", Cookies.NOTDELETEDPATTERN) == null) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
-            account.saveCookies(br.getCookies(last_used_host), "");
+            account.saveCookies(br.getCookies(br.getHost()), "");
             account.setProperty("host", br.getHost());
         }
     }

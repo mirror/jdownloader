@@ -1118,7 +1118,6 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         final ArrayList<DownloadLink> originalItems = new ArrayList<DownloadLink>();
         final ArrayList<DownloadLink> audioPlaylistItems = new ArrayList<DownloadLink>();
         final ArrayList<DownloadLink> desiredSubpathItems = new ArrayList<DownloadLink>();
-        final ArrayList<DownloadLink> miscItems = new ArrayList<DownloadLink>();
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final Map<String, Object> root_metadata = (Map<String, Object>) root.get("metadata");
         /* There is different servers to choose from e.g. see also fields "d1", "d2" and "workable_servers". */
@@ -1139,7 +1138,8 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         final boolean crawlMetadataFiles = cfg.isFileCrawlerCrawlMetadataFiles();
         logger.info("Crawling all files below path: " + sourceurl);
         final List<String> skippedItemsFilepaths = new ArrayList<String>();
-        final List<List<String>> originalFilesLists = new ArrayList<List<String>>();
+        final List<List<String>> originalFilesListsForVideoStreams = new ArrayList<List<String>>();
+        boolean isAccountRequiredForDownloadStatusForVideoStreams = false;
         for (final Map<String, Object> filemap : filemaps) {
             final String source = filemap.get("source").toString(); // "original", "derivative" or "metadata"
             final String format = (String) filemap.get("format");
@@ -1230,13 +1230,21 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                 file.setSha1Hash(sha1);
             }
             file.setProperty(ArchiveOrg.PROPERTY_TIMESTAMP_FROM_API_LAST_MODIFIED, filemap.get("mtime"));
-            /* Set new filename */
-            ArchiveOrg.setFinalFilename(file, filename);
-            file.setAvailable(true);
-            file.setRelativeDownloadFolderPath(thisPath);
             if (isAccountRequiredForDownload) {
                 file.setProperty(ArchiveOrg.PROPERTY_IS_ACCOUNT_REQUIRED, true);
             }
+            if (audioTrackPositionO != null) {
+                /* Track position given -> Item must be part of a playlist. */
+                final DownloadLink audioPlaylistItem = this.createDownloadlink(url);
+                audioPlaylistItem.setProperties(file.getProperties());
+                audioPlaylistItem.setProperty(ArchiveOrg.PROPERTY_PLAYLIST_POSITION, Integer.parseInt(audioTrackPositionO.toString()));
+                /* Add item to list of playlist results. */
+                audioPlaylistItems.add(audioPlaylistItem);
+            }
+            file.setAvailable(true);
+            /* Set new filename */
+            ArchiveOrg.setFinalFilename(file, filename);
+            file.setRelativeDownloadFolderPath(thisPath);
             FilePackage fp = fpmap.get(thisPath);
             if (fp == null) {
                 fp = FilePackage.getInstance();
@@ -1244,12 +1252,6 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                 fpmap.put(thisPath, fp);
             }
             file._setFilePackage(fp);
-            if (audioTrackPositionO != null) {
-                /* Track position given -> Item must be part of a playlist. */
-                file.setProperty(ArchiveOrg.PROPERTY_PLAYLIST_POSITION, Integer.parseInt(audioTrackPositionO.toString()));
-                /* Add item to list of playlist results. */
-                audioPlaylistItems.add(file);
-            }
             if (desiredSubpathDecoded != null && pathWithFilename.startsWith(desiredSubpathDecoded)) {
                 /* Add item to list of results which match our given subpath. */
                 desiredSubpathItems.add(file);
@@ -1259,7 +1261,6 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
             }
             /* Add items to list of all results. */
             ret.add(file);
-            miscItems.add(file);
             // TODO: Check this: Make this work or remove this feature
             // if (crawlArchiveView && isArchiveViewSupported) {
             // final DownloadLink archiveViewURL = createDownloadlink(url + "/");
@@ -1267,7 +1268,8 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
             // }
             final Object original = filemap.get("original");
             if (original instanceof List && isAccountRequiredForDownload) {
-                originalFilesLists.add((List<String>) original);
+                originalFilesListsForVideoStreams.add((List<String>) original);
+                isAccountRequiredForDownloadStatusForVideoStreams = isAccountRequiredForDownload;
             }
         }
         /* Log skipped results */
@@ -1294,38 +1296,59 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         /* Build video Stream playlist if needed */
         final ArrayList<DownloadLink> videoPlaylistItems = new ArrayList<DownloadLink>();
         final PlaylistCrawlMode playlistCrawlMode = cfg.getPlaylistCrawlMode();
-        if (StringUtils.equalsIgnoreCase(mediatype, "movies") && originalFilesLists.size() == 1) {
+        if (StringUtils.equalsIgnoreCase(mediatype, "movies") && originalFilesListsForVideoStreams.size() == 1) {
             /* Video "playlist" handling */
-            final List<String> thisVideoSegments = originalFilesLists.get(0);
-            // TODO: Add functionality / make this work
+            final List<String> thisVideoSegments = originalFilesListsForVideoStreams.get(0);
+            int position = 0;
             int offsetSeconds = 0;
             final int stepSeconds = 60;
             /* Video can't be officially downloaded but it can be streamed in segments of X seconds each -> Generate those stream-links */
             for (int counter = 0; counter < thisVideoSegments.size(); counter++) {
-                final String directurl = "http://archive.org/download/" + identifier + "/" + identifier + ".mp4?t=" + offsetSeconds + "/" + (offsetSeconds + stepSeconds) + "&ignore=x.mp4";
-                System.out.println(directurl);
+                final String directurl = "https://archive.org/download/" + identifier + "/" + identifier + ".mp4?t=" + offsetSeconds + "/" + (offsetSeconds + stepSeconds) + "&ignore=x.mp4";
                 final DownloadLink video = this.createDownloadlink(directurl);
-                // ret.add(video);
+                video.setProperty(ArchiveOrg.PROPERTY_FILETYPE, ArchiveOrg.FILETYPE_VIDEO);
+                video.setProperty(ArchiveOrg.PROPERTY_PLAYLIST_POSITION, position);
+                video.setProperty(ArchiveOrg.PROPERTY_PLAYLIST_SIZE, thisVideoSegments.size());
+                ArchiveOrg.setFinalFilename(video, identifier + ".mp4");
+                video.setAvailable(true);
+                video._setFilePackage(playlistpackage);
+                videoPlaylistItems.add(video);
+                ret.add(video);
+                /* Increment counters */
+                position++;
                 offsetSeconds += stepSeconds;
+            }
+            if (playlistCrawlMode == PlaylistCrawlMode.PLAYLIST_ONLY) {
+                return videoPlaylistItems;
+            } else if (isAccountRequiredForDownloadStatusForVideoStreams) {
+                /*
+                 * Original file is most likely not downloadable at all -> Force-return playlist items to provide downloadable items for the
+                 * user.
+                 */
+                ret.addAll(videoPlaylistItems);
+            } else if (playlistCrawlMode == PlaylistCrawlMode.PLAYLIST_AND_FILES) {
+                ret.addAll(videoPlaylistItems);
             }
         } else if (audioPlaylistItems.size() > 0) {
             /* Add some additional properties for playlist items */
             // final boolean isAudioPlaylist = mediatype.equalsIgnoreCase("audio");
             final int playlistSize = audioPlaylistItems.size();
-            for (final DownloadLink file : ret) {
+            for (final DownloadLink audioPlaylistItem : audioPlaylistItems) {
                 /* Playlist size can only be determined after first loop -> Set that property here. */
-                file.setProperty(ArchiveOrg.PROPERTY_PLAYLIST_SIZE, playlistSize);
-                file.setProperty(ArchiveOrg.PROPERTY_FILETYPE, ArchiveOrg.FILETYPE_AUDIO);
-                /*
-                 * We want all items to go into one package (and most likely to be downloaded into the same folder) so we need to remove the
-                 * previously set relative path information.
-                 */
-                file.setRelativeDownloadFolderPath(null);
-                ArchiveOrg.setFinalFilename(file, file.getName());
+                audioPlaylistItem.setProperty(ArchiveOrg.PROPERTY_PLAYLIST_SIZE, playlistSize);
+                audioPlaylistItem.setProperty(ArchiveOrg.PROPERTY_FILETYPE, ArchiveOrg.FILETYPE_AUDIO);
+                audioPlaylistItem.setAvailable(true);
+                ArchiveOrg.setFinalFilename(audioPlaylistItem, audioPlaylistItem.getName());
             }
             if (playlistCrawlMode == PlaylistCrawlMode.PLAYLIST_ONLY) {
                 playlistpackage.addLinks(audioPlaylistItems);
                 return audioPlaylistItems;
+            } else if (playlistCrawlMode == PlaylistCrawlMode.PLAYLIST_AND_FILES) {
+                /**
+                 * TODO: We need to duplicate those items as playlist items and original files are the same but we need to purposely create
+                 * duplicates to trick our own duplicate-check.
+                 */
+                ret.addAll(audioPlaylistItems);
             }
         }
         if (crawlOriginalFilesOnly && originalItems.size() > 0) {
