@@ -50,12 +50,12 @@ public interface ArchiveOrgConfig extends PluginConfigInterface {
             return text_BookCrawlMode;
         }
 
-        public String getPlaylistCrawlMode_label() {
-            return text_PlaylistCrawlMode;
-        }
-
         public String getMarkNonViewableBookPagesAsOfflineIfNoAccountIsAvailable_label() {
             return text_MarkNonViewableBookPagesAsOfflineIfNoAccountIsAvailable;
+        }
+
+        public String getPlaylistCrawlMode_label() {
+            return text_PlaylistCrawlMode;
         }
 
         public String getSearchTermCrawlerMaxResultsLimit_label() {
@@ -148,6 +148,14 @@ public interface ArchiveOrgConfig extends PluginConfigInterface {
 
     void setBookCrawlMode(final BookCrawlMode bookCrawlerMode);
 
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    @DescriptionForConfigEntry(text_MarkNonViewableBookPagesAsOfflineIfNoAccountIsAvailable)
+    @Order(41)
+    boolean isMarkNonViewableBookPagesAsOfflineIfNoAccountIsAvailable();
+
+    void setMarkNonViewableBookPagesAsOfflineIfNoAccountIsAvailable(boolean b);
+
     public static enum PlaylistCrawlMode implements LabelInterface {
         PLAYLIST_ONLY {
             @Override
@@ -171,19 +179,11 @@ public interface ArchiveOrgConfig extends PluginConfigInterface {
 
     @AboutConfig
     @DefaultEnumValue("PLAYLIST_ONLY")
-    @Order(41)
+    @Order(50)
     @DescriptionForConfigEntry(text_PlaylistCrawlMode)
     PlaylistCrawlMode getPlaylistCrawlMode();
 
     void setPlaylistCrawlMode(final PlaylistCrawlMode bookCrawlerMode);
-
-    @AboutConfig
-    @DefaultBooleanValue(true)
-    @DescriptionForConfigEntry(text_MarkNonViewableBookPagesAsOfflineIfNoAccountIsAvailable)
-    @Order(50)
-    boolean isMarkNonViewableBookPagesAsOfflineIfNoAccountIsAvailable();
-
-    void setMarkNonViewableBookPagesAsOfflineIfNoAccountIsAvailable(boolean b);
 
     @AboutConfig
     @SpinnerValidator(min = 0, max = 100000, step = 100)
