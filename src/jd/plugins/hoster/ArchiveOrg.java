@@ -83,6 +83,12 @@ public class ArchiveOrg extends PluginForHost {
     @Override
     public String getLinkID(final DownloadLink link) {
         if (isAudioPlaylistItem(link)) {
+            /**
+             * This enables us to add the same link twice, one time as playlist item (with different filenames) and one time as "original
+             * file". </br>
+             * We basically need to trick our own duplicate detection to allow the user to add a file as playlist item and "original" at the
+             * same time.
+             */
             return super.getLinkID(link) + "_audio_playlist_item";
         } else if (this.isBook(link)) {
             return this.getHost() + "://" + this.getBookID(link) + "/" + this.getBookSubPrefix(link) + "/" + this.getBookPageIndexNumber(link);
@@ -258,6 +264,15 @@ public class ArchiveOrg extends PluginForHost {
         }
     }
 
+    /** Returns true if link leads to a compressed archive file. */
+    private boolean isArchive(final DownloadLink link) {
+        if (link.getPluginPatternMatcher().matches("(?i).+\\.(zip|rar)/.+")) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     private boolean isBookLendingRequired(final DownloadLink link) {
         if (link.hasProperty(PROPERTY_IS_LENDING_REQUIRED)) {
             return true;
@@ -397,7 +412,7 @@ public class ArchiveOrg extends PluginForHost {
                     logger.info("Deleting HashInfo because: Last-Modified header is not present or broken");
                     deleteHashInfo = true;
                 } else if (lastModifiedDate.getTime() != lastModifiedTimestampFromAPI * 1000) {
-                    logger.info("Deleting HashInfo because: Timestamp from Last-Modified header differs from stored timestamp");
+                    logger.info("Deleting HashInfo because: Timestamp from Last-Modified header differs from stored timestamp so most likely the file has changed and the hash we know can't be used to check against the new version of that file");
                     deleteHashInfo = true;
                 }
             }
@@ -542,7 +557,7 @@ public class ArchiveOrg extends PluginForHost {
     public boolean isResumeable(final DownloadLink link, final Account account) {
         if (this.isBook(link)) {
             return false;
-        } else if (link.getPluginPatternMatcher().matches("(?i).+\\.(zip|rar)/.+")) {
+        } else if (this.isArchive(link)) {
             return false;
         } else {
             return true;
@@ -552,7 +567,7 @@ public class ArchiveOrg extends PluginForHost {
     public int getMaxChunks(final DownloadLink link, final Account account) {
         if (this.isBook(link)) {
             return 1;
-        } else if (link.getPluginPatternMatcher().matches("(?i).+\\.(zip|rar)/.+")) {
+        } else if (this.isArchive(link)) {
             return 1;
         } else {
             return 0;

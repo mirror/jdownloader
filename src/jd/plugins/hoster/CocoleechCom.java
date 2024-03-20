@@ -34,7 +34,6 @@ import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.gui.InputChangedCallbackInterface;
 import org.jdownloader.plugins.accounts.AccountBuilderInterface;
 import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.gui.swing.components.linkbutton.JLink;
@@ -68,6 +67,14 @@ public class CocoleechCom extends PluginForHost {
     }
 
     @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.getHeaders().put("User-Agent", "JDownloader");
+        br.setFollowRedirects(true);
+        return br;
+    }
+
+    @Override
     public LazyPlugin.FEATURE[] getFeatures() {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.MULTIHOST };
         /// return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.MULTIHOST, LazyPlugin.FEATURE.API_KEY_LOGIN };
@@ -76,13 +83,6 @@ public class CocoleechCom extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "https://members.cocoleech.com/terms";
-    }
-
-    private Browser prepBR(final Browser br) {
-        br.setCookiesExclusive(true);
-        br.getHeaders().put("User-Agent", "JDownloader");
-        br.setFollowRedirects(true);
-        return br;
     }
 
     @Override
@@ -123,38 +123,15 @@ public class CocoleechCom extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
 
-    private boolean attemptStoredDownloadurlDownload(final DownloadLink link) throws Exception {
-        final String url = link.getStringProperty(PROPERTY_DIRECTURL);
-        if (StringUtils.isEmpty(url)) {
-            return false;
-        }
-        try {
-            final Browser brc = br.cloneBrowser();
-            dl = new jd.plugins.BrowserAdapter().openDownload(brc, link, url, this.isResumeable(link, null), this.getMaxChunks(link, null));
-            dl.setFilenameFix(true);
-            if (this.looksLikeDownloadableContent(dl.getConnection())) {
-                return true;
-            } else {
-                brc.followConnection(true);
-                throw new IOException();
-            }
-        } catch (final Throwable e) {
-            link.removeProperty(PROPERTY_DIRECTURL);
-            logger.log(e);
-            try {
-                dl.getConnection().disconnect();
-            } catch (Throwable ignore) {
-            }
-            return false;
-        }
-    }
-
     @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
-        prepBR(this.br);
         mhm.runCheck(account, link);
-        if (!attemptStoredDownloadurlDownload(link)) {
-            br.setFollowRedirects(true);
+        final String storedDirecturl = link.getStringProperty(PROPERTY_DIRECTURL);
+        final String dllink;
+        if (storedDirecturl != null) {
+            logger.info("Re-using stored directurl: " + storedDirecturl);
+            dllink = storedDirecturl;
+        } else {
             /* Request creation of downloadlink */
             this.br.getPage(API_ENDPOINT + "?key=" + Encoding.urlEncode(account.getPass()) + "&link=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)));
             handleAPIErrors(this.br, account, link);
@@ -167,10 +144,13 @@ public class CocoleechCom extends PluginForHost {
                     link.setProperty(PROPERTY_MAXCHUNKS, maxChunks);
                 }
             }
-            final String dllink = (String) entries.get("download");
+            dllink = (String) entries.get("download");
             if (StringUtils.isEmpty(dllink)) {
                 mhm.handleErrorGeneric(account, link, "Failed to find final downloadurl", 50, 5 * 60 * 1000l);
             }
+            link.setProperty(PROPERTY_DIRECTURL, dllink);
+        }
+        try {
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, this.isResumeable(link, account), this.getMaxChunks(link, account));
             dl.setFilenameFix(true);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
@@ -180,7 +160,13 @@ public class CocoleechCom extends PluginForHost {
                 }
                 mhm.handleErrorGeneric(account, link, "Unknown download error", 50, 5 * 60 * 1000l);
             }
-            link.setProperty(PROPERTY_DIRECTURL, dllink);
+        } catch (final Exception e) {
+            if (storedDirecturl != null) {
+                link.removeProperty(PROPERTY_DIRECTURL);
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Stored directurl expired", e);
+            } else {
+                throw e;
+            }
         }
         this.dl.startDownload();
     }
@@ -188,10 +174,7 @@ public class CocoleechCom extends PluginForHost {
     @SuppressWarnings({ "unchecked", "rawtypes" })
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        prepBR(this.br);
-        final AccountInfo ai = new AccountInfo();
-        login(account);
-        Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+        final Map<String, Object> entries = login(account);
         /*
          * 2021-11-29: Users enter API key only from now on --> Try to find username in API answer and set it so accounts in JD still have
          * unique username strings!
@@ -207,7 +190,8 @@ public class CocoleechCom extends PluginForHost {
         if (validuntil != null) {
             timestampValiduntil = TimeFormatter.getMilliSeconds(validuntil, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH);
         }
-        if ("premium".equalsIgnoreCase(accounttype) && timestampValiduntil > System.currentTimeMillis()) {
+        final AccountInfo ai = new AccountInfo();
+        if ("premium".equalsIgnoreCase(accounttype)) {
             ai.setValidUntil(timestampValiduntil, br);
             account.setType(AccountType.PREMIUM);
             account.setConcurrentUsePossible(true);
@@ -234,12 +218,12 @@ public class CocoleechCom extends PluginForHost {
         if (!StringUtils.isEmpty(accountPackage)) {
             ai.setStatus(accountPackage);
         }
-        this.br.getPage(API_ENDPOINT + "/hosts-status");
-        final Map<String, Object> hoststatusmap = JavaScriptEngineFactory.jsonToJavaMap(br.getRequest().getHtmlCode());
+        br.getPage(API_ENDPOINT + "/hosts-status");
+        final Map<String, Object> hoststatusmap = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         final ArrayList<String> supportedhostslist = new ArrayList();
         final List<Map<String, Object>> hosters = (List<Map<String, Object>>) hoststatusmap.get("result");
         for (final Map<String, Object> hostinfo : hosters) {
-            String host = (String) hostinfo.get("host");
+            final String host = (String) hostinfo.get("host");
             final String status = (String) hostinfo.get("status");
             if (StringUtils.isEmpty(host)) {
                 /* Skip invalid items */
@@ -248,26 +232,26 @@ public class CocoleechCom extends PluginForHost {
             if ("online".equalsIgnoreCase(status)) {
                 supportedhostslist.add(host);
             } else {
-                logger.info("Not adding currently unsupported host: " + host);
+                logger.info("Not adding currently serverside deactivated host: " + host);
             }
         }
         ai.setMultiHostSupport(this, supportedhostslist);
         return ai;
     }
 
-    private void login(final Account account) throws Exception {
+    private Map<String, Object> login(final Account account) throws Exception {
         synchronized (account) {
             account.setPass(correctPassword(account.getPass()));
             if (!isAPIKey(account.getPass())) {
                 throw new AccountInvalidException("Invalid API key format");
             }
-            this.br.getPage(API_ENDPOINT + "/info?key=" + Encoding.urlEncode(account.getPass()));
+            br.getPage(API_ENDPOINT + "/info?key=" + Encoding.urlEncode(account.getPass()));
             /* No error here = account is valid. */
-            handleAPIErrors(this.br, account, null);
+            return handleAPIErrors(this.br, account, null);
         }
     }
 
-    private void handleAPIErrors(final Browser br, final Account account, final DownloadLink link) throws Exception {
+    private Map<String, Object> handleAPIErrors(final Browser br, final Account account, final DownloadLink link) throws Exception {
         Map<String, Object> entries = null;
         try {
             entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
@@ -290,7 +274,7 @@ public class CocoleechCom extends PluginForHost {
         final String statusmsg = (String) entries.get("message");
         if (StringUtils.isEmpty(statusmsg)) {
             /* No error */
-            return;
+            return entries;
         }
         if (statusmsg.equalsIgnoreCase("Incorrect log-in or password.")) {
             throw new AccountInvalidException(statusmsg);
@@ -314,6 +298,7 @@ public class CocoleechCom extends PluginForHost {
                 mhm.handleErrorGeneric(account, link, statusmsg, 50, 5 * 60 * 1000l);
             }
         }
+        return entries;
     }
 
     @Override

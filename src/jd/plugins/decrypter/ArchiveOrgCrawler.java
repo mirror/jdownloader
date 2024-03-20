@@ -213,6 +213,13 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         final String urlWithoutParams = URLHelper.getUrlWithoutParams(url);
         final String path = new URL(urlWithoutParams).getPath().replaceFirst("(?i)^/download/", "/");
         final String identifier = getIdentifierFromURL(url);
+        if (identifier == null) {
+            /* Invalid URL/identifier */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            return this.crawlMetadataJsonV2(identifier, url);
+        }
         final boolean allowCheckForDirecturl = true;
         if (path.contains("/") && allowCheckForDirecturl) {
             /**
@@ -269,7 +276,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
     }
 
     public static String getIdentifierFromURL(final String url) {
-        return new Regex(url, "/(?:details|download|metadata)/([A-Za-z0-9\\-_]{5,})").getMatch(0);
+        return new Regex(url, "/(?:details|download|metadata)/([A-Za-z0-9\\-_\\.]{5,})").getMatch(0);
     }
 
     /** Crawls all files from "/download/..." URLs. */
@@ -296,7 +303,8 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         // TODO: Get rid of 'titleSlug' during refactoring
         final String titleSlug = new Regex(urlWithoutParams, "(?i)/details/([^/]+)").getMatch(0);
         if (identifier == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            /* Invalid URL */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (titleSlug == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -1086,13 +1094,16 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
             throw new IllegalArgumentException();
         }
         /* The following request will return an empty map if the given identifier is invalid. */
-        br.getPage("https://archive.org/metadata/" + Encoding.urlEncode(identifier));
-        final Map<String, Object> root = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+        final Browser brc = br.cloneBrowser();
+        /* The json answer can be really big. */
+        brc.setLoadLimit(Integer.MAX_VALUE);
+        brc.getPage("https://archive.org/metadata/" + Encoding.urlEncode(identifier));
+        final Map<String, Object> root = restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.MAP);
         // final Boolean is_dark = (Boolean) root.get("is_dark"); // This means that the content is offline(?)
         final List<Map<String, Object>> filemaps = (List<Map<String, Object>>) root.get("files");
         if (filemaps == null || filemaps.isEmpty()) {
-            /* This should never happen. */
-            throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER, identifier);
+            /* Deleted item */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String desiredSubpathDecoded = null;
         if (sourceurl != null) {
@@ -1136,7 +1147,8 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         final boolean crawlOriginalFilesOnly = cfg.isFileCrawlerCrawlOnlyOriginalVersions();
         final boolean crawlArchiveView = cfg.isFileCrawlerCrawlArchiveView();
         final boolean crawlMetadataFiles = cfg.isFileCrawlerCrawlMetadataFiles();
-        logger.info("Crawling all files below path: " + sourceurl);
+        final boolean crawlThumbnails = true; // TODO: 2024-03-20: Implement setting
+        logger.info("Crawling all files below path: " + desiredSubpathDecoded);
         final List<String> skippedItemsFilepaths = new ArrayList<String>();
         final List<List<String>> originalFilesListsForVideoStreams = new ArrayList<List<String>>();
         boolean isAccountRequiredForDownloadStatusForVideoStreams = false;
@@ -1147,6 +1159,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
             final boolean isOldVersion = StringUtils.equalsIgnoreCase((String) filemap.get("old_version"), "true");
             final boolean isOriginal = source.equalsIgnoreCase("original");
             final boolean isMetadata = StringUtils.equalsIgnoreCase(format, "metadata");
+            final boolean isThumbnail = StringUtils.equalsIgnoreCase(format, "Thumbnail");
             final boolean isArchiveViewSupported = false; // TODO: Check this
             // final Object originalO = filemap.get("original");
             // TODO: Test with a "private" item (= downloadable only for logged in users)
@@ -1163,7 +1176,11 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                 skippedItemsFilepaths.add(pathWithFilename);
                 continue;
             } else if (isMetadata && !crawlMetadataFiles) {
-                /* Only include metadata in downloads if wished by the user. */
+                /* Only include metadata if wished by the user. */
+                skippedItemsFilepaths.add(pathWithFilename);
+                continue;
+            } else if (isThumbnail && !crawlThumbnails) {
+                /* Only include thumbnails if wished by the user. */
                 skippedItemsFilepaths.add(pathWithFilename);
                 continue;
             }
@@ -1184,7 +1201,10 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                         if (thisPath == null) {
                             thisPath = pathSegment;
                         } else {
-                            thisPath += "/" + pathSegment;
+                            if (thisPath.length() > 0) {
+                                thisPath += "/";
+                            }
+                            thisPath += pathSegment;
                         }
                     }
                     index++;

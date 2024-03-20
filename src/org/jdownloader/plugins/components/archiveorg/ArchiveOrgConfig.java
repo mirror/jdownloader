@@ -38,6 +38,10 @@ public interface ArchiveOrgConfig extends PluginConfigInterface {
             return text_FileCrawlerCrawlMetadataFiles;
         }
 
+        public String getFileCrawlerCrawlThumbnails_label() {
+            return "File crawler: Crawl thumbnails?";
+        }
+
         public String getPlaylistFilenameScheme_label() {
             return text_PlaylistFilenameScheme;
         }
@@ -87,6 +91,14 @@ public interface ArchiveOrgConfig extends PluginConfigInterface {
 
     void setFileCrawlerCrawlMetadataFiles(boolean b);
 
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    @DescriptionForConfigEntry("Crawl thumbnails?")
+    @Order(26)
+    boolean isFileCrawlerCrawlThumbnails();
+
+    void setFileCrawlerCrawlThumbnails(boolean b);
+
     public static enum PlaylistFilenameScheme implements LabelInterface {
         PLAYLIST_TITLE_WITH_TRACK_NUMBER {
             @Override
@@ -104,8 +116,8 @@ public interface ArchiveOrgConfig extends PluginConfigInterface {
 
     @AboutConfig
     @DefaultEnumValue("PLAYLIST_TITLE_WITH_TRACK_NUMBER")
-    @Order(26)
-    @DescriptionForConfigEntry(text_BookCrawlMode)
+    @Order(27)
+    @DescriptionForConfigEntry(text_PlaylistFilenameScheme)
     PlaylistFilenameScheme getPlaylistFilenameScheme();
 
     void setPlaylistFilenameScheme(final PlaylistFilenameScheme scheme);
