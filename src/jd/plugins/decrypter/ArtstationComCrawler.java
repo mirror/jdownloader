@@ -20,11 +20,11 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.net.httpconnection.HTTPConnection;
 import org.appwork.utils.net.httpconnection.SSLSocketStreamOptions;
 import org.appwork.utils.net.httpconnection.SSLSocketStreamOptionsModifier;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
@@ -45,12 +45,13 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.hoster.ArtstationCom;
 import jd.plugins.hoster.DirectHTTP;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "artstation.com" }, urls = { "https?://(?:www\\.)?artstation\\.com/((?:artist|artwork|marketplace/p/[^^/\\s]+)/[^/\\s]+|(?!about|jobs|contests|blogs|users)[^/\\s]+(/likes)?)" })
-public class ArtstationComCrawler extends antiDDoSForDecrypt {
+public class ArtstationComCrawler extends PluginForDecrypt {
     public ArtstationComCrawler(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -79,39 +80,28 @@ public class ArtstationComCrawler extends antiDDoSForDecrypt {
     @SuppressWarnings({ "unchecked", "rawtypes" })
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final String contenturl = param.getCryptedUrl().replaceFirst("(?i)http:", "https:");
-        final Account aa = AccountController.getInstance().getValidAccount(this.getHost());
-        if (aa != null) {
+        final String contenturl = param.getCryptedUrl().replaceFirst("^(?i)http:", "https:");
+        final Account account = AccountController.getInstance().getValidAccount(this.getHost());
+        if (account != null) {
             /* Login whenever possible - this may unlock some otherwise hidden user content. */
+            final ArtstationCom hosterplugin = (ArtstationCom) this.getNewPluginForHostInstance(this.getHost());
             try {
-                ArtstationCom.login(this.br, aa, false);
+                hosterplugin.login(account, false);
             } catch (final PluginException e) {
-                handleAccountException(aa, e);
+                handleAccountException(account, e);
             }
         }
-        if (br.getURL() == null) {
-            // getPage("https://www.artstation.com/");
-        }
-        try {
-            getPage(contenturl);
-        } catch (PluginException e) {
-            // we can still access the json api
-            logger.log(e);
-            br.setCurrentURL(contenturl);
-        }
-        if (br.getHttpConnection() != null && br.getHttpConnection().getResponseCode() == 404) {
+        br.getPage(contenturl);
+        if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setAllowInheritance(true);
         if (contenturl.matches(TYPE_ALBUM)) {
             final String project_id = new Regex(contenturl, TYPE_ALBUM).getMatch(0);
-            if (inValidate(project_id)) {
-                return ret;
-            }
             ArtstationCom.setHeaders(this.br);
-            getPage("https://www.artstation.com/projects/" + project_id + ".json");
-            final Map<String, Object> json = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.getRequest().getHtmlCode());
+            br.getPage("https://www.artstation.com/projects/" + project_id + ".json");
+            final Map<String, Object> json = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
             final List<Object> resource_data_list = (List<Object>) json.get("assets");
             final String full_name = (String) JavaScriptEngineFactory.walkJson(json, "user/full_name");
             final String username = (String) JavaScriptEngineFactory.walkJson(json, "user/username");
@@ -138,7 +128,7 @@ public class ArtstationComCrawler extends antiDDoSForDecrypt {
                             final Browser br2 = br.cloneBrowser();
                             try {
                                 if (result.endsWith(fid) && StringUtils.containsIgnoreCase(playerEmbedded, "<iframe")) {
-                                    getPage(br2, result);
+                                    br2.getPage(result);
                                     String pageDetail = br2.toString();
                                     if (StringUtils.containsIgnoreCase(url, "/marmosets/") && br2.containsHTML("\"asset_type\":\"marmoset\"") && br2.containsHTML("\"attachment_content_type\":\"application/octet-stream\"")) {
                                         // Handle Marmoset 3D content
@@ -154,7 +144,7 @@ public class ArtstationComCrawler extends antiDDoSForDecrypt {
                                     }
                                 } else if (result.contains("embed.html")) {
                                     /* 2020-08-25: Embedded video (selfhosted by artstation but requires this extra step to download it) */
-                                    getPage(br2, result);
+                                    br2.getPage(result);
                                     assetURL = br2.getRegex("<source[^>]*src=\"(https?://[^<>\"]+)\"[^>]*type=\"video/mp4\"").getMatch(0);
                                     hasVideo |= StringUtils.isNotEmpty(assetURL);
                                 }
@@ -241,11 +231,11 @@ public class ArtstationComCrawler extends antiDDoSForDecrypt {
         } else if (contenturl.matches(TYPE_ARTIST)) {
             final String username = new Regex(contenturl, TYPE_ARTIST).getMatch(0);
             ArtstationCom.setHeaders(this.br);
-            getPage("https://www.artstation.com/users/" + username + ".json");
+            br.getPage("https://www.artstation.com/users/" + username + ".json");
             if (br.getRequest().getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            final Map<String, Object> json = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.getRequest().getHtmlCode());
+            final Map<String, Object> json = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
             final String full_name_of_username_in_url = (String) json.get("full_name");
             final String projectTitle = (String) json.get("title");
             final short entries_per_page = 50;
@@ -259,8 +249,8 @@ public class ArtstationComCrawler extends antiDDoSForDecrypt {
             }
             do {
                 logger.info("Crawling page " + page + " | Offset " + offset);
-                getPage("/users/" + username + "/" + type + ".json?randomize=false&page=" + page);
-                final Map<String, Object> pageJson = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.getRequest().getHtmlCode());
+                br.getPage("/users/" + username + "/" + type + ".json?randomize=false&page=" + page);
+                final Map<String, Object> pageJson = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
                 if (ret.size() == 0) {
                     /* We're crawling the first page */
                     entries_total = (int) JavaScriptEngineFactory.toLong(pageJson.get("total_count"), 0);
@@ -281,11 +271,8 @@ public class ArtstationComCrawler extends antiDDoSForDecrypt {
                         full_name_of_uploader = full_name_of_username_in_url;
                     }
                     final String title = (String) imageInfo.get("title");
-                    final String id = (String) imageInfo.get("hash_id");
+                    final String id = imageInfo.get("hash_id").toString();
                     final String description = (String) imageInfo.get("description");
-                    if (inValidate(id) || inValidate(full_name_of_uploader)) {
-                        return null;
-                    }
                     final String url_content = "https://artstation.com/artwork/" + id;
                     final DownloadLink dl = createDownloadlink(url_content);
                     String filename;

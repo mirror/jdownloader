@@ -282,29 +282,36 @@ public class CocoleechCom extends PluginForHost {
             }
         }
         /**
-         * 2021-09-10: "status" is independent from e.g. {"status":"100","message":"Incorrect log-in or password."} </br>
-         * {"status":"100","message":"Your IP is blocked for today. Please contact support."}
+         * 2021-09-10: "status" field which contains a number looks to always be "100" regardless of the error message e.g. </br>
+         * {"status":"100","message":"Incorrect log-in or password."} </br>
+         * {"status":"100","message":"Your IP is blocked for today. Please contact support."} </br>
+         * {"status":"100","message":"Link is dead."}
          */
         final String statusmsg = (String) entries.get("message");
-        if (!StringUtils.isEmpty(statusmsg)) {
-            if (statusmsg.equalsIgnoreCase("Incorrect log-in or password.")) {
-                throw new AccountInvalidException(statusmsg);
-            } else if (statusmsg.equalsIgnoreCase("Incorrect API key.")) {
-                String errormsg = statusmsg + "\r\nFind your API Key here: members.cocoleech.com/settings";
-                errormsg += "\r\nIf you're using myjdownloader, enter your API Key into both the username and password fields.";
-                throw new AccountInvalidException(errormsg);
-            } else if (statusmsg.equalsIgnoreCase("Premium membership expired.")) {
-                throw new AccountUnavailableException(statusmsg, 5 * 60 * 1000l);
-            } else if (statusmsg.equalsIgnoreCase("Your IP is blocked for today. Please contact support.")) {
-                /* Put all account temp. unavailable errors here. */
-                throw new AccountUnavailableException(statusmsg, 5 * 60 * 1000l);
+        if (StringUtils.isEmpty(statusmsg)) {
+            /* No error */
+            return;
+        }
+        if (statusmsg.equalsIgnoreCase("Incorrect log-in or password.")) {
+            throw new AccountInvalidException(statusmsg);
+        } else if (statusmsg.equalsIgnoreCase("Incorrect API key.")) {
+            String errormsg = statusmsg + "\r\nFind your API Key here: members.cocoleech.com/settings";
+            errormsg += "\r\nIf you're using myjdownloader, enter your API Key into both the username and password fields.";
+            throw new AccountInvalidException(errormsg);
+        } else if (statusmsg.equalsIgnoreCase("Premium membership expired.")) {
+            throw new AccountUnavailableException(statusmsg, 5 * 60 * 1000l);
+        } else if (statusmsg.equalsIgnoreCase("Your IP is blocked for today. Please contact support.")) {
+            /* Put all account temp. unavailable errors here. */
+            throw new AccountUnavailableException(statusmsg, 5 * 60 * 1000l);
+        } else if (statusmsg.equalsIgnoreCase("Link is dead.")) {
+            /* File is offline according to multihoster-API. */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else {
+            /* Unknown error or link based error */
+            if (link == null) {
+                throw new AccountUnavailableException(statusmsg, 3 * 60 * 1000l);
             } else {
-                /* Unknown error or link based error */
-                if (link == null) {
-                    throw new AccountUnavailableException(statusmsg, 3 * 60 * 1000l);
-                } else {
-                    mhm.handleErrorGeneric(account, link, statusmsg, 50, 5 * 60 * 1000l);
-                }
+                mhm.handleErrorGeneric(account, link, statusmsg, 50, 5 * 60 * 1000l);
             }
         }
     }

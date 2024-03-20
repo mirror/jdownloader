@@ -36,6 +36,7 @@ import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.AccountInvalidException;
 import jd.plugins.AccountRequiredException;
+import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -63,12 +64,8 @@ public class FilecatNet extends PluginForHost {
         return "https://filecat.net/";
     }
 
-    /* Connection stuff */
-    private final int           FREE_MAXCHUNKS            = 0;
-    private final int           ACCOUNT_FREE_MAXCHUNKS    = 0;
-    private final int           ACCOUNT_PREMIUM_MAXCHUNKS = 0;
-    private static final String WEBSITE_API_BASE          = "https://api.filecat.net";
-    private final String        PROPERTY_PREMIUMONLY      = "premiumonly";
+    private static final String WEBSITE_API_BASE     = "https://api.filecat.net";
+    private final String        PROPERTY_PREMIUMONLY = "premiumonly";
 
     @Override
     public String getLinkID(final DownloadLink link) {
@@ -87,6 +84,10 @@ public class FilecatNet extends PluginForHost {
     @Override
     public boolean isResumeable(final DownloadLink link, final Account account) {
         return true;
+    }
+
+    public int getMaxChunks(final Account account) {
+        return 0;
     }
 
     @Override
@@ -121,11 +122,11 @@ public class FilecatNet extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link);
-        handleDownload(link, null, FREE_MAXCHUNKS, "free_directlink");
+        handleDownload(link, null, "free_directlink");
     }
 
     /** For free- and account modes! */
-    private void handleDownload(final DownloadLink link, final Account account, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+    private void handleDownload(final DownloadLink link, final Account account, final String directlinkproperty) throws Exception, PluginException {
         String dllink = checkDirectLink(link, directlinkproperty);
         if (dllink == null) {
             final String fid = this.getFID(link);
@@ -140,15 +141,7 @@ public class FilecatNet extends PluginForHost {
             final PostRequest preWaitReq = br.createJSonPostRequest("/dwnldreq", "{\"id\":null,\"file_uid\":\"" + fid + "\",\"captcha_token\":null}");
             br.openRequestConnection(preWaitReq);
             br.loadConnection(null);
-            Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
-            final String reject_reason = (String) entries.get("reject_reason");
-            if (reject_reason != null) {
-                // final String reject_msg = PluginJSonUtils.getJson(br, "reject_msg");
-                if (reject_reason.equalsIgnoreCase("ip_daily_downloads_limit")) {
-                    /* No exact waittime given */
-                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 15 * 60 * 1000l);
-                }
-            }
+            Map<String, Object> entries = checkErrorsWebAPI(br, link, account);
             final String id = entries.get("id").toString();
             final int wait_sec = ((Number) entries.get("wait_sec")).intValue();
             final long timestampBeforeCaptcha = Time.systemIndependentCurrentJVMTimeMillis();
@@ -168,7 +161,7 @@ public class FilecatNet extends PluginForHost {
                 final PostRequest afterCaptchaReq = br.createJSonPostRequest("/dwnldreq", "{\"id\":" + id + ",\"file_uid\":\"" + fid + "\",\"captcha_token\":\"" + recaptchaV2Response + "\"}");
                 br.openRequestConnection(afterCaptchaReq);
                 br.loadConnection(null);
-                entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+                entries = checkErrorsWebAPI(br, link, account);
             } else {
                 /* No captcha, only wait */
                 waitTime(link, timestampBeforeCaptcha, wait_sec);
@@ -181,7 +174,7 @@ public class FilecatNet extends PluginForHost {
                 dllink = br._getURL().getProtocol() + "://" + dllink;
             }
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, this.isResumeable(link, account), maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, this.isResumeable(link, account), this.getMaxChunks(account));
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             br.followConnection(true);
             if (dl.getConnection().getResponseCode() == 403) {
@@ -196,8 +189,36 @@ public class FilecatNet extends PluginForHost {
         dl.startDownload();
     }
 
-    private void initSessionWebsite(final Browser br) throws IOException {
+    private Map<String, Object> checkErrorsWebAPI(final Browser br, final Object link, final Account account) throws PluginException {
+        final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+        final String reject_reason = (String) entries.get("reject_reason");
+        final String reject_msg = (String) entries.get("reject_msg");
+        if (reject_reason != null) {
+            /* Download failure */
+            if (reject_reason.equalsIgnoreCase("ip_daily_downloads_limit")) {
+                /* No exact waittime given */
+                throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, reject_msg, 15 * 60 * 1000l);
+            } else if (reject_reason.equalsIgnoreCase("daily_downloads_traffic_limit")) {
+                if (account != null) {
+                    throw new AccountUnavailableException(reject_msg, 30 * 60 * 1000);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, reject_msg, 15 * 60 * 1000l);
+                }
+            } else {
+                /* Unknown error */
+                if (account != null) {
+                    throw new AccountUnavailableException(reject_msg, 30 * 60 * 1000);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, reject_msg, 15 * 60 * 1000l);
+                }
+            }
+        }
+        return entries;
+    }
+
+    private Map<String, Object> initSessionWebsite(final Browser br) throws IOException {
         br.getPage(WEBSITE_API_BASE + "/app");
+        return restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
     }
 
     private boolean preDownloadWaittimeSkippable() {
@@ -288,19 +309,26 @@ public class FilecatNet extends PluginForHost {
                     return null;
                 }
                 br.getPage(WEBSITE_API_BASE + "/user/get");
-                if (isLoggedinCookies(br)) {
-                    loggedInViaCookies = true;
-                    entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
-                    logger.info("Cookie login successful");
-                } else {
-                    loggedInViaCookies = false;
+                try {
+                    if (isLoggedinCookies(br)) {
+                        loggedInViaCookies = true;
+                        /* Parse json */
+                        entries = this.checkErrorsWebAPI(br, null, account);
+                        logger.info("Cookie login successful");
+                    } else {
+                        loggedInViaCookies = false;
+                        logger.info("Cookie login failed");
+                        br.clearCookies(null);
+                        account.clearCookies("");
+                    }
+                } catch (final Throwable e) {
+                    logger.log(e);
                     logger.info("Cookie login failed");
-                    br.clearCookies(null);
-                    account.clearCookies("");
                 }
             }
             if (!loggedInViaCookies) {
                 /* Full login */
+                logger.info("Performing full login");
                 initSessionWebsite(this.br);
                 final PostRequest preWaitReq = br.createJSonPostRequest("/user/signin", "{\"email\":\"" + account.getUser() + "\",\"password\":\"" + account.getPass() + "\"}");
                 br.openRequestConnection(preWaitReq);
@@ -310,7 +338,7 @@ public class FilecatNet extends PluginForHost {
                     /* Not logged in -> Their WebAPI will not return json! */
                     throw new AccountInvalidException();
                 }
-                entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+                entries = this.checkErrorsWebAPI(br, null, account);
                 final String email = entries != null ? (String) entries.get("email") : null;
                 if (!StringUtils.equalsIgnoreCase(email, account.getUser())) {
                     final String message = entries != null ? (String) entries.get("message") : null;
@@ -356,9 +384,9 @@ public class FilecatNet extends PluginForHost {
         requestFileInformation(link);
         login(account, false);
         if (account.getType() == AccountType.FREE) {
-            handleDownload(link, account, ACCOUNT_FREE_MAXCHUNKS, "account_free_directlink");
+            handleDownload(link, account, "account_free_directlink");
         } else {
-            handleDownload(link, account, ACCOUNT_PREMIUM_MAXCHUNKS, "premium_directlink");
+            handleDownload(link, account, "premium_directlink");
         }
     }
 

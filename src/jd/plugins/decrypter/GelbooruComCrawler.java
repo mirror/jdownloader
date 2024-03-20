@@ -64,17 +64,29 @@ public class GelbooruComCrawler extends PluginForDecrypt {
         int adPagesSkipped = 0;
         final ArrayList<String> dupes = new ArrayList<String>();
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        String singleResultOnFirstPage = br.getRegex("(/index\\.php\\?page=post&s=view&id=\\d+)").getMatch(0);
+        if (singleResultOnFirstPage != null) {
+            singleResultOnFirstPage = br.getURL(singleResultOnFirstPage).toExternalForm();
+        }
         do {
             int numberofNewItemsOnThisPage = 0;
             String[] contentIDs = br.getRegex("id=\"(?:s|p)(\\d+)\"").getColumn(0);
-            if (contentIDs.length == 0) {
+            if (contentIDs == null || contentIDs.length == 0) {
                 /* Fallback */
                 contentIDs = br.getRegex("page=post&[^\"]*id=(\\d+)\\&tags=").getColumn(0);
             }
             if (contentIDs == null || contentIDs.length == 0) {
-                if (br.containsHTML(">\\s*Nobody here but us chickens|Check your blacklist")) {
+                if (ret.size() > 0) {
+                    /* We already found items -> Return results without Exception. */
+                    logger.info("Stopping because: Failed to find any items on current page");
+                    break;
+                } else if (br.containsHTML(">\\s*Nobody here but us chickens|Check your blacklist")) {
                     /* E.g. https://gelbooru.com/index.php?page=post&s=list&tags=tag_that_doesnt_exist */
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                } else if (singleResultOnFirstPage != null) {
+                    logger.info("Returning single result of first page only");
+                    ret.add(this.createDownloadlink(singleResultOnFirstPage));
+                    return ret;
                 } else {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
@@ -88,7 +100,6 @@ public class GelbooruComCrawler extends PluginForDecrypt {
                 numberofNewItemsOnThisPage++;
                 final String link = "https://" + this.getHost() + "/index.php?page=post&s=view&id=" + contentID;
                 final DownloadLink dl = createDownloadlink(link);
-                dl.setLinkID(contentID);
                 dl.setAvailable(true);
                 dl.setName(contentID + ".jpeg");
                 dl._setFilePackage(fp);

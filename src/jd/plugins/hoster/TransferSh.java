@@ -88,7 +88,7 @@ public class TransferSh extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         String filenameFromURL = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(1);
-        link.setName(Encoding.htmlDecode(filenameFromURL));
+        link.setName(Encoding.htmlDecode(filenameFromURL).trim());
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getPluginPatternMatcher());

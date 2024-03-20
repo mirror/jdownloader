@@ -1288,11 +1288,12 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         final FilePackage playlistpackage = FilePackage.getInstance();
         final String metadataTitle = (String) root_metadata.get("title");
         if (!StringUtils.isEmpty(metadataTitle)) {
-            playlistpackage.setName(metadataTitle);
+            playlistpackage.setName(metadataTitle + " - playlist");
         } else {
             /* Fallback */
-            playlistpackage.setName(identifier);
+            playlistpackage.setName(identifier + " - playlist");
         }
+        playlistpackage.setPackageKey("internetarchive://identifier/" + identifier + "/playlist");
         /* Build video Stream playlist if needed */
         final ArrayList<DownloadLink> videoPlaylistItems = new ArrayList<DownloadLink>();
         final PlaylistCrawlMode playlistCrawlMode = cfg.getPlaylistCrawlMode();
@@ -1330,6 +1331,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                 ret.addAll(videoPlaylistItems);
             }
         } else if (audioPlaylistItems.size() > 0) {
+            /* Audio playlist handling */
             /* Add some additional properties for playlist items */
             // final boolean isAudioPlaylist = mediatype.equalsIgnoreCase("audio");
             final int playlistSize = audioPlaylistItems.size();
@@ -1338,10 +1340,10 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                 audioPlaylistItem.setProperty(ArchiveOrg.PROPERTY_PLAYLIST_SIZE, playlistSize);
                 audioPlaylistItem.setProperty(ArchiveOrg.PROPERTY_FILETYPE, ArchiveOrg.FILETYPE_AUDIO);
                 audioPlaylistItem.setAvailable(true);
+                audioPlaylistItem._setFilePackage(playlistpackage);
                 ArchiveOrg.setFinalFilename(audioPlaylistItem, audioPlaylistItem.getName());
             }
             if (playlistCrawlMode == PlaylistCrawlMode.PLAYLIST_ONLY) {
-                playlistpackage.addLinks(audioPlaylistItems);
                 return audioPlaylistItems;
             } else if (playlistCrawlMode == PlaylistCrawlMode.PLAYLIST_AND_FILES) {
                 /**

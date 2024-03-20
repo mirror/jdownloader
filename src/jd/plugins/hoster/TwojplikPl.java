@@ -125,8 +125,24 @@ public class TwojplikPl extends PluginForHost {
         return true;
     }
 
+    public int getMaxChunks(final DownloadLink link, final Account account) {
+        if (account != null) {
+            /* Obtain max allowed chunks value from account */
+            int maxChunks = account.getIntegerProperty(PROPERTY_ACCOUNT_MAX_CHUNKS, 1);
+            if (maxChunks > 1) {
+                /* Negative value -> Allow UP TO X chunks, value > 1 means force X chunks. */
+                maxChunks = -maxChunks;
+            }
+            return maxChunks;
+        } else {
+            /* Free(anonymous) and unknown account type */
+            return 1;
+        }
+    }
+
     private final boolean USE_API                      = true;
     private final String  PROPERTY_ACCOUNT_SESSION_KEY = "session_key";
+    private final String  PROPERTY_ACCOUNT_MAX_CHUNKS  = "max_chunks";
 
     private String getApiBase() {
         return "https://jd2.twojplik.pl/api/v1";
@@ -274,6 +290,8 @@ public class TwojplikPl extends PluginForHost {
                 ai.setTrafficLeft(((Number) premiuminfo.get("transferLeft")).longValue());
                 ai.setTrafficMax(((Number) premiuminfo.get("transferLimit")).longValue());
                 ai.setStatus(premiuminfo.get("name").toString());
+                account.setProperty(PROPERTY_ACCOUNT_MAX_CHUNKS, premiuminfo.get("chunksPerFile"));
+                account.setMaxSimultanDownloads(((Number) premiuminfo.get("filesAtOnce")).intValue());
             } else {
                 account.setType(AccountType.FREE);
                 ai.setTrafficLeft(0);
@@ -399,7 +417,7 @@ public class TwojplikPl extends PluginForHost {
             dllink = file.get("directlink").toString();
         }
         try {
-            dl = jd.plugins.BrowserAdapter.openDownload(this.br, link, dllink, this.isResumeable(link, account), 1);
+            dl = jd.plugins.BrowserAdapter.openDownload(this.br, link, dllink, this.isResumeable(link, account), this.getMaxChunks(link, account));
             final URLConnectionAdapter con = dl.getConnection();
             if (!this.looksLikeDownloadableContent(con)) {
                 br.followConnection(true);

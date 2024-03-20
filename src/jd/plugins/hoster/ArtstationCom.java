@@ -15,6 +15,14 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import org.appwork.utils.net.httpconnection.HTTPConnection;
+import org.appwork.utils.net.httpconnection.SSLSocketStreamOptions;
+import org.appwork.utils.net.httpconnection.SSLSocketStreamOptionsModifier;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.components.config.ArtstationComConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -24,18 +32,13 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.net.httpconnection.HTTPConnection;
-import org.appwork.utils.net.httpconnection.SSLSocketStreamOptions;
-import org.appwork.utils.net.httpconnection.SSLSocketStreamOptionsModifier;
-import org.jdownloader.plugins.components.config.ArtstationComConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "artstation.com" }, urls = { "https?://[a-z0-9\\-\\.]+\\.artstation\\.com/p/assets/.+" })
 public class ArtstationCom extends PluginForHost {
@@ -44,22 +47,35 @@ public class ArtstationCom extends PluginForHost {
         this.enablePremium("https://www.artstation.com/users/sign_up");
     }
 
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        if (cookieLoginOnly) {
+            return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.COOKIE_LOGIN_ONLY };
+        } else {
+            return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.COOKIE_LOGIN_OPTIONAL };
+        }
+    }
+
+    private final boolean      cookieLoginOnly   = true;
     /* DEV NOTES */
     // Tags:
     // protocol: no https
     // other: image links do not use cloudflare service.
     /* Extension which will be used if no correct extension is found */
-    public static final String   default_Extension = ".jpg";
+    public static final String default_Extension = ".jpg";
     /* Connection stuff */
-    private static final boolean free_resume       = true;
-    private static final int     free_maxchunks    = 1;
-    private static final int     free_maxdownloads = -1;
-    public static final long     trust_cookie_age  = 300000l;
-    private String               dllink            = null;
+    private static final int   free_maxchunks    = 1;
+    private static final int   free_maxdownloads = -1;
+    private String             dllink            = null;
 
     @Override
     public String getAGBLink() {
-        return "http://artstation.com/";
+        return "https://artstation.com/";
+    }
+
+    @Override
+    public boolean isResumeable(final DownloadLink link, final Account account) {
+        return true;
     }
 
     @Override
@@ -116,7 +132,7 @@ public class ArtstationCom extends PluginForHost {
 
     private void doDownload(final Account account, final DownloadLink link, final String url) throws Exception {
         this.br.getHeaders().put("Accept-Encoding", "identity");
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, url, free_resume, free_maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, url, this.isResumeable(link, account), free_maxchunks);
         if (!looksLikeDownloadableContent(dl.getConnection())) {
             br.followConnection(true);
             if (dl.getConnection().getResponseCode() == 403) {
@@ -171,55 +187,75 @@ public class ArtstationCom extends PluginForHost {
         return ret;
     }
 
-    public static void login(final Browser br, final Account account, boolean verify) throws Exception {
+    public void login(final Account account, boolean verify) throws Exception {
         synchronized (account) {
-            try {
-                br.setFollowRedirects(true);
-                br.setCookiesExclusive(true);
-                final Cookies cookies = account.loadCookies("");
-                if (cookies != null) {
-                    br.setCookies(account.getHoster(), cookies);
-                    if (!verify && System.currentTimeMillis() - account.getCookiesTimeStamp("") <= trust_cookie_age) {
-                        /* We trust these cookies --> Do not check them */
-                        return;
-                    }
-                    br.getPage("https://www." + account.getHoster() + "/");
-                    if (br.containsHTML("users/sign_out") && br.getCookie(account.getHoster(), "ArtStationSessionCookie", Cookies.NOTDELETEDPATTERN) != null) {
-                        account.saveCookies(br.getCookies(account.getHoster()), "");
-                        return;
-                    }
-                    /* Else perform full login ... */
+            br.setFollowRedirects(true);
+            br.setCookiesExclusive(true);
+            final Cookies cookies = account.loadCookies("");
+            final Cookies userCookies = account.loadUserCookies();
+            if (cookies != null || userCookies != null) {
+                if (userCookies != null) {
+                    br.setCookies(userCookies);
+                } else {
+                    br.setCookies(cookies);
+                }
+                if (!verify) {
+                    /* Do not verify cookies */
+                    return;
                 }
                 br.getPage("https://www." + account.getHoster() + "/");
-                final Form loginform = br.getFormbyKey("authenticity_token");
-                if (loginform == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                loginform.put(loginform.getBestVariable("email"), Encoding.urlEncode(account.getUser()));
-                loginform.put(loginform.getBestVariable("password"), Encoding.urlEncode(account.getPass()));
-                final Browser brc = br.cloneBrowser();
-                setHeaders(brc);
-                brc.submitForm(loginform);
-                if (br.getCookie(account.getHoster(), "ArtStationSessionCookie", Cookies.NOTDELETEDPATTERN) == null) {
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                if (br.containsHTML("\"sign_out")) {
+                    logger.info("Cookie login successful");
+                    if (userCookies == null) {
+                        account.saveCookies(br.getCookies(br.getHost()), "");
+                    }
+                    return;
+                } else {
+                    logger.info("Cookie login failed");
+                    br.clearCookies(null);
+                    if (userCookies != null) {
+                        if (account.hasEverBeenValid()) {
+                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
+                        } else {
+                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
+                        }
                     }
                 }
-                account.saveCookies(br.getCookies(account.getHoster()), "");
-            } catch (final PluginException e) {
-                account.clearCookies("");
-                throw e;
             }
+            if (cookieLoginOnly) {
+                showCookieLoginInfo();
+                throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_required());
+            }
+            logger.info("Performing full login");
+            br.getPage("https://www." + this.getHost() + "/");
+            Form loginform = br.getFormbyKey("authenticity_token");
+            if (loginform == null) {
+                loginform = br.getFormbyActionRegex(".*/session/login");
+            }
+            if (loginform == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            loginform.put(loginform.getBestVariable("email"), Encoding.urlEncode(account.getUser()));
+            loginform.put(loginform.getBestVariable("password"), Encoding.urlEncode(account.getPass()));
+            final Browser brc = br.cloneBrowser();
+            setHeaders(brc);
+            brc.submitForm(loginform);
+            if (br.getCookie(account.getHoster(), "ArtStationSessionCookie", Cookies.NOTDELETEDPATTERN) == null) {
+                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+            }
+            account.saveCookies(br.getCookies(br.getHost()), "");
         }
     }
 
     @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        login(account, true);
         final AccountInfo ai = new AccountInfo();
-        login(this.br, account, true);
         ai.setUnlimitedTraffic();
         account.setType(AccountType.FREE);
         /* free accounts can still have captcha */
@@ -232,7 +268,7 @@ public class ArtstationCom extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         requestFileInformation(link);
-        login(this.br, account, false);
+        login(account, false);
         br.getPage(link.getDownloadURL());
         doDownload(account, link, dllink);
     }

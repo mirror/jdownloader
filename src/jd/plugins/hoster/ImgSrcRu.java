@@ -43,8 +43,6 @@ import jd.plugins.decrypter.ImgSrcRuCrawler;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imgsrc.ru" }, urls = { "https?://decryptedimgsrc\\.ru/[^/]+/\\d+\\.html(\\?pwd=[a-z0-9]{32})?" })
 public class ImgSrcRu extends PluginForHost {
-    // DEV NOTES
-    // drop requests on too much traffic, I suspect at the firewall on connection.
     private String                         dllink    = null;
     private static AtomicReference<String> userAgent = new AtomicReference<String>(null);
     private static AtomicInteger           uaInt     = new AtomicInteger(0);
@@ -60,7 +58,7 @@ public class ImgSrcRu extends PluginForHost {
 
     @Override
     public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replaceFirst("decryptedimgsrc", "imgsrc"));
+        link.setPluginPatternMatcher(link.getPluginPatternMatcher().replaceFirst("decryptedimgsrc", "imgsrc"));
     }
 
     @Override
@@ -71,6 +69,20 @@ public class ImgSrcRu extends PluginForHost {
     public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
         /* 2020-11-16: No captchas at all */
         return false;
+    }
+
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), "(?i)(\\d+)\\.html").getMatch(0);
     }
 
     public Browser prepBrowser(Browser prepBr, Boolean neu) {
@@ -93,13 +105,6 @@ public class ImgSrcRu extends PluginForHost {
         return prepBr;
     }
 
-    /**
-     * because stable is lame!
-     */
-    public void setBrowser(final Browser ibr) {
-        this.br = ibr;
-    }
-
     private String getReferer(final DownloadLink link) {
         final String referOld = link.getStringProperty("Referer"); // backward compatibility
         if (referOld != null) {
@@ -111,6 +116,10 @@ public class ImgSrcRu extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        return requestFileInformation(link, false);
+    }
+
+    private AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
         br = prepBrowser(br, false);
         final String r = getReferer(link);
         if (r != null) {
@@ -118,7 +127,10 @@ public class ImgSrcRu extends PluginForHost {
         }
         getPage(link.getPluginPatternMatcher(), link);
         getDllink();
-        if (dllink != null) {
+        if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        if (!isDownload) {
             URLConnectionAdapter con = null;
             try {
                 final Browser brc = br.cloneBrowser();
@@ -128,14 +140,14 @@ public class ImgSrcRu extends PluginForHost {
                 if (!this.looksLikeDownloadableContent(con)) {
                     brc.followConnection();
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                } else {
-                    String filename = getFileNameFromHeader(con);
-                    String oldname = new Regex(link.getDownloadURL(), "(\\d+)\\.html").getMatch(0);
-                    link.setFinalFileName(oldname + filename.substring(filename.lastIndexOf(".")));
-                    if (con.getCompleteContentLength() > 0) {
+                }
+                this.filenameHandling(link, con);
+                if (con.getCompleteContentLength() > 0) {
+                    if (con.isContentDecoded()) {
+                        link.setDownloadSize(con.getCompleteContentLength());
+                    } else {
                         link.setVerifiedFileSize(con.getCompleteContentLength());
                     }
-                    return AvailableStatus.TRUE;
                 }
             } finally {
                 try {
@@ -143,9 +155,8 @@ public class ImgSrcRu extends PluginForHost {
                 } catch (Throwable e) {
                 }
             }
-        } else {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        return AvailableStatus.TRUE;
     }
 
     private void getDllink() {
@@ -216,7 +227,7 @@ public class ImgSrcRu extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        requestFileInformation(link);
+        requestFileInformation(link, true);
         if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -226,7 +237,21 @@ public class ImgSrcRu extends PluginForHost {
             br.followConnection(true);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        this.filenameHandling(link, dl.getConnection());
         dl.startDownload();
+    }
+
+    private void filenameHandling(final DownloadLink link, final URLConnectionAdapter con) {
+        String filenameFromHeader = getFileNameFromHeader(con);
+        if (filenameFromHeader == null) {
+            return;
+        }
+        final String fileid = this.getFID(link);
+        if (filenameFromHeader.contains(".")) {
+            /* Remove domain from header-filename. */
+            filenameFromHeader = filenameFromHeader.substring(filenameFromHeader.lastIndexOf("."));
+        }
+        link.setFinalFileName(fileid + filenameFromHeader);
     }
 
     public static boolean isPasswordProtected(final Browser br) {

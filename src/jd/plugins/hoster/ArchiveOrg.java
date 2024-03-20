@@ -82,10 +82,9 @@ public class ArchiveOrg extends PluginForHost {
 
     @Override
     public String getLinkID(final DownloadLink link) {
-        // if (isAudioPlaylistItem(link)) {
-        // return super.getLinkID(link) + "_audio_playlist_item";
-        // }
-        if (this.isBook(link)) {
+        if (isAudioPlaylistItem(link)) {
+            return super.getLinkID(link) + "_audio_playlist_item";
+        } else if (this.isBook(link)) {
             return this.getHost() + "://" + this.getBookID(link) + "/" + this.getBookSubPrefix(link) + "/" + this.getBookPageIndexNumber(link);
         } else {
             return super.getLinkID(link);
