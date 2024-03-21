@@ -627,7 +627,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
             isMultiVolumeBook = false;
         }
         final String pageFormat;
-        if (bookAjaxURL.matches(".*/page/n\\d+.*")) {
+        if (bookAjaxURL.matches("(?i).*/page/n\\d+.*")) {
             pageFormat = "/page/n%d";
         } else {
             pageFormat = "/page/%d";
@@ -1135,11 +1135,11 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         final String mediatype = root_metadata.get("mediatype").toString();
         // final String server = root.get("server").toString();
         // final String dir = root.get("dir").toString();
-        final String description = (String) root_metadata.get("description");
+        final Object descriptionO = root_metadata.get("description");
         final FilePackage fpRoot = FilePackage.getInstance();
         fpRoot.setName(identifier);
-        if (!StringUtils.isEmpty(description)) {
-            fpRoot.setComment(description);
+        if (descriptionO instanceof String) {
+            fpRoot.setComment(descriptionO.toString());
         }
         final Map<String, FilePackage> fpmap = new HashMap<String, FilePackage>();
         fpmap.put(identifier, fpRoot);

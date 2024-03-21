@@ -91,50 +91,42 @@ public class LeechpubCom extends PluginForHost {
 
     public boolean login(final Account account, final boolean force) throws Exception {
         synchronized (account) {
-            try {
-                br.setFollowRedirects(true);
-                br.setCookiesExclusive(true);
-                final Cookies cookies = account.loadCookies("");
-                if (cookies != null) {
-                    logger.info("Attempting cookie login");
-                    this.br.setCookies(this.getHost(), cookies);
-                    if (!force) {
-                        /* Don't validate cookies */
-                        return false;
-                    }
-                    br.getPage("https://" + this.getHost());
-                    if (this.isLoggedin(br)) {
-                        logger.info("Cookie login successful");
-                        /* Refresh cookie timestamp */
-                        account.saveCookies(this.br.getCookies(this.getHost()), "");
-                        return true;
-                    } else {
-                        logger.info("Cookie login failed");
-                    }
+            br.setFollowRedirects(true);
+            br.setCookiesExclusive(true);
+            final Cookies cookies = account.loadCookies("");
+            if (cookies != null) {
+                logger.info("Attempting cookie login");
+                this.br.setCookies(this.getHost(), cookies);
+                if (!force) {
+                    /* Don't validate cookies */
+                    return false;
                 }
-                logger.info("Performing full login");
-                br.getPage("https://" + this.getHost() + "/member/");
-                final Form loginform = br.getFormbyProperty("class", "loginform");
-                if (loginform == null) {
-                    logger.warning("Failed to find loginform");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                br.getPage("https://" + this.getHost());
+                if (this.isLoggedin(br)) {
+                    logger.info("Cookie login successful");
+                    /* Refresh cookie timestamp */
+                    account.saveCookies(br.getCookies(br.getHost()), "");
+                    return true;
+                } else {
+                    logger.info("Cookie login failed");
                 }
-                loginform.put("log", Encoding.urlEncode(account.getUser()));
-                loginform.put("pwd", Encoding.urlEncode(account.getPass()));
-                loginform.put("rememberme", "forever");
-                br.submitForm(loginform);
-                br.getPage("/");
-                if (!isLoggedin(br)) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-                account.saveCookies(this.br.getCookies(this.getHost()), "");
-                return true;
-            } catch (final PluginException e) {
-                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
-                    account.clearCookies("");
-                }
-                throw e;
             }
+            logger.info("Performing full login");
+            br.getPage("https://" + this.getHost() + "/member/");
+            final Form loginform = br.getFormbyProperty("class", "loginform");
+            if (loginform == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            loginform.put("log", Encoding.urlEncode(account.getUser()));
+            loginform.put("pwd", Encoding.urlEncode(account.getPass()));
+            loginform.put("rememberme", "forever");
+            br.submitForm(loginform);
+            br.getPage("/");
+            if (!isLoggedin(br)) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+            account.saveCookies(br.getCookies(br.getHost()), "");
+            return true;
         }
     }
 

@@ -28,15 +28,15 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class KatfileDlcOvhRedirector extends PluginForDecrypt {
-    public KatfileDlcOvhRedirector(PluginWrapper wrapper) {
+public class DlcOvhRedirector extends PluginForDecrypt {
+    public DlcOvhRedirector(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "katfile.dlc.ovh" });
+        ret.add(new String[] { "dlc.ovh" });
         return ret;
     }
 
@@ -56,13 +56,14 @@ public class KatfileDlcOvhRedirector extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/enlace/redireccion/[^/]+");
+            ret.add("https?://\\w+\\." + buildHostsPatternPart(domains) + "/enlace/redireccion/[^/]+");
         }
         return ret.toArray(new String[0]);
     }
 
+    /** Mostly URLs contain a subdomain e.g. katfile.dlc.ovh or freedl.dlc.ovh */
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.setFollowRedirects(false);
         br.getPage(param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 404) {
@@ -75,7 +76,7 @@ public class KatfileDlcOvhRedirector extends PluginForDecrypt {
         if (finallink == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        decryptedLinks.add(createDownloadlink(finallink));
-        return decryptedLinks;
+        ret.add(createDownloadlink(finallink));
+        return ret;
     }
 }
