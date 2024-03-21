@@ -20,11 +20,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -45,6 +40,11 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class FastShareCz extends PluginForHost {
     public FastShareCz(PluginWrapper wrapper) {
@@ -59,7 +59,7 @@ public class FastShareCz extends PluginForHost {
 
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
-        ret.add(new String[] { "fastshare.live", "fastshare.cz", "fastshare.cloud", "fastshare.pl", "netshare.cz", "dinoshare.cz" });
+        ret.add(new String[] { "fastshare.cloud", "fastshare.live", "fastshare.cz", "fastshare.pl", "netshare.cz", "dinoshare.cz" });
         return ret;
     }
 
@@ -167,9 +167,8 @@ public class FastShareCz extends PluginForHost {
         br.setCookie(this.getHost(), "lang", "cs");
         br.setCustomCharset("utf-8");
         /**
-         * 2023-08-20: The following information only applies for users of specific countries such as Germany: </br>
-         * When a user is not logged in, all files appear to be offline so effectively a linkcheck is only possible when an account is
-         * given.
+         * 2023-08-20: The following information only applies for users of specific countries such as Germany: </br> When a user is not
+         * logged in, all files appear to be offline so effectively a linkcheck is only possible when an account is given.
          */
         final boolean linkcheckOnlyPossibleWhenLoggedIn = false;
         if (linkcheckOnlyPossibleWhenLoggedIn && account == null) {
@@ -185,7 +184,11 @@ public class FastShareCz extends PluginForHost {
         if (this.looksLikeDownloadableContent(con)) {
             logger.info("Detected direct-download");
             if (con.getCompleteContentLength() > 0) {
-                link.setVerifiedFileSize(con.getCompleteContentLength());
+                if (con.isContentDecoded()) {
+                    link.setDownloadSize(con.getCompleteContentLength());
+                } else {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                }
             }
             final String filename = Plugin.getFileNameFromDispositionHeader(con);
             if (filename != null) {
