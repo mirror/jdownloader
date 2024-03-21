@@ -1155,7 +1155,7 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
         return ai;
     }
 
-    protected void login(final Account account, final boolean validateCookies) throws Exception {
+    public void login(final Account account, final boolean validateCookies) throws Exception {
         synchronized (account) {
             br.setCookiesExclusive(true);
             final Cookies cookies;

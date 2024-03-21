@@ -306,6 +306,8 @@ public class TwojplikPl extends PluginForHost {
             br.setFollowRedirects(true);
             br.setCookiesExclusive(true);
             final Map<String, Object> postdata = new HashMap<String, Object>();
+            /* Trim username as it's not supposed to e.g. contain spaces at the end. */
+            account.setUser(account.getUser().trim());
             postdata.put("login", account.getUser());
             postdata.put("password", account.getPass());
             String sessionkey = account.getStringProperty(PROPERTY_ACCOUNT_SESSION_KEY);

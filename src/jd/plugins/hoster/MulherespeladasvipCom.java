@@ -118,7 +118,7 @@ public class MulherespeladasvipCom extends KernelVideoSharingComV2 {
     }
 
     @Override
-    protected void login(final Account account, final boolean validateCookies) throws Exception {
+    public void login(final Account account, final boolean validateCookies) throws Exception {
         synchronized (account) {
             try {
                 br.setCookiesExclusive(true);

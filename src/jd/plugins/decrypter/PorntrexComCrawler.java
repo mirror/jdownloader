@@ -16,15 +16,18 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
+import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.Account;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -72,20 +75,24 @@ public class PorntrexComCrawler extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final ArrayList<String> dupes = new ArrayList<String>();
-        final String addedlink = param.getCryptedUrl();
-        final Regex photoalbum = new Regex(addedlink, "(?i)^https?://[^/]+/albums/(\\d+)/([a-z0-9\\-]+)/?$");
+        final Account account = AccountController.getInstance().getValidAccount(this.getHost());
+        if (account != null) {
+            /* Login if account is available. This allows users to er.g. crawl private image galleries. */
+            final PorntrexCom plugin = (PorntrexCom) this.getNewPluginForHostInstance(this.getHost());
+            plugin.login(account, false);
+        }
+        final String contenturl = param.getCryptedUrl().replaceFirst("(?i)^http://", "https://");
+        final Regex photoalbum = new Regex(contenturl, "(?i)^https?://[^/]+/albums/(\\d+)/([a-z0-9\\-]+)/?$");
         if (photoalbum.patternFind()) {
             /* Photo album */
             final String slug = photoalbum.getMatch(1);
             final String title = slug.replace("-", " ").trim();
             br.setFollowRedirects(true);
-            br.getPage(addedlink);
+            br.getPage(contenturl);
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else if (br.containsHTML(">\\s*This album is a private album uploaded by")) {
-                logger.info("Private album -> Account required to access it");
-                throw new AccountRequiredException();
+                throw new AccountRequiredException("Private album -> Account required to access it");
             }
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(title);
@@ -105,15 +112,15 @@ public class PorntrexComCrawler extends PluginForDecrypt {
             }
         } else {
             /* Playlist */
-            final String url_playlist_name = new Regex(addedlink, this.getSupportedLinks()).getMatch(2);
-            String fpName = url_playlist_name.replace("-", " ");
+            final HashSet<String> dupes = new HashSet<String>();
+            final String url_slug = new Regex(contenturl, this.getSupportedLinks()).getMatch(2);
             final FilePackage fp = FilePackage.getInstance();
-            fp.setName(Encoding.htmlDecode(fpName.trim()));
+            fp.setName(Encoding.htmlDecode(url_slug).replace("-", " ").trim());
             final UrlQuery query = UrlQuery.parse("mode=async&function=get_block&block_id=playlist_view_playlist_view_dev&sort_by=added2fav_date&_=" + System.currentTimeMillis());
             int page = 1;
             int addedItems = 0;
             final int minItemsPerPage = 4;
-            final String url_base = addedlink;
+            final String url_base = contenturl;
             boolean hasNextPage = false;
             do {
                 final UrlQuery thisQuery = query;
@@ -129,10 +136,10 @@ public class PorntrexComCrawler extends PluginForDecrypt {
                 }
                 final String[] urls = br.getRegex("data-playlist-item=\"(https?://[^\"]*/video/\\d+/[a-z0-9\\-]+)\"").getColumn(0);
                 for (final String url : urls) {
-                    if (dupes.contains(url)) {
+                    if (!dupes.add(url)) {
+                        /* Skip dupes */
                         continue;
                     }
-                    dupes.add(url);
                     final DownloadLink dl = this.createDownloadlink(url);
                     final String url_name = new Regex(url, "([a-z0-9\\-]+)$").getMatch(0);
                     dl.setAvailable(true);
