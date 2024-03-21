@@ -4133,21 +4133,15 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                          */
                         final File writeTest1 = fileOutput;
                         try {
-                            // final RandomAccessFile raf1 = IO.open(writeTest1, "rw");
-                            // raf1.close();
-                            // if (!writeTest1.delete()) {
-                            // /* This should never never never happen! */
-                            // logger.warning("Failed to delete test-written file");
-                            // throw new SkipReasonException(SkipReason.INVALID_DESTINATION);
-                            // }
-                            this.createFilePath(fileOutput, true, true, true);
-                        } catch (final BadDestinationExceptionPathTooLongV2 e) {
-                            /* Double-check */
-                            final File failPath = e.getTooLongPathSegment();
-                            if (!failPath.equals(fileOutput)) {
-                                /* Filename is not the problem but a part segment is too long -> We can't fix that. */
-                                throw new SkipReasonException(SkipReason.INVALID_DESTINATION_TOO_LONG_PATH);
-                            } else if (fileName.length() <= maxFilenameLength) {
+                            final RandomAccessFile raf1 = IO.open(writeTest1, "rw");
+                            raf1.close();
+                            if (!writeTest1.delete()) {
+                                /* This should never never never happen! */
+                                logger.warning("Failed to delete test-written file");
+                                throw new SkipReasonException(SkipReason.INVALID_DESTINATION);
+                            }
+                        } catch (final IOException e) {
+                            if (fileName.length() <= maxFilenameLength) {
                                 /*
                                  * Does not look like too long filename -> Must be a different reason, possibly permission problem -> Give
                                  * up
@@ -4155,7 +4149,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                 throw new SkipReasonException(SkipReason.INVALID_DESTINATION, e);
                             }
                             /* Looks like filename might be too long -> Check if writing a shortened filename would be possible. */
-                            final boolean allowAutoShortenFilenames = true;
+                            final boolean allowAutoShortenFilenames = false;
                             String shortenedFilename;
                             String ext = null;
                             if (fileName.contains(".")) {
@@ -4368,16 +4362,13 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
             }
 
             /**
-             * Creates path of given File instance and performs write-test if wanted.
+             * Creates path of given file and performs write-test if wanted.
              *
              * @throws InterruptedException
              */
-            private void createFilePath(final File fileOutput, final boolean isFile, boolean checkFileWrite, boolean allowCheckForTooLongFilename) throws BadDestinationException, SkipReasonException, IOException, InterruptedException {
-                final boolean checkForFileIsDirectoryForbidden = false;
+            private void createPath(final File fileOutput, boolean checkFileWrite, boolean allowCheckForTooLongFilename, boolean allowAutoRenameTooLongFilename) throws BadDestinationException, SkipReasonException, IOException, InterruptedException {
                 if (fileOutput == null) {
                     throw new IllegalArgumentException();
-                } else if (checkForFileIsDirectoryForbidden && isFile && fileOutput.isDirectory()) {
-                    // TODO: Throw exception(?) -> Evaluate if we really want to check for this problem here.
                 } else if (fileOutput.exists()) {
                     /* Already exists -> No need to do anything. */
                     return;
@@ -4395,45 +4386,27 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                     // controller.getLogger().severe("has no parentFile?! " + fileOutput);
                     throw new SkipReasonException(SkipReason.INVALID_DESTINATION);
                 }
-                if (!checkFileWrite) {
-                    return;
-                }
                 /**
-                 * Create a list of the full folder path structure.
+                 * Manually create all folders up until we are in our final folder where we want to write the file we want to download.
+                 * </br>
+                 * This may look more complicated compared to File.mkdirs() but this way we can know exactly at which point a directory
+                 * could not be created.
                  */
-                final List<File> pathList = new ArrayList<File>();
-                int loop = 0;
-                File next = fileOutput;
-                int folderCreateStartSegmentIndex = -1;
-                while (true) {
-                    pathList.add(0, next);
-                    if (folderCreateStartSegmentIndex == -1 && !next.exists()) {
-                        folderCreateStartSegmentIndex = loop;
+                final List<File> folderCreateList = new ArrayList<File>();
+                File folder = fileOutput.getParentFile();
+                while (!folder.exists()) {
+                    folderCreateList.add(0, folder);
+                    folder = folder.getParentFile();
+                    if (folder == null) {
+                        throw new SkipReasonException(SkipReason.INVALID_DESTINATION);
                     }
-                    next = next.getParentFile();
-                    if (next == null) {
-                        /* We've reached the end. */
-                        break;
-                    }
-                    loop++;
                 }
-                if (folderCreateStartSegmentIndex != -1) {
-                    /**
-                     * Manually create all folders up until we are in our final folder where we want to write the file we want to download.
-                     * </br>
-                     * This may look more complicated compared to File.mkdirs() but this way we can know exactly at which point a directory
-                     * could not be created.
-                     */
-                    folderCreateStartSegmentIndex = pathList.size() - folderCreateStartSegmentIndex - 1;
-                    for (int index = folderCreateStartSegmentIndex; index < pathList.size(); index++) {
-                        final boolean isLastItem = index == pathList.size() - 1;
-                        if (isFile && isLastItem) {
-                            /* Last path segment is file -> Do not create folder! */
-                            break;
-                        }
-                        final File thisfolder = pathList.get(index);
+                if (folderCreateList.size() > 0) {
+                    /* Create missing folders. */
+                    controller.getLogger().info("Creating path from: " + folderCreateList);
+                    for (int index = 0; index < folderCreateList.size(); index++) {
+                        final File thisfolder = folderCreateList.get(index);
                         if (!thisfolder.exists() && !thisfolder.mkdir() && !thisfolder.isDirectory()) {
-                            /* Folder creation failed */
                             controller.getLogger().severe("could not create folder[" + index + "]: " + thisfolder.getAbsolutePath());
                             if (CrossSystem.isWindows() && looksLikeTooLongWindowsPathOrFilename(thisfolder)) {
                                 /*
@@ -4441,62 +4414,69 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                  * end result: The path is not usable for us.
                                  */
                                 controller.getLogger().severe("Looks like too long downloadpath for Windows: " + thisfolder.getAbsolutePath());
-                                throw new BadDestinationExceptionPathTooLongV2(thisfolder, index);
+                                throw new SkipReasonException(SkipReason.INVALID_DESTINATION_TOO_LONG_PATH);
                             } else {
                                 throw new SkipReasonException(SkipReason.INVALID_DESTINATION_PERMISSION_ISSUE, _JDT.T.DownloadLink_setSkipped_statusmessage_invalid_path_permission_issue_file(thisfolder.getName()));
                             }
                         }
-                        // TODO: Remove this?
                         if (controller.isAborting()) {
                             throw new InterruptedException("Controller is aborted");
                         }
                     }
                 }
-                /* Check file writability if needed. */
-                if (isFile && checkFileWrite) {
+                if (checkFileWrite) {
                     /* TODO: Use specific write check functionality here */
                     final File writeTest1 = fileOutput;
                     try {
-                        fileWriteCheck(writeTest1);
-                    } catch (final IOException e1) {
-                        /* Check for a too long filename */
-                        if (allowCheckForTooLongFilename) {
-                            /* Filename looks to be too long but we don#t check. */
-                            throw e1;
+                        final RandomAccessFile raf1 = IO.open(writeTest1, "rw");
+                        raf1.close();
+                        if (!writeTest1.delete()) {
+                            /* This should never never never happen! */
+                            logger.warning("Failed to delete test-written file");
+                            throw new SkipReasonException(SkipReason.INVALID_DESTINATION);
+                        }
+                    } catch (final IOException e) {
+                        // TODO: If we want to, this would be the place to check for problems due to too long filenames.
+                        final String filename = fileOutput.getName();
+                        final int maxFilenameLength = 219;
+                        if (filename.length() <= maxFilenameLength) {
+                            /* Filename doesn't look to be too long. */
+                            throw e;
+                        }
+                        /* Filename looks to be too long. */
+                        if (!allowCheckForTooLongFilename) {
+                            // throw e;
+                            throw new SkipReasonException(SkipReason.INVALID_DESTINATION_TOO_LONG_FILENAME, e);
                         }
                         // TODO: Do not use a static string here
-                        final String shortFilename = "writecheck.txt";
-                        final File writeTest2 = new File(writeTest1.getParent(), shortFilename);
+                        final String shortenedFilename = "writecheck.txt";
+                        final File writeTest2 = new File(writeTest1.getParent(), shortenedFilename);
                         if (writeTest2.exists()) {
                             logger.info("File with shortened filename already exists!");
-                            throw e1;
+                            throw e;
                         }
                         try {
-                            fileWriteCheck(writeTest2);
-                            /* We know that the given filename is too long because writing a file with a shorter filename was successful. */
-                            throw new BadDestinationExceptionPathTooLongV2(fileOutput, pathList.size() - 1);
+                            final RandomAccessFile raf2 = IO.open(writeTest2, "rw");
+                            raf2.close();
+                            if (!writeTest2.delete()) {
+                                /* This should never happen! */
+                                logger.warning("Failed to delete test-written file with shortened filename");
+                                throw new SkipReasonException(SkipReason.INVALID_DESTINATION, e);
+                            } else if (!allowAutoRenameTooLongFilename) {
+                                /* We know that the filename is too long but we are not allowed to modify the filename -> Stop here. */
+                                throw new SkipReasonException(SkipReason.INVALID_DESTINATION_TOO_LONG_FILENAME, e);
+                            }
+                            controller.setSessionDownloadFilename(shortenedFilename);
+                            // downloadLink.setForcedFileName(shortenedFilename);
+                            // downloadLink.setChunksProgress(null);
+                            // fileOutput = writeTest2;
+                            return;
                         } catch (final IOException e2) {
                             /* Permission issue or some other length limitation is in place. */
-                            logger.log(e2);
-                            throw e1;
+                            throw new SkipReasonException(SkipReason.INVALID_DESTINATION, Exceptions.addSuppressed(e2, e));
                         }
                     }
                 }
-            }
-
-            private void fileWriteCheck(final File file) throws IOException, SkipReasonException {
-                // TODO: Maybe throw exception if file already exists
-                // if (file.exists()) {
-                // return;
-                // }
-                final RandomAccessFile raffile = IO.open(file, "rw");
-                raffile.close();
-                if (!file.delete()) {
-                    /* This should never happen! */
-                    logger.warning("Failed to delete test-written file with shortened filename");
-                    throw new IOException("Failed to delete written file");
-                }
-                return;
             }
 
             @Override
