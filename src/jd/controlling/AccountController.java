@@ -79,11 +79,11 @@ public class AccountController implements AccountControllerListener, AccountProp
     private final HashMap<String, List<Account>>                                 MULTIHOSTER_ACCOUNTS;
     private static AccountController                                             INSTANCE         = new AccountController();
     private final Eventsender<AccountControllerListener, AccountControllerEvent> broadcaster      = new Eventsender<AccountControllerListener, AccountControllerEvent>() {
-        @Override
-        protected void fireEvent(final AccountControllerListener listener, final AccountControllerEvent event) {
-            listener.onAccountControllerEvent(event);
-        }
-    };
+                                                                                                      @Override
+                                                                                                      protected void fireEvent(final AccountControllerListener listener, final AccountControllerEvent event) {
+                                                                                                          listener.onAccountControllerEvent(event);
+                                                                                                      }
+                                                                                                  };
 
     public Eventsender<AccountControllerListener, AccountControllerEvent> getEventSender() {
         return broadcaster;
@@ -617,24 +617,24 @@ public class AccountController implements AccountControllerListener, AccountProp
                 accs = new ArrayList<Account>();
                 ACCOUNTS.put(host, accs);
             }
-            final String hasUsername = StringUtils.isNotEmpty(account.getUser()) ? account.getUser() : null;
+            final String username = StringUtils.isNotEmpty(account.getUser()) ? account.getUser() : null;
             for (final Account acc : accs) {
                 if (acc == account) {
                     existingAccount = acc;
                     break;
-                } else if (hasUsername != null && StringUtils.equals(hasUsername, account.getUser()) && StringUtils.equals(acc.getPass(), account.getPass())) {
+                } else if (username != null && StringUtils.equals(acc.getUser(), username) && StringUtils.equals(acc.getPass(), account.getPass())) {
                     /* Check for same user + pw. */
                     existingAccount = acc;
                     break;
                 }
             }
-            if (existingAccount == null && hasUsername != null) {
+            if (existingAccount == null && username != null) {
                 /*
                  * Check for same username only --> Username is supposed to be unique so this should also be a safe method of finding an
                  * existing same account.
                  */
                 for (final Account acc : accs) {
-                    if (StringUtils.equals(hasUsername, account.getUser())) {
+                    if (StringUtils.equals(acc.getUser(), username)) {
                         existingAccount = acc;
                         break;
                     }
