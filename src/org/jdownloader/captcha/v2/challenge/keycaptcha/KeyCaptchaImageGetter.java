@@ -20,9 +20,7 @@ class KeyCaptchaImageGetter {
     private Image[]                            IMAGE;
     private BufferedImage[]                    kcImages;
     private final LinkedHashMap<String, int[]> coordinates;
-
     private int                                kcSampleImg;
-
     private KeyCaptchaImages                   keyCaptchaImage;
     private KeyCaptcha                         helper;
 
@@ -31,13 +29,10 @@ class KeyCaptchaImageGetter {
         this.helper = keyCaptcha;
         loadImage(imageUrl);
         handleCoordinates();
-
         makePieces();
         makeBackground();
-
         LinkedList<BufferedImage> pieces = new LinkedList<BufferedImage>();
         BufferedImage sampleImg = null;
-
         for (int i = 1; i < kcImages.length; i++) {
             if (kcImages[i] == null) {
                 continue;
@@ -109,7 +104,7 @@ class KeyCaptchaImageGetter {
                 continue;
             }
             final int[] imgcs = coordinates.get(element);
-            if (imgcs == null | imgcs.length == 0) {
+            if (imgcs == null || imgcs.length == 0) {
                 break;
             }
             final int w = imgcs[1] + imgcs[5] + imgcs[9];

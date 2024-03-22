@@ -46,13 +46,10 @@ public class WebCache {
             if (cachedRequest == null || cachedRequest._isExpired()) {
                 cache.remove(lookUpID);
             }
-
         }
         if (cachedRequest == null) {
             cachedRequest = readFormDisk(lookUpID);
-
         }
-
         if (cachedRequest != null) {
             putToRAM(cachedRequest);
         }
@@ -61,13 +58,10 @@ public class WebCache {
 
     private CachedRequest readFormDisk(String lookUpID) {
         File file = new File(folder, Hash.getMD5(lookUpID) + ".json");
-
         try {
             if (file.exists()) {
-
                 CachedRequest ret = JSonStorage.restoreFromString(IO.readFileToString(file), CachedRequest.TYPE_REF);
-
-                if (ret == null | ret._isExpired()) {
+                if (ret == null || ret._isExpired()) {
                     file.delete();
                     return null;
                 }
@@ -98,7 +92,6 @@ public class WebCache {
         System.out.println(JSonStorage.serializeToJson(cachedRequest));
         putToRAM(cachedRequest);
         putToDisk(cachedRequest);
-
     }
 
     protected void putToRAM(CachedRequest cachedRequest) {
@@ -116,5 +109,4 @@ public class WebCache {
             logger.log(e);
         }
     }
-
 }

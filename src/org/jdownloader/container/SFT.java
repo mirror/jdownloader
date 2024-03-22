@@ -15,7 +15,6 @@ import org.jdownloader.container.sft.sftBinary;
 import org.jdownloader.container.sft.sftContainer;
 
 public class SFT extends PluginsC {
-
     public SFT() {
         super("SFT", "file:/.+\\.sft$", "$Revision$");
     }
@@ -48,7 +47,7 @@ public class SFT extends PluginsC {
         } catch (Exception e) {
             logger.log(e);
             cs.setStatus(ContainerStatus.STATUS_FAILED);
-            if ((e.getMessage() != null) | (e.getMessage().length() > 0)) {
+            if (e.getMessage() != null && e.getMessage().length() > 0) {
                 UserIO.getInstance().requestMessageDialog(e.getMessage());
             } else {
                 UserIO.getInstance().requestMessageDialog("sft decrypt error");
@@ -61,5 +60,4 @@ public class SFT extends PluginsC {
     public String[] encrypt(String plain) {
         return null;
     }
-
 }
