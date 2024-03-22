@@ -80,9 +80,9 @@ import org.jdownloader.settings.staticreferences.CFG_GUI;
 public class BannerRotation implements Sponsor, AccountControllerListener {
     private final List<AvailableBanner> allBanners = new CopyOnWriteArrayList<AvailableBanner>();
     private final Queue                 queue      = new Queue("Banner") {
-        public void killQueue() {
-        };
-    };
+                                                       public void killQueue() {
+                                                       };
+                                                   };
 
     private class AvailableBanner implements DownloadControllerListener, LinkCollectorListener, DownloadWatchdogListener, AccountControllerListener {
         private volatile boolean    hasDownloadLinks        = false;
@@ -731,7 +731,6 @@ public class BannerRotation implements Sponsor, AccountControllerListener {
                         isBannerEnabled.set(CFG_GUI.BANNER_ENABLED.isEnabled());
                         getAllBanners().add(new AvailableBanner(DomainInfo.getInstance("rapidgator.net")));
                         getAllBanners().add(new AvailableBanner(DomainInfo.getInstance("k2s.cc")));
-                        getAllBanners().add(new AvailableBanner(DomainInfo.getInstance("ddownload.com")));
                         getAllBanners().add(new AvailableBanner(DomainInfo.getInstance("filejoker.net")));
                         updateDelayer.resetAndStart();
                         refreshThread.start();

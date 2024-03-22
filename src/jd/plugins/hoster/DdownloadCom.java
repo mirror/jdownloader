@@ -18,17 +18,6 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.IPVERSION;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-import org.jdownloader.plugins.components.config.XFSConfigDdownloadCom;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.settings.GraphicalUserInterfaceSettings.SIZEUNIT;
-import org.jdownloader.settings.staticreferences.CFG_GUI;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -46,11 +35,22 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.IPVERSION;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+import org.jdownloader.plugins.components.config.XFSConfigDdownloadCom;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings.SIZEUNIT;
+import org.jdownloader.settings.staticreferences.CFG_GUI;
+
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class DdownloadCom extends XFileSharingProBasic {
     public DdownloadCom(final PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium(super.getPurchasePremiumURL());
+        this.enablePremium(getPurchasePremiumURL());
     }
 
     /**
@@ -71,6 +71,11 @@ public class DdownloadCom extends XFileSharingProBasic {
             // re by admin
             br.setIPVersion(IPVERSION.IPV4_IPV6);
         }
+    }
+
+    @Override
+    public String getPurchasePremiumURL() {
+        return "https://ddownload.rip/";
     }
 
     @Override
@@ -100,9 +105,9 @@ public class DdownloadCom extends XFileSharingProBasic {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
         ret.add(new String[] { "ddownload.com", "ddl.to", "api.ddl.to", "esimpurcuesc.ddownload.com",
-                /*
-                 * download cdn, dedicated to ddownload?
-                 */"ucdn.to" });
+        /*
+         * download cdn, dedicated to ddownload?
+         */"ucdn.to" });
         return ret;
     }
 
@@ -227,9 +232,6 @@ public class DdownloadCom extends XFileSharingProBasic {
 
     @Override
     public void doFree(final DownloadLink link, final Account account) throws Exception, PluginException {
-        if (checkShowFreeDialog(getHost())) {
-            showFreeDialog(getHost());
-        }
         super.doFree(link, account);
     }
 
