@@ -26,24 +26,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.WeakHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.storage.JSonMapperException;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.Time;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.net.URLHelper;
-import org.jdownloader.captcha.v2.Challenge;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
-import org.jdownloader.plugins.components.config.RapidGatorConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
 
 import jd.PluginWrapper;
 import jd.config.Property;
@@ -69,6 +53,23 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.storage.JSonMapperException;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.Time;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.net.URLHelper;
+import org.jdownloader.captcha.v2.Challenge;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
+import org.jdownloader.plugins.components.config.RapidGatorConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class RapidGatorNet extends PluginForHost {
@@ -231,15 +232,21 @@ public class RapidGatorNet extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        final Account account = AccountController.getInstance().getValidAccount(this.getHost());
+        final Account account = PluginJsonConfig.get(RapidGatorConfig.class).isEnableAPIPremium() ? AccountController.getInstance().getValidAccount(this.getHost()) : null;
         return requestFileInformation(link, account);
     }
 
     private AvailableStatus requestFileInformation(final DownloadLink link, final Account account) throws Exception {
-        if (account != null && PluginJsonConfig.get(RapidGatorConfig.class).isEnableAPIPremium() && account.hasProperty(PROPERTY_sessionid)) {
+        final String session_id;
+        if (account != null) {
+            session_id = getAccountSession(account);
+        } else {
+            session_id = null;
+        }
+        if (session_id != null) {
             /* API usage is enabled by user, account is available and an API session is available too --> Use API-linkcheck */
             try {
-                return requestFileInformationAPI(link, account);
+                return requestFileInformationAPI(link, account, session_id);
             } catch (final AccountUnavailableException aue) {
                 /* Fallback 1 */
                 logger.log(aue);
@@ -294,8 +301,8 @@ public class RapidGatorNet extends PluginForHost {
         final URLConnectionAdapter con = br.openGetConnection(this.getContentURL(link));
         if (this.looksLikeDownloadableContent(con)) {
             /**
-             * Looks like direct-downloadable item. </br>
-             * Either we're logged in as a premium user or this item was made hot-linked by a premium user.
+             * Looks like direct-downloadable item. </br> Either we're logged in as a premium user or this item was made hot-linked by a
+             * premium user.
              */
             if (con.getCompleteContentLength() > 0) {
                 link.setVerifiedFileSize(con.getCompleteContentLength());
@@ -333,13 +340,11 @@ public class RapidGatorNet extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    private AvailableStatus requestFileInformationAPI(final DownloadLink link, final Account account) throws Exception {
+    private AvailableStatus requestFileInformationAPI(final DownloadLink link, final Account account, final String session_id) throws Exception {
         if (account == null) {
             /* Developer mistake */
             throw new IllegalArgumentException();
-        }
-        final String session_id = account.getStringProperty(PROPERTY_sessionid);
-        if (session_id == null) {
+        } else if (session_id == null) {
             /* This should never happen! */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -474,9 +479,8 @@ public class RapidGatorNet extends PluginForHost {
                 if (allowSolvemediaCaptchaDuringWait) {
                     /**
                      * 2023-10-03: A small trick: We know their Solvemedia key and can thus always obtain captcha solutions at any point of
-                     * time. </br>
-                     * Requesting the captcha here basically allows us to solve it during the serverside wait time which is impossible to do
-                     * in browser.
+                     * time. </br> Requesting the captcha here basically allows us to solve it during the serverside wait time which is
+                     * impossible to do in browser.
                      */
                     final long timeBeforeCaptchaInput = Time.systemIndependentCurrentJVMTimeMillis();
                     final SolveMedia sm = new SolveMedia(br);
@@ -691,17 +695,30 @@ public class RapidGatorNet extends PluginForHost {
         }
     }
 
+    private static WeakHashMap<DownloadLink, WeakHashMap<Account, String>> INVALIDSESSIONMAP = new WeakHashMap<DownloadLink, WeakHashMap<Account, String>>();
+
+    @Override
+    public void clean() {
+        try {
+            super.clean();
+        } finally {
+            synchronized (INVALIDSESSIONMAP) {
+                // remove weak references
+                INVALIDSESSIONMAP.size();
+            }
+        }
+    }
+
     private boolean useShortChallengeTimeoutToAvoidServersideBan = false;
 
     @Override
     public int getChallengeTimeout(Challenge<?> challenge) {
         /**
          * If users need more than X seconds to enter the captcha [in free download mode before final download-step] and we actually send
-         * the captcha input after this time has passed, rapidgator will 'ban' the IP of the user for at least 60 minutes. </br>
-         * RG will first display a precise errormessage but then it will display the same message which is displayed when the user has
-         * reached the daily/hourly download-limit. </br>
-         * This function exists to avoid this. Instead of sending the captcha it can throw a retry exception, avoiding the 60+ minutes IP
-         * 'ban'.
+         * the captcha input after this time has passed, rapidgator will 'ban' the IP of the user for at least 60 minutes. </br> RG will
+         * first display a precise errormessage but then it will display the same message which is displayed when the user has reached the
+         * daily/hourly download-limit. </br> This function exists to avoid this. Instead of sending the captcha it can throw a retry
+         * exception, avoiding the 60+ minutes IP 'ban'.
          */
         if (useShortChallengeTimeoutToAvoidServersideBan) {
             return FREE_CAPTCHA_EXPIRE_TIME_MILLIS;
@@ -813,7 +830,6 @@ public class RapidGatorNet extends PluginForHost {
 
     public AccountInfo fetchAccountInfoAPI(final Account account, final AccountInfo ai) throws Exception {
         synchronized (account) {
-            loginAPI(account);
             final Map<String, Object> responsemap = loginAPI(account);
             final Map<String, Object> storagemap = (Map<String, Object>) responsemap.get("storage");
             if (storagemap != null) {
@@ -1063,51 +1079,95 @@ public class RapidGatorNet extends PluginForHost {
         }
     }
 
+    private String getAccountSession(Map<String, Object> map) throws PluginException {
+        /* 2019-12-14: session_id == PHPSESSID cookie */
+        String ret = (String) map.get("session_id");
+        if (StringUtils.isEmpty(ret)) {
+            /* 2019-12-14: APIv2 */
+            ret = (String) map.get("token");
+        }
+        if (StringUtils.isEmpty(ret)) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else {
+            return ret;
+        }
+    }
+
+    private String getAccountSession(final Account account) {
+        synchronized (account) {
+            return account.getStringProperty(PROPERTY_sessionid, null);
+        }
+    }
+
     private Map<String, Object> loginAPI(final Account account) throws Exception {
         synchronized (account) {
-            final long lastPleaseWait = account.getLongProperty("lastPleaseWait", -1);
-            final long pleaseWait = lastPleaseWait > 0 ? ((5 * 60 * 1000l) - (System.currentTimeMillis() - lastPleaseWait)) : 0;
-            if (pleaseWait > 5000) {
-                throw new AccountUnavailableException("Frequest logins. Please wait!", pleaseWait);
-            }
-            String sessionID = account.getStringProperty(PROPERTY_sessionid);
-            if (sessionID != null) {
-                logger.info("session_create = " + account.getLongProperty(PROPERTY_timestamp_session_create_api, 0));
-                /* Try to re-use last token */
-                br.getPage(getAPIBase() + "user/info?token=" + Encoding.urlEncode(sessionID));
-                try {
-                    final Map<String, Object> response = handleErrors_api(null, null, account, br);
-                    logger.info("Successfully validated last session");
-                    if (sessionReUseAllowed(account, PROPERTY_timestamp_session_create_api, API_SESSION_ID_REFRESH_TIMEOUT_MINUTES)) {
-                        return response;
-                    } else {
-                        logger.info("Existing session looks to be valid but we are not allowed to re-use it");
-                    }
-                } catch (final PluginException e) {
-                    logger.info("Failed to re-use last session_id");
-                    logger.log(e);
-                    br.clearCookies(null);
+            try {
+                final long lastPleaseWait = account.getLongProperty("lastPleaseWait", -1);
+                final long pleaseWait = lastPleaseWait > 0 ? ((5 * 60 * 1000l) - (System.currentTimeMillis() - lastPleaseWait)) : 0;
+                if (pleaseWait > 5000) {
+                    throw new AccountUnavailableException("Frequest logins. Please wait!", pleaseWait);
                 }
+                String session_id = getAccountSession(account);
+                if (session_id != null) {
+                    final long session_timestamp = account.getLongProperty(PROPERTY_timestamp_session_create_api, 0);
+                    logger.info("VerifySession:" + session_id + "|Timestamp:" + session_timestamp + "|Age:" + TimeFormatter.formatMilliSeconds((System.currentTimeMillis() - session_timestamp), 0));
+                    /* Try to re-use last token */
+                    br.getPage(getAPIBase() + "user/info?token=" + Encoding.urlEncode(session_id));
+                    try {
+                        final Map<String, Object> response = handleErrors_api(null, null, account, br);
+                        logger.info("Successfully validated last session");
+                        if (sessionReUseAllowed(account, PROPERTY_timestamp_session_create_api, API_SESSION_ID_REFRESH_TIMEOUT_MINUTES)) {
+                            return response;
+                        } else {
+                            logger.info("Existing session looks to be valid but we are not allowed to re-use it");
+                        }
+                    } catch (final PluginException e) {
+                        clearAccountSession(account);
+                        logger.info("Failed to re-use last session_id");
+                        logger.log(e);
+                        br.clearCookies(null);
+                    }
+                }
+                /* Avoid full logins - RG will temporarily block accounts on too many full logins in a short time! */
+                logger.info("Performing full login");
+                /* Docs: https://rapidgator.net/article/api/user#login */
+                br.getPage(getAPIBase() + "user/login?login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+                final Map<String, Object> response = handleErrors_api(null, null, account, br);
+                session_id = getAccountSession(response);
+                if (StringUtils.isEmpty(session_id)) {
+                    /* This should never happen */
+                    throw new AccountUnavailableException("Fatal: Failed to find sessionID", 1 * 60 * 1000l);
+                } else {
+                    /* Store session_id */
+                    setAccountSession(account, session_id);
+                    return response;
+                }
+            } catch (final PluginException e) {
+                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    clearAccountSession(account);
+                }
+                throw e;
             }
-            /* Avoid full logins - RG will temporarily block accounts on too many full logins in a short time! */
-            logger.info("Performing full login");
-            /* Docs: https://rapidgator.net/article/api/user#login */
-            br.getPage(getAPIBase() + "user/login?login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-            final Map<String, Object> response = handleErrors_api(null, null, account, br);
-            /* 2019-12-14: session_id == PHPSESSID cookie */
-            sessionID = (String) response.get("session_id");
-            if (StringUtils.isEmpty(sessionID)) {
-                /* 2019-12-14: APIv2 */
-                sessionID = (String) response.get("token");
-            }
-            if (StringUtils.isEmpty(sessionID)) {
-                /* This should never happen */
-                throw new AccountUnavailableException("Fatal: Failed to find sessionID", 1 * 60 * 1000l);
-            }
-            /* Store session_id */
-            account.setProperty(PROPERTY_sessionid, sessionID);
+        }
+    }
+
+    private void setAccountSession(Account account, final String session_id) {
+        synchronized (account) {
+            account.setProperty(PROPERTY_sessionid, session_id);
             account.setProperty(PROPERTY_timestamp_session_create_api, System.currentTimeMillis());
-            return response;
+        }
+    }
+
+    private void clearAccountSession(Account account) {
+        synchronized (account) {
+            account.setType(null);
+            final String session_id = getAccountSession(account);
+            final long session_timestamp = account.getLongProperty(PROPERTY_timestamp_session_create_api, 0);
+            account.removeProperty(PROPERTY_sessionid);
+            account.removeProperty(PROPERTY_timestamp_session_create_api);
+            if (session_id != null) {
+                logger.info("ClearSession:" + session_id + "|Timestamp:" + session_timestamp + "|Age:" + TimeFormatter.formatMilliSeconds((System.currentTimeMillis() - session_timestamp), 0));
+            }
         }
     }
 
@@ -1143,7 +1203,7 @@ public class RapidGatorNet extends PluginForHost {
             /* Invalid logindata */
             throw new AccountInvalidException();
         } else if (con.getResponseCode() == 404) {
-            handle404API(link, account, trustError404);
+            handle404API(link, account, session_id, trustError404);
         } else if (con.getResponseCode() == 416) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 416", 5 * 60 * 1000l);
         } else if (con.getResponseCode() == 423) {
@@ -1208,6 +1268,9 @@ public class RapidGatorNet extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server says: 'Please wait ...'", 10 * 60 * 1000l);
                     }
                 } else if (errorMessage.contains("User is not PREMIUM") || errorMessage.contains("This file can be downloaded by premium only") || errorMessage.contains("You can download files up to")) {
+                    if (session_id != null && session_id.equals(getAccountSession(account))) {
+                        clearAccountSession(account);
+                    }
                     throw new AccountRequiredException();
                 } else if (errorMessage.contains("Login or password is wrong") || errorMessage.contains("Error: Error e-mail or password")) {
                     throw new AccountInvalidException(errorMessage);
@@ -1230,20 +1293,20 @@ public class RapidGatorNet extends PluginForHost {
                 } else if (status == 401 || StringUtils.containsIgnoreCase(errorMessage, "Session not exist") || StringUtils.containsIgnoreCase(errorMessage, "Session doesn't exist")) {
                     // {"response":null,"status":401,"details":"Error. Session doesn't exist"}
                     // {"response":null,"status":401,"details":"Error. Session not exist"}
-                    handleInvalidSession(link, account, "401");
+                    handleInvalidSession(link, account, session_id, "401");
                 }
             }
             if (status == 404) {
-                handle404API(link, account, trustError404);
+                handle404API(link, account, session_id, trustError404);
             } else if (status == 500) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "API error 500", 5 * 60 * 1000l);
             } else if (status == 503) {
                 // {"response":null,"status":503,"details":"Download temporarily unavailable"}
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errorMessage, 30 * 60 * 1000l);
             } else if (StringUtils.containsIgnoreCase(errorMessage, "This download session is not for you")) {
-                handleInvalidSession(link, account, "Error 'This download session is not for you'");
+                handleInvalidSession(link, account, session_id, "Error 'This download session is not for you'");
             } else if (StringUtils.containsIgnoreCase(errorMessage, "Session not found")) {
-                handleInvalidSession(link, account, "Error 'Session not found'");
+                handleInvalidSession(link, account, session_id, "Error 'Session not found'");
             } else if (errorMessage.contains("Error: You requested login to your account from unusual Ip address")) {
                 /* User needs to confirm his current IP. */
                 String statusMessage;
@@ -1276,9 +1339,8 @@ public class RapidGatorNet extends PluginForHost {
         if (hotlinkDirectURL != null) {
             directurl = hotlinkDirectURL;
         } else {
-            loginAPI(account);
-            this.requestFileInformationAPI(link, account);
-            session_id = account.getStringProperty(PROPERTY_sessionid);
+            session_id = getAccountSession(loginAPI(account));
+            this.requestFileInformationAPI(link, account, session_id);
             /* Docs: https://rapidgator.net/article/api/file#download */
             br.getPage(getAPIBase() + "file/download?token=" + session_id + "&file_id=" + Encoding.urlEncode(this.getFID(link)));
             final Map<String, Object> response = handleErrors_api(session_id, link, account, br, false);
@@ -1303,14 +1365,26 @@ public class RapidGatorNet extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server did not respond with file content");
             }
         }
-        dl.startDownload();
+        try {
+            dl.startDownload();
+        } finally {
+            synchronized (INVALIDSESSIONMAP) {
+                final WeakHashMap<Account, String> map = INVALIDSESSIONMAP.get(link);
+                if (map != null) {
+                    map.remove(account);
+                    if (map.size() == 0) {
+                        INVALIDSESSIONMAP.remove(link);
+                    }
+                }
+            }
+        }
     }
 
-    private void handle404API(final DownloadLink link, final Account account, final boolean trustError404) throws Exception {
+    private void handle404API(final DownloadLink link, final Account account, final String session_id, final boolean trustError404) throws Exception {
         logger.info("Error 404 happened --> Trying to find out whether session is invalid or file is offline");
         if (link == null) {
             /* This should never happen */
-            handleInvalidSession(link, account, null);
+            handleInvalidSession(link, account, session_id, null);
         }
         if (trustError404) {
             /* File offline */
@@ -1329,14 +1403,14 @@ public class RapidGatorNet extends PluginForHost {
             final boolean trust_api_session_validity_check = false;
             if (trust_api_session_validity_check) {
                 logger.info("Checking for invalid session or 404 file not found");
-                if (validateSessionAPI(account)) {
+                if (validateSessionAPI(account, session_id)) {
                     /* Trust previous error --> File is offline */
                     logger.info("Session is valid --> File is offline");
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 } else {
                     /* Get new session_id on next accountcheck */
                     logger.info("Session is invalid");
-                    handleInvalidSession(link, account, null);
+                    handleInvalidSession(link, account, session_id, null);
                 }
             } else {
                 /*
@@ -1346,20 +1420,14 @@ public class RapidGatorNet extends PluginForHost {
                 requestFileInformationWebsite(link, null);
                 logger.info("File is online --> Probably expired session");
                 /* Probably expired session */
-                handleInvalidSession(link, account, "404");
+                handleInvalidSession(link, account, session_id, "404");
             }
         }
     }
 
     /** Checks if current login session is valid. */
-    private boolean validateSessionAPI(final Account account) throws Exception {
+    private boolean validateSessionAPI(final Account account, final String session_id) throws Exception {
         synchronized (account) {
-            final String session_id = account.getStringProperty(PROPERTY_sessionid);
-            if (session_id == null) {
-                logger.severe("no session available?!");
-                /* This should never happen */
-                return false;
-            }
             /*
              * 2019-12-16: Check running remote uploads to validate session as there is no extra API call available for verifying sessions
              * --> This should return the following for most users: {"response":[],"status":200,"details":null}
@@ -1376,13 +1444,36 @@ public class RapidGatorNet extends PluginForHost {
     }
 
     /** Call this on expired session_id! */
-    private void handleInvalidSession(final DownloadLink link, final Account account, final String error_hint) throws PluginException {
+    private void handleInvalidSession(final DownloadLink link, final Account account, final String session_id, final String error_hint) throws PluginException {
+        synchronized (INVALIDSESSIONMAP) {
+            if (link != null && account != null) {
+                WeakHashMap<Account, String> map = INVALIDSESSIONMAP.get(link);
+                if (map == null) {
+                    map = new WeakHashMap<Account, String>();
+                    map.put(account, session_id);
+                    INVALIDSESSIONMAP.put(link, map);
+                    throwAccountUnavailableException(account, error_hint);
+                } else if (!map.containsKey(account) || !StringUtils.equals(map.get(account), session_id)) {
+                    map.put(account, session_id);
+                    throwAccountUnavailableException(account, error_hint);
+                } else {
+                    /* We've retried with new session but same error --> Problem is not the session but the file */
+                    map.remove(account);
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File seems to be temporarily not available, please try again later", 30 * 60 * 1000l);
+                }
+            } else {
+                throwAccountUnavailableException(account, error_hint);
+            }
+        }
+    }
+
+    private void throwAccountUnavailableException(final Account account, final String error_hint) throws PluginException {
         /* We should not have to reset the session_id property here as it should happen automatically on next accountcheck! */
         final long waittime = 1 * 60 * 1000l;
         if (error_hint != null) {
-            throw new AccountUnavailableException(String.format("Session expired | Reason: %s", error_hint), waittime);
+            throw new AccountUnavailableException(String.format("[%s]Session expired - waiting before opening new session", error_hint), waittime);
         } else {
-            throw new AccountUnavailableException("Session expired", waittime);
+            throw new AccountUnavailableException("Session expired - waiting before opening new session", waittime);
         }
     }
 
