@@ -123,7 +123,7 @@ public class RapidGatorNet extends PluginForHost {
         return br;
     }
 
-    private final int                  API_SESSION_ID_REFRESH_TIMEOUT_MINUTES      = 45;
+    private final int                  API_SESSION_ID_REFRESH_TIMEOUT_MINUTES      = 30;
     /*
      * 2020-01-07: Use 120 minutes for the website login for now. Consider disabling this on negative feedback as frequent website logins
      * may lead to login-captchas!
