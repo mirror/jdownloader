@@ -23,6 +23,7 @@ import java.util.regex.Pattern;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -201,6 +202,17 @@ public class CivitaiCom extends PluginForHost {
             link.setFinalFileName(this.correctOrApplyFileNameExtension(filename, "." + ext));
         }
         dl.startDownload();
+    }
+
+    @Override
+    protected boolean looksLikeDownloadableContent(URLConnectionAdapter urlConnection) {
+        if (super.looksLikeDownloadableContent(urlConnection)) {
+            return true;
+        } else if (urlConnection.getResponseCode() == 200 || urlConnection.getResponseCode() == 206) {
+            return "text/plain".equals(urlConnection.getContentType()) && urlConnection.getCompleteContentLength() > 1024;
+        } else {
+            return false;
+        }
     }
 
     @Override
