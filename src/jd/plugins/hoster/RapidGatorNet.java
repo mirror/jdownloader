@@ -1452,17 +1452,26 @@ public class RapidGatorNet extends PluginForHost {
             if (link != null && account != null) {
                 WeakHashMap<Account, String> map = INVALIDSESSIONMAP.get(link);
                 if (map == null) {
+                    // link never tried before -> add account/session_id combination
                     map = new WeakHashMap<Account, String>();
                     map.put(account, session_id);
                     INVALIDSESSIONMAP.put(link, map);
                     throwAccountUnavailableException(account, error_hint);
-                } else if (!map.containsKey(account) || !StringUtils.equals(map.get(account), session_id)) {
+                } else if (!map.containsKey(account)) {
+                    // link tried before, but never with account -> add account/session_id combination
                     map.put(account, session_id);
                     throwAccountUnavailableException(account, error_hint);
-                } else {
-                    /* We've retried with new session but same error --> Problem is not the session but the file */
+                } else if (!StringUtils.equals(map.get(account), session_id)) {
+                    // we're tried this link before with same account but different session_id and still failing -> issue is with file and
+                    // not
+                    // session_id
                     map.remove(account);
+                    if (map.size() == 0) {
+                        INVALIDSESSIONMAP.remove(link);
+                    }
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File seems to be temporarily not available, please try again later", 30 * 60 * 1000l);
+                } else {
+                    throwAccountUnavailableException(account, error_hint);
                 }
             } else {
                 throwAccountUnavailableException(account, error_hint);
