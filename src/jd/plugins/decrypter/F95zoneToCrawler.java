@@ -78,13 +78,14 @@ public class F95zoneToCrawler extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(masked/.+|threads/[^/#\\?]+\\.\\d+/((page|post)-\\d+)?)");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(masked/.+|threads/([^/#\\?]+\\.\\d+|\\d+)/((page|post)-\\d+)?)");
         }
         return ret.toArray(new String[0]);
     }
 
-    private final String PATTERN_SINGLE   = "https?://[^/]+/masked/.+";
-    private final String PATTERN_MULTIPLE = "https?://[^/]+/threads/([^/#\\?]+)\\.\\d+/((page|post)-\\d+)?";
+    private final String PATTERN_SINGLE   = "(?i)https?://[^/]+/masked/.+";
+    private final String PATTERN_THREAD_1 = "(?i)https?://[^/]+/threads/([^/#\\?]+)\\.\\d+/((page|post)-\\d+)?";
+    private final String PATTERN_THREAD_2 = "(?i)https?://[^/]+/threads/\\d+/((page|post)-\\d+)?";
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final Account account = AccountController.getInstance().getValidAccount(this.getHost());
@@ -96,7 +97,7 @@ public class F95zoneToCrawler extends PluginForDecrypt {
         br.setFollowRedirects(true);
         if (param.getCryptedUrl().matches(PATTERN_SINGLE)) {
             return crawlSingleLink(param);
-        } else if (param.getCryptedUrl().matches(PATTERN_MULTIPLE)) {
+        } else if (param.getCryptedUrl().matches(PATTERN_THREAD_1) || param.getCryptedUrl().matches(PATTERN_THREAD_2)) {
             return crawlForumThreadPage(param);
         } else {
             /* Unsupported URL */
@@ -153,24 +154,21 @@ public class F95zoneToCrawler extends PluginForDecrypt {
     }
 
     private ArrayList<DownloadLink> crawlForumThreadPage(final CryptedLink param) throws Exception {
-        final String urlSlug = new Regex(param.getCryptedUrl(), PATTERN_MULTIPLE).getMatch(0);
-        if (urlSlug == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
         br.getPage(param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        final String urlSlug = new Regex(param.getCryptedUrl(), PATTERN_THREAD_1).getMatch(0);
         final FilePackage fp = FilePackage.getInstance();
         final String title = br.getRegex("property=\"og:title\" content=\"([^\"]+)\"").getMatch(0);
         if (title != null) {
             fp.setName(Encoding.htmlDecode(title).trim());
-        } else {
+        } else if (urlSlug != null) {
             /* Fallback */
             fp.setName(urlSlug.replace("-", " ").trim());
         }
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final String[] externalURLs = br.getRegex("<a href=\"(https?://[^\"]+)\" target=\"_blank\" class=\"link link--external\"").getColumn(0);
+        final String[] externalURLs = br.getRegex("<a href=\"(https?://[^\"]+)\"[^<]*class=\"link link--external\"").getColumn(0);
         for (final String externalURL : externalURLs) {
             ret.add(this.createDownloadlink(externalURL));
         }
