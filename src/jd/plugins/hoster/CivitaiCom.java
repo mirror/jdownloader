@@ -21,6 +21,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -34,10 +38,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class CivitaiCom extends PluginForHost {
@@ -145,7 +145,8 @@ public class CivitaiCom extends PluginForHost {
         }
         /**
          * 2024-03-11: Important: Do not open up the regex for original image too much or you run into risk of accidentally downloading the
-         * wrong image, see: </br> https://board.jdownloader.org/showthread.php?t=95419
+         * wrong image, see: </br>
+         * https://board.jdownloader.org/showthread.php?t=95419
          */
         final String directurlOriginal = br.getRegex("class=\"mantine-it6rft\" src=\"(https?://image\\.civitai\\.com/[^\"]+/original=true/[^\"]+)").getMatch(0);
         if (directurlOriginal != null) {
@@ -209,6 +210,10 @@ public class CivitaiCom extends PluginForHost {
         if (super.looksLikeDownloadableContent(urlConnection)) {
             return true;
         } else if (urlConnection.getResponseCode() == 200 || urlConnection.getResponseCode() == 206) {
+            /*
+             * 2024-03-25: They're sometimes returning wrong content-type information for images, see:
+             * https://board.jdownloader.org/showthread.php?t=95419
+             */
             return "text/plain".equals(urlConnection.getContentType()) && urlConnection.getCompleteContentLength() > 1024;
         } else {
             return false;

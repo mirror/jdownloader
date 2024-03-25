@@ -5169,6 +5169,14 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
     protected AccountInfo fetchAccountInfoAPI(final Browser br, final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         final Map<String, Object> entries = loginAPI(br, account);
+        /**
+         * This is important since the API may also be used as part of the website handling and it is important that the website handling
+         * knows whether an account with an API key can be used for API downloads or not. </br>
+         * In general, if we cannot use an account for downloading, that qualifies us to set an error status on it.
+         */
+        if (!account.hasProperty(PROPERTY_ACCOUNT_ALLOW_API_DOWNLOAD_ATTEMPT_IN_WEBSITE_MODE)) {
+            throw new AccountUnavailableException("API does not allow download | Contact support of this website", 5 * 60 * 1000l);
+        }
         /** 2019-07-31: Better compare expire-date against their serverside time if possible! */
         final String server_timeStr = entries.get("server_time").toString();
         final Map<String, Object> result = (Map<String, Object>) entries.get("result");
@@ -5262,32 +5270,30 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
             }
             getPage(br, this.getAPIBase() + "/account/info?key=" + apikey);
             entries = this.checkErrorsAPI(br, null, account);
-            if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-                /* 2023-11-30: Experiment to find out whether or not we can download via API with this account */
-                boolean apiDownloadsPossible = false;
-                try {
-                    final Browser brc = br.cloneBrowser();
-                    getPage(brc, this.getAPIBase() + "/file/direct_link?key=" + apikey + "&file_code=xxxxxxyyyyyy");
-                    this.checkErrorsAPI(brc, null, account);
-                } catch (final PluginException ple) {
-                    /*
-                     * Typically this happens when downloads are not possible via API:
-                     * {"msg":"This function not allowed in API","server_time":"2023-11-30 15:53:27","status":403}
+            /* 2023-11-30: Experiment to find out whether or not we can download via API with this account */
+            boolean apiDownloadsPossible = false;
+            try {
+                final Browser brc = br.cloneBrowser();
+                getPage(brc, this.getAPIBase() + "/file/direct_link?key=" + apikey + "&file_code=xxxxxxyyyyyy");
+                this.checkErrorsAPI(brc, null, account);
+            } catch (final PluginException ple) {
+                if (ple.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
+                    /**
+                     * Typically this happens when downloads are not possible via API: {"msg":"This function not allowed in
+                     * API","server_time":"2023-11-30 15:53:27","status":403} </br>
                      */
-                    if (ple.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
-                        /* {"server_time":"2023-11-30 15:53:33","status":404,"msg":"no file"} */
-                        apiDownloadsPossible = true;
-                    }
-                } catch (final Throwable e) {
-                    logger.log(e);
-                    logger.info("Exception occured API download check");
-                } finally {
-                    logger.info("API download status: " + apiDownloadsPossible);
-                    if (apiDownloadsPossible) {
-                        account.setProperty(PROPERTY_ACCOUNT_ALLOW_API_DOWNLOAD_ATTEMPT_IN_WEBSITE_MODE, true);
-                    } else {
-                        account.removeProperty(PROPERTY_ACCOUNT_ALLOW_API_DOWNLOAD_ATTEMPT_IN_WEBSITE_MODE);
-                    }
+                    /* {"server_time":"2023-11-30 15:53:33","status":404,"msg":"no file"} */
+                    apiDownloadsPossible = true;
+                }
+            } catch (final Throwable e) {
+                logger.log(e);
+                logger.info("Exception occured API download check");
+            } finally {
+                logger.info("API download status: " + apiDownloadsPossible);
+                if (apiDownloadsPossible) {
+                    account.setProperty(PROPERTY_ACCOUNT_ALLOW_API_DOWNLOAD_ATTEMPT_IN_WEBSITE_MODE, true);
+                } else {
+                    account.removeProperty(PROPERTY_ACCOUNT_ALLOW_API_DOWNLOAD_ATTEMPT_IN_WEBSITE_MODE);
                 }
             }
         }
@@ -5497,14 +5503,18 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
             /* No error */
             return entries;
         }
-        String errormsg = (String) entries.get("msg");
-        if (StringUtils.isEmpty(errormsg)) {
-            errormsg = "Unknown error";
-        }
+        final String errormsg = (String) entries.get("msg");
         /**
          * TODO: Maybe first check for errormessage based on text, then handle statuscode. </br>
          * One statuscode can be returned with different errormessages!
          */
+        /* First check for specific error messages */
+        if (errormsg != null) {
+            if (errormsg.equalsIgnoreCase("This function not allowed in API")) {
+                /* API does not allow user to download so basically we can't use it -> Temp disable account. */
+                throw new AccountUnavailableException("API does not allow download | Contact support of this website", 5 * 60 * 1000l);
+            }
+        }
         if (statuscode == 403) {
             /* Account related error */
             throw new AccountInvalidException(errormsg);

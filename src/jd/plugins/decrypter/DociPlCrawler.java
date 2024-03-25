@@ -32,13 +32,13 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "doci.pl" }, urls = { "https?://(?:www\\.)?doci\\.pl/[^\\?\\&]+" })
-public class DociPl extends PluginForDecrypt {
-    public DociPl(PluginWrapper wrapper) {
+public class DociPlCrawler extends PluginForDecrypt {
+    public DociPlCrawler(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String host_plugin_string = "docidecrypted://";
         jd.plugins.hoster.DociPl.prepBR(this.br);
         br.getPage(param.getCryptedUrl());

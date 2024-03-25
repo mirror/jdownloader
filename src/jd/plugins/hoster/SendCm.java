@@ -430,7 +430,7 @@ public class SendCm extends XFileSharingProBasic {
     protected AccountInfo fetchAccountInfoAPI(final Browser br, final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         loginAPI(br, account);
-        final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
+        final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         /** 2019-07-31: Better compare expire-date against their serverside time if possible! */
         final String server_timeStr = (String) entries.get("server_time");
         final Map<String, Object> result = (Map<String, Object>) entries.get("result");
@@ -452,6 +452,7 @@ public class SendCm extends XFileSharingProBasic {
             premium_expireStr = (String) entries.get("premim_expire");
         }
         final String premium_bandwidthBytesStr = (String) result.get("premium_bandwidth");
+        long premium_bandwidthBytes = -1;
         final String traffic_leftBytesStr = (String) result.get("traffic_left");
         /*
          * 2019-08-22: For newly created free accounts, an expire-date will always be given, even if the account has never been a premium
@@ -462,7 +463,8 @@ public class SendCm extends XFileSharingProBasic {
             expire_milliseconds_precise_to_the_second = TimeFormatter.getMilliSeconds(premium_expireStr, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH);
         }
         if (premium_bandwidthBytesStr != null) {
-            ai.setTrafficLeft(SizeFormatter.getSize(premium_bandwidthBytesStr));
+            premium_bandwidthBytes = SizeFormatter.getSize(premium_bandwidthBytesStr);
+            ai.setTrafficLeft(premium_bandwidthBytes);
         } else if (traffic_leftBytesStr != null) {
             ai.setTrafficLeft(SizeFormatter.getSize(traffic_leftBytesStr));
         } else {
@@ -472,13 +474,23 @@ public class SendCm extends XFileSharingProBasic {
         if (premiumDurationMilliseconds <= 0) {
             /* Expired premium or no expire date given --> It is usually a Free Account */
             setAccountLimitsByType(account, AccountType.FREE);
+            // ai.setExpired(true);
         } else {
             /* Expire date is in the future --> It is a premium account */
             ai.setValidUntil(System.currentTimeMillis() + premiumDurationMilliseconds);
             setAccountLimitsByType(account, AccountType.PREMIUM);
         }
-        if (account.getType() == AccountType.FREE && premium_bandwidthBytesStr == null) {
-            throw new AccountInvalidException("You can only use premium accounts or free accounts with premium traffic via API");
+        if (premium_bandwidthBytes <= 0) {
+            if (account.getType() == AccountType.FREE) {
+                /* Free account without premium traffic */
+                throw new AccountInvalidException("You can only use premium accounts or free accounts with premium traffic via API.");
+            } else {
+                /* Premium account without traffic */
+                String msg = "This is a paid account but no longer has direct link traffic available. This can be purchased from this page: send.cm/pricing.";
+                msg += "\r\nTo use the direct_link API, you need a Pro or Premium account and direct link traffic.";
+                msg += "\r\nTo use JDownloader for downloading from send.cm website, you need a paid account and 'direct link traffic'.";
+                throw new AccountInvalidException(msg);
+            }
         }
         {
             /* Now set less relevant account information */

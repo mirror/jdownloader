@@ -82,7 +82,7 @@ public class NitroFlareCom extends PluginForHost {
          * 2024-02-06: Ugly workaround as someone is not releasing CORE-updates and I do not want to move NitroflareConfig.class into this
          * class. Context: https://board.jdownloader.org/showthread.php?t=95064
          */
-        /** 2024-03-25: Nowq their API is unreliable and I've introduced the same workaround to switch from API to website. */
+        /** 2024-03-25: Now their API is unreliable and I've introduced the same workaround to switch from API to website. */
         // TODO: Remove this workaround
         final String propertyForSpecialAPIModeSettingResetWorkaround202403 = "api_setting_reset_workaround_2024_03_25";
         final boolean workaroundSwitchToAPI = false;
