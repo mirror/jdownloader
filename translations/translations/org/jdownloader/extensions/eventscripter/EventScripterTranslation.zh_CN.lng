@@ -51,7 +51,7 @@ example_script_name=示例
 interval_settings=调用间隔(毫秒)
 loading_editor_title=正在载入编辑器…
 none_trigger=// 这个事件将永远不会被触发。
-permission_msg=事件脚本 '%s1' 需要用于触发器 '%s2' 的权限。\r\n该脚本尝试 \r\n%s3。 \r\n你是否想要允许这个? 如果你不确定，请检查你的脚本!
+permission_msg=事件脚本 '%s1' 需要用于触发器 '%s2' 的权限。\r\n该脚本尝试 \r\n%s3。 \r\n你想要允许这个吗? 如果你不确定，请检查你的脚本!
 permission_title=需要事件脚本工具权限!
 properties_for_eventtrigger=// ========= 事件触发器 '%s1' 的属性  =========
 reset_link_on_low_speed=若速度太低则重置下载
@@ -59,7 +59,7 @@ script_editor_title=脚本编辑器: %s1
 securityLoading=你正在尝试加载并执行来自 %s1 的 JavaScript。 请记住，这个脚本具有对当前环境属性和函数具有完整的访问权限。仅加载受信任的代码! 我们推荐仅加载本地受信任的 JavaScript 文件。
 securityLoading_title=安全警告!
 showMessageDialog_title=告警消息来自 %s1@%s2
-sure_delete_entries=你是否真的想要删除这 %s1 个脚本吗?
+sure_delete_entries=你真的想要删除这 %s1 个脚本吗?
 synchronous=脚本的同步执行
 synchronous_desc=若你不希望当第一个实例仍在运行期间再次执行这个脚本的话，则请启用同步执行。如果你想通过引用修改参数，则请确保启用这个选项。
 syntax_error=JavaScript 语法错误
