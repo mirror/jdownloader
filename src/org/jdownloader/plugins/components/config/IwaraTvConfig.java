@@ -14,11 +14,11 @@ import org.jdownloader.plugins.config.Type;
 @PluginHost(host = "iwara.tv", type = Type.HOSTER)
 public interface IwaraTvConfig extends PluginConfigInterface {
     public static final IwaraTvConfig.TRANSLATION TRANSLATION                                           = new TRANSLATION();
-    final String                                  text_ProfileCrawlerEnableFastLinkcheck                = "Enable fast linkcheck for videos found via profile crawler?";
+    final String                                  text_ProfileCrawlerEnableFastLinkcheck                = "Enable fast linkcheck for videos found via profile & playlist crawler?";
     final String                                  text_PreferredFilenameSchemeType                      = "Select preferred filename scheme type";
     final String                                  text_PreferredFilenameScheme                          = "Select preferred filename scheme";
     final String                                  text_FindFilesizeDuringAvailablecheck                 = "Find filesize during linkcheck?\r\nWarning: Can slow down linkcheck!";
-    final String                                  text_ProfileCrawlerSkipExternalURLs                   = "Profile crawler: Skip externally hosted videos e.g. youtube.com URLs?";
+    final String                                  text_ProfileCrawlerSkipExternalURLs                   = "Profile/Playlist crawler: Skip externally hosted videos e.g. youtube.com URLs?";
     final String                                  text_ScanForDownloadableLinksInContentDescription     = "Scan for URLs in content description?";
     final String                                  text_RegexWhitelistForCrawledUrlsInContentDescription = "RegEx whitelist for crawled URLs from content description e.g. '(?i).*(site\\.tld|site2\\.tld).*' [Empty = Allow all URLs]";
     final String                                  text_DisplayErrorOnTooSmallVideoFilesize              = "Display error if video size is lower than 75% of expected highest filesize?";

@@ -73,18 +73,22 @@ public class IwaraTvCrawler extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:[A-Za-z0-9]+\\.)?" + buildHostsPatternPart(domains) + "/(?:(?:users|profile)/[^/\\?]+(/videos)?|videos?/[A-Za-z0-9]+)");
+            ret.add("https?://(?:[A-Za-z0-9]+\\.)?" + buildHostsPatternPart(domains) + "/(?:(?:users|profile)/[^/\\?]+(/videos)?|videos?/[A-Za-z0-9]+|playlist/[a-f0-9\\-]+)");
         }
         return ret.toArray(new String[0]);
     }
 
-    private static final String TYPE_USER  = "https?://[^/]+/(?:users|profile)/([^/]+)(/videos)?";
-    private static final String TYPE_VIDEO = "https?://[^/]+/videos?/([A-Za-z0-9]+)";
+    private static final String PATTERN_USER     = "https?://[^/]+/(?:users|profile)/([^/]+)(/videos)?";
+    private static final String PATTERN_VIDEO    = "https?://[^/]+/videos?/([A-Za-z0-9]+)";
+    private static final String PATTERN_PLAYLIST = "(?i)https?://[^/]+/playlist/([a-f0-9\\-]+)";
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final Account account = AccountController.getInstance().getValidAccount(this.getHost());
-        if (param.getCryptedUrl().matches(TYPE_USER)) {
+        final String playlistID;
+        if (param.getCryptedUrl().matches(PATTERN_USER)) {
             return crawlChannel(param, account);
+        } else if ((playlistID = new Regex(param.getCryptedUrl(), PATTERN_PLAYLIST).getMatch(0)) != null) {
+            return this.crawlPlaylist(playlistID);
         } else {
             return crawlSingleVideo(param, account);
         }
@@ -92,8 +96,7 @@ public class IwaraTvCrawler extends PluginForDecrypt {
 
     /** Crawls all videos of a user/channel. */
     private ArrayList<DownloadLink> crawlChannel(final CryptedLink param, final Account account) throws Exception {
-        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final String usernameSlug = new Regex(param.getCryptedUrl(), TYPE_USER).getMatch(0);
+        final String usernameSlug = new Regex(param.getCryptedUrl(), PATTERN_USER).getMatch(0);
         if (usernameSlug == null) {
             /* Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -112,7 +115,6 @@ public class IwaraTvCrawler extends PluginForDecrypt {
         final String userid = user.get("id").toString();
         final HashSet<String> dupes = new HashSet<String>();
         dupes.add("thumbnails");
-        int page = 1;
         final UrlQuery query = new UrlQuery();
         query.add("sort", "date");
         query.add("user", userid);
@@ -122,17 +124,41 @@ public class IwaraTvCrawler extends PluginForDecrypt {
         final FilePackage fp = FilePackage.getInstance();
         fp.setAllowInheritance(true);
         fp.setName(usernameForFilename);
+        final String baseurl = br.getURL("/videos").toExternalForm();
+        return this.crawlItemsPagination(baseurl, query, fp);
+    }
+
+    private ArrayList<DownloadLink> crawlPlaylist(final String playlistID) throws Exception {
+        if (playlistID == null) {
+            throw new IllegalArgumentException();
+        }
+        final String url = "https://api.iwara.tv/playlist/" + playlistID;
+        return crawlItemsPagination(url, new UrlQuery(), null);
+    }
+
+    private ArrayList<DownloadLink> crawlItemsPagination(final String url, final UrlQuery query, FilePackage fp) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final HashSet<String> dupes = new HashSet<String>();
+        dupes.add("thumbnails");
+        int page = 1;
+        /* 2021-10-11: Not all user profiles have the "/videos" URL available! */
+        // final String baseURL = "https://" + Browser.getHost(param.getCryptedUrl(), true) + "/users/" + usernameSlug + "/videos";
         final PluginForHost plg = this.getNewPluginForHostInstance(this.getHost());
         int numberofSkippedExternalLinks = 0;
         final IwaraTvConfig cfg = PluginJsonConfig.get(IwaraTvConfig.class);
         do {
             query.addAndReplace("page", Integer.toString(page - 1));
-            br.getPage("/videos?" + query.toString());
+            br.getPage(url + "?" + query.toString());
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            final Map<String, Object> entries2 = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
-            final List<Map<String, Object>> results = (List<Map<String, Object>>) entries2.get("results");
+            final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+            final Map<String, Object> playlistmap = (Map<String, Object>) entries.get("playlist");
+            if (fp == null && playlistmap != null) {
+                fp = FilePackage.getInstance();
+                fp.setName(playlistmap.get("title").toString());
+            }
+            final List<Map<String, Object>> results = (List<Map<String, Object>>) entries.get("results");
             int foundNumberofNewItemsThisPage = 0;
             int numberofSkippedExternalLinksThisPage = 0;
             for (final Map<String, Object> result : results) {
@@ -183,8 +209,8 @@ public class IwaraTvCrawler extends PluginForDecrypt {
                 foundNumberofNewItemsThisPage++;
             }
             numberofSkippedExternalLinks += numberofSkippedExternalLinksThisPage;
-            final int count = ((Number) entries2.get("count")).intValue();
-            final int limit = ((Number) entries2.get("limit")).intValue();
+            final int count = ((Number) entries.get("count")).intValue();
+            final int limit = ((Number) entries.get("limit")).intValue();
             logger.info("Crawled page " + page + " | Found items on this page: " + foundNumberofNewItemsThisPage + " | Total so far: " + ret.size() + " | Skipped externally hosted items this page: " + numberofSkippedExternalLinksThisPage + " | Skipped externally hosted items so far: " + numberofSkippedExternalLinks);
             if (this.isAbort()) {
                 logger.info("Stopping because: Aborted by user");
@@ -255,7 +281,7 @@ public class IwaraTvCrawler extends PluginForDecrypt {
             /* Video is not hosted on iwara.tv but on a 3rd party website. */
             final DownloadLink parent = param.getDownloadLink();
             boolean allowReturnExternallyHostedVideoURLs = true;
-            if (parent != null && parent.getContainerUrl() != null && parent.getContainerUrl().matches(TYPE_USER) && cfg.isProfileCrawlerSkipExternalURLs()) {
+            if (parent != null && parent.getContainerUrl() != null && parent.getContainerUrl().matches(PATTERN_USER) && cfg.isProfileCrawlerSkipExternalURLs()) {
                 /*
                  * Single video URL was returned as part of profile crawl process and user disabled externally hosted content when videos
                  * got returned by profile crawler.

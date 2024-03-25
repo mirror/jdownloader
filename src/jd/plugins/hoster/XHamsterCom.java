@@ -112,7 +112,7 @@ public class XHamsterCom extends PluginForHost {
             /* Movies old pattern --> Redirects to TYPE_VIDEOS_2 (or TYPE_VIDEOS_3) */
             pattern += "|https?://(?:[a-z0-9\\-]+\\.)?" + buildHostsPatternPart(domains) + "/movies/[0-9]+/[^/]+\\.html";
             /* Premium pattern */
-            pattern += "|https?://(?:gold\\.xhamsterpremium\\.com|faphouse\\.com)/videos/([A-Za-z0-9]+)";
+            pattern += "|https?://(?:gold\\.xhamsterpremium\\.com|faphouse\\.com)/([a-z]{2}/)?videos/([A-Za-z0-9]+)";
             ret.add(pattern);
         }
         return ret.toArray(new String[0]);
@@ -145,7 +145,7 @@ public class XHamsterCom extends PluginForHost {
     public static final String    domain_premium                         = "faphouse.com";
     public static final String    api_base_premium                       = "https://faphouse.com/api";
     private static final String   TYPE_MOVIES                            = "(?i)^https?://[^/]+/movies/(\\d+)/([^/]+)\\.html$";
-    private static final String   TYPE_VIDEOS                            = "(?i)^https?://[^/]+/videos?/([A-Za-z0-9\\-]+)$";
+    private static final String   TYPE_VIDEOS                            = "(?i)^https?://[^/]+/(?:[a-z]{2}/)?videos?/([A-Za-z0-9\\-]+)$";
     private static final String   TYPE_VIDEOS_2                          = "(?i)^https?://[^/]+/videos/([a-z0-9\\-_]+)-(\\d+)$";
     private static final String   TYPE_VIDEOS_3                          = "(?i)^https?://[^/]+/videos/([a-z0-9\\-_]+)-([A-Za-z0-9]+)$";
     private final String          PROPERTY_USERNAME                      = "username";
@@ -357,6 +357,35 @@ public class XHamsterCom extends PluginForHost {
         } else if (br.getURL().matches(TYPE_EMBED)) {
             this.embedToNormalHandling(br, link);
         }
+        final int responsecode = br.getRequest().getHttpConnection().getResponseCode();
+        if (responsecode == 423) {
+            if (isVideoOnlyForFriends(br)) {
+                return AvailableStatus.TRUE;
+            } else if (br.containsHTML("(?i)<title>\\s*Page was deleted\\s*</title>")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (isPasswordProtected(br)) {
+                return AvailableStatus.TRUE;
+            } else {
+                String exactErrorMessage = br.getRegex("class=\"item-status not-found\">\\s*<i class=\"xh-icon smile-sad cobalt\"></i>\\s*<div class=\"status-text\">([^<>]+)</div>").getMatch(0);
+                if (exactErrorMessage == null) {
+                    /* 2021-07-27 */
+                    exactErrorMessage = br.getRegex("class=\"error-title\"[^>]*>([^<>\"]+)<").getMatch(0);
+                }
+                if (exactErrorMessage != null) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 423: " + exactErrorMessage, 60 * 60 * 1000l);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 423", 60 * 60 * 1000l);
+                }
+            }
+        } else if (responsecode == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (responsecode == 410) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (responsecode == 451) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Error 451 Unavailable For Legal Reasons");
+        } else if (responsecode == 452) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
         /* Set some Packagizer properties */
         String username = br.getRegex("class=\"entity-author-container__name\"[^>]*href=\"https?://[^/]+/users/([^<>\"]+)\"").getMatch(0);
         if (username == null) {
@@ -394,35 +423,6 @@ public class XHamsterCom extends PluginForHost {
                 link.setProperty(PROPERTY_TAGS, sb.toString());
             }
         }
-        final int responsecode = br.getRequest().getHttpConnection().getResponseCode();
-        if (responsecode == 423) {
-            if (isVideoOnlyForFriends(br)) {
-                return AvailableStatus.TRUE;
-            } else if (br.containsHTML("(?i)<title>\\s*Page was deleted\\s*</title>")) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else if (isPasswordProtected(br)) {
-                return AvailableStatus.TRUE;
-            } else {
-                String exactErrorMessage = br.getRegex("class=\"item-status not-found\">\\s*<i class=\"xh-icon smile-sad cobalt\"></i>\\s*<div class=\"status-text\">([^<>]+)</div>").getMatch(0);
-                if (exactErrorMessage == null) {
-                    /* 2021-07-27 */
-                    exactErrorMessage = br.getRegex("class=\"error-title\"[^>]*>([^<>\"]+)<").getMatch(0);
-                }
-                if (exactErrorMessage != null) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 423: " + exactErrorMessage, 60 * 60 * 1000l);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 423", 60 * 60 * 1000l);
-                }
-            }
-        } else if (responsecode == 404) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (responsecode == 410) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (responsecode == 451) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Error 451 Unavailable For Legal Reasons");
-        } else if (responsecode == 452) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
         if (this.isPremiumURL(contentURL)) {
             /* Premium content */
             title = br.getRegex("class=\"video__title\">([^<]+)</h1>").getMatch(0);
@@ -444,6 +444,7 @@ public class XHamsterCom extends PluginForHost {
                 }
             }
             if (title != null) {
+                title = Encoding.htmlDecode(title).trim();
                 link.setFinalFileName(title + ".mp4");
             }
         } else {
@@ -1196,24 +1197,26 @@ public class XHamsterCom extends PluginForHost {
             br.getPage(customCheckURLWithCorrectDomain);
         }
         account.setProperty(PROPERTY_ACCOUNT_LAST_USED_FREE_DOMAIN, br.getHost());
-        if (isLoggedInHTMLFree(br)) {
-            logger.info("Free cookie login successful");
-            /* Save new cookie timestamp */
-            account.saveCookies(br.getCookies(br.getHost()), "");
-            final String premiumLoginLink = br.getRegex("\"(https?://[^/]+/faphouse/out\\?xhMedium=[^\"]+)\"").getMatch(0);
-            if (premiumLoginLink != null) {
-                /* Premium lgin is possible. This does not mean that this is a premium account!! */
-                account.setProperty(PROPERTY_ACCOUNT_PREMIUM_LOGIN_URL, premiumLoginLink);
-            } else {
-                account.removeProperty(PROPERTY_ACCOUNT_PREMIUM_LOGIN_URL);
-                account.setType(AccountType.FREE);
-            }
-            return true;
-        } else {
-            /* Try full login */
+        if (!isLoggedInHTMLFree(br)) {
             logger.info("Free cookie login failed");
             return false;
         }
+        logger.info("Free cookie login successful");
+        /* Save new cookie timestamp */
+        account.saveCookies(br.getCookies(br.getHost()), "");
+        String premiumLoginLink = br.getRegex("\"(https?://[^/]+/faphouse/out\\?xhMedium=[^\"]+)\"").getMatch(0);
+        if (premiumLoginLink == null) {
+            /* 2024-03-25 */
+            premiumLoginLink = br.getRegex("\"(https?://[^/]+/fh/out\\?url=[^\"]+)\"").getMatch(0);
+        }
+        if (premiumLoginLink != null) {
+            /* Premium login is possible. This does not mean that this is a premium account!! */
+            account.setProperty(PROPERTY_ACCOUNT_PREMIUM_LOGIN_URL, premiumLoginLink);
+        } else {
+            account.removeProperty(PROPERTY_ACCOUNT_PREMIUM_LOGIN_URL);
+            account.setType(AccountType.FREE);
+        }
+        return true;
     }
 
     private boolean isLoggedinHTMLAndCookiesFree(final Browser br) {
@@ -1309,6 +1312,7 @@ public class XHamsterCom extends PluginForHost {
         final String userId = PluginJSonUtils.getJson(brc, "userId");
         final String success = PluginJSonUtils.getJson(brc, "success");
         if ("true".equalsIgnoreCase(success) && !StringUtils.isEmpty(userId)) {
+            /* Success! */
             logger.info("Premium login successful");
             account.saveCookies(brc.getCookies(domain_premium), "premium");
         } else {
@@ -1351,20 +1355,30 @@ public class XHamsterCom extends PluginForHost {
                     final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
                     long expireTimestamp = 0;
                     final String expireStr = (String) entries.get("expiredAt");
+                    final Boolean isLifetime = (Boolean) entries.get("isLifetime");
                     final Boolean isTrial = (Boolean) entries.get("isTrial");
                     final Boolean hasGoldSubscription = (Boolean) entries.get("hasGoldSubscription");
                     final Boolean isRebillEnabled = (Boolean) entries.get("isRebillEnabled");
                     if (!StringUtils.isEmpty(expireStr)) {
-                        expireTimestamp = TimeFormatter.getMilliSeconds(expireStr, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH);
+                        if (expireStr.matches("^\\d{1,2} [A-Za-z]+ \\d{4}$")) {
+                            /* 2024-03-25 */
+                            expireTimestamp = TimeFormatter.getMilliSeconds(expireStr, "dd MMM yyyy", Locale.ENGLISH);
+                        } else {
+                            expireTimestamp = TimeFormatter.getMilliSeconds(expireStr, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH);
+                        }
                     }
-                    if (Boolean.TRUE.equals(hasGoldSubscription) || Boolean.TRUE.equals(isTrial) || expireTimestamp > System.currentTimeMillis()) {
-                        account.setType(AccountType.PREMIUM);
+                    if (Boolean.TRUE.equals(entries.get("isLifetime")) || Boolean.TRUE.equals(hasGoldSubscription) || Boolean.TRUE.equals(isTrial) || expireTimestamp > System.currentTimeMillis()) {
+                        if (isLifetime) {
+                            account.setType(AccountType.LIFETIME);
+                        } else {
+                            account.setType(AccountType.PREMIUM);
+                        }
                         String accountStatusText;
                         if (Boolean.TRUE.equals(isTrial)) {
                             /* Trial account */
                             accountStatusText = "Trial Account";
                         } else {
-                            accountStatusText = AccountType.PREMIUM.getLabel();
+                            accountStatusText = account.getType().getLabel();
                         }
                         if (Boolean.TRUE.equals(isRebillEnabled)) {
                             accountStatusText += " | Rebill: Yes";
