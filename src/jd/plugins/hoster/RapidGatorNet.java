@@ -1104,16 +1104,18 @@ public class RapidGatorNet extends PluginForHost {
                 br.getPage(getAPIBase() + "user/info?token=" + Encoding.urlEncode(session_id));
                 try {
                     final Map<String, Object> response = handleErrors_api(null, null, account, br);
-                    logger.info("Successfully validated last session");
+                    logger.info("Successfully validated last session:" + session_id + "|Timestamp:" + session_timestamp + "|Age:" + TimeFormatter.formatMilliSeconds((System.currentTimeMillis() - session_timestamp), 0));
                     if (sessionReUseAllowed(account, PROPERTY_timestamp_session_create_api, API_SESSION_ID_REFRESH_TIMEOUT_MINUTES)) {
-                        return response;
+                        final Map<String, Object> ret = new HashMap<String, Object>(response);
+                        // required for later use of getAccountSession(Map)
+                        ret.put("token", session_id);
+                        return ret;
                     } else {
-                        logger.info("Existing session looks to be valid but we are not allowed to re-use it");
+                        throw new AccountInvalidException("Existing session looks to be valid but we are not allowed to re-use it");
                     }
                 } catch (final PluginException e) {
-                    clearAccountSession(account);
-                    logger.info("Failed to re-use last session_id");
                     logger.log(e);
+                    clearAccountSession(account, session_id);
                     br.clearCookies(null);
                 }
             }
@@ -1123,11 +1125,7 @@ public class RapidGatorNet extends PluginForHost {
             br.getPage(getAPIBase() + "user/login?login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
             final Map<String, Object> response = handleErrors_api(null, null, account, br);
             /* 2019-12-14: session_id == PHPSESSID cookie */
-            session_id = (String) response.get("session_id");
-            if (StringUtils.isEmpty(session_id)) {
-                /* 2019-12-14: APIv2 */
-                session_id = (String) response.get("token");
-            }
+            session_id = getAccountSession(response);
             if (StringUtils.isEmpty(session_id)) {
                 /* This should never happen */
                 throw new AccountUnavailableException("Fatal: Failed to find sessionID", 1 * 60 * 1000l);
@@ -1146,15 +1144,17 @@ public class RapidGatorNet extends PluginForHost {
         }
     }
 
-    private void clearAccountSession(Account account) {
+    private void clearAccountSession(Account account, final String clear_session_id) {
         synchronized (account) {
-            account.setType(null);
             final String session_id = getAccountSession(account);
-            final long session_timestamp = account.getLongProperty(PROPERTY_timestamp_session_create_api, 0);
-            account.removeProperty(PROPERTY_sessionid);
-            account.removeProperty(PROPERTY_timestamp_session_create_api);
-            if (session_id != null) {
-                logger.info("ClearSession:" + session_id + "|Timestamp:" + session_timestamp + "|Age:" + TimeFormatter.formatMilliSeconds((System.currentTimeMillis() - session_timestamp), 0));
+            if (clear_session_id == null || clear_session_id.equals(session_id)) {
+                account.setType(null);
+                final long session_timestamp = account.getLongProperty(PROPERTY_timestamp_session_create_api, 0);
+                account.removeProperty(PROPERTY_sessionid);
+                account.removeProperty(PROPERTY_timestamp_session_create_api);
+                if (session_id != null) {
+                    logger.info("ClearSession:" + session_id + "|Timestamp:" + session_timestamp + "|Age:" + TimeFormatter.formatMilliSeconds((System.currentTimeMillis() - session_timestamp), 0));
+                }
             }
         }
     }
@@ -1256,8 +1256,8 @@ public class RapidGatorNet extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server says: 'Please wait ...'", 10 * 60 * 1000l);
                     }
                 } else if (errorMessage.contains("User is not PREMIUM") || errorMessage.contains("This file can be downloaded by premium only") || errorMessage.contains("You can download files up to")) {
-                    if (session_id != null && session_id.equals(getAccountSession(account))) {
-                        clearAccountSession(account);
+                    if (session_id != null) {
+                        clearAccountSession(account, session_id);
                     }
                     throw new AccountRequiredException();
                 } else if (errorMessage.contains("Login or password is wrong") || errorMessage.contains("Error: Error e-mail or password")) {
@@ -1321,13 +1321,28 @@ public class RapidGatorNet extends PluginForHost {
         return response;
     }
 
+    private String getAccountSession(final Map<String, Object> map) throws PluginException {
+        /** Returns session_id stored on given account object. */
+        /* 2019-12-14: session_id == PHPSESSID cookie */
+        String ret = (String) map.get("session_id");
+        if (StringUtils.isEmpty(ret)) {
+            /* 2019-12-14: APIv2 */
+            ret = (String) map.get("token");
+        }
+        if (StringUtils.isEmpty(ret)) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else {
+            return ret;
+        }
+    }
+
     public void handlePremium_api(final DownloadLink link, final Account account) throws Exception {
         String directurl = null;
         String session_id = null;
         if (hotlinkDirectURL != null) {
             directurl = hotlinkDirectURL;
         } else {
-            session_id = getAccountSession(account);
+            session_id = getAccountSession(loginAPI(account));
             this.requestFileInformationAPI(link, account, session_id);
             /* Docs: https://rapidgator.net/article/api/file#download */
             br.getPage(getAPIBase() + "file/download?token=" + session_id + "&file_id=" + Encoding.urlEncode(this.getFID(link)));
