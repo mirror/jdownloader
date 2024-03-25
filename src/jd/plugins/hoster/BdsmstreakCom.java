@@ -25,11 +25,11 @@ import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
@@ -48,12 +48,11 @@ public class BdsmstreakCom extends PluginForHost {
     // Tags:
     // other:
     /* Connection stuff */
-    private static final boolean free_resume       = true;
-    private static final int     free_maxchunks    = 1;
-    private static final int     free_maxdownloads = -1;
-    private String               dllink            = null;
-    private final String         PATTERN_NORMAL    = "(?i)https?://[^/]+/video/(\\d+)(/([a-z0-9\\-]+))?";
-    private final String         PATTERN_EMBED     = "(?i)https?://[^/]+/embed/(\\d+)";
+    private static final int free_maxchunks    = 1;
+    private static final int free_maxdownloads = -1;
+    private String           dllink            = null;
+    private final String     PATTERN_NORMAL    = "(?i)https?://[^/]+/video/(\\d+)(/([a-z0-9\\-]+))?";
+    private final String     PATTERN_EMBED     = "(?i)https?://[^/]+/embed/(\\d+)";
 
     @Override
     public String getAGBLink() {
@@ -68,6 +67,11 @@ public class BdsmstreakCom extends PluginForHost {
         } else {
             return super.getLinkID(link);
         }
+    }
+
+    @Override
+    public boolean isResumeable(final DownloadLink link, final Account account) {
+        return true;
     }
 
     private String getFID(final DownloadLink link) {
@@ -89,6 +93,10 @@ public class BdsmstreakCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        return requestFileInformation(link, false);
+    }
+
+    private AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws IOException, PluginException {
         final String extDefault = ".mp4";
         dllink = null;
         String urlSlug = new Regex(link.getPluginPatternMatcher(), "([a-z0-9\\-]+)/?$").getMatch(0);
@@ -113,7 +121,7 @@ public class BdsmstreakCom extends PluginForHost {
         }
         String title = br.getRegex("property=\"og:title\" content=\"([^<>\"]+)\"").getMatch(0);
         if (title == null) {
-            /* Fallback */
+            /* Fallback: use title from url */
             title = urlSlug.replace("-", " ").trim();
         }
         dllink = br.getRegex("\"(https?://[^\"]+\\.mp4[^\"]+)\"").getMatch(0);
@@ -128,17 +136,17 @@ public class BdsmstreakCom extends PluginForHost {
             title = title.trim();
             link.setName(this.correctOrApplyFileNameExtension(title, extDefault));
         }
-        if (!StringUtils.isEmpty(dllink)) {
+        if (!StringUtils.isEmpty(dllink) && !isDownload) {
             URLConnectionAdapter con = null;
             try {
                 con = br.openHeadConnection(this.dllink);
                 handleConnectionErrors(br, con);
                 if (con.getCompleteContentLength() > 0) {
-                    link.setVerifiedFileSize(con.getCompleteContentLength());
-                }
-                final String ext = Plugin.getExtensionFromMimeTypeStatic(con.getContentType());
-                if (ext != null) {
-                    link.setFinalFileName(this.correctOrApplyFileNameExtension(title, "." + ext));
+                    if (con.isContentDecoded()) {
+                        link.setDownloadSize(con.getCompleteContentLength());
+                    } else {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
                 }
             } finally {
                 try {
@@ -152,11 +160,11 @@ public class BdsmstreakCom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
-        requestFileInformation(link);
+        requestFileInformation(link, true);
         if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, this.isResumeable(link, null), free_maxchunks);
         handleConnectionErrors(br, dl.getConnection());
         dl.startDownload();
     }

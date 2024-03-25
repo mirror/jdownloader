@@ -21,6 +21,7 @@ import java.util.List;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -64,15 +65,17 @@ public class MissavComCrawler extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/[a-z]{2}/([A-Za-z0-9\\-]+)");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:dm\\d+/)?[a-z]{2}/([A-Za-z0-9\\-]+)");
         }
         return ret.toArray(new String[0]);
     }
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        final String contentID = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final MissavCom hosterplugin = (MissavCom) this.getNewPluginForHostInstance(this.getHost());
-        final DownloadLink selfhostedVideo = this.createDownloadlink(param.getCryptedUrl());
+        final String newurl = "https://" + getHost() + "/en/" + contentID;
+        final DownloadLink selfhostedVideo = this.createDownloadlink(newurl);
         selfhostedVideo.setDefaultPlugin(hosterplugin);
         hosterplugin.requestFileInformation(selfhostedVideo);
         /* Prevent hosterplugin from checking this link again. No Exception during check = Item is online. */

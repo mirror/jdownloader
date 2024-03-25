@@ -3201,6 +3201,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
             decoded = p;
         } catch (Exception e) {
             logger.log(e);
+            logger.info("js unpack failed");
         }
         String dllink = null;
         if (decoded != null) {
@@ -3208,10 +3209,10 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
             if (StringUtils.isEmpty(dllink)) {
                 /* Open regex is possible because in the unpacked JS there are usually only 1-2 URLs. */
                 dllink = new Regex(decoded, "(?:\"|')(https?://[^<>\"']*?\\.(avi|flv|mkv|mp4|m3u8))(?:\"|')").getMatch(0);
-            }
-            if (StringUtils.isEmpty(dllink)) {
-                /* Maybe rtmp */
-                dllink = new Regex(decoded, "(?:\"|')(rtmp://[^<>\"']*?mp4:[^<>\"']+)(?:\"|')").getMatch(0);
+                if (StringUtils.isEmpty(dllink)) {
+                    /* Maybe rtmp */
+                    dllink = new Regex(decoded, "(?:\"|')(rtmp://[^<>\"']*?mp4:[^<>\"']+)(?:\"|')").getMatch(0);
+                }
             }
         }
         return dllink;

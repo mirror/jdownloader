@@ -82,16 +82,24 @@ public class NitroFlareCom extends PluginForHost {
          * 2024-02-06: Ugly workaround as someone is not releasing CORE-updates and I do not want to move NitroflareConfig.class into this
          * class. Context: https://board.jdownloader.org/showthread.php?t=95064
          */
+        /** 2024-03-25: Nowq their API is unreliable and I've introduced the same workaround to switch from API to website. */
         // TODO: Remove this workaround
-        final String propertyForSpecialAPIModeSettingResetWorkaround202402 = "api_setting_reset_workaround_2024_02_06";
-        if (!cfg.isUsePremiumAPIEnabled() && !this.getPluginConfig().hasProperty(propertyForSpecialAPIModeSettingResetWorkaround202402)) {
-            cfg.setUsePremiumAPIEnabled(true);
+        final String propertyForSpecialAPIModeSettingResetWorkaround202403 = "api_setting_reset_workaround_2024_03_25";
+        final boolean workaroundSwitchToAPI = false;
+        if (workaroundSwitchToAPI) {
+            if (!cfg.isUsePremiumAPIEnabled() && !this.getPluginConfig().hasProperty(propertyForSpecialAPIModeSettingResetWorkaround202403)) {
+                cfg.setUsePremiumAPIEnabled(true);
+            }
+        } else {
+            if (cfg.isUsePremiumAPIEnabled() && !this.getPluginConfig().hasProperty(propertyForSpecialAPIModeSettingResetWorkaround202403)) {
+                cfg.setUsePremiumAPIEnabled(false);
+            }
         }
         /*
          * Do this only once for each JD installation. If this was executed while the user already had the API setting enabled, do not touch
          * it afterwards and assume the user knows what he is doing.
          */
-        this.getPluginConfig().setProperty(propertyForSpecialAPIModeSettingResetWorkaround202402, true);
+        this.getPluginConfig().setProperty(propertyForSpecialAPIModeSettingResetWorkaround202403, true);
     }
 
     @Override

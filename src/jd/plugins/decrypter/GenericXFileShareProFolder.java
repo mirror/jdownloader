@@ -21,6 +21,12 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+import org.jdownloader.plugins.components.antiDDoSForDecrypt;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -44,12 +50,6 @@ import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.hoster.FileupOrg;
 import jd.plugins.hoster.TakefileLink;
 import jd.plugins.hoster.UploadBoyCom;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 @SuppressWarnings("deprecation")
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
@@ -448,7 +448,7 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
         /* Make sure to get the next page so we don't accidently parse the same page multiple times! */
         String nextPageUrl = br.getRegex("<div class=(\"|')paging\\1>.*?<a href=('|\")([^']+\\&amp;page=" + nextPage + "|/go/[a-zA-Z0-9]{12}/\\d+/?)\\2>").getMatch(2);
         if (nextPageUrl == null) {
-            // send.cm
+            // 2024-03-22: send.cm
             nextPageUrl = br.getRegex("<a class\\s*=\\s*(\"|')page-link\\1[^>]*href\\s*=\\s*('|\")(/\\?[^\"']*op=user_public[^\"']*page=" + nextPage + ")").getMatch(2);
         }
         if (nextPageUrl != null) {

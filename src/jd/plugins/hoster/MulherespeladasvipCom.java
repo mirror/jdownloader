@@ -55,13 +55,14 @@ public class MulherespeladasvipCom extends KernelVideoSharingComV2 {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/videos/(videos/(\\d+/)?[^/\\?#]+/|embed/\\d+)");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(videos/(videos/(\\d+/)?[^/\\?#]+/|embed/\\d+)|video/[a-z0-9\\-]+/)");
         }
         return ret.toArray(new String[0]);
     }
 
-    private final String TYPE_SPECIAL       = "https?://[^/]+/videos/videos/((\\d+)/)?([^/]+)/$";
-    private final String TYPE_SPECIAL_EMBED = "https?://[^/]+/videos/videos/embed/(\\d+)";
+    private final String TYPE_SPECIAL       = "(?i)https?://[^/]+/videos/videos/((\\d+)/)?([^/]+)/$";
+    private final String TYPE_SPECIAL_2     = "(?i)https?://[^/]+/video/([a-z0-9\\-]+)";
+    private final String TYPE_SPECIAL_EMBED = "(?i)https?://[^/]+/videos/videos/embed/(\\d+)";
 
     @Override
     protected boolean isEmbedURL(final String url) {
@@ -82,7 +83,11 @@ public class MulherespeladasvipCom extends KernelVideoSharingComV2 {
         if (url == null) {
             return null;
         } else {
-            return new Regex(url, TYPE_SPECIAL).getMatch(2);
+            String slug = new Regex(url, TYPE_SPECIAL).getMatch(2);
+            if (slug == null) {
+                slug = new Regex(url, TYPE_SPECIAL_2).getMatch(0);
+            }
+            return slug;
         }
     }
 
@@ -90,17 +95,18 @@ public class MulherespeladasvipCom extends KernelVideoSharingComV2 {
     protected String getFUIDFromURL(final String url) {
         if (url == null) {
             return null;
-        } else {
-            if (url.matches(TYPE_SPECIAL)) {
-                final String fuid = new Regex(url, TYPE_SPECIAL).getMatch(1);
-                if (fuid != null) {
-                    return fuid;
-                } else {
-                    return new Regex(url, TYPE_SPECIAL).getMatch(2);
-                }
+        }
+        if (url.matches(TYPE_SPECIAL)) {
+            final String fuid = new Regex(url, TYPE_SPECIAL).getMatch(1);
+            if (fuid != null) {
+                return fuid;
             } else {
-                return new Regex(url, TYPE_SPECIAL_EMBED).getMatch(0);
+                return new Regex(url, TYPE_SPECIAL).getMatch(2);
             }
+        } else if (url.matches(TYPE_SPECIAL_2)) {
+            return new Regex(url, TYPE_SPECIAL_2).getMatch(0);
+        } else {
+            return new Regex(url, TYPE_SPECIAL_EMBED).getMatch(0);
         }
     }
 

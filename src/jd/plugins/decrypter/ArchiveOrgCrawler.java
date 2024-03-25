@@ -170,7 +170,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                         } catch (final Exception e) {
                             /* Rare case e.g.: https://archive.org/details/isbn_9789814585354 */
                             logger.info("Details crawler failed -> Fallback to loose book pages");
-                            return crawlBook(br, param, account);
+                            return crawlBookWebsite(br, param, account);
                         }
                     } else if (mode == BookCrawlMode.ORIGINAL_AND_LOOSE_PAGES) {
                         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
@@ -180,14 +180,14 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                             logger.log(ignore);
                             logger.info("Details crawler failed -> Fallback to returning loose book pages ONLY");
                         }
-                        ret.addAll(crawlBook(br, param, account));
+                        ret.addAll(crawlBookWebsite(br, param, account));
                         return ret;
                     } else {
                         /* Only loose book pages can be crawled. */
-                        return crawlBook(br, param, account);
+                        return crawlBookWebsite(br, param, account);
                     }
                 } else {
-                    return crawlBook(br, param, account);
+                    return crawlBookWebsite(br, param, account);
                 }
             } else if (isArchiveContentURL) {
                 return crawlArchiveContent();
@@ -276,7 +276,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
     }
 
     public static String getIdentifierFromURL(final String url) {
-        return new Regex(url, "/(?:details|download|metadata)/([A-Za-z0-9\\-_\\.]{5,})").getMatch(0);
+        return new Regex(url, "/(?:details|download|metadata)/([A-Za-z0-9\\-_\\.]{2,})").getMatch(0);
     }
 
     /** Crawls all files from "/download/..." URLs. */
@@ -424,8 +424,8 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
             if (isUserProfile) {
                 return this.crawlProfile(identifier, br.getURL());
             } else {
-                logger.info("Crawling collections...");
-                final ArrayList<DownloadLink> collectionResults = crawlViaScrapeAPI(br, "collection:" + identifier, -1);
+                logger.info("Crawling collection...");
+                final ArrayList<DownloadLink> collectionResults = crawlCollection(identifier);
                 if (collectionResults.isEmpty()) {
                     throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER, "EMPTY_COLLECTION_" + identifier);
                 }
@@ -433,6 +433,13 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
             }
         }
         return ret;
+    }
+
+    private ArrayList<DownloadLink> crawlCollection(final String collectionIdentifier) throws Exception {
+        if (StringUtils.isEmpty(collectionIdentifier)) {
+            throw new IllegalArgumentException();
+        }
+        return crawlViaScrapeAPI(br, "collection:" + collectionIdentifier, -1);
     }
 
     private ArrayList<DownloadLink> crawlSearchQueryURL(final Browser br, final CryptedLink param) throws Exception {
@@ -570,19 +577,16 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         return ret;
     }
 
-    /** Crawls desired book. Given browser instance needs to access URL to book in beforehand! */
-    public ArrayList<DownloadLink> crawlBook(final Browser br, final CryptedLink param, final Account account) throws Exception {
-        /* Crawl all pages of a book */
-        final String bookAjaxURL = getBookReaderURL(br);
-        if (bookAjaxURL == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+    public ArrayList<DownloadLink> crawlBook(final Browser br, final String ajaxurl, final Account account) throws Exception {
+        if (StringUtils.isEmpty(ajaxurl)) {
+            throw new IllegalArgumentException();
         }
-        final String bookID = UrlQuery.parse(bookAjaxURL).get("id");
+        final String bookID = UrlQuery.parse(ajaxurl).get("id");
         if (StringUtils.isEmpty(bookID)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         long loanedSecondsLeft = 0;
-        br.getPage(bookAjaxURL);
+        br.getPage(ajaxurl);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -627,7 +631,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
             isMultiVolumeBook = false;
         }
         final String pageFormat;
-        if (bookAjaxURL.matches("(?i).*/page/n\\d+.*")) {
+        if (ajaxurl.matches("(?i).*/page/n\\d+.*")) {
             pageFormat = "/page/n%d";
         } else {
             pageFormat = "/page/%d";
@@ -636,15 +640,9 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
          * Defines how book pages will be arranged on the archive.org website. User can open single pages faster in browser if we get this
          * right.
          */
-        final String bookDisplayMode = new Regex(bookAjaxURL, "(?i)/mode/([^/]+)").getMatch(0);
+        final String bookDisplayMode = new Regex(ajaxurl, "(?i)/mode/([^/]+)").getMatch(0);
         final List<Object> imagesO = (List<Object>) brOptions.get("data");
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        int imagecount = -1;
-        try {
-            imagecount = Integer.parseInt(metadata.get("imagecount").toString());
-        } catch (final Exception ignore) {
-        }
-        final int padLength = StringUtils.getPadLength(imagecount);
         int internalPageIndex = 0;
         for (final Object imageO : imagesO) {
             /*
@@ -657,7 +655,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                 /* When this starts at 0 this means the book has a cover else this will start at 1 -> No cover. */
                 final int archiveOrgPageIndex = ((Number) bookpage.get("leafNum")).intValue();
                 final String url = bookpage.get("uri").toString();
-                final DownloadLink dl = new DownloadLink(hostPlugin, null, "archive.org", url, true);
+                final DownloadLink link = new DownloadLink(hostPlugin, null, "archive.org", url, true);
                 String contentURL = contentURLFormat;
                 if (archiveOrgPageIndex > 1) {
                     contentURL += String.format(pageFormat, archiveOrgPageIndex + 1);
@@ -665,19 +663,18 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                 if (bookDisplayMode != null) {
                     contentURL += "/mode/" + bookDisplayMode;
                 }
-                dl.setContentUrl(contentURL);
-                dl.setFinalFileName(StringUtils.formatByPadLength(padLength, archiveOrgPageIndex) + "_" + title + ".jpg");
-                dl.setProperty(ArchiveOrg.PROPERTY_BOOK_ID, bookID);
-                dl.setProperty(ArchiveOrg.PROPERTY_BOOK_PAGE, archiveOrgPageIndex);
-                dl.setProperty(ArchiveOrg.PROPERTY_BOOK_PAGE_INTERNAL_INDEX, internalPageIndex);
+                link.setContentUrl(contentURL);
+                link.setProperty(ArchiveOrg.PROPERTY_BOOK_ID, bookID);
+                link.setProperty(ArchiveOrg.PROPERTY_BOOK_PAGE, archiveOrgPageIndex);
+                link.setProperty(ArchiveOrg.PROPERTY_BOOK_PAGE_INTERNAL_INDEX, internalPageIndex);
                 if (isMultiVolumeBook) {
-                    dl.setProperty(ArchiveOrg.PROPERTY_BOOK_SUB_PREFIX, subPrefix);
+                    link.setProperty(ArchiveOrg.PROPERTY_BOOK_SUB_PREFIX, subPrefix);
                 }
                 if (Boolean.TRUE.equals(isLendingRequired)) {
-                    dl.setProperty(ArchiveOrg.PROPERTY_IS_LENDING_REQUIRED, true);
+                    link.setProperty(ArchiveOrg.PROPERTY_IS_LENDING_REQUIRED, true);
                 }
                 if (loanedSecondsLeft > 0) {
-                    dl.setProperty(ArchiveOrg.PROPERTY_IS_BORROWED_UNTIL_TIMESTAMP, System.currentTimeMillis() + loanedSecondsLeft * 1000);
+                    link.setProperty(ArchiveOrg.PROPERTY_IS_BORROWED_UNTIL_TIMESTAMP, System.currentTimeMillis() + loanedSecondsLeft * 1000);
                 }
                 /**
                  * Mark pages that are not viewable in browser as offline. </br>
@@ -687,31 +684,49 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                 if (Boolean.FALSE.equals(viewable)) {
                     /* Only downloadable with account */
                     if (PluginJsonConfig.get(ArchiveOrgConfig.class).isMarkNonViewableBookPagesAsOfflineIfNoAccountIsAvailable() && account == null) {
-                        dl.setAvailable(false);
+                        link.setAvailable(false);
                     } else {
                         /* Always mark all pages as online. Non-viewable pages can only be downloaded when an account is present. */
-                        dl.setAvailable(true);
+                        link.setAvailable(true);
                     }
                 } else {
-                    dl.setAvailable(true);
+                    link.setAvailable(true);
                     if (account == null || loanedSecondsLeft == 0) {
-                        dl.setProperty(ArchiveOrg.PROPERTY_IS_FREE_DOWNLOADABLE_BOOK_PREVIEW_PAGE, true);
+                        link.setProperty(ArchiveOrg.PROPERTY_IS_FREE_DOWNLOADABLE_BOOK_PREVIEW_PAGE, true);
                     }
                 }
-                ret.add(dl);
+                ret.add(link);
                 internalPageIndex++;
             }
         }
         if (account != null) {
             account.saveCookies(br.getCookies(br.getHost()), "");
         }
+        /* Add additional properties and filenames. */
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(title);
         if (!StringUtils.isEmpty(description)) {
             fp.setComment(description);
         }
-        fp.addLinks(ret);
+        /* Now we know how many pages the book has -> Set additional information and filename. */
+        final int padLength = StringUtils.getPadLength(internalPageIndex);
+        for (final DownloadLink result : ret) {
+            final int thispage = result.getIntegerProperty(ArchiveOrg.PROPERTY_BOOK_PAGE_INTERNAL_INDEX, 0);
+            result.setFinalFileName(StringUtils.formatByPadLength(padLength, thispage) + "_" + title + ".jpg");
+            result._setFilePackage(fp);
+        }
         return ret;
+    }
+
+    /** Crawls desired book. Given browser instance needs to access URL to book in beforehand! */
+    @Deprecated
+    public ArrayList<DownloadLink> crawlBookWebsite(final Browser br, final CryptedLink param, final Account account) throws Exception {
+        /* Crawl all pages of a book */
+        final String bookAjaxURL = getBookReaderURL(br);
+        if (bookAjaxURL == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        return crawlBook(br, bookAjaxURL, account);
     }
 
     private String getBookReaderURL(final Browser br) {
@@ -1100,50 +1115,63 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         brc.getPage("https://archive.org/metadata/" + Encoding.urlEncode(identifier));
         final Map<String, Object> root = restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.MAP);
         // final Boolean is_dark = (Boolean) root.get("is_dark"); // This means that the content is offline(?)
-        final List<Map<String, Object>> filemaps = (List<Map<String, Object>>) root.get("files");
-        if (filemaps == null || filemaps.isEmpty()) {
+        final List<Map<String, Object>> root_files = (List<Map<String, Object>>) root.get("files");
+        if (root_files == null || root_files.isEmpty()) {
             /* Deleted item */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        final ArchiveOrgConfig cfg = PluginJsonConfig.get(ArchiveOrgConfig.class);
         String desiredSubpathDecoded = null;
         if (sourceurl != null) {
             sourceurl = URLHelper.getUrlWithoutParams(sourceurl);
-            final String fullpath = new URL(sourceurl).getPath();
-            /* JSON metadata will always contain all files but in this case we only want to get all files in a specific subfolder. */
-            final String[] urlParts = fullpath.split("/");
-            // final Pattern ignorepart = Pattern.compile("detail|download");
-            boolean buildSubpathNow = false;
-            for (final String urlPart : urlParts) {
-                if (urlPart.equals(identifier)) {
-                    /* Everything alter the identifier will be used as our internal path. */
-                    buildSubpathNow = true;
-                } else if (buildSubpathNow) {
-                    if (desiredSubpathDecoded == null) {
-                        desiredSubpathDecoded = Encoding.htmlDecode(urlPart);
-                    } else {
-                        desiredSubpathDecoded += "/" + Encoding.htmlDecode(urlPart);
-                    }
+        }
+        final String fullpath = new URL(sourceurl).getPath();
+        /* JSON metadata will always contain all files but in this case we only want to get all files in a specific subfolder. */
+        final String[] urlParts = fullpath.split("/");
+        // final Pattern ignorepart = Pattern.compile("detail|download");
+        boolean buildSubpathNow = false;
+        for (final String urlPart : urlParts) {
+            if (urlPart.equals(identifier)) {
+                /* Everything alter the identifier will be used as our internal path. */
+                buildSubpathNow = true;
+            } else if (buildSubpathNow) {
+                if (desiredSubpathDecoded == null) {
+                    desiredSubpathDecoded = Encoding.htmlDecode(urlPart);
+                } else {
+                    desiredSubpathDecoded += "/" + Encoding.htmlDecode(urlPart);
                 }
             }
         }
+        final String server = root.get("server").toString();
+        final Map<String, Object> root_metadata = (Map<String, Object>) root.get("metadata");
+        /* There is different servers to choose from e.g. see also fields "d1", "d2" and "workable_servers". */
+        final String mediatype = root_metadata.get("mediatype").toString();
+        if (StringUtils.equalsIgnoreCase(mediatype, "collection")) {
+            /* Crawl item with collection crawler */
+            return this.crawlCollection(identifier);
+        }
+        final String dir = root.get("dir").toString();
+        /* Crawl files */
         final ArrayList<DownloadLink> originalItems = new ArrayList<DownloadLink>();
         final ArrayList<DownloadLink> audioPlaylistItems = new ArrayList<DownloadLink>();
         final ArrayList<DownloadLink> desiredSubpathItems = new ArrayList<DownloadLink>();
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final Map<String, Object> root_metadata = (Map<String, Object>) root.get("metadata");
-        /* There is different servers to choose from e.g. see also fields "d1", "d2" and "workable_servers". */
-        final String mediatype = root_metadata.get("mediatype").toString();
-        // final String server = root.get("server").toString();
-        // final String dir = root.get("dir").toString();
-        final Object descriptionO = root_metadata.get("description");
+        final Object descriptionObject = root_metadata.get("description");
+        final String description;
+        if (descriptionObject instanceof String) {
+            description = (String) descriptionObject;
+        } else if (descriptionObject instanceof List) {
+            description = StringUtils.join((List) descriptionObject, ";");
+        } else {
+            description = null;
+        }
         final FilePackage fpRoot = FilePackage.getInstance();
         fpRoot.setName(identifier);
-        if (descriptionO instanceof String) {
-            fpRoot.setComment(descriptionO.toString());
+        if (!StringUtils.isEmpty(description)) {
+            fpRoot.setComment(description);
         }
         final Map<String, FilePackage> fpmap = new HashMap<String, FilePackage>();
         fpmap.put(identifier, fpRoot);
-        final ArchiveOrgConfig cfg = PluginJsonConfig.get(ArchiveOrgConfig.class);
         final boolean crawlOriginalFilesOnly = cfg.isFileCrawlerCrawlOnlyOriginalVersions();
         final boolean crawlArchiveView = cfg.isFileCrawlerCrawlArchiveView();
         final boolean crawlMetadataFiles = cfg.isFileCrawlerCrawlMetadataFiles();
@@ -1152,7 +1180,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         final List<String> skippedItemsFilepaths = new ArrayList<String>();
         final List<List<String>> originalFilesListsForVideoStreams = new ArrayList<List<String>>();
         boolean isAccountRequiredForDownloadStatusForVideoStreams = false;
-        for (final Map<String, Object> filemap : filemaps) {
+        for (final Map<String, Object> filemap : root_files) {
             final String source = filemap.get("source").toString(); // "original", "derivative" or "metadata"
             final String format = (String) filemap.get("format");
             /* Boolean as string */
@@ -1317,7 +1345,35 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         /* Build video Stream playlist if needed */
         final ArrayList<DownloadLink> videoPlaylistItems = new ArrayList<DownloadLink>();
         final PlaylistCrawlMode playlistCrawlMode = cfg.getPlaylistCrawlMode();
-        if (StringUtils.equalsIgnoreCase(mediatype, "movies") && originalFilesListsForVideoStreams.size() == 1) {
+        if (StringUtils.equalsIgnoreCase(mediatype, "texts")) {
+            /* Book crawl handling */
+            // TODO: Add functionality
+            final BookCrawlMode mode = cfg.getBookCrawlMode();
+            /* Decide whether or not we need to crawl the loose book pages. */
+            final boolean isBookLendingRequired = StringUtils.equalsIgnoreCase((String) root_metadata.get("access-restricted-item"), "true");
+            if (isBookLendingRequired || mode == BookCrawlMode.LOOSE_PAGES || mode == BookCrawlMode.ORIGINAL_AND_LOOSE_PAGES) {
+                final UrlQuery query = new UrlQuery();
+                query.add("id", identifier);
+                query.add("itemPath", dir);
+                query.add("server", server);
+                query.add("format", "jsonp");
+                // query.add("subPrefix", identifier);
+                query.add("subPrefix", "001"); // TODO: Remove this hardcoded value
+                query.add("requestUri", "/details/" + identifier);
+                final String url = "https://" + server + "/BookReader/BookReaderJSIA.php?" + query.toString();
+                final ArrayList<DownloadLink> bookResults = this.crawlBook(br, url, null);
+                if (isBookLendingRequired || mode == BookCrawlMode.LOOSE_PAGES) {
+                    /* Return loose pages only */
+                    return bookResults;
+                } else {
+                    /*
+                     * User also wants to have original book files -> Add loose book pages to our results and return all results.
+                     */
+                    ret.addAll(bookResults);
+                    return ret;
+                }
+            }
+        } else if (StringUtils.equalsIgnoreCase(mediatype, "movies") && originalFilesListsForVideoStreams.size() == 1) {
             /* Video "playlist" handling */
             final List<String> thisVideoSegments = originalFilesListsForVideoStreams.get(0);
             int position = 0;
@@ -1377,7 +1433,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
             /* Return only original items */
             return originalItems;
         } else {
-            /* Return all items */
+            /* Return all collected items */
             return ret;
         }
     }

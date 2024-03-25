@@ -75,7 +75,15 @@ public class DoodstreamCom extends XFileSharingProBasic {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
         ret.add(new String[] { "dood.re", "doods.pro", "dood.so", "doodstream.com", "dood.to", "doodapi.com", "dood.watch", "dood.cx", "doodstream.co", "dood.la", "dood.ws", "dood.pm", "dood.sh", "dood.one", "dood.tech", "dood.wf", "dood.yt", "dooood.com", "ds2play.com", "ds2video.com", "d0o0d.com", "do0od.com", "d0000d.com", "d000d.com" });
+        ret.add(new String[] { "poophd.com", "do0d.co", "pooop.online", "poop.com.co" });
         return ret;
+    }
+
+    @Override
+    protected List<String> getDeadDomains() {
+        final ArrayList<String> deadDomains = new ArrayList<String>();
+        deadDomains.add("pooop.online");
+        return deadDomains;
     }
 
     public static void setSSLSocketStreamOptions(final Browser br) {
