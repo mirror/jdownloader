@@ -269,14 +269,18 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
         setDownloadLink(dlLink);
     }
 
-    public void setDownloadLink(DownloadLink dlLink) {
-        link = dlLink;
+    protected void passwordForward(DownloadLink dlLink) {
         if (dlLink != null) {
             final List<String> lst = dlLink.getSourcePluginPasswordList();
             if (lst != null && lst.size() > 0) {
                 getArchiveInfo().getExtractionPasswords().addAll(lst);
             }
         }
+    }
+
+    public void setDownloadLink(DownloadLink dlLink) {
+        link = dlLink;
+        passwordForward(dlLink);
     }
 
     public CrawledLink(CryptedLink cLink) {
