@@ -25,6 +25,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -48,12 +49,16 @@ public class DociPlCrawler extends PluginForDecrypt {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final boolean useJsonEndpoint = false;
         if (useJsonEndpoint && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-            final String username = "TODO";
-            final String fileCode = "TODO";
+            final Regex urlinfo = new Regex(contenturl, "(?i)https?://[^/]+/([^/]+)/.*(d|f)([a-z0-9]+)$");
+            final String username = urlinfo.getMatch(0);
+            final String fileFolderCode = urlinfo.getMatch(2);
+            if (username == null || fileFolderCode == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             br.getHeaders().put("Referer", contenturl);
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-            br.getPage("https://" + getHost() + "/file/file_data/get/" + username + "/" + fileCode);
+            br.getPage("https://" + getHost() + "/file/file_data/get/" + username + "/" + fileFolderCode);
             final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
             final Map<String, Object> response = (Map<String, Object>) entries.get("response");
             final Map<String, Object> data = (Map<String, Object>) response.get("data");

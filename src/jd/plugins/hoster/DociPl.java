@@ -161,9 +161,9 @@ public class DociPl extends PluginForHost {
         } else {
             /* Generate fresh directurl */
             /**
-             * Important: Do not provide account during account-check yet! </br>
-             * For some reason when logged-in, ther fileID is not always present inside html code -> This is a lazy workaround since I was
-             * too lazy to find out why that happens.
+             * Important: File-ID is not visible in html code when logged in so we are not providing an account object for
+             * requestFileInformation even if there is one. </br>
+             * Instead we login later.
              */
             requestFileInformation(link, null);
             String fidStr = br.getRegex("data-file-id=(\\d+)").getMatch(0);
