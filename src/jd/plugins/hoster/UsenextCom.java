@@ -101,55 +101,9 @@ public class UsenextCom extends UseNet {
         return SizeFormatter.getSize(value + unit);
     }
 
-    @Override
-    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        setBrowserExclusive();
-        final AccountInfo ai = new AccountInfo();
-        br.setFollowRedirects(true);
-        final Cookies cookies = account.loadCookies("");
-        boolean freshLoginNeeded = true;
-        final String dashboardUrlRelative = "/ma";
-        if (cookies != null) {
-            br.setCookies(cookies);
-            getPage(br, "https://www." + getHost() + dashboardUrlRelative);
-            if (this.isLoggedinHTML(br)) {
-                logger.info("Cookie login successful");
-                freshLoginNeeded = false;
-            } else {
-                logger.info("Cookie login failed");
-                br.clearCookies(null);
-                account.clearCookies("");
-            }
-        }
-        if (freshLoginNeeded) {
-            logger.info("Performing full login");
-            getPage(br, "https://www." + getHost() + "/");
-            String clientID = br.getRegex("src\\s*=\\s*\"(/App[^\"]*\\.js)\"").getMatch(0);
-            if (clientID != null) {
-                final Browser brc = br.cloneBrowser();
-                brc.getPage(clientID);
-                clientID = brc.getRegex("client_id\\s*:\\s*\"(.*?)\"").getMatch(0);
-            }
-            if (clientID == null) {
-                logger.warning("Fallback to static clientID value");
-                clientID = "852f41f8997141c5b9b59e6d15e03f33"; // 2023-01-04
-            }
-            getPage(br, "https://auth." + getHost() + "/login?culture=de-DE&client_id=" + URLEncode.encodeURIComponent(clientID) + "&CustomCSS=https%3A%2F%2Fwww.usenext.com%2Fauth-css%2Fauth.override.css&returnUrl=https%3A%2F%2Fwww.usenext.com%2F%3Fclient_id%3D" + URLEncode.encodeURIComponent(clientID));
-            final Form login = br.getFormbyKey("username");
-            if (login == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            login.put("username", Encoding.urlEncode(account.getUser()));
-            login.put("password", Encoding.urlEncode(account.getPass()));
-            submitForm(br, login);
-            getPage(br, "https://www." + getHost() + dashboardUrlRelative);
-            if (!isLoggedinHTML(br)) {
-                throw new AccountInvalidException();
-            }
-        }
+    private Map<String, Object> queryAPI(final Account account, final Browser br) throws Exception {
         /* At this point login was successful and all that's left to do is to obtain account information. */
         final String api_url = "https://janus.usenext.com";
-        account.saveCookies(br.getCookies(br.getHost()), "");
         final PostRequest postRequest = br
                 .createJSonPostRequest(
                         URLHelper.parseLocation(new URL(api_url), "/graphql"),
@@ -158,47 +112,112 @@ public class UsenextCom extends UseNet {
         postRequest.getHeaders().put("Origin", "https://www." + br.getHost());
         br.setCurrentURL("https://www." + br.getHost() + "/");
         sendRequest(postRequest);
-        final Map<String, Object> json = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
-        final Map<String, Object> volume = (Map<String, Object>) JavaScriptEngineFactory.walkJson(json, "data/radiusData/volume");
-        final long trafficTotal = parseNumber(volume, "total", -1);
-        final long trafficRemaining = parseNumber(volume, "remaining", -1);
-        final Map<String, Object> extraBoost = (Map<String, Object>) JavaScriptEngineFactory.walkJson(json, "data/radiusData/extraBoost");
-        String accountStatusAdditionalText = null;
-        if (extraBoost != null) {
-            final long boostTotal = parseNumber(extraBoost, "total", -1);
-            final long boostRemaining = parseNumber(extraBoost, "remaining", -1);
-            ai.setTrafficMax(trafficTotal + boostTotal);
-            ai.setTrafficLeft(trafficRemaining + boostRemaining);
-            final SIZEUNIT maxSizeUnit = (SIZEUNIT) CFG_GUI.MAX_SIZE_UNIT.getValue();
-            accountStatusAdditionalText = "Boost remaining: " + SIZEUNIT.formatValue(maxSizeUnit, boostRemaining) + "/" + SIZEUNIT.formatValue(maxSizeUnit, boostTotal);
+        if (br.containsHTML("\"AUTH_NOT_AUTHENTICATED\"")) {
+            throw new AccountInvalidException();
         } else {
-            ai.setTrafficMax(trafficTotal);
-            ai.setTrafficLeft(trafficRemaining);
+            synchronized (account) {
+                account.saveCookies(br.getCookies(br.getHost()), "");
+            }
+            final Map<String, Object> json = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+            return json;
         }
-        final Map<String, Object> currentServiceRound = (Map<String, Object>) JavaScriptEngineFactory.walkJson(json, "data/serviceInformation/currentServiceRound");
-        final String currEndDate = (String) currentServiceRound.get("currEndDate");
-        final Date expireDate = TimeFormatter.parseDateString(currEndDate);
-        String accountStatusPackageText = null;
-        if (expireDate != null) {
-            ai.setValidUntil(expireDate.getTime());
-            accountStatusPackageText = (String) JavaScriptEngineFactory.walkJson(currentServiceRound, "article/name");
-        }
-        if (accountStatusPackageText == null) {
-            accountStatusPackageText = account.getType().getLabel();
-        }
-        account.setMaxSimultanDownloads(30);
-        account.setRefreshTimeout(2 * 60 * 60 * 1000l);
-        ai.setProperty("multiHostSupport", Arrays.asList(new String[] { "usenet" }));
-        if (accountStatusAdditionalText != null) {
-            ai.setStatus(accountStatusPackageText + " | " + accountStatusAdditionalText);
-        } else {
-            ai.setStatus(accountStatusPackageText);
-        }
-        return ai;
     }
 
-    private boolean isLoggedinHTML(final Browser br) {
-        return br.containsHTML("https?://[^/]+/signout\"");
+    @Override
+    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        setBrowserExclusive();
+        synchronized (account) {
+            if (account.getUser() == null || !account.getUser().matches("^avi-\\d+-[a-z0-9]+$")) {
+                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nDer Nutzername muss folgendes Format haben: avi-123456-xxxx...!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUsername must be in the following format: avi-123456-xxxx...!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+            }
+            final AccountInfo ai = new AccountInfo();
+            br.setFollowRedirects(true);
+            final Cookies cookies = account.loadCookies("");
+            Map<String, Object> json = null;
+            final String dashboardUrlRelative = "/ma";
+            if (cookies != null) {
+                br.setCookies(cookies);
+                getPage(br, "https://www." + getHost() + dashboardUrlRelative);
+                try {
+                    json = queryAPI(account, br);
+                    logger.info("Cookie login successful");
+                } catch (PluginException e) {
+                    logger.info("Cookie login failed");
+                    br.clearCookies(null);
+                    account.clearCookies("");
+                }
+            }
+            if (json == null) {
+                logger.info("Performing full login");
+                getPage(br, "https://www." + getHost() + "/");
+                String clientID = null;
+                final String buildManifest = br.getRegex("(/_next/static/[^\"]*?buildManifest.js)\"").getMatch(0);
+                if (buildManifest != null) {
+                    Browser brc = br.cloneBrowser();
+                    brc.getPage(buildManifest);
+                    final String signin = brc.getRegex("\"([^\"]*pages/signin[^\"]*\\.js)\"").getMatch(0);
+                    if (signin != null) {
+                        brc = br.cloneBrowser();
+                        brc.getPage("/_next/" + signin);
+                        clientID = brc.getRegex("a\\s*=\\s*\"([a-f0-9]{32})\"").getMatch(0);
+                    }
+                }
+                if (clientID == null) {
+                    logger.warning("Fallback to static clientID value");
+                    clientID = "852f41f8997141c5b9b59e6d15e03f33"; // 2023-01-04
+                }
+                getPage(br, "https://auth." + getHost() + "/login?culture=de-DE&client_id=" + URLEncode.encodeURIComponent(clientID) + "&CustomCSS=https%3A%2F%2Fwww.usenext.com%2Fauth-css%2Fauth.override.css&returnUrl=https%3A%2F%2Fwww.usenext.com%2F%3Fclient_id%3D" + URLEncode.encodeURIComponent(clientID));
+                final Form login = br.getFormbyKey("username");
+                if (login == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                login.put("username", Encoding.urlEncode(account.getUser()));
+                login.put("password", Encoding.urlEncode(account.getPass()));
+                submitForm(br, login);
+                getPage(br, "https://www." + getHost() + dashboardUrlRelative);
+                json = queryAPI(account, br);
+            }
+            final Map<String, Object> volume = (Map<String, Object>) JavaScriptEngineFactory.walkJson(json, "data/radiusData/volume");
+            final long trafficTotal = parseNumber(volume, "total", -1);
+            final long trafficRemaining = parseNumber(volume, "remaining", -1);
+            final Map<String, Object> extraBoost = (Map<String, Object>) JavaScriptEngineFactory.walkJson(json, "data/radiusData/extraBoost");
+            String accountStatusAdditionalText = null;
+            if (extraBoost != null) {
+                final long boostTotal = parseNumber(extraBoost, "total", -1);
+                final long boostRemaining = parseNumber(extraBoost, "remaining", -1);
+                ai.setTrafficMax(trafficTotal + boostTotal);
+                ai.setTrafficLeft(trafficRemaining + boostRemaining);
+                final SIZEUNIT maxSizeUnit = (SIZEUNIT) CFG_GUI.MAX_SIZE_UNIT.getValue();
+                accountStatusAdditionalText = "Boost remaining: " + SIZEUNIT.formatValue(maxSizeUnit, boostRemaining) + "/" + SIZEUNIT.formatValue(maxSizeUnit, boostTotal);
+            } else {
+                ai.setTrafficMax(trafficTotal);
+                ai.setTrafficLeft(trafficRemaining);
+            }
+            final Map<String, Object> currentServiceRound = (Map<String, Object>) JavaScriptEngineFactory.walkJson(json, "data/serviceInformation/currentServiceRound");
+            final String currEndDate = (String) currentServiceRound.get("currEndDate");
+            final Date expireDate = TimeFormatter.parseDateString(currEndDate);
+            String accountStatusPackageText = null;
+            if (expireDate != null) {
+                ai.setValidUntil(expireDate.getTime());
+                accountStatusPackageText = (String) JavaScriptEngineFactory.walkJson(currentServiceRound, "article/name");
+            }
+            if (accountStatusPackageText == null) {
+                accountStatusPackageText = account.getType().getLabel();
+            }
+            account.setMaxSimultanDownloads(30);
+            account.setRefreshTimeout(2 * 60 * 60 * 1000l);
+            ai.setProperty("multiHostSupport", Arrays.asList(new String[] { "usenet" }));
+            if (accountStatusAdditionalText != null) {
+                ai.setStatus(accountStatusPackageText + " | " + accountStatusAdditionalText);
+            } else {
+                ai.setStatus(accountStatusPackageText);
+            }
+            return ai;
+        }
     }
 
     @Override
