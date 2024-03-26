@@ -585,7 +585,6 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         if (StringUtils.isEmpty(bookID)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        long loanedSecondsLeft = 0;
         br.getPage(ajaxurl);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -606,6 +605,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         // final Map<String, Object> lendingStatus = (Map<String, Object>) lendingInfo.get("lendingStatus");
         final long daysLeftOnLoan = ((Number) lendingInfo.get("daysLeftOnLoan")).longValue();
         final long secondsLeftOnLoan = ((Number) lendingInfo.get("secondsLeftOnLoan")).longValue();
+        long loanedSecondsLeft = 0;
         if (daysLeftOnLoan > 0) {
             loanedSecondsLeft += daysLeftOnLoan * 24 * 60 * 60;
         }
@@ -645,9 +645,9 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         int internalPageIndex = 0;
         for (final Object imageO : imagesO) {
-            /*
-             * Most of all objects will contain an array with 2 items --> Books always have two viewable pages. Exception = First page -->
-             * Cover
+            /**
+             * Most of all objects will contain an array with 2 items --> Books always have two viewable pages. </br>
+             * Exception = First page --> Cover
              */
             final List<Object> pagesO = (List<Object>) imageO;
             for (final Object pageO : pagesO) {
@@ -681,18 +681,18 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                  * If we have borrowed this book, this field will not exist at all.
                  */
                 final Object viewable = bookpage.get("viewable");
-                if (Boolean.FALSE.equals(viewable)) {
+                if (Boolean.TRUE.equals(viewable)) {
+                    link.setAvailable(true);
+                    if (account == null || loanedSecondsLeft == 0) {
+                        link.setProperty(ArchiveOrg.PROPERTY_IS_FREE_DOWNLOADABLE_BOOK_PREVIEW_PAGE, true);
+                    }
+                } else {
                     /* Only downloadable with account */
                     if (PluginJsonConfig.get(ArchiveOrgConfig.class).isMarkNonViewableBookPagesAsOfflineIfNoAccountIsAvailable() && account == null) {
                         link.setAvailable(false);
                     } else {
                         /* Always mark all pages as online. Non-viewable pages can only be downloaded when an account is present. */
                         link.setAvailable(true);
-                    }
-                } else {
-                    link.setAvailable(true);
-                    if (account == null || loanedSecondsLeft == 0) {
-                        link.setProperty(ArchiveOrg.PROPERTY_IS_FREE_DOWNLOADABLE_BOOK_PREVIEW_PAGE, true);
                     }
                 }
                 ret.add(link);

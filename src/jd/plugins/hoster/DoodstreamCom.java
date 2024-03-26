@@ -463,7 +463,8 @@ public class DoodstreamCom extends XFileSharingProBasic {
         final String contentURL = getContentURL(link);
         getPage(contentURL);
         /* Allow redirects to other content-IDs but files should be offline if there is e.g. a redirect to an unsupported URL format. */
-        if (isOffline(link, this.br, getCorrectBR(br)) || !this.canHandle(this.br.getURL())) {
+        final String correctedhtml = getCorrectBR(br);
+        if (isOffline(link, this.br, correctedhtml) || !this.canHandle(this.br.getURL())) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String cptr = br.getRegex("'(/cptr/.*?)'").getMatch(0);
@@ -488,40 +489,36 @@ public class DoodstreamCom extends XFileSharingProBasic {
             }
         }
         if (link.getFinalFileName() == null) {
+            String filename;
             if (contentURL.matches(TYPE_STREAM)) {
-                /* First try to get filename from Chromecast json */
-                String filename = new Regex(getCorrectBR(br), "<title>\\s*([^<>\"]*?)\\s*-\\s*DoodStream(?:\\.com)?\\s*</title>").getMatch(0);
+                filename = new Regex(correctedhtml, "<meta name\\s*=\\s*\"og:title\"[^>]*content\\s*=\\s*\"([^<>\"]+)\"\\s*>").getMatch(0);
                 if (filename == null) {
-                    filename = new Regex(getCorrectBR(br), "<meta name\\s*=\\s*\"og:title\"[^>]*content\\s*=\\s*\"([^<>\"]+)\"\\s*>").getMatch(0);
-                    if (filename == null) {
-                        filename = new Regex(getCorrectBR(br), "videoInfo\\s*:\\s*\\{\\s*title\\s*:\\s*\"(.*?)\"").getMatch(0);
-                    }
-                }
-                if (StringUtils.isEmpty(filename)) {
-                    link.setName(this.getFallbackFilename(link, br));
-                } else {
-                    if (!StringUtils.endsWithCaseInsensitive(filename, ".mp4")) {
-                        filename += ".mp4";
-                    }
-                    link.setFinalFileName(filename);
+                    filename = new Regex(correctedhtml, "videoInfo\\s*:\\s*\\{\\s*title\\s*:\\s*\"(.*?)\"").getMatch(0);
                 }
             } else {
-                String filename = br.getRegex("<meta name\\s*=\\s*\"og:title\"[^>]*content\\s*=\\s*\"([^<>\"]+)\"\\s*>").getMatch(0);
+                filename = br.getRegex("<meta name\\s*=\\s*\"og:title\"[^>]*content\\s*=\\s*\"([^<>\"]+)\"\\s*>").getMatch(0);
                 if (filename == null) {
-                    filename = new Regex(getCorrectBR(br), "videoInfo\\s*:\\s*\\{\\s*title\\s*:\\s*\"(.*?)\"").getMatch(0);
-                }
-                if (StringUtils.isEmpty(filename)) {
-                    link.setName(this.getFallbackFilename(link, br));
-                } else {
-                    if (!StringUtils.endsWithCaseInsensitive(filename, ".mp4")) {
-                        filename += ".mp4";
-                    }
-                    link.setFinalFileName(filename);
+                    filename = new Regex(correctedhtml, "videoInfo\\s*:\\s*\\{\\s*title\\s*:\\s*\"(.*?)\"").getMatch(0);
                 }
                 final String filesize = br.getRegex("class\\s*=\\s*\"size\">.*?</i>\\s*([^<>\"]+)\\s*<").getMatch(0);
                 if (!StringUtils.isEmpty(filesize)) {
                     link.setDownloadSize(SizeFormatter.getSize(filesize));
                 }
+            }
+            if (filename == null) {
+                filename = new Regex(correctedhtml, "<title>\\s*([^<>\"]*?)</title>").getMatch(0);
+            }
+            if (StringUtils.isEmpty(filename)) {
+                link.setName(this.getFallbackFilename(link, br));
+            } else {
+                filename = Encoding.htmlDecode(filename).trim();
+                /* Remove unneeded stuff */
+                filename = filename.replaceFirst("(?i)\\s*-\\s*DoodStream(?:\\.com)?\\s*$", "");
+                filename = filename.replaceFirst("(?i) - PoopHD$", "");
+                if (!StringUtils.endsWithCaseInsensitive(filename, ".mp4")) {
+                    filename += ".mp4";
+                }
+                link.setFinalFileName(filename);
             }
         }
         return AvailableStatus.TRUE;
@@ -541,7 +538,11 @@ public class DoodstreamCom extends XFileSharingProBasic {
             requestFileInformationWebsite(link, account, true);
             if (this.getContentURL(link).matches(TYPE_DOWNLOAD)) {
                 /* Basically the same as the other type but hides that via iFrame. */
-                final String embedURL = br.getRegex("<iframe[^>]*src=\"(/e/[a-z0-9]+)\"").getMatch(0);
+                String embedURL = br.getRegex("<iframe[^>]*src=\"(/e/[a-z0-9]+)\"").getMatch(0);
+                if (embedURL == null && br.containsHTML("#poopiframe")) {
+                    /* 2024-03-26: poop.com.co special handling */
+                    embedURL = "/playr.php?id=" + this.getFUIDFromURL(link);
+                }
                 if (embedURL == null) {
                     checkSSLInspection(br, link, account);
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -549,37 +550,40 @@ public class DoodstreamCom extends XFileSharingProBasic {
                     this.getPage(embedURL);
                 }
             }
-            String captchaContainer = br.getRegex("\\$\\.get\\(\"(/[^\"]+op=validate\\&gc_response=)").getMatch(0);
-            if (captchaContainer != null) {
-                if (br.containsHTML("turnstile\\.render")) {
-                    throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported captcha type 'Cloudflare Turnstile'");
-                } else {
-                    final Browser brc = br.cloneBrowser();
-                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, brc).getToken();
-                    this.getPage(brc, captchaContainer + Encoding.urlEncode(recaptchaV2Response), true);
-                    sleep(1000, link);
-                    getPage(br.getURL());// location.reload();
-                    captchaContainer = br.getRegex("\\$\\.get\\(\"(/[^\"]+op=validate\\&gc_response=)").getMatch(0);
-                    if (captchaContainer != null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            dllink = this.getDllink(link, account, br, br.getRequest().getHtmlCode());
+            if (dllink == null) {
+                String captchaContainer = br.getRegex("\\$\\.get\\(\"(/[^\"]+op=validate\\&gc_response=)").getMatch(0);
+                if (captchaContainer != null) {
+                    if (br.containsHTML("turnstile\\.render")) {
+                        throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported captcha type 'Cloudflare Turnstile'");
+                    } else {
+                        final Browser brc = br.cloneBrowser();
+                        final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, brc).getToken();
+                        this.getPage(brc, captchaContainer + Encoding.urlEncode(recaptchaV2Response), true);
+                        sleep(1000, link);
+                        getPage(br.getURL());// location.reload();
+                        captchaContainer = br.getRegex("\\$\\.get\\(\"(/[^\"]+op=validate\\&gc_response=)").getMatch(0);
+                        if (captchaContainer != null) {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
                     }
                 }
+                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                final String continue_url = br.getRegex("'(/pass_md5/[^<>\"\\']+)'").getMatch(0);
+                if (continue_url == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                final String token = br.getRegex("\\&token=([a-z0-9]+)").getMatch(0);
+                if (token == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                this.getPage(continue_url);
+                /* Make sure we got a valid URL before continuing! */
+                final URL dlurl = new URL(br.getRequest().getHtmlCode());
+                // final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                dllink = dlurl.toExternalForm();
+                dllink += "?token=" + token + "&expiry=" + System.currentTimeMillis();
             }
-            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            final String continue_url = br.getRegex("'(/pass_md5/[^<>\"\\']+)'").getMatch(0);
-            if (continue_url == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            final String token = br.getRegex("\\&token=([a-z0-9]+)").getMatch(0);
-            if (token == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            this.getPage(continue_url);
-            /* Make sure we got a valid URL befopre continuing! */
-            final URL dlurl = new URL(br.toString());
-            // final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-            dllink = dlurl.toString();
-            dllink += "?token=" + token + "&expiry=" + System.currentTimeMillis();
         }
         handleDownload(link, account, dllink, null);
     }

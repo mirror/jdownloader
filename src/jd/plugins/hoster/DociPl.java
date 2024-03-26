@@ -20,7 +20,6 @@ import java.util.Map;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.parser.UrlQuery;
@@ -31,7 +30,6 @@ import jd.http.Browser;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
-import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -46,13 +44,11 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "doci.pl" }, urls = { "docidecrypted://.+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "doci.pl" }, urls = { "" })
 public class DociPl extends PluginForHost {
     public DociPl(PluginWrapper wrapper) {
         super(wrapper);
-        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-            this.enablePremium("https://doci.pl/");
-        }
+        this.enablePremium("https://doci.pl/");
     }
 
     @Override
@@ -68,6 +64,7 @@ public class DociPl extends PluginForHost {
     }
 
     private String getContentURL(final DownloadLink link) {
+        /* Correction for links added up until revision 48815. */
         return link.getPluginPatternMatcher().replace("docidecrypted://", "https://");
     }
 
@@ -86,6 +83,22 @@ public class DociPl extends PluginForHost {
     }
 
     @Override
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return "docipl://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return link.getStringProperty(PROPERTY_FILE_ID);
+    }
+
+    public static final String PROPERTY_FILE_ID = "file_id";
+
+    @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         return requestFileInformation(link, null);
     }
@@ -97,6 +110,7 @@ public class DociPl extends PluginForHost {
         }
         final String contenturl = this.getContentURL(link);
         if (!link.isNameSet()) {
+            /* Fallback */
             final String url_filename = new Regex(contenturl, "[^:/]+://[^/]+/(.+)").getMatch(0).replace("/", "_") + ".pdf";
             link.setName(url_filename);
         }
@@ -117,6 +131,10 @@ public class DociPl extends PluginForHost {
         }
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
+        final String documentID = getDocumentID(br);
+        if (documentID != null) {
+            link.setProperty(PROPERTY_FILE_ID, documentID);
         }
     }
 
@@ -141,11 +159,27 @@ public class DociPl extends PluginForHost {
             logger.info("Re-using stored directurl: " + storedDirecturl);
             dllink = storedDirecturl;
         } else {
-            // final String docid = getDocumentID(this.br);
-            requestFileInformation(link, account);
-            final String fidStr = br.getRegex("data-file-id=(\\d+)").getMatch(0);
+            /* Generate fresh directurl */
+            /**
+             * Important: Do not provide account during account-check yet! </br>
+             * For some reason when logged-in, ther fileID is not always present inside html code -> This is a lazy workaround since I was
+             * too lazy to find out why that happens.
+             */
+            requestFileInformation(link, null);
+            String fidStr = br.getRegex("data-file-id=(\\d+)").getMatch(0);
+            if (fidStr == null) {
+                fidStr = br.getRegex("data-item-id=\"(\\d+)\"").getMatch(0);
+                if (fidStr == null) {
+                    /* Fallback to stored ID */
+                    fidStr = this.getFID(link);
+                }
+            }
             if (fidStr == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            /* Login if account is present. */
+            if (account != null) {
+                this.login(account, false);
             }
             final int fid = Integer.parseInt(fidStr);
             final boolean useNewWay = true;
@@ -254,17 +288,21 @@ public class DociPl extends PluginForHost {
                 }
             }
             logger.info("Performing full login");
-            br.getPage("https://" + this.getHost() + "/login.php");
-            final Form loginform = br.getFormbyProperty("name", "login");
-            if (loginform == null) {
-                logger.warning("Failed to find loginform");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            loginform.put("username", Encoding.urlEncode(account.getUser()));
-            loginform.put("password", Encoding.urlEncode(account.getPass()));
-            br.postPage("", "email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-            if (!isLoggedin(br)) {
-                throw new AccountInvalidException();
+            br.getPage("https://" + getHost());
+            final Map<String, Object> loginmap = new HashMap<String, Object>();
+            loginmap.put("email_login", account.getUser());
+            loginmap.put("password_login", account.getPass());
+            loginmap.put("provider_login", "");
+            loginmap.put("remember_login", 1);
+            br.postPageRaw("/account/signin_set", JSonStorage.serializeToJson(loginmap));
+            final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+            if (Boolean.FALSE.equals(entries.get("success"))) {
+                String errormsg = null;
+                final Map<String, Object> responsemap = (Map<String, Object>) entries.get("response");
+                if (responsemap != null) {
+                    errormsg = (String) responsemap.get("info");
+                }
+                throw new AccountInvalidException(errormsg);
             }
             account.saveCookies(br.getCookies(br.getHost()), "");
             return true;

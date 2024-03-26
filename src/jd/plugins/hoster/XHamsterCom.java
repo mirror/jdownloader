@@ -313,7 +313,7 @@ public class XHamsterCom extends PluginForHost {
         final ArrayList<Account> accounts = AccountController.getInstance().getValidAccounts(this.getHost());
         if (accounts != null && accounts.size() > 0) {
             for (final Account acc : accounts) {
-                if (AccountType.PREMIUM.equals(acc.getType())) {
+                if (AccountType.PREMIUM.equals(acc.getType()) || AccountType.LIFETIME.equals(acc.getType())) {
                     premiumAccount = acc;
                     break;
                 }
@@ -332,8 +332,9 @@ public class XHamsterCom extends PluginForHost {
 
     public AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
         final String contentURL = getCorrectedURL(link.getPluginPatternMatcher());
+        final String extDefault = ".mp4";
         if (!link.isNameSet()) {
-            link.setName(getFallbackFileTitle(contentURL) + ".mp4");
+            link.setName(getFallbackFileTitle(contentURL) + extDefault);
         }
         br.setFollowRedirects(true);
         prepBr(this, br);
@@ -429,10 +430,8 @@ public class XHamsterCom extends PluginForHost {
             if (title == null) {
                 title = br.getRegex("property=\"og:title\" content=\"([^\"]+)\"").getMatch(0);
             }
-            if (account == null || account.getType() != AccountType.PREMIUM) {
-                /* Free / Free-Account users can only download trailers. */
-                dllink = br.getRegex("<video src=\"(http[^<>\"]+)\"").getMatch(0);
-            } else {
+            final boolean isPremiumAccount = account != null && (account.getType() == AccountType.PREMIUM || account.getType() == AccountType.LIFETIME);
+            if (isPremiumAccount) {
                 /* Premium users can download the full videos in different qualities. */
                 if (isDownload) {
                     dllink = getDllinkPremium(true);
@@ -442,10 +441,13 @@ public class XHamsterCom extends PluginForHost {
                         link.setDownloadSize(SizeFormatter.getSize(filesizeStr));
                     }
                 }
+            } else {
+                /* Free / Free-Account users can only download trailers. */
+                dllink = br.getRegex("<video src=\"(http[^<>\"]+)\"").getMatch(0);
             }
             if (title != null) {
                 title = Encoding.htmlDecode(title).trim();
-                link.setFinalFileName(title + ".mp4");
+                link.setFinalFileName(title + extDefault);
             }
         } else {
             /* Free content */
@@ -463,16 +465,16 @@ public class XHamsterCom extends PluginForHost {
             }
             // recaptchav2 here, don't trigger captcha until download....
             if (br.containsHTML(recaptchav2)) {
-                if (!isDownload) {
-                    /* Do not ask user to solve captcha during availablecheck, only during download! */
-                    return AvailableStatus.UNCHECKABLE;
-                } else {
+                if (isDownload) {
                     final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
                     final Browser captcha = br.cloneBrowser();
                     captcha.getHeaders().put("Accept", "*/*");
                     captcha.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                     captcha.getPage("/captcha?g-recaptcha-response=" + recaptchaV2Response);
                     br.getPage(br.getURL());
+                } else {
+                    /* Do not ask user to solve captcha during availablecheck, only during download! */
+                    return AvailableStatus.UNCHECKABLE;
                 }
             }
             if (br.containsHTML("(?i)(403 Forbidden|>\\s*This video was deleted\\s*<)")) {
@@ -510,11 +512,11 @@ public class XHamsterCom extends PluginForHost {
             }
             String ext;
             if (!StringUtils.isEmpty(dllink) && dllink.contains(".m3u8")) {
-                ext = ".mp4";
+                ext = extDefault;
             } else if (!StringUtils.isEmpty(dllink)) {
-                ext = getFileNameExtensionFromString(dllink, ".mp4");
+                ext = getFileNameExtensionFromString(dllink, extDefault);
             } else {
-                ext = ".mp4";
+                ext = extDefault;
             }
             if (title != null) {
                 if (getPluginConfig().getBooleanProperty("Filename_id", true)) {
@@ -536,7 +538,7 @@ public class XHamsterCom extends PluginForHost {
             }
         }
         /* 2020-01-31: Do not check filesize if we're currently in download mode as directurl may expire then. */
-        if (!isDownload && !StringUtils.isEmpty(dllink) && !link.isSizeSet() && !StringUtils.containsIgnoreCase(dllink, ".m3u8")) {
+        if (!StringUtils.isEmpty(dllink) && !link.isSizeSet() && !StringUtils.containsIgnoreCase(dllink, ".m3u8") && !isDownload) {
             final Browser brc = br.cloneBrowser();
             brc.setFollowRedirects(true);
             URLConnectionAdapter con = null;

@@ -47,7 +47,6 @@ import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
 
 import jd.PluginWrapper;
-import jd.config.Property;
 import jd.controlling.AccountController;
 import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
 import jd.http.Browser;
@@ -78,6 +77,25 @@ public class RapidGatorNet extends PluginForHost {
         this.enablePremium("https://rapidgator.net/article/premium");
     }
 
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        /* Define custom browser headers and language settings */
+        br.getHeaders().put("Accept-Charset", "ISO-8859-1,utf-8;q=0.7,*;q=0.3");
+        br.getHeaders().put("Accept-Language", "en-US,en;q=0.8");
+        br.getHeaders().put("Cache-Control", null);
+        br.getHeaders().put("Pragma", null);
+        br.setCookie(getHost(), "lang", "en");
+        br.setCustomCharset("UTF-8");
+        final int customReadTimeoutSeconds = PluginJsonConfig.get(RapidGatorConfig.class).getReadTimeout();
+        br.setReadTimeout(customReadTimeoutSeconds * 1000);
+        br.setConnectTimeout(1 * 60 * 1000);
+        /* For API */
+        br.addAllowedResponseCodes(401, 402, 501, 423);
+        br.setFollowRedirects(true);
+        return br;
+    }
+
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         ret.add(new String[] { "rapidgator.net", "rapidgator.asia", "rg.to" });
@@ -103,24 +121,6 @@ public class RapidGatorNet extends PluginForHost {
             ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/file/([a-z0-9]{32}(?:/[^/<>]+\\.html)?|\\d+(?:/[^/<>]+\\.html)?)");
         }
         return ret.toArray(new String[0]);
-    }
-
-    @Override
-    public Browser createNewBrowserInstance() {
-        final Browser br = super.createNewBrowserInstance();
-        /* Define custom browser headers and language settings */
-        br.getHeaders().put("Accept-Charset", "ISO-8859-1,utf-8;q=0.7,*;q=0.3");
-        br.getHeaders().put("Accept-Language", "en-US,en;q=0.8");
-        br.getHeaders().put("Cache-Control", null);
-        br.getHeaders().put("Pragma", null);
-        br.setCookie(getHost(), "lang", "en");
-        br.setCustomCharset("UTF-8");
-        final int customReadTimeoutSeconds = PluginJsonConfig.get(RapidGatorConfig.class).getReadTimeout();
-        br.setReadTimeout(customReadTimeoutSeconds * 1000);
-        br.setConnectTimeout(1 * 60 * 1000);
-        /* For API */
-        br.addAllowedResponseCodes(401, 402, 501, 423);
-        return br;
     }
 
     private final int                  API_SESSION_ID_REFRESH_TIMEOUT_MINUTES      = 30;
@@ -298,7 +298,6 @@ public class RapidGatorNet extends PluginForHost {
             this.loginWebsite(account, false);
         }
         prepDownloadHeader(br);
-        br.setFollowRedirects(true);
         final URLConnectionAdapter con = br.openGetConnection(this.getContentURL(link));
         if (this.looksLikeDownloadableContent(con)) {
             /**
@@ -950,93 +949,76 @@ public class RapidGatorNet extends PluginForHost {
      */
     private boolean loginWebsite(final Account account, final boolean validateCookies) throws Exception {
         synchronized (account) {
-            /* Keep followRedirects information */
-            final boolean ifr = br.isFollowingRedirects();
-            try {
-                br.setCookiesExclusive(true);
-                br.setFollowRedirects(true);
-                final Cookies cookies = account.loadCookies("");
-                if (cookies != null) {
-                    /*
-                     * Make sure that we're logged in. Doing this for every downloadlink might sound like a waste of server capacity but
-                     * really it doesn't hurt anybody.
-                     */
-                    br.setCookies(getHost(), cookies);
-                    if (!validateCookies) {
-                        /* Do not validate cookies */
-                        return false;
-                    }
-                    accessMainpage(br);
-                    if (isLoggedINWebsite(br)) {
-                        logger.info("Successfully validated last session");
-                        if (sessionReUseAllowed(account, PROPERTY_timestamp_session_create_website, WEBSITE_SESSION_ID_REFRESH_TIMEOUT_MINUTES)) {
-                            setAccountTypeWebsite(account, br);
-                            account.saveCookies(br.getCookies(br.getHost()), "");
-                            return true;
-                        }
-                    } else {
-                        logger.info("Cookie login failed");
-                        br.clearCookies(null);
-                    }
+            br.setCookiesExclusive(true);
+            final Cookies cookies = account.loadCookies("");
+            if (cookies != null) {
+                /*
+                 * Make sure that we're logged in. Doing this for every downloadlink might sound like a waste of server capacity but really
+                 * it doesn't hurt anybody.
+                 */
+                br.setCookies(getHost(), cookies);
+                if (!validateCookies) {
+                    /* Do not validate cookies */
+                    return false;
                 }
                 accessMainpage(br);
-                boolean loginSuccess = false;
-                for (int i = 1; i <= 3; i++) {
-                    logger.info("Website login attempt " + i + " of 3");
-                    br.getPage("/auth/login");
-                    String loginPostData = "LoginForm%5Bemail%5D=" + Encoding.urlEncode(account.getUser()) + "&LoginForm%5Bpassword%5D=" + Encoding.urlEncode(account.getPass());
-                    final Form loginForm = br.getFormbyProperty("id", "login");
-                    final String captcha_url = br.getRegex("\"(/auth/captcha/v/[a-z0-9]+)\"").getMatch(0);
-                    String code = null;
-                    if (captcha_url != null) {
-                        final DownloadLink dummyLink = new DownloadLink(this, "Account", this.getHost(), "https://" + this.getHost(), true);
-                        code = getCaptchaCode(captcha_url, dummyLink);
-                        loginPostData += "&LoginForm%5BverifyCode%5D=" + Encoding.urlEncode(code);
-                    }
-                    if (loginForm != null) {
-                        String user = loginForm.getBestVariable("email");
-                        String pass = loginForm.getBestVariable("password");
-                        if (user == null) {
-                            user = "LoginForm%5Bemail%5D";
-                        }
-                        if (pass == null) {
-                            pass = "LoginForm%5Bpassword%5D";
-                        }
-                        loginForm.put(user, Encoding.urlEncode(account.getUser()));
-                        loginForm.put(pass, Encoding.urlEncode(account.getPass()));
-                        if (captcha_url != null) {
-                            loginForm.put("LoginForm%5BverifyCode%5D", Encoding.urlEncode(code));
-                        }
-                        br.submitForm(loginForm);
-                        loginPostData = loginForm.getPropertyString();
+                if (isLoggedINWebsite(br)) {
+                    logger.info("Successfully validated last session");
+                    if (sessionReUseAllowed(account, PROPERTY_timestamp_session_create_website, WEBSITE_SESSION_ID_REFRESH_TIMEOUT_MINUTES)) {
+                        setAccountTypeWebsite(account, br);
+                        account.saveCookies(br.getCookies(br.getHost()), "");
+                        return true;
                     } else {
-                        br.postPage("/auth/login", loginPostData);
+                        logger.info("Session is valid but we aren't allowed to re-use it");
                     }
-                    if (!isLoggedINWebsite(br)) {
-                        logger.info("Login failed");
-                        continue;
-                    } else {
-                        logger.info("Login success");
-                        loginSuccess = true;
-                        break;
-                    }
+                } else {
+                    logger.info("Cookie login failed");
                 }
-                if (!loginSuccess) {
-                    throw new AccountInvalidException();
-                }
-                setAccountTypeWebsite(account, br);
-                account.saveCookies(br.getCookies(br.getHost()), "");
-                account.setProperty(PROPERTY_timestamp_session_create_website, System.currentTimeMillis());
-                return true;
-            } catch (final PluginException e) {
-                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
-                    account.setType(null);
-                    account.setProperty("cookies", Property.NULL);
-                }
-                throw e;
-            } finally {
-                br.setFollowRedirects(ifr);
             }
+            br.clearCookies(null);
+            accessMainpage(br);
+            boolean loginSuccess = false;
+            for (int i = 1; i <= 3; i++) {
+                logger.info("Website login attempt " + i + " of 3");
+                br.getPage("/auth/login");
+                final Form loginForm = br.getFormbyProperty("id", "login");
+                if (loginForm == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                String user = loginForm.getBestVariable("email");
+                String pass = loginForm.getBestVariable("password");
+                if (user == null) {
+                    user = "LoginForm%5Bemail%5D";
+                }
+                if (pass == null) {
+                    pass = "LoginForm%5Bpassword%5D";
+                }
+                loginForm.put(user, Encoding.urlEncode(account.getUser()));
+                loginForm.put(pass, Encoding.urlEncode(account.getPass()));
+                final String captcha_url = br.getRegex("\"(/auth/captcha/v/[a-z0-9]+)\"").getMatch(0);
+                if (captcha_url != null) {
+                    /* Login-captcha */
+                    final DownloadLink dummyLink = new DownloadLink(this, "Account", this.getHost(), "https://" + this.getHost(), true);
+                    final String code = getCaptchaCode(captcha_url, dummyLink);
+                    loginForm.put("LoginForm%5BverifyCode%5D", Encoding.urlEncode(code));
+                }
+                br.submitForm(loginForm);
+                if (isLoggedINWebsite(br)) {
+                    logger.info("Login success");
+                    loginSuccess = true;
+                    break;
+                } else {
+                    logger.info("Login failed");
+                    continue;
+                }
+            }
+            if (!loginSuccess) {
+                throw new AccountInvalidException();
+            }
+            setAccountTypeWebsite(account, br);
+            account.saveCookies(br.getCookies(br.getHost()), "");
+            account.setProperty(PROPERTY_timestamp_session_create_website, System.currentTimeMillis());
+            return true;
         }
     }
 
