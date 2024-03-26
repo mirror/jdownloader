@@ -29,23 +29,6 @@ import java.util.Map.Entry;
 import java.util.WeakHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.storage.JSonMapperException;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.Time;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.net.URLHelper;
-import org.jdownloader.captcha.v2.Challenge;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
-import org.jdownloader.plugins.components.config.RapidGatorConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
@@ -69,6 +52,23 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
+
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.storage.JSonMapperException;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.Time;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.net.URLHelper;
+import org.jdownloader.captcha.v2.Challenge;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
+import org.jdownloader.plugins.components.config.RapidGatorConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class RapidGatorNet extends PluginForHost {
@@ -299,43 +299,51 @@ public class RapidGatorNet extends PluginForHost {
         }
         prepDownloadHeader(br);
         final URLConnectionAdapter con = br.openGetConnection(this.getContentURL(link));
-        if (this.looksLikeDownloadableContent(con)) {
-            /**
-             * Looks like direct-downloadable item. </br>
-             * Either we're logged in as a premium user or this item was made hot-linked by a premium user.
-             */
-            if (con.getCompleteContentLength() > 0) {
-                link.setVerifiedFileSize(con.getCompleteContentLength());
-            }
-            if (link.getFinalFileName() == null) {
-                final String filenameFromHeader = Plugin.getFileNameFromHeader(con);
-                if (filenameFromHeader != null) {
-                    link.setFinalFileName(filenameFromHeader);
+        try {
+            if (this.looksLikeDownloadableContent(con)) {
+                /**
+                 * Looks like direct-downloadable item. </br> Either we're logged in as a premium user or this item was made hot-linked by a
+                 * premium user.
+                 */
+                if (con.getCompleteContentLength() > 0) {
+                    if (con.isContentDecoded()) {
+                        link.setDownloadSize(con.getCompleteContentLength());
+                    } else {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
+                }
+                if (link.getFinalFileName() == null) {
+                    final String filenameFromHeader = Plugin.getFileNameFromHeader(con);
+                    if (filenameFromHeader != null) {
+                        link.setFinalFileName(filenameFromHeader);
+                    }
+                }
+                link.setProperty(PROPERTY_HOTLINK, true);
+                hotlinkDirectURL = con.getURL().toExternalForm();
+            } else {
+                /* Not a direct-URL */
+                br.followConnection();
+                this.checkOfflineWebsite(br, link, true);
+                String filename = br.getRegex("Downloading\\s*:\\s*</strong>\\s*<a href=\"\"[^>]*>([^<>\"]+)<").getMatch(0);
+                if (filename == null) {
+                    filename = br.getRegex("<title>\\s*Download file\\s*([^<>\"]+)</title>").getMatch(0);
+                }
+                final String filesize = br.getRegex("File size:\\s*<strong>([^<>\"]+)</strong>").getMatch(0);
+                if (StringUtils.isNotEmpty(filename)) {
+                    /* Prevent encoding issues when using Content-disposition filenames. */
+                    filename = Encoding.htmlDecode(filename).trim();
+                    link.setFinalFileName(filename);
+                }
+                if (filesize != null) {
+                    link.setDownloadSize(SizeFormatter.getSize(filesize));
+                }
+                final String md5 = br.getRegex(">\\s*MD5\\s*:\\s*([A-Fa-f0-9]{32})<").getMatch(0);
+                if (md5 != null) {
+                    link.setMD5Hash(md5);
                 }
             }
-            link.setProperty(PROPERTY_HOTLINK, true);
-            hotlinkDirectURL = con.getURL().toExternalForm();
-        } else {
-            /* Not a direct-URL */
-            br.followConnection();
-            this.checkOfflineWebsite(br, link, true);
-            String filename = br.getRegex("Downloading\\s*:\\s*</strong>\\s*<a href=\"\"[^>]*>([^<>\"]+)<").getMatch(0);
-            if (filename == null) {
-                filename = br.getRegex("<title>\\s*Download file\\s*([^<>\"]+)</title>").getMatch(0);
-            }
-            final String filesize = br.getRegex("File size:\\s*<strong>([^<>\"]+)</strong>").getMatch(0);
-            if (StringUtils.isNotEmpty(filename)) {
-                /* Prevent encoding issues when using Content-disposition filenames. */
-                filename = Encoding.htmlDecode(filename).trim();
-                link.setFinalFileName(filename);
-            }
-            if (filesize != null) {
-                link.setDownloadSize(SizeFormatter.getSize(filesize));
-            }
-            final String md5 = br.getRegex(">\\s*MD5\\s*:\\s*([A-Fa-f0-9]{32})<").getMatch(0);
-            if (md5 != null) {
-                link.setMD5Hash(md5);
-            }
+        } finally {
+            con.disconnect();
         }
         return AvailableStatus.TRUE;
     }
@@ -479,9 +487,8 @@ public class RapidGatorNet extends PluginForHost {
                 if (allowSolvemediaCaptchaDuringWait) {
                     /**
                      * 2023-10-03: A small trick: We know their Solvemedia key and can thus always obtain captcha solutions at any point of
-                     * time. </br>
-                     * Requesting the captcha here basically allows us to solve it during the serverside wait time which is impossible to do
-                     * in browser.
+                     * time. </br> Requesting the captcha here basically allows us to solve it during the serverside wait time which is
+                     * impossible to do in browser.
                      */
                     final long timeBeforeCaptchaInput = Time.systemIndependentCurrentJVMTimeMillis();
                     final SolveMedia sm = new SolveMedia(br);
@@ -716,11 +723,10 @@ public class RapidGatorNet extends PluginForHost {
     public int getChallengeTimeout(Challenge<?> challenge) {
         /**
          * If users need more than X seconds to enter the captcha [in free download mode before final download-step] and we actually send
-         * the captcha input after this time has passed, rapidgator will 'ban' the IP of the user for at least 60 minutes. </br>
-         * RG will first display a precise errormessage but then it will display the same message which is displayed when the user has
-         * reached the daily/hourly download-limit. </br>
-         * This function exists to avoid this. Instead of sending the captcha it can throw a retry exception, avoiding the 60+ minutes IP
-         * 'ban'.
+         * the captcha input after this time has passed, rapidgator will 'ban' the IP of the user for at least 60 minutes. </br> RG will
+         * first display a precise errormessage but then it will display the same message which is displayed when the user has reached the
+         * daily/hourly download-limit. </br> This function exists to avoid this. Instead of sending the captcha it can throw a retry
+         * exception, avoiding the 60+ minutes IP 'ban'.
          */
         if (useShortChallengeTimeoutToAvoidServersideBan) {
             return FREE_CAPTCHA_EXPIRE_TIME_MILLIS;
