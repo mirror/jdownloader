@@ -3,16 +3,6 @@ package jd.controlling.linkcrawler;
 import java.util.Iterator;
 import java.util.List;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.DomainInfo;
-import org.jdownloader.controlling.Priority;
-import org.jdownloader.controlling.UniqueAlltimeID;
-import org.jdownloader.controlling.filter.FilterRule;
-import org.jdownloader.controlling.packagizer.PackagizerController;
-import org.jdownloader.extensions.extraction.BooleanStatus;
-import org.jdownloader.myjdownloader.client.json.AvailableLinkState;
-import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
-
 import jd.controlling.linkcollector.LinkCollectingInformation;
 import jd.controlling.linkcollector.LinkCollectingJob;
 import jd.controlling.linkcollector.LinkOriginDetails;
@@ -27,6 +17,16 @@ import jd.plugins.DownloadLinkProperty;
 import jd.plugins.LinkInfo;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.DomainInfo;
+import org.jdownloader.controlling.Priority;
+import org.jdownloader.controlling.UniqueAlltimeID;
+import org.jdownloader.controlling.filter.FilterRule;
+import org.jdownloader.controlling.packagizer.PackagizerController;
+import org.jdownloader.extensions.extraction.BooleanStatus;
+import org.jdownloader.myjdownloader.client.json.AvailableLinkState;
+import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
 
 public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>, CheckableLink, AbstractNodeNotifier, Iterable<CrawledLink> {
     private static enum PROPERTY {
@@ -266,22 +266,17 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
     private volatile LinkInfo        linkInfo       = null;
 
     public CrawledLink(DownloadLink dlLink) {
-        link = dlLink;
-        passwordForward(dlLink);
+        setDownloadLink(dlLink);
     }
 
-    protected void passwordForward(DownloadLink dlLink) {
+    public void setDownloadLink(DownloadLink dlLink) {
+        link = dlLink;
         if (dlLink != null) {
             final List<String> lst = dlLink.getSourcePluginPasswordList();
             if (lst != null && lst.size() > 0) {
                 getArchiveInfo().getExtractionPasswords().addAll(lst);
             }
         }
-    }
-
-    public void setDownloadLink(DownloadLink dlLink) {
-        link = dlLink;
-        passwordForward(dlLink);
     }
 
     public CrawledLink(CryptedLink cLink) {
