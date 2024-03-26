@@ -123,7 +123,7 @@ public class RapidGatorNet extends PluginForHost {
         return ret.toArray(new String[0]);
     }
 
-    private final int                  API_SESSION_ID_REFRESH_TIMEOUT_MINUTES      = 30;
+    private final int                  API_SESSION_ID_REFRESH_TIMEOUT_MINUTES      = 45;
     /*
      * 2020-01-07: Use 120 minutes for the website login for now. Consider disabling this on negative feedback as frequent website logins
      * may lead to login-captchas!
@@ -967,23 +967,26 @@ public class RapidGatorNet extends PluginForHost {
                     /* Do not validate cookies */
                     return false;
                 }
+                final long cookies_timestamp = account.getLongProperty(PROPERTY_timestamp_session_create_website, 0);
+                logger.info("VerifyCookies:Timestamp:" + cookies_timestamp + "|Age:" + TimeFormatter.formatMilliSeconds((System.currentTimeMillis() - cookies_timestamp), 0));
                 accessMainpage(br);
                 if (isLoggedINWebsite(br)) {
-                    logger.info("Successfully validated last session");
+                    logger.info("Successfully validated cookies:Timestamp:" + cookies_timestamp + "|Age:" + TimeFormatter.formatMilliSeconds((System.currentTimeMillis() - cookies_timestamp), 0));
                     if (sessionReUseAllowed(account, PROPERTY_timestamp_session_create_website, WEBSITE_SESSION_ID_REFRESH_TIMEOUT_MINUTES)) {
                         setAccountTypeWebsite(account, br);
-                        account.saveCookies(br.getCookies(br.getHost()), "");
+                        setAccountSession(account, br);
                         return true;
                     } else {
-                        logger.info("Session is valid but we aren't allowed to re-use it");
+                        logger.info("Session is valid but we aren't allowed to re-use it:Timestamp:" + cookies_timestamp + "|Age:" + TimeFormatter.formatMilliSeconds((System.currentTimeMillis() - cookies_timestamp), 0));
                     }
                 } else {
-                    logger.info("Cookie login failed");
+                    logger.info("Cookie login failed:Timestamp:" + cookies_timestamp + "|Age:" + TimeFormatter.formatMilliSeconds((System.currentTimeMillis() - cookies_timestamp), 0));
                 }
             }
-            br.clearCookies(null);
+            clearAccountSession(account, br);
             accessMainpage(br);
             boolean loginSuccess = false;
+            // TODO: add 2fa support
             for (int i = 1; i <= 3; i++) {
                 logger.info("Website login attempt " + i + " of 3");
                 br.getPage("/auth/login");
@@ -1007,12 +1010,16 @@ public class RapidGatorNet extends PluginForHost {
                     final DownloadLink dummyLink = new DownloadLink(this, "Account", this.getHost(), "https://" + this.getHost(), true);
                     final String code = getCaptchaCode(captcha_url, dummyLink);
                     loginForm.put("LoginForm%5BverifyCode%5D", Encoding.urlEncode(code));
+                } else if (i > 1) {
+                    throw new AccountInvalidException();
                 }
                 br.submitForm(loginForm);
                 if (isLoggedINWebsite(br)) {
                     logger.info("Login success");
                     loginSuccess = true;
                     break;
+                } else if (br.containsHTML(">\\s*Wrong e-mail or password.\\s*<")) {
+                    throw new AccountInvalidException();
                 } else {
                     logger.info("Login failed");
                     continue;
@@ -1020,11 +1027,30 @@ public class RapidGatorNet extends PluginForHost {
             }
             if (!loginSuccess) {
                 throw new AccountInvalidException();
+            } else {
+                setAccountTypeWebsite(account, br);
+                setAccountSession(account, br);
+                return true;
             }
-            setAccountTypeWebsite(account, br);
+        }
+    }
+
+    private void clearAccountSession(Account account, Browser br) {
+        synchronized (account) {
+            br.clearCookies(null);
+            final long cookies_timestamp = account.getLongProperty(PROPERTY_timestamp_session_create_website, 0);
+            account.clearCookies("");
+            account.removeProperty(PROPERTY_timestamp_session_create_website);
+            if (cookies_timestamp > 0) {
+                logger.info("ClearCookies:Timestamp:" + cookies_timestamp + "|Age:" + TimeFormatter.formatMilliSeconds((System.currentTimeMillis() - cookies_timestamp), 0));
+            }
+        }
+    }
+
+    private void setAccountSession(Account account, Browser br) {
+        synchronized (account) {
             account.saveCookies(br.getCookies(br.getHost()), "");
             account.setProperty(PROPERTY_timestamp_session_create_website, System.currentTimeMillis());
-            return true;
         }
     }
 
@@ -1103,16 +1129,15 @@ public class RapidGatorNet extends PluginForHost {
                     }
                 } catch (final PluginException e) {
                     logger.log(e);
-                    clearAccountSession(account, session_id);
-                    br.clearCookies(null);
                 }
             }
+            clearAccountSession(account, session_id);
+            br.clearCookies(null);
             /* Avoid full logins - RG will temporarily block accounts on too many full logins in a short time! */
             logger.info("Performing full login");
             /* Docs: https://rapidgator.net/article/api/user#login */
             br.getPage(getAPIBase() + "user/login?login=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
             final Map<String, Object> response = handleErrors_api(null, null, account, br);
-            /* 2019-12-14: session_id == PHPSESSID cookie */
             session_id = getAccountSession(response);
             if (StringUtils.isEmpty(session_id)) {
                 /* This should never happen */
