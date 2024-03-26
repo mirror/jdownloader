@@ -414,7 +414,7 @@ public class RapidGatorNet extends PluginForHost {
             }
             this.dl = null;
             logger.info("No direct-URL -> Tring to generate fresh directurl");
-            br.followConnection();
+            br.followConnection(true);
             if (isPremiumAccount && isBuyFile(br, link, account)) {
                 /* 2022-11-07: can be *bypassed* for premium users by using API mode */
                 logger.info("File needs to be bought separately -> Trying to work around this limitation");
