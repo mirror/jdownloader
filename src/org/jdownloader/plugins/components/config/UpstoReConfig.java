@@ -14,12 +14,17 @@ import org.jdownloader.plugins.config.Type;
 public interface UpstoReConfig extends PluginConfigInterface {
     public static final TRANSLATION TRANSLATION                      = new TRANSLATION();
     final String                    text_ActivateReconnectWorkaround = "Activate reconnect workaround for free downloads? Prevents having to enter additional captchas in between downloads.";
+    final String                    text_DowngradeToHTTP             = "Downgrade to HTTP when strict Java settings prevent SHA1 certificate usage.";
     final String                    text_AllowMultipleFreeDownloads  = "Allow up to two free downloads instead of only one?";
     final String                    text_CustomUserAgentHeader       = "Set custom User-Agent header";
 
     public static class TRANSLATION {
         public String getActivateReconnectWorkaround_label() {
             return text_ActivateReconnectWorkaround;
+        }
+
+        public String getDowngradeToHTTP_label() {
+            return text_DowngradeToHTTP;
         }
 
         public String getAllowMultipleFreeDownloads_label() {
@@ -42,16 +47,24 @@ public interface UpstoReConfig extends PluginConfigInterface {
 
     @AboutConfig
     @DefaultBooleanValue(false)
-    @DescriptionForConfigEntry(text_ActivateReconnectWorkaround)
+    @DescriptionForConfigEntry(text_AllowMultipleFreeDownloads)
     @Order(20)
     boolean isAllowMultipleFreeDownloads();
 
     void setAllowMultipleFreeDownloads(boolean b);
 
     @AboutConfig
+    @DefaultBooleanValue(false)
+    @DescriptionForConfigEntry(text_DowngradeToHTTP)
+    @Order(30)
+    boolean isDowngradeToHTTP();
+
+    void setDowngradeToHTTP(boolean b);
+
+    @AboutConfig
     @DefaultStringValue("Mozilla/5.0 (Windows NT 10.0; WOW64; rv:102.0) Gecko/20100101 Firefox/102.0")
     @DescriptionForConfigEntry(text_CustomUserAgentHeader)
-    @Order(30)
+    @Order(40)
     String getCustomUserAgentHeader();
 
     public void setCustomUserAgentHeader(final String str);

@@ -307,6 +307,8 @@ public class UpstoRe extends antiDDoSForHost {
                 }
                 handleErrorsJson();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            } else if (PluginJsonConfig.get(UpstoReConfig.class).isDowngradeToHTTP()) {
+                dllink = dllink.replaceAll("https://", "http://");
             }
         }
         dllink = correctProtocolInFinalDownloadurl(dllink);
