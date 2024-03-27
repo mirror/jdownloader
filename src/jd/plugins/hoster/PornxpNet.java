@@ -17,9 +17,18 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 
+import org.appwork.storage.config.annotations.AboutConfig;
+import org.appwork.storage.config.annotations.DefaultEnumValue;
+import org.appwork.storage.config.annotations.DefaultOnNull;
+import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
+import org.appwork.storage.config.annotations.LabelInterface;
 import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.config.Order;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
@@ -27,6 +36,7 @@ import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -34,6 +44,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.hoster.PornxpNet.PornxpNetConfig.VideoQuality;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class PornxpNet extends PluginForHost {
@@ -46,11 +57,8 @@ public class PornxpNet extends PluginForHost {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
     }
 
-    /* Connection stuff */
-    private static final boolean free_resume                   = true;
-    private static final int     free_maxchunks                = 0;
-    private String               dllink                        = null;
-    private final String         PROPERTY_TAGS_COMMA_SEPARATED = "tags_comma_separated";
+    private String       dllink                        = null;
+    private final String PROPERTY_TAGS_COMMA_SEPARATED = "tags_comma_separated";
 
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
@@ -96,11 +104,25 @@ public class PornxpNet extends PluginForHost {
     }
 
     @Override
+    public boolean isResumeable(final DownloadLink link, final Account account) {
+        return true;
+    }
+
+    public int getMaxChunks(final Account account) {
+        return 0;
+    }
+
+    @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        return requestFileInformation(link, false);
+    }
+
+    private AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
         dllink = null;
+        final String extDefault = ".mp4";
         final String videoid = this.getFID(link);
         if (!link.isNameSet()) {
-            link.setName(videoid + ".mp4");
+            link.setName(videoid + extDefault);
         }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -115,18 +137,24 @@ public class PornxpNet extends PluginForHost {
         if (title != null) {
             title = Encoding.htmlDecode(title);
             title = title.trim();
-            link.setFinalFileName(title + ".mp4");
+            link.setFinalFileName(title + extDefault);
         }
         final String tagsHTML = br.getRegex("class=\"tags\">(.*?)</a> </div></div>").getMatch(0);
         if (tagsHTML != null) {
             final String[] tags = new Regex(tagsHTML, "/tags/([^\"]+)").getColumn(0);
             if (tags != null && tags.length > 0) {
+                final HashSet<String> tagsDupes = new HashSet<String>();
                 final StringBuilder tagsCommaSeparated = new StringBuilder();
-                for (final String tag : tags) {
+                for (String tag : tags) {
+                    tag = Encoding.htmlDecode(tag).trim();
+                    if (!tagsDupes.add(tagsHTML)) {
+                        /* Avoid duplicates */
+                        continue;
+                    }
                     if (tagsCommaSeparated.length() > 0) {
                         tagsCommaSeparated.append(",");
                     }
-                    tagsCommaSeparated.append(Encoding.htmlDecode(tag));
+                    tagsCommaSeparated.append(tag);
                 }
                 logger.info("tagsCommaSeparated[" + tags.length + "] = " + tagsCommaSeparated);
                 link.setProperty(PROPERTY_TAGS_COMMA_SEPARATED, tagsCommaSeparated.toString());
@@ -139,37 +167,63 @@ public class PornxpNet extends PluginForHost {
         /* Find highest quality */
         final String[] qualityurls = br.getRegex("<source src=\"([^\"]+)\"[^>]*type=\"video/mp4\"").getColumn(0);
         if (qualityurls != null && qualityurls.length > 0) {
+            final VideoQuality qual = PluginJsonConfig.get(PornxpNetConfig.class).getVideoQuality();
+            int targetHeight = 0;
+            if (qual == VideoQuality.Q360P) {
+                targetHeight = 360;
+            } else if (qual == VideoQuality.Q480P) {
+                targetHeight = 480;
+            } else if (qual == VideoQuality.Q720P) {
+                targetHeight = 720;
+            } else if (qual == VideoQuality.Q1080P) {
+                targetHeight = 1080;
+            }
             int maxHeight = -1;
+            String bestQualityDownloadlink = null;
+            String userPreferredQualityDownloadlink = null;
             for (final String qualityurl : qualityurls) {
                 final String qualityheightStr = new Regex(qualityurl, "(\\d+)\\.mp4$").getMatch(0);
                 if (qualityheightStr != null) {
                     final int thisQualityHeight = Integer.parseInt(qualityheightStr);
-                    if (thisQualityHeight > maxHeight) {
+                    if (bestQualityDownloadlink == null || thisQualityHeight > maxHeight) {
                         maxHeight = thisQualityHeight;
                         dllink = qualityurl;
+                        bestQualityDownloadlink = qualityurl;
                     }
-                }
-                if (this.dllink == null) {
-                    dllink = qualityurl;
+                    if (thisQualityHeight == targetHeight) {
+                        userPreferredQualityDownloadlink = qualityurl;
+                    }
                 }
             }
-            if (!StringUtils.isEmpty(dllink)) {
-                URLConnectionAdapter con = null;
-                try {
-                    con = br.openHeadConnection(this.dllink);
-                    handleConnectionErrors(br, con);
-                    if (con.getCompleteContentLength() > 0) {
+            if (userPreferredQualityDownloadlink != null) {
+                logger.info("Chose user selected quality: " + targetHeight + "p");
+                dllink = userPreferredQualityDownloadlink;
+            } else {
+                /* Fallback to best */
+                logger.info("Chose max quality: " + maxHeight + "p");
+                dllink = bestQualityDownloadlink;
+            }
+        }
+        if (!StringUtils.isEmpty(dllink) && !isDownload) {
+            URLConnectionAdapter con = null;
+            try {
+                con = br.openHeadConnection(this.dllink);
+                handleConnectionErrors(br, con);
+                if (con.getCompleteContentLength() > 0) {
+                    if (con.isContentDecoded()) {
+                        link.setDownloadSize(con.getCompleteContentLength());
+                    } else {
                         link.setVerifiedFileSize(con.getCompleteContentLength());
                     }
-                    final String ext = Plugin.getExtensionFromMimeTypeStatic(con.getContentType());
-                    if (ext != null && title != null) {
-                        link.setFinalFileName(this.correctOrApplyFileNameExtension(title, "." + ext));
-                    }
-                } finally {
-                    try {
-                        con.disconnect();
-                    } catch (final Throwable e) {
-                    }
+                }
+                final String ext = Plugin.getExtensionFromMimeTypeStatic(con.getContentType());
+                if (ext != null && title != null) {
+                    link.setFinalFileName(this.correctOrApplyFileNameExtension(title, "." + ext));
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
                 }
             }
         }
@@ -182,7 +236,7 @@ public class PornxpNet extends PluginForHost {
         if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(this.br, link, dllink, free_resume, free_maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(this.br, link, dllink, this.isResumeable(link, null), this.getMaxChunks(null));
         handleConnectionErrors(br, dl.getConnection());
         dl.startDownload();
     }
@@ -203,6 +257,70 @@ public class PornxpNet extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return Integer.MAX_VALUE;
+    }
+
+    @Override
+    public Class<? extends PluginConfigInterface> getConfigInterface() {
+        return PornxpNetConfig.class;
+    }
+
+    public static interface PornxpNetConfig extends PluginConfigInterface {
+        public static final TRANSLATION  TRANSLATION  = new TRANSLATION();
+        public static final VideoQuality DEFAULT_MODE = VideoQuality.BEST;
+
+        public static class TRANSLATION {
+            public String getVideoQuality_label() {
+                return "Preferred video quality";
+            }
+        }
+
+        public static enum VideoQuality implements LabelInterface {
+            Q1080P {
+                @Override
+                public String getLabel() {
+                    return "1080p";
+                }
+            },
+            Q720P {
+                @Override
+                public String getLabel() {
+                    return "720p";
+                }
+            },
+            Q480P {
+                @Override
+                public String getLabel() {
+                    return "480p";
+                }
+            },
+            Q360P {
+                @Override
+                public String getLabel() {
+                    return "360p";
+                }
+            },
+            BEST {
+                @Override
+                public String getLabel() {
+                    return "Best";
+                }
+            },
+            DEFAULT {
+                @Override
+                public String getLabel() {
+                    return "Default: " + BEST.getLabel();
+                }
+            };
+        }
+
+        @AboutConfig
+        @DefaultEnumValue("DEFAULT")
+        @Order(10)
+        @DescriptionForConfigEntry("Select preferred video quality")
+        @DefaultOnNull
+        VideoQuality getVideoQuality();
+
+        void setVideoQuality(final VideoQuality mode);
     }
 
     @Override

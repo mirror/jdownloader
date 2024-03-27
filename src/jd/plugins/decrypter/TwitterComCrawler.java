@@ -428,31 +428,36 @@ public class TwitterComCrawler extends PluginForDecrypt {
                 /* Example 2: {"data":{"tweetResult":{"result":{"__typename":"TweetUnavailable","reason":"NsfwLoggedOut"}}}} */
                 /* Example 3: */
                 final Map<String, Object> tweetUnavailableMap = recursiveFindTweetUnavailableMap(entries);
-                if (tweetUnavailableMap == null) {
+                if (tweetUnavailableMap != null) {
+                    final String tweetUnavailableReasonInternal = tweetUnavailableMap.get("reason").toString();
+                    String tweetUnavailableReasonHumanReadableText = null;
+                    try {
+                        if (tweetUnavailableReasonInternal.equalsIgnoreCase("NsfwLoggedOut")) {
+                            /* Account required or given account has no permission to view NSFW content */
+                            if (account != null) {
+                                tweetUnavailableReasonHumanReadableText = "Given account has no permission to view NSFW content.";
+                            } else {
+                                tweetUnavailableReasonHumanReadableText = "Account required to view NSFW content.";
+                            }
+                            throw new AccountRequiredException();
+                        } else {
+                            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                        }
+                    } finally {
+                        if (tweetUnavailableReasonHumanReadableText != null) {
+                            displayBubblenotifyMessage(bubbleNotificationTitle, "Tweet unavailable because: " + tweetUnavailableReasonHumanReadableText);
+                        } else {
+                            displayBubblenotifyMessage(bubbleNotificationTitle, "Tweet unavailable because: API error: " + tweetUnavailableReasonInternal);
+                        }
+                    }
+                } else if (br.getRequest().getHtmlCode().length() <= 100 && !br.containsHTML(tweetID)) {
+                    /* E.g. {"data":{"tweetResult":{}}} */
+                    /* Example URL: https://twitter.com/blabla/status/1760679931984683061 */
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                } else {
                     /* No results and we don't know why */
                     displayBubblenotifyMessage(bubbleNotificationTitle, "Failed to crawl this Tweet for unknown reasons.");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                final String tweetUnavailableReasonInternal = tweetUnavailableMap.get("reason").toString();
-                String tweetUnavailableReasonHumanReadableText = null;
-                try {
-                    if (tweetUnavailableReasonInternal.equalsIgnoreCase("NsfwLoggedOut")) {
-                        /* Account required or given account has no permission to view NSFW content */
-                        if (account != null) {
-                            tweetUnavailableReasonHumanReadableText = "Given account has no permission to view NSFW content.";
-                        } else {
-                            tweetUnavailableReasonHumanReadableText = "Account required to view NSFW content.";
-                        }
-                        throw new AccountRequiredException();
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    }
-                } finally {
-                    if (tweetUnavailableReasonHumanReadableText != null) {
-                        displayBubblenotifyMessage(bubbleNotificationTitle, "Tweet unavailable because: " + tweetUnavailableReasonHumanReadableText);
-                    } else {
-                        displayBubblenotifyMessage(bubbleNotificationTitle, "Tweet unavailable because: API error: " + tweetUnavailableReasonInternal);
-                    }
                 }
             }
         }
