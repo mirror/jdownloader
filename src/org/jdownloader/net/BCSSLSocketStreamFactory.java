@@ -94,9 +94,11 @@ public class BCSSLSocketStreamFactory implements SSLSocketStreamFactory {
                     disableLoop: while (it.hasNext()) {
                         final String next = it.next();
                         if (StringUtils.containsIgnoreCase(next, disabledEntry)) {
-                            for (String enabledEntry : options.getEnabledCipherSuites()) {
-                                if (StringUtils.containsIgnoreCase(next, enabledEntry)) {
-                                    continue disableLoop;
+                            if (!disabledEntry.endsWith("_")) {
+                                for (String enabledEntry : options.getEnabledCipherSuites()) {
+                                    if (StringUtils.containsIgnoreCase(next, enabledEntry)) {
+                                        continue disableLoop;
+                                    }
                                 }
                             }
                             it.remove();
