@@ -208,7 +208,11 @@ public class KemonoParty extends PluginForHost {
                     con = br.openHeadConnection(link.getPluginPatternMatcher());
                     handleConnectionErrors(br, con);
                     if (con.getCompleteContentLength() > 0) {
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                        if (con.isContentDecoded()) {
+                            link.setDownloadSize(con.getCompleteContentLength());
+                        } else {
+                            link.setVerifiedFileSize(con.getCompleteContentLength());
+                        }
                     }
                     if (betterFilename == null) {
                         final String filenameFromHeader = Plugin.getFileNameFromHeader(con);

@@ -880,14 +880,19 @@ public class TwitterComCrawler extends PluginForDecrypt {
                     }
                 }
                 final boolean containsQuotedTweet = quoted_status != null && quoted_status_tombstone == null;
+                /* Results of this Tweet */
                 final ArrayList<DownloadLink> thisTweetResults = crawlTweetMap(null, thisRoot, fp);
+                /* Results of Tweet which was quoted by this one */
+                ArrayList<DownloadLink> thisQuotedTweetResults = null;
+                /* Results of Retweet if this Tweet is a Retweet */
+                ArrayList<DownloadLink> thisRetweetResults = null;
                 if (containsQuotedTweet) {
+                    /*  */
                     /* 2024-02-21: Current Tweet is a reply to a quoted Tweet -> We need to crawl that quoted Tweet separately */
-                    final ArrayList<DownloadLink> thisQuotedTweetResults = crawlTweetMap(null, quoted_status, fp);
-                    thisTweetResults.addAll(thisQuotedTweetResults);
+                    thisQuotedTweetResults = crawlTweetMap(null, quoted_status, fp);
                 } else if (retweetRootMap != null) {
                     /* Retweet: Crawl Retweet and replace results of original Tweet with Retweet results. */
-                    final ArrayList<DownloadLink> thisRetweetResults = crawlTweetMap(null, retweetRootMap, fp);
+                    thisRetweetResults = crawlTweetMap(null, retweetRootMap, fp);
                     /* Find a suitable source Tweet item to inherit properties from. */
                     DownloadLink anySourceTweetItem = null;
                     for (final DownloadLink sourceTweetItem : thisTweetResults) {
@@ -898,7 +903,8 @@ public class TwitterComCrawler extends PluginForDecrypt {
                     }
                     final String[] inheritProperties = new String[] { PROPERTY_USERNAME, PROPERTY_USER_ID, PROPERTY_DATE, PROPERTY_DATE_TIMESTAMP, PROPERTY_MEDIA_COUNT, PROPERTY_TWEET_ID };
                     for (final DownloadLink retweetResult : thisRetweetResults) {
-                        if (!retweetResult.hasProperty(PROPERTY_TWEET_ID)) {
+                        final String retweetID = retweetResult.getStringProperty(PROPERTY_TWEET_ID);
+                        if (retweetID == null) {
                             /* Skip external items such as crawled http URLs. */
                             continue;
                         }
@@ -916,11 +922,19 @@ public class TwitterComCrawler extends PluginForDecrypt {
                     thisTweetResults.clear();
                     thisTweetResults.addAll(thisRetweetResults);
                 }
-                /* Evaluate results */
+                /* Collect all results */
+                final ArrayList<DownloadLink> thisAllResults = new ArrayList<DownloadLink>();
+                thisAllResults.addAll(thisTweetResults);
+                if (thisQuotedTweetResults != null) {
+                    thisAllResults.addAll(thisQuotedTweetResults);
+                }
+                if (thisRetweetResults != null) {
+                    thisAllResults.addAll(thisRetweetResults);
+                }
+                /* Collect some information from results */
                 final HashSet<String> thisRetweetIDs = new HashSet<String>();
-                final HashSet<String> thisTweetItemsFromOtherUsers = new HashSet<String>();
                 final HashSet<String> thisAllTweetIDs = new HashSet<String>();
-                for (final DownloadLink tweetresult : thisTweetResults) {
+                for (final DownloadLink tweetresult : thisAllResults) {
                     final String thisTweetID = tweetresult.getStringProperty(PROPERTY_TWEET_ID);
                     if (thisTweetID == null) {
                         continue;
@@ -930,11 +944,8 @@ public class TwitterComCrawler extends PluginForDecrypt {
                      * Tweets from other users than the one we are crawling now are either Retweets or Tweets which are part of Tweet
                      * comments/replies. Typicall if a user does not want to have Retweets we want to filter such items too.
                      */
-                    final String tweetUsername = tweetresult.getStringProperty(PROPERTY_USERNAME);
                     if (tweetresult.hasProperty(PROPERTY_RETWEET)) {
                         thisRetweetIDs.add(thisTweetID);
-                    } else if (username != null && !tweetUsername.equals(username)) {
-                        thisTweetItemsFromOtherUsers.add(thisTweetID);
                     }
                 }
                 /* Check some skip conditions */
@@ -942,20 +953,22 @@ public class TwitterComCrawler extends PluginForDecrypt {
                     /* Fail-safe */
                     logger.info("Single Tweet filter: Skipping the following results because they do not contain the item we are looking for: " + tweetResults);
                     continue;
-                } else if (singleTweetID == null && !containsQuotedTweet && allowSkipRetweets && !PluginJsonConfig.get(TwitterConfigInterface.class).isCrawlRetweetsV2()) {
+                } else if (singleTweetID == null && allowSkipRetweets && !PluginJsonConfig.get(TwitterConfigInterface.class).isCrawlRetweetsV2() && thisRetweetResults != null) {
                     /* Re-Tweet crawling is disabled: Skip all results of this Tweet if it is a Re-Tweet. */
-                    if (thisRetweetIDs.size() > 0 || thisTweetItemsFromOtherUsers.size() > 0) {
-                        logger.info("Retweet filter: Skipping Retweet(s): " + thisRetweetIDs.toString());
-                        logger.info("Retweet filter: Skipping Tweet items from other users: " + thisTweetItemsFromOtherUsers.toString());
-                        for (final DownloadLink tweetresult : thisTweetResults) {
-                            globalProfileCrawlerSkippedResultsByRetweet.add(tweetresult);
-                        }
-                        continue;
+                    logger.info("Retweet filter: Skipping Retweet(s): " + thisRetweetIDs.toString());
+                    for (final DownloadLink retweetresult : thisRetweetResults) {
+                        globalProfileCrawlerSkippedResultsByRetweet.add(retweetresult);
                     }
+                    continue;
                 }
                 /* Determine timestamp of "last Tweet". */
+                final ArrayList<DownloadLink> resultsForLastTweetDateFinder = new ArrayList<DownloadLink>();
+                resultsForLastTweetDateFinder.addAll(thisTweetResults);
+                if (thisRetweetResults != null) {
+                    resultsForLastTweetDateFinder.addAll(thisRetweetResults);
+                }
                 Long crawledTweetTimestamp = null;
-                for (final DownloadLink thisTweetResult : thisTweetResults) {
+                for (final DownloadLink thisTweetResult : resultsForLastTweetDateFinder) {
                     /* Find timestamp of last added result. Ignore pinned Tweets. */
                     final String thisTweetD = thisTweetResult.getStringProperty(PROPERTY_TWEET_ID);
                     final boolean isPinnedTweet = thisTweetResult.getBooleanProperty(PROPERTY_PINNED_TWEET, false);
@@ -977,14 +990,14 @@ public class TwitterComCrawler extends PluginForDecrypt {
                 }
                 /* Check if we've reached any user defined limits */
                 if (this.crawlUntilTimestamp != null && crawledTweetTimestamp != null && crawledTweetTimestamp < crawlUntilTimestamp) {
-                    /* Skip */
-                    globalProfileCrawlerSkippedResultsByMaxDate.addAll(thisTweetResults);
-                } else if (this.maxTweetsToCrawl != null && globalActuallyCrawledTweetIDs.size() == this.maxTweetsToCrawl.intValue()) {
-                    /* Skip */
-                    globalProfileCrawlerSkippedResultsByMaxitems.addAll(thisTweetResults);
+                    /* Skip all results */
+                    globalProfileCrawlerSkippedResultsByMaxDate.addAll(thisAllResults);
+                } else if (this.maxTweetsToCrawl != null && globalActuallyCrawledTweetIDs.size() >= this.maxTweetsToCrawl.intValue()) {
+                    /* Skip all results */
+                    globalProfileCrawlerSkippedResultsByMaxitems.addAll(thisAllResults);
                 } else {
-                    /* Add */
-                    allowedResults.addAll(thisTweetResults);
+                    /* Add results */
+                    allowedResults.addAll(thisAllResults);
                     globalActuallyCrawledTweetIDs.addAll(thisAllTweetIDs);
                 }
             } else if (typename.equalsIgnoreCase("TweetTombstone")) {
@@ -1009,8 +1022,6 @@ public class TwitterComCrawler extends PluginForDecrypt {
      */
     private ArrayList<DownloadLink> crawlTweetMap(String username, final Map<String, Object> thisRoot, FilePackage fp) throws MalformedURLException, PluginException {
         final TwitterConfigInterface cfg = PluginJsonConfig.get(TwitterConfigInterface.class);
-        String sourceTweetID = null;
-        long sourceTweetTimestamp = -1;
         final Map<String, Object> tweet = (Map<String, Object>) thisRoot.get("legacy");
         final Map<String, Object> user = (Map<String, Object>) JavaScriptEngineFactory.walkJson(thisRoot, "core/user_results/result/legacy");
         if (user == null) {
@@ -1041,13 +1052,6 @@ public class TwitterComCrawler extends PluginForDecrypt {
             tweetText = sanitizeTweetText(tweetText);
         }
         final boolean isReplyToOtherTweet = tweet.get("in_reply_to_status_id_str") != null;
-        String replyTextForFilename = "";
-        if (isReplyToOtherTweet) {
-            /* Mark filenames of tweet-replies if wished by user. */
-            if (cfg.isMarkTweetRepliesViaFilename()) {
-                replyTextForFilename += "_reply";
-            }
-        }
         if (fp == null) {
             /* Assume that we're crawling a single tweet -> Set date + username as packagename. */
             fp = FilePackage.getInstance();
@@ -1169,11 +1173,10 @@ public class TwitterComCrawler extends PluginForDecrypt {
         }
         /* Check for fallback video source if no video item has been found until now. */
         if (videoIndex == 0 && !StringUtils.isEmpty(vmapURL)) {
+            // TODO: 2024-03-27: Check if this is still needed
             /* Fallback handling for very old (???) content */
             /* Expect such URLs which our host plugin can handle: https://video.twimg.com/amplify_video/vmap/<numbers>.vmap */
             final DownloadLink singleVideo = this.createDownloadlink(vmapURL);
-            final String finalFilename = formattedDate + "_" + username + "_" + tweetID + replyTextForFilename + ".mp4";
-            singleVideo.setFinalFileName(finalFilename);
             singleVideo.setProperty(PROPERTY_VIDEO_DIRECT_URLS_ARE_AVAILABLE_VIA_API_EXTENDED_ENTITY, false);
             singleVideo.setProperty(PROPERTY_MEDIA_INDEX, 0);
             singleVideo.setProperty(PROPERTY_TYPE, TYPE_VIDEO);

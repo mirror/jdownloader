@@ -1201,6 +1201,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         final boolean crawlArchiveView = cfg.isFileCrawlerCrawlArchiveView();
         final boolean crawlMetadataFiles = cfg.isFileCrawlerCrawlMetadataFiles();
         final boolean crawlThumbnails = true; // TODO: 2024-03-20: Implement setting
+        final boolean crawlRestrictedItems = true; // TODO: 2024-03-27: Add setting
         logger.info("Crawling all files below path: " + desiredSubpathDecoded);
         final List<String> skippedItemsFilepaths = new ArrayList<String>();
         final List<List<String>> originalFilesListsForVideoStreams = new ArrayList<List<String>>();
@@ -1219,24 +1220,11 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
             // final Object originalO = filemap.get("original");
             /* Boolean as string */
             final boolean isAccountRequiredForDownload = StringUtils.equalsIgnoreCase((String) filemap.get("private"), "true");
+            final boolean isRestrictedDownload = isAccountRequiredForDownload && isAccessRestricted;
             String pathWithFilename = filemap.get("name").toString();
             if (Encoding.isHtmlEntityCoded(pathWithFilename)) {
                 /* Will sometimes contain "&amp;" */
                 pathWithFilename = Encoding.htmlOnlyDecode(pathWithFilename);
-            }
-            /* Check some skip conditions */
-            if (isOldVersion) {
-                /* Skip old elements. */
-                skippedItemsFilepaths.add(pathWithFilename);
-                continue;
-            } else if (isMetadata && !crawlMetadataFiles) {
-                /* Only include metadata if wished by the user. */
-                skippedItemsFilepaths.add(pathWithFilename);
-                continue;
-            } else if (isThumbnail && !crawlThumbnails) {
-                /* Only include thumbnails if wished by the user. */
-                skippedItemsFilepaths.add(pathWithFilename);
-                continue;
             }
             /* Find path- and filename */
             /* Relative path to this file including identifier as root folder. */
@@ -1304,12 +1292,15 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                 file.setSha1Hash(sha1);
             }
             file.setProperty(ArchiveOrg.PROPERTY_TIMESTAMP_FROM_API_LAST_MODIFIED, filemap.get("mtime"));
-            if (isAccountRequiredForDownload) {
+            if (isRestrictedDownload) {
+                file.setProperty(ArchiveOrg.PROPERTY_IS_RESTRICTED, true);
+                /*
+                 * Item is not downloadable at all -> Disable it so download will not even be attempted and also as a visual indicator for
+                 * the user.
+                 */
+                file.setEnabled(false);
+            } else if (isAccountRequiredForDownload) {
                 file.setProperty(ArchiveOrg.PROPERTY_IS_ACCOUNT_REQUIRED, true);
-                if (isAccessRestricted) {
-                    /* Item is not downloadable at all -> Disable it */
-                    file.setEnabled(false);
-                }
             }
             if (audioTrackPositionO != null) {
                 /* Track position given -> Item must be part of a playlist. */
@@ -1338,7 +1329,25 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                 originalItems.add(file);
             }
             /* Add items to list of all results. */
-            ret.add(file);
+            /* Check some skip conditions */
+            if (isOldVersion) {
+                /* Skip old elements. */
+                skippedItemsFilepaths.add(pathWithFilename);
+                continue;
+            } else if (isMetadata && !crawlMetadataFiles) {
+                /* Only include metadata if wished by the user. */
+                skippedItemsFilepaths.add(pathWithFilename);
+                continue;
+            } else if (isThumbnail && !crawlThumbnails) {
+                /* Only include thumbnails if wished by the user. */
+                skippedItemsFilepaths.add(pathWithFilename);
+                continue;
+            } else if (isRestrictedDownload && !crawlRestrictedItems) {
+                skippedItemsFilepaths.add(pathWithFilename);
+                continue;
+            } else {
+                ret.add(file);
+            }
             // TODO: Check this: Make this work or remove this feature
             // if (crawlArchiveView && isArchiveViewSupported) {
             // final DownloadLink archiveViewURL = createDownloadlink(url + "/");
@@ -1377,14 +1386,11 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                 /* Crawl book */
                 /* Books can be split into multiple "parts" -> Collect them here */
                 final HashSet<String> subPrefixes = new HashSet<String>();
-                String subPrefixInSourceURL = null;
+                final String subPrefixInSourceURL = new Regex(sourceurl, "(?i)/details/[^/]+/([^/#\\?\\&]+)").getMatch(0);
                 for (final String str : originalFilenamesDupeCollection) {
                     final Regex chapterregex = new Regex(str, "(.+)_(djvu\\.xml|page_numbers\\.json)");
                     if (chapterregex.patternFind()) {
                         final String subPrefix = chapterregex.getMatch(0);
-                        if (sourceurl != null && sourceurl.contains("/details/" + identifier + "/" + subPrefix)) {
-                            subPrefixInSourceURL = subPrefix;
-                        }
                         subPrefixes.add(subPrefix);
                     }
                 }
@@ -1407,7 +1413,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                     hostPlugin.login(account, false);
                 }
                 logger.info("Crawling book with " + subPrefixes.size() + " subPrefixes | subPrefixInSourceURL = " + subPrefixInSourceURL);
-                if (subPrefixInSourceURL != null) {
+                if (subPrefixInSourceURL != null && subPrefixes.contains(subPrefixInSourceURL)) {
                     /* User wants to crawl specific subPrefix only. */
                     subPrefixes.clear();
                     subPrefixes.add(subPrefixInSourceURL);
@@ -1444,6 +1450,8 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                     /* Return loose pages only */
                     return bookResults;
                 }
+            } else {
+                // BookCrawlMode.PREFER_ORIGINAL
             }
         } else if (StringUtils.equalsIgnoreCase(mediatype, "movies") && originalFilesListsForVideoStreams.size() == 1) {
             /* Video "playlist" handling */

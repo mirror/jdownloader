@@ -2285,14 +2285,13 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
             return filesizeStrChosen;
         }
         this.getPage(br, continueURL);
-        String dllink = null;
         final Form download1 = br.getFormByInputFieldKeyValue("op", "download_orig");
         if (download1 != null) {
             this.handleCaptcha(link, br, download1);
             this.submitForm(br, download1);
             this.checkErrors(br, br.getRequest().getHtmlCode(), link, account, false);
         }
-        dllink = this.getDllink(link, account, br, br.getRequest().getHtmlCode());
+        String dllink = this.getDllink(link, account, br, br.getRequest().getHtmlCode());
         if (StringUtils.isEmpty(dllink)) {
             /*
              * 2019-05-30: Test - worked for: xvideosharing.com - not exactly required as getDllink will usually already return a result.
@@ -2301,9 +2300,9 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
         }
         if (StringUtils.isEmpty(dllink)) {
             logger.warning("Failed to find dllink via official video download");
-        } else {
-            logger.info("Successfully found dllink via official video download");
+            return null;
         }
+        logger.info("Successfully found dllink via official video download");
         return dllink;
     }
 

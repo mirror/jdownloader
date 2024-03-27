@@ -18,10 +18,13 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
@@ -143,5 +146,38 @@ public class VidhideCom extends XFileSharingProBasic {
             }
         }
         return super.getFUIDFromURL(link);
+    }
+
+    @Override
+    protected String getDllinkViaOfficialVideoDownloadNew(final Browser br, final DownloadLink link, final Account account, final boolean returnFilesize) throws Exception {
+        final String filesize = br.getRegex(">\\s*\\d+x\\d+ ([^<]+)</small>").getMatch(0);
+        if (returnFilesize) {
+            return filesize;
+        }
+        final String originalDownloadContinueLink = br.getRegex("(/download/[a-z0-9]{12}_o)").getMatch(0);
+        if (originalDownloadContinueLink == null) {
+            /* Fallback to upper handling */
+            return super.getDllinkViaOfficialVideoDownloadNew(br, link, account, returnFilesize);
+        }
+        getPage(br, originalDownloadContinueLink);
+        final Form download1 = br.getFormByInputFieldKeyValue("op", "download_orig");
+        if (download1 != null) {
+            this.handleCaptcha(link, br, download1);
+            this.submitForm(br, download1);
+            this.checkErrors(br, br.getRequest().getHtmlCode(), link, account, false);
+        }
+        String dllink = this.getDllink(link, account, br, br.getRequest().getHtmlCode());
+        if (StringUtils.isEmpty(dllink)) {
+            /*
+             * 2019-05-30: Test - worked for: xvideosharing.com - not exactly required as getDllink will usually already return a result.
+             */
+            dllink = br.getRegex("<a href\\s*=\\s*\"(https?[^\"]+)\"[^>]*>\\s*Direct Download Link\\s*</a>").getMatch(0);
+        }
+        if (StringUtils.isEmpty(dllink)) {
+            logger.warning("Failed to find dllink via official video download");
+            return null;
+        }
+        logger.info("Successfully found dllink via official video download");
+        return dllink;
     }
 }

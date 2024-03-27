@@ -49,7 +49,6 @@ public class PornxpNet extends PluginForHost {
     /* Connection stuff */
     private static final boolean free_resume                   = true;
     private static final int     free_maxchunks                = 0;
-    private static final int     free_maxdownloads             = -1;
     private String               dllink                        = null;
     private final String         PROPERTY_TAGS_COMMA_SEPARATED = "tags_comma_separated";
 
@@ -203,7 +202,7 @@ public class PornxpNet extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return free_maxdownloads;
+        return Integer.MAX_VALUE;
     }
 
     @Override

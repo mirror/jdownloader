@@ -112,6 +112,8 @@ public class ArchiveOrg extends PluginForHost {
     public static final String                            PROPERTY_BOOK_PAGE_INTERNAL_INDEX               = "book_page_internal_index";
     /* For officially downloadable files */
     public static final String                            PROPERTY_IS_ACCOUNT_REQUIRED                    = "is_account_required";
+    /* For files which are not downloadable at all - still such items can be added to JD. */
+    public static final String                            PROPERTY_IS_RESTRICTED                          = "is_restricted";
     /* For book page downloads */
     public static final String                            PROPERTY_IS_LENDING_REQUIRED                    = "is_lending_required";
     public static final String                            PROPERTY_IS_FREE_DOWNLOADABLE_BOOK_PREVIEW_PAGE = "is_free_downloadable_book_preview_page";
@@ -139,8 +141,9 @@ public class ArchiveOrg extends PluginForHost {
     }
 
     public AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
-        if (link.getPluginPatternMatcher().endsWith("my_dir")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (link.hasProperty(PROPERTY_IS_RESTRICTED)) {
+            /* Such items can neither be checked nor downloaded. */
+            return AvailableStatus.UNCHECKABLE;
         }
         this.setBrowserExclusive();
         if (account != null) {
@@ -429,6 +432,10 @@ public class ArchiveOrg extends PluginForHost {
 
     private void handleDownload(final Account account, final DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link, account, true);
+        if (link.hasProperty(PROPERTY_IS_RESTRICTED)) {
+            /* Such items can neither be checked nor downloaded. */
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Restricted item - download prohibited");
+        }
         ArchiveOrgLendingInfo lendingInfoForBeforeDownload = null;
         if (account != null) {
             this.login(account, false);
