@@ -393,17 +393,15 @@ public class SendCm extends XFileSharingProBasic {
             throw new AccountInvalidException("Invalid API key! Enter your API key into the password field.\r\nYou can find your API key here: " + getHost() + "/?op=my_account -> 'API' field");
         }
         if (apikey != null) {
-            /* Prefer API */
+            /* Login via API */
             try {
                 if (apiFromAccountPasswordField) {
                     /* Dirty hack */
-                    logger.info("Trying API key as password");
+                    logger.info("User has entered valid API key as password -> Trying that");
                     account.setProperty(PROPERTY_ACCOUNT_apikey, apikey);
                 }
+                /* Login via API */
                 final AccountInfo ai = this.fetchAccountInfoAPI(this.br, account);
-                if (apiFromAccountPasswordField) {
-                    logger.info("User has entered valid API key as password");
-                }
                 if (isApiOnlyMode) {
                     logger.info("Returning AccountInfo solely obtained via API");
                     return ai;
