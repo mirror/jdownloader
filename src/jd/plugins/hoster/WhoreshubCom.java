@@ -18,6 +18,9 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jdownloader.plugins.components.config.KVSConfig;
+import org.jdownloader.plugins.components.config.KVSConfigWhoreshubCom;
+
 import jd.PluginWrapper;
 import jd.plugins.Account;
 import jd.plugins.HostPlugin;
@@ -68,5 +71,10 @@ public class WhoreshubCom extends KernelVideoSharingComV2 {
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return 5;
+    }
+
+    @Override
+    public Class<? extends KVSConfig> getConfigInterface() {
+        return KVSConfigWhoreshubCom.class;
     }
 }

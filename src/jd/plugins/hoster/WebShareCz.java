@@ -312,6 +312,7 @@ public class WebShareCz extends PluginForHost {
                  */
                 final int maxRetries = PluginJsonConfig.get(WebshareCzConfig.class).getMaxRetriesOnErrorTemporarilyUnavailable();
                 final int numberofAttempt = link.getIntegerProperty(PROPERTY_COUNTER_RETRIES_ON_ERROR_FILE_TEMPORARILY_UNAVAILABLE, 1);
+                /* Increase counter */
                 link.setProperty(PROPERTY_COUNTER_RETRIES_ON_ERROR_FILE_TEMPORARILY_UNAVAILABLE, numberofAttempt + 1);
                 if (maxRetries > 0 && numberofAttempt > maxRetries) {
                     /* Don't retry */

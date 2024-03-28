@@ -30,6 +30,9 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.net.URLHelper;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
+import org.jdownloader.plugins.components.config.XFSConfigSendCm;
+import org.jdownloader.plugins.components.config.XFSConfigSendCm.LoginMode;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -222,6 +225,7 @@ public class SendCm extends XFileSharingProBasic {
         try {
             return super.loginWebsite(link, account, validateCookies);
         } catch (final PluginException e) {
+            /* Special 2FA login handling */
             Form twoFAForm = null;
             final String formKey2FA = "new_ip_token";
             final Form[] forms = br.getForms();
@@ -370,18 +374,6 @@ public class SendCm extends XFileSharingProBasic {
             return super.regexAPIKey(br);
         }
     }
-    // private String getApikey(final Account account) {
-    // String apikey = this.getAPIKeyFromAccount(account);
-    // final boolean tryApiHack = false;
-    // if (apikey == null && tryApiHack && this.isAPIKey(account.getPass())) {
-    // apikey = account.getPass();
-    // /* Dirty hack */
-    // if (tryApiHack && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-    // account.setProperty(PROPERTY_ACCOUNT_apikey, apikey);
-    // }
-    // }
-    // return apikey;
-    // }
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
@@ -396,7 +388,8 @@ public class SendCm extends XFileSharingProBasic {
         } else if (StringUtils.equals(apikey, account.getPass())) {
             apiFromAccountPasswordField = true;
         }
-        if (enableAccountApiOnlyMode() && (apikey == null || !apiFromAccountPasswordField)) {
+        final boolean isApiOnlyMode = enableAccountApiOnlyMode();
+        if (isApiOnlyMode && (apikey == null || !apiFromAccountPasswordField)) {
             throw new AccountInvalidException("Invalid API key! Enter your API key into the password field.\r\nYou can find your API key here: " + getHost() + "/?op=my_account -> 'API' field");
         }
         if (apikey != null) {
@@ -411,13 +404,17 @@ public class SendCm extends XFileSharingProBasic {
                 if (apiFromAccountPasswordField) {
                     logger.info("User has entered valid API key as password");
                 }
-                logger.info("Returning AccountInfo solely obtained via API");
-                return ai;
+                if (isApiOnlyMode) {
+                    logger.info("Returning AccountInfo solely obtained via API");
+                    return ai;
+                } else {
+                    logger.info("Continue to also obtain account information via website");
+                }
             } catch (final Exception e) {
                 logger.log(e);
                 logger.info("API login failed");
                 account.removeProperty(PROPERTY_ACCOUNT_apikey);
-                if (enableAccountApiOnlyMode()) {
+                if (isApiOnlyMode) {
                     throw e;
                 }
             }
@@ -624,6 +621,21 @@ public class SendCm extends XFileSharingProBasic {
 
     @Override
     protected boolean enableAccountApiOnlyMode() {
-        return true;
+        final XFSConfigSendCm cfg = PluginJsonConfig.get(XFSConfigSendCm.class);
+        if (cfg.getLoginMode() == LoginMode.WEBSITE) {
+            return false;
+        } else {
+            return true;
+        }
+    }
+
+    @Override
+    protected boolean supportsAPISingleLinkcheck() {
+        return isAPIKey(this.getAPIKey());
+    }
+
+    @Override
+    public Class<? extends XFSConfigSendCm> getConfigInterface() {
+        return XFSConfigSendCm.class;
     }
 }
