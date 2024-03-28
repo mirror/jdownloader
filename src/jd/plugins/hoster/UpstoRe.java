@@ -145,7 +145,7 @@ public class UpstoRe extends antiDDoSForHost {
 
     /** Returns the URL used in browser to access content. */
     private String getInternalContentURL(final DownloadLink link) {
-        return link.getPluginPatternMatcher().replaceFirst("http://", "https://").replaceFirst("upsto\\.re/", "upstore.net/");
+        return link.getPluginPatternMatcher().replaceFirst("(?i)http://", "https://").replaceFirst("(?i)upsto\\.re/", "upstore.net/");
     }
 
     @Override
