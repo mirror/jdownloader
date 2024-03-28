@@ -30,6 +30,7 @@ import org.jdownloader.plugins.config.PluginJsonConfig;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.HTMLParser;
@@ -52,6 +53,13 @@ public class Open3dlabComCrawler extends PluginForDecrypt {
         super(wrapper);
     }
 
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.setFollowRedirects(true);
+        return br;
+    }
+
     public static List<String[]> getPluginDomains() {
         return Open3dlabCom.getPluginDomains();
     }
@@ -72,19 +80,23 @@ public class Open3dlabComCrawler extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:project|user)/\\d+/?");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(user/\\d+/?|project/[a-f0-9\\-]+/?)");
         }
         return ret.toArray(new String[0]);
     }
 
-    private final String PATTERN_PROJECT = "https?://[^/]+/project/(\\d+)/?";
-    private final String PATTERN_PROFILE = "https?://[^/]+/user/(\\d+)/?";
+    private final String PATTERN_PROJECT = "(?i)https?://[^/]+/project/([a-f0-9\\-]+)/?";
+    private final String PATTERN_PROFILE = "(?i)https?://[^/]+/user/(\\d+)/?";
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        if (param.getCryptedUrl().matches(PATTERN_PROJECT)) {
+        final Regex project;
+        final Regex profile;
+        if ((project = new Regex(param.getCryptedUrl(), PATTERN_PROJECT)).patternFind()) {
             return crawlProject(param);
-        } else {
+        } else if ((profile = new Regex(param.getCryptedUrl(), PATTERN_PROFILE)).patternFind()) {
             return this.crawlProfile(param);
+        } else {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
     }
 
@@ -95,10 +107,13 @@ public class Open3dlabComCrawler extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        br.setFollowRedirects(true);
         br.getPage(param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final String[] dlHTMLs = br.getRegex("<td class=\"text-wrap-word js-edit-input\"(.*?)</ul>\\s*</div>\\s*</div>\\s*</td>\\s*</tr>").getColumn(0);
+        if (dlHTMLs == null || dlHTMLs.length == 0) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         String title = br.getRegex("\"name\"\\s*:\\s*\"([^\"]+)\"").getMatch(0);
         if (title == null) {
@@ -120,10 +135,6 @@ public class Open3dlabComCrawler extends PluginForDecrypt {
             mirrorPrioList = userHosterMirrorListStr.split(",");
         }
         final MirrorFallbackMode fallbackMode = cfg.getMirrorFallbackMode();
-        final String[] dlHTMLs = br.getRegex("<td class=\"text-wrap-word js-edit-input\"(.*?)</ul>\\s*</div>\\s*</div>\\s*</td>\\s*</tr>").getColumn(0);
-        if (dlHTMLs == null || dlHTMLs.length == 0) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
         for (final String dlHTML : dlHTMLs) {
             /* Find all mirrors */
             String filename = new Regex(dlHTML, "span class=\"js-edit-input__wrapper\"><strong>([^<]+)</strong>").getMatch(0);
@@ -200,6 +211,7 @@ public class Open3dlabComCrawler extends PluginForDecrypt {
         if (title != null) {
             fp.setName(title);
         } else {
+            /* Fallback */
             fp.setName(projectID);
         }
         fp.setCleanupPackageName(false);
@@ -217,7 +229,6 @@ public class Open3dlabComCrawler extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        br.setFollowRedirects(true);
         br.getPage(param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -259,6 +270,7 @@ public class Open3dlabComCrawler extends PluginForDecrypt {
                 logger.info("Stopping because: Failed to find next page -> Reached end?");
                 break;
             } else {
+                /* Continue to next page */
                 br.getPage(nextPageURL);
                 continue;
             }

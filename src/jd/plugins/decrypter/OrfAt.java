@@ -165,29 +165,11 @@ public class OrfAt extends PluginForDecrypt {
         }
     }
 
-    private ArrayList<DownloadLink> crawlOrfmediathekNew(final CryptedLink param, final String contenturl) throws Exception {
+    private ArrayList<DownloadLink> crawlOrfmediathekNewEncryptedID(final String encryptedID, String sourceurl) throws Exception {
+        if (StringUtils.isEmpty(encryptedID)) {
+            throw new IllegalArgumentException();
+        }
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final Regex videourl = new Regex(contenturl, "(?i)https?://on\\.orf\\.at/video/(\\d+)(/([\\w\\-]+))?");
-        if (!videourl.patternFind()) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Unsupported URL");
-        }
-        br.getPage(contenturl);
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        final String videoSource = br.getRegex("data-ssr=\"true\">(.+)</script>").getMatch(0);
-        final String videoDurationStr = new Regex(videoSource, "duration=(\\d+)").getMatch(0);
-        String encryptedID = null;
-        if (videoDurationStr != null) {
-            encryptedID = new Regex(videoSource, "\"([^\"]+)\"," + videoDurationStr).getMatch(0);
-        }
-        if (encryptedID == null) {
-            /* Lazy attempt */
-            encryptedID = new Regex(videoSource, "\"([A-Za-z0-9]{36})\"").getMatch(0);
-        }
-        if (encryptedID == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
         br.getPage("https://api-tvthek.orf.at/api/v4.3/public/episode/encrypted/" + Encoding.urlEncode(encryptedID));
         if (br.getHttpConnection().getResponseCode() == 404) {
             /* E.g. {"error":{"code":404,"message":"Not Found"}} */
@@ -206,7 +188,12 @@ public class OrfAt extends PluginForDecrypt {
         // if (Boolean.TRUE.equals(is_drm_protected)) {
         // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "DRM protected");
         // }
-        final String sourceurl = param.getCryptedUrl();
+        if (sourceurl == null) {
+            sourceurl = (String) entries.get("share_body");
+            if (StringUtils.isEmpty(sourceurl)) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+        }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(dateWithoutTime + " - " + mainVideoTitle);
         if (description != null) {
@@ -610,6 +597,32 @@ public class OrfAt extends PluginForDecrypt {
         }
         fp.addLinks(ret);
         return ret;
+    }
+
+    private ArrayList<DownloadLink> crawlOrfmediathekNew(final CryptedLink param, final String contenturl) throws Exception {
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final Regex videourl = new Regex(contenturl, "(?i)https?://on\\.orf\\.at/video/(\\d+)(/([\\w\\-]+))?");
+        if (!videourl.patternFind()) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Unsupported URL");
+        }
+        br.getPage(contenturl);
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final String videoSource = br.getRegex("data-ssr=\"true\">(.+)</script>").getMatch(0);
+        final String videoDurationStr = new Regex(videoSource, "duration=(\\d+)").getMatch(0);
+        String encryptedID = null;
+        if (videoDurationStr != null) {
+            encryptedID = new Regex(videoSource, "\"([^\"]+)\"," + videoDurationStr).getMatch(0);
+        }
+        if (encryptedID == null) {
+            /* Lazy attempt */
+            encryptedID = new Regex(videoSource, "\"([A-Za-z0-9]{36})\"").getMatch(0);
+        }
+        if (encryptedID == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        return crawlOrfmediathekNewEncryptedID(encryptedID, contenturl);
     }
 
     @Deprecated
@@ -1448,6 +1461,11 @@ public class OrfAt extends PluginForDecrypt {
              * content.
              */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final String encrypted_id = (String) episode.get("encrypted_id");
+        if (!StringUtils.isEmpty(encrypted_id)) {
+            /* Use new handling */
+            return this.crawlOrfmediathekNewEncryptedID(encrypted_id, null);
         }
         final SubConfiguration cfg = SubConfiguration.getConfig("orf.at");
         // if(Boolean.TRUE.equals(episode.get("is_drm_protected"))) {

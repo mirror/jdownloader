@@ -631,6 +631,36 @@ public class YoutubeHelper {
                 return new DataOrigin[] { DataOrigin.YT_PLAYLIST };
             }
         });
+        REPLACER.add(new YoutubeReplacer("PLAYLIST_POSITION", "PL_POS", "VIDEONUMBER") {
+            @Override
+            public String getDescription() {
+                return _GUI.T.YoutubeHelper_getDescription_videonumber();
+            }
+
+            @Override
+            protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
+                final int playlistNumber = link.getIntegerProperty(YoutubeHelper.YT_PLAYLIST_POSITION, -1);
+                if (playlistNumber >= 0) {
+                    // playlistnumber
+                    DecimalFormat df = new DecimalFormat("0000");
+                    try {
+                        if (StringUtils.isNotEmpty(mod)) {
+                            df = new DecimalFormat(mod);
+                        }
+                    } catch (Throwable e) {
+                        helper.logger.log(e);
+                    }
+                    return df.format(playlistNumber);
+                } else {
+                    return "";
+                }
+            }
+
+            @Override
+            public DataOrigin[] getDataOrigins() {
+                return new DataOrigin[] { DataOrigin.YT_SINGLE_VIDEO, DataOrigin.YT_PLAYLIST };
+            }
+        });
         REPLACER.add(new YoutubeReplacer("CHANNEL_ID", "CH_ID") {
             @Override
             protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
@@ -1113,36 +1143,6 @@ public class YoutubeHelper {
             @Override
             public DataOrigin[] getDataOrigins() {
                 return new DataOrigin[] { DataOrigin.YT_SINGLE_VIDEO };
-            }
-        });
-        REPLACER.add(new YoutubeReplacer("VIDEONUMBER", "PLAYLIST_POSITION", "PL_POS") {
-            @Override
-            public String getDescription() {
-                return _GUI.T.YoutubeHelper_getDescription_videonumber();
-            }
-
-            @Override
-            protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
-                final int playlistNumber = link.getIntegerProperty(YoutubeHelper.YT_PLAYLIST_POSITION, -1);
-                if (playlistNumber >= 0) {
-                    // playlistnumber
-                    DecimalFormat df = new DecimalFormat("0000");
-                    try {
-                        if (StringUtils.isNotEmpty(mod)) {
-                            df = new DecimalFormat(mod);
-                        }
-                    } catch (Throwable e) {
-                        helper.logger.log(e);
-                    }
-                    return df.format(playlistNumber);
-                } else {
-                    return "";
-                }
-            }
-
-            @Override
-            public DataOrigin[] getDataOrigins() {
-                return new DataOrigin[] { DataOrigin.YT_SINGLE_VIDEO, DataOrigin.YT_PLAYLIST };
             }
         });
         REPLACER.add(new YoutubeReplacer("VIEWS") {
