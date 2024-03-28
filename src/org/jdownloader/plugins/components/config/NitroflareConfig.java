@@ -14,7 +14,7 @@ public interface NitroflareConfig extends PluginConfigInterface {
     public static final TRANSLATION TRANSLATION                       = new TRANSLATION();
     final String                    text_AllowMultipleFreeDownloads   = "Allow multiple free downloads?\r\nThis might result in fatal errors!";
     final String                    text_TrustAPIAboutPremiumOnlyFlag = "Trust API about Premium-only flag?";
-    final String                    text_UsePremiumAPIEnabled         = "Use API for account check and premium account downloading [recommended]?";
+    final String                    text_UseAPI                       = "[Recommended]Use API for account check, linkcheck and premium downloading?";
 
     public static class TRANSLATION {
         public String getAllowMultipleFreeDownloads_label() {
@@ -25,8 +25,8 @@ public interface NitroflareConfig extends PluginConfigInterface {
             return text_TrustAPIAboutPremiumOnlyFlag;
         }
 
-        public String getUsePremiumAPIEnabled_label() {
-            return text_UsePremiumAPIEnabled;
+        public String getUseAPI_label() {
+            return text_UseAPI;
         }
     }
 
@@ -50,11 +50,11 @@ public interface NitroflareConfig extends PluginConfigInterface {
 
     @AboutConfig
     @DefaultBooleanValue(true)
-    @DescriptionForConfigEntry(text_UsePremiumAPIEnabled)
+    @DescriptionForConfigEntry(text_UseAPI)
     @Order(30)
-    boolean isUsePremiumAPIEnabled();
+    boolean isUseAPI();
 
-    void setUsePremiumAPIEnabled(boolean b);
+    void setUseAPI(boolean b);
     /** 2020-07-03: Doesn't work (yet) thus I've removed this setting RE: psp */
     // @AboutConfig
     // @DefaultBooleanValue(false)

@@ -42,6 +42,10 @@ public interface ArchiveOrgConfig extends PluginConfigInterface {
             return "File crawler: Crawl thumbnails?";
         }
 
+        public String getFileCrawlerCrawlRestrictedItems_label() {
+            return "File crawler: Crawl restricted [=un-downloadable] items?";
+        }
+
         public String getPlaylistFilenameScheme_label() {
             return text_PlaylistFilenameScheme;
         }
@@ -99,6 +103,14 @@ public interface ArchiveOrgConfig extends PluginConfigInterface {
 
     void setFileCrawlerCrawlThumbnails(boolean b);
 
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    @DescriptionForConfigEntry("Crawl restricted items although they can't be downloaded?")
+    @Order(27)
+    boolean isFileCrawlerCrawlRestrictedItems();
+
+    void setFileCrawlerCrawlRestrictedItems(boolean b);
+
     public static enum PlaylistFilenameScheme implements LabelInterface {
         PLAYLIST_TITLE_WITH_TRACK_NUMBER {
             @Override
@@ -116,7 +128,7 @@ public interface ArchiveOrgConfig extends PluginConfigInterface {
 
     @AboutConfig
     @DefaultEnumValue("PLAYLIST_TITLE_WITH_TRACK_NUMBER")
-    @Order(27)
+    @Order(29)
     @DescriptionForConfigEntry(text_PlaylistFilenameScheme)
     PlaylistFilenameScheme getPlaylistFilenameScheme();
 

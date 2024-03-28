@@ -25,8 +25,8 @@ public interface KemonoPartyConfig extends PluginConfigInterface {
             return text_TextCrawlMode;
         }
 
-        public String getEnableProfileCrawlerExtendedDupeFiltering_label() {
-            return "Profile crawler: Enable extended filtering of duplicates?";
+        public String getEnableProfileCrawlerAdvancedDupeFiltering_label() {
+            return "Profile crawler: Enable advanced filtering of duplicates via sha256 hash?";
         }
     }
 
@@ -71,7 +71,7 @@ public interface KemonoPartyConfig extends PluginConfigInterface {
     @DefaultBooleanValue(false)
     @DescriptionForConfigEntry("Filters duplicates during crawl process via sha256 file-hashes.")
     @Order(30)
-    boolean isEnableProfileCrawlerExtendedDupeFiltering();
+    boolean isEnableProfileCrawlerAdvancedDupeFiltering();
 
-    void setEnableProfileCrawlerExtendedDupeFiltering(boolean b);
+    void setEnableProfileCrawlerAdvancedDupeFiltering(boolean b);
 }

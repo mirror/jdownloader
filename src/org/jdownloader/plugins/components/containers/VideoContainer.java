@@ -3,10 +3,10 @@ package org.jdownloader.plugins.components.containers;
 import java.net.MalformedURLException;
 import java.util.Locale;
 
-import jd.plugins.Plugin;
-
 import org.appwork.storage.Storable;
 import org.appwork.utils.parser.UrlQuery;
+
+import jd.plugins.Plugin;
 
 /**
  * Base container for all video information. Extend when you want further features.
@@ -113,7 +113,7 @@ public class VideoContainer implements Storable {
     public final void _setExtensionFromUrl(final String url) {
         String extension = null;
         try {
-            final UrlQuery query = new UrlQuery().parse(url);
+            final UrlQuery query = UrlQuery.parse(url);
             final String filename = query.get("filename");
             extension = Plugin.getFileNameExtensionFromString(filename);
         } catch (MalformedURLException e) {

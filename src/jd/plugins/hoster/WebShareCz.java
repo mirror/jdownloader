@@ -155,8 +155,9 @@ public class WebShareCz extends PluginForHost {
         }
     }
 
-    private final String ERROR_FILE_INFO_WRONG_PASSWORD  = "FILE_INFO_FATAL_2";
-    private final String PROPERTY_DOWNLOAD_PASSWORD_HASH = "downloadpasswordhash";
+    private final String ERROR_FILE_INFO_WRONG_PASSWORD                                 = "FILE_INFO_FATAL_2";
+    private final String PROPERTY_DOWNLOAD_PASSWORD_HASH                                = "downloadpasswordhash";
+    private final String PROPERTY_COUNTER_RETRIES_ON_ERROR_FILE_TEMPORARILY_UNAVAILABLE = "counter_retries_on_error_file_temporarily_unavailable";
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
@@ -309,7 +310,16 @@ public class WebShareCz extends PluginForHost {
                  * <response><status>FATAL</status><code>FILE_LINK_FATAL_4</code><message>File temporarily
                  * unavailable.</message><app_version>29</app_version></response>
                  */
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, message, 5 * 60 * 1000l);
+                final int maxRetries = PluginJsonConfig.get(WebshareCzConfig.class).getMaxRetriesOnErrorTemporarilyUnavailable();
+                final int numberofAttempt = link.getIntegerProperty(PROPERTY_COUNTER_RETRIES_ON_ERROR_FILE_TEMPORARILY_UNAVAILABLE, 1);
+                link.setProperty(PROPERTY_COUNTER_RETRIES_ON_ERROR_FILE_TEMPORARILY_UNAVAILABLE, numberofAttempt + 1);
+                if (maxRetries > 0 && numberofAttempt > maxRetries) {
+                    /* Don't retry */
+                    throw new PluginException(LinkStatus.ERROR_FATAL, message, 5 * 60 * 1000l);
+                } else {
+                    /* Auto retry */
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, message, 5 * 60 * 1000l);
+                }
             } else if (code.equalsIgnoreCase("FILE_LINK_FATAL_5")) {
                 /* Should be <message>Too many running downloads on too many devices.</message> */
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, message, 3 * 60 * 1000l);
@@ -605,5 +615,6 @@ public class WebShareCz extends PluginForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
+        link.removeProperty(PROPERTY_COUNTER_RETRIES_ON_ERROR_FILE_TEMPORARILY_UNAVAILABLE);
     }
 }

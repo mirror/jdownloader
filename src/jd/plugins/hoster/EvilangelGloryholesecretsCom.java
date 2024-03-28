@@ -19,7 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.jdownloader.plugins.components.config.EvilangelCoreConfig;
-import org.jdownloader.plugins.components.config.EvilangelCoreConfigTabooheatCom;
+import org.jdownloader.plugins.components.config.EvilangelCoreConfigGloryholesecretsCom;
 
 import jd.PluginWrapper;
 import jd.plugins.DownloadLink;
@@ -62,8 +62,7 @@ public class EvilangelGloryholesecretsCom extends EvilangelCore {
 
     @Override
     public Class<? extends EvilangelCoreConfig> getConfigInterface() {
-        return EvilangelCoreConfigTabooheatCom.class;
-        // return EvilangelCoreConfigGloryholesecretsCom.class;
+        return EvilangelCoreConfigGloryholesecretsCom.class;
     }
 
     @Override

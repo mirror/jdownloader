@@ -88,7 +88,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
     private final String  PATTERN_DOWNLOAD         = "(?i)https?://[^/]+/download/([\\w\\-]+).*";
     private final String  PATTERN_SEARCH           = "(?i)https?://[^/]+/search\\?query=.+";
     private ArchiveOrg    hostPlugin               = null;
-    private final boolean USE_NEW_HANDLING_2024_04 = false;
+    private final boolean USE_NEW_HANDLING_2024_04 = true;
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final String contenturl = param.getCryptedUrl().replace("://www.", "://").replaceFirst("(?i)/(stream|embed)/", "/download/");
@@ -702,8 +702,8 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         final boolean crawlOriginalFilesOnly = cfg.isFileCrawlerCrawlOnlyOriginalVersions();
         final boolean crawlArchiveView = cfg.isFileCrawlerCrawlArchiveView();
         final boolean crawlMetadataFiles = cfg.isFileCrawlerCrawlMetadataFiles();
-        final boolean crawlThumbnails = true; // TODO: 2024-03-20: Implement setting
-        final boolean crawlRestrictedItems = true; // TODO: 2024-03-27: Add setting
+        final boolean crawlThumbnails = cfg.isFileCrawlerCrawlThumbnails();
+        final boolean crawlRestrictedItems = cfg.isFileCrawlerCrawlRestrictedItems();
         logger.info("Crawling all files below path: " + desiredSubpathDecoded);
         final List<String> skippedItemsFilepaths = new ArrayList<String>();
         final List<List<String>> originalFilesListsForVideoStreams = new ArrayList<List<String>>();
@@ -835,18 +835,14 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
             if (isOldVersion) {
                 /* Skip old elements. */
                 skippedItemsFilepaths.add(pathWithFilename);
-                continue;
             } else if (isMetadata && !crawlMetadataFiles) {
                 /* Only include metadata if wished by the user. */
                 skippedItemsFilepaths.add(pathWithFilename);
-                continue;
             } else if (isThumbnail && !crawlThumbnails) {
                 /* Only include thumbnails if wished by the user. */
                 skippedItemsFilepaths.add(pathWithFilename);
-                continue;
             } else if (isRestrictedDownload && !crawlRestrictedItems) {
                 skippedItemsFilepaths.add(pathWithFilename);
-                continue;
             } else {
                 ret.add(file);
             }

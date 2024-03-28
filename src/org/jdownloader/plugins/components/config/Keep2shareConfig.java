@@ -37,7 +37,7 @@ public interface Keep2shareConfig extends PluginConfigInterface {
         }
 
         public String getEnableFolderWorkaround_label() {
-            return "Enable folder workaround?";
+            return "Folder crawler: Enable folder workaround?";
         }
 
         public String getCaptchaTimeoutBehavior_label() {

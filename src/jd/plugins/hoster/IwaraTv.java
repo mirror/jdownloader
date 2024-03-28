@@ -25,7 +25,6 @@ import java.util.Map;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.parser.UrlQuery;
@@ -433,10 +432,7 @@ public class IwaraTv extends PluginForHost {
         /* Final check: Check if actual filesize looks to be much smaller than size reported by their Web-API. */
         final long expectedFilesize = link.getLongProperty(PROPERTY_EXPECTED_FILESIZE, -1);
         final long realFilesize = dl.getConnection().getCompleteContentLength();
-        // TODO: Make use of this new plugin setting
-        // if (cfg.isDisplayErrorOnTooSmallVideoFilesize() && expectedFilesize != -1 && realFilesize != -1 && realFilesize <
-        // expectedFilesize * 0.75) {
-        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && expectedFilesize != -1 && realFilesize != -1 && realFilesize < expectedFilesize * 0.75) {
+        if (cfg.isDisplayErrorOnTooSmallVideoFilesize() && expectedFilesize != -1 && realFilesize != -1 && realFilesize < expectedFilesize * 0.75) {
             /* Deeper explanation: https://board.jdownloader.org/showthread.php?p=526884#post526884 */
             final SIZEUNIT maxSizeUnit = (SIZEUNIT) CFG_GUI.MAX_SIZE_UNIT.getValue();
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File is too small! Expected " + SIZEUNIT.formatValue(maxSizeUnit, expectedFilesize) + " but got " + SIZEUNIT.formatValue(maxSizeUnit, realFilesize));

@@ -77,29 +77,33 @@ public class NitroFlareCom extends PluginForHost {
                 logger.log(t);
             }
         }
-        final NitroflareConfig cfg = PluginJsonConfig.get(NitroflareConfig.class);
-        /*
-         * 2024-02-06: Ugly workaround as someone is not releasing CORE-updates and I do not want to move NitroflareConfig.class into this
-         * class. Context: https://board.jdownloader.org/showthread.php?t=95064
-         */
-        /** 2024-03-25: Now their API is unreliable and I've introduced the same workaround to switch from API to website. */
-        // TODO: Remove this workaround
-        final String propertyForSpecialAPIModeSettingResetWorkaround202403 = "api_setting_reset_workaround_2024_03_25";
-        final boolean workaroundSwitchToAPI = false;
-        if (workaroundSwitchToAPI) {
-            if (!cfg.isUsePremiumAPIEnabled() && !this.getPluginConfig().hasProperty(propertyForSpecialAPIModeSettingResetWorkaround202403)) {
-                cfg.setUsePremiumAPIEnabled(true);
+        /* Workarounds to switch users from API/website mode to vice-versa. */
+        final boolean enableStupidAndUglyAPIWebsiteSettingWorkaround = false;
+        if (enableStupidAndUglyAPIWebsiteSettingWorkaround) {
+            final NitroflareConfig cfg = PluginJsonConfig.get(NitroflareConfig.class);
+            /*
+             * 2024-02-06: Ugly workaround as someone is not releasing CORE-updates and I do not want to move NitroflareConfig.class into
+             * this class. Context: https://board.jdownloader.org/showthread.php?t=95064
+             */
+            /** 2024-03-25: Now their API is unreliable and I've introduced the same workaround to switch from API to website. */
+            // TODO: Remove this workaround
+            final String propertyForSpecialAPIModeSettingResetWorkaround202403 = "api_setting_reset_workaround_2024_03_25";
+            final boolean workaroundSwitchToAPI = false;
+            if (workaroundSwitchToAPI) {
+                if (!cfg.isUseAPI() && !this.getPluginConfig().hasProperty(propertyForSpecialAPIModeSettingResetWorkaround202403)) {
+                    cfg.setUseAPI(true);
+                }
+            } else {
+                if (cfg.isUseAPI() && !this.getPluginConfig().hasProperty(propertyForSpecialAPIModeSettingResetWorkaround202403)) {
+                    cfg.setUseAPI(false);
+                }
             }
-        } else {
-            if (cfg.isUsePremiumAPIEnabled() && !this.getPluginConfig().hasProperty(propertyForSpecialAPIModeSettingResetWorkaround202403)) {
-                cfg.setUsePremiumAPIEnabled(false);
-            }
+            /*
+             * Do this only once for each JD installation. If this was executed while the user already had the API setting enabled, do not
+             * touch it afterwards and assume the user knows what he is doing.
+             */
+            this.getPluginConfig().setProperty(propertyForSpecialAPIModeSettingResetWorkaround202403, true);
         }
-        /*
-         * Do this only once for each JD installation. If this was executed while the user already had the API setting enabled, do not touch
-         * it afterwards and assume the user knows what he is doing.
-         */
-        this.getPluginConfig().setProperty(propertyForSpecialAPIModeSettingResetWorkaround202403, true);
     }
 
     @Override
@@ -166,7 +170,7 @@ public class NitroFlareCom extends PluginForHost {
      *         false: Use website for everything (except linkcheck)
      */
     private boolean useAPIAccountMode() {
-        return PluginJsonConfig.get(NitroflareConfig.class).isUsePremiumAPIEnabled();
+        return PluginJsonConfig.get(NitroflareConfig.class).isUseAPI();
     }
 
     private boolean useAPIFreeMode() {

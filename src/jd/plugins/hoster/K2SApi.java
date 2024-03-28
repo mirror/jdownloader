@@ -26,6 +26,7 @@ import org.jdownloader.captcha.blacklist.CaptchaBlackList;
 import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.components.config.Keep2shareConfig;
+import org.jdownloader.plugins.components.config.Keep2shareConfig.CaptchaTimeoutBehavior;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 
 import jd.PluginWrapper;
@@ -849,14 +850,19 @@ public abstract class K2SApi extends PluginForHost {
 
     @Override
     public void onCaptchaTimeout(DownloadLink link, Challenge<?> challenge) throws CaptchaException, PluginException, InterruptedException {
-        CaptchaBlackList.getInstance().add(new BlockDownloadCaptchasByHost(link.getHost()));
-        final boolean isAccountLoginCaptchaChallenge = isAccountLoginCaptchaChallenge(link, challenge);
-        if (isAccountLoginCaptchaChallenge) {
-            final String text = "You did not answer the login captcha on time | Waiting in order to avoid IP ban";
-            final long waitMillis = 3 * 60 * 60 * 1000;
-            throw new AccountUnavailableException(text, waitMillis);
+        final CaptchaTimeoutBehavior captchaTimeoutBehavior = PluginJsonConfig.get(Keep2shareConfig.class).getCaptchaTimeoutBehavior();
+        if (captchaTimeoutBehavior == CaptchaTimeoutBehavior.GLOBAL_SETTING) {
+            super.onCaptchaTimeout(link, challenge);
         } else {
-            throw new CaptchaException(SkipRequest.BLOCK_HOSTER);
+            CaptchaBlackList.getInstance().add(new BlockDownloadCaptchasByHost(link.getHost()));
+            final boolean isAccountLoginCaptchaChallenge = isAccountLoginCaptchaChallenge(link, challenge);
+            if (isAccountLoginCaptchaChallenge) {
+                final String text = "You did not answer the login captcha on time | Waiting in order to avoid IP ban";
+                final long waitMillis = 3 * 60 * 60 * 1000;
+                throw new AccountUnavailableException(text, waitMillis);
+            } else {
+                throw new CaptchaException(SkipRequest.BLOCK_HOSTER);
+            }
         }
     }
 
