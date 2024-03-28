@@ -1013,7 +1013,7 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
             try {
                 if (StringUtils.isEmpty(this.dllink)) {
                     if (this.isPrivateVideo(link)) {
-                        throw new AccountRequiredException();
+                        throw new AccountRequiredException("Private videos can only be watched by registered users");
                     } else {
                         /* Broken video or broken plugin. */
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Broken video (?)");
