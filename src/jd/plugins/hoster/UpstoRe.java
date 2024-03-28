@@ -26,14 +26,6 @@ import java.util.TimeZone;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperHostPluginHCaptcha;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.components.config.UpstoReConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-
 import jd.PluginWrapper;
 import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
 import jd.http.Browser;
@@ -52,6 +44,14 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperHostPluginHCaptcha;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.components.config.UpstoReConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class UpstoRe extends antiDDoSForHost {
@@ -307,8 +307,6 @@ public class UpstoRe extends antiDDoSForHost {
                 }
                 handleErrorsJson();
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            } else if (PluginJsonConfig.get(UpstoReConfig.class).isDowngradeToHTTP()) {
-                dllink = dllink.replaceAll("https://", "http://");
             }
         }
         dllink = correctProtocolInFinalDownloadurl(dllink);
@@ -623,8 +621,11 @@ public class UpstoRe extends antiDDoSForHost {
     }
 
     private String correctProtocolInFinalDownloadurl(final String url) {
-        /* 2024-01-16: Temp workaround, see https://board.jdownloader.org/showthread.php?t=95034 */
-        return url.replaceFirst("(?i)^https://", "http://");
+        if (PluginJsonConfig.get(UpstoReConfig.class).isDowngradeToHTTP()) {
+            return url.replaceFirst("(?i)^https://", "http://");
+        } else {
+            return url;
+        }
     }
 
     @Override

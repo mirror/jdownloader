@@ -54,9 +54,11 @@ public interface UpstoReConfig extends PluginConfigInterface {
     void setAllowMultipleFreeDownloads(boolean b);
 
     @AboutConfig
-    @DefaultBooleanValue(false)
+    @DefaultBooleanValue(true)
     @DescriptionForConfigEntry(text_DowngradeToHTTP)
     @Order(30)
+    /* 2024-01-16: Temp workaround, see */
+    // https://board.jdownloader.org/showthread.php?t=95034
     boolean isDowngradeToHTTP();
 
     void setDowngradeToHTTP(boolean b);
