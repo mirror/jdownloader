@@ -215,12 +215,7 @@ public class RapidGatorNet extends PluginForHost {
 
     @Override
     public boolean hasCaptcha(final DownloadLink link, final Account acc) {
-        if (acc != null && AccountType.PREMIUM.equals(acc.getType())) {
-            return false;
-        } else {
-            /* No account or free account, yes we can expect captcha */
-            return true;
-        }
+        return !isPremiumAccount(acc);
     }
 
     @Override
@@ -389,9 +384,13 @@ public class RapidGatorNet extends PluginForHost {
         handleDownloadWebsite(link, null);
     }
 
+    private boolean isPremiumAccount(final Account account) {
+        return account != null && (AccountType.PREMIUM.equals(account.getType()) || AccountType.LIFETIME.equals(account.getType()));
+    }
+
     @SuppressWarnings("deprecation")
     private void handleDownloadWebsite(final DownloadLink link, final Account account) throws Exception {
-        final boolean isPremiumAccount = account != null && AccountType.PREMIUM.equals(account.getType());
+        final boolean isPremiumAccount = isPremiumAccount(account);
         if (!isPremiumAccount && checkShowFreeDialog(getHost())) {
             showFreeDialog(getHost());
         }
@@ -434,7 +433,7 @@ public class RapidGatorNet extends PluginForHost {
                 } else {
                     /* Free + free account */
                     if (PluginJsonConfig.get(RapidGatorConfig.class).isActivateExperimentalWaittimeHandling()) {
-                        currentIP = new BalancedWebIPCheck(null).getExternalIP().getIP();
+                        currentIP = new BalancedWebIPCheck(br.getProxy()).getExternalIP().getIP();
                         logger.info("currentIP = " + currentIP);
                         synchronized (blockedIPsMap) {
                             /* Load list of saved IPs + timestamp of last download */
@@ -614,10 +613,10 @@ public class RapidGatorNet extends PluginForHost {
                     if (finalDownloadURL == null) {
                         // Old regex
                         finalDownloadURL = br.getRegex("location\\.href\\s*=\\s*'(https?://.*?)'").getMatch(0);
-                    }
-                    if (finalDownloadURL == null) {
-                        /* 2020-02-06 */
-                        finalDownloadURL = br.getRegex("(https?://[^/]+/download/[^<>\"\\']+)").getMatch(0);
+                        if (finalDownloadURL == null) {
+                            /* 2020-02-06 */
+                            finalDownloadURL = br.getRegex("(https?://[^/]+/download/[^<>\"\\']+)").getMatch(0);
+                        }
                     }
                 }
                 if (finalDownloadURL == null) {
@@ -779,22 +778,19 @@ public class RapidGatorNet extends PluginForHost {
         return 0;
     }
 
-    protected static String getDirectlinkProperty(final Account account) {
-        if (account != null && account.getType() == AccountType.FREE) {
-            /* Free Account */
-            return "freelink2";
-        } else if (account != null && account.getType() == AccountType.PREMIUM) {
-            /* Premium account */
+    protected String getDirectlinkProperty(final Account account) {
+        if (isPremiumAccount(null)) {
             return "premlink";
+        } else if (account != null) {
+            return "freelink2";
         } else {
-            /* Free(anonymous) and unknown account type */
             return "freelink";
         }
     }
 
     @Override
     public boolean isResumeable(final DownloadLink link, final Account account) {
-        if (account != null && AccountType.PREMIUM.equals(account.getType())) {
+        if (isPremiumAccount(account)) {
             return true;
         } else {
             // 2020-05-27, rapidgator now advertises that it doesn't support resume for free accounts
@@ -817,7 +813,7 @@ public class RapidGatorNet extends PluginForHost {
     }
 
     private int getMaxChunks(final DownloadLink link, final Account account) {
-        if (account != null && AccountType.PREMIUM.equals(account.getType())) {
+        if (isPremiumAccount(account)) {
             final long knownDownloadSize = link.getKnownDownloadSize();
             if (knownDownloadSize > 0 && knownDownloadSize <= 1024l * 1024l * 2) {
                 // 2022-12-06: small files seem to create issues with multiple connections. Reference:
@@ -835,31 +831,34 @@ public class RapidGatorNet extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        // return freeRunning.get() + 1;
-        return Integer.MAX_VALUE;
+        return freeRunning.get() + 1;
     }
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        final AccountInfo ai = new AccountInfo();
         synchronized (account) {
             if (PluginJsonConfig.get(RapidGatorConfig.class).isEnableAPIPremium()) {
-                return fetchAccountInfoAPI(account, ai);
+                return fetchAccountInfoAPI(account);
             } else {
-                return fetchAccountInfoWebsite(account, ai);
+                return fetchAccountInfoWebsite(account);
             }
         }
     }
 
-    public AccountInfo fetchAccountInfoAPI(final Account account, final AccountInfo ai) throws Exception {
+    public AccountInfo fetchAccountInfoAPI(final Account account) throws Exception {
         synchronized (account) {
             final Map<String, Object> responsemap = loginAPI(account);
-            final Map<String, Object> storagemap = (Map<String, Object>) responsemap.get("storage");
+            return parseAPIAccountInfo(account, responsemap, new AccountInfo());
+        }
+    }
+
+    public AccountInfo parseAPIAccountInfo(final Account account, final Map<String, Object> response_map, final AccountInfo ai) throws Exception {
+        synchronized (account) {
+            final Map<String, Object> storagemap = (Map<String, Object>) response_map.get("storage");
             if (storagemap != null) {
                 ai.setUsedSpace(((Number) storagemap.get("total")).longValue() - ((Number) storagemap.get("left")).longValue());
             }
-            final Map<String, Object> usermap = (Map<String, Object>) responsemap.get("user");
-            final Number premium_end_time_timestamp = (Number) usermap.get("premium_end_time");
+            final Map<String, Object> usermap = (Map<String, Object>) response_map.get("user");
             /*
              * E.g. "traffic":{"total":null,"left":null} --> Free Account
              */
@@ -872,10 +871,11 @@ public class RapidGatorNet extends PluginForHost {
              * 2019-12-17: They might also have an unofficial daily trafficlimit of 50-100GB. After this the user will first get a new
              * password via E-Mail and if he continues to download 'too much', account might get temporarily banned.
              */
-            final Map<String, Object> trafficmap = (Map<String, Object>) usermap.get("traffic");
-            final Number traffic_left = (Number) trafficmap.get("left");
-            final Number traffic_max = (Number) trafficmap.get("total");
             if (Boolean.TRUE.equals(usermap.get("is_premium"))) {
+                final Map<String, Object> trafficmap = (Map<String, Object>) usermap.get("traffic");
+                final Number traffic_left = (Number) trafficmap.get("left");
+                final Number traffic_max = (Number) trafficmap.get("total");
+                final Number premium_end_time_timestamp = (Number) usermap.get("premium_end_time");
                 if (premium_end_time_timestamp != null) {
                     /*
                      * 2019-12-23: Premium accounts expire too early if we just set the expire-date. Using their Android App even they will
@@ -904,14 +904,15 @@ public class RapidGatorNet extends PluginForHost {
         }
     }
 
-    public AccountInfo fetchAccountInfoWebsite(final Account account, final AccountInfo ai) throws Exception {
+    public AccountInfo fetchAccountInfoWebsite(final Account account) throws Exception {
+        final AccountInfo ai = new AccountInfo();
         loginWebsite(account, true);
-        if (AccountType.FREE.equals(account.getType())) {
+        if (!isPremiumAccount(account)) {
             /* Free account: Captcha is required for downloading. */
             setAccountLimitsByType(account, AccountType.FREE);
             ai.setUnlimitedTraffic();
             if (PluginJsonConfig.get(RapidGatorConfig.class).isActivateExperimentalWaittimeHandling()) {
-                final String currentIP = new BalancedWebIPCheck(null).getExternalIP().getIP();
+                final String currentIP = new BalancedWebIPCheck(br.getProxy()).getExternalIP().getIP();
                 final long lastdownload_timestamp = getPluginSavedLastDownloadTimestamp(currentIP);
                 final long passedTimeSinceLastFreeDownloadMilliseconds = System.currentTimeMillis() - lastdownload_timestamp;
                 if (passedTimeSinceLastFreeDownloadMilliseconds < FREE_RECONNECTWAIT_GENERAL_MILLIS) {
@@ -1055,9 +1056,6 @@ public class RapidGatorNet extends PluginForHost {
                     logger.info("2FA code required");
                     final DownloadLink dl_dummy = new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true);
                     String twoFACode = getUserInput("Enter 2-Factor authentication code", dl_dummy);
-                    if (twoFACode != null) {
-                        twoFACode = twoFACode.trim();
-                    }
                     if (twoFACode == null || !(twoFACode = twoFACode.trim()).matches("\\d{6}")) {
                         logger.info("Login abort: Invalid 2FA code format");
                         break;
@@ -1250,7 +1248,7 @@ public class RapidGatorNet extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        if (AccountType.PREMIUM.equals(account.getType()) && PluginJsonConfig.get(RapidGatorConfig.class).isEnableAPIPremium()) {
+        if (isPremiumAccount(account) && PluginJsonConfig.get(RapidGatorConfig.class).isEnableAPIPremium()) {
             /* Premium account -> API can be used if preferred by the user. */
             handlePremium_api(link, account);
         } else {
@@ -1421,7 +1419,12 @@ public class RapidGatorNet extends PluginForHost {
         if (hotlinkDirectURL != null) {
             directurl = hotlinkDirectURL;
         } else {
-            session_id = getAccountSession(loginAPI(account));
+            final Map<String, Object> response_map = loginAPI(account);
+            session_id = getAccountSession(response_map);
+            final AccountInfo ai = account.getAccountInfo();
+            if (ai != null) {
+                parseAPIAccountInfo(account, response_map, ai);
+            }
             this.requestFileInformationAPI(link, account, session_id);
             /* Docs: https://rapidgator.net/article/api/file#download */
             br.getPage(getAPIBase() + "file/download?token=" + session_id + "&file_id=" + Encoding.urlEncode(this.getFID(link)));
@@ -1587,9 +1590,17 @@ public class RapidGatorNet extends PluginForHost {
         /* Check if item is only downloadable for premium users. */
         final String freedlsizelimit = br.getRegex("(?i)'You can download files up to ([\\d\\.]+ ?(MB|GB)) in free mode\\s*<").getMatch(0);
         if (freedlsizelimit != null) {
-            throw new AccountRequiredException();
+            if (isPremiumAccount(account)) {
+                throw new AccountUnavailableException("Expired premium account!?", 30 * 60 * 1000);
+            } else {
+                throw new AccountRequiredException("File too large for free account");
+            }
         } else if (br.containsHTML("(?is)This file can be downloaded by premium only\\s*</div>")) {
-            throw new AccountRequiredException();
+            if (isPremiumAccount(account)) {
+                throw new AccountUnavailableException("Expired premium account!?", 30 * 60 * 1000);
+            } else {
+                throw new AccountRequiredException("This file can be downloaded by premium only");
+            }
         }
         /* Determine max wait time if a limit related error would happen in free download mode. */
         final long passedTimeSinceLastDlMilliseconds;
@@ -1631,6 +1642,9 @@ public class RapidGatorNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait before starting new downloads", 1 * 60 * 1000l);
         } else if (br.containsHTML("(?i)File is temporarily not available, please try again later")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File is temporarily not available, please try again later");
+        } else if (br.containsHTML("(?i)>\\s*File is temporarily unavailable, please try again later\\.\\s*Maintenance in data center")) {
+            // maybe also a shadow ban?
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "File is temporarily unavailable, please try again later. Maintenance in data center");
         } else if (br.containsHTML("(?i)>\\s*You have reached your hourly downloads limit\\.")) {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "You've reached your hourly downloads limit", Math.min(maxReconnectWait, FREE_RECONNECTWAIT_GENERAL_MILLIS));
         } else if (br.containsHTML("(?i)>\\s*You have reached your daily downloads limit")) {
