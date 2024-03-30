@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.downloader.hls.HLSDownloader;
@@ -30,6 +31,7 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
+import jd.http.requests.PostRequest;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.HTMLSearch;
@@ -247,7 +249,7 @@ public class BibeltvDe extends PluginForHost {
                 final Browser brc = br.cloneBrowser();
                 int progress = 0;
                 String apiKeyDetected = null;
-                for (final String jsURL : alljsurls) {
+                apiKeyLoop: for (final String jsURL : alljsurls) {
                     progress++;
                     logger.info("Working on jsURL " + progress + "/" + alljsurls.size() + " | " + jsURL);
                     if (this.isAbort()) {
@@ -255,14 +257,18 @@ public class BibeltvDe extends PluginForHost {
                         throw new InterruptedException();
                     }
                     brc.getPage(jsURL);
-                    final String apiKeyTemp = brc.getRegex("Authorization\\s*:\"([^\"]+)\"").getMatch(0);
-                    if (apiKeyTemp != null) {
-                        if (apiKeyTemp.matches("(?i)^(Bearer|Basic) $")) {
-                            logger.info("Skipping invalid authentication key: " + apiKeyTemp);
-                            continue;
-                        } else {
-                            apiKeyDetected = apiKeyTemp;
-                            break;
+                    final String apiKeyTemps[] = brc.getRegex("Authorization\\s*:\"([^\"]+)\"").getColumn(0);
+                    if (apiKeyTemps != null) {
+                        for (String apiKeyTemp : apiKeyTemps) {
+                            if (apiKeyTemp != null) {
+                                if (apiKeyTemp.matches("(?i)^(Bearer|Basic) $")) {
+                                    logger.info("Skipping invalid authentication key: " + apiKeyTemp);
+                                    continue;
+                                } else {
+                                    apiKeyDetected = apiKeyTemp;
+                                    break apiKeyLoop;
+                                }
+                            }
                         }
                     }
                 }
@@ -274,17 +280,28 @@ public class BibeltvDe extends PluginForHost {
                 apiKey.set(apiKeyDetected);
             }
             key = apiKey.get();
-            br2.getHeaders().put("Authorization", key);
-            br2.getPage("/mediathek/api/video/" + internalVideoID);
+            // br2.getHeaders().put("Authorization", key);
+            PostRequest r = new PostRequest(link.getPluginPatternMatcher());
+            r.setContentType("text/plain;charset=UTF-8");
+            r.setPostDataString("[" + internalVideoID + "]");
+            r.getHeaders().put(HTTPConstants.HEADER_REQUEST_ACCEPT, "text/x-component");
+            r.getHeaders().put(HTTPConstants.HEADER_REQUEST_ORIGIN, "https://www.bibeltv.de");
+            // TODO: find Next-Action value
+            r.getHeaders().put("Next-Action", "c54a3b3c4f2e8c51ff2fa76e05af1af5338d7f9e");
+            br2.getPage(r);
             if (br2.getHttpConnection().getResponseCode() == 401) {
                 /* This should never happen */
                 apiKey.set(null);
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "API authorization failure");
             }
         }
-        entries = restoreFromString(br2.getRequest().getHtmlCode(), TypeRef.MAP);
+        String response = new Regex(br2.getRequest().getHtmlCode(), "(\r|\n)\\s*1:(\\{.+)").getMatch(1);
+        if (response == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        entries = restoreFromString(response, TypeRef.MAP);
         /* 2019-12-18: They provide HLS, DASH and http(highest quality only) */
-        final List<Map<String, Object>> ressourcelist = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entries, "video/videoUrls");
+        final List<Map<String, Object>> ressourcelist = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entries, "video/editions/{0}/videoUrls");
         if (ressourcelist == null || ressourcelist.isEmpty()) {
             /* Most likely video is not available anymore because current date is > date value in field "schedulingEnd". */
             /*

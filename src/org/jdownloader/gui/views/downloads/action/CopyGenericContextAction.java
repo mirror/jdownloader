@@ -11,20 +11,6 @@ import java.util.regex.Pattern;
 
 import javax.swing.TransferHandler;
 
-import jd.controlling.ClipboardMonitoring;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
-import jd.controlling.linkcrawler.CrawledPackageView;
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
-import jd.controlling.packagecontroller.AbstractPackageNode;
-import jd.gui.swing.jdgui.MainTabbedPane;
-import jd.parser.Regex;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-import jd.plugins.FilePackageView;
-import jd.plugins.download.HashInfo;
-
 import org.appwork.utils.Files;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
@@ -45,6 +31,20 @@ import org.jdownloader.gui.views.linkgrabber.LinkGrabberTable;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings.SIZEUNIT;
 import org.jdownloader.settings.UrlDisplayType;
 import org.jdownloader.translate._JDT;
+
+import jd.controlling.ClipboardMonitoring;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
+import jd.controlling.linkcrawler.CrawledPackageView;
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
+import jd.controlling.packagecontroller.AbstractPackageNode;
+import jd.gui.swing.jdgui.MainTabbedPane;
+import jd.parser.Regex;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import jd.plugins.FilePackageView;
+import jd.plugins.download.HashInfo;
 
 public class CopyGenericContextAction extends CustomizableTableContextAppAction implements ActionContext {
     private static final String PATTERN_NAME                  = "{name}";                      // depends on type
@@ -337,7 +337,7 @@ public class CopyGenericContextAction extends CustomizableTableContextAppAction 
             final CrawledPackage cp = link.getParentNode();
             line = line.replace(PATTERN_TYPE, "Link");
             line = line.replace(PATTERN_HOST, nulltoString(link.getHost()));
-            line = line.replace(PATTERN_COMMENT, nulltoString(link.getDownloadLink().getComment()));
+            line = line.replace(PATTERN_COMMENT, nulltoString(link.getComment()));
             line = line.replace(PATTERN_PATH, nulltoString(LinkTreeUtils.getDownloadDirectory(link)));
             final long fileSize = link.getSize();
             line = line.replace(PATTERN_FILESIZE_RAW, nulltoString(Long.toString(fileSize)));
@@ -347,7 +347,7 @@ public class CopyGenericContextAction extends CustomizableTableContextAppAction 
             line = line.replace(PATTERN_FILESIZE_GIB, nulltoString(formatFileSize(fileSize, SIZEUNIT.GiB)));
             line = line.replace(PATTERN_NEWLINE, CrossSystem.getNewLine());
             line = replaceDownloadLinkProperties(link.getDownloadLink(), line);
-            final String name = link.getDownloadLink().getView().getDisplayName();
+            final String name = link.getName();
             line = line.replace(PATTERN_NAME, nulltoString(name));
             line = line.replace(PATTERN_PACKAGE_NAME, nulltoString(cp.getName()));
             line = line.replace(PATTERN_NAME_NOEXT, nulltoString(Files.getFileNameWithoutExtension(name)));

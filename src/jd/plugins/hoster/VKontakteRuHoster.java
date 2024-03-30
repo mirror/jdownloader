@@ -1347,7 +1347,7 @@ public class VKontakteRuHoster extends PluginForHost {
     @Deprecated
     @SuppressWarnings({ "unchecked" })
     private String getHighestQualityPictureDownloadurl(final Browser br, final DownloadLink dl, final boolean checkDownloadability) throws Exception {
-        String json = br.getRegex("ajax\\.preload\\(\\'al_photos\\.php\\'\\s*?,\\s*?\\{[^\\}]*?\\}\\s*?,\\s*?(\\[.*?)\\);\n").getMatch(0);
+        String json = br.getRegex("ajax\\.preload\\(\\'al_photos\\.php\\'\\s*?,\\s*?\\{[^\\}]*?\\}\\s*?,\\s*?(\\[.*?)\\)\\s*;\n").getMatch(0);
         if (json == null) {
             json = br.getRegex("<\\!json>(.*?)<\\!><\\!json>").getMatch(0);
         }
@@ -1364,7 +1364,7 @@ public class VKontakteRuHoster extends PluginForHost {
                 return null;
             }
         }
-        final Object jsonO = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.OBJECT);
+        final Object jsonO = restoreFromString(json, TypeRef.OBJECT);
         final String thisid = getPhotoID(dl);
         final Object photoo = findPictureObject(jsonO, thisid);
         final Map<String, Object> sourcemap = (Map<String, Object>) photoo;
