@@ -203,6 +203,11 @@ public class YouPornCom extends PluginForHost {
             title = Encoding.htmlDecode(title).trim().replaceAll("   ", "-");
             link.setFinalFileName(title + defaultEXT);
         }
+        final String channelname = br.getRegex("class=\"submitByLink\"[^>]*>\\s*<[^>]*href=\"/(?:channel|uservids)/([^\"/]+)").getMatch(0);
+        if (channelname != null) {
+            /* Packagizer property */
+            link.setProperty("username", Encoding.htmlDecode(channelname).trim());
+        }
         if (br.getURL().contains("/private/") || br.containsHTML("for=\"privateLogin_password\"")) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "Password protected links are not yet supported, contact our support!");
         }

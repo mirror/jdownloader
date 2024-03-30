@@ -3,6 +3,14 @@ package jd.plugins.hoster;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.config.RedtubeConfig;
+import org.jdownloader.plugins.components.config.RedtubeConfig.PreferredStreamQuality;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -20,15 +28,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.config.RedtubeConfig;
-import org.jdownloader.plugins.components.config.RedtubeConfig.PreferredStreamQuality;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "redtube.com" }, urls = { "https?://(?:www\\.|[a-z]{2}\\.)?(?:redtube\\.(?:cn\\.com|com|tv|com\\.br)/|embed\\.redtube\\.(?:cn\\.com|com|tv|com\\.br)/[^<>\"]*?\\?id=)(\\d{4,})" })
 public class RedTubeCom extends PluginForHost {
@@ -123,7 +122,7 @@ public class RedTubeCom extends PluginForHost {
         if (br.containsHTML(">Error Page Not Found|<title>Kostenlose Porno Sexvideos")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String channelname = br.getRegex("class=\"video-infobox-link\" href=\"/channels/([^\"]+)\"").getMatch(0);
+        final String channelname = br.getRegex("class=\"video-infobox-link\" href=\"/(?:users|channels)/([^\"/]+)").getMatch(0);
         if (channelname != null) {
             /* Packagizer property */
             link.setProperty(PROPERTY_USERNAME, Encoding.htmlDecode(channelname).trim());
