@@ -24,6 +24,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -44,12 +50,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.XvideosCom;
 import jd.plugins.hoster.XvideosCore;
-
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class XvideosComProfile extends PluginForDecrypt {
@@ -192,7 +192,7 @@ public class XvideosComProfile extends PluginForDecrypt {
                 final String videoID = new Regex(url, "/video([^/]*)/").getMatch(0);
                 if (dupeList.add(videoID)) {
                     foundOnPage++;
-                    url = br.getURL(url).toString();
+                    url = br.getURL(url).toExternalForm();
                     final String urlTitle = new Regex(url, "/video[^/]*/([^/\\?]+)").getMatch(0);
                     final DownloadLink dl = this.createDownloadlink(url);
                     /* Save http requests */
@@ -252,7 +252,7 @@ public class XvideosComProfile extends PluginForDecrypt {
             for (String url : urls) {
                 final String videoID = new Regex(url, "/video([^/]*)/").getMatch(0);
                 if (dupeList.add(videoID)) {
-                    url = br.getURL(url).toString();
+                    url = br.getURL(url).toExternalForm();
                     final String urlTitle = new Regex(url, "/video[^/]*/([^/\\?]+)").getMatch(0);
                     final DownloadLink dl = this.createDownloadlink(url);
                     /* Save http requests by pre-setting online status */
@@ -313,7 +313,7 @@ public class XvideosComProfile extends PluginForDecrypt {
                 final String title = (String) video.get("title");
                 if (dupeList.add(videoID)) {
                     final String nameTemp;
-                    final DownloadLink dl = createDownloadlink(brc.getURL(singleLink).toString());
+                    final DownloadLink dl = createDownloadlink(brc.getURL(singleLink).toExternalForm());
                     /* Usually we will crawl a lot of URLs at this stage --> Set onlinestatus right away! */
                     dl.setAvailable(true);
                     fp.add(dl);
@@ -360,36 +360,36 @@ public class XvideosComProfile extends PluginForDecrypt {
                 logger.info("Stopping because: User doesn't have any videos");
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            int numberofItemsOnCurrentPage = 0;
+            int numberofNewItemsOnCurrentPage = 0;
             final List<Map<String, Object>> videos = (List<Map<String, Object>>) entries.get("videos");
             for (final Map<String, Object> video : videos) {
                 final String singleLink = video.get("u").toString();
                 final String videoID = video.get("id").toString();
                 /* Only add new URLs */
-                if (dupeList.add(videoID)) {
-                    final String titleURL = new Regex(singleLink, "/([^/]+)$").getMatch(0);
-                    final String nameTemp;
-                    final DownloadLink dl = createDownloadlink(br.getURL(singleLink).toString());
-                    /* Usually we will crawl a lot of URLs at this stage --> Set onlinestatus right away! */
-                    dl.setAvailable(true);
-                    fp.add(dl);
-                    if (titleURL != null) {
-                        nameTemp = videoID + "_" + cleanUrlTitle(titleURL);
-                    } else {
-                        nameTemp = videoID;
-                    }
-                    dl.setName(nameTemp + ".mp4");
-                    /* Packagizer properties */
-                    dl.setProperty(XvideosCore.PROPERTY_USERNAME, username);
-                    dl._setFilePackage(fp);
-                    ret.add(dl);
-                    distribute(dl);
-                    numberofItemsOnCurrentPage++;
-                } else {
+                if (!dupeList.add(videoID)) {
                     // logger.info("Found dupe: " + videoID);
+                    continue;
                 }
+                final String titleURL = new Regex(singleLink, "/([^/]+)$").getMatch(0);
+                final String nameTemp;
+                final DownloadLink dl = createDownloadlink(br.getURL(singleLink).toExternalForm());
+                /* Usually we will crawl a lot of URLs at this stage --> Set onlinestatus right away! */
+                dl.setAvailable(true);
+                fp.add(dl);
+                if (titleURL != null) {
+                    nameTemp = videoID + "_" + cleanUrlTitle(titleURL);
+                } else {
+                    nameTemp = videoID;
+                }
+                dl.setName(nameTemp + ".mp4");
+                /* Packagizer properties */
+                dl.setProperty(XvideosCore.PROPERTY_USERNAME, username);
+                dl._setFilePackage(fp);
+                ret.add(dl);
+                distribute(dl);
+                numberofNewItemsOnCurrentPage++;
             }
-            logger.info("Crawled page: " + pageNum + " | Crawled items on current page: " + numberofItemsOnCurrentPage + " | Progress overall: " + ret.size() + "/" + totalNumberofItems);
+            logger.info("Crawled page: " + pageNum + " | Crawled items on current page: " + numberofNewItemsOnCurrentPage + " | Progress overall: " + ret.size() + "/" + totalNumberofItems);
             if (this.isAbort()) {
                 logger.info("Stopping because: Aborted by user");
                 break;
@@ -397,7 +397,7 @@ public class XvideosComProfile extends PluginForDecrypt {
                 /* We found all items */
                 logger.info("Stopping because: Reached the end");
                 break;
-            } else if (numberofItemsOnCurrentPage < maxItemsPerPage) {
+            } else if (numberofNewItemsOnCurrentPage < maxItemsPerPage) {
                 /* Fail-safe */
                 logger.info("Stopping because: Probably reached the end");
                 break;

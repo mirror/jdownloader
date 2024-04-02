@@ -1874,8 +1874,6 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
                     } else {
                         logger.info("Successfully found link via embed");
                     }
-                } catch (final InterruptedException e) {
-                    throw e;
                 } catch (final Throwable e) {
                     logger.log(e);
                     logger.info("Failed to get link via embed");
@@ -2541,8 +2539,6 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
                 File cf = null;
                 try {
                     cf = sm.downloadCaptcha(getLocalCaptchaFile());
-                } catch (final InterruptedException e) {
-                    throw e;
                 } catch (final Exception e) {
                     if (org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia.FAIL_CAUSE_CKEY_MISSING.equals(e.getMessage())) {
                         throw new PluginException(LinkStatus.ERROR_FATAL, "Host side solvemedia.com captcha error - please contact the " + this.getHost() + " support", -1, e);
@@ -2763,8 +2759,6 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
                 brc.followConnection(true);
                 throw new IOException();
             }
-        } catch (final InterruptedException e) {
-            throw e;
         } catch (final Exception e) {
             if (throwException) {
                 throw e;
@@ -3786,7 +3780,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
         }
     }
 
-    protected AccountInfo fetchAccountInfoWebsiteStorage(final Browser br, final Account account, final AccountInfo ai) throws Exception {
+    protected void fetchAccountInfoWebsiteStorage(final Browser br, final Account account, final AccountInfo ai) throws Exception {
         final String space[] = new Regex(getCorrectBR(br), ">Used space:</td>.*?<td.*?b>([0-9\\.]+) ?(KB|MB|GB|TB)?</b>").getRow(0);
         if ((space != null && space.length != 0) && (space[0] != null && space[1] != null)) {
             /* free users it's provided by default */
@@ -3795,10 +3789,9 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
             /* premium users the Mb value isn't provided for some reason... */
             ai.setUsedSpace(space[0] + "Mb");
         }
-        return ai;
     }
 
-    protected AccountInfo fetchAccountInfoWebsiteTraffic(final Browser br, final Account account, final AccountInfo ai) throws Exception {
+    protected void fetchAccountInfoWebsiteTraffic(final Browser br, final Account account, final AccountInfo ai) throws Exception {
         /*
          * trafficleft is usually not given via API so we'll have to check for it via website. Also we do not trsut 'unlimited traffic' via
          * API yet.
@@ -3825,9 +3818,9 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
         } else {
             ai.setUnlimitedTraffic();
         }
-        return ai;
     }
 
+    /** If thus returns true, API account information can be trusted in website mode. */
     protected boolean trustAccountInfoAPI(final Browser br, Account account, AccountInfo ai) throws Exception {
         return true;
     }
@@ -3835,7 +3828,6 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
     protected AccountInfo fetchAccountInfoWebsite(final Account account) throws Exception {
         AccountInfo ai = null;
         loginWebsite(null, account, true);
-        boolean apiSuccess = false;
         /*
          * Only access URL if we haven't accessed it before already. Some sites will redirect to their Account-Info page right after
          * logging-in or our login-function when it is verifying cookies and not performing a full login.
@@ -3843,51 +3835,40 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
         if (br.getURL() == null || !br.getURL().contains(getRelativeAccountInfoURL())) {
             getPage(this.getMainPage() + getRelativeAccountInfoURL());
         }
-        {
-            /*
-             * 2019-07-11: apikey handling - prefer account info via API instead of website if allowed.
-             */
-            String apikey = null;
-            try {
-                /*
-                 * 2019-08-13: Do not hand over corrected_br as source as correctBR() might remove important parts of the html and because
-                 * XFS owners will usually not add html traps into the html of accounts (especially ) we can use the original unmodified
-                 * html here.
-                 */
-                apikey = this.findAPIKey(this.br.cloneBrowser());
-            } catch (InterruptedException e) {
-                throw e;
-            } catch (final Throwable e) {
-                /*
-                 * 2019-08-16: All kinds of errors may happen when trying to access the API. It is preferable if it works but we cannot rely
-                 * on it working so we need that website fallback!
-                 */
-                logger.info("Failed to find apikey (with Exception) --> Continuing via website");
-                logger.log(e);
-            }
+        /*
+         * 2019-07-11: apikey handling - prefer account info via API instead of website if allowed.
+         */
+        try {
+            final String apikey = this.findAPIKey(this.br.cloneBrowser());
             if (apikey != null) {
                 /*
                  * 2019-07-11: Use API even if 'supports_api()' is disabled because if it works it is a much quicker and more reliable way
                  * to get account information.
                  */
-                logger.info("Found apikey --> Trying to get AccountInfo via API");
+                logger.info("Found apikey --> Trying to get AccountInfo via API: " + apikey);
                 /* Save apikey for later usage */
                 synchronized (account) {
                     account.setProperty(PROPERTY_ACCOUNT_apikey, apikey);
                     try {
                         ai = this.fetchAccountInfoAPI(this.br.cloneBrowser(), account);
-                        apiSuccess = trustAccountInfoAPI(br, account, ai);
-                    } catch (final InterruptedException e) {
-                        throw e;
                     } catch (final Throwable e) {
                         e.printStackTrace();
                         logger.warning("Failed to find accountinfo via API even though apikey is given; probably serverside API failure --> Fallback to website handling");
+                        /* Do not store invalid API key */
+                        account.removeProperty(PROPERTY_ACCOUNT_apikey);
                     }
                 }
             }
+        } catch (final Throwable e) {
+            /*
+             * 2019-08-16: All kinds of errors may happen when trying to access the API. It is preferable if it works but we cannot rely on
+             * it working so we need that website fallback!
+             */
+            logger.info("Failed to find apikey (with Exception) --> Continuing via website");
+            logger.log(e);
         }
-        final boolean trustApiAvailablecheckInWebsiteMode = false;
-        if (apiSuccess && trustApiAvailablecheckInWebsiteMode) {
+        final boolean apiSuccess = ai != null && trustAccountInfoAPI(br, account, ai);
+        if (apiSuccess && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
             /* Trust API info */
             logger.info("Successfully found complete AccountInfo via API");
             /* API with trafficleft value is uncommon -> Make sure devs easily take note of this! */
@@ -3902,29 +3883,19 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
                 ai.setStatus("[API] " + accStatus);
             }
             return ai;
-        } else if (ai == null) {
-            logger.info("AccountInfo via API not possible -> Obtaining all AccountInfo from website");
-            /*
-             * apikey can also be used e.g. for mass-linkchecking. Make sure that we keep only a valid apikey otherwise other stuff may
-             * break!
-             */
-            account.removeProperty(PROPERTY_ACCOUNT_apikey);
-            /*
-             * Do not remove the saved API domain because if a user e.g. adds an apikey without adding an account later on, it might still
-             * be useful!
-             */
-            // this.getPluginConfig().removeProperty(PROPERTY_PLUGIN_api_domain_with_protocol);
-            /* Use new AccountInfo object to use with account data from website. */
+        }
+        if (ai == null) {
+            /* No info from API available */
             ai = new AccountInfo();
         } else {
-            logger.info("Found AccountInfo via API but trying to obtain trafficleft value from website (usually not given via API)");
+            logger.info("Found AccountInfo via API but trying to obtain trafficleft value from website as it is usually not given via API");
         }
-        ai = fetchAccountInfoWebsiteTraffic(br, account, ai);
+        fetchAccountInfoWebsiteTraffic(br, account, ai);
         if (apiSuccess) {
             logger.info("Successfully found AccountInfo without trafficleft via API (fetched trafficleft via website)");
             return ai;
         }
-        ai = fetchAccountInfoWebsiteStorage(br, account, ai);
+        fetchAccountInfoWebsiteStorage(br, account, ai);
         if (supports_lifetime_account() && is_lifetime_account(br)) {
             ai.setValidUntil(-1);
             setAccountLimitsByType(account, AccountType.LIFETIME);

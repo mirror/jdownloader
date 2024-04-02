@@ -135,10 +135,11 @@ public class WolfstreamTv extends XFileSharingProBasic {
 
     @Override
     public String[] scanInfo(final String[] fileInfo) {
-        // required
-        if (StringUtils.isEmpty(fileInfo[0])) {
-            fileInfo[0] = new Regex(correctedBR, "<h1\\s+[^>]*>\\s*(.*?)\\s*<\\s*\\w+").getMatch(0);
+        final String betterFileTitle = new Regex(correctedBR, "CONTENT=\"Watch video ([^\"]+)\"").getMatch(0);
+        if (betterFileTitle != null) {
+            fileInfo[0] = betterFileTitle;
         }
+        /* Find filesize */
         if (StringUtils.isEmpty(fileInfo[1])) {
             fileInfo[1] = new Regex(correctedBR, "<span\\s+class\\s*=\\s*\"\\s*uploadate\\s*\"\\s*>\\s*Size\\s*:\\s*([0-9\\.]+\\s*[KMGTP]{0,1}B)\\s*").getMatch(0);
         }

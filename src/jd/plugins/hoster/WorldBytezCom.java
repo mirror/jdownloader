@@ -122,6 +122,7 @@ public class WorldBytezCom extends XFileSharingProBasic {
             super.doFree(link, account);
         } catch (final PluginException e) {
             if (e.getLinkStatus() == LinkStatus.ERROR_PLUGIN_DEFECT && this.findFormDownload2Free(br) == null) {
+                /* Account required to download this file */
                 throw new AccountRequiredException();
             } else {
                 throw e;

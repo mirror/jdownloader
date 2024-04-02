@@ -169,7 +169,7 @@ public class FastfileCc extends XFileSharingProBasic {
                 }
             }
             if (twoFAForm == null) {
-                /* Login failed */
+                /* Login failed, not due the need of 2FA login */
                 throw e;
             }
             logger.info("2FA code required");

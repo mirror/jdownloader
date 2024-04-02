@@ -169,6 +169,7 @@ public abstract class XvideosCore extends PluginForHost {
     }
 
     protected String getVideoidFromURL(final String url) {
+        final Regex regex_type_Click;
         if (url == null) {
             return null;
         } else if (url.matches(type_embed)) {
@@ -183,6 +184,8 @@ public abstract class XvideosCore extends PluginForHost {
             return new Regex(url, type_special1).getMatch(0);
         } else if (url.matches(type_special2)) {
             return new Regex(url, type_special2).getMatch(2);
+        } else if ((regex_type_Click = new Regex(url, type_click)).patternFind()) {
+            return regex_type_Click.getMatch(1);
         } else {
             return null;
         }
@@ -205,12 +208,17 @@ public abstract class XvideosCore extends PluginForHost {
 
     protected String getURLTitle(final DownloadLink link) {
         final String url = link.getPluginPatternMatcher();
+        final Regex regex_type_special1;
+        final Regex regex_type_special2;
+        final Regex regex_type_Click;
         if (url == null) {
             return null;
-        } else if (url.matches(type_special1)) {
-            return new Regex(url, type_special1).getMatch(1);
-        } else if (url.matches(type_special2)) {
-            return new Regex(url, type_special2).getMatch(1);
+        } else if ((regex_type_special1 = new Regex(url, type_special1)).patternFind()) {
+            return regex_type_special1.getMatch(1);
+        } else if ((regex_type_special2 = new Regex(url, type_special2)).patternFind()) {
+            return regex_type_special2.getMatch(1);
+        } else if ((regex_type_Click = new Regex(url, type_click)).patternFind()) {
+            return regex_type_Click.getMatch(2);
         } else {
             /* Not all URLs have titles */
             return null;
@@ -220,8 +228,9 @@ public abstract class XvideosCore extends PluginForHost {
     /* xvideos.com */
     protected static final String type_normal                     = "(?i)https?://[^/]+/video(\\d+)(/(.+))?$";
     protected static final String type_normal_dot                 = "(?i)https?://[^/]+/video\\.([a-z0-9\\-]+)(.*?/[^/]+)?$";
+    protected static final String type_click                      = "(?i)https?://[^/]+/prof-video-click/upload/([a-z0-9\\-]+)/([a-z0-9\\-]+)/([a-z0-9\\-_]+)";
     /* xnxx.gold */
-    protected static final String type_normal_dash                = "(?i)https?://[^/]+/video-([a-z0-9\\-]+)(/[^/]+)?$";                          // xnxx.com&
+    protected static final String type_normal_dash                = "(?i)https?://[^/]+/video-([a-z0-9\\-]+)(/[^/]+)?$";                                       // xnxx.com&
     // xnxx.gold
     protected static final String type_embed                      = "(?i)https?://[^/]+/embedframe/(\\d+)";
     protected static final String type_special1                   = "(?i)https?://[^/]+/[^/]+/upload/[^/]+/(\\d+)/([^/]+)";

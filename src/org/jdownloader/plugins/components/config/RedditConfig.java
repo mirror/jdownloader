@@ -146,7 +146,7 @@ public interface RedditConfig extends PluginConfigInterface {
     @DescriptionForConfigEntry(text_PreferredFilenameScheme)
     FilenameScheme getPreferredFilenameScheme();
 
-    void setPreferredFilenameScheme(final FilenameScheme quality);
+    void setPreferredFilenameScheme(final FilenameScheme scheme);
 
     @AboutConfig
     @DefaultStringValue("*date*_*date_timestamp*_*date_timedelta_formatted*_*subreddit_title*_*username*_*post_id*_*post_title**original_filename_without_ext*_*index**ext*")

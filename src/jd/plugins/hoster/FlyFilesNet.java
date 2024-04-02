@@ -17,6 +17,10 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -35,14 +39,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "flyfiles.net" }, urls = { "https?://(?:www\\.)?flyfiles\\.net/([a-z0-9]{10})" })
 public class FlyFilesNet extends PluginForHost {
-    private static Object       LOCK     = new Object();
-    private static final String NOCHUNKS = "NOCHUNKS";
+    private static final String PROPERTY_NOCHUNKS = "NOCHUNKS";
 
     // DEV NOTES
     // mods:
@@ -87,7 +86,7 @@ public class FlyFilesNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final Regex finfo = br.getRegex("id=\"file_det\"[^>]*>\\s+(.+) \\- ([\\d\\.]+ (KB|MB|GB|TB))<br>");
-        if (finfo.matches()) {
+        if (finfo.patternFind()) {
             link.setName(Encoding.htmlDecode(finfo.getMatch(0)).trim());
             link.setDownloadSize(SizeFormatter.getSize(finfo.getMatch(1)));
         }
@@ -214,40 +213,37 @@ public class FlyFilesNet extends PluginForHost {
 
     private void login(final Account account, final boolean force) throws Exception {
         synchronized (account) {
-            try {
-                prepBrowser();
-                br.setCookiesExclusive(true);
-                prepBrowser();
-                final Cookies cookies = account.loadCookies("");
-                if (cookies != null) {
-                    br.setCookies(cookies);
-                    if (!force) {
-                        /* Do not check cookies */
-                        return;
-                    }
-                    logger.info("Checking login cookies");
-                    br.getPage("https://" + this.getHost() + "/login.html");
-                    if (isLoggedin(br)) {
-                        logger.info("Cookie login successful");
-                        /* Access sub-page which contains information about this account. */
-                        br.getPage("/");
-                        account.saveCookies(br.getCookies(br.getHost()), "");
-                    } else {
-                        logger.info("Cookie login failed");
-                    }
+            prepBrowser();
+            br.setCookiesExclusive(true);
+            prepBrowser();
+            final Cookies cookies = account.loadCookies("");
+            if (cookies != null) {
+                br.setCookies(cookies);
+                if (!force) {
+                    /* Do not check cookies */
+                    return;
                 }
-                logger.info("Performing full login");
-                br.getPage("https://" + this.getHost());
-                br.postPage("/login.html", "user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
-                if (!isLoggedin(br)) {
-                    throw new AccountInvalidException();
+                logger.info("Checking login cookies");
+                br.getPage("https://" + this.getHost() + "/login.html");
+                if (isLoggedin(br)) {
+                    logger.info("Cookie login successful");
+                    /* Access sub-page which contains information about this account. */
+                    br.getPage("/");
+                    account.saveCookies(br.getCookies(br.getHost()), "");
+                } else {
+                    logger.info("Cookie login failed");
+                    account.clearCookies("");
+                    br.clearCookies(null);
                 }
-                br.getPage("/");
-                account.saveCookies(br.getCookies(br.getHost()), "");
-            } catch (final PluginException e) {
-                account.clearCookies("");
-                throw e;
             }
+            logger.info("Performing full login");
+            br.getPage("https://" + this.getHost());
+            br.postPage("/login.html", "user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
+            if (!isLoggedin(br)) {
+                throw new AccountInvalidException();
+            }
+            br.getPage("/");
+            account.saveCookies(br.getCookies(br.getHost()), "");
         }
     }
 
@@ -278,7 +274,7 @@ public class FlyFilesNet extends PluginForHost {
             }
         }
         int maxChunks = 0;
-        if (link.getBooleanProperty(FlyFilesNet.NOCHUNKS, false)) {
+        if (link.getBooleanProperty(FlyFilesNet.PROPERTY_NOCHUNKS, false)) {
             maxChunks = 1;
         }
         dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, true, maxChunks);
@@ -296,16 +292,16 @@ public class FlyFilesNet extends PluginForHost {
                 } catch (final Throwable e) {
                 }
                 /* unknown error, we disable multiple chunks */
-                if (link.getBooleanProperty(FlyFilesNet.NOCHUNKS, false) == false) {
-                    link.setProperty(FlyFilesNet.NOCHUNKS, Boolean.valueOf(true));
+                if (link.getBooleanProperty(FlyFilesNet.PROPERTY_NOCHUNKS, false) == false) {
+                    link.setProperty(FlyFilesNet.PROPERTY_NOCHUNKS, Boolean.valueOf(true));
                     throw new PluginException(LinkStatus.ERROR_RETRY);
                 }
             }
         } catch (final PluginException e) {
             // New V2 errorhandling
             /* unknown error, we disable multiple chunks */
-            if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && link.getBooleanProperty(FlyFilesNet.NOCHUNKS, false) == false) {
-                link.setProperty(FlyFilesNet.NOCHUNKS, Boolean.valueOf(true));
+            if (e.getLinkStatus() != LinkStatus.ERROR_RETRY && link.getBooleanProperty(FlyFilesNet.PROPERTY_NOCHUNKS, false) == false) {
+                link.setProperty(FlyFilesNet.PROPERTY_NOCHUNKS, Boolean.valueOf(true));
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
             throw e;
@@ -314,7 +310,7 @@ public class FlyFilesNet extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
+        return Integer.MAX_VALUE;
     }
 
     @Override

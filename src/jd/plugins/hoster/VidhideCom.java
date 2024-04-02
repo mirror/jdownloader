@@ -29,6 +29,8 @@ import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class VidhideCom extends XFileSharingProBasic {
@@ -175,7 +177,13 @@ public class VidhideCom extends XFileSharingProBasic {
         }
         if (StringUtils.isEmpty(dllink)) {
             logger.warning("Failed to find dllink via official video download");
-            return null;
+            final String specialErrorDownloadImpossible = br.getRegex("<b class=\"err\"[^>]*>([^<]+)</b>").getMatch(0);
+            if (specialErrorDownloadImpossible != null) {
+                /* 2024-04-02: e.g. "Downloads disabled 6210" */
+                throw new PluginException(LinkStatus.ERROR_FATAL, specialErrorDownloadImpossible);
+            } else {
+                return null;
+            }
         }
         logger.info("Successfully found dllink via official video download");
         return dllink;
