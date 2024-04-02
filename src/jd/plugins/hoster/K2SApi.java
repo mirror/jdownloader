@@ -77,7 +77,6 @@ public abstract class K2SApi extends PluginForHost {
     // public static final String PROPERTY_isAvailableForFree = "isAvailableForFree";
     /* Hardcoded time to wait between downloads once limit is reached. */
     private final long          FREE_RECONNECTWAIT_MILLIS  = 1 * 60 * 60 * 1000L;
-    private final boolean       USE_MASS_LINKCHECKER       = true;                     // TODO: Remove this
 
     public K2SApi(PluginWrapper wrapper) {
         super(wrapper);
@@ -376,8 +375,6 @@ public abstract class K2SApi extends PluginForHost {
          * files being displayed as online while they actually don't exist anymore (abused/deleted). </br>
          * More detailed description: https://board.jdownloader.org/showthread.php?t=95537
          */
-        // TODO: Make use of plugin setting
-        // return USE_MASS_LINKCHECKER;
         final Keep2shareConfig cfg = PluginJsonConfig.get(this.getConfigInterface());
         final LinkcheckMode mode = cfg.getFileLinkcheckMode();
         if (mode == LinkcheckMode.SINGLE_LINKCHECK) {
