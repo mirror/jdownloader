@@ -97,11 +97,6 @@ public class NaughtyamericaComCrawler extends PluginForDecrypt {
                 throw new DecrypterRetryException(RetryReason.PLUGIN_SETTINGS, "ACCOUNT_LOGIN_EXPIRED_" + urlSlug, "Refresh your account in settings and try again.");
             }
             final ArrayList<Integer> selectedQualities = this.getSelectedQualities();
-            /* TODO: Remove those hardcoded values once 8k and 6k have been added to plugin settings. */
-            selectedQualities.add(4320);
-            selectedQualities.add(3466);
-            selectedQualities.add(3465);
-            selectedQualities.add(2048);
             if (selectedQualities.isEmpty() && !ignoreQualitySelection) {
                 throw new DecrypterRetryException(RetryReason.PLUGIN_SETTINGS, "USER_DESELECTED_ALL_QUALITIES_" + urlSlug, "You've deselected all qualities in the settings of this plugin.");
             }
@@ -284,12 +279,9 @@ public class NaughtyamericaComCrawler extends PluginForDecrypt {
             return Integer.parseInt(qualityStr);
         } else if (qualityStr.equalsIgnoreCase("8k") || StringUtils.startsWithCaseInsensitive(qualityStr, "8k")) {
             return 4320;
-        } else if (StringUtils.containsIgnoreCase(qualityStr, "") && (qualityStr.equalsIgnoreCase("6k") || StringUtils.startsWithCaseInsensitive(qualityStr, "6k"))) {
+        } else if (qualityStr.equalsIgnoreCase("6k") || StringUtils.startsWithCaseInsensitive(qualityStr, "6k")) {
             /* Quest2/Quest Pro 6K H265 */
             return 3466;
-        } else if (qualityStr.equalsIgnoreCase("6k") || StringUtils.startsWithCaseInsensitive(qualityStr, "6k")) {
-            /* Quest2/Quest Pro 6K H264 */
-            return 3465;
         } else if (qualityStr.equalsIgnoreCase("4k")) {
             return 2160;
         } else if (qualityStr.equalsIgnoreCase("vrdesktophd")) {
@@ -318,8 +310,18 @@ public class NaughtyamericaComCrawler extends PluginForDecrypt {
     private ArrayList<Integer> getSelectedQualities() {
         final ArrayList<Integer> selectedQualities = new ArrayList<Integer>();
         final NaughtyamericaConfig cfg = PluginJsonConfig.get(NaughtyamericaConfig.class);
+        if (cfg.isGrab8K()) {
+            selectedQualities.add(4320);
+        }
+        if (cfg.isGrab6K()) {
+            // Multiple different video-heights possible
+            selectedQualities.add(3465);
+            selectedQualities.add(3466);
+        }
         if (cfg.isGrab4K()) {
-            selectedQualities.add(getQualityHeight("4k"));
+            // Multiple different video-heights possible
+            selectedQualities.add(2048);
+            selectedQualities.add(2160);
         }
         if (cfg.isGrab1440p()) {
             selectedQualities.add(1440);

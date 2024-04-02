@@ -26,6 +26,7 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 import org.jdownloader.plugins.components.config.Keep2shareConfig;
+import org.jdownloader.plugins.components.config.Keep2shareConfig.FileLinkAddMode;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 
 import jd.PluginWrapper;
@@ -98,8 +99,10 @@ public class Keep2ShareCcDecrypter extends PluginForDecrypt {
         final boolean looksLikeSingleFileItem;
         String contentidFromURL = new Regex(param.getCryptedUrl(), SUPPORTED_LINKS_PATTERN_FOLDER).getMatch(0);
         if (contentidFromURL != null) {
+            /* Looks like folder */
             looksLikeSingleFileItem = false;
         } else {
+            /* Looks like single file */
             contentidFromURL = new Regex(param.getCryptedUrl(), SUPPORTED_LINKS_PATTERN_FILE).getMatch(0);
             looksLikeSingleFileItem = true;
         }
@@ -111,7 +114,8 @@ public class Keep2ShareCcDecrypter extends PluginForDecrypt {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final K2SApi plugin = (jd.plugins.hoster.K2SApi) getNewPluginForHostInstance(this.getHost());
         final Keep2shareConfig cfg = PluginJsonConfig.get(plugin.getConfigInterface());
-        if (looksLikeSingleFileItem && !cfg.isEnableFolderWorkaround()) {
+        final FileLinkAddMode mode = cfg.getFileLinkAddMode();
+        if (looksLikeSingleFileItem && (mode == FileLinkAddMode.HOSTER_PLUGIN_LINKCHECK || mode == FileLinkAddMode.DEFAULT)) {
             /* URL looks like single file URL -> Pass to hosterplugin so we can make use of mass-linkchecking feature. */
             ret.add(this.createDownloadlink(param.getCryptedUrl().replaceFirst(Pattern.quote(contentidFromURL), contentid)));
             return ret;
@@ -125,16 +129,16 @@ public class Keep2ShareCcDecrypter extends PluginForDecrypt {
         FilePackage fp = null;
         String thisFolderTitle = null;
         try {
-            singleFileHandling: if (looksLikeSingleFileItem) {
+            singleFileHandling: if (looksLikeSingleFileItem && mode == FileLinkAddMode.CRAWLER_PLUGIN_VIA_API_GETFILESINFO) {
                 /**
                  * This handling is supposed to be for single files but can also be used for small folders. </br>
-                 * Using the folder handling down below for single files will prohibit our special referer handling from working since it
-                 * eems to flag the current IP so th referer will be ignored later and users who have configured a special referer will not
-                 * get better download speeds anymore. </br>
+                 * Using the folder handling down below for single files will prohibit our special referrer handling from working since it
+                 * seems to flag the current IP so the referrer will be ignored later and users who have configured a special referrer will
+                 * not get better download speeds anymore. </br>
                  * More detailed explanation: https://board.jdownloader.org/showthread.php?t=94515
                  */
                 logger.info("Link looks like single file link -> Jumping into single file handling");
-                final HashMap<String, Object> postdataGetfilesinfo = new HashMap<String, Object>();
+                final Map<String, Object> postdataGetfilesinfo = new HashMap<String, Object>();
                 postdataGetfilesinfo.put("ids", Arrays.asList(new String[] { contentid }));
                 /**
                  * What this returns: </br>
@@ -178,7 +182,7 @@ public class Keep2ShareCcDecrypter extends PluginForDecrypt {
             String sourceFileID = null;
             String path = this.getAdoptedCloudFolderStructure();
             do {
-                final HashMap<String, Object> postdataGetfilestatus = new HashMap<String, Object>();
+                final Map<String, Object> postdataGetfilestatus = new HashMap<String, Object>();
                 postdataGetfilestatus.put("id", contentid);
                 postdataGetfilestatus.put("limit", maxItemsPerPage);
                 postdataGetfilestatus.put("offset", offset);

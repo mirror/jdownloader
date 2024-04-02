@@ -20,6 +20,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.config.GelbooruComConfig;
+import org.jdownloader.plugins.components.config.GelbooruComConfig.FilenameScheme;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
@@ -32,6 +35,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
@@ -153,7 +157,12 @@ public class GelbooruCom extends PluginForHost {
                 dllink = br.getRegex("<\\s*source\\s+[^>]*src\\s*=\\s*(\"|'|)(.*?)\\1").getMatch(1);
             }
         }
-        if (title != null) {
+        final GelbooruComConfig cfg = PluginJsonConfig.get(GelbooruComConfig.class);
+        final FilenameScheme scheme = cfg.getPreferredFilenameScheme();
+        final String originalFilename = dllink != null ? Plugin.getFileNameFromURL(dllink) : null;
+        if (scheme == FilenameScheme.SERVER_FILENAME && originalFilename != null) {
+            link.setFinalFileName(originalFilename);
+        } else if (title != null) {
             title = Encoding.htmlDecode(title).trim();
             final String extFromURL = getFileNameExtensionFromString(dllink, extDefault);
             link.setFinalFileName(this.correctOrApplyFileNameExtension(title, extFromURL));
@@ -229,5 +238,10 @@ public class GelbooruCom extends PluginForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
+    }
+
+    @Override
+    public Class<? extends GelbooruComConfig> getConfigInterface() {
+        return GelbooruComConfig.class;
     }
 }

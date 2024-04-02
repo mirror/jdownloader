@@ -27,15 +27,15 @@ import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.components.config.Keep2shareConfig;
 import org.jdownloader.plugins.components.config.Keep2shareConfig.CaptchaTimeoutBehavior;
+import org.jdownloader.plugins.components.config.Keep2shareConfig.LinkcheckMode;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 
 import jd.PluginWrapper;
+import jd.controlling.AccountController;
 import jd.controlling.captcha.SkipRequest;
 import jd.controlling.proxy.AbstractProxySelectorImpl;
 import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
 import jd.http.Browser;
-import jd.http.Cookie;
-import jd.http.Cookies;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.Formatter;
@@ -77,6 +77,7 @@ public abstract class K2SApi extends PluginForHost {
     // public static final String PROPERTY_isAvailableForFree = "isAvailableForFree";
     /* Hardcoded time to wait between downloads once limit is reached. */
     private final long          FREE_RECONNECTWAIT_MILLIS  = 1 * 60 * 60 * 1000L;
+    private final boolean       USE_MASS_LINKCHECKER       = true;                     // TODO: Remove this
 
     public K2SApi(PluginWrapper wrapper) {
         super(wrapper);
@@ -102,7 +103,6 @@ public abstract class K2SApi extends PluginForHost {
         br.getHeaders().put("User-Agent", "JDownloader." + getVersion());
         br.getHeaders().put("Accept-Language", "en-gb, en;q=0.8");
         br.getHeaders().put("Accept-Charset", null);
-        // prepBr.getHeaders().put("Cache-Control", null);
         br.getHeaders().put("Pragma", null);
         br.setConnectTimeout(90 * 1000);
         br.setReadTimeout(90 * 1000);
@@ -171,19 +171,6 @@ public abstract class K2SApi extends PluginForHost {
         return url_referer;
     }
 
-    private String getFallbackFilename(final DownloadLink link) {
-        String name_url = null;
-        try {
-            /* Try-catch to allow other plugins to use other patterns */
-            name_url = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(2);
-        } catch (final Throwable ignore) {
-        }
-        if (name_url == null) {
-            name_url = this.getFUID(link);
-        }
-        return name_url;
-    }
-
     /**
      * Sets domain the API will use!
      *
@@ -206,12 +193,13 @@ public abstract class K2SApi extends PluginForHost {
     public void resetLink(DownloadLink link) {
     }
 
-    protected boolean isValidDownloadConnection(final URLConnectionAdapter con) {
+    @Override
+    protected boolean looksLikeDownloadableContent(final URLConnectionAdapter con) {
         final String contentType = con.getContentType();
         if (StringUtils.contains(contentType, "text") || StringUtils.containsIgnoreCase(contentType, "html") || con.getCompleteContentLength() == -1 || con.getResponseCode() == 401 || con.getResponseCode() == 404 || con.getResponseCode() == 409 || con.getResponseCode() == 440) {
             return false;
         } else {
-            return looksLikeDownloadableContent(con);
+            return super.looksLikeDownloadableContent(con);
         }
     }
 
@@ -279,7 +267,7 @@ public abstract class K2SApi extends PluginForHost {
      * @return
      */
     protected boolean useAPI() {
-        /* 2020-05-09: Website mode not supported anymore. */
+        /* 2020-05-09: Website mode not supported anymore so this is hardcoded to true now. */
         return true;
     }
 
@@ -364,8 +352,58 @@ public abstract class K2SApi extends PluginForHost {
         return getHost();
     }
 
+    /** Sets filename based in information in downloadurl. */
+    private void setWeakFilename(final DownloadLink link) {
+        if (!link.isNameSet()) {
+            String name_url = null;
+            try {
+                /* Try-catch to allow other plugins to use other patterns */
+                name_url = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(2);
+            } catch (final Throwable ignore) {
+            }
+            if (name_url == null) {
+                /* Fallback to fuid */
+                name_url = this.getFUID(link);
+            }
+            link.setName(name_url);
+        }
+    }
+
+    @Override
+    public boolean internal_supportsMassLinkcheck() {
+        /**
+         * The need to have a setting for the mass-linkcheck behavior is mainly due to a serverside API bug in mass-linkcheck which leads to
+         * files being displayed as online while they actually don't exist anymore (abused/deleted). </br>
+         * More detailed description: https://board.jdownloader.org/showthread.php?t=95537
+         */
+        // TODO: Make use of plugin setting
+        // return USE_MASS_LINKCHECKER;
+        final Keep2shareConfig cfg = PluginJsonConfig.get(this.getConfigInterface());
+        final LinkcheckMode mode = cfg.getFileLinkcheckMode();
+        if (mode == LinkcheckMode.SINGLE_LINKCHECK) {
+            /* User prefers single linkcheck. */
+            return false;
+        } else if (mode == LinkcheckMode.AUTO) {
+            /*
+             * Use single-linkcheck if user is a premium user since single linkcheck causes disadvantages for free [+ free-account]
+             * downloading but not for premium users.
+             */
+            final ArrayList<Account> accounts = AccountController.getInstance().getValidAccounts(this.getHost());
+            if (accounts != null) {
+                for (final Account account : accounts) {
+                    if (this.isPremium(account)) {
+                        /* User has active premium account -> Prefer single linkcheck. */
+                        return false;
+                    }
+                }
+            }
+        }
+        /* Allow mass-linkcheck */
+        return true;
+    }
+
+    @Override
     public boolean checkLinks(final DownloadLink[] urls) {
-        // required to get overrides to work
         final Browser br = prepAPI(createNewBrowserInstance());
         try {
             final List<DownloadLink> links = new ArrayList<DownloadLink>();
@@ -375,22 +413,25 @@ public abstract class K2SApi extends PluginForHost {
                 final ArrayList<String> fileIDs = new ArrayList<String>();
                 while (true) {
                     if (links.size() == 100 || index == urls.length) {
+                        /* Check up to 100 fileIDs with one request */
                         break;
-                    } else {
-                        final DownloadLink dl = urls[index];
-                        final String fuid = getFUID(dl);
-                        links.add(dl);
-                        fileIDs.add(fuid);
-                        index++;
                     }
+                    final DownloadLink dl = urls[index];
+                    final String fuid = getFUID(dl);
+                    links.add(dl);
+                    fileIDs.add(fuid);
+                    index++;
                 }
                 try {
                     try {
                         final HashMap<String, Object> postdata = new HashMap<String, Object>();
                         postdata.put("ids", fileIDs);
+                        // postdata.put("extended_info", true);
+                        /* Docs to used API call: https://keep2share.github.io/api/#resources:/getFilesInfo:post */
                         final Map<String, Object> entries = postPageRaw(br, "/getfilesinfo", postdata, null);
                         final List<Map<String, Object>> files = (List<Map<String, Object>>) entries.get("files");
                         for (final DownloadLink link : links) {
+                            setWeakFilename(link);
                             final String fuid = getFUID(link);
                             Map<String, Object> fileInfo = null;
                             for (final Map<String, Object> fileInfoTmp : files) {
@@ -414,7 +455,7 @@ public abstract class K2SApi extends PluginForHost {
                                 link.setAvailable(false);
                             } else {
                                 parseFileInfo(link, fileInfo, fuid);
-                                if ((Boolean) fileInfo.get("is_folder") == Boolean.TRUE) {
+                                if (Boolean.TRUE.equals(fileInfo.get("is_folder"))) {
                                     /**
                                      * Check if somehow a fileID has managed to go into the hoster plugin handling. </br>
                                      * This should never happen.
@@ -423,9 +464,6 @@ public abstract class K2SApi extends PluginForHost {
                                     if (link.getComment() == null) {
                                         link.setComment(getErrorMessageForUser(23));
                                     }
-                                }
-                                if (!link.isNameSet()) {
-                                    link.setName(getFallbackFilename(link));
                                 }
                             }
                         }
@@ -641,7 +679,7 @@ public abstract class K2SApi extends PluginForHost {
     public void handleDownload(final DownloadLink link, final Account account) throws Exception {
         logger.info(getRevisionInfo());
         /* Check link */
-        reqFileInformation(link);
+        this.requestFileInformation(link);
         final String fuid = getFUID(link);
         final String storedDirecturl = this.getStoredDirecturl(link, account);
         final String dllink;
@@ -652,7 +690,7 @@ public abstract class K2SApi extends PluginForHost {
             dllink = storedDirecturl;
         } else {
             logger.info("Generating new directurl");
-            final boolean isFree = this.isNoAccountOrFreeAccount(account);
+            final boolean isFree = !this.isPremium(account);
             if ("premium".equalsIgnoreCase(link.getStringProperty(PROPERTY_ACCESS)) && isFree) {
                 // download not possible
                 premiumDownloadRestriction(getErrorMessageForUser(3));
@@ -800,7 +838,7 @@ public abstract class K2SApi extends PluginForHost {
         logger.info("Current speedlimit according to final downloadurl: " + rate_limitStr);
         try {
             dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, resumable, maxChunks);
-            if (!isValidDownloadConnection(dl.getConnection())) {
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 logger.warning("The final dllink seems not to be a file!");
                 br.followConnection(true);
                 handleGeneralServerErrors(br, dl, account, link);
@@ -854,6 +892,7 @@ public abstract class K2SApi extends PluginForHost {
         if (captchaTimeoutBehavior == CaptchaTimeoutBehavior.GLOBAL_SETTING) {
             super.onCaptchaTimeout(link, challenge);
         } else {
+            /* Stop all items of this host to avoid IP ban due to too many un-answered captchas. */
             CaptchaBlackList.getInstance().add(new BlockDownloadCaptchasByHost(link.getHost()));
             final boolean isAccountLoginCaptchaChallenge = isAccountLoginCaptchaChallenge(link, challenge);
             if (isAccountLoginCaptchaChallenge) {
@@ -893,20 +932,15 @@ public abstract class K2SApi extends PluginForHost {
         }
         final Map<String, Object> entries = this.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         final String filename = (String) entries.get("name");
-        // final String access = (String)entries.get("access");
         final boolean isDeleted = ((Boolean) entries.get("isDeleted")).booleanValue();
-        // final boolean hasAbuse = ((Boolean) entries.get("hasAbuse")).booleanValue();
         final Object filesizeO = entries.get("size");
-        // final List<Object> ressourcelist = (List<Object>) entries.get("");
         if (!StringUtils.isEmpty(filename)) {
             link.setFinalFileName(filename);
         }
         if (filesizeO != null) {
             link.setDownloadSize(Long.parseLong(filesizeO.toString()));
         }
-        // link.setProperty(PROPERTY_isAvailableForFree, entries.get("isAvailableForFree"));
         if (isDeleted) {
-            /* Files can get deleted and filename & filesize information may still be available! */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         return AvailableStatus.TRUE;
@@ -1700,10 +1734,15 @@ public abstract class K2SApi extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        return reqFileInformation(link);
+        if (internal_supportsMassLinkcheck()) {
+            return requestFileInformationViaMassLinkcheck(link);
+        } else {
+            return requestFileInformationViaSingleLinkcheck_GetfilestatusAPICall(link);
+        }
     }
 
-    private AvailableStatus reqFileInformation(final DownloadLink link) throws Exception {
+    private AvailableStatus requestFileInformationViaMassLinkcheck(final DownloadLink link) throws Exception {
+        /* Check single file via mass-linkchecker */
         final boolean checked = checkLinks(new DownloadLink[] { link });
         // we can't throw exception in checklinks! This is needed to prevent multiple captcha events!
         if (!checked || !link.isAvailabilityStatusChecked()) {
@@ -1712,6 +1751,38 @@ public abstract class K2SApi extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         return link.getAvailableStatus();
+    }
+
+    /**
+     * Check single file via single linkcheck using another API call. </br>
+     * Can be used as a workaround for this problem: https://board.jdownloader.org/showthread.php?t=95537 </br>
+     * API call used here: https://keep2share.github.io/api/#resources:/getFileStatus:post
+     */
+    private AvailableStatus requestFileInformationViaSingleLinkcheck_GetfilestatusAPICall(final DownloadLink link) throws Exception {
+        final HashMap<String, Object> postdataGetfilestatus = new HashMap<String, Object>();
+        final String fileID = getFUID(link);
+        this.setWeakFilename(link);
+        postdataGetfilestatus.put("id", getFUID(link));
+        postdataGetfilestatus.put("limit", 1);
+        postdataGetfilestatus.put("offset", 0);
+        try {
+            final Map<String, Object> response = this.postPageRaw(br, "/getfilestatus", postdataGetfilestatus, null);
+            K2SApi.parseFileInfo(link, response, fileID);
+            if (response.containsKey("files") || Boolean.TRUE.equals(response.get("is_folder"))) {
+                /* User added folder as '/file/' link so it wasn't processed as a folder in our crawler plugin -> Dead end. */
+                if (link.getComment() == null) {
+                    link.setComment(getErrorMessageForUser(23));
+                }
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Multiple files/folder -> We cannot handle this in hosterplugin");
+            }
+        } catch (final PluginException e) {
+            if (br.getHttpConnection().getResponseCode() == 400) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Invalid fileID");
+            } else {
+                throw e;
+            }
+        }
+        return AvailableStatus.TRUE;
     }
 
     private String getLanguage() {
@@ -1757,7 +1828,7 @@ public abstract class K2SApi extends PluginForHost {
     }
 
     private void controlSlot(final int num, final Account account) {
-        if (isNoAccountOrFreeAccount(account)) {
+        if (!this.isPremium(account)) {
             synchronized (freeDownloadHandling) {
                 final AbstractProxySelectorImpl proxySelector = getDownloadLink().getDownloadLinkController().getProxySelector();
                 AtomicLong[] store = freeDownloadHandling.get(proxySelector);
@@ -1797,7 +1868,7 @@ public abstract class K2SApi extends PluginForHost {
         /*
          * TODO: Always use getHostMaxAccount(account) for accounts (no matter which type) and getHostMaxFree for non account downloads(?)
          */
-        if (isNoAccountOrFreeAccount(account)) {
+        if (!this.isPremium(account)) {
             final AtomicLong[] store;
             synchronized (freeDownloadHandling) {
                 store = freeDownloadHandling.get(proxy);
@@ -1844,6 +1915,7 @@ public abstract class K2SApi extends PluginForHost {
     @Override
     public boolean isSameAccount(Account downloadAccount, AbstractProxySelectorImpl downloadProxySelector, Account candidateAccount, AbstractProxySelectorImpl candidateProxySelector) {
         if (downloadProxySelector == candidateProxySelector) {
+            // TODO: 2024-03-29: What is this doing?
             if (isNoAccountOrFreeAccount(downloadAccount) && isNoAccountOrFreeAccount(candidateAccount)) {
                 return true;
             }
@@ -1996,12 +2068,12 @@ public abstract class K2SApi extends PluginForHost {
 
     @Override
     public boolean hasCaptcha(final DownloadLink link, final jd.plugins.Account acc) {
-        if (acc == null || acc.getType() == AccountType.FREE) {
-            /* No account or free account, yes we can expect captcha */
-            return true;
-        } else {
-            /* Only sometimes required during login */
+        if (this.isPremium(acc)) {
+            /* No captchas for premium users */
             return false;
+        } else {
+            /* Captchas for free- and free-account users */
+            return true;
         }
     }
     // @Override
@@ -2016,25 +2088,6 @@ public abstract class K2SApi extends PluginForHost {
     // return false;
     // }
     // }
-
-    private static final String cfRequiredCookies = "__cfduid|cf_clearance";
-
-    /**
-     * returns true if browser contains cookies that match expected
-     *
-     * @author raztoki
-     * @param ibr
-     * @return
-     */
-    protected boolean containsCloudflareCookies(final Browser ibr) {
-        final Cookies add = ibr.getCookies(ibr.getHost());
-        for (final Cookie c : add.getCookies()) {
-            if (new Regex(c.getKey(), cfRequiredCookies).matches()) {
-                return true;
-            }
-        }
-        return false;
-    }
 
     @Override
     public Class<? extends Keep2shareConfig> getConfigInterface() {

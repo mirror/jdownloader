@@ -40,8 +40,16 @@ public interface NaughtyamericaConfig extends PluginConfigInterface {
             return "Grab 1440p?";
         }
 
-        public String getGrab4kp_label() {
+        public String getGrab4Kp_label() {
             return "Grab 4k?";
+        }
+
+        public String getGrab6Kp_label() {
+            return "Grab 6k?";
+        }
+
+        public String getGrab8Kp_label() {
+            return "Grab 8k?";
         }
     }
 
@@ -132,4 +140,20 @@ public interface NaughtyamericaConfig extends PluginConfigInterface {
     boolean isGrab4K();
 
     void setGrab4K(boolean b);
+
+    @AboutConfig
+    @DescriptionForConfigEntry("Grab 6k?")
+    @DefaultBooleanValue(true)
+    @Order(140)
+    boolean isGrab6K();
+
+    void setGrab6K(boolean b);
+
+    @AboutConfig
+    @DescriptionForConfigEntry("Grab 8k?")
+    @DefaultBooleanValue(true)
+    @Order(150)
+    boolean isGrab8K();
+
+    void setGrab8K(boolean b);
 }

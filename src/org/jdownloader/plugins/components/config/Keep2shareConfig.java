@@ -13,7 +13,7 @@ import org.jdownloader.plugins.config.PluginHost;
 import org.jdownloader.plugins.config.TakeValueFromSubconfig;
 import org.jdownloader.plugins.config.Type;
 
-@PluginHost(host = "keep2share.cc", type = Type.HOSTER)
+@PluginHost(host = "k2s.cc", type = Type.HOSTER)
 public interface Keep2shareConfig extends PluginConfigInterface {
     public static class TRANSLATION {
         public String getEnableReconnectWorkaround_label() {
@@ -36,8 +36,12 @@ public interface Keep2shareConfig extends PluginConfigInterface {
             return "Max. number of simultaneous downloads in free mode";
         }
 
-        public String getEnableFolderWorkaround_label() {
-            return "Folder crawler: Enable folder workaround?";
+        public String getFileLinkAddMode_label() {
+            return "File link add mode";
+        }
+
+        public String getFileLinkcheckMode_label() {
+            return "File linkcheck mode";
         }
 
         public String getCaptchaTimeoutBehavior_label() {
@@ -80,13 +84,79 @@ public interface Keep2shareConfig extends PluginConfigInterface {
 
     void setMaxSimultaneousFreeDownloads(int maxFree);
 
-    @AboutConfig
-    @DefaultBooleanValue(false)
-    @Order(50)
-    @DescriptionForConfigEntry("Enable this if you want JDownloader to be able to handle folders which are added as single file URLs in with the pattern /http.../file/...'.")
-    boolean isEnableFolderWorkaround();
+    final FileLinkAddMode defaultFileLinkAddMode = FileLinkAddMode.HOSTER_PLUGIN_LINKCHECK;
 
-    void setEnableFolderWorkaround(boolean b);
+    public static enum FileLinkAddMode implements LabelInterface {
+        HOSTER_PLUGIN_LINKCHECK {
+            @Override
+            public String getLabel() {
+                return "Pass to hoster plugin for file linkcheck";
+            }
+        },
+        CRAWLER_PLUGIN_VIA_API_GETFILESINFO {
+            @Override
+            public String getLabel() {
+                return "[Not recommended] Check for folder via '/api/v2/getfilesinfo'";
+            }
+        },
+        CRAWLER_PLUGIN_VIA_API_GETFILESTATUS {
+            @Override
+            public String getLabel() {
+                return "Check for folder via '/api/v2/getfilestatus'";
+            }
+        },
+        DEFAULT {
+            @Override
+            public String getLabel() {
+                return "Default: " + defaultFileLinkAddMode.getLabel();
+            }
+        };
+    }
+
+    @AboutConfig
+    @DefaultEnumValue("DEFAULT")
+    @Order(50)
+    @DescriptionForConfigEntry("Configure how '/file/' links are processed when they are initially added. Documentation of used API: keep2share.github.io/api/")
+    FileLinkAddMode getFileLinkAddMode();
+
+    void setFileLinkAddMode(FileLinkAddMode mode);
+
+    final LinkcheckMode defaultFileLinkcheckMode = LinkcheckMode.MASS_LINKCHECK;
+
+    public static enum LinkcheckMode implements LabelInterface {
+        MASS_LINKCHECK {
+            @Override
+            public String getLabel() {
+                return "Mass linkcheck: Checks up to 100 items with a single request via API '/api/v2/getfilesinfo'";
+            }
+        },
+        SINGLE_LINKCHECK {
+            @Override
+            public String getLabel() {
+                return "Single linkcheck: Check links one by one via '/api/v2/getfilestatus'";
+            }
+        },
+        AUTO {
+            @Override
+            public String getLabel() {
+                return "Auto: Use single linkcheck if premium account is available, else mass-linkcheck";
+            }
+        },
+        DEFAULT {
+            @Override
+            public String getLabel() {
+                return "Default: " + defaultFileLinkcheckMode.getLabel();
+            }
+        };
+    }
+
+    @AboutConfig
+    @DefaultEnumValue("DEFAULT")
+    @Order(51)
+    @DescriptionForConfigEntry("Configure how file links are checked. Documentation of used API: keep2share.github.io/api/")
+    LinkcheckMode getFileLinkcheckMode();
+
+    void setFileLinkcheckMode(LinkcheckMode mode);
 
     public static enum CaptchaTimeoutBehavior implements LabelInterface {
         GLOBAL_SETTING {

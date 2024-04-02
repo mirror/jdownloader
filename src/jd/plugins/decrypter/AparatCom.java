@@ -23,6 +23,9 @@ import java.util.Map;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.config.AparatComConfig;
+import org.jdownloader.plugins.components.config.AparatComConfig.PreferredStreamQuality;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -116,35 +119,65 @@ public class AparatCom extends PluginForDecrypt {
             final String videodescription = (String) videomap.get("description");
             // TODO: Add selection of user preferred video quality
             final List<Map<String, Object>> qualitymaps = (List<Map<String, Object>>) videomap.get("file_link_all");
-            Map<String, Object> bestQuality = null;
             int videoHeightMax = -1;
+            DownloadLink best = null;
+            DownloadLink preferredQuality = null;
+            final int preferredQualityHeight;
+            final PreferredStreamQuality quality = PluginJsonConfig.get(AparatComConfig.class).getPreferredStreamQuality();
+            if (quality == PreferredStreamQuality.Q144P) {
+                preferredQualityHeight = 144;
+            } else if (quality == PreferredStreamQuality.Q240P) {
+                preferredQualityHeight = 240;
+            } else if (quality == PreferredStreamQuality.Q360P) {
+                preferredQualityHeight = 360;
+            } else if (quality == PreferredStreamQuality.Q480P) {
+                preferredQualityHeight = 480;
+            } else if (quality == PreferredStreamQuality.Q720P) {
+                preferredQualityHeight = 720;
+            } else if (quality == PreferredStreamQuality.Q1080P) {
+                preferredQualityHeight = 1080;
+            } else if (quality == PreferredStreamQuality.Q2160P) {
+                preferredQualityHeight = 2160;
+            } else {
+                preferredQualityHeight = -1;
+            }
             for (final Map<String, Object> qualitymap : qualitymaps) {
                 final String thisprofile = qualitymap.get("profile").toString();
                 if (!thisprofile.matches("(?i)\\d+p")) {
                     continue;
                 }
                 final int thisVideoHeight = Integer.parseInt(thisprofile.toLowerCase(Locale.ENGLISH).replace("p", ""));
-                if (thisVideoHeight > videoHeightMax || bestQuality == null) {
+                final List<String> urls = (List<String>) qualitymap.get("urls");
+                final DownloadLink dl = this.createDownloadlink(DirectHTTP.createURLForThisPlugin(urls.get(0)));
+                final String profile = qualitymap.get("profile").toString(); // e.g. "1080p"
+                String fileName;
+                if (!StringUtils.isEmpty(videotitle)) {
+                    fileName = videotitle;
+                } else {
+                    fileName = videoid;
+                }
+                if (profile != null) {
+                    fileName += "_" + profile;
+                }
+                dl.setFinalFileName(fileName + ".mp4");
+                dl.setAvailable(true);
+                dl.setContentUrl(contenturl);
+                ret.add(dl);
+                if (thisVideoHeight > videoHeightMax || best == null) {
                     videoHeightMax = thisVideoHeight;
-                    bestQuality = qualitymap;
+                    best = dl;
+                }
+                if (thisVideoHeight == preferredQualityHeight) {
+                    preferredQuality = dl;
                 }
             }
-            final List<String> urls = (List<String>) bestQuality.get("urls");
-            final DownloadLink dl = this.createDownloadlink(DirectHTTP.createURLForThisPlugin(urls.get(0)));
-            final String profile = bestQuality.get("profile").toString();
-            String fileName;
-            if (!StringUtils.isEmpty(videotitle)) {
-                fileName = videotitle;
+            if (preferredQuality != null) {
+                ret.clear();
+                ret.add(preferredQuality);
             } else {
-                fileName = videoid;
+                ret.clear();
+                ret.add(best);
             }
-            if (profile != null) {
-                fileName += "_" + profile;
-            }
-            dl.setFinalFileName(fileName + ".mp4");
-            dl.setAvailable(true);
-            dl.setContentUrl(contenturl);
-            ret.add(dl);
             /* Put all results into one package */
             final FilePackage fp = FilePackage.getInstance();
             if (!videotitle.isEmpty()) {
@@ -153,8 +186,7 @@ public class AparatCom extends PluginForDecrypt {
             if (!StringUtils.isEmpty(videodescription)) {
                 fp.setComment(videodescription);
             }
-            // filePackage.setComment(videotitle);
-            fp.setPackageKey("aparat_com://video/" + videoid + "/quality/" + profile);
+            fp.setPackageKey("aparat_com://video/" + videoid);
             fp.addLinks(ret);
             return ret;
         } else if (playlist.patternFind()) {
@@ -205,5 +237,10 @@ public class AparatCom extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         return ret;
+    }
+
+    @Override
+    public Class<? extends AparatComConfig> getConfigInterface() {
+        return AparatComConfig.class;
     }
 }
