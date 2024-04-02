@@ -26,7 +26,6 @@ import java.util.Set;
 import java.util.regex.Pattern;
 
 import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
@@ -75,7 +74,7 @@ public class OneDriveLiveComCrawler extends PluginForDecrypt {
 
     @SuppressWarnings({ "unchecked", "deprecation" })
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        String contenturl = param.getCryptedUrl().replaceFirst("(?i)http://", "https://");
+        String contenturl = param.getCryptedUrl().replaceFirst("^(?i)http://", "https://");
         setGlobalVars(contenturl);
         if (cid == null || resource_id == null) {
             /* Possibly a short-URL which redirects to another URL which should contain the parameters we are looking for. */
@@ -102,8 +101,7 @@ public class OneDriveLiveComCrawler extends PluginForDecrypt {
         }
         cid = cid.toUpperCase(Locale.ENGLISH);
         contenturl = this.generateFolderLink(cid, resource_id, authkey);
-        boolean useNewAPI = DebugMode.TRUE_IN_IDE_ELSE_FALSE;
-        // useNewAPI = false;
+        final boolean useNewAPI = true;
         if (useNewAPI) {
             final UrlQuery rootquerypost = new UrlQuery();
             rootquerypost.add("%24select", "*%2CsharepointIds%2CwebDavUrl%2CcontainingDrivePolicyScenarioViewpoint");

@@ -51,6 +51,14 @@ public class WolfstreamTv extends XFileSharingProBasic {
         return ret;
     }
 
+    @Override
+    protected List<String> getDeadDomains() {
+        final ArrayList<String> deadDomains = new ArrayList<String>();
+        deadDomains.add("aparat.cam");
+        deadDomains.add("wolfstream.top"); // 2024-04-02: Is home of another project now
+        return deadDomains;
+    }
+
     public static String[] getAnnotationNames() {
         return buildAnnotationNames(getPluginDomains());
     }

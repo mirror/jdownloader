@@ -177,7 +177,6 @@ public class OrfAt extends PluginForDecrypt {
         }
         final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         final Map<String, Object> _embedded = (Map<String, Object>) entries.get("_embedded");
-        final Map<String, Object> sourcesForGaplessVideo = (Map<String, Object>) entries.get("sources");
         final String contentIDSlashPlaylistIDSlashVideoID = entries.get("id").toString();
         final List<Map<String, Object>> segments = (List<Map<String, Object>>) _embedded.get("segments");
         final String dateStr = entries.get("date").toString();
@@ -460,10 +459,10 @@ public class OrfAt extends PluginForDecrypt {
         final boolean gaplessNeeded = isCrawlGaplessAndVideoChapters || isCrawlGaplessOnly;
         final boolean crawlGapless;
         if (ret.isEmpty()) {
-            /* Found nothing -> Try to cra */
+            /* Found nothing -> Try to crawl gapless items */
             logger.info("Found nothing -> Trying to crawl gapless version as fallback");
             crawlGapless = true;
-        } else if (sourcesForGaplessVideo != null && sourcesForGaplessVideo.size() > 0 && gaplessNeeded && !alreadyFoundGaplessProgressive) {
+        } else if (gaplessNeeded && !alreadyFoundGaplessProgressive) {
             logger.info("User prefers gapless and already crawled items don't looke like gapless");
             crawlGapless = true;
         } else {
@@ -473,15 +472,22 @@ public class OrfAt extends PluginForDecrypt {
         if (crawlGapless) {
             /* Gapless video handling */
             logger.info("Crawling gapless video streams");
-            if (isCrawlGaplessOnly) {
-                /* Discard previously found results */
-                ret.clear();
+            // TODO: 2024-03-18: Add auto fallback to progressive video chapters if user prefers gapless && gapless is HLS split
+            // audio/video.
+            /* Check if any gapless sources are available. */
+            final Map<String, Object> sourcesForGaplessVideo = (Map<String, Object>) entries.get("sources");
+            if (sourcesForGaplessVideo == null || sourcesForGaplessVideo.isEmpty()) {
+                logger.info("No gapless sources available -> Returning items we found so far");
+                return ret;
             }
-            // TODO: 2024-03-18: Add auto falback to progressive video chapters if user prefers gapless && gapless is HLS split audio/video.
+            final List<Map<String, Object>> sources_hls = (List<Map<String, Object>>) sourcesForGaplessVideo.get("hls");
+            if (sources_hls == null || sources_hls.isEmpty()) {
+                logger.info("No gapless sources available -> Returning items we found so far");
+                return ret;
+            }
             final String segmentID = "gapless";
             final List<DownloadLink> videoresults = new ArrayList<DownloadLink>();
             DownloadLink best = null;
-            final List<Map<String, Object>> sources_hls = (List<Map<String, Object>>) sourcesForGaplessVideo.get("hls");
             for (final Map<String, Object> hlssource : sources_hls) {
                 final String hlsMaster = hlssource.get("src").toString();
                 br.getPage(hlsMaster);
@@ -549,7 +555,7 @@ public class OrfAt extends PluginForDecrypt {
                     videoSelectedResults.addAll(videoSelectedResults);
                 }
             }
-            final List<DownloadLink> thisFinalResults = new ArrayList<DownloadLink>();
+            final ArrayList<DownloadLink> thisFinalResults = new ArrayList<DownloadLink>();
             for (final DownloadLink chosenVideoResult : videoSelectedResults) {
                 thisFinalResults.add(chosenVideoResult);
                 /* Add a subtitle-result for each chosen video quality */
@@ -572,6 +578,10 @@ public class OrfAt extends PluginForDecrypt {
                 thumbnail.setProperty(ORFMediathek.PROPERTY_CONTENT_TYPE, ORFMediathek.CONTENT_TYPE_IMAGE);
                 thumbnail.setProperty(ORFMediathek.PROPERTY_DIRECTURL, thumbnailurlFromFirstSegment);
                 thisFinalResults.add(thumbnail);
+            }
+            if (isCrawlGaplessOnly) {
+                /* Discard previously found results as user wants gapless items only. */
+                ret.clear();
             }
             /* Add properties and add results to final list */
             for (final DownloadLink result : thisFinalResults) {
@@ -600,7 +610,6 @@ public class OrfAt extends PluginForDecrypt {
     }
 
     private ArrayList<DownloadLink> crawlOrfmediathekNew(final CryptedLink param, final String contenturl) throws Exception {
-        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final Regex videourl = new Regex(contenturl, "(?i)https?://on\\.orf\\.at/video/(\\d+)(/([\\w\\-]+))?");
         if (!videourl.patternFind()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Unsupported URL");

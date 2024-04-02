@@ -19,10 +19,12 @@ import java.util.List;
 import java.util.Map;
 
 import org.appwork.storage.TypeRef;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -37,18 +39,19 @@ public class WistiaCom extends PluginForHost {
         super(wrapper);
     }
 
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.VIDEO_STREAMING };
+    }
+
     /* DEV NOTES */
     // Tags:
     // protocol: no https
     // other:
-    /* Extension which will be used if no correct extension is found */
-    private static final String  default_Extension = ".mp4";
     /* Connection stuff */
-    private static final boolean free_resume       = true;
-    private static final int     free_maxchunks    = 0;
-    private static final int     free_maxdownloads = -1;
-    private String               dllink            = null;
-    private boolean              server_issues     = false;
+    private static final int free_maxchunks    = 0;
+    private static final int free_maxdownloads = -1;
+    private String           dllink            = null;
 
     @Override
     public String getAGBLink() {
@@ -69,12 +72,20 @@ public class WistiaCom extends PluginForHost {
         return new Regex(link.getPluginPatternMatcher(), "(?:iframe|medias)/([A-Za-z0-9]+)").getMatch(0);
     }
 
+    @Override
+    public boolean isResumeable(final DownloadLink link, final Account account) {
+        return true;
+    }
+
     @SuppressWarnings({ "unchecked" })
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         dllink = null;
-        server_issues = false;
+        final String extDefault = ".mp4";
         final String fid = getFID(link);
+        if (!link.isNameSet()) {
+            link.setName(fid + extDefault);
+        }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(String.format("https://fast.wistia.com/embed/medias/%s.jsonp", fid));
@@ -95,9 +106,6 @@ public class WistiaCom extends PluginForHost {
         final List<Object> ressourcelist = (List<Object>) media.get("assets");
         String filename = (String) media.get("name");
         final String description = (String) media.get("seoDescription");
-        if (filename == null) {
-            filename = fid;
-        }
         /* Find highest quality */
         long sizemax = 0;
         String ext = null;
@@ -124,28 +132,30 @@ public class WistiaCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         // dllink = "https://embedwistia-a.akamaihd.net/deliveries/" + dllink_id + "/file.mp4";
-        filename = Encoding.htmlDecode(filename);
-        filename = filename.trim();
-        if (ext != null && !filename.endsWith(ext)) {
-            filename += ".mp4";
-        }
         if (description != null && description.length() > 0 && link.getComment() == null) {
             link.setComment(description);
         }
         link.setDownloadSize(sizemax);
-        link.setFinalFileName(filename);
+        if (filename != null) {
+            filename = Encoding.htmlDecode(filename);
+            filename = filename.trim();
+            if (ext != null && !filename.endsWith(ext)) {
+                filename += ".mp4";
+            } else {
+                filename += extDefault;
+            }
+            link.setFinalFileName(filename);
+        }
         return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
-        if (server_issues) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
-        } else if (dllink == null) {
+        if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, this.isResumeable(link, null), free_maxchunks);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             br.followConnection(true);
             if (dl.getConnection().getResponseCode() == 403) {
@@ -153,7 +163,7 @@ public class WistiaCom extends PluginForHost {
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             } else {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Video broken?");
             }
         }
         dl.startDownload();
