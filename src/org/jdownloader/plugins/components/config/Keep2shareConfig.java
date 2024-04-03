@@ -93,16 +93,10 @@ public interface Keep2shareConfig extends PluginConfigInterface {
                 return "Pass to hoster plugin for file linkcheck";
             }
         },
-        CRAWLER_PLUGIN_VIA_API_GETFILESINFO {
-            @Override
-            public String getLabel() {
-                return "[Not recommended] Check for folder via '/api/v2/getfilesinfo'";
-            }
-        },
         CRAWLER_PLUGIN_VIA_API_GETFILESTATUS {
             @Override
             public String getLabel() {
-                return "Check for folder via '/api/v2/getfilestatus'";
+                return "Check for folder: Use this if you plan to add single file links that are folders";
             }
         },
         DEFAULT {

@@ -120,16 +120,14 @@ public class Keep2ShareCcDecrypter extends PluginForDecrypt {
             ret.add(this.createDownloadlink(param.getCryptedUrl().replaceFirst(Pattern.quote(contentidFromURL), contentid)));
             return ret;
         }
-        br = plugin.createNewBrowserInstance();
+        this.br = plugin.createNewBrowserInstance();
         // set cross browser support
         plugin.setBrowser(br);
         final String referer = K2SApi.getRefererFromURL(param.getCryptedUrl());
         Map<String, Object> response = null;
         List<Map<String, Object>> items = null;
-        FilePackage fp = null;
-        String thisFolderTitle = null;
         try {
-            singleFileHandling: if (looksLikeSingleFileItem && mode == FileLinkAddMode.CRAWLER_PLUGIN_VIA_API_GETFILESINFO) {
+            singleFileHandling: if (looksLikeSingleFileItem) {
                 /**
                  * This handling is supposed to be for single files but can also be used for small folders. </br>
                  * Using the folder handling down below for single files will prohibit our special referrer handling from working since it
@@ -174,7 +172,9 @@ public class Keep2ShareCcDecrypter extends PluginForDecrypt {
                 /* If we reach this line this means we found at least one file that is online. */
                 return ret;
             }
-            final Set<String> dups = new HashSet<String>();
+            FilePackage fp = null;
+            String thisFolderTitle = null;
+            final Set<String> dupes = new HashSet<String>();
             final int maxItemsPerPage = 50;
             int offset = 0;
             int page = 1;
@@ -227,37 +227,34 @@ public class Keep2ShareCcDecrypter extends PluginForDecrypt {
                     } else {
                         id = item.get("id").toString();
                     }
-                    if (!dups.add(id)) {
+                    if (!dupes.add(id)) {
                         continue;
                     }
                     numberofNewItems++;
                     final String filenameOrFoldername = (String) item.get("name");
+                    final DownloadLink result;
                     if (Boolean.TRUE.equals(item.get("is_folder"))) {
-                        final DownloadLink folder = createDownloadlink(generateFolderUrl(id, filenameOrFoldername, referer));
-                        if (path != null) {
-                            folder.setRelativeDownloadFolderPath(path);
-                        }
-                        ret.add(folder);
-                        distribute(folder);
+                        /* Folder */
+                        result = createDownloadlink(generateFolderUrl(id, filenameOrFoldername, referer));
                     } else {
                         /* File */
-                        final DownloadLink file = createDownloadlink(generateFileUrl(id, filenameOrFoldername, referer));
-                        K2SApi.parseFileInfo(file, item, sourceFileID);
-                        if (!file.isNameSet()) {
+                        result = createDownloadlink(generateFileUrl(id, filenameOrFoldername, referer));
+                        K2SApi.parseFileInfo(result, item, sourceFileID);
+                        if (!result.isNameSet()) {
                             /* Fallback */
-                            file.setName(id);
+                            result.setName(id);
                         }
                         if (fp != null) {
-                            file._setFilePackage(fp);
+                            result._setFilePackage(fp);
                         }
-                        if (path != null) {
-                            file.setRelativeDownloadFolderPath(path);
-                        }
-                        ret.add(file);
-                        distribute(file);
                     }
+                    if (path != null) {
+                        result.setRelativeDownloadFolderPath(path);
+                    }
+                    ret.add(result);
+                    distribute(result);
                 }
-                logger.info("Crawled page " + page + " | Offset: " + offset + " Found items so far: " + ret.size());
+                logger.info("Crawled page " + page + " | Offset: " + offset + " | New items this page: " + numberofNewItems + " | Found items so far: " + ret.size());
                 if (this.isAbort()) {
                     logger.info("Stopping because: Aborted by user");
                     break;
@@ -276,12 +273,8 @@ public class Keep2ShareCcDecrypter extends PluginForDecrypt {
                 }
             } while (!this.isAbort());
         } catch (final PluginException e) {
-            if (e.getLinkStatus() == LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE) {
-                /*
-                 * Most likely http response 400 bad request -> Due to invalid contentID format -> Effectively this means that the content
-                 * we want to access is offline.
-                 */
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, null, e);
+            if (br.getHttpConnection().getResponseCode() == 400) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Invalid fileID");
             } else {
                 throw e;
             }
