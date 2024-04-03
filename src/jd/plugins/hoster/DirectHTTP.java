@@ -15,6 +15,7 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
@@ -29,6 +30,26 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
+
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Files;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.URLHelper;
+import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
+import org.jdownloader.auth.AuthenticationController;
+import org.jdownloader.auth.AuthenticationInfo;
+import org.jdownloader.auth.AuthenticationInfo.Type;
+import org.jdownloader.auth.Login;
+import org.jdownloader.plugins.SkipReasonException;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.plugins.controller.PluginClassLoader;
+import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin;
+import org.jdownloader.plugins.controller.host.PluginFinder;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -64,30 +85,12 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.download.DownloadLinkDownloadable;
 import jd.plugins.download.Downloadable;
 import jd.plugins.download.HashInfo;
+import jd.plugins.download.HashResult;
 import jd.plugins.download.raf.HTTPDownloader;
 import jd.utils.locale.JDL;
-
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.net.protocol.http.HTTPConstants.ResponseCode;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Files;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.net.URLHelper;
-import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
-import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
-import org.jdownloader.auth.AuthenticationController;
-import org.jdownloader.auth.AuthenticationInfo;
-import org.jdownloader.auth.AuthenticationInfo.Type;
-import org.jdownloader.auth.Login;
-import org.jdownloader.plugins.SkipReasonException;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.PluginClassLoader;
-import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin;
-import org.jdownloader.plugins.controller.host.PluginFinder;
 
 /**
  * TODO: remove after next big update of core to use the public static methods!
@@ -370,16 +373,37 @@ public class DirectHTTP extends antiDDoSForHost implements DownloadConnectionVer
     }
 
     @Override
-    public Downloadable newDownloadable(DownloadLink downloadLink, Browser br) {
+    public Downloadable newDownloadable(final DownloadLink downloadLink, final Browser br) {
         final String host = Browser.getHost(downloadLink.getPluginPatternMatcher());
+        final Browser finalBr;
         if (StringUtils.contains(host, "mooo.com")) {
             final Browser brc = br.cloneBrowser();
             // clear referer required
             brc.setRequest(null);
-            return super.newDownloadable(downloadLink, brc);
+            finalBr = brc;
         } else {
-            return super.newDownloadable(downloadLink, br);
+            finalBr = br;
         }
+        return new DownloadLinkDownloadable(downloadLink) {
+            @Override
+            public HashResult getHashResult(HashInfo hashInfo, File outputPartFile) {
+                final HashResult ret = super.getHashResult(hashInfo, outputPartFile);
+                if (ret == null || ret.match() || !downloadLink.hasProperty(BYPASS_CLOUDFLARE_BGJ)) {
+                    return ret;
+                } else {
+                    return new HashResult(HashInfo.parse(ret.getFileHash()), ret.getFileHash());
+                }
+            }
+
+            @Override
+            public Browser getContextBrowser() {
+                if (finalBr != null) {
+                    return finalBr.cloneBrowser();
+                } else {
+                    return super.getContextBrowser();
+                }
+            }
+        };
     }
 
     @Override
@@ -762,7 +786,7 @@ public class DirectHTTP extends antiDDoSForHost implements DownloadConnectionVer
         case 200:
             /*
              * for example HTTP/1.1 200 OK, Content-Disposition: inline; filename=error.html
-             * 
+             *
              * we retry without HEAD in order to get full html response
              */
             return RequestMethod.HEAD.equals(con.getRequest().getRequestMethod()) && Boolean.FALSE.equals(verifyDownloadableContent(null, con));
@@ -1040,6 +1064,7 @@ public class DirectHTTP extends antiDDoSForHost implements DownloadConnectionVer
                 return this.requestFileInformation(downloadLink, retry + 1, optionSet);
             }
             if (urlConnection.getHeaderField("cf-bgj") != null && !downloadLink.hasProperty(BYPASS_CLOUDFLARE_BGJ)) {
+                // TODO: add support for "Cf-Polished: status=not_needed"
                 if (RequestMethod.HEAD.equals(urlConnection.getRequest().getRequestMethod())) {
                     followURLConnection(br, urlConnection);
                 } else {

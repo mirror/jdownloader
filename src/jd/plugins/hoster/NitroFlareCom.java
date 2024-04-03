@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -65,6 +66,7 @@ public class NitroFlareCom extends PluginForHost {
     /* Documentation | docs: https://nitroflare.com/member?s=api */
     /* Don't touch the following! */
     private static AtomicInteger maxFree                   = new AtomicInteger(1);
+    private static AtomicBoolean API_AUTO_DISABLED         = new AtomicBoolean(false);
     private final String         PROPERTY_PREMIUM_REQUIRED = "premiumRequired";
 
     @Override
@@ -76,33 +78,6 @@ public class NitroFlareCom extends PluginForHost {
             } catch (final Throwable t) {
                 logger.log(t);
             }
-        }
-        /* Workarounds to switch users from API/website mode to vice-versa. */
-        final boolean enableStupidAndUglyAPIWebsiteSettingWorkaround = false;
-        if (enableStupidAndUglyAPIWebsiteSettingWorkaround) {
-            final NitroflareConfig cfg = PluginJsonConfig.get(NitroflareConfig.class);
-            /*
-             * 2024-02-06: Ugly workaround as someone is not releasing CORE-updates and I do not want to move NitroflareConfig.class into
-             * this class. Context: https://board.jdownloader.org/showthread.php?t=95064
-             */
-            /** 2024-03-25: Now their API is unreliable and I've introduced the same workaround to switch from API to website. */
-            // TODO: Remove this workaround
-            final String propertyForSpecialAPIModeSettingResetWorkaround202403 = "api_setting_reset_workaround_2024_03_25";
-            final boolean workaroundSwitchToAPI = false;
-            if (workaroundSwitchToAPI) {
-                if (!cfg.isUseAPI() && !this.getPluginConfig().hasProperty(propertyForSpecialAPIModeSettingResetWorkaround202403)) {
-                    cfg.setUseAPI(true);
-                }
-            } else {
-                if (cfg.isUseAPI() && !this.getPluginConfig().hasProperty(propertyForSpecialAPIModeSettingResetWorkaround202403)) {
-                    cfg.setUseAPI(false);
-                }
-            }
-            /*
-             * Do this only once for each JD installation. If this was executed while the user already had the API setting enabled, do not
-             * touch it afterwards and assume the user knows what he is doing.
-             */
-            this.getPluginConfig().setProperty(propertyForSpecialAPIModeSettingResetWorkaround202403, true);
         }
     }
 
@@ -166,17 +141,21 @@ public class NitroFlareCom extends PluginForHost {
     /**
      * Use website or API: https://nitroflare.com/member?s=api </br>
      *
-     * @return true: Use API for account login and premium downloading </br>
+     * @return true: Use API for account login and downloading </br>
      *         false: Use website for everything (except linkcheck)
      */
-    private boolean useAPIAccountMode() {
-        return PluginJsonConfig.get(NitroflareConfig.class).isUseAPI();
-    }
-
-    private boolean useAPIFreeMode() {
-        /** 2020-07-03: Doesn't work (yet, and/or API just can't be used without account) thus I've removed this setting RE: psp */
-        // return PluginJsonConfig.get(NitroflareConfig.class).isUseFreeAPIEnabled();
-        return false;
+    private boolean useAPIMode(final Account account, final DownloadLink downloadLink) {
+        if (API_AUTO_DISABLED.get()) {
+            return false;
+        } else if (account == null || account.getType() == Account.AccountType.FREE) {
+            /**
+             * 2020-07-03: Doesn't work (yet, and/or API just can't be used without account) thus I've removed this setting RE: psp
+             */
+            // return PluginJsonConfig.get(NitroflareConfig.class).isUseFreeAPIEnabled();
+            return false;
+        } else {
+            return PluginJsonConfig.get(NitroflareConfig.class).isUseAPI042024();
+        }
     }
 
     private static AtomicReference<String> BASE_DOMAIN = new AtomicReference<String>(null);
@@ -452,7 +431,7 @@ public class NitroFlareCom extends PluginForHost {
             dllink = storedDirecturl;
         } else {
             /* We need to generate a fresh directurl */
-            if (useAPIFreeMode()) {
+            if (useAPIMode(account, link)) {
                 /* API mode */
                 br.getPage(getAPIBase() + "/getDownloadLink?file=" + Encoding.urlEncode(fileid));
                 this.checkErrorsAPI(br, link, account);
@@ -792,7 +771,7 @@ public class NitroFlareCom extends PluginForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        if (useAPIAccountMode()) {
+        if (useAPIMode(account, null)) {
             return fetchAccountInfoAPI(account);
         } else {
             return fetchAccountInfoWeb(account, true);
@@ -1035,7 +1014,8 @@ public class NitroFlareCom extends PluginForHost {
             /* API captcha required to continue/start using their API! */
             if (!solveCaptcha) {
                 /* Captcha has been tried before and something went wrong... */
-                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                API_AUTO_DISABLED.set(true);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Auto retry without API", 15 * 1000l);
             }
             final Request previousRequest = br.getRequest().cloneRequest();
             final String captchaResponse;
@@ -1073,7 +1053,7 @@ public class NitroFlareCom extends PluginForHost {
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         /* is free user? */
-        if (account.getType() == AccountType.FREE) {
+        if (AccountType.FREE.equals(account.getType())) {
             /* Login */
             fetchAccountInfoWeb(account, false);
             handleFreeDownload(link, account);
@@ -1097,7 +1077,7 @@ public class NitroFlareCom extends PluginForHost {
                 }
             }
             logger.info("Generating new directurl");
-            if (this.useAPIAccountMode()) {
+            if (useAPIMode(account, link)) {
                 /* 2020-06-24: According to API docs, we should check the file before performing premium-download-API-call! */
                 requestFileInformationAPI(link);
                 /* Additional login is not required. */

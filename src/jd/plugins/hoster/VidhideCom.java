@@ -156,7 +156,8 @@ public class VidhideCom extends XFileSharingProBasic {
         if (returnFilesize) {
             return filesize;
         }
-        final String originalDownloadContinueLink = br.getRegex("(/download/[a-z0-9]{12}_o)").getMatch(0);
+        // old h still required as there still exist links
+        final String originalDownloadContinueLink = br.getRegex("(/download/[a-z0-9]{12}_(?:o|h))").getMatch(0);
         if (originalDownloadContinueLink == null) {
             /* Fallback to upper handling */
             return super.getDllinkViaOfficialVideoDownloadNew(br, link, account, returnFilesize);

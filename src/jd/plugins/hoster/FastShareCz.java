@@ -445,6 +445,13 @@ public class FastShareCz extends PluginForHost {
                 throw new AccountUnavailableException("Traffic limit reached", 5 * 60 * 1000l);
             }
         }
+        final URLConnectionAdapter con = br.getRequest().getHttpConnection();
+        if (con.getResponseCode() == 200 && con.getCompleteContentLength() == 0 && StringUtils.containsIgnoreCase(con.getContentType(), "text/html")) {
+            final String directurlproperty = getDirecturlProperty(account);
+            if (link.removeProperty(directurlproperty)) {
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Stored directurl expired");
+            }
+        }
         final String errortextMaxConcurrentDownloadsLimit = "Reached max concurrent downloads limit";
         if (br.containsHTML("(?i)(>100% FREE slotů je plných|>Využijte PROFI nebo zkuste později)")) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free slots available", 10 * 60 * 1000l);

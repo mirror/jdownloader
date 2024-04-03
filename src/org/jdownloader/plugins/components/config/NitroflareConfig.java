@@ -49,10 +49,10 @@ public interface NitroflareConfig extends PluginConfigInterface {
     void setTrustAPIAboutPremiumOnlyFlag(boolean b);
 
     @AboutConfig
-    @DefaultBooleanValue(true)
+    @DefaultBooleanValue(false)
     @DescriptionForConfigEntry(text_UseAPI)
     @Order(30)
-    boolean isUseAPI();
+    boolean isUseAPI042024();
 
     void setUseAPI(boolean b);
     /** 2020-07-03: Doesn't work (yet) thus I've removed this setting RE: psp */
