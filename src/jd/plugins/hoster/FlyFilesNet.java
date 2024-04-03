@@ -16,6 +16,7 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.Locale;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -43,43 +44,52 @@ import jd.plugins.PluginForHost;
 public class FlyFilesNet extends PluginForHost {
     private static final String PROPERTY_NOCHUNKS = "NOCHUNKS";
 
-    // DEV NOTES
-    // mods:
-    // non account: 3 * 1
-    // free account:
-    // premium account: 20 * 20
-    // protocol: has https but is fubar.
-    // other: no redirects
-    @Override
-    public void correctDownloadLink(DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("https://", "http://"));
-    }
-
     public FlyFilesNet(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://" + this.getHost() + "/");
     }
 
-    // do not add @Override here to keep 0.* compatibility
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9, de;q=0.8");
+        br.setCookie(getHost(), "lang", "english");
+        br.setFollowRedirects(true);
+        return br;
+    }
+
+    private String getContentURL(final DownloadLink link) {
+        return link.getPluginPatternMatcher().replaceFirst("(?i)https://", "http://");
+    }
+
+    @Override
     public boolean hasAutoCaptcha() {
         return false;
     }
 
     @Override
     public String getAGBLink() {
-        return "https://" + this.getHost() + "/terms.php";
+        return "https://" + getHost() + "/terms.php";
     }
 
-    public void prepBrowser() {
-        // define custom browser headers and language settings.
-        br.getHeaders().put("Accept-Language", "en-gb, en;q=0.9, de;q=0.8");
-        br.setCookie(this.getHost(), "lang", "english");
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return "flyfilesnet://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws Exception {
         this.setBrowserExclusive();
-        br.getPage(link.getPluginPatternMatcher());
+        br.getPage(getContentURL(link));
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML("(?i)>\\s*File not found\\!")) {
@@ -89,6 +99,8 @@ public class FlyFilesNet extends PluginForHost {
         if (finfo.patternFind()) {
             link.setName(Encoding.htmlDecode(finfo.getMatch(0)).trim());
             link.setDownloadSize(SizeFormatter.getSize(finfo.getMatch(1)));
+        } else {
+            logger.warning("Failed to find file information");
         }
         return AvailableStatus.TRUE;
     }
@@ -96,20 +108,19 @@ public class FlyFilesNet extends PluginForHost {
     @SuppressWarnings("deprecation")
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        final String fid = new Regex(link.getDownloadURL(), "net/(.*)").getMatch(0);
         String dllink = checkDirectLink(link, "directlink");
         if (dllink == null) {
             requestFileInformation(link);
-            if (br.containsHTML("(?i)This file available for downloading only for premium users")) {
+            if (br.containsHTML("This file available for downloading only for premium users")) {
                 throw new AccountRequiredException();
             }
-            String captchaurl = br.getRegex("\"(/captcha/[^<>\"]*?)\"").getMatch(0);
-            final String waittime = br.getRegex("var\\s+timeWait\\s+=\\s+(\\d+);").getMatch(0);
+            final String captchaurl = br.getRegex("\"(/captcha/[^<>\"]*?)\"").getMatch(0);
+            final String waitSecondsStr = br.getRegex("var\\s+timeWait\\s+=\\s+(\\d+);").getMatch(0);
             final String reCaptchaV2ID = br.getRegex("\\'sitekey\\'\\s*?:\\s*?\\'([^\"\\']+)\\'").getMatch(0);
             final String postURL = "https://" + this.getHost() + "/";
-            String postata = "getDownLink=" + fid;
-            if (waittime != null) {
-                final long wait = Long.parseLong(waittime);
+            String postata = "getDownLink=" + this.getFID(link);
+            if (waitSecondsStr != null) {
+                final long wait = Long.parseLong(waitSecondsStr);
                 /* Usually if there is a waittime it is a long waittime (1-2 hours). */
                 if (wait > 0) {
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, wait * 1001l);
@@ -162,11 +173,14 @@ public class FlyFilesNet extends PluginForHost {
             URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
-                br2.setFollowRedirects(true);
                 con = br2.openHeadConnection(dllink);
                 if (this.looksLikeDownloadableContent(con)) {
                     if (con.getCompleteContentLength() > 0) {
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                        if (con.isContentDecoded()) {
+                            link.setDownloadSize(con.getCompleteContentLength());
+                        } else {
+                            link.setVerifiedFileSize(con.getCompleteContentLength());
+                        }
                     }
                     return dllink;
                 } else {
@@ -197,15 +211,15 @@ public class FlyFilesNet extends PluginForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
+        final AccountInfo ai = new AccountInfo();
         login(account, true);
-        String expire = new Regex(br, "(?i)<u>Premium</u>: <span id=\"premiumDate\">(\\d{4}\\-\\d{2}\\-\\d{2} \\d{2}:\\d{2}:\\d{2})</span>").getMatch(0);
+        final String expire = new Regex(br, "id=\"premiumDate\"[^>]*>(\\d{4}\\-\\d{2}\\-\\d{2} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
         if (expire == null) {
             /* Expired premium --> Free accounts are not supported! */
             ai.setExpired(true);
             return ai;
         }
-        ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MM-dd hh:mm:ss", null));
+        ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MM-dd hh:mm:ss", Locale.ENGLISH), br);
         ai.setUnlimitedTraffic();
         account.setType(AccountType.PREMIUM);
         return ai;
@@ -213,9 +227,7 @@ public class FlyFilesNet extends PluginForHost {
 
     private void login(final Account account, final boolean force) throws Exception {
         synchronized (account) {
-            prepBrowser();
             br.setCookiesExclusive(true);
-            prepBrowser();
             final Cookies cookies = account.loadCookies("");
             if (cookies != null) {
                 br.setCookies(cookies);
@@ -224,12 +236,11 @@ public class FlyFilesNet extends PluginForHost {
                     return;
                 }
                 logger.info("Checking login cookies");
-                br.getPage("https://" + this.getHost() + "/login.html");
+                br.getPage("https://" + this.getHost() + "/");
                 if (isLoggedin(br)) {
                     logger.info("Cookie login successful");
-                    /* Access sub-page which contains information about this account. */
-                    br.getPage("/");
                     account.saveCookies(br.getCookies(br.getHost()), "");
+                    return;
                 } else {
                     logger.info("Cookie login failed");
                     account.clearCookies("");
@@ -239,17 +250,23 @@ public class FlyFilesNet extends PluginForHost {
             logger.info("Performing full login");
             br.getPage("https://" + this.getHost());
             br.postPage("/login.html", "user=" + Encoding.urlEncode(account.getUser()) + "&pass=" + Encoding.urlEncode(account.getPass()));
-            if (!isLoggedin(br)) {
+            if (!br.containsHTML("#login\\|1")) {
                 throw new AccountInvalidException();
             }
             br.getPage("/");
+            /* Double-check */
+            if (!isLoggedin(br)) {
+                logger.warning("Not logged in according to HTML code even though login looks to have worked");
+                throw new AccountInvalidException();
+            }
+            /* Login successful -> Save cookies */
             account.saveCookies(br.getCookies(br.getHost()), "");
         }
     }
 
     /** Only use this on sub-page /login.html !" */
     private boolean isLoggedin(final Browser br) {
-        if (br.containsHTML("#login\\|1")) {
+        if (br.containsHTML("\"form_logout shadow round_corners\"")) {
             return true;
         } else {
             return false;
@@ -258,10 +275,10 @@ public class FlyFilesNet extends PluginForHost {
 
     @Override
     public void handlePremium(DownloadLink link, Account account) throws Exception {
-        requestFileInformation(link);
-        login(account, false);
         String dllink = checkDirectLink(link, "premlink");
         if (dllink == null) {
+            requestFileInformation(link);
+            login(account, false);
             br.postPage("https://" + this.getHost() + "/", "getDownLink=" + new Regex(link.getDownloadURL(), "net/(.*)").getMatch(0));
             dllink = getDllink(br);
             // they don't show any info about limits or waits. You seem to just
@@ -321,7 +338,7 @@ public class FlyFilesNet extends PluginForHost {
     public void resetDownloadlink(DownloadLink link) {
     }
 
-    /* NO OVERRIDE!! We need to stay 0.9*compatible */
+    @Override
     public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
         if (acc == null) {
             /* no account, yes we can expect captcha */

@@ -41,6 +41,8 @@ import jd.plugins.Account.AccountType;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
@@ -281,7 +283,7 @@ public class XvideosComProfile extends PluginForDecrypt {
         return ret;
     }
 
-    private ArrayList<DownloadLink> crawlChannel(final String url) throws IOException, PluginException {
+    private ArrayList<DownloadLink> crawlChannel(final String url) throws IOException, PluginException, DecrypterRetryException {
         final String username = new Regex(url, TYPE_USER).getMatch(0);
         if (username == null) {
             /* Developer mistake */
@@ -291,8 +293,9 @@ public class XvideosComProfile extends PluginForDecrypt {
             logger.info("Profile does not exist anymore");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        final PluginForHost plg = DebugMode.TRUE_IN_IDE_ELSE_FALSE ? this.getNewPluginForHostInstance(this.getHost()) : null;
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final Set<String> dupeList = new HashSet<String>();
+        final Set<String> dupes = new HashSet<String>();
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(username);
         final String userID = br.getRegex("profile-report-form-(\\d+)_").getMatch(0);
@@ -311,28 +314,34 @@ public class XvideosComProfile extends PluginForDecrypt {
                 final String singleLink = video.get("url").toString();
                 final String videoID = video.get("id").toString();
                 final String title = (String) video.get("title");
-                if (dupeList.add(videoID)) {
-                    final String nameTemp;
-                    final DownloadLink dl = createDownloadlink(brc.getURL(singleLink).toExternalForm());
-                    /* Usually we will crawl a lot of URLs at this stage --> Set onlinestatus right away! */
-                    dl.setAvailable(true);
-                    fp.add(dl);
-                    if (!StringUtils.isEmpty(title)) {
-                        nameTemp = videoID + "_" + title;
-                    } else {
-                        nameTemp = videoID;
-                    }
-                    dl.setName(nameTemp + ".mp4");
-                    /* Packagizer properties */
-                    dl.setProperty(XvideosCore.PROPERTY_USERNAME, username);
-                    dl._setFilePackage(fp);
-                    ret.add(dl);
-                    distribute(dl);
+                if (!dupes.add(videoID)) {
+                    /* Skip dupes */
+                    continue;
                 }
+                final String videourl = brc.getURL(singleLink).toExternalForm();
+                final DownloadLink dl = createDownloadlink(videourl);
+                if (plg != null && !plg.canHandle(videourl)) {
+                    logger.warning("Detected URL goes into nirvana: " + videourl);
+                }
+                /* Usually we will crawl a lot of URLs at this stage --> Set onlinestatus right away! */
+                dl.setAvailable(true);
+                fp.add(dl);
+                final String nameTemp;
+                if (!StringUtils.isEmpty(title)) {
+                    nameTemp = videoID + "_" + title;
+                } else {
+                    nameTemp = videoID;
+                }
+                dl.setName(nameTemp + ".mp4");
+                /* Packagizer properties */
+                dl.setProperty(XvideosCore.PROPERTY_USERNAME, username);
+                dl._setFilePackage(fp);
+                ret.add(dl);
+                distribute(dl);
             }
             logger.info("Crawled quickies: " + videos.size());
         }
-        final String url_base = this.br.getURL("/channels/" + username + "/videos/new").toString();
+        final String url_base = br.getURL("/channels/" + username + "/videos/new").toExternalForm();
         short pageNum = 0;
         final short maxItemsPerPage = 36;
         final Browser brc = br.cloneBrowser();
@@ -358,7 +367,7 @@ public class XvideosComProfile extends PluginForDecrypt {
             final int totalNumberofItems = ((Number) entries.get("nb_videos")).intValue();
             if (totalNumberofItems == 0) {
                 logger.info("Stopping because: User doesn't have any videos");
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                throw new DecrypterRetryException(RetryReason.EMPTY_PROFILE);
             }
             int numberofNewItemsOnCurrentPage = 0;
             final List<Map<String, Object>> videos = (List<Map<String, Object>>) entries.get("videos");
@@ -366,16 +375,20 @@ public class XvideosComProfile extends PluginForDecrypt {
                 final String singleLink = video.get("u").toString();
                 final String videoID = video.get("id").toString();
                 /* Only add new URLs */
-                if (!dupeList.add(videoID)) {
+                if (!dupes.add(videoID)) {
                     // logger.info("Found dupe: " + videoID);
                     continue;
                 }
                 final String titleURL = new Regex(singleLink, "/([^/]+)$").getMatch(0);
-                final String nameTemp;
-                final DownloadLink dl = createDownloadlink(br.getURL(singleLink).toExternalForm());
+                final String videourl = br.getURL(singleLink).toExternalForm();
+                final DownloadLink dl = createDownloadlink(videourl);
+                if (plg != null && !plg.canHandle(videourl)) {
+                    logger.warning("Detected URL goes into nirvana: " + videourl);
+                }
                 /* Usually we will crawl a lot of URLs at this stage --> Set onlinestatus right away! */
                 dl.setAvailable(true);
                 fp.add(dl);
+                final String nameTemp;
                 if (titleURL != null) {
                     nameTemp = videoID + "_" + cleanUrlTitle(titleURL);
                 } else {

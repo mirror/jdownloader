@@ -323,6 +323,7 @@ public class MydirtyhobbyCom extends PluginForHost {
         final String coinsHumanReadable;
         if (coinsStr != null) {
             coinsHumanReadable = coinsStr;
+            ai.setPremiumPoints(Long.parseLong(coinsStr));
         } else {
             coinsHumanReadable = "Unknown";
         }
