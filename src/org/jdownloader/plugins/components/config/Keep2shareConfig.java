@@ -110,7 +110,7 @@ public interface Keep2shareConfig extends PluginConfigInterface {
     @AboutConfig
     @DefaultEnumValue("DEFAULT")
     @Order(50)
-    @DescriptionForConfigEntry("Configure how '/file/' links are processed when they are initially added. Documentation of used API: keep2share.github.io/api/")
+    @DescriptionForConfigEntry("Configure how '/file/' links are processed when they are initially added.")
     FileLinkAddMode getFileLinkAddMode();
 
     void setFileLinkAddMode(FileLinkAddMode mode);
@@ -147,7 +147,7 @@ public interface Keep2shareConfig extends PluginConfigInterface {
     @AboutConfig
     @DefaultEnumValue("DEFAULT")
     @Order(51)
-    @DescriptionForConfigEntry("Configure how file links are checked. Documentation of used API: keep2share.github.io/api/")
+    @DescriptionForConfigEntry("Configure how '/file/' links are checked.")
     LinkcheckMode getFileLinkcheckMode();
 
     void setFileLinkcheckMode(LinkcheckMode mode);
@@ -170,7 +170,7 @@ public interface Keep2shareConfig extends PluginConfigInterface {
     @AboutConfig
     @DefaultEnumValue("GLOBAL_SETTING")
     @Order(60)
-    @DescriptionForConfigEntry("Define what should happen when a captcha of this hoster runs into a timeout.")
+    @DescriptionForConfigEntry("Define what should happen when a captcha runs into a timeout.")
     CaptchaTimeoutBehavior getCaptchaTimeoutBehavior();
 
     void setCaptchaTimeoutBehavior(CaptchaTimeoutBehavior behavior);
