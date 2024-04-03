@@ -57,7 +57,9 @@ public class MydirtyhobbyCom extends PluginForHost {
         br.setAllowedResponseCodes(410);
         br.setFollowRedirects(true);
         /* Important else we'll get redirected to a "Are you 18+" page. */
-        br.setCookie(getHost(), "AGEGATEPASSED", "1");
+        for (final String site : siteSupportedNames()) {
+            br.setCookie(site, "AGEGATEPASSED", "1");
+        }
         return br;
     }
 
