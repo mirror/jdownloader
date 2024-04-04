@@ -21,13 +21,19 @@ public class BadFilePathException extends IOException {
                 return "Total length of path is too long";
             }
         },
-        PERMISSION_PROBLEMS {
+        PERMISSION_PROBLEM {
             @Override
             public String getLabel() {
                 return "Permission to write to path is not given";
             }
         },
-        FILE_EXISTS_AS_DIR {
+        FILE_ALREADY_EXISTS {
+            @Override
+            public String getLabel() {
+                return "File already exists";
+            }
+        },
+        FILE_ALREADY_EXISTS_AS_FOLDER {
             @Override
             public String getLabel() {
                 return "File can't be created because a directory with the same name already exists";
@@ -41,8 +47,9 @@ public class BadFilePathException extends IOException {
         };
     }
 
-    private File file;
-    private int  index;
+    private File   file;
+    private Reason reason;
+    private int    index;
 
     public BadFilePathException(final File file) {
         init(file, Reason.INVALID_DESTINATION, -1);
@@ -59,11 +66,16 @@ public class BadFilePathException extends IOException {
 
     private void init(File file, final Reason reason, final int index) {
         this.file = file;
+        this.reason = reason;
         this.index = index;
     }
 
     public File getFile() {
         return this.file;
+    }
+
+    public Reason getReason() {
+        return this.reason;
     }
 
     public int getIndex() {
