@@ -269,7 +269,7 @@ public class FastShareCz extends PluginForHost {
                 if (this.isPremiumAccount(account)) {
                     dllink = br.getRegex("\"(https?://[a-z0-9]+\\." + Pattern.quote(br.getHost()) + "/download\\.php[^<>\"]*?)\"").getMatch(0);
                     if (dllink == null) {
-                        dllink = br.getRegex("class\\s*=\\s*\"speed\">\\s*<a href\\s*=\"(https?://[^/]*" + Pattern.quote(br.getHost()) + "/[^<>\"]*?)\"").getMatch(0);
+                        dllink = br.getRegex("class\\s*=\\s*\"speed\">\\s*<a href\\s*=\\s*\"(https?://[^/]*" + Pattern.quote(br.getHost()) + "/[^<>\"]*?)\"").getMatch(0);
                     }
                 } else {
                     br.setFollowRedirects(false);
