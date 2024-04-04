@@ -57,9 +57,7 @@ public class MydirtyhobbyCom extends PluginForHost {
         br.setAllowedResponseCodes(410);
         br.setFollowRedirects(true);
         /* Important else we'll get redirected to a "Are you 18+" page. */
-        for (final String site : siteSupportedNames()) {
-            br.setCookie(site, "AGEGATEPASSED", "1");
-        }
+        setCookie(br, "AGEGATEPASSED", "1");
         return br;
     }
 
@@ -221,7 +219,7 @@ public class MydirtyhobbyCom extends PluginForHost {
             final Cookies cookies = account.loadCookies("");
             /* Re-use cookies whenever possible - avoid login captcha! */
             if (cookies != null) {
-                br.setCookies(cookies);
+                setCookies(br, cookies);
                 if (!force) {
                     /* Do not validate cookies */
                     return;
@@ -301,7 +299,24 @@ public class MydirtyhobbyCom extends PluginForHost {
                 logger.warning("Login via WebAPI was successful but according to HTML code we are not logged in");
                 throw new AccountInvalidException();
             }
-            account.saveCookies(br.getCookies(br.getHost()), "");
+            final Cookies cookiesFresh = br.getCookies(br.getHost());
+            account.saveCookies(cookiesFresh, "");
+            setCookies(br, cookiesFresh);
+        }
+    }
+
+    private void setCookie(final Browser br, final String key, final String value) {
+        /* Set cookie on all domains we know */
+        for (final String site : siteSupportedNames()) {
+            br.setCookie(site, key, value);
+        }
+    }
+
+    private void setCookies(final Browser br, final Cookies cookies) {
+        br.setCookies(cookies);
+        /* Set cookies on all domains we know */
+        for (final String site : siteSupportedNames()) {
+            br.setCookies(site, cookies);
         }
     }
 
