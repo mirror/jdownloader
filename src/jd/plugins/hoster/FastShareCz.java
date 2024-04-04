@@ -442,14 +442,11 @@ public class FastShareCz extends PluginForHost {
     }
 
     private void checkErrors(final Browser br, final DownloadLink link, final Account account) throws PluginException {
-        {
-            /* [Premium-] account related error messages */
-            if (br.containsHTML("(?i)máte dostatečný kredit pro stažení tohoto souboru")) {
-                throw new AccountUnavailableException("Traffic limit reached", 5 * 60 * 1000l);
-            }
-        }
         final String errortextMaxConcurrentDownloadsLimit = "Reached max concurrent downloads limit";
-        if (br.containsHTML("(?i)(>100% FREE slotů je plných|>Využijte PROFI nebo zkuste později)")) {
+        /* [Premium-] account related error messages */
+        if (br.containsHTML("(?i)máte dostatečný kredit pro stažení tohoto souboru")) {
+            throw new AccountUnavailableException("Traffic limit reached", 5 * 60 * 1000l);
+        } else if (br.containsHTML("(?i)(>100% FREE slotů je plných|>Využijte PROFI nebo zkuste později)")) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "No free slots available", 10 * 60 * 1000l);
         } else if (br.containsHTML("Přes FREE můžete stahovat jen jeden soubor současně|Pres FREE muzete stahovat jen jeden soubor najednou")) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, errortextMaxConcurrentDownloadsLimit, 3 * 60 * 1000l);
