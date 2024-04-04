@@ -499,7 +499,7 @@ public abstract class K2SApi extends PluginForHost {
     public static void parseFileInfo(final DownloadLink link, final Map<String, Object> fileInfo, final String sourceFileID) {
         final String id = (String) fileInfo.get("id");
         if (id != null && isSpecialFileID(sourceFileID) && !StringUtils.equals(id, sourceFileID)) {
-            /* Save internal ID as we use this for dupe-checking. */
+            /* ID from URL is special fileID -> Find internal/"real" fileID as we use this for better dupe-checking. */
             link.setProperty(PROPERTY_FILE_ID, id);
         }
         if (Boolean.TRUE.equals(fileInfo.get("is_available"))) {
