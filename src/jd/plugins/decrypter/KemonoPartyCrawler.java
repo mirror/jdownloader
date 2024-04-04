@@ -30,6 +30,12 @@ import org.appwork.utils.DebugMode;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.notify.BasicNotify;
+import org.jdownloader.gui.notify.BubbleNotify;
+import org.jdownloader.gui.notify.BubbleNotify.AbstractNotifyWindowFactory;
+import org.jdownloader.gui.notify.gui.AbstractNotifyWindow;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.plugins.components.config.KemonoPartyConfig;
 import org.jdownloader.plugins.components.config.KemonoPartyConfig.TextCrawlMode;
 import org.jdownloader.plugins.components.config.KemonoPartyConfigCoomerParty;
@@ -42,6 +48,8 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
@@ -95,8 +103,10 @@ public class KemonoPartyCrawler extends PluginForDecrypt {
     private final String TYPE_PROFILE = "(?i)(?:https?://[^/]+)?/([^/]+)/user/([\\w\\-\\.]+)(\\?o=(\\d+))?$";
     private final String TYPE_POST    = "(?i)(?:https?://[^/]+)?/([^/]+)/user/([\\w\\-\\.]+)/post/(\\d+)$";
     private KemonoParty  hostPlugin   = null;
+    private CryptedLink  cl           = null;
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        cl = param;
         if (param.getCryptedUrl().matches(TYPE_PROFILE)) {
             return this.crawlProfile(param);
         } else if (param.getCryptedUrl().matches(TYPE_POST)) {
@@ -138,7 +148,7 @@ public class KemonoPartyCrawler extends PluginForDecrypt {
         int numberofContinuousPagesWithoutAnyNewItems = 0;
         final int maxPagesWithoutNewItems = 15;
         do {
-            br.getPage("https://" + this.getHost() + "/api/v1/" + portal + "/user/" + Encoding.urlEncode(userID) + "?o=" + offset);
+            getPage(br, "https://" + this.getHost() + "/api/v1/" + portal + "/user/" + Encoding.urlEncode(userID) + "?o=" + offset);
             final List<HashMap<String, Object>> posts = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.LIST_HASHMAP);
             if (posts == null || posts.isEmpty()) {
                 if (ret.isEmpty()) {
@@ -191,7 +201,7 @@ public class KemonoPartyCrawler extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         /* Always begin on page 1 no matter which page param is given in users' added URL. */
-        br.getPage("https://" + this.getHost() + "/" + portal + "/user/" + userID);
+        getPage(br, "https://" + this.getHost() + "/" + portal + "/user/" + userID);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (!br.getURL().matches(TYPE_PROFILE)) {
@@ -242,7 +252,7 @@ public class KemonoPartyCrawler extends PluginForDecrypt {
                 break;
             } else {
                 page++;
-                br.getPage(nextpageurl);
+                getPage(br, nextpageurl);
             }
         } while (true);
         return ret;
@@ -304,7 +314,7 @@ public class KemonoPartyCrawler extends PluginForDecrypt {
             /* Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        br.getPage("https://" + this.getHost() + "/api/v1/" + portal + "/user/" + userID + "/post/" + postID);
+        getPage(br, "https://" + this.getHost() + "/api/v1/" + portal + "/user/" + userID + "/post/" + postID);
         if (br.getHttpConnection().getResponseCode() == 404) {
             /* E.g. {"error":"Not Found"} */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -435,7 +445,7 @@ public class KemonoPartyCrawler extends PluginForDecrypt {
         br.setAllowedResponseCodes(500);// DDOS-GUARD
         int retry = 3;
         while (retry > 0) {
-            br.getPage(posturl);
+            getPage(br, posturl);
             if (br.getHttpConnection().getResponseCode() == 500 && !isAbort()) {
                 sleep(1000, param);
                 retry--;
@@ -591,6 +601,42 @@ public class KemonoPartyCrawler extends PluginForDecrypt {
     public int getMaxConcurrentProcessingInstances() {
         /* Try to avoid getting blocked by DDOS-GUARD / rate-limited. */
         return 1;
+    }
+
+    protected void getPage(final Browser br, final String url) throws Exception {
+        boolean errorRateLimit = true;
+        final int maxtries = 4;
+        for (int i = 0; i <= maxtries; i++) {
+            br.getPage(url);
+            if (this.isAbort()) {
+                /* Aborted by user */
+                throw new InterruptedException();
+            } else if (br.getHttpConnection().getResponseCode() == 429) {
+                logger.info("Error 429 too many requests - add less URLs and/or perform a reconnect!");
+                final int retrySeconds = 5;
+                final String title = "Rate-Limit reached";
+                String text = "Time until rate-limit reset: Unknown | Attempt " + (i + 1) + "/" + maxtries;
+                text += "\nTry again later or change your IP | Auto retry in " + retrySeconds + " seconds";
+                this.displayBubblenotifyMessage(title, text);
+                this.sleep(5000l, this.cl);
+                continue;
+            } else {
+                errorRateLimit = false;
+                break;
+            }
+        }
+        if (errorRateLimit) {
+            throw new DecrypterRetryException(RetryReason.HOST_RATE_LIMIT);
+        }
+    }
+
+    private void displayBubblenotifyMessage(final String title, final String msg) {
+        BubbleNotify.getInstance().show(new AbstractNotifyWindowFactory() {
+            @Override
+            public AbstractNotifyWindow<?> buildAbstractNotifyWindow() {
+                return new BasicNotify("Kemono: " + title, msg, new AbstractIcon(IconKey.ICON_INFO, 32));
+            }
+        });
     }
 
     @Override
