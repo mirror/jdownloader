@@ -120,7 +120,7 @@ public class CivitaiCom extends PluginForHost {
         } else if (br.getHttpConnection().getResponseCode() == 503) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Error 503 service unavailable");
         }
-        final String json = br.getRegex("type=\"application/json\"[^>]*>(\\{\"props.*?)</script>").getMatch(0);
+        final String json = br.getRegex("type\\s*=\\s*\"application/json\"[^>]*>(\\{\"props.*?)</script>").getMatch(0);
         final Map<String, Object> entries = restoreFromString(json, TypeRef.MAP);
         final Map<String, Object> imagemap = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "props/pageProps/trpcState/json/queries/{0}/state/data");
         if (imagemap == null) {
