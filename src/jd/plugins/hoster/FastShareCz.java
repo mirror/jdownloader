@@ -405,7 +405,7 @@ public class FastShareCz extends PluginForHost {
         if (trafficLeftStr != null) {
             trafficLeftStr = trafficLeftStr.trim().replace(" ", "");
         }
-        final boolean userHasUnlimitedTraffic = br.containsHTML("(?i)href=\"/user\">\\s*Neomezené stahování\\s*</span>");
+        final boolean userHasUnlimitedTraffic = br.containsHTML("(?i)href\\s*=\\s*\"/user\">\\s*Neomezené stahování\\s*</span>");
         final String unlimitedTrafficInfo = br.getRegex("(?:Neomezené stahování)\\s*:\\s*</td>\\s*<td>\\s*<span[^>]*>\\s*(.*?)\\s*<").getMatch(0);
         final boolean isPremiumUnlimitedTrafficUser = (unlimitedTrafficInfo != null && !StringUtils.equalsIgnoreCase(unlimitedTrafficInfo, "Neaktivní")) || userHasUnlimitedTraffic;
         if (trafficLeftStr == null && !isPremiumUnlimitedTrafficUser) {
