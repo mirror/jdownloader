@@ -26,6 +26,10 @@ public interface JdownloaderTranslation extends TranslateInterface {
     @Default(lngs = { "en", "de" }, values = { "No", "Nein" })
     String basics_no();
 
+    @Default(lngs = { "en" }, values = { "%s1" })
+    @Deprecated
+    String LinkCollector_archiv(String cleanFileName);
+
     @Default(lngs = { "en", "de" }, values = { "Show %s1 now?\r\nYou may open it later using Mainmenu->Window", "%s1 jetzt anzeigen?\r\n%s1 kann jederzeit über Hauptmenü -> Fenster angezeigt werden." })
     String gui_settings_extensions_show_now(String name);
 
