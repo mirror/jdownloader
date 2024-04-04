@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -151,12 +152,12 @@ public abstract class Tb7AndXt7PlCORE extends PluginForHost {
         final long expireTimeMillis = TimeFormatter.getMilliSeconds(validUntilDateStr, "dd.MM.yyyyHH:mm", Locale.ENGLISH);
         ai.setValidUntil(expireTimeMillis, br);
         /* 2024-02-06: Is that the daily traffic-limit? [30GB] */
-        String otherHostersLimitLeftStr = br.getRegex("Pozostały Limit Premium do wykorzystania:\\s*<b>([^<]+)</b></div>").getMatch(0);
+        String otherHostersLimitLeftStr = br.getRegex("Pozostały Limit Premium do wykorzystania\\s*:\\s*<b>([^<]+)</b></div>").getMatch(0);
         if (otherHostersLimitLeftStr == null) {
-            otherHostersLimitLeftStr = br.getRegex("Pozostały limit na serwisy dodatkowe:\\s*<b>([^<]+)</b></div>").getMatch(0);
+            otherHostersLimitLeftStr = br.getRegex("Pozostały limit na serwisy dodatkowe\\s*:\\s*<b>([^<]+)</b></div>").getMatch(0);
         }
         ai.setProperty("TRAFFIC_LEFT", otherHostersLimitLeftStr == null ? getPhrase("UNKNOWN") : SizeFormatter.getSize(otherHostersLimitLeftStr));
-        String unlimited = br.getRegex("<br />(.*): <b>Bez limitu</b> \\|").getMatch(0);
+        final String unlimited = br.getRegex("<br />(.*):\\s*<b>\\s*Bez limitu\\s*</b> \\|").getMatch(0);
         if (unlimited != null) {
             ai.setProperty("UNLIMITED", unlimited);
         }
@@ -296,46 +297,46 @@ public abstract class Tb7AndXt7PlCORE extends PluginForHost {
         }
     }
 
-    private HashMap<String, String> phrasesEN = new HashMap<String, String>() {
-                                                  {
-                                                      put("PREMIUM_ERROR", "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.");
-                                                      put("UNSUPPORTED_ACCOUNT_TYPE_NOT_PREMIUM", "\r\nUnsupported account type!\r\nIf you think this message is incorrect or it makes sense to add support for this account type\r\ncontact us via our support forum.");
-                                                      put("PLUGIN_BROKEN", "\r\nPlugin broken, please contact the JDownloader Support!");
-                                                      put("TRAFFIC_LEFT", "Traffic left");
-                                                      put("HOSTER_UNAVAILABLE", "Host is temporarily unavailable via");
-                                                      put("DOWNLOAD_LIMIT", "Download limit exceeded!");
-                                                      put("RETRY", "Retry in few secs");
-                                                      put("LINK_INACTIVE", "Xt7 reports the link is as inactive!");
-                                                      put("LINK_EXPIRED", "Previously generated Link expired!");
-                                                      put("NO_TRAFFIC", "No traffic left");
-                                                      put("UNKNOWN_ERROR", "Unable to handle this errorcode!");
-                                                      put("ACCOUNT_TYPE", "Account type");
-                                                      put("UNKNOWN", "Unknown");
-                                                      put("UNLIMITED", "Unlimited");
-                                                      put("FREE", "free");
-                                                      put("EXPIRED", "Account expired/free");
-                                                  }
-                                              };
-    private HashMap<String, String> phrasesPL = new HashMap<String, String>() {
-                                                  {
-                                                      put("PREMIUM_ERROR", "\r\nNieprawidłowy użytkownik/hasło!\r\nUpewnij się, że wprowadziłeś poprawnie użytkownika i hasło. Podpowiedzi:\r\n1. Jeśli w twoim haśle znajdują się znaki specjalne - usuń je/popraw i wprowadź ponownie hasło!\r\n2. Wprowadzając nazwę użytkownika i hasło - nie używaj operacji Kopiuj i Wklej.");
-                                                      put("UNSUPPORTED_ACCOUNT_TYPE_NOT_PREMIUM", "\r\nNieobsługiwany typ konta!\r\nJesli uważasz, że informacja ta jest niepoprawna i chcesz aby dodac obsługę tego typu konta\r\nskontaktuj się z nami poprzez forum wsparcia.");
-                                                      put("PLUGIN_BROKEN", "\r\nProblem z wtyczką, skontaktuj się z zespołem wsparcia JDownloader!");
-                                                      put("TRAFFIC_LEFT", "Pozostały transfer");
-                                                      put("HOSTER_UNAVAILABLE", "Serwis jest niedostępny przez");
-                                                      put("DOWNLOAD_LIMIT", "Przekroczono dostępny limit transferu!");
-                                                      put("RETRY", "Ponawianie za kilka sekund");
-                                                      put("LINK_INACTIVE", "Xt7 raportuje link jako nieaktywny!");
-                                                      put("LINK_EXPIRED", "Poprzednio wygenerowany link wygasł!");
-                                                      put("NO_TRAFFIC", "Brak dostępnego transferu");
-                                                      put("UNKNOWN_ERROR", "Nieobsługiwany kod błędu!");
-                                                      put("ACCOUNT_TYPE", "Typ konta");
-                                                      put("UNKNOWN", "Nieznany");
-                                                      put("UNLIMITED", "Bez limitu");
-                                                      put("FREE", "darmowe");
-                                                      put("EXPIRED", "Konto wygasło/darmowe");
-                                                  }
-                                              };
+    private Map<String, String> phrasesEN = new HashMap<String, String>() {
+                                              {
+                                                  put("PREMIUM_ERROR", "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.");
+                                                  put("UNSUPPORTED_ACCOUNT_TYPE_NOT_PREMIUM", "\r\nUnsupported account type!\r\nIf you think this message is incorrect or it makes sense to add support for this account type\r\ncontact us via our support forum.");
+                                                  put("PLUGIN_BROKEN", "\r\nPlugin broken, please contact the JDownloader Support!");
+                                                  put("TRAFFIC_LEFT", "Traffic left");
+                                                  put("HOSTER_UNAVAILABLE", "Host is temporarily unavailable via");
+                                                  put("DOWNLOAD_LIMIT", "Download limit exceeded!");
+                                                  put("RETRY", "Retry in few secs");
+                                                  put("LINK_INACTIVE", "Xt7 reports the link is as inactive!");
+                                                  put("LINK_EXPIRED", "Previously generated Link expired!");
+                                                  put("NO_TRAFFIC", "No traffic left");
+                                                  put("UNKNOWN_ERROR", "Unable to handle this errorcode!");
+                                                  put("ACCOUNT_TYPE", "Account type");
+                                                  put("UNKNOWN", "Unknown");
+                                                  put("UNLIMITED", "Unlimited");
+                                                  put("FREE", "free");
+                                                  put("EXPIRED", "Account expired/free");
+                                              }
+                                          };
+    private Map<String, String> phrasesPL = new HashMap<String, String>() {
+                                              {
+                                                  put("PREMIUM_ERROR", "\r\nNieprawidłowy użytkownik/hasło!\r\nUpewnij się, że wprowadziłeś poprawnie użytkownika i hasło. Podpowiedzi:\r\n1. Jeśli w twoim haśle znajdują się znaki specjalne - usuń je/popraw i wprowadź ponownie hasło!\r\n2. Wprowadzając nazwę użytkownika i hasło - nie używaj operacji Kopiuj i Wklej.");
+                                                  put("UNSUPPORTED_ACCOUNT_TYPE_NOT_PREMIUM", "\r\nNieobsługiwany typ konta!\r\nJesli uważasz, że informacja ta jest niepoprawna i chcesz aby dodac obsługę tego typu konta\r\nskontaktuj się z nami poprzez forum wsparcia.");
+                                                  put("PLUGIN_BROKEN", "\r\nProblem z wtyczką, skontaktuj się z zespołem wsparcia JDownloader!");
+                                                  put("TRAFFIC_LEFT", "Pozostały transfer");
+                                                  put("HOSTER_UNAVAILABLE", "Serwis jest niedostępny przez");
+                                                  put("DOWNLOAD_LIMIT", "Przekroczono dostępny limit transferu!");
+                                                  put("RETRY", "Ponawianie za kilka sekund");
+                                                  put("LINK_INACTIVE", "Xt7 raportuje link jako nieaktywny!");
+                                                  put("LINK_EXPIRED", "Poprzednio wygenerowany link wygasł!");
+                                                  put("NO_TRAFFIC", "Brak dostępnego transferu");
+                                                  put("UNKNOWN_ERROR", "Nieobsługiwany kod błędu!");
+                                                  put("ACCOUNT_TYPE", "Typ konta");
+                                                  put("UNKNOWN", "Nieznany");
+                                                  put("UNLIMITED", "Bez limitu");
+                                                  put("FREE", "darmowe");
+                                                  put("EXPIRED", "Konto wygasło/darmowe");
+                                              }
+                                          };
 
     /**
      * Returns a Polish/English translation of a phrase. We don't use the JDownloader translation framework since we need only Polish and

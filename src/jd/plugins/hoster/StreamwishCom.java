@@ -22,10 +22,13 @@ import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class StreamwishCom extends XFileSharingProBasic {
@@ -38,13 +41,13 @@ public class StreamwishCom extends XFileSharingProBasic {
      * DEV NOTES XfileSharingProBasic Version SEE SUPER-CLASS<br />
      * mods: See overridden functions<br />
      * limit-info:<br />
-     * captchatype-info: null 4dignum solvemedia reCaptchaV2, hcaptcha<br />
+     * captchatype-info: 2024-04-04: null <br />
      * other:<br />
      */
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "streamwish.com", "streamwish.to", "awish.pro", "embedwish.com", "wishembed.pro", "vidcloud.top" });
+        ret.add(new String[] { "streamwish.com", "streamwish.to", "awish.pro", "embedwish.com", "wishembed.pro", "vidcloud.top", "gdplry.online" });
         return ret;
     }
 
@@ -58,7 +61,19 @@ public class StreamwishCom extends XFileSharingProBasic {
     }
 
     public static String[] getAnnotationUrls() {
-        return XFileSharingProBasic.buildAnnotationUrls(getPluginDomains());
+        return StreamwishCom.buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static final String getDefaultAnnotationPatternPartStreamwish() {
+        return "/(?:d/[A-Za-z0-9]+|(?:embed-|e/|f/)?[a-z0-9]{12}(?:/[^/]+(?:\\.html)?)?)";
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "(?::\\d+)?" + StreamwishCom.getDefaultAnnotationPatternPartStreamwish());
+        }
+        return ret.toArray(new String[0]);
     }
 
     @Override
@@ -128,8 +143,30 @@ public class StreamwishCom extends XFileSharingProBasic {
     }
 
     @Override
+    public String getFUIDFromURL(final DownloadLink link) {
+        final Regex patternSpecial = new Regex(link.getPluginPatternMatcher(), "https://[^/]+/f/([a-z0-9]{12})");
+        if (patternSpecial.patternFind()) {
+            return patternSpecial.getMatch(0);
+        } else {
+            return super.getFUIDFromURL(link);
+        }
+    }
+
+    @Override
+    protected URL_TYPE getURLType(final String url) {
+        if (url == null) {
+            return null;
+        }
+        if (url.matches("(?i)^https?://[^/]+/f/([a-z0-9]{12}).*")) {
+            return URL_TYPE.OFFICIAL_VIDEO_DOWNLOAD;
+        } else {
+            return super.getURLType(url);
+        }
+    }
+
+    @Override
     protected String buildURLPath(final DownloadLink link, final String fuid, final URL_TYPE type) {
-        if (type == URL_TYPE.OFFICIAL_VIDEO_DOWNLOAD) {
+        if (type == null || type == URL_TYPE.OFFICIAL_VIDEO_DOWNLOAD) {
             /* 2023-09-07: Special: They do not have working "/d/..." links anymore but users are still spreading them. */
             return buildNormalURLPath(link, fuid);
         } else {
@@ -159,5 +196,13 @@ public class StreamwishCom extends XFileSharingProBasic {
         } else {
             return super.isOffline(link, br, correctedBR);
         }
+    }
+
+    @Override
+    protected void checkErrors(final Browser br, final String html, final DownloadLink link, final Account account, final boolean checkAll) throws NumberFormatException, PluginException {
+        if (br.containsHTML(">\\s*Video temporarily not available")) {
+            throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Video temporarily not available");
+        }
+        super.checkErrors(br, html, link, account, checkAll);
     }
 }

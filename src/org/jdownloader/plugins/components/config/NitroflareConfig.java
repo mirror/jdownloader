@@ -25,7 +25,7 @@ public interface NitroflareConfig extends PluginConfigInterface {
             return text_TrustAPIAboutPremiumOnlyFlag;
         }
 
-        public String getUseAPI_label() {
+        public String getUseAPI042024_label() {
             return text_UseAPI;
         }
     }

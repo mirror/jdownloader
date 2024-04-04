@@ -24,6 +24,7 @@ import org.jdownloader.plugins.components.config.XFSConfigVideo;
 import org.jdownloader.plugins.components.config.XFSConfigVideoWolfstreamTv;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
@@ -144,6 +145,16 @@ public class WolfstreamTv extends XFileSharingProBasic {
             fileInfo[1] = new Regex(correctedBR, "<span\\s+class\\s*=\\s*\"\\s*uploadate\\s*\"\\s*>\\s*Size\\s*:\\s*([0-9\\.]+\\s*[KMGTP]{0,1}B)\\s*").getMatch(0);
         }
         return super.scanInfo(fileInfo);
+    }
+
+    @Override
+    protected boolean isOffline(final DownloadLink link, final Browser br, final String correctedBR) {
+        // 2024-04-04
+        if (br.containsHTML(">\\s*File was locked by administrator")) {
+            return true;
+        } else {
+            return super.isOffline(link, br, correctedBR);
+        }
     }
 
     @Override

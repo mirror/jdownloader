@@ -26,6 +26,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Pattern;
 
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.DebugMode;
@@ -91,15 +92,31 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
     private final boolean USE_NEW_HANDLING_2024_04 = true;
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        if (USE_NEW_HANDLING_2024_04) {
+            return decryptItNEW(param);
+        } else {
+            return decryptItOLD(param);
+        }
+    }
+
+    private ArrayList<DownloadLink> decryptItNEW(final CryptedLink param) throws Exception {
+        final String contenturl = param.getCryptedUrl();
+        if (contenturl.matches(PATTERN_SEARCH)) {
+            return this.crawlSearchQueryURL(br, param);
+        } else {
+            return this.crawlMetadataJsonV2(contenturl);
+        }
+    }
+
+    /** 2024-03-27: TODO: Remove this old/deprecated code by the end of 2024 */
+    @Deprecated
+    private ArrayList<DownloadLink> decryptItOLD(final CryptedLink param) throws Exception {
         final String contenturl = param.getCryptedUrl().replace("://www.", "://").replaceFirst("(?i)/(stream|embed)/", "/download/");
         if (new Regex(contenturl, PATTERN_DOWNLOAD).patternFind()) {
-            return crawlPatternSlashDownload(contenturl);
+            return crawlPatternSlashDownloadWebsite(contenturl);
         } else if (contenturl.matches(PATTERN_SEARCH)) {
             return this.crawlSearchQueryURL(br, param);
-        } else if (USE_NEW_HANDLING_2024_04) {
-            return this.crawlMetadataJsonV2(contenturl);
         } else {
-            /* 2024-03-27: TODO: Remove this old/deprecated code */
             /*
              * 2020-08-26: Login might sometimes be required for book downloads.
              */
@@ -209,7 +226,8 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         }
     }
 
-    private ArrayList<DownloadLink> crawlPatternSlashDownload(final String url) throws Exception {
+    @Deprecated
+    private ArrayList<DownloadLink> crawlPatternSlashDownloadWebsite(final String url) throws Exception {
         if (url == null) {
             /* Developer mistake */
             throw new IllegalArgumentException();
@@ -221,64 +239,60 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
             /* Invalid URL/identifier */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (USE_NEW_HANDLING_2024_04) {
-            return this.crawlMetadataJsonV2(identifier, url);
-        } else {
-            // TODO: 2024-03-28 Delete this old/deprecated handling
-            final boolean allowCheckForDirecturl = true;
-            if (path.contains("/") && allowCheckForDirecturl) {
-                /**
-                 * 2023-05-30: Especially important when user adds a like to a file inside a .zip file as that will not be contained in the
-                 * XML which we are crawling below. </br>
-                 * Reference: https://board.jdownloader.org/showthread.php?t=89368
-                 */
-                logger.info("Path contains subpath -> Checking for single directurl");
-                URLConnectionAdapter con = null;
-                try {
-                    con = br.openHeadConnection(url);
-                    ensureInitHosterplugin();
-                    if (this.looksLikeDownloadableContent(con)) {
-                        logger.info("URL is directurl");
-                        final DownloadLink link = new DownloadLink(hostPlugin, null, hostPlugin.getHost(), url, true);
-                        if (con.getCompleteContentLength() > 0) {
-                            if (con.isContentDecoded()) {
-                                link.setDownloadSize(con.getCompleteContentLength());
-                            } else {
-                                link.setVerifiedFileSize(con.getCompleteContentLength());
-                            }
-                        }
-                        final String filenameFromHeader = getFileNameFromHeader(con);
-                        if (filenameFromHeader != null) {
-                            link.setFinalFileName(Encoding.htmlDecode(filenameFromHeader).trim());
-                        }
-                        link.setAvailable(true);
-                        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-                        ret.add(link);
-                        return ret;
-                    } else {
-                        logger.info("URL is not a directurl");
-                        switch (con.getResponseCode()) {
-                        case 404:
-                            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                        case 400:
-                            throw new DecrypterRetryException(RetryReason.HOST);
-                        default:
-                            break;
+        // TODO: 2024-03-28 Delete this old/deprecated handling
+        final boolean allowCheckForDirecturl = true;
+        if (path.contains("/") && allowCheckForDirecturl) {
+            /**
+             * 2023-05-30: Especially important when user adds a like to a file inside a .zip file as that will not be contained in the XML
+             * which we are crawling below. </br>
+             * Reference: https://board.jdownloader.org/showthread.php?t=89368
+             */
+            logger.info("Path contains subpath -> Checking for single directurl");
+            URLConnectionAdapter con = null;
+            try {
+                con = br.openHeadConnection(url);
+                ensureInitHosterplugin();
+                if (this.looksLikeDownloadableContent(con)) {
+                    logger.info("URL is directurl");
+                    final DownloadLink link = new DownloadLink(hostPlugin, null, hostPlugin.getHost(), url, true);
+                    if (con.getCompleteContentLength() > 0) {
+                        if (con.isContentDecoded()) {
+                            link.setDownloadSize(con.getCompleteContentLength());
+                        } else {
+                            link.setVerifiedFileSize(con.getCompleteContentLength());
                         }
                     }
-                } finally {
-                    try {
-                        con.disconnect();
-                    } catch (final Throwable e) {
+                    final String filenameFromHeader = getFileNameFromHeader(con);
+                    if (filenameFromHeader != null) {
+                        link.setFinalFileName(Encoding.htmlDecode(filenameFromHeader).trim());
+                    }
+                    link.setAvailable(true);
+                    final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+                    ret.add(link);
+                    return ret;
+                } else {
+                    logger.info("URL is not a directurl");
+                    switch (con.getResponseCode()) {
+                    case 404:
+                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    case 400:
+                        throw new DecrypterRetryException(RetryReason.HOST);
+                    default:
+                        break;
                     }
                 }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (final Throwable e) {
+                }
             }
-            return crawlXML(url, br, path);
         }
+        return crawlXML(url, br, path);
     }
 
     public static String getIdentifierFromURL(final String url) {
-        return new Regex(url, "/(?:details|download|metadata)/([A-Za-z0-9\\-_\\.]{2,})").getMatch(0);
+        return new Regex(url, "/(?:details|embed|download|metadata|stream)/([A-Za-z0-9\\-_\\.]{2,})").getMatch(0);
     }
 
     private ArrayList<DownloadLink> crawlCollection(final String collectionIdentifier) throws Exception {
@@ -614,7 +628,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         }
     }
 
-    private ArrayList<DownloadLink> crawlMetadataJsonV2(String sourceurl) throws Exception {
+    private ArrayList<DownloadLink> crawlMetadataJsonV2(final String sourceurl) throws Exception {
         if (sourceurl == null) {
             throw new IllegalArgumentException();
         }
@@ -634,6 +648,10 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         /* Check if given ideantifier looks to be a user profile. */
         if (identifier.startsWith("@")) {
             return this.crawlProfile(identifier, sourceurl);
+        }
+        if (sourceurl != null) {
+            /* Remove params so that URL-paths will be correct down below. */
+            sourceurl = URLHelper.getUrlWithoutParams(sourceurl);
         }
         /* The following request will return an empty map if the given identifier is invalid. */
         final Browser brc = br.cloneBrowser();
@@ -655,26 +673,13 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
             return this.crawlCollection(identifier);
         }
         final ArchiveOrgConfig cfg = PluginJsonConfig.get(ArchiveOrgConfig.class);
+        final String desiredSubpath = new Regex(sourceurl, "/" + Pattern.quote(identifier) + "/(.+)").getMatch(0);
         String desiredSubpathDecoded = null;
-        if (sourceurl != null) {
-            sourceurl = URLHelper.getUrlWithoutParams(sourceurl);
-        }
-        final String fullpath = new URL(sourceurl).getPath();
-        /* JSON metadata will always contain all files but in this case we only want to get all files in a specific subfolder. */
-        final String[] urlParts = fullpath.split("/");
-        // final Pattern ignorepart = Pattern.compile("detail|download");
-        boolean buildSubpathNow = false;
-        for (final String urlPart : urlParts) {
-            if (urlPart.equals(identifier)) {
-                /* Everything alter the identifier will be used as our internal path. */
-                buildSubpathNow = true;
-            } else if (buildSubpathNow) {
-                if (desiredSubpathDecoded == null) {
-                    desiredSubpathDecoded = Encoding.htmlDecode(urlPart);
-                } else {
-                    desiredSubpathDecoded += "/" + Encoding.htmlDecode(urlPart);
-                }
-            }
+        if (desiredSubpath != null) {
+            /*
+             * In this case we only want to get all files in a specific subfolder or even only a single file.
+             */
+            desiredSubpathDecoded = Encoding.htmlDecode(desiredSubpath);
         }
         final String server = root.get("server").toString();
         final String dir = root.get("dir").toString();

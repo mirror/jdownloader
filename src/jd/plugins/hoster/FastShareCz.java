@@ -301,6 +301,15 @@ public class FastShareCz extends PluginForHost {
         br.setFollowRedirects(true);
         try {
             dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, this.isResumeable(link, account), this.getMaxChunks(account));
+            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                br.followConnection(true);
+                checkErrors(br, link, account);
+                if (br.getRequest().getHtmlCode().length() <= 100) {
+                    throw new PluginException(LinkStatus.ERROR_RETRY, "Server error");
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+            }
         } catch (final Exception e) {
             if (storedDirecturl != null) {
                 link.removeProperty(directurlproperty);
@@ -312,15 +321,6 @@ public class FastShareCz extends PluginForHost {
         if (storedDirecturl == null) {
             /* Save directurl to be able to re-use it next time. */
             link.setProperty(directurlproperty, dllink);
-        }
-        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            br.followConnection(true);
-            checkErrors(br, link, account);
-            if (br.getRequest().getHtmlCode().length() <= 100) {
-                throw new PluginException(LinkStatus.ERROR_RETRY, "Server error");
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
         }
         dl.setFilenameFix(isContentDispositionFixRequired(dl, dl.getConnection(), link));
         dl.startDownload();
@@ -443,13 +443,6 @@ public class FastShareCz extends PluginForHost {
             /* [Premium-] account related error messages */
             if (br.containsHTML("(?i)máte dostatečný kredit pro stažení tohoto souboru")) {
                 throw new AccountUnavailableException("Traffic limit reached", 5 * 60 * 1000l);
-            }
-        }
-        final URLConnectionAdapter con = br.getRequest().getHttpConnection();
-        if (con.getResponseCode() == 200 && con.getCompleteContentLength() == 0 && StringUtils.containsIgnoreCase(con.getContentType(), "text/html")) {
-            final String directurlproperty = getDirecturlProperty(account);
-            if (link.removeProperty(directurlproperty)) {
-                throw new PluginException(LinkStatus.ERROR_RETRY, "Stored directurl expired");
             }
         }
         final String errortextMaxConcurrentDownloadsLimit = "Reached max concurrent downloads limit";
