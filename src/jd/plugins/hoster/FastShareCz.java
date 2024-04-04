@@ -217,7 +217,7 @@ public class FastShareCz extends PluginForHost {
         }
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (br.containsHTML("(?i)(<title>\\s*FastShare\\.[a-z]+\\s*</title>|>Tento soubor byl smazán na základě požadavku vlastníka autorských)")) {
+        } else if (br.containsHTML("(?i)(<title>\\s*FastShare\\.[a-z]+\\s*</title>|>\\s*Tento soubor byl smazán na základě požadavku vlastníka autorských)")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML(">\\s*Soubor byl smazán")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
