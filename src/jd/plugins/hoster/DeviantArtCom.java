@@ -15,7 +15,6 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
@@ -32,11 +31,11 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.appwork.storage.TypeRef;
-import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.Base64;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.downloader.text.TextDownloader;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.components.config.DeviantArtComConfig;
 import org.jdownloader.plugins.components.config.DeviantArtComConfig.ImageDownloadMode;
@@ -691,12 +690,8 @@ public class DeviantArtCom extends PluginForHost {
             } else {
                 text = br.getRequest().getHtmlCode();
             }
-            final File dest = new File(link.getFileOutput());
-            IO.writeToFile(dest, text.getBytes(br.getRequest().getCharsetFromMetaTags()), IO.SYNC.META_AND_DATA);
-            /* Set filesize so user can see it in UI. */
-            link.setVerifiedFileSize(dest.length());
-            /* Set progress to finished - the "download" is complete ;) */
-            link.getLinkStatus().setStatus(LinkStatus.FINISHED);
+            dl = new TextDownloader(this, link, text);
+            dl.startDownload();
         } else {
             /* Download file */
             final String dllink = getDirecturl(br, link, account);

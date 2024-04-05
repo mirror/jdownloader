@@ -21,6 +21,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -34,10 +38,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class CivitaiCom extends PluginForHost {
@@ -134,18 +134,23 @@ public class CivitaiCom extends PluginForHost {
             filename = Encoding.htmlDecode(filename).trim();
             link.setName(filename);
         } else {
-            final String mimeType = (String) imagemap.get("mimeType");
-            final String ext = Plugin.getExtensionFromMimeTypeStatic(mimeType);
-            if (ext != null) {
-                link.setName(imageID + "." + ext);
-            }
+            /* Fallback */
+            filename = imageID;
+        }
+        final String mimeType = (String) imagemap.get("mimeType");
+        final String ext = Plugin.getExtensionFromMimeTypeStatic(mimeType);
+        if (ext != null) {
+            link.setName(this.applyFilenameExtension(filename, "." + ext));
+        } else {
+            link.setName(filename);
         }
         if (filesize != null) {
             link.setDownloadSize(filesize.longValue());
         }
         /**
          * 2024-03-11: Important: Do not open up the regex for original image too much or you run into risk of accidentally downloading the
-         * wrong image, see: </br> https://board.jdownloader.org/showthread.php?t=95419
+         * wrong image, see: </br>
+         * https://board.jdownloader.org/showthread.php?t=95419
          */
         final String directurlOriginal = br.getRegex("class=\"mantine-it6rft\" src=\"(https?://image\\.civitai\\.com/[^\"]+/original=true/[^\"]+)").getMatch(0);
         if (directurlOriginal != null) {
@@ -162,10 +167,10 @@ public class CivitaiCom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        handleDownload(link, FREE_MAXCHUNKS, "free_directlink");
+        handleDownload(link, FREE_MAXCHUNKS);
     }
 
-    private void handleDownload(final DownloadLink link, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+    private void handleDownload(final DownloadLink link, final int maxchunks) throws Exception, PluginException {
         requestFileInformation(link);
         String dllink = link.getStringProperty(PROPERTY_DIRECTURL);
         if (StringUtils.isEmpty(dllink)) {

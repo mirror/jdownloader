@@ -101,8 +101,8 @@ public class Open3dlabComCrawler extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> crawlProject(final CryptedLink param) throws Exception {
-        final String projectID = new Regex(param.getCryptedUrl(), PATTERN_PROJECT).getMatch(0);
-        if (projectID == null) {
+        final String projectIDFromSourceurl = new Regex(param.getCryptedUrl(), PATTERN_PROJECT).getMatch(0);
+        if (projectIDFromSourceurl == null) {
             /* Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -110,6 +110,17 @@ public class Open3dlabComCrawler extends PluginForDecrypt {
         br.getPage(param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final String projectID;
+        /*
+         * 2024-04-05: ProjectIDs have changed from only numbers to alphanumeric so let's try to extract the "real" projectID from current
+         * browser-URL.
+         */
+        final String projectIDFromBrowserURL = new Regex(br.getURL(), PATTERN_PROJECT).getMatch(0);
+        if (projectIDFromBrowserURL != null) {
+            projectID = projectIDFromBrowserURL;
+        } else {
+            projectID = projectIDFromSourceurl;
         }
         final String[] dlHTMLs = br.getRegex("<td class=\"text-wrap-word js-edit-input\"(.*?)</ul>\\s*</div>\\s*</div>\\s*</td>\\s*</tr>").getColumn(0);
         if (dlHTMLs == null || dlHTMLs.length == 0) {
@@ -215,6 +226,7 @@ public class Open3dlabComCrawler extends PluginForDecrypt {
             fp.setName(projectID);
         }
         fp.setCleanupPackageName(false);
+        fp.setPackageKey(this.getHost() + "://project/" + projectID);
         for (final DownloadLink result : ret) {
             result.setAvailable(true);
             result._setFilePackage(fp);
@@ -257,7 +269,7 @@ public class Open3dlabComCrawler extends PluginForDecrypt {
                     }
                 }
             }
-            logger.info("Crawled page " + page + " | Total number of items so far: " + ret.size());
+            logger.info("Crawled page " + page + " | New items on this page: " + numberofNewItems + " | Total number of items so far: " + ret.size());
             page++;
             final String nextPageURL = br.getRegex("(/user/" + profileID + "/\\?page=" + page + ")").getMatch(0);
             if (this.isAbort()) {

@@ -29,49 +29,6 @@ import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 import javax.swing.JSeparator;
 
-import jd.PluginWrapper;
-import jd.config.ConfigContainer;
-import jd.config.Property;
-import jd.config.SubConfiguration;
-import jd.controlling.downloadcontroller.DiskSpaceReservation;
-import jd.controlling.downloadcontroller.DownloadSession;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.downloadcontroller.DownloadWatchDogJob;
-import jd.controlling.downloadcontroller.ExceptionRunnable;
-import jd.controlling.downloadcontroller.FileIsLockedException;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.linkchecker.LinkChecker;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcrawler.CheckableLink;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.controlling.packagecontroller.AbstractNodeNotifier;
-import jd.http.Browser;
-import jd.http.Request;
-import jd.http.URLConnectionAdapter;
-import jd.http.requests.GetRequest;
-import jd.http.requests.HeadRequest;
-import jd.nutils.encoding.Encoding;
-import jd.plugins.Account;
-import jd.plugins.AccountInfo;
-import jd.plugins.BrowserAdapter;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.DownloadLinkDatabindingInterface;
-import jd.plugins.FilePackage;
-import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginConfigPanelNG;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
-import jd.plugins.PluginProgress;
-import jd.plugins.decrypter.TbCmV2;
-import jd.plugins.download.DownloadInterface;
-import jd.plugins.download.DownloadLinkDownloadable;
-import jd.plugins.download.Downloadable;
-import jd.plugins.download.HashResult;
-import jd.plugins.download.raf.ChunkRange;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.remoteapi.exceptions.BasicRemoteAPIException;
@@ -114,6 +71,7 @@ import org.jdownloader.controlling.linkcrawler.LinkVariant;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.downloader.segment.Segment;
 import org.jdownloader.downloader.segment.SegmentDownloader;
+import org.jdownloader.downloader.text.TextDownloader;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo.PluginView;
@@ -151,6 +109,48 @@ import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.plugins.controller.host.PluginFinder;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.staticreferences.CFG_YOUTUBE;
+
+import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.Property;
+import jd.config.SubConfiguration;
+import jd.controlling.downloadcontroller.DownloadSession;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.DownloadWatchDogJob;
+import jd.controlling.downloadcontroller.ExceptionRunnable;
+import jd.controlling.downloadcontroller.FileIsLockedException;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.linkchecker.LinkChecker;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcrawler.CheckableLink;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.controlling.packagecontroller.AbstractNodeNotifier;
+import jd.http.Browser;
+import jd.http.Request;
+import jd.http.URLConnectionAdapter;
+import jd.http.requests.GetRequest;
+import jd.http.requests.HeadRequest;
+import jd.nutils.encoding.Encoding;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
+import jd.plugins.BrowserAdapter;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.DownloadLinkDatabindingInterface;
+import jd.plugins.FilePackage;
+import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginConfigPanelNG;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
+import jd.plugins.PluginProgress;
+import jd.plugins.decrypter.TbCmV2;
+import jd.plugins.download.DownloadInterface;
+import jd.plugins.download.DownloadLinkDownloadable;
+import jd.plugins.download.Downloadable;
+import jd.plugins.download.HashResult;
+import jd.plugins.download.raf.ChunkRange;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "youtube.com" }, urls = { "youtubev2://.+" })
 public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInterface {
@@ -2446,59 +2446,12 @@ public class YoutubeDashV2 extends PluginForHost implements YoutubeHostPluginInt
         if (requestFileInformation(downloadLink) != AvailableStatus.TRUE) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String description = downloadLink.getTempProperties().getStringProperty(YoutubeHelper.YT_DESCRIPTION, null);
-        if (description == null) {
+        final String descriptionText = downloadLink.getTempProperties().getStringProperty(YoutubeHelper.YT_DESCRIPTION, null);
+        if (descriptionText == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final byte[] bytes = description.getBytes("UTF-8");
-        final File outputFile = new File(downloadLink.getFileOutput());
-        final DiskSpaceReservation reservation = new DiskSpaceReservation() {
-            @Override
-            public long getSize() {
-                return Math.max(0, bytes.length - outputFile.length());
-            }
-
-            @Override
-            public File getDestination() {
-                return outputFile;
-            }
-
-            @Override
-            public Object getOwner() {
-                return YoutubeDashV2.this;
-            }
-
-            @Override
-            public LogInterface getLogger() {
-                return YoutubeDashV2.this.getLogger();
-            }
-        };
-        //
-        final DownloadLinkDownloadable downloadable = new DownloadLinkDownloadable(downloadLink);
-        if (!downloadable.checkIfWeCanWrite(new ExceptionRunnable() {
-            @Override
-            public void run() throws Exception {
-                downloadable.checkAndReserve(reservation);
-                try {
-                    downloadable.lockFiles(outputFile);
-                } catch (FileIsLockedException e) {
-                    downloadable.unlockFiles(outputFile);
-                    throw new PluginException(LinkStatus.ERROR_ALREADYEXISTS, null, e);
-                }
-            }
-        }, null)) {
-            throw new SkipReasonException(SkipReason.INVALID_DESTINATION);
-        }
-        try {
-            final long size = bytes.length;
-            IO.writeToFile(outputFile, bytes);
-            downloadable.setDownloadTotalBytes(size);
-            downloadable.setDownloadBytesLoaded(size);
-            downloadable.setAvailable(AvailableStatus.TRUE);
-            downloadable.setLinkStatus(LinkStatus.FINISHED);
-        } finally {
-            downloadable.unlockFiles(outputFile);
-        }
+        dl = new TextDownloader(this, downloadLink, descriptionText);
+        dl.startDownload();
     }
 
     @Override

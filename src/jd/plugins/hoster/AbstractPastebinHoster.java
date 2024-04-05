@@ -15,9 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.File;
-
-import org.appwork.utils.IO;
+import org.jdownloader.downloader.text.TextDownloader;
 import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
@@ -27,7 +25,6 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
@@ -79,12 +76,8 @@ public abstract class AbstractPastebinHoster extends PluginForHost {
         final PastebinMetadata metadata = ((AbstractPastebinCrawler) plg).crawlMetadata(new CryptedLink(link.getPluginPatternMatcher(), link), br);
         final String textToSave = metadata.getPastebinText();
         /* Write text to file */
-        final File dest = new File(link.getFileOutput());
-        IO.writeToFile(dest, textToSave.getBytes("UTF-8"), IO.SYNC.META_AND_DATA);
-        /* Set filesize so user can see it in UI. */
-        link.setVerifiedFileSize(dest.length());
-        /* Set progress to finished - the "download" is complete. */
-        link.getLinkStatus().setStatus(LinkStatus.FINISHED);
+        dl = new TextDownloader(this, link, textToSave);
+        dl.startDownload();
     }
 
     @Override

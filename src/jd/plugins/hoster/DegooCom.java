@@ -15,12 +15,17 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.downloader.text.TextDownloader;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -37,12 +42,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.IO;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class DegooCom extends PluginForHost {
@@ -182,14 +181,10 @@ public class DegooCom extends PluginForHost {
                     /* 2021-08-16: Don't use PLUGIN_DEFECT LinkStatus here as we're using an API which is supposed to be fairly stable. */
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to find final downloadurl");
                 }
-                final String rawText = Encoding.Base64Decode(b64EncodedData);
+                final String text = Encoding.Base64Decode(b64EncodedData);
                 /* Write text to file */
-                final File dest = new File(link.getFileOutput());
-                IO.writeToFile(dest, rawText.getBytes("UTF-8"), IO.SYNC.META_AND_DATA);
-                /* Set filesize so user can see it in UI. */
-                link.setVerifiedFileSize(dest.length());
-                /* Set progress to finished - the "download" is complete. */
-                link.getLinkStatus().setStatus(LinkStatus.FINISHED);
+                dl = new TextDownloader(this, link, text);
+                dl.startDownload();
             }
         }
     }
@@ -369,13 +364,8 @@ public class DegooCom extends PluginForHost {
             final Browser brAPI = br.cloneBrowser();
             this.login(brAPI, account, false);
             this.prepBRGraphQL(brAPI);
-            brAPI.postPageRaw(
-                    API_BASE_GRAPHQL,
-                    "{\"operationName\":\"GetOverlay4\",\"variables\":{\"Token\":\""
-                            + this.getToken(account)
-                            + "\",\"ID\":{\"FileID\":\""
-                            + this.getFileID(link)
-                            + "\"}},\"query\":\"query GetOverlay4($Token: String!, $ID: IDType!) {    getOverlay4(Token: $Token, ID: $ID) {      ID      MetadataID      UserID      DeviceID      MetadataKey      Name      FilePath      LocalPath      LastUploadTime      LastModificationTime      ParentID      Category      Size      Platform      URL      ThumbnailURL      CreationTime      IsSelfLiked      Likes      Comments      IsHidden      IsInRecycleBin      Description      Location {        Country        Province        Place        GeoLocation {          Latitude          Longitude        }      }      Location2 {        Country        Region        SubRegion        Municipality        Neighborhood        GeoLocation {          Latitude          Longitude        }      }      Data      DataBlock      CompressionParameters      Shareinfo {        Status        ShareTime      }      HasViewed      QualityScore    }  }\"}");
+            brAPI.postPageRaw(API_BASE_GRAPHQL, "{\"operationName\":\"GetOverlay4\",\"variables\":{\"Token\":\"" + this.getToken(account) + "\",\"ID\":{\"FileID\":\"" + this.getFileID(link)
+                    + "\"}},\"query\":\"query GetOverlay4($Token: String!, $ID: IDType!) {    getOverlay4(Token: $Token, ID: $ID) {      ID      MetadataID      UserID      DeviceID      MetadataKey      Name      FilePath      LocalPath      LastUploadTime      LastModificationTime      ParentID      Category      Size      Platform      URL      ThumbnailURL      CreationTime      IsSelfLiked      Likes      Comments      IsHidden      IsInRecycleBin      Description      Location {        Country        Province        Place        GeoLocation {          Latitude          Longitude        }      }      Location2 {        Country        Region        SubRegion        Municipality        Neighborhood        GeoLocation {          Latitude          Longitude        }      }      Data      DataBlock      CompressionParameters      Shareinfo {        Status        ShareTime      }      HasViewed      QualityScore    }  }\"}");
             // this.checkErrorsAPI(this.br, account);
             final Map<String, Object> entries = restoreFromString(brAPI.toString(), TypeRef.MAP);
             this.dllink = JavaScriptEngineFactory.walkJson(entries, "data/getOverlay4/URL").toString();
@@ -394,14 +384,10 @@ public class DegooCom extends PluginForHost {
                     /* 2021-08-16: Don't use PLUGIN_DEFECT LinkStatus here as we're using an API which is supposed to be fairly stable. */
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Failed to find final downloadurl");
                 }
-                final String rawText = Encoding.Base64Decode(b64EncodedData);
+                final String text = Encoding.Base64Decode(b64EncodedData);
                 /* Write text to file */
-                final File dest = new File(link.getFileOutput());
-                IO.writeToFile(dest, rawText.getBytes("UTF-8"), IO.SYNC.META_AND_DATA);
-                /* Set filesize so user can see it in UI. */
-                link.setVerifiedFileSize(dest.length());
-                /* Set progress to finished - the "download" is complete. */
-                link.getLinkStatus().setStatus(LinkStatus.FINISHED);
+                dl = new TextDownloader(this, link, text);
+                dl.startDownload();
             }
         }
     }
@@ -413,9 +399,9 @@ public class DegooCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
         } else if (con.getResponseCode() == 429) {
             /**
-             * 2021-01-17: Plaintext response: "Rate Limit" </br> This limit sits on the files themselves and/or the uploader account. There
-             * is no way to bypass this by reconnecting! </br> Displayed error on website:
-             * "Daily limit reached, upgrade to increase this limit or wait until tomorrow"
+             * 2021-01-17: Plaintext response: "Rate Limit" </br>
+             * This limit sits on the files themselves and/or the uploader account. There is no way to bypass this by reconnecting! </br>
+             * Displayed error on website: "Daily limit reached, upgrade to increase this limit or wait until tomorrow"
              */
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Daily limit reached");
         } else {

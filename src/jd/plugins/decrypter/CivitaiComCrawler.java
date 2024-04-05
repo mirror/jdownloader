@@ -25,12 +25,14 @@ import org.appwork.utils.parser.UrlQuery;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
@@ -71,7 +73,7 @@ public class CivitaiComCrawler extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/models/.+");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(models/.+|posts/\\d+)");
         }
         return ret.toArray(new String[0]);
     }
@@ -79,8 +81,10 @@ public class CivitaiComCrawler extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String contenturl = param.getCryptedUrl();
+        final Regex urlregex = new Regex(param.getCryptedUrl(), "(?i)/posts/(\\d+)");
         final UrlQuery query = UrlQuery.parse(contenturl);
         final String modelVersionId = query.get("modelVersionId");
+        final String postID = urlregex.getMatch(0);
         /* Using API: https://github.com/civitai/civitai/wiki/REST-API-Reference */
         final String apiBase = "https://civitai.com/api/v1";
         if (modelVersionId != null) {
@@ -118,10 +122,39 @@ public class CivitaiComCrawler extends PluginForDecrypt {
             fp.setName(modelName);
             fp.setPackageKey("civitai://model/modelVersion/" + modelVersionId);
             fp.addLinks(ret);
+        } else if (postID != null) {
+            /* Handles such links: https://civitai.com/posts/1234567 */
+            /* https://github.com/civitai/civitai/wiki/REST-API-Reference#get-apiv1images */
+            br.getPage(apiBase + "/images?postId=" + postID);
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+            final List<Map<String, Object>> images = (List<Map<String, Object>>) entries.get("items");
+            if (images == null || images.isEmpty()) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName(postID);
+            fp.setPackageKey("civitai://post/" + postID);
+            for (final Map<String, Object> image : images) {
+                final String imageurl = image.get("url").toString();
+                final String tempName = Plugin.getFileNameFromURL(imageurl);
+                final DownloadLink link = this.createDownloadlink(br.getURL("/images/" + image.get("id")).toExternalForm());
+                link._setFilePackage(fp);
+                if (tempName != null) {
+                    link.setName(tempName);
+                }
+                link.setAvailable(true);
+                ret.add(link);
+            }
         } else {
             /* Unsupported link */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        // if(ret.isEmpty()) {
+        // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        // }
         return ret;
     }
 

@@ -15,7 +15,6 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -28,11 +27,11 @@ import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.DebugMode;
-import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.parser.UrlQuery;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.downloader.text.TextDownloader;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.components.config.InstagramConfig;
 import org.jdownloader.plugins.components.config.InstagramConfig.MediaQualityDownloadMode;
@@ -616,12 +615,9 @@ public class InstaGramCom extends PluginForHost {
     public void handleDownload(final DownloadLink link) throws Exception {
         if (isText(link)) {
             /* Write text to file */
-            final File dest = new File(link.getFileOutput());
-            IO.writeToFile(dest, link.getStringProperty(PROPERTY_description).getBytes("UTF-8"), IO.SYNC.META_AND_DATA);
-            /* Set filesize so user can see it in UI. */
-            link.setVerifiedFileSize(dest.length());
-            /* Set progress to finished - the "download" is complete. */
-            link.getLinkStatus().setStatus(LinkStatus.FINISHED);
+            final String text = link.getStringProperty(PROPERTY_description);
+            dl = new TextDownloader(this, link, text);
+            dl.startDownload();
         } else {
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

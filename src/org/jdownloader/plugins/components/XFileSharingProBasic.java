@@ -5636,12 +5636,12 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
      * Names are either enforced if the configuration of the script implies this or if it detects that embedding videos is possible. </br>
      * Do not override - at least try to avoid having to!!
      */
-    private final boolean internal_isVideohoster_enforce_video_filename(final DownloadLink link) {
+    protected final boolean internal_isVideohoster_enforce_video_filename(final DownloadLink link) {
         return internal_isVideohosterEmbed(this.br) || isVideohoster_enforce_video_filename() || isEmbedURL(link);
     }
 
     @Override
-    public boolean internal_supportsMassLinkcheck() {
+    public final boolean internal_supportsMassLinkcheck() {
         return this.supportsAPIMassLinkcheck() || this.supportsMassLinkcheckOverWebsite() || this.enableAccountApiOnlyMode();
     }
 
@@ -5669,7 +5669,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
      * Example: uploadboy.com</br>
      * Do not override - at least try to avoid having to!!
      */
-    protected boolean internal_supports_availablecheck_filename_abuse() {
+    protected final boolean internal_supports_availablecheck_filename_abuse() {
         final boolean supportedByIndicatingHtmlCode = new Regex(getCorrectBR(br), "op=report_file&(?:amp;)?id=" + this.getFUIDFromURL(this.getDownloadLink())).matches();
         boolean allowedByAutoHandling = true;
         final SubConfiguration config = this.getPluginConfig();
@@ -5686,7 +5686,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
         return (this.supports_availablecheck_filename_abuse() || supportedByIndicatingHtmlCode) && allowedByAutoHandling;
     }
 
-    protected boolean internal_supports_availablecheck_alt() {
+    protected final boolean internal_supports_availablecheck_alt() {
         boolean allowedByAutoHandling = true;
         final SubConfiguration config = this.getPluginConfig();
         final long timestampLastFailure = config.getLongProperty(PROPERTY_PLUGIN_ALT_AVAILABLECHECK_LAST_FAILURE_TIMESTAMP, 0);

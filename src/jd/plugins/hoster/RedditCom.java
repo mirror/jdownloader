@@ -15,7 +15,6 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -26,7 +25,6 @@ import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.DebugMode;
-import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.parser.UrlQuery;
@@ -34,6 +32,7 @@ import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.downloader.text.TextDownloader;
 import org.jdownloader.plugins.components.config.RedditConfig;
 import org.jdownloader.plugins.components.config.RedditConfig.VideoDownloadStreamType;
 import org.jdownloader.plugins.components.hls.HlsContainer;
@@ -374,12 +373,9 @@ public class RedditCom extends PluginForHost {
         requestFileInformation(link, true);
         if (link.getPluginPatternMatcher().matches(PATTERN_TEXT)) {
             /* Write text to file */
-            final File dest = new File(link.getFileOutput());
-            IO.writeToFile(dest, link.getStringProperty(PROPERTY_POST_TEXT).getBytes("UTF-8"), IO.SYNC.META_AND_DATA);
-            /* Set filesize so user can see it in UI. */
-            link.setVerifiedFileSize(dest.length());
-            /* Set progress to finished - the "download" is complete ;) */
-            link.getLinkStatus().setStatus(LinkStatus.FINISHED);
+            final String text = link.getStringProperty(PROPERTY_POST_TEXT);
+            dl = new TextDownloader(this, link, text);
+            dl.startDownload();
         } else if (link.getPluginPatternMatcher().contains("v.redd.it")) {
             if (this.getVideoDownloadStreamType(link) == VideoDownloadStreamType.HLS) {
                 /* HLS video */

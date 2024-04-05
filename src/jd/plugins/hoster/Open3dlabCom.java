@@ -135,7 +135,11 @@ public class Open3dlabCom extends PluginForHost {
                 con = brc.openGetConnection(dllink);
                 handleConnectionErrors(brc, con, link.getName());
                 if (con.getCompleteContentLength() > 0) {
-                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                    if (con.isContentDecoded()) {
+                        link.setDownloadSize(con.getCompleteContentLength());
+                    } else {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
                 }
                 final String serverFilename = Plugin.getFileNameFromHeader(con);
                 if (serverFilename != null) {

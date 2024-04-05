@@ -113,7 +113,7 @@ public class StreamsbNet extends XFileSharingProBasic {
     private final String IS_OFFICIALLY_DOWNLOADABLE = "is_officially_downloadable";
 
     @Override
-    protected boolean internal_supports_availablecheck_filename_abuse() {
+    protected boolean supports_availablecheck_filename_abuse() {
         return false;
     }
 

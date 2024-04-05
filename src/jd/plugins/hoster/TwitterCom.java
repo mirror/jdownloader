@@ -15,7 +15,6 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -24,11 +23,11 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
 import org.appwork.storage.TypeRef;
-import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.downloader.text.TextDownloader;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.components.config.TwitterConfigInterface;
 import org.jdownloader.plugins.components.hls.HlsContainer;
@@ -588,12 +587,9 @@ public class TwitterCom extends PluginForHost {
         requestFileInformation(link, null, true);
         if (link.getPluginPatternMatcher().matches(TYPE_TWEET_TEXT)) {
             /* Write text to file */
-            final File dest = new File(link.getFileOutput());
-            IO.writeToFile(dest, getTweetText(link).getBytes("UTF-8"), IO.SYNC.META_AND_DATA);
-            /* Set filesize so user can see it in UI. */
-            link.setVerifiedFileSize(dest.length());
-            /* Set progress to finished - the "download" is complete. */
-            link.getLinkStatus().setStatus(LinkStatus.FINISHED);
+            final String text = getTweetText(link);
+            dl = new TextDownloader(this, link, text);
+            dl.startDownload();
         } else {
             /* Download file */
             if (StringUtils.isEmpty(dllink)) {
