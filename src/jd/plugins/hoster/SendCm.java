@@ -23,7 +23,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
-import org.appwork.storage.TypeRef;
 import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
@@ -355,12 +354,6 @@ public class SendCm extends XFileSharingProBasic {
     }
 
     @Override
-    protected boolean allowToGenerateAPIKeyInWebsiteMode() {
-        /* 2022-10-05: Their API handling is broken serverside and will never return and API key sending the request to generate one. */
-        return false;
-    }
-
-    @Override
     protected boolean supportsShortURLs() {
         return true;
     }
@@ -376,56 +369,9 @@ public class SendCm extends XFileSharingProBasic {
     }
 
     @Override
-    public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        /* 2023-10-27: Special: Try API login first */
-        // TODO: Refactor this once next Fullbuild has been released
-        String apikey = getAPIKeyFromAccount(account);
-        final boolean tryApikeyViaPasswordField = true;
-        boolean apiFromAccountPasswordField = false;
-        if (apikey == null && tryApikeyViaPasswordField && isAPIKey(account.getPass())) {
-            apikey = account.getPass();
-            apiFromAccountPasswordField = true;
-        } else if (StringUtils.equals(apikey, account.getPass())) {
-            apiFromAccountPasswordField = true;
-        }
-        final boolean isApiOnlyMode = enableAccountApiOnlyMode();
-        if (isApiOnlyMode && (apikey == null || !apiFromAccountPasswordField)) {
-            throw new AccountInvalidException("Invalid API key! Enter your API key into the password field.\r\nYou can find your API key here: " + getHost() + "/?op=my_account -> 'API' field");
-        }
-        if (apikey != null) {
-            /* Login via API */
-            try {
-                if (apiFromAccountPasswordField) {
-                    /* Dirty hack */
-                    logger.info("User has entered valid API key as password -> Trying that");
-                    account.setProperty(PROPERTY_ACCOUNT_apikey, apikey);
-                }
-                /* Login via API */
-                final AccountInfo ai = this.fetchAccountInfoAPI(this.br, account);
-                if (isApiOnlyMode) {
-                    logger.info("Returning AccountInfo solely obtained via API");
-                    return ai;
-                } else {
-                    logger.info("Continue to also obtain account information via website");
-                }
-            } catch (final Exception e) {
-                logger.log(e);
-                logger.info("API login failed");
-                account.removeProperty(PROPERTY_ACCOUNT_apikey);
-                if (isApiOnlyMode) {
-                    throw e;
-                }
-            }
-        }
-        /* Fallback to upper handling */
-        return super.fetchAccountInfo(account);
-    }
-
-    @Override
     protected AccountInfo fetchAccountInfoAPI(final Browser br, final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        loginAPI(br, account);
-        final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+        final Map<String, Object> entries = loginAPI(br, account);
         /** 2019-07-31: Better compare expire-date against their serverside time if possible! */
         final String server_timeStr = (String) entries.get("server_time");
         final Map<String, Object> result = (Map<String, Object>) entries.get("result");
@@ -522,14 +468,6 @@ public class SendCm extends XFileSharingProBasic {
 
     @Override
     protected String getDllinkAPI(final DownloadLink link, final Account account) throws Exception {
-        /**
-         * Only execute this if you know that the currently used host supports this! </br>
-         * Only execute this if an apikey is given! </br>
-         * Only execude this if you know that a particular host has enabled this API call! </br>
-         * Important: For some hosts, this API call will only be available for premium accounts, no for free accounts!
-         */
-        /* 2019-11-04: Linkcheck is not required here - download API will return offline status. */
-        // requestFileInformationAPI(link, account);
         logger.info("Trying to get dllink via API");
         final String apikey = getAPIKeyFromAccount(account);
         if (StringUtils.isEmpty(apikey)) {
@@ -545,51 +483,16 @@ public class SendCm extends XFileSharingProBasic {
             /* Special: Short URL -> Usually not supported by API but they've somehow integrated it. */
             fileid_to_download = "d/" + fuid;
         }
-        /*
-         * Users can also chose a preferred quality via '&q=h' but we prefer to receive all and then chose to easily have a fallback in case
-         * the quality selected by our user is not available.
-         */
-        /* Documentation videohost: https://xfilesharingpro.docs.apiary.io/#reference/file/file-clone/get-direct-link */
-        /*
-         * Documentation filehost:
-         * https://xvideosharing.docs.apiary.io/#reference/file/file-direct-link/get-links-to-all-available-qualities
-         */
         getPage(this.getAPIBase() + "/file/direct_link?key=" + apikey + "&file_code=" + Encoding.urlEncode(fileid_to_download));
-        this.checkErrorsAPI(this.br, link, account);
-        final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+        final Map<String, Object> entries = this.checkErrorsAPI(this.br, link, account);
         final Map<String, Object> result = (Map<String, Object>) entries.get("result");
-        /**
-         * TODO: Add quality selection. 2020-05-20: Did not add selection yet because so far this API call has NEVER worked for ANY
-         * filehost&videohost!
-         */
-        /* For videohosts: Pick the best quality */
-        String dllink = null;
-        final String[] qualities = new String[] { "o", "h", "n", "l" };
-        for (final String quality : qualities) {
-            final Map<String, Object> quality_tmp = (Map<String, Object>) result.get(quality);
-            if (quality_tmp != null) {
-                dllink = (String) quality_tmp.get("url");
-                if (!StringUtils.isEmpty(dllink)) {
-                    break;
-                }
-            }
-        }
-        if (StringUtils.isEmpty(dllink)) {
-            /* For filehosts (= no different qualities available) */
-            logger.info("Failed to find any quality - downloading original file");
-            dllink = (String) result.get("url");
-            // final long filesize = JavaScriptEngineFactory.toLong(entries.get("size"), 0);
-        }
+        final String dllink = result.get("url").toString();
         if (!StringUtils.isEmpty(dllink)) {
             logger.info("Successfully found dllink via API");
             return dllink;
         } else {
             logger.warning("Failed to find dllink via API");
-            this.checkErrorsAPI(br, link, account);
-            /**
-             * TODO: Check if defect message makes sense here. Once we got better errorhandling we can eventually replace this with a
-             * waittime.
-             */
+            /* This should never happen */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
     }

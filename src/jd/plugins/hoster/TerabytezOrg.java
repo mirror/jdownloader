@@ -192,13 +192,4 @@ public class TerabytezOrg extends XFileSharingProBasic {
             return getFUID(link, type);
         }
     }
-
-    @Override
-    public boolean isPremiumOnly(final Browser br) {
-        if (br.getURL().matches("(?i).*/login\\?redirect=.*")) {
-            return true;
-        } else {
-            return super.isPremiumOnly(br);
-        }
-    }
 }

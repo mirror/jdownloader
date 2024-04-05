@@ -409,6 +409,7 @@ public class FaceBookComGallery extends PluginForDecrypt {
                     packages.put(videoID, fp);
                 }
                 result._setFilePackage(fp);
+                result.setContainerUrl(br.getURL());
             }
         }
         if (ret.isEmpty()) {
@@ -495,86 +496,87 @@ public class FaceBookComGallery extends PluginForDecrypt {
     private void crawlVideos(final Object o, final List<DownloadLink> results) {
         if (o instanceof Map) {
             final Map<String, Object> map = (Map<String, Object>) o;
+            final String id = (String) map.get("id");
+            final Boolean is_live_streaming = (Boolean) map.get("is_live_streaming");
+            isVideo: if (id != null && is_live_streaming != null && (map.containsKey("dash_manifest") || map.containsKey("dash_manifest_url"))) {
+                if (Boolean.TRUE.equals(is_live_streaming)) {
+                    /* Livestreams are not supported */
+                    logger.info("Skipping livestream: " + id);
+                    skippedLivestreams++;
+                    break isVideo;
+                }
+                final String videoContentURL = (String) map.get("permalink_url");
+                final String thumbnailDirectURL = (String) JavaScriptEngineFactory.walkJson(map, "preferred_thumbnail/image/uri");
+                final DownloadLink video = new DownloadLink(this.hosterplugin, this.getHost(), videoContentURL, true);
+                final Object playable_duration_in_ms = map.get("playable_duration_in_ms");
+                if (playable_duration_in_ms instanceof Number) {
+                    /* Set this as a possible Packagizer property. */
+                    video.setProperty(FaceBookComVideos.PROPERTY_RUNTIME_MILLISECONDS, ((Number) playable_duration_in_ms).longValue());
+                }
+                final String title = (String) map.get("name");
+                final String uploader = (String) JavaScriptEngineFactory.walkJson(map, "owner/name");
+                String publishDateFormatted = null;
+                final Object publish_timeO = map.get("publish_time");
+                if (publish_timeO instanceof Number) {
+                    final long publish_time = ((Number) publish_timeO).longValue();
+                    final Date date = new Date(publish_time * 1000);
+                    publishDateFormatted = new SimpleDateFormat("yyyy-MM-dd").format(date);
+                }
+                final String description = (String) JavaScriptEngineFactory.walkJson(map, "savable_description/text");
+                final String uploaderURL = FaceBookComVideos.getUploaderNameFromVideoURL(videoContentURL);
+                String urlLow = (String) map.get("playable_url");
+                if (StringUtils.isEmpty(urlLow)) {
+                    /* 2023-07-13 */
+                    urlLow = (String) map.get("browser_native_sd_url");
+                }
+                String urlHigh = (String) map.get("playable_url_quality_hd");
+                if (StringUtils.isEmpty(urlHigh)) {
+                    /* 2023-07-13 */
+                    urlHigh = (String) map.get("browser_native_hd_url");
+                }
+                if (!StringUtils.isEmpty(urlHigh)) {
+                    video.setProperty(FaceBookComVideos.PROPERTY_DIRECTURL_HD, urlHigh);
+                }
+                if (!StringUtils.isEmpty(urlLow)) {
+                    video.setProperty(FaceBookComVideos.PROPERTY_DIRECTURL_LOW, urlLow);
+                }
+                video.setProperty(FaceBookComVideos.PROPERTY_TYPE, FaceBookComVideos.TYPE_VIDEO);
+                final ArrayList<DownloadLink> thisResults = new ArrayList<DownloadLink>();
+                thisResults.add(video);
+                if (!StringUtils.isEmpty(thumbnailDirectURL)) {
+                    /* Not all videos have thumbnails! Alternatively we could check for field "has_preview_thumbnails". */
+                    final DownloadLink thumbnail = new DownloadLink(this.hosterplugin, this.getHost(), thumbnailDirectURL, true);
+                    thumbnail.setProperty(FaceBookComVideos.PROPERTY_TYPE, FaceBookComVideos.TYPE_THUMBNAIL);
+                    thumbnail.setProperty(FaceBookComVideos.PROPERTY_DIRECTURL_LAST, thumbnailDirectURL);
+                    thisResults.add(thumbnail);
+                }
+                /* Add properties to result */
+                for (final DownloadLink thisResult : thisResults) {
+                    thisResult.setProperty(FaceBookComVideos.PROPERTY_CONTENT_ID, id);
+                    if (uploaderURL != null) {
+                        thisResult.setProperty(FaceBookComVideos.PROPERTY_UPLOADER_URL, uploaderURL);
+                    }
+                    if (!StringUtils.isEmpty(title)) {
+                        thisResult.setProperty(FaceBookComVideos.PROPERTY_TITLE, title);
+                    }
+                    if (!StringUtils.isEmpty(uploader)) {
+                        thisResult.setProperty(FaceBookComVideos.PROPERTY_UPLOADER, uploader);
+                    }
+                    if (publishDateFormatted != null) {
+                        thisResult.setProperty(FaceBookComVideos.PROPERTY_DATE_FORMATTED, publishDateFormatted);
+                    }
+                    if (description != null) {
+                        thisResult.setProperty(FaceBookComVideos.PROPERTY_DESCRIPTION, description);
+                    }
+                    thisResult.setAvailable(true);
+                }
+                results.addAll(thisResults);
+                return;
+            }
             for (final Map.Entry<String, Object> entry : map.entrySet()) {
-                final String key = entry.getKey();
+                // final String key = entry.getKey();
                 final Object value = entry.getValue();
-                final String ifThisisAVideoThisIsTheVideoID = value instanceof String ? value.toString() : null;
-                final Boolean is_live_streaming = (Boolean) map.get("is_live_streaming");
-                if (key.equals("id") && is_live_streaming != null && map.containsKey("dash_manifest")) {
-                    if (Boolean.TRUE.equals(is_live_streaming)) {
-                        /* Livestreams are not supported */
-                        logger.info("Skipping livestream: " + ifThisisAVideoThisIsTheVideoID);
-                        skippedLivestreams++;
-                        continue;
-                    }
-                    final String videoContentURL = (String) map.get("permalink_url");
-                    final String thumbnailDirectURL = (String) JavaScriptEngineFactory.walkJson(map, "preferred_thumbnail/image/uri");
-                    final DownloadLink video = new DownloadLink(this.hosterplugin, this.getHost(), videoContentURL, true);
-                    final Object playable_duration_in_ms = map.get("playable_duration_in_ms");
-                    if (playable_duration_in_ms instanceof Number) {
-                        /* Set this as a possible Packagizer property. */
-                        video.setProperty(FaceBookComVideos.PROPERTY_RUNTIME_MILLISECONDS, ((Number) playable_duration_in_ms).longValue());
-                    }
-                    final String title = (String) map.get("name");
-                    final String uploader = (String) JavaScriptEngineFactory.walkJson(map, "owner/name");
-                    String publishDateFormatted = null;
-                    final Object publish_timeO = map.get("publish_time");
-                    if (publish_timeO instanceof Number) {
-                        final long publish_time = ((Number) publish_timeO).longValue();
-                        final Date date = new Date(publish_time * 1000);
-                        publishDateFormatted = new SimpleDateFormat("yyyy-MM-dd").format(date);
-                    }
-                    final String description = (String) JavaScriptEngineFactory.walkJson(map, "savable_description/text");
-                    final String uploaderURL = FaceBookComVideos.getUploaderNameFromVideoURL(videoContentURL);
-                    String urlLow = (String) map.get("playable_url");
-                    if (StringUtils.isEmpty(urlLow)) {
-                        /* 2023-07-13 */
-                        urlLow = (String) map.get("browser_native_sd_url");
-                    }
-                    String urlHigh = (String) map.get("playable_url_quality_hd");
-                    if (StringUtils.isEmpty(urlHigh)) {
-                        /* 2023-07-13 */
-                        urlHigh = (String) map.get("browser_native_hd_url");
-                    }
-                    if (!StringUtils.isEmpty(urlHigh)) {
-                        video.setProperty(FaceBookComVideos.PROPERTY_DIRECTURL_HD, urlHigh);
-                    }
-                    if (!StringUtils.isEmpty(urlLow)) {
-                        video.setProperty(FaceBookComVideos.PROPERTY_DIRECTURL_LOW, urlLow);
-                    }
-                    video.setProperty(FaceBookComVideos.PROPERTY_TYPE, FaceBookComVideos.TYPE_VIDEO);
-                    final ArrayList<DownloadLink> thisResults = new ArrayList<DownloadLink>();
-                    thisResults.add(video);
-                    if (!StringUtils.isEmpty(thumbnailDirectURL)) {
-                        /* Not all videos have thumbnails! Alternatively we could check for field "has_preview_thumbnails". */
-                        final DownloadLink thumbnail = new DownloadLink(this.hosterplugin, this.getHost(), thumbnailDirectURL, true);
-                        thumbnail.setProperty(FaceBookComVideos.PROPERTY_TYPE, FaceBookComVideos.TYPE_THUMBNAIL);
-                        thumbnail.setProperty(FaceBookComVideos.PROPERTY_DIRECTURL_LAST, thumbnailDirectURL);
-                        thisResults.add(thumbnail);
-                    }
-                    /* Add properties to result */
-                    for (final DownloadLink thisResult : thisResults) {
-                        thisResult.setProperty(FaceBookComVideos.PROPERTY_CONTENT_ID, ifThisisAVideoThisIsTheVideoID);
-                        if (uploaderURL != null) {
-                            thisResult.setProperty(FaceBookComVideos.PROPERTY_UPLOADER_URL, uploaderURL);
-                        }
-                        if (!StringUtils.isEmpty(title)) {
-                            thisResult.setProperty(FaceBookComVideos.PROPERTY_TITLE, title);
-                        }
-                        if (!StringUtils.isEmpty(uploader)) {
-                            thisResult.setProperty(FaceBookComVideos.PROPERTY_UPLOADER, uploader);
-                        }
-                        if (publishDateFormatted != null) {
-                            thisResult.setProperty(FaceBookComVideos.PROPERTY_DATE_FORMATTED, publishDateFormatted);
-                        }
-                        if (description != null) {
-                            thisResult.setProperty(FaceBookComVideos.PROPERTY_DESCRIPTION, description);
-                        }
-                        thisResult.setAvailable(true);
-                    }
-                    results.addAll(thisResults);
-                    break;
-                } else if (value instanceof List || value instanceof Map) {
+                if (value instanceof List || value instanceof Map) {
                     crawlVideos(value, results);
                 }
             }

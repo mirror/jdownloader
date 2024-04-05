@@ -262,6 +262,7 @@ public class FaceBookComVideos extends PluginForHost {
             return AvailableStatus.TRUE;
         } else {
             // final boolean fastLinkcheck = PluginJsonConfig.get(this.getConfigInterface()).isEnableFastLinkcheck();
+            // 2024-04-05: Re-evaluate if this is still needed; Facebook direct-URLs should be static!
             logger.info("Trying to refresh directurl");
             final FaceBookComGallery crawler = (FaceBookComGallery) this.getNewPluginForDecryptInstance(this.getHost());
             final ArrayList<DownloadLink> results = crawler.crawl(new CryptedLink(link.getContainerUrl()), account);
@@ -432,26 +433,24 @@ public class FaceBookComVideos extends PluginForHost {
     }
 
     public void handleDownload(final DownloadLink link, final Account account) throws Exception {
-        if (!attemptStoredDownloadurlDownload(link)) {
-            requestFileInformation(link, account, true);
-            if (downloadURL == null) {
-                if (isAccountRequired(link)) {
-                    /*
-                     * If this happens while an account is active this means that the user is either missing the rights to access that item
-                     * or the item is offline.
-                     */
-                    throw new AccountRequiredException();
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-            }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, downloadURL, true, this.getMaxChunks(link));
-            if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-                br.followConnection(true);
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Broken file?");
+        requestFileInformation(link, account, true);
+        if (downloadURL == null) {
+            if (isAccountRequired(link)) {
+                /*
+                 * If this happens while an account is active this means that the user is either missing the rights to access that item or
+                 * the item is offline.
+                 */
+                throw new AccountRequiredException();
             } else {
-                link.setProperty(PROPERTY_DIRECTURL_LAST, downloadURL);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, downloadURL, true, this.getMaxChunks(link));
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            br.followConnection(true);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Broken file?");
+        } else {
+            link.setProperty(PROPERTY_DIRECTURL_LAST, downloadURL);
         }
         dl.startDownload();
     }
@@ -460,32 +459,6 @@ public class FaceBookComVideos extends PluginForHost {
         if (link.hasProperty(PROPERTY_ACCOUNT_REQUIRED)) {
             return true;
         } else {
-            return false;
-        }
-    }
-
-    private boolean attemptStoredDownloadurlDownload(final DownloadLink link) throws Exception {
-        final String url = link.getStringProperty(PROPERTY_DIRECTURL_LAST);
-        if (StringUtils.isEmpty(url)) {
-            return false;
-        }
-        try {
-            final Browser brc = br.cloneBrowser();
-            dl = new jd.plugins.BrowserAdapter().openDownload(brc, link, url, true, this.getMaxChunks(link));
-            if (this.looksLikeDownloadableContent(dl.getConnection())) {
-                return true;
-            } else {
-                /* Remove that so we don't waste time checking this again. */
-                brc.followConnection(true);
-                throw new IOException();
-            }
-        } catch (final Throwable e) {
-            link.removeProperty(PROPERTY_DIRECTURL_LAST);
-            logger.log(e);
-            try {
-                dl.getConnection().disconnect();
-            } catch (Throwable ignore) {
-            }
             return false;
         }
     }

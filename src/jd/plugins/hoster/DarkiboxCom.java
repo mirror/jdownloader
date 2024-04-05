@@ -280,12 +280,6 @@ public class DarkiboxCom extends XFileSharingProBasic {
     }
 
     @Override
-    protected boolean containsInvalidLoginsMessage(final Browser br) {
-        // TODO: Remove this once it is implemented in upper codebase
-        return br != null && br.containsHTML("(?i)>\\s*Incorrect (Login|Username) or Password\\s*<");
-    }
-
-    @Override
     protected boolean isVideohoster_enforce_video_filename() {
         return true;
     }

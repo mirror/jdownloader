@@ -4149,7 +4149,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                                 throw new SkipReasonException(SkipReason.INVALID_DESTINATION, e);
                             }
                             /* Looks like filename might be too long -> Check if writing a shortened filename would be possible. */
-                            final boolean allowAutoShortenFilenames = false;
+                            final boolean allowAutoShortenFilenames = true;
                             String shortenedFilename;
                             String ext = null;
                             if (fileName.contains(".")) {

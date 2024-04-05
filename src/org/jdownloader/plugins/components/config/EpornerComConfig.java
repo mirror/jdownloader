@@ -69,4 +69,35 @@ public interface EpornerComConfig extends PluginConfigInterface {
     PreferredStreamQuality getPreferredStreamQuality();
 
     void setPreferredStreamQuality(PreferredStreamQuality quality);
+
+    final PreferredVideoCodec defaultPreferredVideoCodec = PreferredVideoCodec.H264;
+
+    public static enum PreferredVideoCodec implements LabelInterface {
+        AV1 {
+            @Override
+            public String getLabel() {
+                return "AV1";
+            }
+        },
+        H264 {
+            @Override
+            public String getLabel() {
+                return "H.264";
+            }
+        },
+        DEFAULT {
+            @Override
+            public String getLabel() {
+                return "Default: " + defaultPreferredVideoCodec.getLabel();
+            }
+        };
+    }
+
+    @AboutConfig
+    @DefaultEnumValue("DEFAULT")
+    @DescriptionForConfigEntry("If your video codec is not found, first/random codec will be used.")
+    @Order(110)
+    PreferredVideoCodec getPreferredVideoCodec();
+
+    void setPreferredVideoCodec(PreferredVideoCodec quality);
 }
