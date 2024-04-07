@@ -44,6 +44,8 @@ import org.jdownloader.plugins.config.PluginJsonConfig;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
+import jd.http.requests.GetRequest;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.HTMLParser;
 import jd.plugins.CryptedLink;
@@ -69,6 +71,14 @@ public class KemonoPartyCrawler extends PluginForDecrypt {
         final Browser br = super.createNewBrowserInstance();
         br.setFollowRedirects(true);
         return br;
+    }
+
+    @Override
+    public void init() {
+        for (String host : siteSupportedNames()) {
+            Browser.setRequestIntervalLimitGlobal(host, false, 250);
+        }
+        super.init();
     }
 
     public static List<String[]> getPluginDomains() {
@@ -607,22 +617,29 @@ public class KemonoPartyCrawler extends PluginForDecrypt {
         boolean errorRateLimit = true;
         final int maxtries = 15;
         for (int i = 0; i <= maxtries; i++) {
-            br.getPage(url);
-            if (this.isAbort()) {
-                /* Aborted by user */
-                throw new InterruptedException();
-            } else if (br.getHttpConnection().getResponseCode() == 429) {
-                logger.info("Error 429 too many requests - add less URLs and/or perform a reconnect!");
-                final int retrySeconds = 10;
-                final String title = "Rate-Limit reached";
-                String text = "Time until rate-limit reset: Unknown | Attempt " + (i + 1) + "/" + maxtries;
-                text += "\nTry again later or change your IP | Auto retry in " + retrySeconds + " seconds";
-                this.displayBubblenotifyMessage(title, text);
-                this.sleep(retrySeconds * 1000, this.cl);
-                continue;
-            } else {
-                errorRateLimit = false;
-                break;
+            GetRequest getRequest = br.createGetRequest(url);
+            final URLConnectionAdapter con = br.openRequestConnection(getRequest);
+            try {
+                if (this.isAbort()) {
+                    /* Aborted by user */
+                    throw new InterruptedException();
+                } else if (con.getResponseCode() == 429) {
+                    br.followConnection(true);
+                    logger.info("Error 429 too many requests - add less URLs and/or perform a reconnect!");
+                    final int retrySeconds = 10;
+                    final String title = "Rate-Limit reached";
+                    String text = "Time until rate-limit reset: Unknown | Attempt " + (i + 1) + "/" + maxtries;
+                    text += "\nTry again later or change your IP | Auto retry in " + retrySeconds + " seconds";
+                    this.displayBubblenotifyMessage(title, text);
+                    this.sleep(retrySeconds * 1000, this.cl);
+                    continue;
+                } else {
+                    br.followConnection();
+                    errorRateLimit = false;
+                    break;
+                }
+            } finally {
+                con.disconnect();
             }
         }
         if (errorRateLimit) {
