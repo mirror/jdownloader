@@ -19,6 +19,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.util.Arrays;
@@ -43,6 +44,7 @@ import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.appwork.storage.config.annotations.LabelInterface;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.HexFormatter;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
 import org.jdownloader.controlling.FileStateManager;
 import org.jdownloader.controlling.FileStateManager.FILESTATE;
 import org.jdownloader.plugins.config.Order;
@@ -51,6 +53,7 @@ import org.jdownloader.plugins.config.PluginConfigInterface;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.requests.PostRequest;
+import jd.nutils.SimpleFTP;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.DownloadLink;
@@ -258,6 +261,7 @@ public class WeTransferCom extends PluginForHost {
                 throw e;
             }
         }
+        dl.setFilenameFix(true);
         dl.startDownload();
         /**
          * 2024-02-27: This website delivers single files as .zip files without .zip file-extension while all of them contain exactly one
@@ -323,34 +327,43 @@ public class WeTransferCom extends PluginForHost {
         try {
             ZipEntry zipEntry = null;
             final Enumeration<? extends ZipEntry> zipEntries = zipFile.entries();
-            boolean multipleEntriesFound = false;
             while (zipEntries.hasMoreElements()) {
                 if (zipEntry != null) {
-                    multipleEntriesFound = true;
-                    break;
+                    logger.info("Skip extract as we found multiple ZipEntries!");
+                    return;
                 } else {
                     zipEntry = zipEntries.nextElement();
                 }
             }
-            final String fileName = getFileNameFromDispositionHeader(dl.getConnection());
-            if (multipleEntriesFound) {
-                logger.info("Skip extract as we found multiple ZipEntries!");
-                return;
-            } else {
-                if (zipEntry == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "no entry in zip file!");
-                } else {
-                    ZipEntry checkZipEntry = zipFile.getEntry(fileName);
-                    if (checkZipEntry != null) {
-                        logger.info("Extract!Full matching ZipEntry found:" + checkZipEntry.getName());
-                        zipEntry = checkZipEntry;
-                    } else if ((checkZipEntry = zipFile.getEntry(fileName.replaceFirst("^(.+/)", ""))) != null) {
-                        logger.info("Extract!Filename only matching ZipEntry found:" + checkZipEntry.getName());
-                        zipEntry = checkZipEntry;
-                    } else {
-                        logger.info("Skip!No matching ZipEntry found:" + zipEntry.getName());
-                        return;
+            String fileName = null;
+            final DispositionHeader dispositionHeader = parseDispositionHeader(dl.getConnection());
+            if (dispositionHeader != null && StringUtils.isNotEmpty(fileName = dispositionHeader.getFilename())) {
+                // special chars like german umlauts are encoded but no encoding is provided in header
+                if (dispositionHeader.getEncoding() == null) {
+                    try {
+                        fileName = SimpleFTP.BestEncodingGuessingURLDecode(fileName);
+                    } catch (final IllegalArgumentException ignore) {
+                        logger.log(ignore);
+                    } catch (final UnsupportedEncodingException ignore) {
+                        logger.log(ignore);
                     }
+                }
+            }
+            if (fileName == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            } else if (zipEntry == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "no entry in zip file!");
+            } else {
+                ZipEntry checkZipEntry = zipFile.getEntry(fileName);
+                if (checkZipEntry != null) {
+                    logger.info("Extract!Full matching ZipEntry found:" + checkZipEntry.getName());
+                    zipEntry = checkZipEntry;
+                } else if ((checkZipEntry = zipFile.getEntry(fileName.replaceFirst("^(.+/)", ""))) != null) {
+                    logger.info("Extract!Filename only matching ZipEntry found:" + checkZipEntry.getName());
+                    zipEntry = checkZipEntry;
+                } else {
+                    logger.info("Skip!No matching ZipEntry found:" + zipEntry.getName());
+                    return;
                 }
             }
             final ShutdownVetoListener vetoListener = new ShutdownVetoListener() {

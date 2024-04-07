@@ -358,7 +358,6 @@ public class DeepbridCom extends PluginForHost {
             ai.setStatus(account.getType().getLabel() + " | MaxDls: " + maxSimultaneousDownloads + " MaxCon: " + maxConnections + " | Points: " + points);
         }
         getPage(br, API_BASE + "?page=api&action=hosters");
-        Map<String, Object> entries;
         final List<Object> supportedhostslistO;
         final Object supportedhostsO = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.OBJECT);
         if (supportedhostsO instanceof Map) {
@@ -379,13 +378,26 @@ public class DeepbridCom extends PluginForHost {
         for (final Object hostO : supportedhostslistO) {
             /* List can be given in two different varieties */
             if (hostO instanceof Map) {
-                entries = (Map<String, Object>) hostO;
-                for (final String host : entries.keySet()) {
-                    final String isUP = (String) entries.get(host);
-                    if (!"up".equalsIgnoreCase(isUP)) {
+                final Map<String, Object> entries = (Map<String, Object>) hostO;
+                for (final Map.Entry<String, Object> entry : entries.entrySet()) {
+                    if (!"up".equalsIgnoreCase((String) entry.getValue())) {
                         /* Skip hosts which do not work via this MOCH at this moment! */
                         continue;
                     }
+                    final String[] hosts = entry.getKey().split(",");
+                    for (String host : hosts) {
+                        if (host.equalsIgnoreCase("icerbox")) {
+                            /* 2020-05-20: Workaround: https://board.jdownloader.org/showthread.php?t=84429 */
+                            supportedhostslist.add("icerbox.com");
+                            supportedhostslist.add("icerbox.biz");
+                        } else {
+                            supportedhostslist.add(host);
+                        }
+                    }
+                }
+            } else if (hostO instanceof String) {
+                final String[] hosts = ((String) hostO).split(",");
+                for (String host : hosts) {
                     if (host.equalsIgnoreCase("icerbox")) {
                         /* 2020-05-20: Workaround: https://board.jdownloader.org/showthread.php?t=84429 */
                         supportedhostslist.add("icerbox.com");
@@ -394,8 +406,6 @@ public class DeepbridCom extends PluginForHost {
                         supportedhostslist.add(host);
                     }
                 }
-            } else if (hostO instanceof String) {
-                supportedhostslist.add(hostO.toString());
             }
         }
         try {
