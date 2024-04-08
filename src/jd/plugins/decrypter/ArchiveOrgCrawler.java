@@ -977,6 +977,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                 if (rest == 0) {
                     numberofVideoSegments = (int) (totalLengthSeconds / secondsPerSegment);
                 } else {
+                    /* Uneven total runtime -> Last segment will be shorter than the others. */
                     numberofVideoSegments = (int) ((totalLengthSeconds / secondsPerSegment) + 1);
                 }
             } else {
