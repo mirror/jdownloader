@@ -15,14 +15,11 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 import org.appwork.storage.TypeRef;
-import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
@@ -165,41 +162,6 @@ public class VeevTo extends XFileSharingProBasic {
             logger.info("Successfully found dllink via official video download");
         }
         return dllink;
-    }
-
-    @Override
-    protected URL_TYPE getURLType(final String url) {
-        if (url == null) {
-            return null;
-        }
-        if (url.matches("(?i)^https?://[^/]+/d/([A-Za-z0-9]{12,})")) {
-            return URL_TYPE.OFFICIAL_VIDEO_DOWNLOAD;
-        } else if (url.matches("(?i)^https?://[^/]+/e/([A-Za-z0-9]{12,})")) {
-            return URL_TYPE.EMBED_VIDEO_2;
-        } else {
-            logger.info("Unknown URL_TYPE: " + url);
-        }
-        return super.getURLType(url);
-    }
-
-    @Override
-    protected String getFUID(final String url, final URL_TYPE type) {
-        if (url == null || type == null) {
-            return null;
-        }
-        try {
-            switch (type) {
-            case EMBED_VIDEO_2:
-                return new Regex(new URL(url).getPath(), "/e/([A-Za-z0-9]{12,})").getMatch(0);
-            case OFFICIAL_VIDEO_DOWNLOAD:
-                return new Regex(new URL(url).getPath(), "/d/([A-Za-z0-9]{12,})").getMatch(0);
-            default:
-                throw new IllegalArgumentException("Unsupported type:" + type + "|" + url);
-            }
-        } catch (MalformedURLException e) {
-            logger.log(e);
-        }
-        return null;
     }
 
     @Override

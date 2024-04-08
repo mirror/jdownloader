@@ -20,7 +20,6 @@ public interface ArchiveOrgConfig extends PluginConfigInterface {
     final String                    text_PlaylistFilenameScheme                                  = "Playlist filename scheme";
     final String                    text_BookImageQuality                                        = "Book image quality (0 = highest, 10 = lowest)";
     final String                    text_BookCrawlMode                                           = "Book crawl mode";
-    final String                    text_PlaylistCrawlMode                                       = "'/details/...' crawler: Audio/video playlist crawl mode";
     final String                    text_MarkNonViewableBookPagesAsOfflineIfNoAccountIsAvailable = "Mark non viewable book pages as offline if no account is available?";
     final String                    text_SearchTermCrawlerMaxResultsLimit                        = "Search term crawler: Limit max results [0 = disable this crawler]";
     public static final TRANSLATION TRANSLATION                                                  = new TRANSLATION();
@@ -62,8 +61,8 @@ public interface ArchiveOrgConfig extends PluginConfigInterface {
             return text_MarkNonViewableBookPagesAsOfflineIfNoAccountIsAvailable;
         }
 
-        public String getPlaylistCrawlMode_label() {
-            return text_PlaylistCrawlMode;
+        public String getPlaylistCrawlMode202404_label() {
+            return "Audio/video playlist crawl mode";
         }
 
         public String getSearchTermCrawlerMaxResultsLimit_label() {
@@ -180,6 +179,8 @@ public interface ArchiveOrgConfig extends PluginConfigInterface {
 
     void setMarkNonViewableBookPagesAsOfflineIfNoAccountIsAvailable(boolean b);
 
+    final PlaylistCrawlMode default_PlaylistCrawlMode = PlaylistCrawlMode.AUTO;
+
     public static enum PlaylistCrawlMode implements LabelInterface {
         PLAYLIST_ONLY {
             @Override
@@ -198,16 +199,28 @@ public interface ArchiveOrgConfig extends PluginConfigInterface {
             public String getLabel() {
                 return "Files only";
             }
+        },
+        AUTO {
+            @Override
+            public String getLabel() {
+                return "Auto";
+            }
+        },
+        DEFAULT {
+            @Override
+            public String getLabel() {
+                return "Default: " + default_PlaylistCrawlMode.getLabel();
+            }
         };
     }
 
     @AboutConfig
-    @DefaultEnumValue("PLAYLIST_ONLY")
+    @DefaultEnumValue("DEFAULT")
     @Order(50)
-    @DescriptionForConfigEntry(text_PlaylistCrawlMode)
-    PlaylistCrawlMode getPlaylistCrawlMode();
+    @DescriptionForConfigEntry("Handling for audio/video playlists.")
+    PlaylistCrawlMode getPlaylistCrawlMode202404();
 
-    void setPlaylistCrawlMode(final PlaylistCrawlMode bookCrawlerMode);
+    void setPlaylistCrawlMode202404(final PlaylistCrawlMode bookCrawlerMode);
 
     @AboutConfig
     @SpinnerValidator(min = 0, max = 100000, step = 100)

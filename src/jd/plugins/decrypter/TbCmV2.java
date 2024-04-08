@@ -585,7 +585,7 @@ public class TbCmV2 extends PluginForDecrypt {
                     if (this.playlistID != null) {
                         channelOrPlaylistPackageNamePattern = cfg.getPackagePatternForPlaylists();
                     } else {
-                        channelOrPlaylistPackageNamePattern = cfg.getPackagePatternForChannels();
+                        channelOrPlaylistPackageNamePattern = cfg.getPackagePatternForChannelPackages();
                     }
                     if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
                         /* Dev only: Include number of expected items in packagename for better overview/debugging. */

@@ -34,6 +34,7 @@ import jd.parser.html.Form.MethodType;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
@@ -153,20 +154,6 @@ public class FilemoonSx extends XFileSharingProBasic {
     }
 
     @Override
-    protected URL_TYPE getURLType(final String url) {
-        if (url != null) {
-            if (url.matches("(?i)^https?://[^/]+/d/([a-z0-9]+).*")) {
-                return URL_TYPE.NORMAL;
-            } else if (url.matches("(?i)^https?://[A-Za-z0-9\\-\\.:]+/e/([a-z0-9]{12}).*")) {
-                return URL_TYPE.EMBED_VIDEO;
-            } else {
-                logger.info("Unknown URL_TYPE:" + url);
-            }
-        }
-        return null;
-    }
-
-    @Override
     protected boolean supports_availablecheck_alt() {
         return false;
     }
@@ -198,6 +185,58 @@ public class FilemoonSx extends XFileSharingProBasic {
     }
 
     @Override
+    public AvailableStatus requestFileInformationWebsite(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
+        final URL_TYPE type = this.getURLType(link);
+        if (type == URL_TYPE.EMBED_VIDEO_2) {
+            /* Special handling */
+            if (!link.isNameSet()) {
+                /* Set fallback-filename */
+                setWeakFilename(link, null);
+            }
+            final String url = link.getPluginPatternMatcher();
+            final boolean isFollowRedirect = br.isFollowingRedirects();
+            try {
+                br.setFollowRedirects(true);
+                if (probeDirectDownload(link, account, br, br.createGetRequest(url), true)) {
+                    return AvailableStatus.TRUE;
+                }
+            } finally {
+                br.setFollowRedirects(isFollowRedirect);
+            }
+            final boolean isRefererBlocked = this.isRefererBlocked(br);
+            if (isRefererBlocked) {
+                /* We know that the item is online but we can't download it. */
+                return AvailableStatus.TRUE;
+            }
+            /* Try to find filename */
+            /* Check for errors */
+            this.checkErrors(br, url, link, account, false);
+            /* Try to find filename */
+            final Browser brc = br.cloneBrowser();
+            this.getPage(brc, "/d/" + this.getFUIDFromURL(link));
+            if (this.isOffline(link, brc, brc.getRequest().getHtmlCode())) {
+                logger.info("Video item looks to be not downloadable");
+            }
+            final String[] fileInfo = internal_getFileInfoArray();
+            scanInfo(fileInfo);
+            processFileInfo(fileInfo, brc, link);
+            if (!StringUtils.isEmpty(fileInfo[0])) {
+                /* Correct- and set filename */
+                setFilename(fileInfo[0], link, brc);
+            } else {
+                /*
+                 * Fallback. Do this again as now we got the html code available so we can e.g. know if this is a video-filehoster or not.
+                 */
+                this.setWeakFilename(link, brc);
+            }
+            /* No filename given -> Return AvailableStatus */
+            return AvailableStatus.TRUE;
+        } else {
+            return super.requestFileInformationWebsite(link, account, isDownload);
+        }
+    }
+
+    @Override
     public void doFree(final DownloadLink link, final Account account) throws Exception, PluginException {
         /* First bring up saved final links */
         String dllink = checkDirectLink(link, account);
@@ -206,12 +245,14 @@ public class FilemoonSx extends XFileSharingProBasic {
             requestFileInformationWebsite(link, account, true);
             final DownloadMode mode = this.getPreferredDownloadModeFromConfig();
             streamDownloadurl = this.getDllink(link, account, br, br.getRequest().getHtmlCode());
-            if (mode == DownloadMode.STREAM && !StringUtils.isEmpty(streamDownloadurl)) {
+            if (!StringUtils.isEmpty(streamDownloadurl) && (mode == DownloadMode.STREAM || mode == DownloadMode.AUTO)) {
                 /* User prefers to download stream -> We can skip the captcha required to find official video downloadurl. */
                 break grabOfficialVideoDownloadDirecturl;
             }
             this.checkErrors(br, this.getCorrectBR(br), link, account, false);
-            this.getPage("/download/" + this.getFUIDFromURL(link));
+            if (!br.getURL().matches(".*/download/.*")) {
+                this.getPage("/download/" + this.getFUIDFromURL(link));
+            }
             final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br, "6LdiBGAgAAAAAIQm_arJfGYrzjUNP_TCwkvPlv8k").getToken();
             final Form dlform = new Form();
             dlform.setMethod(MethodType.POST);
@@ -254,13 +295,19 @@ public class FilemoonSx extends XFileSharingProBasic {
         /* 2022-11-04: Website failure after captcha on "/download/..." page */
         if (isSpecialError404(br)) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404");
-        } else if (br.containsHTML("(?i)>\\s*This video is not available in your country")) {
+        } else if (isRefererBlocked(br)) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Custom referer needed to download this item");
+        } else if (br.containsHTML(">\\s*This video is not available in your country")) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "GEO-blocked");
         }
     }
 
     private boolean isSpecialError404(final Browser br) {
         return br.containsHTML("(?i)class=\"error e404\"|>\\s*Page not found");
+    }
+
+    private boolean isRefererBlocked(final Browser br) {
+        return br.containsHTML(">\\s*This video cannot be watched under this domain");
     }
 
     @Override

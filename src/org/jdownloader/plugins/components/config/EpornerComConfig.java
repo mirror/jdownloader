@@ -11,6 +11,18 @@ import org.jdownloader.plugins.config.Type;
 
 @PluginHost(host = "eporner.com", type = Type.HOSTER)
 public interface EpornerComConfig extends PluginConfigInterface {
+    public static final TRANSLATION TRANSLATION = new TRANSLATION();
+
+    public static class TRANSLATION {
+        public String getPreferredStreamQuality_label() {
+            return "Preferred quality";
+        }
+
+        public String getPreferredVideoCodec_label() {
+            return "Preferred video codec";
+        }
+    }
+
     public static enum PreferredStreamQuality implements LabelInterface {
         BEST {
             @Override

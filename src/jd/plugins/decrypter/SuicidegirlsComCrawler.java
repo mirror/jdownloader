@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Locale;
 import java.util.Random;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 
 import jd.PluginWrapper;
@@ -53,30 +54,6 @@ public class SuicidegirlsComCrawler extends PluginForDecrypt {
     private static final String TYPE_ALBUM = "(?i)https?://(?:www\\.)?suicidegirls\\.com/(?:girls|members)/[A-Za-z0-9\\-_]+/album/\\d+/[A-Za-z0-9\\-_]+/";
     private static final String TYPE_USER  = "(?i)https?://(?:www\\.)?suicidegirls\\.com/(?:girls|members)/[A-Za-z0-9\\-_]+/";
 
-    private final int padLength(final int size) {
-        if (size < 10) {
-            return 1;
-        } else if (size < 100) {
-            return 2;
-        } else if (size < 1000) {
-            return 3;
-        } else if (size < 10000) {
-            return 4;
-        } else if (size < 100000) {
-            return 5;
-        } else if (size < 1000000) {
-            return 6;
-        } else if (size < 10000000) {
-            return 7;
-        } else {
-            /*
-             * 2023-03-11: This whole function can be replaced by StringUtils.getPadLength but I'm leaving it here just because of the
-             * djmakinera comment lol
-             */
-            return 8;// hello djmakinera
-        }
-    }
-
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final PluginForHost plugin = this.getNewPluginForHostInstance(this.getHost());
         plugin.setBrowser(this.br);
@@ -105,19 +82,21 @@ public class SuicidegirlsComCrawler extends PluginForDecrypt {
             }
             fpName = username + " - " + fpName;
             final String[] links = br.getRegex("<li class=\"photo-container\" id=\"thumb-\\d+\" data-index=\"\\d+\"[^>]*>\\s*<a href=\"(http[^<>\"]*?)\"").getColumn(0);
-            if ((links == null || links.length == 0) && !loggedin) {
-                /* Account is needed most times */
-                throw new AccountRequiredException();
-            }
             if (links == null || links.length == 0) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                if (!loggedin) {
+                    /* Assume that account is needed to view content */
+                    throw new AccountRequiredException();
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
             }
             int imageIndex = 1;
             for (String directlink : links) {
                 directlink = Encoding.htmlOnlyDecode(directlink);
                 final DownloadLink dl = this.createDownloadlink("http://suicidegirlsdecrypted/" + System.currentTimeMillis() + new Random().nextInt(1000000000));
                 final String extension = getFileNameExtensionFromURL(directlink, ".jpg");
-                final String imageName = String.format(Locale.US, "%0" + padLength(links.length) + "d", imageIndex++) + "_" + fpName + extension;
+                final int padLength = StringUtils.getPadLength(links.length);
+                final String imageName = String.format(Locale.US, "%0" + padLength + "d", imageIndex++) + "_" + fpName + extension;
                 dl.setProperty(SuicidegirlsCom.PROPERTY_DIRECTURL, directlink);
                 dl.setProperty(SuicidegirlsCom.PROPERTY_IMAGE_NAME, imageName);
                 dl.setFinalFileName(imageName);

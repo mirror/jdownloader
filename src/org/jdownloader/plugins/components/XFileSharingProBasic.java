@@ -725,11 +725,6 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
                      */
                     return URLHelper.parseLocation(new URL(protocol + urlHost), buildShortURLPath(link, fuid));
                 case EMBED_VIDEO:
-                    /*
-                     * URL displayed to the user. We correct this as we do not catch the ".html" part but we don't care about the host
-                     * inside this URL!
-                     */
-                    link.setContentUrl(URLHelper.parseLocation(new URL(url.getProtocol() + "://" + urlHost), buildEmbedURLPath(link, fuid)));
                     return URLHelper.parseLocation(new URL(protocol + hostCorrected), buildNormalURLPath(link, fuid));
                 case EMBED_VIDEO_2:
                     return URLHelper.parseLocation(new URL(protocol + hostCorrected), buildNormalURLPath(link, fuid));
@@ -952,6 +947,10 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
 
     protected boolean probeDirectDownload(final DownloadLink link, final Account account, final Browser br, final Request request, final boolean setFilesize) throws Exception {
         request.getHeaders().put(HTTPConstants.HEADER_REQUEST_ACCEPT_ENCODING, "identity");
+        final String referer = this.getReferer(link);
+        if (referer != null) {
+            request.getHeaders().put(HTTPConstants.HEADER_REQUEST_REFERER, referer);
+        }
         final URLConnectionAdapter con = openAntiDDoSRequestConnection(br, request);
         try {
             if (this.looksLikeDownloadableContent(con)) {
@@ -994,7 +993,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
 
     public AvailableStatus requestFileInformationWebsite(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
         resolveShortURL(this.br.cloneBrowser(), link, account);
-        /* First, set fallback-filename */
+        /* Set fallback-filename */
         if (!link.isNameSet()) {
             setWeakFilename(link, null);
         }
@@ -1029,32 +1028,30 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
         } else {
             /* Normal handling */
             scanInfo(fileInfo);
-            {
-                /**
-                 * Two possible reasons to use fallback handling to find filename: </br>
-                 * 1. Filename abbreviated over x chars long (common serverside XFS bug) --> Use getFnameViaAbuseLink as a workaround to
-                 * find the full-length filename! </br>
-                 * 2. Missing filename.
-                 */
-                if (!StringUtils.isEmpty(fileInfo[0]) && fileInfo[0].trim().endsWith("&#133;") && this.internal_supports_availablecheck_filename_abuse()) {
-                    logger.warning("Found filename is crippled by website -> Looking for full length filename");
-                    final String betterFilename = this.getFnameViaAbuseLink(altbr, link);
-                    if (betterFilename != null) {
-                        logger.info("Found full length filename: " + betterFilename);
-                        fileInfo[0] = betterFilename;
-                    } else {
-                        logger.info("Failed to find full length filename");
-                    }
-                } else if (StringUtils.isEmpty(fileInfo[0]) && this.internal_supports_availablecheck_filename_abuse()) {
-                    /* We failed to find the filename via html --> Try getFnameViaAbuseLink as workaround */
-                    logger.info("Failed to find any filename, trying to obtain filename via getFnameViaAbuseLink");
-                    final String betterFilename = this.getFnameViaAbuseLink(altbr, link);
-                    if (betterFilename != null) {
-                        logger.info("Found filename: " + betterFilename);
-                        fileInfo[0] = betterFilename;
-                    } else {
-                        logger.info("Failed to find any filename -> Fallback will be used");
-                    }
+            /**
+             * Two possible reasons to use fallback handling to find filename: </br>
+             * 1. Filename abbreviated over x chars long (common serverside XFS bug) --> Use getFnameViaAbuseLink as a workaround to find
+             * the full-length filename! </br>
+             * 2. Missing filename.
+             */
+            if (!StringUtils.isEmpty(fileInfo[0]) && fileInfo[0].trim().endsWith("&#133;") && this.internal_supports_availablecheck_filename_abuse()) {
+                logger.warning("Found filename is crippled by website -> Looking for full length filename");
+                final String betterFilename = this.getFnameViaAbuseLink(altbr, link);
+                if (betterFilename != null) {
+                    logger.info("Found full length filename: " + betterFilename);
+                    fileInfo[0] = betterFilename;
+                } else {
+                    logger.info("Failed to find full length filename");
+                }
+            } else if (StringUtils.isEmpty(fileInfo[0]) && this.internal_supports_availablecheck_filename_abuse()) {
+                /* We failed to find the filename via html --> Try getFnameViaAbuseLink as workaround */
+                logger.info("Failed to find any filename, trying to obtain filename via getFnameViaAbuseLink");
+                final String betterFilename = this.getFnameViaAbuseLink(altbr, link);
+                if (betterFilename != null) {
+                    logger.info("Found filename: " + betterFilename);
+                    fileInfo[0] = betterFilename;
+                } else {
+                    logger.info("Failed to find any filename -> Fallback will be used");
                 }
             }
             /* Filesize fallback */
@@ -1156,8 +1153,10 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
             return URL_TYPE.NORMAL;
         } else if (url.matches("(?i)^https?://[^/]+/file/([a-z0-9]{12}).*")) {
             return URL_TYPE.FILE;
-        } else if (url.matches("(?i)^https?://[A-Za-z0-9\\-\\.:]+/embed-([a-z0-9]{12}).*") || url.matches("(?i)^https?://[A-Za-z0-9\\-\\.:]+/e/([a-z0-9]{12}).*")) {
+        } else if (url.matches("(?i)^https?://[A-Za-z0-9\\-\\.:]+/embed-([a-z0-9]{12}).*")) {
             return URL_TYPE.EMBED_VIDEO;
+        } else if (url.matches("(?i)^https?://[A-Za-z0-9\\-\\.:]+/e/([a-z0-9]{12}).*")) {
+            return URL_TYPE.EMBED_VIDEO_2;
         } else {
             logger.info("Unknown URL_TYPE: " + url);
         }
@@ -1175,7 +1174,9 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
                         throw new IllegalArgumentException("Unsupported type:" + type + "|" + url);
                     }
                 case EMBED_VIDEO:
-                    return new Regex(new URL(url).getPath(), "/(?:embed-|e/)?([a-z0-9]{12})").getMatch(0);
+                    return new Regex(new URL(url).getPath(), "/embed-([a-z0-9]{12})").getMatch(0);
+                case EMBED_VIDEO_2:
+                    return new Regex(new URL(url).getPath(), "/e/([a-z0-9]{12})").getMatch(0);
                 case FILE:
                     return new Regex(new URL(url).getPath(), "/file/([a-z0-9]{12})").getMatch(0);
                 case SHORT:
@@ -1206,45 +1207,48 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
      */
     protected void resolveShortURL(final Browser br, final DownloadLink link, final Account account) throws Exception {
         synchronized (link) {
-            if (supportsShortURLs() && isShortURL(link)) {
-                final String contentURL = this.getContentURL(link);
-                /* Short URLs -> We need to find the long FUID! */
-                br.setFollowRedirects(true);
-                if (probeDirectDownload(link, account, br, br.createGetRequest(contentURL), true)) {
-                    return;
-                } else if (this.isOffline(link, br, br.getRequest().getHtmlCode())) {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                }
-                URL_TYPE type = getURLType(br.getURL());
-                final String realFUID;
-                if (type != null && !URL_TYPE.SHORT.equals(type)) {
-                    realFUID = getFUID(br.getURL(), type);
+            if (!supportsShortURLs()) {
+                return;
+            } else if (!isShortURL(link)) {
+                return;
+            }
+            final String contentURL = this.getContentURL(link);
+            /* Short URLs -> We need to find the long FUID! */
+            br.setFollowRedirects(true);
+            if (probeDirectDownload(link, account, br, br.createGetRequest(contentURL), true)) {
+                return;
+            } else if (this.isOffline(link, br, br.getRequest().getHtmlCode())) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            URL_TYPE type = getURLType(br.getURL());
+            final String realFUID;
+            if (type != null && !URL_TYPE.SHORT.equals(type)) {
+                realFUID = getFUID(br.getURL(), type);
+            } else {
+                final Form form = br.getFormbyProperty("name", "F1");
+                final InputField id = form != null ? form.getInputFieldByName("id") : null;
+                realFUID = id != null ? id.getValue() : null;
+                type = URL_TYPE.NORMAL;
+            }
+            if (realFUID == null || !realFUID.matches("[A-Za-z0-9]{12}")) {
+                /* Failure */
+                /**
+                 * The usual XFS errors can happen here in which case we won't be able to find the long FUID. </br>
+                 * Even while a limit is reached, such URLs can sometimes be checked via: "/?op=check_files" but we won't do this for now!
+                 */
+                this.checkErrors(br, br.getRequest().getHtmlCode(), link, account, false);
+                /* Assume that this URL is offline */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "realFUID:" + realFUID);
+            } else {
+                /* Success! */
+                final String urlNew;
+                if (URL_TYPE.FILE.equals(type)) {
+                    urlNew = URLHelper.parseLocation(new URL(this.getMainPage(link)), buildNormalFileURLPath(link, realFUID));
                 } else {
-                    final Form form = br.getFormbyProperty("name", "F1");
-                    final InputField id = form != null ? form.getInputFieldByName("id") : null;
-                    realFUID = id != null ? id.getValue() : null;
-                    type = URL_TYPE.NORMAL;
+                    urlNew = URLHelper.parseLocation(new URL(this.getMainPage(link)), buildNormalURLPath(link, realFUID));
                 }
-                if (realFUID == null || !realFUID.matches("[A-Za-z0-9]{12}")) {
-                    /**
-                     * The usual XFS errors can happen here in which case we won't be able to find the long FUID. </br>
-                     * Even while a limit is reached, such URLs can sometimes be checked via: "/?op=check_files" but we won't do this for
-                     * now!
-                     */
-                    this.checkErrors(br, br.getRequest().getHtmlCode(), link, account, false);
-                    /* Assume that this URL is offline */
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "realFUID:" + realFUID);
-                } else {
-                    /* Success! */
-                    final String urlNew;
-                    if (URL_TYPE.FILE.equals(type)) {
-                        urlNew = URLHelper.parseLocation(new URL(this.getMainPage(link)), buildNormalFileURLPath(link, realFUID));
-                    } else {
-                        urlNew = URLHelper.parseLocation(new URL(this.getMainPage(link)), buildNormalURLPath(link, realFUID));
-                    }
-                    logger.info("resolve URL|old: " + contentURL + "|new:" + urlNew);
-                    link.setPluginPatternMatcher(urlNew);
-                }
+                logger.info("resolve URL|old: " + contentURL + "|new:" + urlNew);
+                link.setPluginPatternMatcher(urlNew);
             }
         }
     }
@@ -1263,8 +1267,8 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
         String dllink = getDllink(link, account, br, getCorrectBR(br));
         if (StringUtils.isEmpty(dllink)) {
             final URL_TYPE type = this.getURLType(br.getURL());
-            if (type != URL_TYPE.EMBED_VIDEO) {
-                String fid = this.getFUIDFromURL(link);
+            if (!this.isEmbedURLType(type)) {
+                final String fid = this.getFUIDFromURL(link);
                 String embedURL = br.getRegex("/e/" + fid + "|/embed-" + fid + "(\\.html)?").getMatch(-1);
                 if (embedURL == null) {
                     embedURL = this.getMainPage(br) + this.buildEmbedURLPath(link, fid);
@@ -2774,6 +2778,47 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
         }
     }
 
+    /**
+     * Returns referer to be used in availablecheck. </br>
+     * This is e.g. useful for websites which restrict the embedding of videos to a specific source.
+     */
+    protected String getReferer(final DownloadLink link) {
+        final Class<? extends XFSConfig> cfg = this.getConfigInterface();
+        String custom_referer = null;
+        if (cfg != null) {
+            custom_referer = PluginJsonConfig.get(cfg).getCustomReferer();
+        }
+        final String url_referer = null;
+        final String sourceURL = link.getContainerUrl();
+        if (!StringUtils.isEmpty(url_referer) || !StringUtils.isEmpty(custom_referer)) {
+            /* Use Referer from inside added URL if given. */
+            String chosenReferer = null;
+            if (!StringUtils.isEmpty(custom_referer)) {
+                logger.info("Using referer from config: " + custom_referer);
+                chosenReferer = custom_referer;
+            } else {
+                logger.info("Using referer from URL: " + url_referer);
+                chosenReferer = url_referer;
+            }
+            chosenReferer = Encoding.htmlDecode(chosenReferer);
+            if (!chosenReferer.startsWith("http")) {
+                logger.info("Applying protocol to chosen referer: Before: " + chosenReferer);
+                chosenReferer = "https://" + chosenReferer;
+                logger.info("After: " + chosenReferer);
+            }
+            return chosenReferer;
+        } else if (!StringUtils.isEmpty(sourceURL) && !new Regex(sourceURL, this.getSupportedLinks()).patternFind()) {
+            /*
+             * Try to use source URL as Referer if it does not match any supported URL of this plugin.
+             */
+            logger.info("Using referer from Source-URL: " + sourceURL);
+            return sourceURL;
+        } else {
+            /* No Referer at all. */
+            return null;
+        }
+    }
+
     @Override
     public boolean hasAutoCaptcha() {
         /* Assume we never got auto captcha as most services will use e.g. reCaptchaV2 nowdays. */
@@ -2882,7 +2927,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
      */
     protected String getDllink(final DownloadLink link, final Account account, final Browser br, String src) {
         String dllink = br.getRedirectLocation();
-        if (dllink == null || new Regex(dllink, this.getSupportedLinks()).matches()) {
+        if (dllink == null || new Regex(dllink, this.getSupportedLinks()).patternFind()) {
             if (StringUtils.isEmpty(dllink)) {
                 for (final Pattern pattern : getDownloadurlRegexes()) {
                     dllink = new Regex(src, pattern).getMatch(0);

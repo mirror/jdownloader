@@ -239,7 +239,6 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
             /* Invalid URL/identifier */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        // TODO: 2024-03-28 Delete this old/deprecated handling
         final boolean allowCheckForDirecturl = true;
         if (path.contains("/") && allowCheckForDirecturl) {
             /**
@@ -712,6 +711,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         logger.info("Crawling all files below path: " + desiredSubpathDecoded);
         final List<String> skippedItemsFilepaths = new ArrayList<String>();
         final List<List<String>> originalFilesListsForVideoStreams = new ArrayList<List<String>>();
+        String totalLengthSecondsStrForVideoStreams = null;
         final HashSet<String> originalFilenamesDupeCollection = new HashSet<String>();
         /** Restricted access usually means that original files are not downloadable or only DRM protected / encrypted items exist. */
         final boolean isAccessRestricted = StringUtils.equalsIgnoreCase((String) root_metadata.get("access-restricted-item"), "true");
@@ -832,8 +832,9 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                 /* Add item to list of results which match our given subpath. */
                 desiredSubpathItems.add(file);
             }
-            if (isOriginal) {
+            if (isOriginal && totalLengthSecondsStrForVideoStreams == null) {
                 originalItems.add(file);
+                totalLengthSecondsStrForVideoStreams = (String) filemap.get("length");
             }
             /* Add items to list of all results. */
             /* Check some skip conditions */
@@ -880,7 +881,10 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         playlistpackage.setPackageKey("internetarchive://identifier/" + identifier + "/playlist");
         /* Build video Stream playlist if needed */
         final ArrayList<DownloadLink> videoPlaylistItems = new ArrayList<DownloadLink>();
-        final PlaylistCrawlMode playlistCrawlMode = cfg.getPlaylistCrawlMode();
+        PlaylistCrawlMode playlistCrawlMode = cfg.getPlaylistCrawlMode202404();
+        if (playlistCrawlMode == PlaylistCrawlMode.DEFAULT) {
+            playlistCrawlMode = PlaylistCrawlMode.AUTO;
+        }
         if (StringUtils.equalsIgnoreCase(mediatype, "texts")) {
             /* Book crawl handling */
             final BookCrawlMode mode = cfg.getBookCrawlMode();
@@ -956,19 +960,42 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
             } else {
                 // BookCrawlMode.PREFER_ORIGINAL
             }
-        } else if (StringUtils.equalsIgnoreCase(mediatype, "movies") && originalFilesListsForVideoStreams.size() == 1) {
+        } else if (StringUtils.equalsIgnoreCase(mediatype, "movies")) {
             /* Video "playlist" handling */
-            final List<String> thisVideoSegments = originalFilesListsForVideoStreams.get(0);
+            final int secondsPerSegment = 60;
+            double totalLengthSeconds;
+            final int numberofVideoSegments;
+            if (originalFilesListsForVideoStreams.size() == 1) {
+                /* We know how many segments the video has and can calculate the runtime based on that. */
+                final List<String> thisVideoSegments = originalFilesListsForVideoStreams.get(0);
+                totalLengthSeconds = secondsPerSegment * thisVideoSegments.size();
+                numberofVideoSegments = thisVideoSegments.size();
+            } else if (totalLengthSecondsStrForVideoStreams != null && totalLengthSecondsStrForVideoStreams.matches("\\d+(\\.\\d+)?")) {
+                /* We know the runtime of the video [in seconds] and can calculate the number of segments based on that. */
+                totalLengthSeconds = Double.parseDouble(totalLengthSecondsStrForVideoStreams);
+                final double rest = totalLengthSeconds % secondsPerSegment;
+                if (rest == 0) {
+                    numberofVideoSegments = (int) (totalLengthSeconds / secondsPerSegment);
+                } else {
+                    numberofVideoSegments = (int) ((totalLengthSeconds / secondsPerSegment) + 1);
+                }
+            } else {
+                /* This should never happen */
+                logger.warning("Detected mediatype 'movies' item but failed to determine video playtime");
+                /* Return original files */
+                return ret;
+            }
             int position = 0;
             int offsetSeconds = 0;
-            final int stepSeconds = 60;
-            /* Video can't be officially downloaded but it can be streamed in segments of X seconds each -> Generate those stream-links */
-            for (int counter = 0; counter < thisVideoSegments.size(); counter++) {
-                final String directurl = "https://archive.org/download/" + identifier + "/" + identifier + ".mp4?t=" + offsetSeconds + "/" + (offsetSeconds + stepSeconds) + "&ignore=x.mp4";
+            /*
+             * Video can't be officially downloaded but it can be streamed in segments of X seconds each -> Generate those stream-links
+             */
+            for (int counter = 0; counter < numberofVideoSegments; counter++) {
+                final String directurl = "https://archive.org/download/" + identifier + "/" + identifier + ".mp4?t=" + offsetSeconds + "/" + (offsetSeconds + secondsPerSegment) + "&ignore=x.mp4";
                 final DownloadLink video = this.createDownloadlink(directurl);
                 video.setProperty(ArchiveOrg.PROPERTY_FILETYPE, ArchiveOrg.FILETYPE_VIDEO);
                 video.setProperty(ArchiveOrg.PROPERTY_PLAYLIST_POSITION, position);
-                video.setProperty(ArchiveOrg.PROPERTY_PLAYLIST_SIZE, thisVideoSegments.size());
+                video.setProperty(ArchiveOrg.PROPERTY_PLAYLIST_SIZE, numberofVideoSegments);
                 ArchiveOrg.setFinalFilename(video, identifier + ".mp4");
                 video.setAvailable(true);
                 video._setFilePackage(playlistpackage);
@@ -976,17 +1003,17 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                 ret.add(video);
                 /* Increment counters */
                 position++;
-                offsetSeconds += stepSeconds;
+                offsetSeconds += secondsPerSegment;
             }
-            if (playlistCrawlMode == PlaylistCrawlMode.PLAYLIST_ONLY) {
-                /* User prefers to only get stream downloads slash "video playlist". */
-                return videoPlaylistItems;
-            } else if (isAccessRestricted) {
+            if (isAccessRestricted && playlistCrawlMode == PlaylistCrawlMode.AUTO) {
                 /*
                  * Original file is not downloadable at all -> Force-return playlist items to provide downloadable items for the user.
                  */
-                ret.addAll(videoPlaylistItems);
-            } else if (playlistCrawlMode == PlaylistCrawlMode.PLAYLIST_AND_FILES) {
+                return videoPlaylistItems;
+            } else if (playlistCrawlMode == PlaylistCrawlMode.PLAYLIST_ONLY) {
+                /* User prefers to only get stream downloads slash "video playlist". */
+                return videoPlaylistItems;
+            } else if (playlistCrawlMode == PlaylistCrawlMode.PLAYLIST_AND_FILES || playlistCrawlMode == PlaylistCrawlMode.AUTO) {
                 ret.addAll(videoPlaylistItems);
             } else {
                 /* Do not return any playlist items but only original files. */
@@ -1007,22 +1034,24 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
             if (playlistCrawlMode == PlaylistCrawlMode.PLAYLIST_ONLY) {
                 /* Return playlist items only */
                 return audioPlaylistItems;
-            } else if (playlistCrawlMode == PlaylistCrawlMode.PLAYLIST_AND_FILES) {
+            } else if (playlistCrawlMode == PlaylistCrawlMode.AUTO || playlistCrawlMode == PlaylistCrawlMode.PLAYLIST_AND_FILES) {
                 /* Return playlist and original files. */
                 ret.addAll(audioPlaylistItems);
                 return ret;
             } else {
                 /* Do not return any playlist items but only original files. */
             }
+        } else {
+            /* No special mediatype given -> Check for used specified return-items */
+            if (desiredSubpathDecoded != null) {
+                /* Return only links below desired subpath if desired subpath is available. */
+                if (desiredSubpathItems.isEmpty()) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                return desiredSubpathItems;
+            }
         }
         /* "Normal" file handling */
-        if (desiredSubpathDecoded != null) {
-            /* Return only links below desired subpath if desired subpath is available. */
-            if (desiredSubpathItems.isEmpty()) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            return desiredSubpathItems;
-        }
         if (crawlOriginalFilesOnly && originalItems.size() > 0) {
             /* Return only original items */
             return originalItems;
@@ -1235,7 +1264,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         }
         final String downloadlinkToAllFilesDownload = br.getRegex("(?i)href=\"(/download/[^\"]*?)\">\\s*SHOW ALL").getMatch(0);
         final ArchiveOrgConfig cfg = PluginJsonConfig.get(ArchiveOrgConfig.class);
-        final PlaylistCrawlMode playlistCrawlMode = cfg.getPlaylistCrawlMode();
+        final PlaylistCrawlMode playlistCrawlMode = cfg.getPlaylistCrawlMode202404();
         if (playlistCrawlMode == PlaylistCrawlMode.PLAYLIST_ONLY && playlistItems.size() > 0) {
             logger.info("Returning streaming items ONLY");
             return playlistItems;

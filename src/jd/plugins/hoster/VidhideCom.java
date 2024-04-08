@@ -50,7 +50,7 @@ public class VidhideCom extends XFileSharingProBasic {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "vidhide.com", "vidhidepro.com", "moflix-stream.click" });
+        ret.add(new String[] { "vidhide.com", "vidhidepro.com", "moflix-stream.click", "javplaya.com" });
         return ret;
     }
 
