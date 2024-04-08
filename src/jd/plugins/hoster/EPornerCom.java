@@ -195,7 +195,7 @@ public class EPornerCom extends PluginForHost {
                     final String filesizeStr = dlinfo[2];
                     final long tempsize = SizeFormatter.getSize(filesizeStr);
                     if (StringUtils.containsIgnoreCase(directurl, "av1")) {
-                        if (tempsize > filesizeBestAV1 || dllinkBestAV1 == null) {
+                        if (dllinkBestAV1 == null || tempsize > filesizeBestAV1) {
                             filesizeBestAV1 = tempsize;
                             dllinkBestAV1 = directurl;
                         }
@@ -204,7 +204,7 @@ public class EPornerCom extends PluginForHost {
                             filesizeSelectedAV1 = tempsize;
                         }
                     } else {
-                        if (tempsize > filesizeBestH264 || dllinkBestH264 == null) {
+                        if (dllinkBestH264 == null || tempsize > filesizeBestH264) {
                             filesizeBestH264 = tempsize;
                             dllinkBestH264 = directurl;
                         }
@@ -213,6 +213,11 @@ public class EPornerCom extends PluginForHost {
                             filesizeSelectedH264 = tempsize;
                         }
                     }
+                    /* Determine best candidate for fallback / "global best" */
+                    // if (dllink == null || tempsize > filesize) {
+                    // filesize = tempsize;
+                    // dllink = directurl;
+                    // }
                 }
             }
             // TODO: Implement setting for preferred video codec

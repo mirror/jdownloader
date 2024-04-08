@@ -92,10 +92,7 @@ public class XunniupanCom extends PluginForHost {
 
     /* Connection stuff */
     /* 2019-09-12: Failed to test any free download as it seems like all files they host are PREMIUMONLY! */
-    private final int    FREE_MAXDOWNLOADS            = 1;
-    private final int    ACCOUNT_FREE_MAXDOWNLOADS    = 1;
-    private final int    ACCOUNT_PREMIUM_MAXDOWNLOADS = 5;
-    private final String PROPERTY_DIRECTURL_PREMIUM   = "premlink";
+    private final String PROPERTY_DIRECTURL_PREMIUM = "premlink";
 
     @Override
     public boolean isResumeable(final DownloadLink link, final Account account) {
@@ -315,7 +312,7 @@ public class XunniupanCom extends PluginForHost {
             link.setProperty(directlinkproperty, dllink);
         }
         try {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, this.getMaxChunks(account));
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, this.isResumeable(link, account), this.getMaxChunks(account));
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 br.followConnection(true);
                 if (br.getURL().endsWith("/503.html")) {
@@ -346,7 +343,7 @@ public class XunniupanCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return FREE_MAXDOWNLOADS;
+        return 1;
     }
 
     /**
@@ -359,60 +356,53 @@ public class XunniupanCom extends PluginForHost {
      */
     private boolean login(final Account account, final boolean validateCookies) throws Exception {
         synchronized (account) {
-            try {
-                br.setCookiesExclusive(true);
-                br.setFollowRedirects(true);
-                final Cookies cookies = account.loadCookies("");
-                if (cookies != null) {
-                    this.br.setCookies(this.getHost(), cookies);
-                    if (System.currentTimeMillis() - account.getCookiesTimeStamp("") <= 300000l && !validateCookies) {
-                        /* We trust these cookies as they're not that old --> Do not check them */
-                        logger.info("Trust cookies without checking as they're still fresh");
-                        return false;
-                    }
-                    logger.info("Validating cookies...");
-                    br.getPage("http://www." + account.getHoster() + "/mydisk.php");
-                    if (isLoggedIn()) {
-                        logger.info("Cookie login successful");
-                        account.saveCookies(this.br.getCookies(this.getHost()), "");
-                        return true;
-                    } else {
-                        logger.info("Cookie login failed");
-                        this.br.clearCookies(br.getHost());
-                    }
+            br.setCookiesExclusive(true);
+            br.setFollowRedirects(true);
+            final Cookies cookies = account.loadCookies("");
+            if (cookies != null) {
+                this.br.setCookies(this.getHost(), cookies);
+                if (!validateCookies) {
+                    /* Do not validate cookies */
+                    return false;
                 }
-                /*
-                 * 2019-09-12: Every full login will invalidate al older sessions (user will have to re-login via browser)! If users
-                 * complain about too many login captchas, tell them to only login via browser OR JDownloader to avoid this!
-                 */
-                logger.info("Performing full login");
-                br.getPage("http://www." + account.getHoster() + "/account.php?action=login");
-                final Form loginform = br.getFormbyProperty("name", "login_form");
-                if (loginform == null) {
-                    logger.warning("Failed to find loginform");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                loginform.put("username", account.getUser());
-                loginform.put("password", account.getPass());
-                final String captchaFieldKey = "verycode";
-                if (loginform.hasInputFieldByName(captchaFieldKey)) {
-                    final DownloadLink dummyLink = new DownloadLink(this, "Account", account.getHoster(), "http://" + account.getHoster(), true);
-                    final String code = getCaptchaCode("/includes/imgcode.inc.php?verycode_type=2&t=0." + System.currentTimeMillis(), dummyLink);
-                    loginform.put(captchaFieldKey, code);
-                }
-                loginform.put("remember", "1");
-                br.submitForm(loginform);
-                if (!isLoggedIn()) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-                account.saveCookies(this.br.getCookies(this.getHost()), "");
-                return true;
-            } catch (final PluginException e) {
-                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                logger.info("Validating cookies...");
+                br.getPage("http://www." + account.getHoster() + "/mydisk.php");
+                if (isLoggedIn()) {
+                    logger.info("Cookie login successful");
+                    account.saveCookies(this.br.getCookies(this.getHost()), "");
+                    return true;
+                } else {
+                    logger.info("Cookie login failed");
+                    this.br.clearCookies(br.getHost());
                     account.clearCookies("");
                 }
-                throw e;
             }
+            /*
+             * 2019-09-12: Every full login will invalidate al older sessions (user will have to re-login via browser)! If users complain
+             * about too many login captchas, tell them to only login via browser OR JDownloader to avoid this!
+             */
+            logger.info("Performing full login");
+            br.getPage("http://www." + account.getHoster() + "/account.php?action=login");
+            final Form loginform = br.getFormbyProperty("name", "login_form");
+            if (loginform == null) {
+                logger.warning("Failed to find loginform");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            loginform.put("username", account.getUser());
+            loginform.put("password", account.getPass());
+            final String captchaFieldKey = "verycode";
+            if (loginform.hasInputFieldByName(captchaFieldKey)) {
+                final DownloadLink dummyLink = new DownloadLink(this, "Account", account.getHoster(), "http://" + account.getHoster(), true);
+                final String code = getCaptchaCode("/includes/imgcode.inc.php?verycode_type=2&t=0." + System.currentTimeMillis(), dummyLink);
+                loginform.put(captchaFieldKey, code);
+            }
+            loginform.put("remember", "1");
+            br.submitForm(loginform);
+            if (!isLoggedIn()) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+            account.saveCookies(this.br.getCookies(this.getHost()), "");
+            return true;
         }
     }
 
@@ -436,12 +426,12 @@ public class XunniupanCom extends PluginForHost {
         if (expire < System.currentTimeMillis()) {
             account.setType(AccountType.FREE);
             /* free accounts can still have captcha */
-            account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
+            account.setMaxSimultanDownloads(this.getMaxSimultanFreeDownloadNum());
             account.setConcurrentUsePossible(false);
         } else {
             ai.setValidUntil(expire, this.br);
             account.setType(AccountType.PREMIUM);
-            account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+            account.setMaxSimultanDownloads(this.getMaxSimultanPremiumDownloadNum());
             account.setConcurrentUsePossible(true);
         }
         return ai;
@@ -454,7 +444,7 @@ public class XunniupanCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return ACCOUNT_PREMIUM_MAXDOWNLOADS;
+        return 5;
     }
 
     @Override

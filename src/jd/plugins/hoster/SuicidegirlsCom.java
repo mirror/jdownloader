@@ -37,6 +37,7 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -239,11 +240,7 @@ public class SuicidegirlsCom extends PluginForHost {
             // br.postPage("", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" +
             // Encoding.urlEncode(account.getPass()));
             if (!StringUtils.isEmpty(msg)) {
-                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
+                throw new AccountInvalidException(msg);
             }
             account.saveCookies(br.getCookies(br.getHost()), "");
         }
@@ -257,8 +254,8 @@ public class SuicidegirlsCom extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         login(account, true);
-        if (br.getURL() == null || !br.getURL().contains("/member/account")) {
-            br.getPage("https://www." + this.getHost() + "/member/account/");
+        if (!br.getURL().contains("/member/account")) {
+            br.getPage("/member/account/");
         }
         ai.setUnlimitedTraffic();
         String expire = br.getRegex("YOUR ACCOUNT IS CLOSING IN\\s*<a>(\\d+ weeks?, \\d+ days?)<").getMatch(0);
@@ -326,7 +323,7 @@ public class SuicidegirlsCom extends PluginForHost {
 
     @SuppressWarnings("deprecation")
     public Account login(final Browser br) {
-        final ArrayList<Account> accounts = AccountController.getInstance().list("suicidegirls.com");
+        final ArrayList<Account> accounts = AccountController.getInstance().list(this.getHost());
         if (accounts != null && accounts.size() != 0) {
             final LogInterface logger = br.getLogger();
             for (final Account account : accounts) {

@@ -63,7 +63,7 @@ public interface Keep2shareConfig extends PluginConfigInterface {
     @AboutConfig
     @Order(20)
     @TakeValueFromSubconfig("CUSTOM_REFERER")
-    @DescriptionForConfigEntry("Define custom referer value to be used.")
+    @DescriptionForConfigEntry("Custom referer value to be used.")
     String getReferer();
 
     void setReferer(String referer);

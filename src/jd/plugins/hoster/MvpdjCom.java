@@ -29,6 +29,7 @@ import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -103,7 +104,7 @@ public class MvpdjCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://mvpdj.com/about";
+        return "https://mvpdj.com/about";
     }
 
     @Override
@@ -249,7 +250,6 @@ public class MvpdjCom extends PluginForHost {
         handleDownload(link);
     }
 
-    @SuppressWarnings("deprecation")
     private void login(final Account account, final boolean force) throws Exception {
         synchronized (account) {
             br.setCookiesExclusive(true);
@@ -264,19 +264,26 @@ public class MvpdjCom extends PluginForHost {
                 } else {
                     logger.info("Cookie login failed");
                     br.clearCookies(null);
+                    account.clearCookies("");
                 }
             }
             logger.info("Performing full login");
-            br.getPage("https://www." + this.getHost() + "/");
-            final DownloadLink dummyLink = new DownloadLink(this, "Account", this.getHost(), "http://" + this.getHost(), true);
-            final String code = this.getCaptchaCode("https://www.mvpdj.com/captcha/number2.php", dummyLink);
-            final String postData = "autologin=clicked&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&authcode=" + Encoding.urlEncode(code);
+            br.getPage("https://www." + this.getHost() + "/user/login");
+            final Form loginform = br.getFormbyActionRegex(".*login/save");
+            if (loginform == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            loginform.put("username", Encoding.urlEncode(account.getUser()));
+            loginform.put("userpass", Encoding.urlEncode(account.getPass()));
+            /* 2024-04-08: Captcha not needed anymore */
+            // final DownloadLink dummyLink = new DownloadLink(this, "Account", this.getHost(), "https://" + this.getHost(), true);
+            // final String code = this.getCaptchaCode("https://www.mvpdj.com/captcha/number2.php", dummyLink);
             // this.br.postPage("/user/useraccount", "");
-            this.br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-            this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            this.br.getHeaders().put("Referer", "https://www." + this.getHost() + "/");
-            this.br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
-            this.br.postPage("/user/login", postData);
+            br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            br.getHeaders().put("Referer", "https://www." + this.getHost() + "/");
+            br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
+            br.submitForm(loginform);
             final String statuscode = PluginJSonUtils.getJsonValue(br, "code");
             if (!"200".equals(statuscode)) {
                 throw new AccountInvalidException();
@@ -287,12 +294,12 @@ public class MvpdjCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
+        return Integer.MAX_VALUE;
     }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return Integer.MAX_VALUE;
     }
 
     @Override
