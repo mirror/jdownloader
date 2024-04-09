@@ -102,8 +102,6 @@ public class ArchiveOrg extends PluginForHost {
         return false;
     }
 
-    /* Connection stuff */
-    private final String                                  PROPERTY_DOWNLOAD_SERVERSIDE_BROKEN             = "download_serverside_broken";
     public static final String                            PROPERTY_BOOK_ID                                = "book_id";
     public static final String                            PROPERTY_BOOK_SUB_PREFIX                        = "book_sub_prefix";
     /* Book page by number by archive.org. Can satart at 0 or 1. Do not use as a real page index! */
@@ -112,8 +110,10 @@ public class ArchiveOrg extends PluginForHost {
     public static final String                            PROPERTY_BOOK_PAGE_INTERNAL_INDEX               = "book_page_internal_index";
     /* For officially downloadable files */
     public static final String                            PROPERTY_IS_ACCOUNT_REQUIRED                    = "is_account_required";
-    /* For files which are not downloadable at all - still such items can be added to JD. */
-    public static final String                            PROPERTY_IS_RESTRICTED                          = "is_restricted";
+    /**
+     * For files which are not downloadable at all - still such items can be added to JD.
+     */
+    public static final String                            PROPERTY_IS_NOT_DOWNLOADABLE                    = "is_not_downloadable";
     /* For book page downloads */
     public static final String                            PROPERTY_IS_LENDING_REQUIRED                    = "is_lending_required";
     public static final String                            PROPERTY_IS_FREE_DOWNLOADABLE_BOOK_PREVIEW_PAGE = "is_free_downloadable_book_preview_page";
@@ -133,6 +133,7 @@ public class ArchiveOrg extends PluginForHost {
     public static final String                            FILETYPE_VIDEO                                  = "video";
     private final String                                  PROPERTY_ACCOUNT_TIMESTAMP_BORROW_LIMIT_REACHED = "timestamp_borrow_limit_reached";
     private static HashMap<String, ArchiveOrgLendingInfo> bookBorrowSessions                              = new HashMap<String, ArchiveOrgLendingInfo>();
+    private static final String                           ERRORMSG_FILE_NOT_DOWNLOADABLE                  = "This file is not downloadable or broken";
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
@@ -141,7 +142,7 @@ public class ArchiveOrg extends PluginForHost {
     }
 
     public AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
-        if (link.hasProperty(PROPERTY_IS_RESTRICTED)) {
+        if (link.hasProperty(PROPERTY_IS_NOT_DOWNLOADABLE)) {
             /* Such items can neither be checked nor downloaded. */
             return AvailableStatus.UNCHECKABLE;
         }
@@ -378,14 +379,15 @@ public class ArchiveOrg extends PluginForHost {
             if (br.containsHTML("(?i)>\\s*Item not available<")) {
                 if (br.containsHTML("(?i)>\\s*The item is not available due to issues")) {
                     /* First check for this flag */
-                    if (link.getBooleanProperty(PROPERTY_DOWNLOAD_SERVERSIDE_BROKEN, false)) {
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "The item is not available due to issues with the item's content");
+                    if (link.hasProperty(PROPERTY_IS_NOT_DOWNLOADABLE)) {
+                        throw new PluginException(LinkStatus.ERROR_FATAL, ERRORMSG_FILE_NOT_DOWNLOADABLE);
                     } else if (account != null) {
                         /* Error happened while we're logged in -> Dead end --> Also set this flag to ensure that */
-                        link.setProperty(PROPERTY_DOWNLOAD_SERVERSIDE_BROKEN, true);
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "The item is not available due to issues with the item's content");
+                        link.setProperty(PROPERTY_IS_NOT_DOWNLOADABLE, true);
+                        throw new PluginException(LinkStatus.ERROR_FATAL, ERRORMSG_FILE_NOT_DOWNLOADABLE);
                     } else {
-                        throw new AccountRequiredException();
+                        /* Make user try again with account */
+                        throw new AccountRequiredException("Item is not downloadable or only for logged in users");
                     }
                 } else {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403: Item not available");
@@ -432,9 +434,9 @@ public class ArchiveOrg extends PluginForHost {
 
     private void handleDownload(final Account account, final DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link, account, true);
-        if (link.hasProperty(PROPERTY_IS_RESTRICTED)) {
+        if (link.hasProperty(PROPERTY_IS_NOT_DOWNLOADABLE)) {
             /* Such items can neither be checked nor downloaded. */
-            throw new PluginException(LinkStatus.ERROR_FATAL, "Restricted item - download prohibited");
+            throw new PluginException(LinkStatus.ERROR_FATAL, ERRORMSG_FILE_NOT_DOWNLOADABLE);
         }
         ArchiveOrgLendingInfo lendingInfoForBeforeDownload = null;
         if (account != null) {
@@ -893,7 +895,7 @@ public class ArchiveOrg extends PluginForHost {
              * Remove this property otherwise there is the possibility that the user gets a permanent error for certain files while they
              * might just be temporarily unavailable (this should never happen...)!
              */
-            link.removeProperty(PROPERTY_DOWNLOAD_SERVERSIDE_BROKEN);
+            link.removeProperty(PROPERTY_IS_NOT_DOWNLOADABLE);
             /* If this is a book page: Reset downloaded-flag for book page to prevent returning the book too early. */
             final Account account = AccountController.getInstance().getValidAccount(this.getHost());
             if (account != null) {

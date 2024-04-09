@@ -802,14 +802,10 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                 file.setSha1Hash(sha1);
             }
             file.setProperty(ArchiveOrg.PROPERTY_TIMESTAMP_FROM_API_LAST_MODIFIED, filemap.get("mtime"));
-            if (isRestrictedDownload) {
-                file.setProperty(ArchiveOrg.PROPERTY_IS_RESTRICTED, true);
-                /*
-                 * Item is not downloadable at all -> Disable it so download will not even be attempted and also as a visual indicator for
-                 * the user.
-                 */
-                file.setEnabled(false);
-            } else if (isAccountRequiredForDownload) {
+            // if (isAccountRequiredForDownload && isAccessRestricted) {
+            // file.setProperty(ArchiveOrg.PROPERTY_IS_RESTRICTED, true);
+            // }
+            if (isAccountRequiredForDownload) {
                 file.setProperty(ArchiveOrg.PROPERTY_IS_ACCOUNT_REQUIRED, true);
             }
             if (audioTrackPositionO != null) {
