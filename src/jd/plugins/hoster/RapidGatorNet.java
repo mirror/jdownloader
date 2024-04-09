@@ -44,6 +44,7 @@ import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPlugin
 import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
 import org.jdownloader.plugins.components.config.RapidGatorConfig;
 import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
 
 import jd.PluginWrapper;
@@ -75,6 +76,11 @@ public class RapidGatorNet extends PluginForHost {
     public RapidGatorNet(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://rapidgator.net/article/premium");
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.USERNAME_IS_EMAIL };
     }
 
     @Override

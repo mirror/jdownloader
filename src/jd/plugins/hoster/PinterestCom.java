@@ -66,9 +66,9 @@ public class PinterestCom extends PluginForHost {
     @Override
     public LazyPlugin.FEATURE[] getFeatures() {
         if (enforceCookieLoginOnly) {
-            return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.IMAGE_GALLERY, LazyPlugin.FEATURE.IMAGE_HOST, LazyPlugin.FEATURE.COOKIE_LOGIN_ONLY };
+            return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.IMAGE_GALLERY, LazyPlugin.FEATURE.IMAGE_HOST, LazyPlugin.FEATURE.USERNAME_IS_EMAIL, LazyPlugin.FEATURE.COOKIE_LOGIN_ONLY };
         } else {
-            return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.IMAGE_GALLERY, LazyPlugin.FEATURE.IMAGE_HOST, LazyPlugin.FEATURE.COOKIE_LOGIN_OPTIONAL };
+            return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.IMAGE_GALLERY, LazyPlugin.FEATURE.IMAGE_HOST, LazyPlugin.FEATURE.USERNAME_IS_EMAIL, LazyPlugin.FEATURE.COOKIE_LOGIN_OPTIONAL };
         }
     }
 

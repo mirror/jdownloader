@@ -72,7 +72,7 @@ public class ArchiveOrg extends PluginForHost {
 
     @Override
     public LazyPlugin.FEATURE[] getFeatures() {
-        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.COOKIE_LOGIN_OPTIONAL };
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.COOKIE_LOGIN_OPTIONAL, LazyPlugin.FEATURE.USERNAME_IS_EMAIL };
     }
 
     @Override

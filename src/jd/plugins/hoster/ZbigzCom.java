@@ -18,7 +18,6 @@ package jd.plugins.hoster;
 import java.util.Locale;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -54,7 +53,7 @@ public class ZbigzCom extends antiDDoSForHost {
 
     @Override
     public LazyPlugin.FEATURE[] getFeatures() {
-        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.COOKIE_LOGIN_OPTIONAL };
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.COOKIE_LOGIN_OPTIONAL, LazyPlugin.FEATURE.USERNAME_IS_EMAIL };
     }
 
     @Override

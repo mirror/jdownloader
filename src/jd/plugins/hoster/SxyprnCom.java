@@ -228,45 +228,39 @@ public class SxyprnCom extends antiDDoSForHost {
 
     public void login(final Browser brlogin, final Account account, final boolean validateCookies) throws Exception {
         synchronized (account) {
-            try {
-                br.setCookiesExclusive(true);
-                final Cookies cookies = account.loadCookies("");
-                if (cookies != null) {
-                    logger.info("Attempting cookie login");
-                    this.br.setCookies(this.getHost(), cookies);
-                    if (!validateCookies) {
-                        /* Don't validate cookies */
-                        return;
-                    }
-                    getPage(brlogin, "https://" + this.getHost() + "/");
-                    if (this.isLoggedin(brlogin)) {
-                        logger.info("Cookie login successful");
-                        account.saveCookies(br.getCookies(this.getHost()), "");
-                        return;
-                    } else {
-                        logger.info("Cookie login failed");
-                        br.clearCookies(br.getHost());
-                    }
+            br.setCookiesExclusive(true);
+            final Cookies cookies = account.loadCookies("");
+            if (cookies != null) {
+                logger.info("Attempting cookie login");
+                this.br.setCookies(this.getHost(), cookies);
+                if (!validateCookies) {
+                    /* Don't validate cookies */
+                    return;
                 }
-                logger.info("Performing full login");
                 getPage(brlogin, "https://" + this.getHost() + "/");
-                final Form loginform = new Form();
-                loginform.setMethod(MethodType.POST);
-                loginform.setAction("/php/login.php");
-                loginform.put("email", Encoding.urlEncode(account.getUser()));
-                loginform.put("password", Encoding.urlEncode(account.getPass()));
-                this.submitForm(brlogin, loginform);
-                getPage(brlogin, "https://" + this.getHost() + "/");
-                if (!isLoggedin(brlogin)) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-                account.saveCookies(br.getCookies(this.getHost()), "");
-            } catch (final PluginException e) {
-                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                if (this.isLoggedin(brlogin)) {
+                    logger.info("Cookie login successful");
+                    account.saveCookies(br.getCookies(this.getHost()), "");
+                    return;
+                } else {
+                    logger.info("Cookie login failed");
+                    br.clearCookies(br.getHost());
                     account.clearCookies("");
                 }
-                throw e;
             }
+            logger.info("Performing full login");
+            getPage(brlogin, "https://" + this.getHost() + "/");
+            final Form loginform = new Form();
+            loginform.setMethod(MethodType.POST);
+            loginform.setAction("/php/login.php");
+            loginform.put("email", Encoding.urlEncode(account.getUser()));
+            loginform.put("password", Encoding.urlEncode(account.getPass()));
+            this.submitForm(brlogin, loginform);
+            getPage(brlogin, "https://" + this.getHost() + "/");
+            if (!isLoggedin(brlogin)) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+            account.saveCookies(br.getCookies(this.getHost()), "");
         }
     }
 

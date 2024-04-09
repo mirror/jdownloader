@@ -39,6 +39,7 @@ import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperHostPluginHCap
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.gui.InputChangedCallbackInterface;
 import org.jdownloader.plugins.accounts.AccountBuilderInterface;
+import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings.SIZEUNIT;
 
 import jd.PluginWrapper;
@@ -66,6 +67,11 @@ public class FikperCom extends PluginForHost {
     public FikperCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://fikper.com/register");
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.USERNAME_IS_EMAIL };
     }
 
     @Override

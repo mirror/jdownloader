@@ -54,9 +54,9 @@ public class SeedrCc extends PluginForHost {
     @Override
     public LazyPlugin.FEATURE[] getFeatures() {
         if (cookieLoginOnly) {
-            return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.COOKIE_LOGIN_ONLY };
+            return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.USERNAME_IS_EMAIL, LazyPlugin.FEATURE.COOKIE_LOGIN_ONLY };
         } else {
-            return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.COOKIE_LOGIN_OPTIONAL };
+            return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.USERNAME_IS_EMAIL, LazyPlugin.FEATURE.COOKIE_LOGIN_OPTIONAL };
         }
     }
 
@@ -75,7 +75,7 @@ public class SeedrCc extends PluginForHost {
     private final boolean       cookieLoginOnly      = false;
 
     private boolean isDirectDownloadURL(final DownloadLink link) {
-        return link != null && new Regex(link.getPluginPatternMatcher(), ".*/download/archive/.*").matches();
+        return link != null && new Regex(link.getPluginPatternMatcher(), "(?i).*/download/archive/.*").patternFind();
     }
 
     @Override
@@ -95,16 +95,19 @@ public class SeedrCc extends PluginForHost {
                 if (!this.looksLikeDownloadableContent(con)) {
                     // not possible to refresh
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                } else {
-                    if (con.getCompleteContentLength() > 0) {
+                }
+                if (con.getCompleteContentLength() > 0) {
+                    if (con.isContentDecoded()) {
+                        link.setDownloadSize(con.getCompleteContentLength());
+                    } else {
                         link.setVerifiedFileSize(con.getCompleteContentLength());
                     }
-                    final String filenameFromHeader = getFileNameFromHeader(con);
-                    if (filenameFromHeader != null && link.getFinalFileName() == null) {
-                        link.setFinalFileName(filenameFromHeader);
-                    }
-                    return AvailableStatus.TRUE;
                 }
+                final String filenameFromHeader = getFileNameFromHeader(con);
+                if (filenameFromHeader != null && link.getFinalFileName() == null) {
+                    link.setFinalFileName(filenameFromHeader);
+                }
+                return AvailableStatus.TRUE;
             } finally {
                 try {
                     con.disconnect();
@@ -126,7 +129,7 @@ public class SeedrCc extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
+        final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         this.dllink = (String) entries.get("url");
         final String filename = (String) entries.get("name");
         if (!StringUtils.isEmpty(filename)) {
@@ -142,7 +145,11 @@ public class SeedrCc extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Broken file?");
                 }
                 if (con.getCompleteContentLength() > 0) {
-                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                    if (con.isContentDecoded()) {
+                        link.setDownloadSize(con.getCompleteContentLength());
+                    } else {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
                 }
                 final String filenameFromHeader = getFileNameFromHeader(con);
                 if (filenameFromHeader != null) {

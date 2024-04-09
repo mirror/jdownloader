@@ -24,6 +24,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.plugins.components.config.FilestoreToConfig;
 import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -50,6 +51,11 @@ public class FilestoreTo extends PluginForHost {
     public FilestoreTo(final PluginWrapper wrapper) {
         super(wrapper);
         enablePremium("http://filestore.to/premium");
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.USERNAME_IS_EMAIL };
     }
 
     /* Don't touch the following! */

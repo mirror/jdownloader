@@ -20,6 +20,14 @@ import java.util.ArrayList;
 import java.util.Locale;
 import java.util.Map;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -36,15 +44,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "juba-get.com" }, urls = { "" })
 public class JubaGetCom extends PluginForHost {
@@ -66,6 +65,11 @@ public class JubaGetCom extends PluginForHost {
     public JubaGetCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://juba-get.com/plans");
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.MULTIHOST, LazyPlugin.FEATURE.USERNAME_IS_EMAIL };
     }
 
     @Override
@@ -105,11 +109,6 @@ public class JubaGetCom extends PluginForHost {
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         /* handlePremium should never be called */
         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-    }
-
-    @Override
-    public LazyPlugin.FEATURE[] getFeatures() {
-        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.MULTIHOST };
     }
 
     @Override

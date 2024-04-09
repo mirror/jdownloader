@@ -19,6 +19,13 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -39,13 +46,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cloud.mail.ru" }, urls = { "https?://cloud\\.mail\\.ru/public/[A-Za-z0-9]+/[A-Za-z0-9]+.*|https?://[a-z0-9]+\\.datacloudmail\\.ru/weblink/(view|get)/[a-z0-9]+/[^<>\"/]+/[^<>\"/]+" })
 public class CloudMailRu extends PluginForHost {
     public CloudMailRu(PluginWrapper wrapper) {
@@ -53,6 +53,11 @@ public class CloudMailRu extends PluginForHost {
         setConfigElements();
         /* 2021-01-06: Dropped account support as it does not provide any advantages over downloading anonymously. */
         // this.enablePremium("https://cloud.mail.ru/");
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.USERNAME_IS_EMAIL };
     }
 
     private static final String  TYPE_FROM_DECRYPTER       = "https?://cloud\\.mail\\.ru/public/[A-Za-z0-9]+/[A-Za-z0-9].*";

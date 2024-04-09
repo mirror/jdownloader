@@ -19,7 +19,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
@@ -53,6 +52,11 @@ public class EsouboryCz extends PluginForHost {
     public EsouboryCz(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.esoubory.cz/credits/buy/");
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.MULTIHOST, LazyPlugin.FEATURE.USERNAME_IS_EMAIL };
     }
 
     /* Using similar API (and same owner): esoubory.cz, filesloop.com */
@@ -283,11 +287,6 @@ public class EsouboryCz extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
         }
         account.saveCookies(br.getCookies(account.getHoster()), "");
-    }
-
-    @Override
-    public LazyPlugin.FEATURE[] getFeatures() {
-        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.MULTIHOST };
     }
 
     /** no override to keep plugin compatible to old stable */

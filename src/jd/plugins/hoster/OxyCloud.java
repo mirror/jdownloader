@@ -20,6 +20,7 @@ import java.io.IOException;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -42,6 +43,11 @@ public class OxyCloud extends antiDDoSForHost {
     public OxyCloud(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://oxy.cloud/partners");
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.USERNAME_IS_EMAIL };
     }
 
     @Override

@@ -62,7 +62,7 @@ public class TeraboxCom extends PluginForHost {
 
     @Override
     public LazyPlugin.FEATURE[] getFeatures() {
-        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.COOKIE_LOGIN_ONLY };
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.COOKIE_LOGIN_ONLY, LazyPlugin.FEATURE.USERNAME_IS_EMAIL };
     }
 
     @Override

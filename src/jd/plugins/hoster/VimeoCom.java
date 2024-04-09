@@ -26,6 +26,26 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.storage.JSonStorage;
+import org.appwork.utils.JVMVersion;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.Time;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.logging2.LogInterface;
+import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.net.URLHelper;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.components.containers.VimeoContainer;
+import org.jdownloader.plugins.components.containers.VimeoContainer.Quality;
+import org.jdownloader.plugins.components.containers.VimeoContainer.Source;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -57,26 +77,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.utils.locale.JDL;
-
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.storage.JSonStorage;
-import org.appwork.utils.JVMVersion;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.Time;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.logging2.LogInterface;
-import org.appwork.utils.logging2.LogSource;
-import org.appwork.utils.net.URLHelper;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.downloader.hls.M3U8Playlist;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.components.containers.VimeoContainer;
-import org.jdownloader.plugins.components.containers.VimeoContainer.Quality;
-import org.jdownloader.plugins.components.containers.VimeoContainer.Source;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vimeo.com" }, urls = { "decryptedforVimeoHosterPlugin://.+" })
 public class VimeoCom extends PluginForHost {
@@ -123,6 +123,7 @@ public class VimeoCom extends PluginForHost {
         } else {
             ret.add(LazyPlugin.FEATURE.COOKIE_LOGIN_OPTIONAL);
         }
+        ret.add(LazyPlugin.FEATURE.USERNAME_IS_EMAIL);
         // TODO: Make use of this
         // ret.add(LazyPlugin.FEATURE.USERNAME_IS_EMAIL);
         return ret.toArray(new LazyPlugin.FEATURE[0]);

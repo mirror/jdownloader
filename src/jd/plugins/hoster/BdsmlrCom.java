@@ -45,7 +45,7 @@ public class BdsmlrCom extends PluginForHost {
 
     @Override
     public LazyPlugin.FEATURE[] getFeatures() {
-        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX, LazyPlugin.FEATURE.USERNAME_IS_EMAIL };
     }
 
     @Override

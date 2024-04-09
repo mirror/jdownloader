@@ -171,7 +171,7 @@ public class DefaultEditAccountPanelCookieLogin extends MigPanel implements Acco
             usernameLabel.setForeground(Color.RED);
             userok = false;
         } else if (this.usernameIsEmail && !PluginForHost.looksLikeValidEmailAddress(this.getUsername())) {
-            /* E-Mail is needed but user did not enter a valid looking e-mail address. */
+            /* E-Mail is needed but user did not enter a valid-looking e-mail address. */
             usernameLabel.setForeground(Color.RED);
             userok = false;
         } else {

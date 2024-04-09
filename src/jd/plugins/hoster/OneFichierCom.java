@@ -45,6 +45,7 @@ import org.jdownloader.gui.InputChangedCallbackInterface;
 import org.jdownloader.plugins.accounts.AccountBuilderInterface;
 import org.jdownloader.plugins.components.config.OneFichierConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -131,6 +132,11 @@ public class OneFichierCom extends PluginForHost {
     public OneFichierCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.1fichier.com/en/register.pl");
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.USERNAME_IS_EMAIL };
     }
 
     @Override

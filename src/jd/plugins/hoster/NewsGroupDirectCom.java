@@ -5,17 +5,6 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.List;
 
-import jd.PluginWrapper;
-import jd.http.Cookies;
-import jd.nutils.encoding.Encoding;
-import jd.parser.html.Form;
-import jd.plugins.Account;
-import jd.plugins.AccountInfo;
-import jd.plugins.DownloadLink;
-import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-
 import org.appwork.uio.CloseReason;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Regex;
@@ -27,12 +16,29 @@ import org.jdownloader.gui.dialog.AskForDownloadLinkDialog;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
 import org.jdownloader.plugins.components.usenet.UsenetServer;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
+import jd.PluginWrapper;
+import jd.http.Cookies;
+import jd.nutils.encoding.Encoding;
+import jd.parser.html.Form;
+import jd.plugins.Account;
+import jd.plugins.AccountInfo;
+import jd.plugins.DownloadLink;
+import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "newsgroupdirect.com" }, urls = { "" })
 public class NewsGroupDirectCom extends UseNet {
     public NewsGroupDirectCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://newsgroupdirect.com/#pricing");
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.USENET, LazyPlugin.FEATURE.USERNAME_IS_EMAIL };
     }
 
     @Override

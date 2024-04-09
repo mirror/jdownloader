@@ -71,6 +71,11 @@ public class LeechallIo extends PluginForHost {
     }
 
     @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.MULTIHOST, LazyPlugin.FEATURE.USERNAME_IS_EMAIL };
+    }
+
+    @Override
     public String getAGBLink() {
         return "https://leechall.io/terms";
     }
@@ -110,11 +115,6 @@ public class LeechallIo extends PluginForHost {
     public void handlePremium(DownloadLink link, Account account) throws Exception {
         /* handle premium should never be called */
         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-    }
-
-    @Override
-    public LazyPlugin.FEATURE[] getFeatures() {
-        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.MULTIHOST };
     }
 
     @Override
