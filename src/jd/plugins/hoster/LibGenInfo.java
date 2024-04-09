@@ -136,6 +136,7 @@ public class LibGenInfo extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
+        /* @developer: Disable this if API handling fails for unknown reasons. */
         final boolean allowUseAPI = true;
         final String storedBookID = this.getBookID(link);
         /* 2024-04-09: Internal bookID is needed to obtain information from API. */

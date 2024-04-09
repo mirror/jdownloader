@@ -34,6 +34,7 @@ import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.parser.html.HTMLSearch;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -149,7 +150,12 @@ public class YouPornCom extends PluginForHost {
         br.setCookie(this.getHost(), "yp-device", "1");
         br.setCookie(this.getHost(), "language", "en");
         br.getPage(link.getPluginPatternMatcher());
-        if (br.containsHTML("<div id=\"video-not-found-related\"|watchRemoved\"|class=\\'video-not-found\\'")) {
+        if (br.getURL().endsWith("/video-removed")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.getURL().endsWith("/video-inactive")) {
+            /* 2024-04-09: "This video has been deactivated" */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("<div id=\"video-not-found-related\"|watchRemoved\"|class=\\'video-not-found\\'")) {
             /* Offline link */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML("404 \\- Page Not Found<|id=\"title_404\"") || this.br.getHttpConnection().getResponseCode() == 404) {
@@ -158,8 +164,8 @@ public class YouPornCom extends PluginForHost {
         } else if (br.containsHTML("(?i)<div class='geo-blocked-content'>\\s*This video has been disabled") || br.getURL().contains("/video-disabled")) {
             /* 2021-01-18 */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Video has been disabled / flagged for review");
-        } else if (this.br.containsHTML("(?i)<div class='geo-blocked-content'>\\s*This video has been removed by the uploader")) {
-            /* 2021-01-18 */
+        } else if (this.br.containsHTML(">\\s*This video has been removed")) {
+            /* 22024-04-09 */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (this.br.containsHTML("(?i)<div class='geo-blocked-content'>\\s*Video has been flagged for verification")) {
             /* 2021-01-18 */
@@ -182,18 +188,15 @@ public class YouPornCom extends PluginForHost {
         if (otherReasonForTempUnavailable != null) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, otherReasonForTempUnavailable, 5 * 60 * 1000l);
         }
-        String title = br.getRegex("<title>(.*?) \\- Free Porn Videos[^<>]+</title>").getMatch(0);
-        if (title == null) {
-            title = br.getRegex("<title>(.*?) Video \\- Youporn\\.com</title>").getMatch(0);
-        }
-        if (title == null) {
-            title = br.getRegex("addthis:title=\"YouPorn \\- (.*?)\"></a>").getMatch(0);
-        }
-        if (title == null) {
-            title = br.getRegex("\\'video_title\\'\\s*:\\s*\"([^<>\"]*?)\"").getMatch(0);
-        }
+        String title = br.getRegex("<h1 class=\"videoTitle tm_videoTitle\"[^>]*>([^<]+)</h1>").getMatch(0);
         if (title == null) {
             title = br.getRegex("videoTitle\\s*:\\s*\'([^<>\']*?)\'").getMatch(0);
+        }
+        if (title == null || true) {
+            title = HTMLSearch.searchMetaTag(br, "og:title");
+        }
+        if (title == null) {
+            title = br.getRegex("<title>(.*?)</title>").getMatch(0);
         }
         if (title == null) {
             /* Final fallback */
@@ -201,6 +204,8 @@ public class YouPornCom extends PluginForHost {
         }
         if (title != null) {
             title = Encoding.htmlDecode(title).trim().replaceAll("   ", "-");
+            title = title.replaceFirst("(?i) - Free Porn Videos.*$", "");
+            title = title.replaceFirst("(?i) Video - Youporn\\.com$", "");
             link.setFinalFileName(title + defaultEXT);
         }
         final String channelname = br.getRegex("class=\"submitByLink\"[^>]*>\\s*<[^>]*href=\"/(?:channel|uservids)/([^\"/]+)").getMatch(0);

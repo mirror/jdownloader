@@ -464,7 +464,6 @@ public class RedditComCrawler extends PluginForDecrypt {
                 }
                 final Map<String, Object> preview = (Map<String, Object>) data.get("preview");
                 if (preview != null) {
-                    /* TODO: Add setting so user can select the preferred format here */
                     final List<Map<String, Object>> images = (List<Map<String, Object>>) preview.get("images");
                     for (final Map<String, Object> image : images) {
                         final Map<String, Object> variants = (Map<String, Object>) image.get("variants");
