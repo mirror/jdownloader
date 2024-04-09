@@ -117,6 +117,11 @@ public class XxembedCom extends XFileSharingProBasic {
     }
 
     @Override
+    protected boolean supports_availablecheck_filename_abuse() {
+        return false;
+    }
+
+    @Override
     public String[] scanInfo(final String[] fileInfo) {
         super.scanInfo(fileInfo);
         /* 2024-04-09: Ugly workaround to remove invalid values; filesize is not given by this filehost. */

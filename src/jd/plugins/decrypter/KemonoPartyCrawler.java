@@ -633,10 +633,13 @@ public class KemonoPartyCrawler extends PluginForDecrypt {
                     this.displayBubblenotifyMessage(title, text);
                     this.sleep(retrySeconds * 1000, this.cl);
                     continue;
-                } else {
+                } else if (con.getResponseCode() == 200) {
                     br.followConnection();
                     errorRateLimit = false;
                     break;
+                } else {
+                    br.followConnection(true);
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             } finally {
                 con.disconnect();

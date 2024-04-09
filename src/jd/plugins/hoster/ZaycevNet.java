@@ -82,20 +82,25 @@ public class ZaycevNet extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         final String extDefault = ".mp3";
         if (!link.isNameSet()) {
-            link.setName(this.getLinkID(link) + extDefault);
+            link.setName(this.getFID(link) + extDefault);
         }
         this.setBrowserExclusive();
         br.getHeaders().put("Accept-Charset", null);
         br.getHeaders().put("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/38.0.2125.101 Safari/537.36");
         this.br.setAllowedResponseCodes(410);
         // br.setCookie(this.getHost(), "mm_cookie", "1");
+        br.setFollowRedirects(false);
         br.getPage(link.getPluginPatternMatcher());
+        br.setFollowRedirects(true);
         final int responsecode = this.br.getHttpConnection().getResponseCode();
         final String htmlRefresh = br.getRequest().getHTMLRefresh();
         if (br.getRedirectLocation() != null || htmlRefresh != null || br.containsHTML(">Данная композиция заблокирована, приносим извинения") || responsecode == 404 || responsecode == 410) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String filename = br.getRegex("alt=\"([^\"]+)\"[^>]*placeholder=\"/track\\.svg\"").getMatch(0);
+        String filename = br.getRegex("alt=\"([^\"]+)\"[^>]*placeholder=\"/track\\.svg\"").getMatch(0);
+        if (filename == null) {
+            filename = br.getRegex("ТРЕК\\s*</span>\\s*<h1[^>]*>\\s*(.*?)\\s*<").getMatch(0);
+        }
         String filesizeStr = br.getRegex("content=\"([^\"]+)\"[^>]*itemProp=\"contentSize\"").getMatch(0);
         if (filename != null) {
             link.setFinalFileName(Encoding.htmlDecode(filename).trim() + extDefault);

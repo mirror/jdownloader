@@ -146,9 +146,10 @@ public class YouPornCom extends PluginForHost {
         this.server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.setCookie(this.getHost(), "age_verified", "1");
-        br.setCookie(this.getHost(), "yp-device", "1");
-        br.setCookie(this.getHost(), "language", "en");
+        final String host = Browser.getHost(link.getPluginPatternMatcher());
+        br.setCookie(host, "age_verified", "1");
+        br.setCookie(host, "yp-device", "1");
+        br.setCookie(host, "language", "en");
         br.getPage(link.getPluginPatternMatcher());
         if (br.getURL().endsWith("/video-removed")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -161,16 +162,18 @@ public class YouPornCom extends PluginForHost {
         } else if (br.containsHTML("404 \\- Page Not Found<|id=\"title_404\"") || this.br.getHttpConnection().getResponseCode() == 404) {
             /* Invalid link */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (br.containsHTML("(?i)<div class='geo-blocked-content'>\\s*This video has been disabled") || br.getURL().contains("/video-disabled")) {
+        } else if (br.containsHTML("(?i)<div class\\s*=\\s*(\"|')geo-blocked-content(\"|')>\\s*This video has been disabled") || br.getURL().contains("/video-disabled")) {
             /* 2021-01-18 */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Video has been disabled / flagged for review");
         } else if (this.br.containsHTML(">\\s*This video has been removed")) {
             /* 22024-04-09 */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (this.br.containsHTML("(?i)<div class='geo-blocked-content'>\\s*Video has been flagged for verification")) {
+        } else if (this.br.containsHTML("(?i)<div class\\s*=\\s*(\"|')geo-blocked-content(\"|')>\\s*This page is not available in your location")) {
+            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "This page is not available in your location", 60 * 60 * 1000l);
+        } else if (this.br.containsHTML("(?i)<div class\\s*=\\s*(\"|')geo-blocked-content(\"|')>\\s*Video has been flagged for verification")) {
             /* 2021-01-18 */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Video has been flagged for verification", 3 * 60 * 60 * 1000l);
-        } else if (this.br.containsHTML("(?i)class='geo-blocked-content'")) {
+        } else if (this.br.containsHTML("(?i)class\\s*=\\s*(\"|')geo-blocked-content(\"|')>")) {
             /* 2020-07-02: New: E.g. if you go to youpornru.com with a german IP and add specific URLs (not all content is GEO-blocked!). */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "GEO-blocked", 3 * 60 * 60 * 1000l);
         } else if (this.br.containsHTML("onload=\"go\\(\\)\"")) {
@@ -329,7 +332,11 @@ public class YouPornCom extends PluginForHost {
                 con = brc.openHeadConnection(dllink);
                 if (looksLikeDownloadableContent(con)) {
                     if (con.getCompleteContentLength() > 0) {
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                        if (con.isContentDecoded()) {
+                            link.setDownloadSize(con.getCompleteContentLength());
+                        } else {
+                            link.setVerifiedFileSize(con.getCompleteContentLength());
+                        }
                     }
                 } else {
                     server_issues = true;

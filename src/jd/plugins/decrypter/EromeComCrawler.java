@@ -81,7 +81,7 @@ public class EromeComCrawler extends PluginForDecrypt {
     }
 
     private static final String PATTERN_ALBUM   = "/a/([A-Za-z0-9]+)";
-    private static final String PATTERN_PROFILE = "/([\\w\\-]+)";
+    private static final String PATTERN_PROFILE = "/([\\w\\-]+)(\\?page=\\d+)?";
 
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
@@ -177,6 +177,10 @@ public class EromeComCrawler extends PluginForDecrypt {
             /* Crawl all album-items of profile */
             final HashSet<String> dupes = new HashSet<String>();
             int page = 1;
+            final String urlPage = new Regex(br._getURL().getQuery(), "page=(\\d+)").getMatch(0);
+            if (urlPage != null) {
+                page = Integer.parseInt(urlPage);
+            }
             do {
                 int numberofNewItemsThisPage = 0;
                 final String[] albumurls = br.getRegex(PATTERN_ALBUM).getColumn(-1);
@@ -199,6 +203,9 @@ public class EromeComCrawler extends PluginForDecrypt {
                     break;
                 } else if (numberofNewItemsThisPage == 0) {
                     logger.info("Stopping because: Failed to find any new items on current page");
+                    break;
+                } else if (urlPage != null) {
+                    logger.info("Stopping because: single page mode");
                     break;
                 }
                 page++;
