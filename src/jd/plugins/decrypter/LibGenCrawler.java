@@ -23,9 +23,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.parser.UrlQuery;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -41,6 +38,9 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.DirectHTTP;
 import jd.plugins.hoster.LibGenInfo;
+
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.parser.UrlQuery;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class LibGenCrawler extends PluginForDecrypt {
@@ -140,6 +140,7 @@ public class LibGenCrawler extends PluginForDecrypt {
         final Regex editionRegex = new Regex(param.getCryptedUrl(), "(?i)https?://[^/]+/edition\\.php\\?id=(\\d+)");
         final Regex seriesRegex = new Regex(param.getCryptedUrl(), "(?i)https?://[^/]+/series\\.php\\?id=(\\d+)");
         final Regex fileIDRegex = new Regex(param.getCryptedUrl(), "(?i)https?://[^/]+/file\\.php\\?id=(\\d+)");
+        final Regex bookMD5Regex = new Regex(param.getCryptedUrl(), "(?i)https?://[^/]+/book/index\\.php\\?md5=([a-fA-F0-9]+)");
         if (editionRegex.patternFind()) {
             final String editionID = editionRegex.getMatch(0);
             /* They're nice and provide a public json view/API for programmers. */
@@ -212,10 +213,32 @@ public class LibGenCrawler extends PluginForDecrypt {
                 /* Unsupported link */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
+            final String orgContentURL = contenturl;
             contenturl = this.generateSingleFileDownloadurl(domainToUse, md5);
             ensureInitHosterplugin();
-            final DownloadLink book = this.createDownloadlink(generateSingleFileDownloadurl(domainToUse, md5));
+            final DownloadLink book = this.createDownloadlink(contenturl);
             book.setDefaultPlugin(this.hostPlugin);
+            if (bookMD5Regex.patternFind()) {
+                br.getPage(orgContentURL);
+                final String bookID = br.getRegex(">\\s*ID:\\s*</font>\\s*</nobr>\\s*</td>\\s*<td>\\s*(\\d+)\\s*<").getMatch(0);
+                if (bookID != null) {
+                    book.setProperty(LibGenInfo.PROPERTY_BOOK_ID, bookID);
+                }
+                final String fileSize = br.getRegex("\\s+\\(\\s*(\\d+)\\s*bytes\\s*\\)").getMatch(0);
+                if (fileSize != null) {
+                    book.setVerifiedFileSize(Long.parseLong(fileSize));
+                }
+                final String title = br.getRegex(">\\s*Title:\\s*</font>\\s*</nobr>\\s*</td>\\s*<td[^>]*>\\s*<b>\\s*<a[^>]*>\\s*(.*?)\\s*<").getMatch(0);
+                if (title != null) {
+                    final String extension = br.getRegex(">\\s*Extension:\\s*</font>\\s*</nobr>\\s*</td>\\s*<td>\\s*(.*?)\\s*<").getMatch(0);
+                    if (extension != null) {
+                        book.setName(applyFilenameExtension(title, extension));
+                    } else {
+                        book.setName(title);
+                    }
+                    book.setAvailable(true);
+                }
+            }
             final boolean useAPI = true;
             if (useAPI) {
                 /* Let hosterplugin process single link */

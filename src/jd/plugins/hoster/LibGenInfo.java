@@ -21,12 +21,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -39,6 +36,11 @@ import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.LibGenCrawler;
+
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 @PluginDependencies(dependencies = { PornportalCom.class })
@@ -168,7 +170,9 @@ public class LibGenInfo extends PluginForHost {
         final String contenturl = getContentURL(link);
         final UrlQuery query = new UrlQuery();
         query.add("object", "f");
-        query.add("fields", "Title,Author,MD5,sha1,edition,id,extension,year,filename,filesize,locator");
+        // NOTE: different domains have different version of api and not every version does support every field. some return map result,
+        // others return list result
+        query.add("fields", "Title,Author,MD5,id,extension,year,filesize,locator");
         query.add("addkeys", "*");
         if (bookID != null) {
             query.add("ids", bookID);
@@ -180,13 +184,23 @@ public class LibGenInfo extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final Object responseO = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.OBJECT);
-        if (!(responseO instanceof Map)) {
-            /* E.g. response is empty array -> Item offline */
+        final Map<String, Object> book;
+        if (responseO instanceof Map) {
+            final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+            if (entries.size() == 0) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            book = (Map<String, Object>) entries.entrySet().iterator().next().getValue();
+        } else if (responseO instanceof List) {
+            final List<Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.LIST);
+            if (entries.size() == 0) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            book = (Map<String, Object>) entries.get(0);
+        } else {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         /* First and only item in this map is the one we want. */
-        final Map<String, Object> book = (Map<String, Object>) entries.entrySet().iterator().next().getValue();
         parseFileInfoAPI(link, book);
         return AvailableStatus.TRUE;
     }
@@ -232,11 +246,17 @@ public class LibGenInfo extends PluginForHost {
         if (contenturl.matches(TYPE_DIRECT)) {
             URLConnectionAdapter con = null;
             try {
-                con = br.openGetConnection(contenturl);
+                final Request req = br.createGetRequest(contenturl);
+                req.getHeaders().put(HTTPConstants.HEADER_REQUEST_ACCEPT_ENCODING, "identity");
+                con = br.openRequestConnection(req);
                 if (this.looksLikeDownloadableContent(con)) {
                     /* File is direct-downloadable */
                     if (con.getCompleteContentLength() > 0) {
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                        if (con.isContentDecoded()) {
+                            link.setDownloadSize(con.getCompleteContentLength());
+                        } else {
+                            link.setVerifiedFileSize(con.getCompleteContentLength());
+                        }
                     }
                     link.setFinalFileName(Plugin.getFileNameFromDispositionHeader(con));
                     return AvailableStatus.TRUE;
