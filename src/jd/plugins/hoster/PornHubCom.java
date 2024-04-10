@@ -1207,6 +1207,7 @@ public class PornHubCom extends PluginForHost {
             }
             final String redirect = (String) entries.get("redirect");
             final Boolean expiredPremiumUser = (Boolean) entries.get("expiredPremiumUser");
+            final String message = (String) entries.get("message");
             /*
              * 2022-06-27: remember_me is always "false" even though we check the "remember_me" checkbox/field. It's the same in browser
              * though!
@@ -1215,7 +1216,11 @@ public class PornHubCom extends PluginForHost {
             // final String username = (String) entries.get("username");
             final String defaultTextLoginFailed_EN = "Login failed.\r\nIf you believe this message is incorrect, try cookie login.\r\nInstructions:\r\nsupport.jdownloader.org/Knowledgebase/Article/View/account-cookie-login-instructions";
             if ((Integer) ReflectionUtils.cast(entries.get("success"), Integer.class) != 1) {
-                throw new AccountInvalidException(defaultTextLoginFailed_EN);
+                if (message != null) {
+                    throw new AccountInvalidException(defaultTextLoginFailed_EN + "\r\nServerside error message:\r\n" + message);
+                } else {
+                    throw new AccountInvalidException(defaultTextLoginFailed_EN);
+                }
             }
             if (redirect != null && (redirect.startsWith("http") || redirect.startsWith("/"))) {
                 /* Required to get the (premium) cookies (multiple redirects). */
