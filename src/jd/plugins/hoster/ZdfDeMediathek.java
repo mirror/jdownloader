@@ -28,6 +28,17 @@ import java.util.Locale;
 import java.util.Scanner;
 import java.util.TimeZone;
 
+import jd.PluginWrapper;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
+import jd.parser.Regex;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
+
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DefaultEnumValue;
@@ -40,17 +51,6 @@ import org.jdownloader.plugins.config.Order;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.translate._JDT;
-
-import jd.PluginWrapper;
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
-import jd.parser.Regex;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zdf.de" }, urls = { "decryptedmediathek://.+" })
 public class ZdfDeMediathek extends PluginForHost {
@@ -128,7 +128,11 @@ public class ZdfDeMediathek extends PluginForHost {
                     con = br.openHeadConnection(this.dllink);
                     handleConnectionErrors(br, con);
                     if (con.getCompleteContentLength() > 0) {
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                        if (con.isContentDecoded()) {
+                            link.setDownloadSize(con.getCompleteContentLength());
+                        } else {
+                            link.setVerifiedFileSize(con.getCompleteContentLength());
+                        }
                     }
                 } finally {
                     try {
@@ -167,8 +171,8 @@ public class ZdfDeMediathek extends PluginForHost {
                 waitMillisUntilVideoIsAvailable = timeUntilLater;
             } else {
                 /**
-                 * This should never happen. Either server time is wrong/offset or user has wrong local OS time. </br>
-                 * Video should already be available -> Wait static wait time
+                 * This should never happen. Either server time is wrong/offset or user has wrong local OS time. </br> Video should already
+                 * be available -> Wait static wait time
                  */
                 waitMillisUntilVideoIsAvailable = 30 * 60 * 1000;
             }
@@ -634,10 +638,22 @@ public class ZdfDeMediathek extends PluginForHost {
         void setGrabHTTPMp4LowVideoEnabled(boolean b);
 
         @DefaultBooleanValue(true)
+        @Order(91)
+        boolean isGrabHTTPWebmLowVideoEnabled();
+
+        void setGrabHTTPWebmLowVideoEnabled(boolean b);
+
+        @DefaultBooleanValue(true)
         @Order(100)
         boolean isGrabHTTPMp4HighVideoEnabled();
 
         void setGrabHTTPMp4HighVideoEnabled(boolean b);
+
+        @DefaultBooleanValue(true)
+        @Order(101)
+        boolean isGrabHTTPWebmHighVideoEnabled();
+
+        void setGrabHTTPWebmHighVideoEnabled(boolean b);
 
         @DefaultBooleanValue(true)
         @Order(105)
@@ -646,15 +662,57 @@ public class ZdfDeMediathek extends PluginForHost {
         void setGrabHTTPMp4MediumVideoEnabled(boolean b);
 
         @DefaultBooleanValue(true)
+        @Order(106)
+        boolean isGrabHTTPWebmMediumVideoEnabled();
+
+        void setGrabHTTPWebmMediumVideoEnabled(boolean b);
+
+        @DefaultBooleanValue(true)
         @Order(110)
         boolean isGrabHTTPMp4VeryHighVideoEnabled();
 
         void setGrabHTTPMp4VeryHighVideoEnabled(boolean b);
 
         @DefaultBooleanValue(true)
+        @Order(111)
+        boolean isGrabHTTPWebmVeryHighVideoEnabled();
+
+        void setGrabHTTPWebmVeryHighVideoEnabled(boolean b);
+
+        @DefaultBooleanValue(true)
         @Order(120)
         boolean isGrabHTTPMp4HDVideoEnabled();
 
         void setGrabHTTPMp4HDVideoEnabled(boolean b);
+
+        @DefaultBooleanValue(true)
+        @Order(121)
+        boolean isGrabHTTPWebmHDVideoEnabled();
+
+        void setGrabHTTPWebmHDVideoEnabled(boolean b);
+
+        @DefaultBooleanValue(true)
+        @Order(122)
+        boolean isGrabHTTPMp4FHDVideoEnabled();
+
+        void setGrabHTTPMp4FHDVideoEnabled(boolean b);
+
+        @DefaultBooleanValue(true)
+        @Order(123)
+        boolean isGrabHTTPWebmFHDVideoEnabled();
+
+        void setGrabHTTPWebmFHDVideoEnabled(boolean b);
+
+        @DefaultBooleanValue(true)
+        @Order(130)
+        boolean isGrabHTTPMp4UHDVideoEnabled();
+
+        void setGrabHTTPMp4UHDVideoEnabled(boolean b);
+
+        @DefaultBooleanValue(true)
+        @Order(131)
+        boolean isGrabHTTPWebmUHDVideoEnabled();
+
+        void setGrabHTTPWebmUHDVideoEnabled(boolean b);
     }
 }
