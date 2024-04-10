@@ -1127,7 +1127,7 @@ public class PornHubCom extends PluginForHost {
             if ((freeCookies != null && premiumCookies != null) || userCookies != null) {
                 /* Check cookies - only perform a full login if they're not valid anymore. */
                 if (userCookies != null) {
-                    br.setCookies(userCookies);
+                    this.setCookies(br, userCookies);
                 } else {
                     br.setCookies(freeCookieDomain, freeCookies);
                     br.setCookies(preferredLoginPremiumDomain, premiumCookies);
@@ -1272,6 +1272,17 @@ public class PornHubCom extends PluginForHost {
                 }
             }
             return true;
+        }
+    }
+
+    /** Sets given cookies on all domains we know. */
+    private void setCookies(final Browser br, final Cookies cookies) {
+        final List<String> domains = new ArrayList<String>();
+        domains.addAll(Arrays.asList(domainsFree));
+        domains.addAll(Arrays.asList(domainsPremium));
+        br.setCookies(cookies);
+        for (final String domain : domains) {
+            br.setCookies(domain, cookies);
         }
     }
 
