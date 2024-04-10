@@ -13,7 +13,7 @@ import org.jdownloader.plugins.config.Type;
 @PluginHost(host = "kemono.su", type = Type.CRAWLER)
 public interface KemonoPartyConfig extends PluginConfigInterface {
     final String                    text_CrawlHttpLinksFromPostContent = "Crawl http links in post text?";
-    final String                    text_PerPostURLPackage             = "Place each post results into own package?";
+    final String                    text_PerPostURLPackage             = "Place each post results into separate package?";
     final String                    text_TextCrawlMode                 = "When to add post text content as .txt file:";
     public static final TRANSLATION TRANSLATION                        = new TRANSLATION();
 
