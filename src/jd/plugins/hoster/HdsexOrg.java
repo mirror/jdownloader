@@ -23,6 +23,7 @@ import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -43,8 +44,13 @@ public class HdsexOrg extends PluginForHost {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
     }
 
-    /* Connection stuff */
-    private static final int free_maxdownloads = -1;
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.setFollowRedirects(true);
+        br.setCookie(this.getHost(), "lang", "en");
+        return br;
+    }
 
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
@@ -101,12 +107,11 @@ public class HdsexOrg extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        final String extDefault = ".mp4";
         if (!link.isNameSet()) {
-            link.setName(this.getFID(link) + ".mp4");
+            link.setName(this.getFID(link) + extDefault);
         }
         this.setBrowserExclusive();
-        br.setCookie(this.getHost(), "lang", "en");
-        br.setFollowRedirects(true);
         br.getPage("https://" + this.getHost() + "/video/" + this.getFID(link));
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -118,7 +123,7 @@ public class HdsexOrg extends PluginForHost {
         if (title != null) {
             title = Encoding.htmlDecode(title);
             title = title.trim();
-            link.setFinalFileName(title + ".mp4");
+            link.setFinalFileName(title + extDefault);
         }
         return AvailableStatus.TRUE;
     }
@@ -141,7 +146,8 @@ public class HdsexOrg extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return free_maxdownloads;
+        /* Last checked: 2024-04-11: Limited to 1 as their CDN servers are very very slow. */
+        return 1;
     }
 
     @Override

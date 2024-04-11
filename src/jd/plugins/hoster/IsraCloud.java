@@ -75,6 +75,13 @@ public class IsraCloud extends XFileSharingProBasic {
     }
 
     @Override
+    protected List<String> getDeadDomains() {
+        final ArrayList<String> deadDomains = new ArrayList<String>();
+        deadDomains.add("isracloud.com");
+        return deadDomains;
+    }
+
+    @Override
     public boolean isResumeable(final DownloadLink link, final Account account) {
         if (account != null && account.getType() == AccountType.FREE) {
             /* Free Account */
@@ -122,7 +129,7 @@ public class IsraCloud extends XFileSharingProBasic {
         super.scanInfo(fileInfo);
         /* 2020-10-21: Special */
         if (StringUtils.isEmpty(fileInfo[0])) {
-            fileInfo[0] = new Regex(correctedBR, "lass=\"desc\">\\s*<span>([^<>\"]+)<").getMatch(0);
+            fileInfo[0] = new Regex(correctedBR, "class=\"desc\"[^>]*>\\s*<span>([^<>\"]+)<").getMatch(0);
         }
         return fileInfo;
     }

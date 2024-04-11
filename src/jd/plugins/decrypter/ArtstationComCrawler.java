@@ -57,8 +57,8 @@ public class ArtstationComCrawler extends PluginForDecrypt {
     }
 
     private static final String TYPE_ARTIST      = "(?i)https?://[^/]+/(?:artist/)?([^/]+)(/likes)?$";
-    private static final String TYPE_ALBUM       = "(?i)https?://[^/]+/artwork/([a-zA-Z0-9]+)";
-    private static final String TYPE_MARKETPLACE = "(?i)https?://[^/]+/marketplace/p/([a-zA-Z0-9\\-]+)/([a-zA-Z0-9\\-]+)";
+    private static final String TYPE_ALBUM       = "(?i)https?://[^/]+/artwork/([a-zA-Z0-9]+).*";
+    private static final String TYPE_MARKETPLACE = "(?i)https?://[^/]+/marketplace/p/([a-zA-Z0-9\\-]+)/([a-zA-Z0-9\\-]+).*";
     Object                      modifier         = null;
 
     @Override
