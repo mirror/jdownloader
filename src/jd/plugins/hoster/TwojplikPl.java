@@ -61,7 +61,7 @@ public class TwojplikPl extends PluginForHost {
 
     @Override
     public FEATURE[] getFeatures() {
-        return new FEATURE[] { LazyPlugin.FEATURE.FAVICON, LazyPlugin.FEATURE.USERNAME_IS_EMAIL };
+        return new FEATURE[] { LazyPlugin.FEATURE.FAVICON };
     }
 
     @Override
