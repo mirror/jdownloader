@@ -36,7 +36,7 @@ public interface MegaConzConfig extends PluginConfigInterface {
         }
 
         public String getUseGlobalCDN_label() {
-            return "Use minimal set of http headers?";
+            return "Use global CDN?";
         }
 
         public String getAllowConcurrentDecryption_label() {
