@@ -24,6 +24,14 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
+import jd.controlling.ClipboardMonitoring.ClipboardChangeDetector.CHANGE_FLAG;
+import jd.controlling.linkcollector.LinkCollectingJob;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinkOrigin;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledLinkModifier;
+import jd.parser.html.HTMLParser;
+
 import org.appwork.utils.IO;
 import org.appwork.utils.IO.BOM;
 import org.appwork.utils.Regex;
@@ -35,14 +43,6 @@ import org.jdownloader.controlling.PasswordUtils;
 import org.jdownloader.gui.views.components.packagetable.dragdrop.PackageControllerTableTransferable;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
-
-import jd.controlling.ClipboardMonitoring.ClipboardChangeDetector.CHANGE_FLAG;
-import jd.controlling.linkcollector.LinkCollectingJob;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcollector.LinkOrigin;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledLinkModifier;
-import jd.parser.html.HTMLParser;
 
 public class ClipboardMonitoring {
     public static class HTMLFragment {
@@ -250,9 +250,9 @@ public class ClipboardMonitoring {
         }
     }
 
-    private static final ClipboardMonitoring INSTANCE = new ClipboardMonitoring();
-    private static final DataFlavor          URLFLAVOR;
-    private static final DataFlavor          URILISTFLAVOR;
+    private static final ClipboardMonitoring                                                 INSTANCE            = new ClipboardMonitoring();
+    private static final DataFlavor                                                          URLFLAVOR;
+    private static final DataFlavor                                                          URILISTFLAVOR;
     static {
         DataFlavor ret = null;
         try {
@@ -1016,10 +1016,18 @@ public class ClipboardMonitoring {
                     }
                     final String next = izer.nextToken();
                     if (StringUtils.isNotEmpty(next)) {
-                        // file:/ -> not authority -> all fine
-                        // file://xy/ -> xy will be authority -> java.lang.IllegalArgumentException: URI has an authority component
-                        // file:/// -> empty authority -> all fine
-                        sb.append(next.replaceFirst("file:///", "file:/"));
+                        if (next.matches("(?i)^(https?|file|ftp):/")) {
+                            // file:/ -> not authority -> all fine
+                            // file://xy/ -> xy will be authority -> java.lang.IllegalArgumentException: URI has an authority component
+                            // file:/// -> empty authority -> all fine
+                            sb.append(next.replaceFirst("file:///", "file:/"));
+                        } else if (next.startsWith("/")) {
+                            // macOS has no file protocol prefix
+                            final File probe = new File(next);
+                            if (probe.isAbsolute()) {
+                                sb.append(probe.toURI().toString());
+                            }
+                        }
                     }
                 }
             }
