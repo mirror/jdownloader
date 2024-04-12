@@ -19,9 +19,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -42,6 +39,9 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.DirectHTTP;
 import jd.plugins.hoster.KhinsiderCom;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class KhinsiderComCrawler extends PluginForDecrypt {
@@ -109,6 +109,7 @@ public class KhinsiderComCrawler extends PluginForDecrypt {
             }
             if (this.looksLikeDownloadableContent(con)) {
                 final DownloadLink direct = getCrawler().createDirectHTTPDownloadLink(br.getRequest(), con);
+                direct.setProperty(DirectHTTP.PROPERTY_CUSTOM_HOST, "downloads." + getHost());
                 ret.add(direct);
             } else {
                 br.followConnection();
@@ -130,7 +131,7 @@ public class KhinsiderComCrawler extends PluginForDecrypt {
             final String[] urls = HTMLParser.getHttpLinks(br.getRequest().getHtmlCode(), br.getURL());
             for (final String url : urls) {
                 if (new Regex(url, singleTrackPattern).patternFind()) {
-                    ret.add(this.createDownloadlink(url));
+                    ret.add(this.createDownloadlink(url, false));
                 } else if (new Regex(url, officialAlbumDownloadPattern).patternFind()) {
                     officialAlbumDownloadurl = url;
                 }
@@ -138,11 +139,12 @@ public class KhinsiderComCrawler extends PluginForDecrypt {
             if (officialAlbumDownloadurl != null && account != null && account.getType() == AccountType.PREMIUM) {
                 /* Paid / Premium / Donator account available -> Return only official .zip downloadlink. */
                 ret.clear();
-                ret.add(this.createDownloadlink(officialAlbumDownloadurl));
+                ret.add(this.createDownloadlink(officialAlbumDownloadurl, false));
             }
             final String urlThumbnail = br.getRegex("href=\"(https?://[^\"]+/folder\\.[a-z0-9]+)\" target=\"_blank\">").getMatch(0);
             if (urlThumbnail != null) {
-                final DownloadLink thumbnail = this.createDownloadlink(DirectHTTP.createURLForThisPlugin(urlThumbnail));
+                final DownloadLink thumbnail = this.createDownloadlink(DirectHTTP.createURLForThisPlugin(urlThumbnail), false);
+                thumbnail.setProperty(DirectHTTP.PROPERTY_CUSTOM_HOST, "downloads." + getHost());
                 thumbnail.setAvailable(true);
                 ret.add(thumbnail);
             }
@@ -161,8 +163,9 @@ public class KhinsiderComCrawler extends PluginForDecrypt {
             final String[] filesizes = br.getRegex("\\((\\d+\\.\\d{2} (?:KB|MB|GB))\\)").getColumn(0);
             int index = 0;
             for (final String directurl : directurls) {
-                final DownloadLink direct = this.createDownloadlink(DirectHTTP.createURLForThisPlugin(directurl));
+                final DownloadLink direct = this.createDownloadlink(DirectHTTP.createURLForThisPlugin(directurl), false);
                 final String filenameFromURL = Plugin.getFileNameFromURL(directurl);
+                direct.setProperty(DirectHTTP.PROPERTY_CUSTOM_HOST, "downloads." + getHost());
                 if (filenameFromURL != null) {
                     /*
                      * URL may redirect to another URL so we are in danger of loosing the track number which is usually containing in the

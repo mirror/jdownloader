@@ -17,13 +17,11 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
+import jd.http.requests.PostRequest;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -38,6 +36,10 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.decrypter.MixCloudComCrawler;
+
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mixcloud.com" }, urls = { "https?://stream\\d+\\.mixcloud\\.com/.+|https://thumbnailer\\.mixcloud\\.com/unsafe/.+" })
 public class MixCloudCom extends PluginForHost {
@@ -211,7 +213,9 @@ public class MixCloudCom extends PluginForHost {
             // br.getHeaders().put("Content-Type", "multipart/form-data;");
             // br.getHeaders().put("", "");
             // br.getHeaders().put("", "");
-            br.postPage("/authentication/email-login/", "email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+            final PostRequest request = br.createPostRequest("https://app.mixcloud.com/authentication/email-login/", "email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+            request.getHeaders().put(HTTPConstants.HEADER_REQUEST_CONTENT_TYPE, "application/x-www-form-urlencoded; charset=UTF-8");
+            br.getPage(request);
             /*
              * E.g. {"data": {"password": "test123456", "$valid": false, "email": "test123456", "$errors": {"email":
              * ["Username does not exist"]}}, "success": false}
