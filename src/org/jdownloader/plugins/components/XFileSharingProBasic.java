@@ -1053,8 +1053,11 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
         if (referer != null) {
             request.getHeaders().put(HTTPConstants.HEADER_REQUEST_REFERER, referer);
         }
-        final URLConnectionAdapter con = openAntiDDoSRequestConnection(br, request);
+        URLConnectionAdapter con = null;
+        final boolean followRedirectsOld = br.isFollowingRedirects();
         try {
+            br.setFollowRedirects(true);
+            con = openAntiDDoSRequestConnection(br, request);
             if (this.looksLikeDownloadableContent(con)) {
                 final long completeContentLength = con.getCompleteContentLength();
                 if (completeContentLength >= 0 && completeContentLength < 100) {
@@ -1090,6 +1093,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
             }
         } finally {
             con.disconnect();
+            br.setFollowRedirects(followRedirectsOld);
         }
     }
 
@@ -1107,13 +1111,19 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
         }
     }
 
+    /**
+     * Handling for older / standard XFS links for examle: </br>
+     * https://xfswebsite.tld/[a-z0-9]{12} </br>
+     * https://xfswebsite.tld/embed-[a-z0-9]{12}
+     */
     public AvailableStatus requestFileInformationWebsiteXFSOld(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
-        /* Old XFS handling */
+        if (probeDirectDownload(link, account, br, br.createGetRequest(this.getContentURLV2(link)), true)) {
+            return AvailableStatus.TRUE;
+        }
         if (this.supportsShortURLs()) {
-            // TODO: Case shortURL + directly downloadable isn't handled in an ideal way yet e.g. send.cm
             resolveShortURL(br, link, account);
         }
-        final URL_TYPE urltype = this.getURLType(link);
+        final URL_TYPE urltype = this.getURLType(br.getURL());
         // boolean looksLikeOffline = false;
         PluginException embedException = null;
         boolean hasCheckedEmbedHandling = false;
@@ -1232,7 +1242,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
     }
 
     /**
-     * 2019-05-15: This can check availability via '/embed' URL. <br />
+     * 2019-05-15: This can check availability via '/embed-[a-z0-9]{12}' URL. <br />
      * Only call this if internal_isVideohosterEmbed returns true. </br>
      *
      * @return final downloadurl
@@ -1243,19 +1253,23 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
          * online if we find a directurl. This also speeds-up linkchecking! Example: uqload.com
          */
         final String fid = this.getFUIDFromURL(link);
-        final URL_TYPE type = this.getURLType(link);
-        final String url;
-        if (type == URL_TYPE.EMBED_VIDEO) {
-            url = this.getContentURLV2(link);
-        } else {
-            url = this.getMainPage(br) + this.buildURLPath(link, fid, URL_TYPE.EMBED_VIDEO);
+        final URL_TYPE currentBrowserURLType = this.getURLType(br.getURL());
+        if (currentBrowserURLType != URL_TYPE.EMBED_VIDEO) {
+            /* URL needs to be accessed */
+            final URL_TYPE type = this.getURLType(link);
+            final String url;
+            if (type == URL_TYPE.EMBED_VIDEO) {
+                url = this.getContentURLV2(link);
+            } else {
+                url = this.getMainPage(br) + this.buildURLPath(link, fid, URL_TYPE.EMBED_VIDEO);
+            }
+            getPage(br, url);
         }
-        getPage(br, url);
         if (br.getRequest().getHtmlCode().equalsIgnoreCase("File was deleted")) {
             /* Should be valid for all XFS hosts e.g. speedvideo.net, uqload.com */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        this.checkErrors(br, url, link, account, false);
+        this.checkErrors(br, br.getRequest().getHtmlCode(), link, account, false);
         final String dllink = getDllink(link, account, br, getCorrectBR(br));
         if (!StringUtils.isEmpty(dllink)) {
             this.videoStreamDownloadurl = dllink;
@@ -1380,14 +1394,8 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
         if (!link.isNameSet()) {
             setWeakFilename(link, null);
         }
-        final boolean isFollowRedirect = br.isFollowingRedirects();
-        try {
-            br.setFollowRedirects(true);
-            if (probeDirectDownload(link, account, br, br.createGetRequest(this.getContentURL(link)), true)) {
-                return AvailableStatus.TRUE;
-            }
-        } finally {
-            br.setFollowRedirects(isFollowRedirect);
+        if (probeDirectDownload(link, account, br, br.createGetRequest(this.getContentURL(link)), true)) {
+            return AvailableStatus.TRUE;
         }
         if (isOffline(link, this.br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -1597,10 +1605,13 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
             final String contentURL = this.getContentURLV2(link);
             /* Short URLs -> We need to find the long FUID! */
             br.setFollowRedirects(true);
-            if (probeDirectDownload(link, account, br, br.createGetRequest(contentURL), true)) {
-                return;
-            } else if (this.isOffline(link, br)) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            /* Check if the URL we want has already been accessed with given browser instance */
+            if (br.getURL() == null || !br.getURL().equals(contentURL)) {
+                if (probeDirectDownload(link, account, br, br.createGetRequest(contentURL), true)) {
+                    return;
+                } else if (this.isOffline(link, br)) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
             }
             URL_TYPE type = getURLType(br.getURL());
             final String realFUID;

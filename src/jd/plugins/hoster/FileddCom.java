@@ -18,7 +18,6 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
@@ -126,15 +125,5 @@ public class FileddCom extends XFileSharingProBasic {
         if (new Regex(correctedBR, ">\\s*Free Members can download files no bigger than").matches()) {
             throw new AccountRequiredException();
         }
-    }
-
-    @Override
-    public String[] scanInfo(final String html, final String[] fileInfo) {
-        /* 2020-08-25: Special */
-        super.scanInfo(html, fileInfo);
-        if (StringUtils.isEmpty(fileInfo[1])) {
-            fileInfo[1] = new Regex(html, "<span>-->\\s*\\((\\d+\\.\\d+ [A-Za-z]+)\\)</b>").getMatch(0);
-        }
-        return fileInfo;
     }
 }

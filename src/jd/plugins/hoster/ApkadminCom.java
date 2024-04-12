@@ -104,15 +104,4 @@ public class ApkadminCom extends XFileSharingProBasic {
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
     }
-
-    @Override
-    public String[] scanInfo(final String[] fileInfo) {
-        super.scanInfo(fileInfo);
-        /* 2021-10-04 */
-        final String betterFilename = br.getRegex("(?i)File\\s*:\\s*<strong>([^<>\"]+)</strong>").getMatch(0);
-        if (betterFilename != null) {
-            fileInfo[0] = betterFilename;
-        }
-        return fileInfo;
-    }
 }

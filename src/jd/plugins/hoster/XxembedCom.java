@@ -136,12 +136,4 @@ public class XxembedCom extends XFileSharingProBasic {
             return super.isOffline(link, br);
         }
     }
-
-    @Override
-    public String[] scanInfo(final String[] fileInfo) {
-        super.scanInfo(fileInfo);
-        /* 2024-04-09: Ugly workaround to remove invalid values; filesize is not given by this filehost. */
-        fileInfo[1] = null;
-        return fileInfo;
-    }
 }
