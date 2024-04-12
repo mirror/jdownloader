@@ -73,8 +73,13 @@ public class AkwamCcCrawler extends PluginForDecrypt {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        final boolean isSingleRedirectLink = br.getURL().matches("^https?://[^/]+/link/\\d+$");
         final FilePackage fp = FilePackage.getInstance();
-        fp.setName(new Regex(html, "<title>(.*)</title>").getMatch(0).replace(" | اكوام", ""));
+        String title = new Regex(html, "<title>(.*)</title>").getMatch(0);
+        if (title != null) {
+            title = title.replace(" | اكوام", "");
+            fp.setName(title);
+        }
         String[][] links;
         final boolean isSeries = (html.contains("series-episodes") || html.contains("show-episodes")) && !br.getURL().matches("https?://[^/]+/movie/.+");
         if (isSeries) {
@@ -87,12 +92,14 @@ public class AkwamCcCrawler extends PluginForDecrypt {
             for (final String[] link : links) {
                 final String finalLink = link[0];
                 final DownloadLink dl = createDownloadlink(finalLink);
-                dl._setFilePackage(fp);
+                if (!isSingleRedirectLink) {
+                    dl._setFilePackage(fp);
+                }
                 ret.add(dl);
             }
         } else {
             /* Last resort */
-            final Pattern redirectpattern = Pattern.compile("(http?://[^/]+/link/\\d+)");
+            final Pattern redirectpattern = Pattern.compile("(?i)(http?://[^/]+/link/\\d+)");
             final PluginForHost plg = this.getNewPluginForHostInstance(this.getHost());
             final String[] urls = HTMLParser.getHttpLinks(br.getRequest().getHtmlCode(), br.getURL());
             for (final String url : urls) {
@@ -104,8 +111,7 @@ public class AkwamCcCrawler extends PluginForDecrypt {
             }
         }
         if (ret.isEmpty()) {
-            logger.info("Unsupported URL or crawler failure");
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Unsupported URL or crawler failure");
         }
         return ret;
     }
