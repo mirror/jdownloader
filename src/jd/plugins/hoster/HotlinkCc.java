@@ -20,10 +20,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-import org.jdownloader.plugins.components.config.XFSConfigVideoHotlinkCc;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -39,6 +35,10 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+import org.jdownloader.plugins.components.config.XFSConfigVideoHotlinkCc;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class HotlinkCc extends XFileSharingProBasic {
@@ -243,16 +243,6 @@ public class HotlinkCc extends XFileSharingProBasic {
             throw new AccountRequiredException();
         }
         super.doFree(link, account);
-    }
-
-    private boolean isPremium(final Account account) {
-        if (account == null) {
-            return false;
-        } else if (account.getType() == AccountType.PREMIUM) {
-            return true;
-        } else {
-            return false;
-        }
     }
 
     @Override
