@@ -3,15 +3,15 @@
   "dependencies":null,
   "filter":null,
   "installed":{
-    "date":"2023-11-20T17:16:33 CET",
+    "date":"2024-04-12T08:47:24 CEST",
     "dependencies":[{
       "groupId":"org.bouncycastle",
       "artifactId":"bcprov-jdk15to18",
-      "version":"1.77",
+      "version":"1.78",
       "type":"jar"
     }],
     "description":"The Bouncy Castle Java APIs for ASN.1 extension and utility APIs used to support bcpkix and bctls. This jar contains APIs for JDK 1.5 to JDK 1.8.",
-    "hashes":{"bcutil-jdk15on.jar":"4672f139e5455d849b85bb73e3a7921bc2ad2d3c35aacc005762959f656de1cb"},
+    "hashes":{"bcutil-jdk15on.jar":"51ce06aa34802cdb31a958af5988a55c508cbd9a9acc580df5447d06e1a61fdf"},
     "licenses":[{
       "name":"Bouncy Castle Licence",
       "url":"http://www.bouncycastle.org/licence.html",
@@ -19,7 +19,7 @@
     }],
     "minJRE":"JVM_1_5",
     "name":"Bouncy Castle ASN.1 Extension and Utility APIs",
-    "version":"1.77"
+    "version":"1.78"
   },
   "minJRE":"1.6",
   "provider":"maven",
