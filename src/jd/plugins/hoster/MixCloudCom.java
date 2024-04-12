@@ -208,7 +208,7 @@ public class MixCloudCom extends PluginForHost {
             // br.getHeaders().put("X-Mixcloud-Client-Version", "REDACTED");
             br.getHeaders().put("X-Mixcloud-Platform", "www");
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            br.getHeaders().put("Content-Type", "multipart/form-data;");
+            // br.getHeaders().put("Content-Type", "multipart/form-data;");
             // br.getHeaders().put("", "");
             // br.getHeaders().put("", "");
             br.postPage("/authentication/email-login/", "email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
