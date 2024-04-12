@@ -1757,10 +1757,10 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
                     }
                 }
             }
-            if (filename == null || filesizeBytesStr == null && pattern_shareboxWithFilenameAndFilesizeBytes != null) {
+            if ((filename == null || filesizeBytesStr == null) && pattern_shareboxWithFilenameAndFilesizeBytes != null) {
                 /* E.g. send.cm */
                 final Regex shareboxWithFilesizeBytesRegex = br.getRegex(pattern_shareboxWithFilenameAndFilesizeBytes);
-                if (filesizeBytesStr == null) {
+                if (filename == null) {
                     filename = shareboxWithFilesizeBytesRegex.getMatch(0);
                 }
                 if (filesizeBytesStr == null) {
