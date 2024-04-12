@@ -43,8 +43,13 @@ public class AkmfilesCom extends XFileSharingProBasic {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "akmfiles.com", "akmfls.xyz" });
+        ret.add(new String[] { "filepro.live", "akmfiles.com", "akmfls.xyz" });
         return ret;
+    }
+
+    @Override
+    public String rewriteHost(final String host) {
+        return this.rewriteHost(getPluginDomains(), host);
     }
 
     public static String[] getAnnotationNames() {

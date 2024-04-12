@@ -18,7 +18,6 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
@@ -30,16 +29,18 @@ import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.decrypter.MixCloudComCrawler;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "mixcloud.com" }, urls = { "https?://stream\\d+\\.mixcloud\\.com/.+|https://thumbnailer\\.mixcloud\\.com/unsafe/.+" })
-public class MixCloudCom extends antiDDoSForHost {
+public class MixCloudCom extends PluginForHost {
     public MixCloudCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.mixcloud.com/select/");
@@ -55,17 +56,29 @@ public class MixCloudCom extends antiDDoSForHost {
     // protocol: no https
     // other:
     /* Extension which will be used if no correct extension is found */
-    private static final String  default_extension = ".m4a";
+    private static final String default_extension = ".m4a";
     /* Connection stuff */
-    private static final boolean resume            = true;
-    private static final int     maxchunks         = 0;
-    private static final int     maxdownloads      = -1;
-    private String               dllink            = null;
-    private boolean              server_issues     = false;
+    private static final int    maxchunks         = 0;
+    private String              dllink            = null;
 
     @Override
     public String getAGBLink() {
         return "https://www.mixcloud.com/";
+    }
+
+    @Override
+    public boolean isResumeable(final DownloadLink link, final Account account) {
+        final AccountType type = account != null ? account.getType() : null;
+        if (AccountType.FREE.equals(type)) {
+            /* Free Account */
+            return true;
+        } else if (AccountType.PREMIUM.equals(type) || AccountType.LIFETIME.equals(type)) {
+            /* Premium account */
+            return true;
+        } else {
+            /* Free(anonymous) and unknown account type */
+            return false;
+        }
     }
 
     @Override
@@ -75,7 +88,6 @@ public class MixCloudCom extends antiDDoSForHost {
 
     private AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
         dllink = null;
-        server_issues = false;
         br.setFollowRedirects(true);
         final String url_filename = new Regex(link.getDownloadURL(), "mixcloud\\.com/(.+)").getMatch(0);
         String filename = link.getFinalFileName();
@@ -99,7 +111,7 @@ public class MixCloudCom extends antiDDoSForHost {
         if (!filename.endsWith(ext)) {
             filename += ext;
         }
-        dllink = Encoding.htmlDecode(dllink);
+        dllink = Encoding.htmlOnlyDecode(dllink);
         link.setFinalFileName(filename);
         if (!isDownload) {
             URLConnectionAdapter con = null;
@@ -107,7 +119,11 @@ public class MixCloudCom extends antiDDoSForHost {
                 con = br.openHeadConnection(this.dllink);
                 handleConnectionErrors(br, con);
                 if (con.getCompleteContentLength() > 0) {
-                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                    if (con.isContentDecoded()) {
+                        link.setDownloadSize(con.getCompleteContentLength());
+                    } else {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
                 }
             } finally {
                 try {
@@ -135,19 +151,17 @@ public class MixCloudCom extends antiDDoSForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
-        if (server_issues) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
-        } else if (StringUtils.isEmpty(dllink)) {
+        if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, this.isResumeable(link, null), maxchunks);
         handleConnectionErrors(br, dl.getConnection());
         dl.startDownload();
     }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return maxdownloads;
+        return Integer.MAX_VALUE;
     }
 
     /**
@@ -156,73 +170,70 @@ public class MixCloudCom extends antiDDoSForHost {
      */
     public boolean login(final Account account, final boolean force) throws Exception {
         synchronized (account) {
-            try {
-                br.setFollowRedirects(true);
-                br.setCookiesExclusive(true);
-                final Cookies cookies = account.loadCookies("");
-                String csrftoken = null;
-                if (cookies != null) {
-                    logger.info("Attempting cookie login");
-                    this.br.setCookies(this.getHost(), cookies);
-                    if (!force && System.currentTimeMillis() - account.getCookiesTimeStamp("") < 5 * 60 * 1000l) {
-                        logger.info("Cookies are still fresh --> Trust cookies without login");
-                        return false;
-                    }
-                    getPage("https://" + this.getHost() + "/");
-                    csrftoken = MixCloudComCrawler.findCsrftoken(br);
-                    this.postPageRaw("https://www.mixcloud.com/graphql", "{\"id\":\"q33\",\"query\":\"query DashboardStatsCardQuery {viewer {id,...F1}} fragment F0 on Stats {comments {totalCount},favorites {totalCount},reposts {totalCount},plays {totalCount},minutes {totalCount},__typename} fragment F1 on Viewer {me {username,hasProFeatures,isUploader,stats {...F0},id},id}\",\"variables\":{}}");
-                    final String username = PluginJSonUtils.getJson(br, "username");
-                    if (!StringUtils.isEmpty(username)) {
-                        logger.info("Cookie login successful");
-                        /* Refresh cookie timestamp */
-                        account.saveCookies(this.br.getCookies(br.getHost()), "");
-                        return true;
-                    } else {
-                        logger.info("Cookie login failed");
-                    }
+            br.setFollowRedirects(true);
+            br.setCookiesExclusive(true);
+            final Cookies cookies = account.loadCookies("");
+            String csrftoken = null;
+            if (cookies != null) {
+                logger.info("Attempting cookie login");
+                this.br.setCookies(this.getHost(), cookies);
+                if (!force) {
+                    /* Do not validate cookies */
+                    return false;
                 }
-                logger.info("Performing full login");
-                getPage("https://" + this.getHost() + "/");
+                br.getPage("https://" + this.getHost() + "/");
                 csrftoken = MixCloudComCrawler.findCsrftoken(br);
-                if (csrftoken == null) {
-                    logger.warning("Failed to find csrftoken");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                postPage("/authentication/email-login/", "email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-                /*
-                 * E.g. {"data": {"password": "test123456", "$valid": false, "email": "test123456", "$errors": {"email":
-                 * ["Username does not exist"]}}, "success": false}
-                 */
-                final String isValid = PluginJSonUtils.getJson(br, "success");
-                if (!StringUtils.equalsIgnoreCase(isValid, "true")) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-                account.saveCookies(this.br.getCookies(br.getHost()), "");
-                return true;
-            } catch (final PluginException e) {
-                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                br.postPageRaw("https://www.mixcloud.com/graphql", "{\"id\":\"q33\",\"query\":\"query DashboardStatsCardQuery {viewer {id,...F1}} fragment F0 on Stats {comments {totalCount},favorites {totalCount},reposts {totalCount},plays {totalCount},minutes {totalCount},__typename} fragment F1 on Viewer {me {username,hasProFeatures,isUploader,stats {...F0},id},id}\",\"variables\":{}}");
+                final String username = PluginJSonUtils.getJson(br, "username");
+                if (!StringUtils.isEmpty(username)) {
+                    logger.info("Cookie login successful");
+                    /* Refresh cookie timestamp */
+                    account.saveCookies(this.br.getCookies(br.getHost()), "");
+                    return true;
+                } else {
+                    logger.info("Cookie login failed");
+                    br.clearCookies(null);
                     account.clearCookies("");
                 }
-                throw e;
             }
+            logger.info("Performing full login");
+            br.getPage("https://" + this.getHost() + "/");
+            csrftoken = MixCloudComCrawler.findCsrftoken(br);
+            if (csrftoken == null) {
+                logger.warning("Failed to find csrftoken");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            br.getHeaders().put("Accept", "*/*");
+            br.getHeaders().put("Origin", "https://www.mixcloud.com");
+            // br.getHeaders().put("X-Mixcloud-Client-Version", "REDACTED");
+            br.getHeaders().put("X-Mixcloud-Platform", "www");
+            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+            br.getHeaders().put("Content-Type", "multipart/form-data;");
+            // br.getHeaders().put("", "");
+            // br.getHeaders().put("", "");
+            br.postPage("/authentication/email-login/", "email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+            /*
+             * E.g. {"data": {"password": "test123456", "$valid": false, "email": "test123456", "$errors": {"email":
+             * ["Username does not exist"]}}, "success": false}
+             */
+            final String isValid = PluginJSonUtils.getJson(br, "success");
+            if (!StringUtils.equalsIgnoreCase(isValid, "true")) {
+                throw new AccountInvalidException();
+            }
+            account.saveCookies(br.getCookies(br.getHost()), "");
+            return true;
         }
     }
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        try {
-            login(account, true);
-        } catch (final PluginException e) {
-            throw e;
-        }
+        login(account, true);
         final String hasProFeatures = PluginJSonUtils.getJson(br, "hasProFeatures");
         if ("true".equalsIgnoreCase(hasProFeatures)) {
             account.setType(AccountType.PREMIUM);
-            ai.setStatus("Premium user");
         } else {
             account.setType(AccountType.FREE);
-            ai.setStatus("Registered (free) user");
         }
         ai.setUnlimitedTraffic();
         account.setConcurrentUsePossible(true);
@@ -238,7 +249,7 @@ public class MixCloudCom extends antiDDoSForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return maxdownloads;
+        return Integer.MAX_VALUE;
     }
 
     @Override
