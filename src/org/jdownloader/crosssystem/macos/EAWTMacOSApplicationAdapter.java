@@ -28,6 +28,7 @@ import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.views.settings.ConfigurationView;
 
 import org.appwork.storage.config.JsonConfig;
+import org.appwork.utils.ReflectionUtils;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.os.CrossSystem.OperatingSystem;
 import org.appwork.utils.swing.windowmanager.WindowManager;
@@ -52,15 +53,15 @@ import com.apple.eawt.QuitHandler;
 import com.apple.eawt.QuitResponse;
 
 public class EAWTMacOSApplicationAdapter implements QuitHandler, AboutHandler, PreferencesHandler, AppReOpenedListener, OpenFilesHandler, OpenURIHandler {
-    public static void enableMacSpecial() {
-        Application macApplication = Application.getApplication();
+    public static void enableMacSpecial() throws Exception {
+        final Application macApplication = Application.getApplication();
         final EAWTMacOSApplicationAdapter adapter = new EAWTMacOSApplicationAdapter();
-        macApplication.setAboutHandler(adapter);
-        macApplication.setPreferencesHandler(adapter);
-        macApplication.setQuitHandler(adapter);
-        macApplication.addAppEventListener(adapter);
-        macApplication.setOpenFileHandler(adapter);
-        macApplication.setOpenURIHandler(adapter);
+        ReflectionUtils.invoke(macApplication.getClass(), "setAboutHandler", macApplication, void.class, adapter);
+        ReflectionUtils.invoke(macApplication.getClass(), "setPreferencesHandler", macApplication, void.class, adapter);
+        ReflectionUtils.invoke(macApplication.getClass(), "setQuitHandler", macApplication, void.class, adapter);
+        ReflectionUtils.invoke(macApplication.getClass(), "addAppEventListener", macApplication, void.class, adapter);
+        ReflectionUtils.invoke(macApplication.getClass(), "setOpenFileHandler", macApplication, void.class, adapter);
+        ReflectionUtils.invoke(macApplication.getClass(), "setOpenURIHandler", macApplication, void.class, adapter);
         if (CrossSystem.getOS().isMinimum(OperatingSystem.MAC_SIERRA)) {
             SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
                 public void run() {
