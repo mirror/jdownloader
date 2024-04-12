@@ -1802,7 +1802,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
                 }
             }
         }
-        if (StringUtils.isEmpty(filename) || StringUtils.isEmpty(filesizeWithUnit)) {
+        if (StringUtils.isEmpty(filename) || StringUtils.isAllEmpty(filesizeWithUnit, filesizeBytesStr)) {
             // eg dailyuploads.net
             final String downloadFileTable2 = new Regex(html, "<table[^>]*>.*?<h\\d+[^>]*>\\s*Download\\s*File\\s*</h\\d+>\\s*(.*?)</table>").getMatch(0);
             if (downloadFileTable2 != null) {
@@ -1859,7 +1859,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
              * 'supports_availablecheck_filesize_html' setting:
              */
         }
-        if (StringUtils.isEmpty(filesizeWithUnit)) {
+        if (filesizeBytesStr == null && filesizeWithUnit == null) {
             filesizeWithUnit = new Regex(html, "id\\s*=\\s*\"fsize[^\"]*\"\\s*>\\s*([0-9\\.]+\\s*[MBTGK]+)\\s*<").getMatch(0);
             if (StringUtils.isEmpty(filesizeWithUnit)) {
                 /* 2019-07-12: Example: Katfile.com */
@@ -1897,9 +1897,6 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
         /* MD5 is only available in very very rare cases! */
         final String md5 = new Regex(html, "<b>\\s*MD5.*?</b>.*?nowrap>\\s*(.*?)\\s*<").getMatch(0);
         fileInfo[2] = md5;
-        if (StringUtils.isEmpty(fileInfo[0])) {
-            fileInfo[0] = filename;
-        }
         return fileInfo;
     }
 
