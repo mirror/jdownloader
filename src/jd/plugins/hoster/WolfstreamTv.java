@@ -136,6 +136,7 @@ public class WolfstreamTv extends XFileSharingProBasic {
 
     @Override
     public String[] scanInfo(final String[] fileInfo) {
+        super.scanInfo(fileInfo);
         final String betterFileTitle = new Regex(correctedBR, "CONTENT=\"Watch video ([^\"]+)\"").getMatch(0);
         if (betterFileTitle != null) {
             fileInfo[0] = betterFileTitle;
@@ -144,16 +145,15 @@ public class WolfstreamTv extends XFileSharingProBasic {
         if (StringUtils.isEmpty(fileInfo[1])) {
             fileInfo[1] = new Regex(correctedBR, "<span\\s+class\\s*=\\s*\"\\s*uploadate\\s*\"\\s*>\\s*Size\\s*:\\s*([0-9\\.]+\\s*[KMGTP]{0,1}B)\\s*").getMatch(0);
         }
-        return super.scanInfo(fileInfo);
+        return fileInfo;
     }
 
     @Override
-    protected boolean isOffline(final DownloadLink link, final Browser br, final String correctedBR) {
-        // 2024-04-04
+    protected boolean isOffline(final DownloadLink link, final Browser br) {
         if (br.containsHTML(">\\s*File was locked by administrator")) {
             return true;
         } else {
-            return super.isOffline(link, br, correctedBR);
+            return super.isOffline(link, br);
         }
     }
 

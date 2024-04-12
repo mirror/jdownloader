@@ -225,7 +225,7 @@ public class VoeSx extends XFileSharingProBasic {
         final boolean embedOnly = br.containsHTML(">\\s*This video can be watched as embed only");
         br.setFollowRedirects(true);
         br.getPage(this.getMainPage(link) + "/e/" + this.getFUIDFromURL(link));
-        if (this.isOffline(link, br, correctedBR)) {
+        if (this.isOffline(link, br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String[] fileInfo = internal_getFileInfoArray();

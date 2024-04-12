@@ -34,7 +34,6 @@ import jd.parser.html.Form.MethodType;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
@@ -142,18 +141,6 @@ public class FilemoonSx extends XFileSharingProBasic {
     }
 
     @Override
-    protected String buildURLPath(final DownloadLink link, final String fuid, final URL_TYPE type) {
-        switch (type) {
-        case EMBED_VIDEO:
-            return "/e/" + fuid;
-        case NORMAL:
-            return "/d/" + fuid;
-        default:
-            throw new IllegalArgumentException("Unsupported type:" + type + "|" + fuid);
-        }
-    }
-
-    @Override
     protected boolean supports_availablecheck_alt() {
         return false;
     }
@@ -182,58 +169,6 @@ public class FilemoonSx extends XFileSharingProBasic {
             fileInfo[0] = betterFilename;
         }
         return fileInfo;
-    }
-
-    @Override
-    public AvailableStatus requestFileInformationWebsite(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
-        final URL_TYPE type = this.getURLType(link);
-        if (type == URL_TYPE.EMBED_VIDEO_2) {
-            /* Special handling */
-            if (!link.isNameSet()) {
-                /* Set fallback-filename */
-                setWeakFilename(link, null);
-            }
-            final String url = link.getPluginPatternMatcher();
-            final boolean isFollowRedirect = br.isFollowingRedirects();
-            try {
-                br.setFollowRedirects(true);
-                if (probeDirectDownload(link, account, br, br.createGetRequest(url), true)) {
-                    return AvailableStatus.TRUE;
-                }
-            } finally {
-                br.setFollowRedirects(isFollowRedirect);
-            }
-            final boolean isRefererBlocked = this.isRefererBlocked(br);
-            if (isRefererBlocked) {
-                /* We know that the item is online but we can't download it. */
-                return AvailableStatus.TRUE;
-            }
-            /* Try to find filename */
-            /* Check for errors */
-            this.checkErrors(br, url, link, account, false);
-            /* Try to find filename */
-            final Browser brc = br.cloneBrowser();
-            this.getPage(brc, "/d/" + this.getFUIDFromURL(link));
-            if (this.isOffline(link, brc, brc.getRequest().getHtmlCode())) {
-                logger.info("Video item looks to be not downloadable");
-            }
-            final String[] fileInfo = internal_getFileInfoArray();
-            scanInfo(fileInfo);
-            processFileInfo(fileInfo, brc, link);
-            if (!StringUtils.isEmpty(fileInfo[0])) {
-                /* Correct- and set filename */
-                setFilename(fileInfo[0], link, brc);
-            } else {
-                /*
-                 * Fallback. Do this again as now we got the html code available so we can e.g. know if this is a video-filehoster or not.
-                 */
-                this.setWeakFilename(link, brc);
-            }
-            /* No filename given -> Return AvailableStatus */
-            return AvailableStatus.TRUE;
-        } else {
-            return super.requestFileInformationWebsite(link, account, isDownload);
-        }
     }
 
     @Override
@@ -311,12 +246,17 @@ public class FilemoonSx extends XFileSharingProBasic {
     }
 
     @Override
-    protected boolean isOffline(final DownloadLink link, final Browser br, final String correctedBR) {
+    protected boolean isOffline(final DownloadLink link, final Browser br) {
         if (br.containsHTML("(?i)<h1>\\s*Page not found|class=\"error e404\"")) {
             return true;
         } else {
-            return super.isOffline(link, br, correctedBR);
+            return super.isOffline(link, br);
         }
+    }
+
+    @Override
+    protected boolean trustAvailablecheckVideoEmbed() {
+        return true;
     }
 
     @Override

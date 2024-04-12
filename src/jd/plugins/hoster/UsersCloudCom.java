@@ -133,12 +133,11 @@ public class UsersCloudCom extends XFileSharingProBasic {
     }
 
     @Override
-    protected boolean isOffline(final DownloadLink link, final Browser br, final String html) {
-        /* 2020-02-18: Special */
-        boolean isoffline = new Regex(html, ">\\s*(The file is no longer available|The file you are trying to download is no longer available)").matches();
-        if (!isoffline) {
-            isoffline = super.isOffline(link, br, html);
+    protected boolean isOffline(final DownloadLink link, final Browser br) {
+        if (br.containsHTML(">\\s*(The file is no longer available|The file you are trying to download is no longer available)")) {
+            return true;
+        } else {
+            return super.isOffline(link, br);
         }
-        return isoffline;
     }
 }

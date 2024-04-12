@@ -175,14 +175,13 @@ public class SendCm extends XFileSharingProBasic {
                     /* No result or more than one -> Problem! */
                     logger.info("Failed to find real FUID");
                     throw exc;
-                } else {
-                    /* Success! */
-                    final String realFUID = realFUIDs.iterator().next();
-                    final String contentURL = this.getContentURL(link);
-                    final String urlNew = URLHelper.parseLocation(new URL(this.getMainPage(link)), buildNormalURLPath(link, realFUID));
-                    logger.info("resolve URL|old: " + contentURL + "|new:" + urlNew);
-                    link.setPluginPatternMatcher(urlNew);
                 }
+                /* Success! */
+                final String realFUID = realFUIDs.iterator().next();
+                final String contentURL = this.getContentURL(link);
+                final String urlNew = URLHelper.parseLocation(new URL(this.getMainPage(link)), buildNormalURLPath(link, realFUID));
+                logger.info("resolve URL|old: " + contentURL + "|new:" + urlNew);
+                link.setPluginPatternMatcher(urlNew);
             }
         }
     }
@@ -289,7 +288,7 @@ public class SendCm extends XFileSharingProBasic {
 
     @Override
     public String[] scanInfo(final String html, String[] fileInfo) {
-        fileInfo = super.scanInfo(html, fileInfo);
+        super.scanInfo(html, fileInfo);
         String betterFilename = br.getRegex("class\\s*=\\s*\"modal-title\"\\s*id=\"qr\"[^>]*>\\s*([^<]*?)\\s*</h\\d+>").getMatch(0);
         if (betterFilename == null) {
             betterFilename = br.getRegex("data-feather\\s*=\\s*\"file\"[^>]*>\\s*</i>\\s*([^<]*?)\\s*</h\\d+>").getMatch(0);
@@ -308,11 +307,11 @@ public class SendCm extends XFileSharingProBasic {
     }
 
     @Override
-    protected boolean isOffline(final DownloadLink link, final Browser br, final String correctedBR) {
-        if (br.containsHTML("(?i)>\\s*The file you were looking for doesn")) {
+    protected boolean isOffline(final DownloadLink link, final Browser br) {
+        if (br.containsHTML(">\\s*The file you were looking for doesn")) {
             return true;
         } else {
-            return super.isOffline(link, br, correctedBR);
+            return super.isOffline(link, br);
         }
     }
 

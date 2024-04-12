@@ -18,15 +18,15 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+
 import jd.PluginWrapper;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class UploadrarCom extends XFileSharingProBasic {
@@ -51,7 +51,7 @@ public class UploadrarCom extends XFileSharingProBasic {
 
     @Override
     public String[] scanInfo(String[] fileInfo) {
-        fileInfo = super.scanInfo(fileInfo);
+        super.scanInfo(fileInfo);
         if (StringUtils.isEmpty(fileInfo[0])) {
             fileInfo[0] = br.getRegex("div\\s*class\\s*=\\s*\"desc\"\\s*>\\s*<span>\\s*(.*?)\\s*</span>").getMatch(0);
         }

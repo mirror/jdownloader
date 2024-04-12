@@ -106,14 +106,14 @@ public class SamaupCo extends XFileSharingProBasic {
     }
 
     @Override
-    public String[] scanInfo(final String[] fileInfo) {
+    public String[] scanInfo(final String html, final String[] fileInfo) {
         /* 2019-05-08: Special: Especially required for: Filenames of Picture-URLs, filesizes */
-        super.scanInfo(fileInfo);
+        super.scanInfo(html, fileInfo);
         if (StringUtils.isEmpty(fileInfo[0])) {
-            fileInfo[0] = new Regex(correctedBR, "<img id=\"img\\-preview\"[^>]+alt=\"([^<>\"]+)\" onclick=\"showFullScreen\\(\\)\">").getMatch(0);
+            fileInfo[0] = new Regex(html, "<img id=\"img\\-preview\"[^>]+alt=\"([^<>\"]+)\" onclick=\"showFullScreen\\(\\)\">").getMatch(0);
         }
         if (StringUtils.isEmpty(fileInfo[0])) {
-            fileInfo[1] = new Regex(correctedBR, "<li>size : (\\d+(?:(?:\\.|,)\\d+)? [A-Za-z]+)").getMatch(0);
+            fileInfo[1] = new Regex(html, "<li>size : (\\d+(?:(?:\\.|,)\\d+)? [A-Za-z]+)").getMatch(0);
         }
         return fileInfo;
     }

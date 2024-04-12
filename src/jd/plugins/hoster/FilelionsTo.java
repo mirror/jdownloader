@@ -138,11 +138,11 @@ public class FilelionsTo extends XFileSharingProBasic {
     }
 
     @Override
-    protected boolean isOffline(final DownloadLink link, final Browser br, final String correctedBR) {
+    protected boolean isOffline(final DownloadLink link, final Browser br) {
         if (br.containsHTML(">\\s*File is no longer available")) {
             return true;
         } else {
-            return super.isOffline(link, br, correctedBR);
+            return super.isOffline(link, br);
         }
     }
 
@@ -151,6 +151,27 @@ public class FilelionsTo extends XFileSharingProBasic {
         super.checkErrors(br, html, link, account, checkAll);
         if (br.containsHTML(">\\s*Video temporarily not available")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Video temporarily not available");
+        }
+    }
+
+    @Override
+    protected URL_TYPE getURLType(final String url) {
+        if (url == null) {
+            return null;
+        }
+        if (url.matches("(?i)^https?://[A-Za-z0-9\\-\\.:]+/v/([a-z0-9]{12}).*")) {
+            return URL_TYPE.EMBED_VIDEO_2;
+        } else {
+            return super.getURLType(url);
+        }
+    }
+
+    @Override
+    protected String buildURLPath(final DownloadLink link, final String fuid, final URL_TYPE type) {
+        if (type == URL_TYPE.EMBED_VIDEO_2) {
+            return "/v/" + fuid;
+        } else {
+            return super.buildURLPath(link, fuid, type);
         }
     }
 }

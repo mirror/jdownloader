@@ -18,6 +18,9 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.Regex;
@@ -25,9 +28,6 @@ import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class RacatyNet extends XFileSharingProBasic {
@@ -113,16 +113,22 @@ public class RacatyNet extends XFileSharingProBasic {
 
     @Override
     public String[] scanInfo(final String[] fileInfo) {
-        fileInfo[0] = new Regex(correctedBR, "<title>([^<>\"]+) free download at Racaty\\.[A-Za-z0-9]+</title>").getMatch(0);
-        if (StringUtils.isEmpty(fileInfo[0])) {
-            fileInfo[0] = new Regex(correctedBR, "<h5>Identity</h5><p>([^<>\"]+)</p>").getMatch(0);
-        }
-        fileInfo[1] = new Regex(correctedBR, "b>Size:</b> (\\d+(?:\\.\\d+)? .*?)\\s+").getMatch(0);
-        if (fileInfo[1] == null) {
-            /* 2020-03-31 */
-            fileInfo[1] = new Regex(correctedBR, ">Size\\s*:([^<>\"]+) / Uploaded:").getMatch(0);
-        }
         super.scanInfo(fileInfo);
+        String filename = new Regex(correctedBR, "<title>([^<>\"]+) free download at Racaty\\.[A-Za-z0-9]+</title>").getMatch(0);
+        if (StringUtils.isEmpty(filename)) {
+            filename = new Regex(correctedBR, "<h5>Identity</h5><p>([^<>\"]+)</p>").getMatch(0);
+        }
+        String filesize = new Regex(correctedBR, "b>Size:</b> (\\d+(?:\\.\\d+)? .*?)\\s+").getMatch(0);
+        if (filesize == null) {
+            /* 2020-03-31 */
+            filesize = new Regex(correctedBR, ">Size\\s*:([^<>\"]+) / Uploaded:").getMatch(0);
+        }
+        if (filename != null) {
+            fileInfo[0] = filename;
+        }
+        if (filesize != null) {
+            fileInfo[1] = filesize;
+        }
         return fileInfo;
     }
 

@@ -119,10 +119,13 @@ public class MexashareCom extends XFileSharingProBasic {
     }
 
     @Override
-    public String[] scanInfo(final String[] fileInfo) {
+    public String[] scanInfo(final String html, final String[] fileInfo) {
         /* 2019-08-28: Special */
-        fileInfo[0] = new Regex(correctedBR, ">You have requested the file[^<>]+<a[^>]+>([^<>\"]+)<").getMatch(0);
-        super.scanInfo(fileInfo);
+        super.scanInfo(html, fileInfo);
+        final String filename = new Regex(html, "(?i)>\\s*You have requested the file[^<>]+<a[^>]+>([^<>\"]+)<").getMatch(0);
+        if (filename != null) {
+            fileInfo[0] = filename;
+        }
         return fileInfo;
     }
 

@@ -72,7 +72,7 @@ public class XvideosharingCom extends XFileSharingProBasic {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
         ret.add(new String[] { "xvideosharing.com" });
-        ret.add(new String[] { "vidspeeds.com" });
+        ret.add(new String[] { "vidspeeds.com", "vidspeed.net" });
         return ret;
     }
 

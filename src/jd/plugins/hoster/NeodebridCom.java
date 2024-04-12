@@ -20,6 +20,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.JSonMapperException;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -38,13 +45,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
-
-import org.appwork.storage.JSonMapperException;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "neodebrid.com" }, urls = { "https?://(?:www\\.)?neodebrid\\.com/dl/([A-Z0-9]+)" })
 public class NeodebridCom extends PluginForHost {
@@ -66,6 +66,11 @@ public class NeodebridCom extends PluginForHost {
     public NeodebridCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://neodebrid.com/premium");
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.MULTIHOST, LazyPlugin.FEATURE.USERNAME_IS_EMAIL };
     }
 
     @Override
@@ -105,9 +110,13 @@ public class NeodebridCom extends PluginForHost {
         if (filename != null) {
             filename = Encoding.htmlDecode(filename).trim();
             link.setName(filename);
+        } else {
+            logger.warning("Failed to find filename");
         }
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
+        } else {
+            logger.warning("Failed to find filesize");
         }
         return AvailableStatus.TRUE;
     }
@@ -186,11 +195,6 @@ public class NeodebridCom extends PluginForHost {
             mhm.handleErrorGeneric(account, link, "unknown_dl_error", 10, 5 * 60 * 1000l);
         }
         this.dl.startDownload();
-    }
-
-    @Override
-    public LazyPlugin.FEATURE[] getFeatures() {
-        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.MULTIHOST };
     }
 
     @Override
@@ -446,42 +450,36 @@ public class NeodebridCom extends PluginForHost {
 
     private Map<String, Object> loginAPI(final Account account, final boolean validateToken) throws Exception {
         synchronized (account) {
-            try {
-                br.setFollowRedirects(true);
-                String api_token = getApiToken(account);
-                Map<String, Object> entries = null;
-                if (api_token != null) {
-                    if (!validateToken) {
-                        return null;
-                    }
-                    logger.info("Checking existing token...");
-                    try {
-                        entries = this.callAPI(account, null, br, "/info?token=" + this.getApiToken(account), false);
-                        logger.info("Stored token was valid");
-                        return entries;
-                    } catch (final PluginException ignore) {
-                        /**
-                         * E.g. {"status":"error","reason":"Session expired. Please log-in again."} or </br>
-                         * {"status":"error","reason":"Token not found."}
-                         */
-                        logger.info("Stored token was INVALID, performing full login");
-                        br.clearCookies(null);
-                    }
+            br.setFollowRedirects(true);
+            String api_token = getApiToken(account);
+            Map<String, Object> entries = null;
+            if (api_token != null) {
+                if (!validateToken) {
+                    return null;
                 }
-                entries = this.callAPI(account, null, br, "/login?email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()), false);
-                api_token = (String) entries.get("api_token");
-                if (StringUtils.isEmpty(api_token)) {
-                    /* This should never happen! */
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                account.setProperty(PROPERTY_ACCOUNT_api_token, api_token);
-                return entries;
-            } catch (final PluginException e) {
-                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                logger.info("Checking existing token...");
+                try {
+                    entries = this.callAPI(account, null, br, "/info?token=" + this.getApiToken(account), false);
+                    logger.info("Stored token was valid");
+                    return entries;
+                } catch (final PluginException ignore) {
+                    /**
+                     * E.g. {"status":"error","reason":"Session expired. Please log-in again."} or </br>
+                     * {"status":"error","reason":"Token not found."}
+                     */
+                    logger.info("Stored token was INVALID, performing full login");
+                    br.clearCookies(null);
                     account.removeProperty(PROPERTY_ACCOUNT_api_token);
                 }
-                throw e;
             }
+            entries = this.callAPI(account, null, br, "/login?email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()), false);
+            api_token = (String) entries.get("api_token");
+            if (StringUtils.isEmpty(api_token)) {
+                /* This should never happen! */
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            account.setProperty(PROPERTY_ACCOUNT_api_token, api_token);
+            return entries;
         }
     }
 

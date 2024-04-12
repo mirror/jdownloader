@@ -46,7 +46,7 @@ public class VeevTo extends XFileSharingProBasic {
      * DEV NOTES XfileSharingProBasic Version SEE SUPER-CLASS<br />
      * mods: See overridden functions<br />
      * limit-info:<br />
-     * captchatype-info: null 4dignum solvemedia reCaptchaV2, hcaptcha<br />
+     * captchatype-info: 2024-04-10: reCaptchaV2 <br />
      * other:<br />
      */
     public static List<String[]> getPluginDomains() {
@@ -72,7 +72,7 @@ public class VeevTo extends XFileSharingProBasic {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "(?::\\d+)?" + "/(?:d|e)/([A-Za-z0-9]{12,})");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + getDefaultAnnotationPatternPartXFSNew());
         }
         return ret.toArray(new String[0]);
     }
@@ -166,20 +166,6 @@ public class VeevTo extends XFileSharingProBasic {
     }
 
     @Override
-    protected String buildURLPath(final DownloadLink link, final String fuid, final URL_TYPE type) {
-        switch (type) {
-        case NORMAL:
-            return "/d/" + fuid;
-        case EMBED_VIDEO_2:
-            return "/e/" + fuid;
-        case OFFICIAL_VIDEO_DOWNLOAD:
-            return "/d/" + fuid;
-        default:
-            return super.buildURLPath(link, fuid, type);
-        }
-    }
-
-    @Override
     public String[] scanInfo(final String html, final String[] fileInfo) {
         super.scanInfo(html, fileInfo);
         final String betterFilename = new Regex(html, "<h4>([^<]+)</h4>").getMatch(0);
@@ -187,10 +173,5 @@ public class VeevTo extends XFileSharingProBasic {
             fileInfo[0] = betterFilename;
         }
         return fileInfo;
-    }
-
-    @Override
-    protected boolean isVideohoster_enforce_video_filename() {
-        return true;
     }
 }

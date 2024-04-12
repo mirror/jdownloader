@@ -397,19 +397,19 @@ public class DoodstreamCom extends XFileSharingProBasic {
     }
 
     @Override
-    protected boolean isOffline(final DownloadLink link, final Browser br, final String html) {
+    protected boolean isOffline(final DownloadLink link, final Browser br) {
         /**
          * 2021-08-20: Hoster is playing cat & mouse games by adding fake "file not found" texts. </br>
          * An empty embed iframe is a sign that the item is offline.
          */
-        if (new Regex(html, "<iframe src=\"/e/\"").matches()) {
+        if (br.containsHTML("<iframe src=\"/e/\"")) {
             /* 2021-26-04 */
             // all videos are now
             // <h1>Not Found</h1>
             // <p>video you are looking for is not found.</p>
-            if (new Regex(html, "minimalUserResponseInMiliseconds\\s*=").matches()) {
+            if (br.containsHTML("minimalUserResponseInMiliseconds\\s*=")) {
                 return false;
-            } else if (new Regex(html, "'(/cptr/.*?)'").getMatch(0) != null) {
+            } else if (br.containsHTML("'/cptr/.*?'")) {
                 return false;
             } else {
                 return true;
@@ -464,7 +464,7 @@ public class DoodstreamCom extends XFileSharingProBasic {
         getPage(contentURL);
         /* Allow redirects to other content-IDs but files should be offline if there is e.g. a redirect to an unsupported URL format. */
         final String correctedhtml = getCorrectBR(br);
-        if (isOffline(link, this.br, correctedhtml) || !this.canHandle(this.br.getURL())) {
+        if (isOffline(link, this.br) || !this.canHandle(this.br.getURL())) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String cptr = br.getRegex("'(/cptr/.*?)'").getMatch(0);

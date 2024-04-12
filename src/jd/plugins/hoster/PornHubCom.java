@@ -534,6 +534,7 @@ public class PornHubCom extends PluginForHost {
             } else if (from != null && from.length == 2) {
                 html_filename = from[0] + "@" + from[1].replace(":", "-") + "_" + viewKey;
             } else {
+                /* Fallback */
                 html_filename = viewKey;
             }
             if (!webm) {

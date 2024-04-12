@@ -108,7 +108,11 @@ public class KhinsiderCom extends PluginForHost {
                 con = br.openHeadConnection(link.getPluginPatternMatcher());
                 handleConnectionErrors(br, con);
                 if (con.getCompleteContentLength() > 0) {
-                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                    if (con.isContentDecoded()) {
+                        link.setDownloadSize(con.getCompleteContentLength());
+                    } else {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
                 }
                 final String filename = Plugin.getFileNameFromDispositionHeader(con);
                 if (filename != null) {
@@ -192,7 +196,7 @@ public class KhinsiderCom extends PluginForHost {
             if (!isLoggedin(br)) {
                 throw new AccountInvalidException();
             }
-            account.saveCookies(this.br.getCookies(br.getHost()), "");
+            account.saveCookies(br.getCookies(br.getHost()), "");
             return true;
         }
     }

@@ -234,21 +234,24 @@ public class DdownloadCom extends XFileSharingProBasic {
     }
 
     @Override
-    public String[] scanInfo(final String[] fileInfo) {
+    public String[] scanInfo(final String html, final String[] fileInfo) {
         /* 2020-05-17 */
-        fileInfo[0] = new Regex(correctedBR, "<div class=\"name position-relative\">\\s*<h4>([^<>\"]+)</h4>").getMatch(0);
-        if (StringUtils.isEmpty(fileInfo[0])) {
+        super.scanInfo(html, fileInfo);
+        String filename = new Regex(html, "<div class=\"name position-relative\">\\s*<h4>([^<>\"]+)</h4>").getMatch(0);
+        if (StringUtils.isEmpty(filename)) {
             /* 2021-03-25 */
-            fileInfo[0] = new Regex(correctedBR, ">File\\s*:\\s*<font[^>]*>([^<>\"]+)<").getMatch(0);
+            filename = new Regex(html, ">File\\s*:\\s*<font[^>]*>([^<>\"]+)<").getMatch(0);
         }
-        fileInfo[1] = new Regex(correctedBR, "class=\"file-size\">([^<>\"]+)<").getMatch(0);
-        if (StringUtils.isEmpty(fileInfo[1])) {
+        String filesize = new Regex(html, "class=\"file-size\">([^<>\"]+)<").getMatch(0);
+        if (StringUtils.isEmpty(filesize)) {
             /* 2021-03-25 */
-            fileInfo[1] = new Regex(correctedBR, "\\[<font[^>]*>(\\d+[^<>\"]+)</font>\\]").getMatch(0);
+            filesize = new Regex(html, "\\[<font[^>]*>(\\d+[^<>\"]+)</font>\\]").getMatch(0);
         }
-        if (StringUtils.isEmpty(fileInfo[0]) || StringUtils.isEmpty(fileInfo[1])) {
-            /* Fallback to template handling */
-            super.scanInfo(fileInfo);
+        if (!StringUtils.isEmpty(filename)) {
+            fileInfo[0] = filename;
+        }
+        if (!StringUtils.isEmpty(filesize)) {
+            fileInfo[1] = filesize;
         }
         return fileInfo;
     }
@@ -426,13 +429,14 @@ public class DdownloadCom extends XFileSharingProBasic {
     }
 
     @Override
-    protected boolean isOffline(final DownloadLink link, final Browser br, final String html) {
+    protected boolean isOffline(final DownloadLink link, final Browser br) {
         /* 2020-01-17: Special */
-        if (new Regex(html, ">\\s*This file was banned by copyright").matches()) {
+        if (br.containsHTML(">\\s*This file was banned by copyright")) {
             /* "<strong>Oops!</strong> This file was banned by copyright owner's report" */
             return true;
+        } else {
+            return super.isOffline(link, br);
         }
-        return super.isOffline(link, br, html);
     }
 
     @Override

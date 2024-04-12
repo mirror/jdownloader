@@ -20,6 +20,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -28,12 +33,6 @@ import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class AniStreamCom extends XFileSharingProBasic {
@@ -121,24 +120,27 @@ public class AniStreamCom extends XFileSharingProBasic {
     }
 
     @Override
-    public String[] scanInfo(final String[] fileInfo) {
-        /* 2020-06-16: Special */
-        fileInfo[0] = new Regex(correctedBR, Pattern.compile(this.getFUIDFromURL(this.getDownloadLink()) + "\">([^<>\"]+)</a>", Pattern.CASE_INSENSITIVE)).getMatch(0);
-        fileInfo[1] = new Regex(correctedBR, "\\(([0-9]+ byte)\\)").getMatch(0);
-        if (StringUtils.isEmpty(fileInfo[0]) || StringUtils.isEmpty(fileInfo[1])) {
-            super.scanInfo(fileInfo);
+    public String[] scanInfo(final String html, final String[] fileInfo) {
+        /* 2019-08-21: Special */
+        super.scanInfo(html, fileInfo);
+        final String filename = new Regex(html, Pattern.compile(this.getFUIDFromURL(this.getDownloadLink()) + "\">([^<>\"]+)</a>", Pattern.CASE_INSENSITIVE)).getMatch(0);
+        if (filename != null) {
+            fileInfo[0] = filename;
+        }
+        final String filesize = new Regex(html, "\\(([0-9]+ byte)\\)").getMatch(0);
+        if (filesize != null) {
+            fileInfo[1] = filesize;
         }
         return fileInfo;
     }
 
     @Override
-    protected boolean isOffline(final DownloadLink link, final Browser br, final String html) {
-        boolean offline = super.isOffline(link, br, html);
-        if (!offline) {
-            /* 2020-08-04 */
-            offline = new Regex(html, ">\\s*File deleted|>\\s*This file is not available anymore").matches();
+    protected boolean isOffline(final DownloadLink link, final Browser br) {
+        if (br.containsHTML(">\\s*File deleted|>\\s*This file is not available anymore")) {
+            return true;
+        } else {
+            return super.isOffline(link, br);
         }
-        return offline;
     }
 
     @Override

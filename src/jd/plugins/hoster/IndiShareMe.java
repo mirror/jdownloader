@@ -173,10 +173,10 @@ public class IndiShareMe extends XFileSharingProBasic {
     }
 
     @Override
-    protected boolean isOffline(final DownloadLink link, final Browser br, final String correctedBR) {
+    protected boolean isOffline(final DownloadLink link, final Browser br) {
         if (containsFakeError(br)) {
             return false;
-        } else if (super.isOffline(link, br, correctedBR)) {
+        } else if (super.isOffline(link, br)) {
             return true;
         } else {
             return false;

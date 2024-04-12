@@ -20,6 +20,7 @@ import java.util.List;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -36,6 +37,19 @@ public class UbiqfileCom extends XFileSharingProBasic {
     public UbiqfileCom(final PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium(super.getPurchasePremiumURL());
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        final LazyPlugin.FEATURE[] features = super.getFeatures();
+        final LazyPlugin.FEATURE[] featuresNew = new LazyPlugin.FEATURE[features.length + 1];
+        int index = 0;
+        for (final LazyPlugin.FEATURE feature : features) {
+            featuresNew[index] = feature;
+            index++;
+        }
+        featuresNew[featuresNew.length - 1] = LazyPlugin.FEATURE.USERNAME_IS_EMAIL;
+        return featuresNew;
     }
 
     /**

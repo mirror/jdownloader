@@ -129,12 +129,12 @@ public class FileddCom extends XFileSharingProBasic {
     }
 
     @Override
-    public String[] scanInfo(final String[] fileInfo) {
+    public String[] scanInfo(final String html, final String[] fileInfo) {
         /* 2020-08-25: Special */
+        super.scanInfo(html, fileInfo);
         if (StringUtils.isEmpty(fileInfo[1])) {
-            fileInfo[1] = new Regex(br.toString(), "<span>-->\\s*\\((\\d+\\.\\d+ [A-Za-z]+)\\)</b>").getMatch(0);
+            fileInfo[1] = new Regex(html, "<span>-->\\s*\\((\\d+\\.\\d+ [A-Za-z]+)\\)</b>").getMatch(0);
         }
-        super.scanInfo(fileInfo);
         return fileInfo;
     }
 }

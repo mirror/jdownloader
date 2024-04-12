@@ -140,13 +140,12 @@ public class VidozaNet extends XFileSharingProBasic {
     }
 
     @Override
-    protected boolean isOffline(final DownloadLink link, final Browser br, final String html) {
-        boolean isOffline = super.isOffline(link, br, html);
-        if (!isOffline && html != null) {
-            /* 2019-07-04: Special: */
-            isOffline = html.contains("/embed-.html\"") || html.contains("Reason for deletion:");
+    protected boolean isOffline(final DownloadLink link, final Browser br) {
+        if (br.containsHTML("/embed-\\.html\"|Reason for deletion:")) {
+            return true;
+        } else {
+            return super.isOffline(link, br);
         }
-        return isOffline;
     }
 
     @Override

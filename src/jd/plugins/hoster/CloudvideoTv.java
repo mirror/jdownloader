@@ -18,6 +18,9 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+import org.jdownloader.plugins.components.config.XFSConfigVideoCloudvideoTv;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.Regex;
@@ -27,9 +30,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-import org.jdownloader.plugins.components.config.XFSConfigVideoCloudvideoTv;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class CloudvideoTv extends XFileSharingProBasic {
@@ -116,20 +116,20 @@ public class CloudvideoTv extends XFileSharingProBasic {
 
     @Override
     protected void checkErrors(final Browser br, final String html, final DownloadLink link, final Account account, final boolean checkAll) throws NumberFormatException, PluginException {
-        if (new Regex(html, ">\\s*Index page here").matches()) {
+        if (new Regex(html, ">\\s*Index page here").patternFind()) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Not (yet) downloadable: Video is still being encoded or broken");
         }
         super.checkErrors(br, html, link, account, checkAll);
     }
 
     @Override
-    protected boolean isOffline(final DownloadLink link, final Browser br, final String html) {
-        boolean offline = super.isOffline(link, br, html);
+    protected boolean isOffline(final DownloadLink link, final Browser br) {
+        boolean offline = super.isOffline(link, br);
         if (offline) {
             return true;
         } else {
             /* 2021-03-08 */
-            return new Regex(html, "class=\"error-title\">\\s*404|>\\s*You may have mistyped the address").matches();
+            return br.containsHTML("class=\"error-title\">\\s*404|>\\s*You may have mistyped the address");
         }
     }
 

@@ -106,10 +106,10 @@ public class FileupOrg extends XFileSharingProBasic {
     }
 
     @Override
-    public String[] scanInfo(final String[] fileInfo) {
-        super.scanInfo(fileInfo);
+    public String[] scanInfo(final String html, final String[] fileInfo) {
+        super.scanInfo(html, fileInfo);
         if (StringUtils.isEmpty(fileInfo[1])) {
-            fileInfo[1] = new Regex(correctedBR, "You have requested.*?https?://(?:www\\.)?[^/]+/\\s*?" + this.getFUIDFromURL(this.getDownloadLink()) + "</span>\\s*?\\((\\d+(?:\\.\\d{1,2})? [A-Za-z]{2,5})\\)</p>").getMatch(0);
+            fileInfo[1] = new Regex(html, "You have requested.*?https?://(?:www\\.)?[^/]+/\\s*?" + this.getFUIDFromURL(this.getDownloadLink()) + "</span>\\s*?\\((\\d+(?:\\.\\d{1,2})? [A-Za-z]{2,5})\\)</p>").getMatch(0);
         }
         return fileInfo;
     }

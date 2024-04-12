@@ -21,7 +21,6 @@ import java.util.List;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.parser.Regex;
@@ -120,10 +119,10 @@ public class PornveCom extends XFileSharingProBasic {
     }
 
     @Override
-    public String[] scanInfo(final String[] fileInfo) {
-        super.scanInfo(fileInfo);
+    public String[] scanInfo(final String html, final String[] fileInfo) {
+        super.scanInfo(html, fileInfo);
         if (StringUtils.isEmpty(fileInfo[0])) {
-            fileInfo[0] = new Regex(correctedBR, "property=\"og:title\" content=\"([^<>\"]+)\"").getMatch(0);
+            fileInfo[0] = new Regex(html, "property=\"og:title\" content=\"([^<>\"]+)\"").getMatch(0);
         }
         return fileInfo;
     }

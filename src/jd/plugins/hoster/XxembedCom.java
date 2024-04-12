@@ -21,6 +21,7 @@ import java.util.List;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
@@ -43,7 +44,7 @@ public class XxembedCom extends XFileSharingProBasic {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "xxembed.com" });
+        ret.add(new String[] { "xxembed.com", "rutood.com" });
         return ret;
     }
 
@@ -119,6 +120,21 @@ public class XxembedCom extends XFileSharingProBasic {
     @Override
     protected boolean supports_availablecheck_filename_abuse() {
         return false;
+    }
+
+    @Override
+    protected boolean supports_availablecheck_filesize_bytes_from_sharebox() {
+        return false;
+    }
+
+    @Override
+    protected boolean isOffline(final DownloadLink link, final Browser br) {
+        if (br.containsHTML("<h2>Download video</h2>")) {
+            /* Empty page without download options e.g.https://rutood.com/xxxxxxyyyyyy.html */
+            return true;
+        } else {
+            return super.isOffline(link, br);
+        }
     }
 
     @Override

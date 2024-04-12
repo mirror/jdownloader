@@ -22,7 +22,6 @@ import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
-import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.parser.html.InputField;
 import jd.plugins.Account;
@@ -152,12 +151,12 @@ public class KatfileCom extends XFileSharingProBasic {
     }
 
     @Override
-    protected boolean isOffline(final DownloadLink link, final Browser br, final String html) {
-        boolean isoffline = super.isOffline(link, br, html);
-        if (!isoffline) {
-            isoffline = new Regex(html, "(?i)/404-remove|>The file expired>The file was deleted by its owner").matches();
+    protected boolean isOffline(final DownloadLink link, final Browser br) {
+        if (br.containsHTML("(?i)/404-remove|>The file expired>The file was deleted by its owner")) {
+            return true;
+        } else {
+            return super.isOffline(link, br);
         }
-        return isoffline;
     }
 
     @Override

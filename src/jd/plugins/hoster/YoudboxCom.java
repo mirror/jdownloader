@@ -127,7 +127,7 @@ public class YoudboxCom extends XFileSharingProBasic {
     }
 
     @Override
-    protected String getFUID(final String url, URL_TYPE type) {
+    protected String getFUID(final String url, final URL_TYPE type) {
         final String idFromSpecialPattern = new Regex(url, PATTERN_SPECIAL).getMatch(0);
         if (idFromSpecialPattern != null) {
             return idFromSpecialPattern;

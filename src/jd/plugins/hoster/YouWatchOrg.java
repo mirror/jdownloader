@@ -182,18 +182,16 @@ public class YouWatchOrg extends XFileSharingProBasic {
     @Override
     public String[] scanInfo(final String[] fileInfo) {
         /* 2020-06-12: Special: Encrypted filenames */
-        // super.scanInfo(fileInfo);
-        if (StringUtils.isEmpty(fileInfo[0])) {
-            fileInfo[0] = new Regex(correctedBR, "<h3 id=\"title\">([^<>\"]*?)</h3>").getMatch(0);
-        }
-        if (!StringUtils.isEmpty(fileInfo[0])) {
+        super.scanInfo(fileInfo);
+        String filename = new Regex(correctedBR, "<h3 id=\"title\">([^<>\"]*?)</h3>").getMatch(0);
+        if (!StringUtils.isEmpty(filename)) {
             // Decode Caesar's shift code
-            fileInfo[0] = fileInfo[0].replaceAll("(</?b>|\\.html)", "");
-            fileInfo[0] = fileInfo[0].trim();
-            if (br.containsHTML("\\$\\(\"\\#title\"\\).text\\(\\s*vrot\\(\\s*\\$\\(\"\\#title\"\\)") && fileInfo[0] != null) {
+            filename = filename.replaceAll("(</?b>|\\.html)", "");
+            filename = filename.trim();
+            if (br.containsHTML("\\$\\(\"\\#title\"\\).text\\(\\s*vrot\\(\\s*\\$\\(\"\\#title\"\\)") && filename != null) {
                 final StringBuilder sb = new StringBuilder();
-                for (int index = 0; index < fileInfo[0].length(); index++) {
-                    final char c = fileInfo[0].charAt(index);
+                for (int index = 0; index < filename.length(); index++) {
+                    final char c = filename.charAt(index);
                     final String v = String.valueOf(c);
                     if (v.matches("[a-zA-Z]{1}")) {
                         final char n = (char) (c + (v.toUpperCase(Locale.ENGLISH).charAt(0) <= 'M' ? 13 : -13));
@@ -202,19 +200,23 @@ public class YouWatchOrg extends XFileSharingProBasic {
                         sb.append(c);
                     }
                 }
-                fileInfo[0] = sb.toString();
+                filename = sb.toString();
             }
+        }
+        if (filename != null) {
+            fileInfo[0] = filename;
         }
         return fileInfo;
     }
 
     @Override
-    protected boolean isOffline(final DownloadLink link, final Browser br, final String html) {
-        if (!br.getURL().contains(this.getFUIDFromURL(this.getDownloadLink()))) {
+    protected boolean isOffline(final DownloadLink link, final Browser br) {
+        final String fuid = this.getFUIDFromURL(this.getDownloadLink());
+        if (fuid != null && !br.getURL().contains(fuid)) {
             /* 2021-02-22 */
             return true;
         } else {
-            return super.isOffline(link, br, html);
+            return super.isOffline(link, br);
         }
     }
 }
