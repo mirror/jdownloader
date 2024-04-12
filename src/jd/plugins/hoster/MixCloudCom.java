@@ -185,7 +185,7 @@ public class MixCloudCom extends PluginForHost {
                 }
                 br.getPage("https://" + this.getHost() + "/");
                 csrftoken = MixCloudComCrawler.findCsrftoken(br);
-                br.postPageRaw("https://www.mixcloud.com/graphql", "{\"id\":\"q33\",\"query\":\"query DashboardStatsCardQuery {viewer {id,...F1}} fragment F0 on Stats {comments {totalCount},favorites {totalCount},reposts {totalCount},plays {totalCount},minutes {totalCount},__typename} fragment F1 on Viewer {me {username,hasProFeatures,isUploader,stats {...F0},id},id}\",\"variables\":{}}");
+                br.postPageRaw("https://app.mixcloud.com/graphql", "{\"id\":\"q33\",\"query\":\"query DashboardStatsCardQuery {viewer {id,...F1}} fragment F0 on Stats {comments {totalCount},favorites {totalCount},reposts {totalCount},plays {totalCount},minutes {totalCount},__typename} fragment F1 on Viewer {me {username,hasProFeatures,isUploader,stats {...F0},id},id}\",\"variables\":{}}");
                 final String username = PluginJSonUtils.getJson(br, "username");
                 if (!StringUtils.isEmpty(username)) {
                     logger.info("Cookie login successful");
@@ -205,16 +205,13 @@ public class MixCloudCom extends PluginForHost {
                 logger.warning("Failed to find csrftoken");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            br.getHeaders().put("Accept", "*/*");
-            br.getHeaders().put("Origin", "https://www.mixcloud.com");
-            // br.getHeaders().put("X-Mixcloud-Client-Version", "REDACTED");
-            br.getHeaders().put("X-Mixcloud-Platform", "www");
-            br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            // br.getHeaders().put("Content-Type", "multipart/form-data;");
-            // br.getHeaders().put("", "");
-            // br.getHeaders().put("", "");
             final PostRequest request = br.createPostRequest("https://app.mixcloud.com/authentication/email-login/", "email=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
             request.getHeaders().put(HTTPConstants.HEADER_REQUEST_CONTENT_TYPE, "application/x-www-form-urlencoded; charset=UTF-8");
+            request.getHeaders().put("Accept", "*/*");
+            request.getHeaders().put("Origin", "https://www.mixcloud.com");
+            //
+            request.getHeaders().put("X-Mixcloud-Platform", "www");
+            request.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             br.getPage(request);
             /*
              * E.g. {"data": {"password": "test123456", "$valid": false, "email": "test123456", "$errors": {"email":
