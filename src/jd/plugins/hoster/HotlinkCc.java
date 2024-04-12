@@ -630,6 +630,12 @@ public class HotlinkCc extends XFileSharingProBasic {
     }
 
     @Override
+    protected Boolean requiresCaptchaForOfficialVideoDownload() {
+        // Last changed: 2024-04-12
+        return Boolean.FALSE;
+    }
+
+    @Override
     public Class<? extends XFSConfigVideoHotlinkCc> getConfigInterface() {
         return XFSConfigVideoHotlinkCc.class;
     }
