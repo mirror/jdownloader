@@ -202,7 +202,7 @@ public class TbCmV2 extends PluginForDecrypt {
         }
     }
 
-    private String getVideoIDFromUrl(final String url) {
+    public static String getVideoIDFromUrl(final String url) {
         String vuid = new Regex(url, "(?i)v=" + VIDEO_ID_PATTERN).getMatch(0);
         if (vuid == null) {
             vuid = new Regex(url, "(?i)/v/" + VIDEO_ID_PATTERN).getMatch(0);
