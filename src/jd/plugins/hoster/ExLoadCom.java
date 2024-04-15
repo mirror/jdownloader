@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.regex.Pattern;
 
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
@@ -68,7 +69,7 @@ public class ExLoadCom extends XFileSharingProBasic {
         return ExLoadCom.buildAnnotationUrls(getPluginDomains());
     }
 
-    private static final String TYPE_SPECIAL = "https?://[^/]+/dl\\?op=download1\\&id=([a-z0-9]{12})";
+    private static final Pattern TYPE_SPECIAL = Pattern.compile("https?://[^/]+/dl\\?op=download1\\&id=([a-z0-9]{12})", Pattern.CASE_INSENSITIVE);
 
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
@@ -83,7 +84,8 @@ public class ExLoadCom extends XFileSharingProBasic {
         final Regex special = new Regex(link.getPluginPatternMatcher(), TYPE_SPECIAL);
         if (special.patternFind()) {
             /* Return links for "normal" linktype */
-            return this.getMainPage(link) + "/" + special.getMatch(0);
+            final String fuid = special.getMatch(0);
+            return this.getMainPage(link) + this.buildURLPath(link, fuid, URL_TYPE.NORMAL);
         } else {
             return super.getContentURL(link);
         }
@@ -168,6 +170,28 @@ public class ExLoadCom extends XFileSharingProBasic {
         } else {
             /* Use template handling */
             super.handleCaptcha(link, br, captchaForm);
+        }
+    }
+
+    @Override
+    public String getFUIDFromURL(final DownloadLink link) {
+        final String fuidFromSpecialLinktype = new Regex(link.getPluginPatternMatcher(), TYPE_SPECIAL).getMatch(0);
+        if (fuidFromSpecialLinktype != null) {
+            return fuidFromSpecialLinktype;
+        } else {
+            return super.getFUIDFromURL(link);
+        }
+    }
+
+    @Override
+    protected URL_TYPE getURLType(final DownloadLink link) {
+        if (link == null) {
+            return null;
+        }
+        if (new Regex(link.getPluginPatternMatcher(), TYPE_SPECIAL).patternFind()) {
+            return URL_TYPE.NORMAL;
+        } else {
+            return super.getURLType(link);
         }
     }
 }

@@ -116,12 +116,4 @@ public class DailyuploadsNet extends XFileSharingProBasic {
         }
         return dllink;
     }
-
-    @Override
-    protected boolean isOffline(final DownloadLink link, final Browser br) {
-        final Browser brc = br.cloneBrowser();
-        /* Small workaround */
-        brc.getRequest().setHtmlCode(this.correctedBR);
-        return super.isOffline(link, brc);
-    }
 }

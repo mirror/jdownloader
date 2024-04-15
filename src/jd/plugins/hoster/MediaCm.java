@@ -236,12 +236,7 @@ public class MediaCm extends XFileSharingProBasic {
 
     @Override
     protected String getContentURL(final DownloadLink link) {
-        return "https://" + this.getHost() + "/d/" + this.getFUIDFromURL(link);
-    }
-
-    @Override
-    protected String getContentURLV2(final DownloadLink link) {
-        return "https://" + this.getHost() + "/d/" + this.getFUIDFromURL(link);
+        return this.getMainPage() + this.buildURLPath(link, this.getFUIDFromURL(link), URL_TYPE.OFFICIAL_VIDEO_DOWNLOAD);
     }
 
     protected String getFUID(final String url, URL_TYPE type) {

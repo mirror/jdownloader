@@ -327,16 +327,6 @@ public class DoodstreamCom extends XFileSharingProBasic {
     }
 
     @Override
-    protected String getContentURL(final DownloadLink link) {
-        final String linkpart = new Regex(link.getPluginPatternMatcher(), "https?://[^/]+/(.+)").getMatch(0);
-        if (linkpart != null) {
-            return getMainPage(link) + "/" + linkpart;
-        } else {
-            return super.getContentURL(link);
-        }
-    }
-
-    @Override
     public int getMaxSimultaneousFreeAnonymousDownloads() {
         return 10;
     }
