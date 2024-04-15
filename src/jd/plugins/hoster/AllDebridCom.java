@@ -260,7 +260,7 @@ public class AllDebridCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo accountInfo = new AccountInfo();
-        login(account, new AccountInfo(), true);
+        login(account, accountInfo, true);
         /* They got 3 arrays of types of supported websites --> We want to have the "hosts" Array only! */
         br.getPage(api_base + "/user/hosts?" + agent + "&hostsOnly=true");
         final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);

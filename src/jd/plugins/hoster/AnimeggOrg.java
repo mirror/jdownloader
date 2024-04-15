@@ -18,7 +18,6 @@ package jd.plugins.hoster;
 import java.util.LinkedHashMap;
 
 import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.plugins.components.config.AnimeggOrgConfig;
 import org.jdownloader.plugins.components.config.AnimeggOrgConfig.Quality;
 import org.jdownloader.plugins.config.PluginConfigInterface;
@@ -35,6 +34,7 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
 /**
@@ -43,12 +43,19 @@ import jd.plugins.components.PluginJSonUtils;
  *
  */
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "animegg.org" }, urls = { "https?://(www\\.)?animegg\\.org/(?:embed/\\d+|[\\w\\-]+episode-\\d+)" })
-public class AnimeggOrg extends antiDDoSForHost {
+public class AnimeggOrg extends PluginForHost {
     // raztoki embed video player template.
     private String dllink = null;
 
     public AnimeggOrg(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.setFollowRedirects(true);
+        return br;
     }
 
     @Override
@@ -63,14 +70,13 @@ public class AnimeggOrg extends antiDDoSForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return Integer.MAX_VALUE;
     }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
-        br.setFollowRedirects(true);
-        getPage(link.getPluginPatternMatcher());
+        br.getPage(link.getPluginPatternMatcher());
         // not yet available. We can only say offline!
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -86,7 +92,7 @@ public class AnimeggOrg extends antiDDoSForHost {
             for (int index = 0; index < embedurls.length; index++) {
                 final String embedurl = embedurls[index];
                 logger.info("Checking embedurl " + (index + 1) + "/" + embedurls.length + " | " + embedurl);
-                getPage(embedurl);
+                br.getPage(embedurl);
                 final String vsources = getVideosourcesString(br);
                 if (StringUtils.isEmpty(vsources) || vsources.equals("[]")) {
                     logger.info("Found broken videosource: " + embedurl);
@@ -137,7 +143,6 @@ public class AnimeggOrg extends antiDDoSForHost {
         dllink = Encoding.urlDecode(dllink, false);
         Browser br2 = br.cloneBrowser();
         // In case the link redirects to the finallink
-        br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
             con = br2.openHeadConnection(dllink);
@@ -147,7 +152,11 @@ public class AnimeggOrg extends antiDDoSForHost {
             } else if (this.looksLikeDownloadableContent(con)) {
                 link.setFinalFileName(filename + ".mp4");
                 if (con.getCompleteContentLength() > 0) {
-                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                    if (con.isContentDecoded()) {
+                        link.setDownloadSize(con.getCompleteContentLength());
+                    } else {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
                 }
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

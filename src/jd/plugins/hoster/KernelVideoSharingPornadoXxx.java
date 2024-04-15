@@ -32,8 +32,15 @@ public class KernelVideoSharingPornadoXxx extends KernelVideoSharingComV2 {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
         /* Not to be mistaken with pornado.co!! */
-        ret.add(new String[] { "pornado.xxx" });
+        ret.add(new String[] { "pornado.xxx", "anon-v.com", "private-shows.net" });
         return ret;
+    }
+
+    @Override
+    protected ArrayList<String> getDeadDomains() {
+        final ArrayList<String> deadDomains = new ArrayList<String>();
+        deadDomains.add("private-shows.net"); // 2024-04-15
+        return deadDomains;
     }
 
     public static String[] getAnnotationNames() {

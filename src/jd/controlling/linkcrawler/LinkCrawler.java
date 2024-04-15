@@ -1577,8 +1577,9 @@ public class LinkCrawler {
                         if (deepLink == null) {
                             return;
                         }
-                        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-                            // TODO: 2024-03-07: Properly implement this
+                        final boolean scanForHttpDirectory = false;
+                        if (scanForHttpDirectory && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                            // TODO: 2024-03-07: Unfinished feature, properly implement this
                             /* Check if http directory crawler would return results for current item */
                             ArrayList<DownloadLink> httpDirectoryResults = null;
                             try {

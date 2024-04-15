@@ -208,24 +208,28 @@ public class FileCryptCc extends PluginForDecrypt {
                     }
                     logger.info("Password attempt: " + passwordCounter + " / " + maxPasswordRetries);
                     Form passwordForm = null;
-                    final String passwordFieldKey = "password__";
+                    /* Place current password field value on position [0]! */
+                    final String[] possiblePasswordFieldKeys = new String[] { "pssw", "password__" };
+                    String passwordFieldKey = null;
                     final Form[] allForms = br.getForms();
                     if (allForms != null && allForms.length != 0) {
                         findPwFormLoop: for (final Form aForm : allForms) {
-                            if (aForm.containsHTML("password") || aForm.hasInputFieldByName(passwordFieldKey)) {
-                                logger.info("Found password form by hasInputFieldByName(passwordFieldKey)");
-                                passwordForm = aForm;
-                                break findPwFormLoop;
-                            } else if (aForm.containsHTML("password")) {
-                                logger.info("Found password form by aForm.containsHTML(\"password\")");
-                                passwordForm = aForm;
-                                break findPwFormLoop;
+                            for (final String possiblePasswordFieldKey : possiblePasswordFieldKeys) {
+                                if (aForm.hasInputFieldByName(possiblePasswordFieldKey)) {
+                                    logger.info("Found password form by hasInputFieldByName(passwordFieldKey) | passwordFieldKey = " + possiblePasswordFieldKey);
+                                    passwordFieldKey = possiblePasswordFieldKey;
+                                    passwordForm = aForm;
+                                    break findPwFormLoop;
+                                }
                             }
                         }
                     }
                     /* If there is captcha + password, password comes first, then captcha! */
                     if (passwordForm == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Failed to find pasword Form");
+                    } else if (passwordFieldKey == null) {
+                        /* Developer mistake */
+                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "passwordFieldKey can't be empty");
                     }
                     final String passCode;
                     if (passwords.size() > 0) {

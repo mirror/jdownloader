@@ -1097,7 +1097,13 @@ public class VKontakteRu extends PluginForDecrypt {
         if (numberOfItemsStr != null && numberOfItemsStr.equals("0")) {
             throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER);
         }
-        final String startOffset = albumInfo != null ? (String) albumInfo.get("offset") : null;
+        String startOffset = null;
+        if (albumInfo != null) {
+            final Object offsetO = albumInfo.get("offset");
+            if (offsetO != null) {
+                startOffset = offsetO.toString();
+            }
+        }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(new Regex(contenturl, "(-?(\\d+_)?\\d+)$").getMatch(0));
         fp.setCleanupPackageName(false);

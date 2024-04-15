@@ -2754,32 +2754,32 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
             } else if (StringUtils.containsIgnoreCase(getCorrectBR(br), "/captchas/")) {
                 logger.info("Detected captcha method \"Standard captcha\" for this host");
                 final String[] sitelinks = HTMLParser.getHttpLinks(br.getRequest().getHtmlCode(), "");
-                String captchaurl = null;
                 if (sitelinks == null || sitelinks.length == 0) {
                     logger.warning("Standard captcha captchahandling broken!");
                     checkErrorsLastResort(br, null);
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
+                String captchaurl = null;
                 for (final String linkTmp : sitelinks) {
-                    if (linkTmp.contains("/captchas/")) {
+                    if (StringUtils.containsIgnoreCase(linkTmp, "/captchas/")) {
                         captchaurl = linkTmp;
                         break;
                     }
                 }
                 if (StringUtils.isEmpty(captchaurl)) {
                     /* Fallback e.g. for relative URLs (e.g. subyshare.com [bad example, needs special handling anways!]) */
-                    captchaurl = new Regex(getCorrectBR(br), "(/captchas/[a-z0-9]+\\.jpg)").getMatch(0);
+                    captchaurl = new Regex(getCorrectBR(br), "(?i)(/captchas/[a-z0-9]+\\.jpg)").getMatch(0);
                 }
                 if (captchaurl == null) {
                     logger.warning("Standard captcha captchahandling broken2!");
                     checkErrorsLastResort(br, null);
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                String code = getCaptchaCode("xfilesharingprobasic", captchaurl, link);
+                final String code = getCaptchaCode("xfilesharingprobasic", captchaurl, link);
                 captchaForm.put("code", code);
                 logger.info("Put captchacode " + code + " obtained by captcha metod \"Standard captcha\" in the form.");
                 link.setProperty(PROPERTY_captcha_required, Boolean.TRUE);
-            } else if (new Regex(getCorrectBR(br), "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)").matches()) {
+            } else if (new Regex(getCorrectBR(br), "(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)").patternFind()) {
                 logger.info("Detected captcha method \"reCaptchaV1\" for this host");
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Website uses reCaptchaV1 which has been shut down by Google. Contact website owner!");
             } else if (this.containsSolvemediaCaptcha(getCorrectBR(br))) {
