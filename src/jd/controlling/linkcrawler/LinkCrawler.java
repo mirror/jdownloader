@@ -87,7 +87,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginsC;
-import jd.plugins.components.GenericHTTPDirectoryIndexCrawler;
+import jd.plugins.decrypter.GenericHTTPDirectoryIndexCrawler;
 import jd.plugins.hoster.DirectHTTP;
 
 public class LinkCrawler {
@@ -626,15 +626,12 @@ public class LinkCrawler {
             if (ret == null) {
                 final List<LazyCrawlerPlugin> lazyCrawlerPlugins = getSortedLazyCrawlerPlugins();
                 final ListIterator<LazyCrawlerPlugin> it = lazyCrawlerPlugins.listIterator();
-                int counter = 0;
                 while (it.hasNext()) {
                     final LazyCrawlerPlugin pDecrypt = it.next();
-                    System.out.println("Crawler " + counter + ": " + pDecrypt.getDisplayName());
                     if (StringUtils.equals("httpdirectorycrawler", pDecrypt.getDisplayName())) {
                         lazyGenericHttpDirectoryCrawlerPlugin.set(pDecrypt);
                         return pDecrypt;
                     }
-                    counter++;
                 }
             }
             return ret;
@@ -1586,10 +1583,6 @@ public class LinkCrawler {
                             /* Check if http directory crawler would return results for current item */
                             ArrayList<DownloadLink> httpDirectoryResults = null;
                             try {
-                                // final LazyCrawlerPlugin lazyC = getDeepCrawlingPlugin();
-                                // if (lazyC == null) {
-                                // throw new UpdateRequiredClassNotFoundException("could not find 'LinkCrawlerDeepHelper' crawler plugin");
-                                // }
                                 final LazyCrawlerPlugin lazyHttpDirectoryCrawler = this.getLazyGenericHttpDirectoryCrawlerPlugin();
                                 final GenericHTTPDirectoryIndexCrawler httpDirectoryCrawler = (GenericHTTPDirectoryIndexCrawler) lazyHttpDirectoryCrawler.newInstance(getPluginClassLoaderChild());
                                 httpDirectoryResults = httpDirectoryCrawler.parseHTTPDirectory(null, br);

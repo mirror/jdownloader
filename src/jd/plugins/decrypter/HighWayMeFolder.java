@@ -32,7 +32,6 @@ import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.components.GenericHTTPDirectoryIndexCrawler;
 import jd.plugins.hoster.HighWayCore;
 import jd.plugins.hoster.HighWayMe2;
 

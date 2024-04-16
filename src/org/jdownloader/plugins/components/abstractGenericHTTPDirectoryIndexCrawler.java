@@ -13,7 +13,7 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-package jd.plugins.components;
+package org.jdownloader.plugins.components;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -42,9 +42,9 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.hoster.DirectHTTP;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "HTTPDirectoryCrawler" }, urls = { "" })
-public class GenericHTTPDirectoryIndexCrawler extends PluginForDecrypt {
-    public GenericHTTPDirectoryIndexCrawler(PluginWrapper wrapper) {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
+public abstract class abstractGenericHTTPDirectoryIndexCrawler extends PluginForDecrypt {
+    public abstractGenericHTTPDirectoryIndexCrawler(PluginWrapper wrapper) {
         super(wrapper);
     }
 
