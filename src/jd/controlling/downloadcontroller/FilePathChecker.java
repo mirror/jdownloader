@@ -25,7 +25,7 @@ public class FilePathChecker {
     }
 
     public static void createFilePath(final File file) throws BadDestinationException, IOException {
-        createFilePath(file, new CheckFlag[] { CheckFlag.IS_FILE, CheckFlag.CHECK_FILE_WRITE });
+        createFilePath(file, new CheckFlag[] { CheckFlag.IS_FILE, CheckFlag.CHECK_FILE_WRITE, CheckFlag.CHECK_FILE_FOR_TOO_LONG_FILENAME });
     }
 
     public static void createFolderPath(final File file) throws BadDestinationException, IOException {
@@ -74,7 +74,7 @@ public class FilePathChecker {
             throw new BadFilePathException(fileOutput, BadFilePathException.Reason.INVALID_DESTINATION);
         }
         /* Validate path without writing anything */
-        {
+        pathValidation: {
             File checking = null;
             String[] folders;
             switch (CrossSystem.getOSFamily()) {
@@ -131,16 +131,17 @@ public class FilePathChecker {
                 }
             }
             // TODO: Make this nicer
-            if (checking != null && checking.exists() && checking.isDirectory()) {
-                checking = null;
-            }
-            if (checking != null) {
-                // throw new BadDestinationException(checking);
+            if (checking == null) {
+                break pathValidation;
+            } else if (checking.exists() && checking.isDirectory()) {
+                break pathValidation;
+            } else {
+                /* Invalid path according to path validation */
                 throw new BadFilePathException(fileOutput, BadFilePathException.Reason.INVALID_DESTINATION);
             }
         }
-        if (!checkFolderCreate) {
-            /* No errors until now and we're not allowed to write -> Cann it success */
+        if (!checkFolderCreate && !checkFileWrite) {
+            /* No errors until now and we're not allowed to write -> Call it success */
             return;
         }
         /**
@@ -152,7 +153,7 @@ public class FilePathChecker {
         int folderCreateStartSegmentIndex = -1;
         while (true) {
             pathList.add(0, next);
-            if (folderCreateStartSegmentIndex == -1 && !next.exists()) {
+            if (folderCreateStartSegmentIndex != -1 || (folderCreateStartSegmentIndex == -1 && !next.exists())) {
                 folderCreateStartSegmentIndex = loop;
             }
             next = next.getParentFile();
@@ -217,14 +218,14 @@ public class FilePathChecker {
                 }
                 try {
                     fileWriteCheck(writeTest2);
-                    /* We assume that the given filename is too long because writing a file with a shorter filename was successful. */
-                    throw new BadFilePathException(fileOutput, BadFilePathException.Reason.PATH_SEGMENT_TOO_LONG, pathList.size() - 1);
                 } catch (final IOException e2) {
-                    /* Permission issue or some other length limitation is in place. */
-                    // logger.log(e2);
-                    // throw e1;
+                    /* Permission issue because we were unable to write any file in this directory. */
                     throw new BadFilePathException(fileOutput, BadFilePathException.Reason.PERMISSION_PROBLEM, pathList.size() - 1);
                 }
+                /*
+                 * We assume that the given filename is too long because writing a file with a shorter filename was successful.
+                 */
+                throw new BadFilePathException(fileOutput, BadFilePathException.Reason.PATH_SEGMENT_TOO_LONG, pathList.size() - 1);
             }
         }
     }
@@ -265,20 +266,7 @@ public class FilePathChecker {
     }
 
     public static void main(String[] args) throws BadDestinationException, IOException {
-        // run();
         final File testfile = new File("JD:\\\\Windows\\\\jdfoldertest");
         final BadFilePathException permissionErrorExpectedResult = new BadFilePathException(testfile, BadFilePathException.Reason.PERMISSION_PROBLEM);
-        try {
-            FilePathChecker.createFolderPath(testfile);
-        } catch (final BadFilePathException bf) {
-            // bf.printStackTrace();
-            if (bf.getReason() == permissionErrorExpectedResult.getReason()) {
-                System.out.println("Success");
-            } else {
-                System.out.println("Failure");
-            }
-            throw bf;
-        }
-        System.out.print("Failure (No Exception)");
     }
 }
