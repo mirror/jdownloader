@@ -19,6 +19,7 @@ import jd.plugins.hoster.DirectHTTP;
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "web.archive.org" }, urls = { "https?://web\\.archive\\.org/web/\\d+.+" })
 public class WebArchiveOrg extends PluginForDecrypt {
     private static final Pattern PATTERN_DIRECT = Pattern.compile("https?://web\\.archive\\.org/web/\\d+(im|oe)_/(https?.+)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern PATTERN_OTHER  = Pattern.compile("https?://web\\.archive\\.org/web/(\\d+)/(https?.+)", Pattern.CASE_INSENSITIVE);
 
     public WebArchiveOrg(PluginWrapper wrapper) {
         super(wrapper);
@@ -36,9 +37,11 @@ public class WebArchiveOrg extends PluginForDecrypt {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         if (new Regex(param.getCryptedUrl(), PATTERN_DIRECT).patternFind()) {
             ret.add(createDownloadlink(DirectHTTP.createURLForThisPlugin(param.getCryptedUrl())));
-            final String originalURL = new Regex(param.getCryptedUrl(), PATTERN_DIRECT).getMatch(0);
-            ret.add(createDownloadlink(originalURL));
         } else {
+            final String originalURL = new Regex(param.getCryptedUrl(), PATTERN_OTHER).getMatch(1);
+            if (originalURL != null) {
+                ret.add(createDownloadlink(Encoding.htmlDecode(originalURL)));
+            }
             final String youtubeVideoID = TbCmV2.getVideoIDFromUrl(param.getCryptedUrl());
             specialyoutubehandling: if (youtubeVideoID != null) {
                 /* Look for direct-URLs */
