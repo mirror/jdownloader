@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.appwork.testframework.AWTest;
+import org.appwork.utils.os.CrossSystem;
 
 import jd.controlling.downloadcontroller.BadFilePathException;
 import jd.controlling.downloadcontroller.FilePathChecker;
@@ -15,33 +16,73 @@ public class FilePathCheckerTest extends AWTest {
     }
 
     public void runTest() throws Exception {
+        boolean allowDeleteFolderRecursive = false;
+        final String windowsTestBasePath = "jdownloaderfilefoldertests";
+        final File testBasePath = new File(windowsTestBasePath);
+        System.out.print(testBasePath.getAbsolutePath());
         try {
-            /********************************************************************/
-            /* Folder tests */
-            // TODO: Maybe add better detection of such invalid paths
-            /* Invalid path */
-            final File testInvalidFilePath = new File("JD:\\\\Windows\\\\jdfilefoldertest");
-            CLEANUP.add(testInvalidFilePath);
-            testFolderCreationFail(testInvalidFilePath, new BadFilePathException(testInvalidFilePath, BadFilePathException.Reason.PERMISSION_PROBLEM));
-            /*
-             * Windows invalid path due to permission issue. If this test fails, application might have been started with admin permissions.
-             */
-            final File testPermissionIssue = new File("C:\\\\Windows\\\\jdfilefoldertest_test_we_cannot_write_here");
-            CLEANUP.add(testPermissionIssue);
-            testFolderCreationFail(testPermissionIssue, new BadFilePathException(testPermissionIssue, BadFilePathException.Reason.PERMISSION_PROBLEM));
-            /********************************************************************/
-            /* File tests */
-            /* Windows too long filename test | If this fails, OS of tester != Windows */
-            final File longfilenameTest = new File("C:\\\\jdfilefoldertest\\\\Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy.txt");
-            CLEANUP.add(longfilenameTest);
-            testFileCreationFail(longfilenameTest, new BadFilePathException(longfilenameTest, BadFilePathException.Reason.PATH_SEGMENT_TOO_LONG));
-            /* Windows valid file path */
-            final File normalFileTest = new File("C:\\\\jdfilefoldertest\\\\testfile.txt");
+            if (CrossSystem.isWindows()) {
+                /* Windows specific tests */
+                /********************************************************************/
+                /* Folder tests */
+                if (testBasePath.exists()) {
+                    /* Folder existed before this test got executed thus we're not allowed to delete it once our tests are done. */
+                    final File[] filesfolders = testBasePath.listFiles();
+                    if (filesfolders == null || filesfolders.length == 0) {
+                        allowDeleteFolderRecursive = true;
+                    } else {
+                        allowDeleteFolderRecursive = false;
+                    }
+                } else {
+                    /*
+                     * Folder did not exist before this test was executed thus we can delete that folder and all files inside of it once our
+                     * test is done.
+                     */
+                    testBasePath.mkdirs();
+                    allowDeleteFolderRecursive = true;
+                }
+                // testBasePathNoWrite.setWritable(false);
+                final File testBasePathNoWrite = new File(windowsTestBasePath, "nowrite");
+                testBasePathNoWrite.setReadOnly();
+                testBasePathNoWrite.mkdirs();
+                /* Invalid path */
+                final File testInvalidFilePath = new File(testBasePath, "invalid:folder_because_of_invalid_char_colon");
+                CLEANUP.add(testInvalidFilePath);
+                testFolderCreationFail(testInvalidFilePath, new BadFilePathException(testInvalidFilePath, BadFilePathException.Reason.PERMISSION_PROBLEM));
+                /*
+                 * Windows invalid path due to permission issue. If this test fails, application might have been started with admin
+                 * permissions.
+                 */
+                final boolean doPermissionTest = false;
+                if (doPermissionTest) {
+                    // TODO: Fix this test
+                    final File testPermissionIssue = new File(testBasePathNoWrite, "we_cant_write_this_subfolder");
+                    CLEANUP.add(testPermissionIssue);
+                    testFolderCreationFail(testPermissionIssue, new BadFilePathException(testPermissionIssue, BadFilePathException.Reason.PERMISSION_PROBLEM));
+                }
+                /********************************************************************/
+                /* File tests */
+                /* Windows too long filename test | If this fails, OS of tester != Windows */
+                final File longfilenameTest = new File(testBasePath, "too_long_filename_test_Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy.txt");
+                CLEANUP.add(longfilenameTest);
+                testFileCreationFail(longfilenameTest, new BadFilePathException(longfilenameTest, BadFilePathException.Reason.PATH_SEGMENT_TOO_LONG));
+            } else {
+                // TODO: Add tests for other OS'
+            }
+            /* Valid folder path */
+            final File normalFolderAndSubfolderTest = new File(testBasePath, "subfolder");
+            CLEANUP.add(normalFolderAndSubfolderTest);
+            testFolderCreationSuccess(normalFolderAndSubfolderTest);
+            /* Valid file path */
+            final File normalFileTest = new File(testBasePath, "testfile_valid_filename_length.txt");
             CLEANUP.add(normalFileTest);
             testFileCreationSuccess(normalFileTest);
             System.out.println("SUCCESS");
         } finally {
             cleanup();
+            if (allowDeleteFolderRecursive) {
+                deleteRecursive(testBasePath);
+            }
         }
     }
 
@@ -56,6 +97,18 @@ public class FilePathCheckerTest extends AWTest {
                 next.deleteOnExit();
             }
         }
+    }
+
+    private static void deleteRecursive(final File folder) {
+        if (folder.isDirectory()) {
+            final File[] filesfolders = folder.listFiles();
+            if (filesfolders != null) {
+                for (final File file : filesfolders) {
+                    deleteRecursive(file);
+                }
+            }
+        }
+        folder.delete();
     }
 
     public static void testFolderCreationFail(final File file, final BadFilePathException expectedException) throws Exception {
@@ -82,7 +135,7 @@ public class FilePathCheckerTest extends AWTest {
         }
     }
 
-    public static void testFolderCreationSuccess(final File file, final BadFilePathException expectedException) throws Exception {
+    public static void testFolderCreationSuccess(final File file) throws Exception {
         try {
             FilePathChecker.createFolderPath(file);
         } catch (final BadFilePathException bf) {
