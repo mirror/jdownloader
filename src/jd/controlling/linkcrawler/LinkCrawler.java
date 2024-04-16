@@ -87,7 +87,7 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginsC;
-import jd.plugins.decrypter.GenericHTTPDirectoryIndexCrawler;
+import jd.plugins.components.GenericHTTPDirectoryIndexCrawler;
 import jd.plugins.hoster.DirectHTTP;
 
 public class LinkCrawler {
@@ -626,12 +626,15 @@ public class LinkCrawler {
             if (ret == null) {
                 final List<LazyCrawlerPlugin> lazyCrawlerPlugins = getSortedLazyCrawlerPlugins();
                 final ListIterator<LazyCrawlerPlugin> it = lazyCrawlerPlugins.listIterator();
+                int counter = 0;
                 while (it.hasNext()) {
                     final LazyCrawlerPlugin pDecrypt = it.next();
+                    System.out.println("Crawler " + counter + ": " + pDecrypt.getDisplayName());
                     if (StringUtils.equals("httpdirectorycrawler", pDecrypt.getDisplayName())) {
                         lazyGenericHttpDirectoryCrawlerPlugin.set(pDecrypt);
                         return pDecrypt;
                     }
+                    counter++;
                 }
             }
             return ret;
@@ -1544,7 +1547,7 @@ public class LinkCrawler {
                         } else {
                             brURL = request.getAuthentication().getURLWithUserInfo(request.getURL());
                         }
-                        List<CrawledLink> possibleCryptedLinks = find(generation, source, brURL, null, false, false);
+                        final List<CrawledLink> possibleCryptedLinks = find(generation, source, brURL, null, false, false);
                         if (possibleCryptedLinks == null) {
                             return;
                         }
@@ -1577,7 +1580,7 @@ public class LinkCrawler {
                         if (deepLink == null) {
                             return;
                         }
-                        final boolean scanForHttpDirectory = false;
+                        final boolean scanForHttpDirectory = true;
                         if (scanForHttpDirectory && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
                             // TODO: 2024-03-07: Unfinished feature, properly implement this
                             /* Check if http directory crawler would return results for current item */
@@ -1694,8 +1697,7 @@ public class LinkCrawler {
                              * deepLink is our source and a matching deepPattern, crawl the links directly and don't wait for
                              * UnknownCrawledLinkHandler
                              */
-                            // Explanation please
-                            possibleCryptedLinks = null;
+                            // TODO: 2024-04-16: psp: Explanation please
                             crawl(generation, possibleDeepCryptedLinks);
                         } else {
                             /* first check if the url itself can be handled */
@@ -1706,8 +1708,6 @@ public class LinkCrawler {
                                     lc.crawl(generation, possibleDeepCryptedLinks);
                                 }
                             });
-                        }
-                        if (possibleCryptedLinks != null) {
                             crawl(generation, possibleCryptedLinks);
                         }
                     }

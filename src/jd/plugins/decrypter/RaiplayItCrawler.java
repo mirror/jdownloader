@@ -27,7 +27,6 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -42,8 +41,10 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterException;
 import jd.plugins.DecrypterPlugin;
@@ -115,7 +116,7 @@ public class RaiplayItCrawler extends PluginForDecrypt {
 
     /* Old channel config url (see also rev 35204): http://www.rai.tv/dl/RaiTV/iphone/android/smartphone/advertising_config.html */
     private ArrayList<DownloadLink> crawlWholeDay(final CryptedLink param) throws Exception {
-        final ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String parameter = param.getCryptedUrl();
         final String[] dates = new Regex(parameter, "(\\d{4}\\-\\d{2}\\-\\d{2})").getColumn(0);
         final String[] channels = new Regex(parameter, "ch=(\\d+)").getColumn(0);
@@ -203,14 +204,14 @@ public class RaiplayItCrawler extends PluginForDecrypt {
                     } else {
                         url_for_user = "http://www.rai.it" + webLink;
                     }
-                    decryptedLinks.add(this.createDownloadlink(url_for_user));
+                    ret.add(this.createDownloadlink(url_for_user));
                 }
             }
         }
         if (!foundUserDate) {
             logger.info("Failed to find date which the user wanted --> Crawled nothing");
         }
-        return decryptedLinks;
+        return ret;
     }
 
     /** Crawl all episodes of a series. */
@@ -571,7 +572,7 @@ public class RaiplayItCrawler extends PluginForDecrypt {
             }
         }
         final Regex hdsconvert = new Regex(dllink, "(https?://[^/]+/z/podcastcdn/.+\\.csmil)/manifest\\.f4m");
-        if (hdsconvert.matches()) {
+        if (hdsconvert.patternFind()) {
             logger.info("Changing HDS --> HLS");
             dllink = hdsconvert.getMatch(0).replace("/z/", "/i/") + "/index_1_av.m3u8";
         }
@@ -579,9 +580,10 @@ public class RaiplayItCrawler extends PluginForDecrypt {
         final String[] staticBitrateList = new String[] { "10000", "5000", "3600", "3200", "2400", "1800", "1200", "700", "400", "250" };
         final QualitySelectionMode mode = PluginJsonConfig.get(this.getConfigInterface()).getQualitySelectionMode();
         final String httpBitratesFromMPDStreamingMinusSeparated = new Regex(dllink, "filter=[A-Za-z0-9]+_([0-9\\-]+)").getMatch(0);
-        if (dllink.contains(".m3u8") || httpBitratesFromMPDStreamingMinusSeparated != null) {
+        if (StringUtils.containsIgnoreCase(dllink, ".m3u8") || httpBitratesFromMPDStreamingMinusSeparated != null) {
             // https?:\/\/[^\/]+\/i\/VOD\/(teche_root\/YT_ITALIA_TECHE_HD\/[0-9]*_)([0-9,]+)\.mp4(?:.csmil)?\/index_[0-9]+_av.m3u8\?null=[0-9]+&id=[A-Za-z0-9]+%3d%3d&hdntl=exp=[0-9]+~acl=%2f\*~data=hdntl~hmac=[A-Za-z0-9]+
             final String httpBitratesFromHLSStreamingCommaSeparated = new Regex(dllink, ",(\\d{3,}[0-9,]*)").getMatch(0);
+            boolean crawlHLS = false;
             if (httpBitratesFromMPDStreamingMinusSeparated != null || httpBitratesFromHLSStreamingCommaSeparated != null || (middleBitrate != null && dllink.contains(middleBitrate))) {
                 /*
                  * Prefer HTTP URLs over HLS URLs as HLS will be split audio/video which we do not yet support.
@@ -606,6 +608,7 @@ public class RaiplayItCrawler extends PluginForDecrypt {
                     httpBitratesToAdd.addAll(availableHTTPBitrates);
                 }
                 logger.info("Converting HLS -> HTTP URLs");
+                boolean successfullyCheckedProgressive = false;
                 for (final String desiredBitrate : httpBitratesToAdd) {
                     // final String directlink_http = String.format("http://creativemedia3.rai.it/%s%s.mp4", http_url_part, bitrate);
                     /* 2021-03-11 */
@@ -617,15 +620,48 @@ public class RaiplayItCrawler extends PluginForDecrypt {
                     if (description != null) {
                         dl.setComment(description);
                     }
+                    if (!successfullyCheckedProgressive) {
+                        URLConnectionAdapter con = null;
+                        try {
+                            con = br.openHeadConnection(directlink_http);
+                            if (!this.looksLikeDownloadableContent(con)) {
+                                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Progressive videostream is not downloadable");
+                            }
+                            if (con.getCompleteContentLength() > 0) {
+                                /* Set ilesize on result now that we know it. */
+                                if (con.isContentDecoded()) {
+                                    dl.setDownloadSize(con.getCompleteContentLength());
+                                } else {
+                                    dl.setVerifiedFileSize(con.getCompleteContentLength());
+                                }
+                            }
+                            successfullyCheckedProgressive = true;
+                        } catch (final Throwable e) {
+                            logger.log(e);
+                        } finally {
+                            try {
+                                con.disconnect();
+                            } catch (final Throwable e) {
+                            }
+                        }
+                        if (!successfullyCheckedProgressive) {
+                            logger.warning("Progressive failed -> Returning HLS results ONLY");
+                            crawlHLS = true;
+                            break;
+                        }
+                    }
                     ret.add(dl);
                 }
             } else {
+                crawlHLS = true;
+            }
+            if (crawlHLS) {
                 /* https://svn.jdownloader.org/issues/84276 */
                 logger.warning("Crawling HLS: Split audio/video could cause JD to only download video or audio");
                 final Browser hls = br.cloneBrowser();
                 hls.setFollowRedirects(true);
                 hls.getPage(dllink);
-                if (hls.getRegex("Access Denied").matches()) {
+                if (hls.getRegex("Access Denied").patternFind()) {
                     logger.severe("Access denied! The hmac is corrupt, maybe. Try to set a coherent User-Agent.");
                 }
                 final List<HlsContainer> availableQualities = HlsContainer.getHlsQualities(hls);
@@ -749,5 +785,10 @@ public class RaiplayItCrawler extends PluginForDecrypt {
     @Override
     public Class<? extends RaiplayItConfig> getConfigInterface() {
         return RaiplayItConfig.class;
+    }
+
+    @Override
+    public boolean hasCaptcha(CryptedLink link, Account acc) {
+        return false;
     }
 }

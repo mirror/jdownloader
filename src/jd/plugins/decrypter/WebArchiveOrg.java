@@ -18,7 +18,7 @@ import jd.plugins.hoster.DirectHTTP;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "web.archive.org" }, urls = { "https?://web\\.archive\\.org/web/\\d+.+" })
 public class WebArchiveOrg extends PluginForDecrypt {
-    private static final Pattern PATTERN_DIRECT = Pattern.compile("https?://web\\.archive\\.org/web/\\d+(im|oe)_/(https?.+)");
+    private static final Pattern PATTERN_DIRECT = Pattern.compile("https?://web\\.archive\\.org/web/\\d+(im|oe)_/(https?.+)", Pattern.CASE_INSENSITIVE);
 
     public WebArchiveOrg(PluginWrapper wrapper) {
         super(wrapper);
