@@ -1619,33 +1619,39 @@ public class LinkCrawler {
                             /* Crawl links according to pattern of rule. */
                             deepPatternContent = true;
                             final String[][] matches = new Regex(request.getHtmlCode(), matchingRule._getDeepPattern()).getMatches();
-                            if (matches != null && matches.length > 0) {
-                                final HashSet<String> dups = new HashSet<String>();
-                                final StringBuilder sb = new StringBuilder();
-                                for (final String matcharray[] : matches) {
-                                    for (final String match : matcharray) {
-                                        if (StringUtils.isNotEmpty(match) && !brURL.equals(match) && dups.add(match)) {
-                                            if (sb.length() > 0) {
-                                                sb.append("\r\n");
-                                            }
-                                            sb.append(match);
-                                            if (match.matches("^[^<>\"]+$")) {
-                                                // TODO: 2024-03-08: What is this doing?
-                                                try {
-                                                    final String url = br.getURL(match).toExternalForm();
-                                                    if (dups.add(url)) {
-                                                        sb.append("\r\n").append(url);
-                                                    }
-                                                } catch (final Throwable e) {
+                            if (matches == null || matches.length == 0) {
+                                /*
+                                 * Users' deep pattern is bad and/or currently processed link is broken/offline and thus we get no results.
+                                 */
+                                if (matchingRule.isLogging()) {
+                                    final LogInterface ruleLogger = LogController.getFastPluginLogger("LinkCrawlerRule." + matchingRule.getId());
+                                    ruleLogger.info("Got no matches based on user defined DeepPattern");
+                                }
+                                return;
+                            }
+                            final HashSet<String> dups = new HashSet<String>();
+                            final StringBuilder sb = new StringBuilder();
+                            for (final String matcharray[] : matches) {
+                                for (final String match : matcharray) {
+                                    if (StringUtils.isNotEmpty(match) && !brURL.equals(match) && dups.add(match)) {
+                                        if (sb.length() > 0) {
+                                            sb.append("\r\n");
+                                        }
+                                        sb.append(match);
+                                        if (match.matches("^[^<>\"]+$")) {
+                                            // TODO: 2024-03-08: What is this doing?
+                                            try {
+                                                final String url = br.getURL(match).toExternalForm();
+                                                if (dups.add(url)) {
+                                                    sb.append("\r\n").append(url);
                                                 }
+                                            } catch (final Throwable e) {
                                             }
                                         }
                                     }
                                 }
-                                crawlContent = sb.toString();
-                            } else {
-                                crawlContent = null;
                             }
+                            crawlContent = sb.toString();
                         } else {
                             deepPatternContent = false;
                             crawlContent = request.getHtmlCode();
