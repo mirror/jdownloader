@@ -69,6 +69,7 @@ public class WebArchiveOrg extends PluginForDecrypt {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final Regex regexDirect = new Regex(param.getCryptedUrl(), PATTERN_DIRECT);
         final Regex regexFile = new Regex(param.getCryptedUrl(), PATTERN_FILE);
+        boolean fileNotFound = false;
         if (regexDirect.patternFind()) {
             /* Sure that we got a direct-URL */
             ret.add(createDownloadlink(DirectHTTP.createURLForThisPlugin(param.getCryptedUrl())));
@@ -85,6 +86,8 @@ public class WebArchiveOrg extends PluginForDecrypt {
             final String directurl = brc.getRedirectLocation();
             if (directurl == null) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else {
+                fileNotFound = true;
             }
             ret.add(createDownloadlink(DirectHTTP.createURLForThisPlugin(directurl)));
             return ret;
@@ -104,15 +107,16 @@ public class WebArchiveOrg extends PluginForDecrypt {
                 } else {
                     br.followConnection();
                     if (br.getHttpConnection().getResponseCode() == 404) {
-                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                    }
-                    /* E.g. embedded PDF */
-                    final String directurl = br.getRegex("<iframe id=\"playback\"[^>]*src=\"(https?://[^\"]+)").getMatch(0);
-                    if (directurl == null) {
-                        logger.info("URL is not supported or content is offline");
-                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                        fileNotFound = true;
                     } else {
-                        ret.add(this.createDownloadlink(DirectHTTP.createURLForThisPlugin(directurl)));
+                        /* E.g. embedded PDF */
+                        final String directurl = br.getRegex("<iframe id=\"playback\"[^>]*src=\"(https?://[^\"]+)").getMatch(0);
+                        if (directurl == null) {
+                            logger.info("URL is not supported or content is offline");
+                            fileNotFound = true;
+                        } else {
+                            ret.add(this.createDownloadlink(DirectHTTP.createURLForThisPlugin(directurl)));
+                        }
                     }
                 }
             } finally {
@@ -120,7 +124,11 @@ public class WebArchiveOrg extends PluginForDecrypt {
             }
         }
         if (ret.isEmpty()) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (fileNotFound) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         } else {
             return ret;
         }
