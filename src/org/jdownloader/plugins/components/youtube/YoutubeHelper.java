@@ -145,6 +145,7 @@ public class YoutubeHelper {
     private static final String REGEX_FMT_MAP_FROM_JSPLAYER_SETUP          = "\"url_encoded_fmt_stream_map\"\\s*:\\s*(\".*?\")";
     public static final String  PAID_VIDEO                                 = "Paid Video:";
     public static final String  YT_CHANNEL_ID                              = "YT_CHANNEL_ID";
+    public static final String  YT_ATID                                    = "YT_@ID";
     public static final String  YT_CHANNEL_SIZE                            = "YT_CHANNEL_SIZE";
     public static final String  YT_DURATION                                = "YT_DURATION";
     public static final String  YT_DATE_UPLOAD                             = "YT_DATE_UPDATE";
@@ -364,6 +365,22 @@ public class YoutubeHelper {
             @Override
             public DataOrigin[] getDataOrigins() {
                 return new DataOrigin[] { DataOrigin.YT_SINGLE_VIDEO };
+            }
+        });
+        REPLACER.add(new YoutubeReplacer("@ID", "ATID") {
+            @Override
+            public String getDescription() {
+                return _GUI.T.YoutubeHelper_getDescription_atid();
+            }
+
+            @Override
+            protected String getValue(DownloadLink link, YoutubeHelper helper, String mod) {
+                return link.getStringProperty(YoutubeHelper.YT_ATID, "");
+            }
+
+            @Override
+            public DataOrigin[] getDataOrigins() {
+                return new DataOrigin[] { DataOrigin.YT_SINGLE_VIDEO, DataOrigin.YT_CHANNEL };
             }
         });
         REPLACER.add(new YoutubeReplacer("360", "SPHERICAL") {
@@ -1650,6 +1667,7 @@ public class YoutubeHelper {
         parseDuration(vid);
         parseChannelTitle(vid);
         parseUser(vid);
+        parseAtID(vid);
         parseViews(vid);
         parseCategory(vid);
         return vid;
@@ -1772,6 +1790,17 @@ public class YoutubeHelper {
             }
         }
         return vid.user;
+    }
+
+    protected String parseAtID(YoutubeClipData vid) {
+        if (StringUtils.isEmpty(vid.atID)) {
+            final Map<String, Object> map = getYtInitialPlayerResponse();
+            if (map != null) {
+                final String ownerProfileUrl = (String) JavaScriptEngineFactory.walkJson(map, "microformat/playerMicroformatRenderer/ownerProfileUrl");
+                vid.atID = new Regex(ownerProfileUrl, "youtube.com/@([^\\?/]+)").getMatch(0);
+            }
+        }
+        return vid.atID;
     }
 
     protected String parseCategory(YoutubeClipData vid) {

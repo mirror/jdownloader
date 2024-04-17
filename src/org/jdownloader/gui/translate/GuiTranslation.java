@@ -4531,6 +4531,9 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Unique Video ID" })
     String YoutubeHelper_getDescription_id();
 
+    @Default(lngs = { "en" }, values = { "User/Channel URL @ID" })
+    String YoutubeHelper_getDescription_atid();
+
     @Default(lngs = { "en" }, values = { "File Extension e.g. .mp4" })
     String YoutubeHelper_getDescription_extension();
 

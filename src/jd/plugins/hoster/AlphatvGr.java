@@ -20,6 +20,10 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -33,10 +37,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "alphatv.gr" }, urls = { "https?://(?:www\\.)?alphatv\\.gr/.+vtype=[a-z0-9]+\\&vid=\\d+.+" })
 public class AlphatvGr extends PluginForHost {
@@ -96,19 +96,18 @@ public class AlphatvGr extends PluginForHost {
     }
 
     public static String getFilename(final Browser br) {
-        final Regex finfo = br.getRegex("/microsites/mourmoura/(?:video/)?(\\d+)/?([^\"]*?)\\.mp4");
-        final String date = finfo.getMatch(0);
-        String title = finfo.getMatch(1);
+        String title = br.getRegex("id\\s*=\\s*\"currentVideoTitle\"\\s*>\\s*(.*?)\\s*<").getMatch(0);
         if (title == null) {
             title = br.getRegex("/([^/]+)\\.mp4").getMatch(0);
-        }
-        if (title == null) {
-            title = getFilenameFromUrl(br.getURL());
             if (title == null) {
-                /* Final fallback - this should never happen! */
-                title = br.getURL();
+                title = getFilenameFromUrl(br.getURL());
+                if (title == null) {
+                    /* Final fallback - this should never happen! */
+                    title = br.getURL();
+                }
             }
         }
+        final String date = br.getRegex("/(\\d{8})_([^/]+)\\.mp4").getMatch(0);
         String filename = "";
         final String date_formatted = formatDate(date);
         if (date_formatted != null) {
@@ -125,7 +124,7 @@ public class AlphatvGr extends PluginForHost {
         requestFileInformation(link);
         final String hls_master = null;
         /* 2018-11-15: http streaming is the only streaming method at the moment! */
-        String json = br.getRegex("id=\"currentvideourl\" data-plugin-player=\"(\\{[^\"]+\\})\"").getMatch(0);
+        String json = br.getRegex("id=\"currentvideourl\" data-plugin-k?player=\"(\\{[^\"]+\\})\"").getMatch(0);
         String url_http = this.br.getRegex("id=\"currentvideourl\" data\\-url=\"(https?://[^\"]+)\"").getMatch(0);
         if (url_http == null && json != null) {
             json = Encoding.htmlDecode(json);
@@ -183,7 +182,7 @@ public class AlphatvGr extends PluginForHost {
     }
 
     public static String getFilenameFromUrl(final String url) {
-        return new Regex(url, "shows?/(.+)/?(\\?.+|$)").getMatch(0);
+        return new Regex(url, "shows?/([^/\\?&]+)").getMatch(0);
     }
 
     private void setConfigElements() {

@@ -44,6 +44,7 @@ public class YoutubeClipData {
     public int                                playlistSize             = -1;
     public String                             playlistDescription      = null;
     public String                             videoID                  = null;
+    public String                             atID                     = null;
     public int                                playlistEntryNumber      = -1;
     public String                             category                 = null;
     public int                                duration                 = -1;
@@ -172,6 +173,7 @@ public class YoutubeClipData {
             dest.playlistSize = playlistSize;
             dest.playlistDescription = playlistDescription;
             dest.user = user;
+            dest.atID = atID;
             dest.user_alternative = user_alternative;
             dest.bestVideoItag = bestVideoItag;
             dest.datePublished = datePublished;
@@ -220,6 +222,7 @@ public class YoutubeClipData {
         setValue(dest, YoutubeHelper.YT_DATE, datePublished);
         setValue(dest, YoutubeHelper.YT_GOOGLE_PLUS_ID, userGooglePlusID);
         setValue(dest, YoutubeHelper.YT_CHANNEL_ID, channelID);
+        setValue(dest, YoutubeHelper.YT_ATID, atID);
         setValue(dest, YoutubeHelper.YT_DURATION, duration);
         setValue(dest, YoutubeHelper.YT_DATE_UPLOAD, dateUploaded);
         setValue(dest, YoutubeHelper.YT_DATE_LIVESTREAM_START, dateLivestreamStart);

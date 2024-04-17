@@ -114,7 +114,10 @@ public class AlphatvGr extends PluginForDecrypt {
                             return decryptedLinks;
                         }
                         final String url = "https://www.alphatv.gr" + linkpart + "?vtype=episodes&vid=" + videoID + "&year=" + year + "&showId=" + showID;
-                        final String episodeInfo = new Regex(videoItem, "<a class=\"openVideoPopUp\" onclick=\"[^\"]+\">([^<>\"]+)<").getMatch(0);
+                        String episodeInfo = new Regex(videoItem, "<a class=\"openVideoPopUp\" onclick=\"[^\"]+\">([^<>\"]+)<").getMatch(0);
+                        if (episodeInfo == null) {
+                            episodeInfo = new Regex(videoItem, "<a class=\"openVideoPopUp\"[^>]*>\\s*([^<>\"]*?)\\s*<").getMatch(0);
+                        }
                         String title = jd.plugins.hoster.AlphatvGr.getFilenameFromUrl(url);
                         if (episodeInfo != null) {
                             title += episodeInfo.trim();

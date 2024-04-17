@@ -1133,9 +1133,15 @@ public abstract class YetiShareCore extends antiDDoSForHost {
     protected String getDllink(final Browser br) {
         /* 2020-02-26: Example without 'http': cnubis.com */
         /* 2020-12-11: Example ... "/themes/files/": zupload.me */
-        String ret = br.getRegex("(?:\"|\\')((?:https?:)?//[A-Za-z0-9\\.\\-]+\\.[^/]+/[^<>\"]*?(?:\\?|\\&)download_token=[A-Za-z0-9]+[^<>\"\\']*?)(?:\"|\\')").getMatch(0);
+        String ret = br.getRegex("openUrl\\(\\s*(?:\"|\\')((?:https?:)?//[A-Za-z0-9\\.\\-]+\\.[^/]+/[^<>\"]*?(?:\\?|\\&)download_token=[A-Za-z0-9]+[^<>\"\\']*?)(?:\"|\\')").getMatch(0);
         if (StringUtils.isEmpty(ret)) {
-            ret = br.getRegex("\"(https?://[^\"]+(?<!/themes)/files/[^\"]+)\"").getMatch(0);
+            ret = br.getRegex("source\\s*:\\s*(?:\"|\\')((?:https?:)?//[A-Za-z0-9\\.\\-]+\\.[^/]+/[^<>\"]*?(?:\\?|\\&)download_token=[A-Za-z0-9]+[^<>\"\\']*?)(?:\"|\\')").getMatch(0);
+            if (StringUtils.isEmpty(ret)) {
+                ret = br.getRegex("(?:\"|\\')((?:https?:)?//[A-Za-z0-9\\.\\-]+\\.[^/]+/[^<>\"]*?(?:\\?|\\&)download_token=[A-Za-z0-9]+[^<>\"\\']*?)(?:\"|\\')").getMatch(0);
+                if (StringUtils.isEmpty(ret)) {
+                    ret = br.getRegex("\"(https?://[^\"]+(?<!/themes)/files/[^\"]+)\"").getMatch(0);
+                }
+            }
         }
         if (isDownloadlink(ret)) {
             return ret;

@@ -312,7 +312,7 @@ public class YoutubeDashConfigPanel extends PluginConfigPanelNG {
             // [SU] Space to Underscore
         }
         addPair(_GUI.T.YoutubeDashConfigPanel_YoutubeDashConfigPanel_package_pattern(), null, null, new TextInput(cf._getStorageHandler().getKeyHandler("PackagePattern", StringKeyHandler.class)));
-        addPair(_GUI.T.YoutubeDashConfigPanel_YoutubeDashConfigPanel_package_pattern_channel(), null, null, new TextInput(cf._getStorageHandler().getKeyHandler("PackagePatternForChannels", StringKeyHandler.class)));
+        addPair(_GUI.T.YoutubeDashConfigPanel_YoutubeDashConfigPanel_package_pattern_channel(), null, null, new TextInput(cf._getStorageHandler().getKeyHandler("PackagePatternForChannelPackages", StringKeyHandler.class)));
         addPair(_GUI.T.YoutubeDashConfigPanel_YoutubeDashConfigPanel_package_pattern_playlist(), null, null, new TextInput(cf._getStorageHandler().getKeyHandler("PackagePatternForPlaylists", StringKeyHandler.class)));
         addPair(_GUI.T.YoutubeDashConfigPanel_YoutubeDashConfigPanel_filename_pattern_video(), null, null, new TextInput(CFG_YOUTUBE.VIDEO_FILENAME_PATTERN));
         // addPair(_GUI.T.YoutubeDashConfigPanel_YoutubeDashConfigPanel_filename_pattern_video3D(), null, null, new
