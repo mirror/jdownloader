@@ -30,6 +30,7 @@ import net.sourceforge.htmlunit.corejs.javascript.tools.shell.Global;
 
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
+import org.appwork.storage.simplejson.MinimalMemoryMap;
 import org.appwork.uio.CloseReason;
 import org.appwork.uio.ExceptionDialogInterface;
 import org.appwork.uio.UIOManager;
@@ -250,7 +251,7 @@ public class ScriptThread extends Thread implements JSShutterDelegate {
         dupes.add("net.sourceforge.htmlunit.corejs.javascript.Function");
         dupes.add("void");
         StringBuilder preloadClasses = new StringBuilder("");
-        for (Class<?> c : new Class[] { Boolean.class, Integer.class, Byte.class, Long.class, String.class, Double.class, Float.class, ArrayList.class, List.class, LinkedList.class, Map.class, HashMap.class, Set.class, HashSet.class, net.sourceforge.htmlunit.corejs.javascript.EcmaError.class, ScriptEnvironment.class, EnvironmentException.class }) {
+        for (Class<?> c : new Class[] { Boolean.class, Integer.class, Byte.class, Long.class, String.class, Double.class, Float.class, ArrayList.class, List.class, LinkedList.class, Map.class, HashMap.class, Set.class, HashSet.class, MinimalMemoryMap.class, net.sourceforge.htmlunit.corejs.javascript.EcmaError.class, ScriptEnvironment.class, EnvironmentException.class }) {
             if (c.isArray()) {
                 c = c.getComponentType();
             }
