@@ -26,6 +26,7 @@ import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -49,15 +50,16 @@ public class AnimegalleriesNet extends PluginForHost {
     // Tags:
     // protocol: no https
     // other:
-    /* Connection stuff */
-    private static final boolean free_resume       = true;
-    private static final int     free_maxchunks    = 0;
-    private static final int     free_maxdownloads = -1;
-    private String               dllink            = null;
+    private String dllink = null;
 
     @Override
     public String getAGBLink() {
         return "https://www.animegalleries.net/privacy.php";
+    }
+
+    @Override
+    public boolean isResumeable(final DownloadLink link, final Account account) {
+        return true;
     }
 
     @Override
@@ -94,22 +96,22 @@ public class AnimegalleriesNet extends PluginForHost {
         } else if (br.containsHTML("(?i)>\\s*The selected album/picture does not exist")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String title = br.getRegex("<title>Anime Galleries dot Net \\- ([^<>\"]+) Pics, Images, Screencaps, and Scans</title>").getMatch(0);
-        if (title == null) {
-            title = fileid;
-        }
+        String filename = br.getRegex("Filename:\\s*</td><td[^>]*>([^<]+)</td>").getMatch(0);
         dllink = br.getRegex("id=\"photoholder\"><img src=\"(http[^<>\"]+)\"").getMatch(0);
         if (dllink == null) {
             dllink = br.getRegex("\"(https?://media\\.animegalleries\\.net/albums/[^<>\"]+)\"").getMatch(0);
         }
         if (dllink != null) {
-            dllink = Encoding.htmlDecode(dllink);
+            dllink = Encoding.htmlOnlyDecode(dllink);
         }
-        if (title != null) {
-            title = Encoding.htmlDecode(title);
-            title = title.trim();
+        if (filename == null && dllink != null) {
+            filename = Plugin.getFileNameFromURL(dllink);
+        }
+        if (filename != null) {
+            filename = Encoding.htmlDecode(filename);
+            filename = filename.trim();
             final String extFromURL = getFileNameExtensionFromString(dllink, extDefault);
-            link.setName(this.correctOrApplyFileNameExtension(title, extFromURL));
+            link.setName(this.correctOrApplyFileNameExtension(filename, extFromURL));
         }
         final String filesizeStr = br.getRegex("(?i)File Size\\s*:\\s*</td><td [^>]*><span [^>]*>(\\d+ [^<]+)</span>").getMatch(0);
         if (filesizeStr != null) {
@@ -128,7 +130,7 @@ public class AnimegalleriesNet extends PluginForHost {
                 }
                 final String ext = Plugin.getExtensionFromMimeTypeStatic(con.getContentType());
                 if (ext != null) {
-                    link.setFinalFileName(this.correctOrApplyFileNameExtension(title, "." + ext));
+                    link.setFinalFileName(this.correctOrApplyFileNameExtension(filename, "." + ext));
                 }
             } finally {
                 try {
@@ -146,7 +148,7 @@ public class AnimegalleriesNet extends PluginForHost {
         if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, this.isResumeable(link, null), 0);
         handleConnectionErrors(br, dl.getConnection());
         dl.startDownload();
     }
@@ -166,7 +168,7 @@ public class AnimegalleriesNet extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return free_maxdownloads;
+        return Integer.MAX_VALUE;
     }
 
     @Override

@@ -129,25 +129,27 @@ public class PixivNet extends PluginForHost {
     }
 
     /* Extension which will be used if no correct extension is found */
-    public static final String  default_extension      = ".jpg";
+    public static final String  default_extension             = ".jpg";
     /* Connection stuff */
-    private final boolean       FREE_RESUME            = true;
-    private final int           FREE_MAXCHUNKS         = 1;
-    private final boolean       ACCOUNT_FREE_RESUME    = true;
-    private final int           ACCOUNT_FREE_MAXCHUNKS = 1;
-    private String              downloadSource         = null;
+    private final boolean       FREE_RESUME                   = true;
+    private final int           FREE_MAXCHUNKS                = 1;
+    private final boolean       ACCOUNT_FREE_RESUME           = true;
+    private final int           ACCOUNT_FREE_MAXCHUNKS        = 1;
+    private String              downloadSource                = null;
     /* DownloadLink Properties / Packagizer properties */
-    public static final String  PROPERTY_MAINLINK      = "mainlink";
-    public static final String  PROPERTY_CONTENT_ID    = "contentid";
-    public static final String  PROPERTY_GALLERYID     = "galleryid";
-    public static final String  PROPERTY_GALLERYURL    = "galleryurl";
-    public static final String  PROPERTY_UPLOADDATE    = "createdate";
-    public static final String  PROPERTY_TITLE         = "title";
-    public static final String  PROPERTY_UPLOADER      = "uploader";
-    public static final String  ANIMATION_META         = "animation_meta";
-    public static final String  PROPERTY_ORDER_ID      = "orderid";
-    private static final String TYPE_ANIMATION_META    = "(?i)https?://[^/]+/ajax/illust/(\\d+)/ugoira_meta";
-    private static final String TYPE_NOVEL             = "(?i)https?://[^/]+/novel/show\\.php\\?id=(\\d+)";
+    public static final String  PROPERTY_MAINLINK             = "mainlink";
+    public static final String  PROPERTY_CONTENT_ID           = "contentid";
+    public static final String  PROPERTY_GALLERYID            = "galleryid";
+    public static final String  PROPERTY_GALLERYURL           = "galleryurl";
+    public static final String  PROPERTY_UPLOADDATE           = "createdate";
+    public static final String  PROPERTY_TITLE                = "title";
+    public static final String  PROPERTY_TITLE_ALT            = "title_alt";
+    public static final String  PROPERTY_TAGS_COMMA_SEPARATED = "tags_comma_separated";
+    public static final String  PROPERTY_UPLOADER             = "uploader";
+    public static final String  ANIMATION_META                = "animation_meta";
+    public static final String  PROPERTY_ORDER_ID             = "orderid";
+    private static final String TYPE_ANIMATION_META           = "(?i)https?://[^/]+/ajax/illust/(\\d+)/ugoira_meta";
+    private static final String TYPE_NOVEL                    = "(?i)https?://[^/]+/novel/show\\.php\\?id=(\\d+)";
 
     @Override
     public String getLinkID(final DownloadLink link) {

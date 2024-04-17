@@ -18,6 +18,7 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.HashSet;
 
+import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
@@ -66,20 +67,30 @@ public class AnimegalleriesNetCrawler extends PluginForDecrypt {
             if (next != null) {
                 br.getPage(next);
             }
-            final String[] linkids = br.getRegex("\"/img/(\\d+)\"").getColumn(0);
-            if (linkids == null || linkids.length == 0) {
+            final String[] imageeids = br.getRegex("\"/img/(\\d+)\"").getColumn(0);
+            if (imageeids == null || imageeids.length == 0) {
+                logger.info("Stopping because: Failed to find any items on current page");
                 break;
             }
             int newItemsOnThisPage = 0;
-            for (final String contentID : linkids) {
+            for (final String contentID : imageeids) {
                 if (!dupes.add(contentID)) {
+                    /* Skip duplicates */
                     continue;
                 }
+                final Regex filenameSizeRegex = br.getRegex("<a href=\"/img/" + contentID + "\">([^<]+)</a><br>[^<]+\\(([^\\)]+)\\)\\s*<br>");
                 final String singleLink = "http://www.animegalleries.net/img/" + contentID;
                 final DownloadLink dl = createDownloadlink(singleLink);
                 dl._setFilePackage(fp);
                 dl.setAvailable(true);
-                dl.setName(contentID + ".jpg");
+                if (filenameSizeRegex.patternFind()) {
+                    final String filename = filenameSizeRegex.getMatch(0);
+                    dl.setName(Encoding.htmlDecode(filename).trim());
+                    final String filesize = filenameSizeRegex.getMatch(1);
+                    dl.setDownloadSize(SizeFormatter.getSize(filesize));
+                } else {
+                    dl.setName(contentID + ".jpg");
+                }
                 ret.add(dl);
                 distribute(dl);
                 newItemsOnThisPage++;

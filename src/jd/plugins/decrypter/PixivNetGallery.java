@@ -148,36 +148,41 @@ public class PixivNetGallery extends PluginForDecrypt {
                 PixivNet.checkErrors(br);
                 final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
                 final Map<String, Object> body = (Map<String, Object>) entries.get("body");
+                final Map<String, Object> tagsmap = (Map<String, Object>) body.get("tags");
                 /* 2020-05-08: illustType 0 = image, 1 = ??, 2 = animation (?) */
                 final long illustType = JavaScriptEngineFactory.toLong(body.get("illustType"), 0);
                 uploadDate = (String) body.get("uploadDate");
                 int pagecount = (int) JavaScriptEngineFactory.toLong(body.get("pageCount"), 1);
                 final String username = (String) body.get("userName");
                 final String illustUploadDate = (String) body.get("createDate");
-                String illustTitle = (String) body.get("illustTitle");
-                String tags = null;
+                final String illustTitle = (String) body.get("illustTitle");
+                String tagsCommaSeparated = null;
+                if (tagsmap != null) {
+                    final List<Map<String, Object>> tagslist = (List<Map<String, Object>>) tagsmap.get("tags");
+                    if (tagslist != null && tagslist.size() > 0) {
+                        for (final Map<String, Object> taginfo : tagslist) {
+                            final String tagStr = taginfo.get("tag").toString();
+                            if (tagsCommaSeparated == null) {
+                                /* First round */
+                                tagsCommaSeparated = tagStr;
+                            } else {
+                                tagsCommaSeparated += "," + tagStr;
+                            }
+                        }
+                    }
+                }
                 // final String illustId = (String) entries.get("illustId");
                 /*
                  * Users want to have a maximum of information in filenames:
                  * https://board.jdownloader.org/showpost.php?p=462062&postcount=41
                  */
-                final String alt = (String) body.get("alt");
-                if (!StringUtils.isEmpty(alt) && !StringUtils.isEmpty(illustTitle)) {
-                    if (alt.contains(illustTitle)) {
-                        illustTitle = alt;
-                    } else {
-                        illustTitle = alt + " " + illustTitle;
-                    }
-                } else {
-                    /* Fallback */
-                    illustTitle = itemID;
-                }
+                final String titleAlt = (String) body.get("alt");
                 final String singleLink = (String) JavaScriptEngineFactory.walkJson(body, "urls/regular");
                 if (singleLink == null) {
                     /* Most likely NSFW content for which account is required. */
                     throw new AccountRequiredException();
                 }
-                ret.add(generateDownloadLink(param.getCryptedUrl(), itemID, illustTitle, illustUploadDate, username, tags, singleLink));
+                ret.add(generateDownloadLink(param.getCryptedUrl(), itemID, illustTitle, titleAlt, illustUploadDate, username, tagsCommaSeparated, singleLink));
                 if (pagecount > 1) {
                     /* == click on "Load more" */
                     getPage(param, br, "/ajax/illust/" + itemID + "/pages?lang=en");
@@ -195,7 +200,7 @@ public class PixivNetGallery extends PluginForDecrypt {
                             /* Skip invalid items */
                             continue;
                         }
-                        ret.add(generateDownloadLink(param.getCryptedUrl(), itemID, illustTitle, illustUploadDate, username, tags, directurl));
+                        ret.add(generateDownloadLink(param.getCryptedUrl(), itemID, illustTitle, titleAlt, illustUploadDate, username, tagsCommaSeparated, directurl));
                     }
                 }
                 if (illustType == 2) {
@@ -403,7 +408,7 @@ public class PixivNetGallery extends PluginForDecrypt {
     }
 
     /** Generates DownloadLink for a single picture item. */
-    private DownloadLink generateDownloadLink(final String parameter, final String contentID, String title, final String uploadDate, final String username, String tags, final String directurl) {
+    private DownloadLink generateDownloadLink(final String parameter, final String contentID, String title, final String titleAlt, final String uploadDate, final String username, final String tagsCommaSeparated, final String directurl) {
         if (title == null) {
             title = contentID;
         }
@@ -411,7 +416,7 @@ public class PixivNetGallery extends PluginForDecrypt {
         String filename;
         final String picNumberStr = new Regex(directurl, "/[^/]+_p(\\d+)[^/]*\\.[a-z]+$").getMatch(0);
         if (picNumberStr != null) {
-            filename = this.generateFilename(contentID, title, username, tags, picNumberStr, null);
+            filename = this.generateFilename(contentID, title, titleAlt, username, tagsCommaSeparated, picNumberStr, null);
         } else if (filename_url != null) {
             /* Fallback - just use the given filename (minus extension)! */
             filename = filename_url.substring(0, filename_url.lastIndexOf("."));
@@ -432,6 +437,8 @@ public class PixivNetGallery extends PluginForDecrypt {
         final DownloadLink dl = createDownloadlink(directurl.replaceAll("https?://", "decryptedpixivnet://"));
         dl.setProperty(PixivNet.PROPERTY_MAINLINK, parameter);
         dl.setProperty(PixivNet.PROPERTY_TITLE, title);
+        dl.setProperty(PixivNet.PROPERTY_TITLE_ALT, titleAlt);
+        dl.setProperty(PixivNet.PROPERTY_TAGS_COMMA_SEPARATED, tagsCommaSeparated);
         dl.setProperty(PixivNet.PROPERTY_CONTENT_ID, contentID);
         // dl.setProperty(PixivNet.PROPERTY_GALLERYID, userid);
         dl.setProperty(PixivNet.PROPERTY_GALLERYURL, br.getURL());
@@ -453,29 +460,30 @@ public class PixivNetGallery extends PluginForDecrypt {
     }
 
     /** Returns filename without extension */
-    private String generateFilename(final String galleryID, String title, final String username, String tags, final String picNumberStr, final String extension) {
+    private String generateFilename(final String galleryID, String title, final String titleAlt, final String username, String tagsCommaSeparated, final String picNumberStr, final String extension) {
         if (galleryID == null || picNumberStr == null) {
             return null;
         }
-        if (tags != null) {
-            tags = tags.trim();
+        if (tagsCommaSeparated != null) {
+            tagsCommaSeparated = tagsCommaSeparated.trim();
         }
-        if (title != null) {
-            title = title.trim();
-        }
-        String thistitle;
-        if (tags == null || (title != null && tags.equalsIgnoreCase(title))) {
-            thistitle = "";
+        String titleForFilename;
+        if (!StringUtils.isEmpty(title) && !StringUtils.isEmpty(titleAlt)) {
+            if (titleAlt.contains(title)) {
+                titleForFilename = titleAlt;
+            } else {
+                titleForFilename = titleAlt + " " + title;
+            }
+        } else if (!StringUtils.isEmpty(title)) {
+            titleForFilename = title.trim();
         } else {
-            thistitle = tags;
-        }
-        if (title != null) {
-            thistitle += title;
+            /* Fallback */
+            titleForFilename = galleryID;
         }
         if (username != null) {
-            thistitle += " - " + username;
+            titleForFilename += " - " + username;
         }
-        return galleryID + "_p" + picNumberStr + " " + thistitle;
+        return galleryID + "_p" + picNumberStr + " " + titleForFilename;
     }
 
     public static boolean isOffline(final Browser br) {

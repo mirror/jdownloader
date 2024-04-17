@@ -83,12 +83,12 @@ public class WebArchiveOrg extends PluginForDecrypt {
             brc.getPage(param.getCryptedUrl());
             brc.getPage("https://web.archive.org/web/2oe_/http://wayback-fakeurl.archive.org/yt/" + Encoding.urlEncode(youtubeVideoID));
             final String directurl = brc.getRedirectLocation();
-            if (directurl != null) {
-                ret.add(createDownloadlink(DirectHTTP.createURLForThisPlugin(directurl)));
-                return ret;
+            if (directurl == null) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
+            ret.add(createDownloadlink(DirectHTTP.createURLForThisPlugin(directurl)));
+            return ret;
         }
-
         if (regexFile.patternFind()) {
             /* Unsure if we got a direct-URL -> Check it */
             final String fileID = regexFile.getMatch(0);

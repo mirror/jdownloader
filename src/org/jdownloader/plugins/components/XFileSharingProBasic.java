@@ -166,6 +166,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
     private static final String               PROPERTY_PLUGIN_ALT_AVAILABLECHECK_LAST_WORKING                   = "ALT_AVAILABLECHECK_LAST_WORKING";
     private static final String               PROPERTY_ACCOUNT_ALLOW_API_DOWNLOAD_ATTEMPT_IN_WEBSITE_MODE       = "allow_api_download_attempt_in_website_mode";
     private String                            videoStreamDownloadurl                                            = null;
+    private boolean                           hasCheckedEmbedHandling                                           = false;
 
     public static enum URL_TYPE {
         EMBED_VIDEO,
@@ -792,7 +793,6 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
     }
 
     protected String getMainPage(final DownloadLink link) {
-        // TODO: Improve & simplify this
         final URL url;
         try {
             url = new URL(link.getPluginPatternMatcher());
@@ -901,7 +901,6 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
      */
     public boolean isPremiumOnly(final Browser br) {
         if (br == null) {
-            // TODO: Remove the need of this check
             return false;
         }
         final boolean premiumonly_by_url = isPremiumOnlyURL(br);
@@ -1046,11 +1045,10 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
         final URL_TYPE urltype = this.getURLType(br.getURL());
         // boolean looksLikeOffline = false;
         PluginException embedException = null;
-        boolean hasCheckedEmbedHandling = false;
         if (urltype == URL_TYPE.EMBED_VIDEO) {
             try {
-                this.requestFileInformationVideoEmbedXFSOld(br, link, account, true);
                 hasCheckedEmbedHandling = true;
+                this.requestFileInformationVideoEmbedXFSOld(br, link, account, true);
                 if (trustAvailablecheckVideoEmbed()) {
                     return AvailableStatus.TRUE;
                 }
@@ -1203,11 +1201,10 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
     public AvailableStatus requestFileInformationWebsiteXFSNew(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
         PluginException embedException = null;
         final URL_TYPE urltype = this.getURLType(link);
-        boolean hasCheckedEmbedHandling = false;
         if (urltype == URL_TYPE.EMBED_VIDEO_2) {
             try {
-                this.requestFileInformationVideoEmbedXFSNew(br, link, account, isDownload, true);
                 hasCheckedEmbedHandling = true;
+                this.requestFileInformationVideoEmbedXFSNew(br, link, account, isDownload, true);
                 if (trustAvailablecheckVideoEmbed()) {
                     return AvailableStatus.TRUE;
                 }
@@ -1301,13 +1298,23 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
         }
     }
 
+    protected boolean isXFSOld(final URL_TYPE urltype) {
+        if (urltype == null || urltype == URL_TYPE.IMAGE || urltype == URL_TYPE.NORMAL || urltype == URL_TYPE.EMBED_VIDEO || urltype == URL_TYPE.SHORT) {
+            /* Old XFS */
+            return true;
+        } else {
+            /* New XFS */
+            return false;
+        }
+    }
+
     public AvailableStatus requestFileInformationWebsite(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
         /* Set fallback-filename */
         if (!link.isNameSet()) {
             setWeakFilename(link, null);
         }
         final URL_TYPE urltype = this.getURLType(link);
-        if (urltype == null || urltype == URL_TYPE.IMAGE || urltype == URL_TYPE.NORMAL || urltype == URL_TYPE.EMBED_VIDEO || urltype == URL_TYPE.SHORT) {
+        if (isXFSOld(urltype)) {
             return requestFileInformationWebsiteXFSOld(link, account, isDownload);
         } else {
             /* New XFS handling */
@@ -2085,6 +2092,16 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
             return;
         }
         requestFileInformationWebsite(link, account, true);
+        if (!hasCheckedEmbedHandling && videoStreamDownloadurl == null) {
+            final String embedurl = this.findEmbedURL(br, link, account);
+            if (embedurl != null) {
+                logger.info("Looks like this is a videohost which is using self-embedding");
+                hasCheckedEmbedHandling = true;
+                final Browser brc = br.cloneBrowser();
+                getPage(brc, embedurl);
+                this.videoStreamDownloadurl = this.getDllink(link, account, brc, brc.getRequest().getHtmlCode());
+            }
+        }
         String dllink = null;
         String officialDownloadURL = null;
         final DownloadMode mode = this.getPreferredDownloadModeFromConfig();
@@ -2104,15 +2121,15 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
             final int download1max = 1;
             download1: do {
                 logger.info(String.format("Handling download1 loop %d / %d", download1counter + 1, download1max + 1));
-                officialDownloadURL = getDllinkViaOfficialVideoDownload(this.br.cloneBrowser(), link, account, false);
-                if (!StringUtils.isEmpty(officialDownloadURL) && mode == DownloadMode.ORIGINAL) {
-                    logger.info("Stepping out of download1 loop because: User wants original download && we found original download");
-                    break;
-                }
                 dllink = getDllink(link, account, br, getCorrectBR(br));
-                if (!StringUtils.isEmpty(dllink)) {
+                if (!StringUtils.isEmpty(dllink) && !preferOfficialVideoDownload) {
                     logger.info("Stepping out of download1 loop because: Found directurl");
-                    break;
+                    break download1;
+                }
+                officialDownloadURL = getDllinkViaOfficialVideoDownload(this.br.cloneBrowser(), link, account, false);
+                if (!StringUtils.isEmpty(officialDownloadURL)) {
+                    logger.info("Stepping out of download1 loop because: User wants original download && we found original download");
+                    break download1;
                 }
                 /* Extra handling for imagehosts */
                 if (StringUtils.isEmpty(dllink) && this.isImagehoster()) {
@@ -2153,11 +2170,11 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
                         } while (true);
                     }
                 }
-                if (!StringUtils.isEmpty(dllink)) {
+                if (!StringUtils.isEmpty(dllink) || !StringUtils.isEmpty(officialDownloadURL)) {
                     logger.info("Stepping out of download1 loop because: Found directurl");
-                    break;
+                    break download1;
                 } else if (download1counter > 0) {
-                    break;
+                    break download1;
                 }
                 /* Check for errors and download1 Form. Only execute this part once! */
                 /*
@@ -2168,7 +2185,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
                 final Form download1 = findFormDownload1Free(br);
                 if (download1 == null) {
                     logger.info("Failed to find download1 Form");
-                    break;
+                    break download1;
                 }
                 logger.info("Found download1 Form");
                 submitForm(download1);
@@ -2213,12 +2230,14 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
                     }
                     logger.info("Submitted Form download2");
                     checkErrors(br, getCorrectBR(br), link, account, true);
-                    /* 2020-03-02: E.g. akvideo.stream */
-                    if (StringUtils.isEmpty(officialDownloadURL)) {
-                        officialDownloadURL = getDllinkViaOfficialVideoDownload(this.br.cloneBrowser(), link, account, false);
-                    }
                     if (StringUtils.isEmpty(dllink)) {
                         dllink = getDllink(link, account, br, getCorrectBR(br));
+                        if (!StringUtils.isEmpty(dllink) && !preferOfficialVideoDownload) {
+                            break download2;
+                        }
+                    }
+                    if (StringUtils.isEmpty(officialDownloadURL)) {
+                        officialDownloadURL = getDllinkViaOfficialVideoDownload(this.br.cloneBrowser(), link, account, false);
                     }
                     if (!StringUtils.isEmpty(officialDownloadURL) || !StringUtils.isEmpty(dllink)) {
                         /* Success */
@@ -2244,6 +2263,26 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         handleDownload(link, account, officialDownloadURL, dllink, null);
+    }
+
+    /** Returns relative URL to embed content if available in current browsers' html code. */
+    protected String findEmbedURL(final Browser br, final DownloadLink link, final Account Account) {
+        final String fid = this.getFUIDFromURL(link);
+        final URL_TYPE urltype = this.getURLType(link);
+        if (fid == null || urltype == null) {
+            return null;
+        }
+        final String expectedurl;
+        if (this.isXFSOld(urltype)) {
+            expectedurl = this.buildURLPath(link, fid, URL_TYPE.EMBED_VIDEO);
+        } else {
+            expectedurl = this.buildURLPath(link, fid, URL_TYPE.EMBED_VIDEO_2);
+        }
+        if (br.containsHTML(Pattern.quote(expectedurl))) {
+            return expectedurl;
+        } else {
+            return null;
+        }
     }
 
     /**
@@ -3135,14 +3174,16 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
                 // remove custom rules first!!! As html can change because of generic cleanup rules.
                 /* generic cleanup */
                 boolean modified = false;
-                for (final String aRegex : regexStuff) {
-                    final String results[] = new Regex(correctedBR, aRegex).getColumn(0);
-                    if (results != null) {
-                        for (final String result : results) {
-                            final String replace = replaceCorrectBR(br, aRegex, result);
-                            if (replace != null) {
-                                correctedBR = correctedBR.replace(result, replace);
-                                modified = true;
+                if (regexStuff != null) {
+                    for (final String aRegex : regexStuff) {
+                        final String results[] = new Regex(correctedBR, aRegex).getColumn(0);
+                        if (results != null) {
+                            for (final String result : results) {
+                                final String replace = replaceCorrectBR(br, aRegex, result);
+                                if (replace != null) {
+                                    correctedBR = correctedBR.replace(result, replace);
+                                    modified = true;
+                                }
                             }
                         }
                     }

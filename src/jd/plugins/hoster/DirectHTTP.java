@@ -107,9 +107,6 @@ public class DirectHTTP extends antiDDoSForHost implements DownloadConnectionVer
      */
     public static final String  FIXNAME                                      = "fixName";
     public static final String  FORCE_NORESUME                               = "forcenochunkload";                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   // TODO:
-    // Remove
-    // this?
-    @Deprecated
     public static final String  FORCE_NOCHUNKS                               = "forcenochunk";
     public static final String  FORCE_NOVERIFIEDFILESIZE                     = "forcenoverifiedfilesize";
     public static final String  TRY_ALL                                      = "tryall";

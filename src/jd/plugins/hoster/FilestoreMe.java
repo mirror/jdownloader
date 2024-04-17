@@ -123,8 +123,31 @@ public class FilestoreMe extends XFileSharingProBasic {
     }
 
     @Override
+    protected boolean supports_availablecheck_alt() {
+        /* 2024-04-17 */
+        return false;
+    }
+
+    @Override
     protected boolean supports_availablecheck_filesize_html() {
         /* 2023-10-04 */
         return false;
+    }
+
+    @Override
+    public String[] scanInfo(final String html, final String[] fileInfo) {
+        super.scanInfo(html, fileInfo);
+        final String betterFilesize = br.getRegex("<span>Size ([^<]+)</span>").getMatch(0);
+        if (betterFilesize != null) {
+            fileInfo[1] = betterFilesize;
+        }
+        return fileInfo;
+    }
+
+    @Override
+    public ArrayList<String> getCleanupHTMLRegexes() {
+        /* 2024-04-17: Return empty array as commented out html of this website contains filesize which we otherwise cannot find. */
+        final ArrayList<String> cleanupRegExes = new ArrayList<String>();
+        return cleanupRegExes;
     }
 }

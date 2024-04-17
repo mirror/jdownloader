@@ -18,6 +18,7 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
@@ -164,5 +165,34 @@ public class LulustreamCom extends XFileSharingProBasic {
             fileInfo[0] = betterFilename;
         }
         return fileInfo;
+    }
+
+    @Override
+    protected String getDllinkViaOfficialVideoDownload(final Browser br, final DownloadLink link, final Account account, final boolean returnFilesize) throws Exception {
+        final URL_TYPE type = getURLType(br.getURL());
+        if (type != URL_TYPE.OFFICIAL_VIDEO_DOWNLOAD) {
+            /* 2024-04-17: Special handling because stream downloads are DRM protected */
+            this.getPage(buildURLPath(link, this.getFUIDFromURL(link), URL_TYPE.OFFICIAL_VIDEO_DOWNLOAD));
+        }
+        return super.getDllinkViaOfficialVideoDownload(br, link, account, returnFilesize);
+    }
+
+    @Override
+    protected Boolean requiresCaptchaForOfficialVideoDownload() {
+        return Boolean.TRUE;
+    }
+
+    @Override
+    protected String getDllink(final DownloadLink link, final Account account, final Browser br, String src) {
+        final String dllink = super.getDllink(link, account, br, src);
+        /*
+         * 2024-04-17: Small workaround: They're using DRM protected HLS streams so let's not return those at all to enforce a fallback to
+         * official video download.
+         */
+        if (StringUtils.containsIgnoreCase(dllink, ".m3u8")) {
+            return null;
+        } else {
+            return dllink;
+        }
     }
 }

@@ -23,6 +23,10 @@ import java.util.Locale;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -37,10 +41,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class SubyShareCom extends XFileSharingProBasic {
@@ -348,7 +348,6 @@ public class SubyShareCom extends XFileSharingProBasic {
                 }
                 logger.info("Submitted Form download2");
                 checkErrors(br, correctedBR, link, account, true);
-                /* 2020-03-02: E.g. akvideo.stream */
                 dllink = getDllinkViaOfficialVideoDownload(this.br.cloneBrowser(), link, account, false);
                 if (dllink == null) {
                     dllink = getDllink(link, account, br, correctedBR);
