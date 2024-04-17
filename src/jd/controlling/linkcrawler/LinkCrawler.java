@@ -33,30 +33,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import jd.controlling.linkcollector.LinkCollectingJob;
-import jd.controlling.linkcollector.LinkCollector.JobLinkCrawler;
-import jd.controlling.linkcollector.LinknameCleaner;
-import jd.controlling.linkcrawler.LinkCrawlerConfig.DirectHTTPPermission;
-import jd.controlling.linkcrawler.LinkCrawlerRule.RULE;
-import jd.http.Browser;
-import jd.http.Request;
-import jd.http.URLConnectionAdapter;
-import jd.http.requests.PostRequest;
-import jd.nutils.SimpleFTP;
-import jd.nutils.encoding.Encoding;
-import jd.parser.html.Form;
-import jd.parser.html.HTMLParser;
-import jd.parser.html.HTMLParser.HtmlParserCharSequence;
-import jd.parser.html.HTMLParser.HtmlParserResultSet;
-import jd.plugins.CryptedLink;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-import jd.plugins.Plugin;
-import jd.plugins.PluginForDecrypt;
-import jd.plugins.PluginForHost;
-import jd.plugins.PluginsC;
-import jd.plugins.hoster.DirectHTTP;
-
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.storage.config.JsonConfig;
@@ -90,6 +66,30 @@ import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.settings.GeneralSettings;
+
+import jd.controlling.linkcollector.LinkCollectingJob;
+import jd.controlling.linkcollector.LinkCollector.JobLinkCrawler;
+import jd.controlling.linkcollector.LinknameCleaner;
+import jd.controlling.linkcrawler.LinkCrawlerConfig.DirectHTTPPermission;
+import jd.controlling.linkcrawler.LinkCrawlerRule.RULE;
+import jd.http.Browser;
+import jd.http.Request;
+import jd.http.URLConnectionAdapter;
+import jd.http.requests.PostRequest;
+import jd.nutils.SimpleFTP;
+import jd.nutils.encoding.Encoding;
+import jd.parser.html.Form;
+import jd.parser.html.HTMLParser;
+import jd.parser.html.HTMLParser.HtmlParserCharSequence;
+import jd.parser.html.HTMLParser.HtmlParserResultSet;
+import jd.plugins.CryptedLink;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import jd.plugins.Plugin;
+import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
+import jd.plugins.PluginsC;
+import jd.plugins.hoster.DirectHTTP;
 
 public class LinkCrawler {
     private static enum DISTRIBUTE {
@@ -1615,40 +1615,44 @@ public class LinkCrawler {
                         final List<CrawledLink> possibleDeepCryptedLinks;
                         if (matchingRule != null && matchingRule._getDeepPattern() != null) {
                             /* Crawl links according to pattern of rule. */
-
                             final String[][] matches = new Regex(request.getHtmlCode(), matchingRule._getDeepPattern()).getMatches();
-                            if (matches != null && matches.length > 0) {
-                                final HashSet<String> dups = new HashSet<String>();
-                                final StringBuilder sb = new StringBuilder();
-                                for (final String matcharray[] : matches) {
-                                    for (final String match : matcharray) {
-                                        if (StringUtils.isNotEmpty(match) && !brURL.equals(match) && dups.add(match)) {
-                                            if (sb.length() > 0) {
-                                                sb.append("\r\n");
-                                            }
-                                            sb.append(match);
-                                            if (match.matches("^[^<>\"]+$")) {
-                                                try {
-                                                    final String url = br.getURL(match).toExternalForm();
-                                                    if (dups.add(url)) {
-                                                        sb.append("\r\n").append(url);
-                                                    }
-                                                } catch (final Throwable e) {
+                            if (matches == null || matches.length == 0) {
+                                /*
+                                 * Users' deep pattern is bad and/or currently processed link is broken/offline and thus we get no results.
+                                 */
+                                if (matchingRule.isLogging()) {
+                                    final LogInterface ruleLogger = LogController.getFastPluginLogger("LinkCrawlerRule." + matchingRule.getId());
+                                    ruleLogger.info("Got no matches based on user defined DeepPattern");
+                                }
+                                return;
+                            }
+                            final HashSet<String> dups = new HashSet<String>();
+                            final StringBuilder sb = new StringBuilder();
+                            for (final String matcharray[] : matches) {
+                                for (final String match : matcharray) {
+                                    if (StringUtils.isNotEmpty(match) && !brURL.equals(match) && dups.add(match)) {
+                                        if (sb.length() > 0) {
+                                            sb.append("\r\n");
+                                        }
+                                        sb.append(match);
+                                        if (match.matches("^[^<>\"]+$")) {
+                                            try {
+                                                final String url = br.getURL(match).toExternalForm();
+                                                if (dups.add(url)) {
+                                                    sb.append("\r\n").append(url);
                                                 }
+                                            } catch (final Throwable e) {
                                             }
                                         }
                                     }
                                 }
-                                deepPatternContent = true;
-                                possibleDeepCryptedLinks = find(generation, source, sb.toString(), finalBaseUrl, false, false);
-                            } else {
-                                return;
                             }
+                            deepPatternContent = true;
+                            possibleDeepCryptedLinks = find(generation, source, sb.toString(), finalBaseUrl, false, false);
                         } else {
                             deepPatternContent = false;
                             possibleDeepCryptedLinks = find(generation, source, request.getHtmlCode(), finalBaseUrl, false, false);
                         }
-
                         if (possibleDeepCryptedLinks == null || possibleDeepCryptedLinks.size() == 0) {
                             return;
                         }
