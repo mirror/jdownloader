@@ -72,7 +72,24 @@ public class WebArchiveOrg extends PluginForDecrypt {
         if (regexDirect.patternFind()) {
             /* Sure that we got a direct-URL */
             ret.add(createDownloadlink(DirectHTTP.createURLForThisPlugin(param.getCryptedUrl())));
-        } else if (regexFile.patternFind()) {
+        }
+        final String originalURL = new Regex(param.getCryptedUrl(), PATTERN_OTHER).getMatch(1);
+        final PluginForDecrypt yt = getNewPluginForDecryptInstance("youtube.com");
+        final String youtubeVideoID = yt != null && yt.canHandle(originalURL) ? TbCmV2.getVideoIDFromUrl(param.getCryptedUrl()) : null;
+        if (youtubeVideoID != null) {
+            /* Look for direct-URLs */
+            final Browser brc = br.cloneBrowser();
+            brc.setFollowRedirects(false);
+            brc.getPage(param.getCryptedUrl());
+            brc.getPage("https://web.archive.org/web/2oe_/http://wayback-fakeurl.archive.org/yt/" + Encoding.urlEncode(youtubeVideoID));
+            final String directurl = brc.getRedirectLocation();
+            if (directurl != null) {
+                ret.add(createDownloadlink(DirectHTTP.createURLForThisPlugin(directurl)));
+                return ret;
+            }
+        }
+
+        if (regexFile.patternFind()) {
             /* Unsure if we got a direct-URL -> Check it */
             final String fileID = regexFile.getMatch(0);
             final String linkpart = regexFile.getMatch(1);
@@ -100,24 +117,6 @@ public class WebArchiveOrg extends PluginForDecrypt {
                 }
             } finally {
                 con.disconnect();
-            }
-        } else {
-            final String youtubeVideoID = TbCmV2.getVideoIDFromUrl(param.getCryptedUrl());
-            if (youtubeVideoID == null) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "We can't handle this type of URL");
-            }
-            /* Look for direct-URLs */
-            br.setFollowRedirects(false);
-            br.getPage(param.getCryptedUrl());
-            br.getPage("https://web.archive.org/web/2oe_/http://wayback-fakeurl.archive.org/yt/" + Encoding.urlEncode(youtubeVideoID));
-            final String directurl = br.getRedirectLocation();
-            if (directurl == null) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Failed to extract YT directurl");
-            }
-            ret.add(createDownloadlink(DirectHTTP.createURLForThisPlugin(directurl)));
-            final String originalURL = new Regex(param.getCryptedUrl(), PATTERN_OTHER).getMatch(1);
-            if (originalURL != null) {
-                ret.add(createDownloadlink(Encoding.htmlDecode(originalURL)));
             }
         }
         if (ret.isEmpty()) {
