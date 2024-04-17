@@ -58,7 +58,8 @@ public class WebArchiveOrg extends PluginForDecrypt {
         }
         if (ret.isEmpty()) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else {
+            return ret;
         }
-        return ret;
     }
 }
