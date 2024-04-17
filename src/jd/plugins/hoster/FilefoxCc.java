@@ -137,11 +137,11 @@ public class FilefoxCc extends XFileSharingProBasic {
     }
 
     @Override
-    protected String regexWaittime() {
+    protected String regexWaittime(Browser br) {
         /* 2019-06-06: Special */
-        String waitStr = super.regexWaittime();
+        String waitStr = super.regexWaittime(br);
         if (StringUtils.isEmpty(waitStr)) {
-            waitStr = new Regex(correctedBR, "class\\s*=\\s*(\"|')time-remain\\1\\s*>\\s*(\\d+)\\s*</").getMatch(1);
+            waitStr = new Regex(br.getRequest().getHtmlCode(), "class\\s*=\\s*(\"|')time-remain\\1\\s*>\\s*(\\d+)\\s*</").getMatch(1);
         }
         return waitStr;
     }

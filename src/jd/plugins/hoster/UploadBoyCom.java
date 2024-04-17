@@ -20,10 +20,6 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -33,6 +29,10 @@ import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class UploadBoyCom extends XFileSharingProBasic {
@@ -126,11 +126,12 @@ public class UploadBoyCom extends XFileSharingProBasic {
         return 1;
     }
 
-    public String regexWaittime() {
+    @Override
+    public String regexWaittime(Browser br) {
         /* 2019-05-29: Special */
-        String wait = super.regexWaittime();
+        String wait = super.regexWaittime(br);
         if (wait == null) {
-            wait = new Regex(correctedBR, "class=\"count\">\\s*?(\\d+)\\s*?</span>").getMatch(0);
+            wait = new Regex(br.getRequest().getHtmlCode(), "class=\"count\">\\s*?(\\d+)\\s*?</span>").getMatch(0);
         }
         return wait;
     }

@@ -23,10 +23,6 @@ import java.util.Locale;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -41,6 +37,10 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class SubyShareCom extends XFileSharingProBasic {
@@ -182,11 +182,11 @@ public class SubyShareCom extends XFileSharingProBasic {
     }
 
     @Override
-    protected String regexWaittime() {
-        String waitStr = super.regexWaittime();
+    protected String regexWaittime(Browser br) {
+        String waitStr = super.regexWaittime(br);
         if (StringUtils.isEmpty(waitStr)) {
             /* 2018-07-19: Special */
-            waitStr = new Regex(correctedBR, "class\\s*=\\s*\"seconds\"[^>]*?>\\s*?(\\d+)\\s*?<").getMatch(0);
+            waitStr = new Regex(br.getRequest().getHtmlCode(), "class\\s*=\\s*\"seconds\"[^>]*?>\\s*?(\\d+)\\s*?<").getMatch(0);
         }
         return waitStr;
     }

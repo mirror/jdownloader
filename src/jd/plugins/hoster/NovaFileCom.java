@@ -25,9 +25,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.XFileSharingProBasicSpecialFilejoker;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -41,6 +38,9 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.XFileSharingProBasicSpecialFilejoker;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class NovaFileCom extends XFileSharingProBasicSpecialFilejoker {
@@ -195,11 +195,11 @@ public class NovaFileCom extends XFileSharingProBasicSpecialFilejoker {
     }
 
     @Override
-    protected String regexWaittime() {
+    protected String regexWaittime(Browser br) {
         /* 2019-08-21: Special */
-        String wait = new Regex(correctedBR, "class=\"alert\\-success[^\"]*\">(\\d+)</span>").getMatch(0);
+        String wait = new Regex(br.getRequest().getHtmlCode(), "class=\"alert\\-success[^\"]*\">(\\d+)</span>").getMatch(0);
         if (StringUtils.isEmpty(wait)) {
-            wait = super.regexWaittime();
+            wait = super.regexWaittime(br);
         }
         return wait;
     }

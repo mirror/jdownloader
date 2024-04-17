@@ -20,9 +20,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.Regex;
@@ -33,6 +30,9 @@ import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class MyqloudOrg extends XFileSharingProBasic {
@@ -309,15 +309,15 @@ public class MyqloudOrg extends XFileSharingProBasic {
     }
 
     @Override
-    protected String regexWaittime() {
+    protected String regexWaittime(Browser br) {
         /**
          * TODO: 2019-05-15: Try to grab the whole line which contains "id"="countdown" and then grab the waittime from inside that as it
          * would probably make this more reliable.
          */
         /* Ticket Time */
-        String waitStr = super.regexWaittime();
+        String waitStr = super.regexWaittime(br);
         if (waitStr == null) {
-            waitStr = new Regex(correctedBR, "id=\"[a-z0-9]+\">(\\d+)</span> seconds").getMatch(0);
+            waitStr = new Regex(br.getRequest().getHtmlCode(), "id=\"[a-z0-9]+\">(\\d+)</span> seconds").getMatch(0);
         }
         return waitStr;
     }

@@ -18,15 +18,16 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class FileupOrg extends XFileSharingProBasic {
@@ -121,10 +122,10 @@ public class FileupOrg extends XFileSharingProBasic {
     }
 
     @Override
-    public String regexWaittime() {
-        String ttt = super.regexWaittime();
+    public String regexWaittime(Browser br) {
+        String ttt = super.regexWaittime(br);
         if (StringUtils.isEmpty(ttt)) {
-            ttt = new Regex(correctedBR, "<span id=\"countdown\">[^<>]*?<span class=\"label label\\-danger seconds\">(\\d+)</span>").getMatch(0);
+            ttt = new Regex(br.getRequest().getHtmlCode(), "<span id=\"countdown\">[^<>]*?<span class=\"label label\\-danger seconds\">(\\d+)</span>").getMatch(0);
         }
         return ttt;
     }

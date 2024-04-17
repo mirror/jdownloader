@@ -19,9 +19,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.Regex;
@@ -32,6 +29,9 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class FilespaceCom extends XFileSharingProBasic {
@@ -165,11 +165,11 @@ public class FilespaceCom extends XFileSharingProBasic {
     }
 
     @Override
-    public String regexWaittime() {
+    public String regexWaittime(Browser br) {
         /* 2019-04-29: Special */
-        String wait = super.regexWaittime();
+        String wait = super.regexWaittime(br);
         if (wait == null) {
-            wait = new Regex(correctedBR, "Please wait <span id=\"[a-z0-9]+\">(\\d+)</span>").getMatch(0);
+            wait = new Regex(br.getRequest().getHtmlCode(), "Please wait <span id=\"[a-z0-9]+\">(\\d+)</span>").getMatch(0);
         }
         return wait;
     }

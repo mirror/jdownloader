@@ -20,10 +20,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-import org.jdownloader.plugins.components.config.XFSConfigVideoHotlinkCc;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -39,6 +35,10 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+import org.jdownloader.plugins.components.config.XFSConfigVideoHotlinkCc;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class HotlinkCc extends XFileSharingProBasic {
@@ -221,13 +221,13 @@ public class HotlinkCc extends XFileSharingProBasic {
     }
 
     @Override
-    public String regexWaittime() {
+    public String regexWaittime(Browser br) {
         /* 2019-05-15: Special */
-        String waitStr = super.regexWaittime();
+        String waitStr = super.regexWaittime(br);
         if (StringUtils.isEmpty(waitStr)) {
-            waitStr = new Regex(correctedBR, "class=\"seconds yellow\"><b>(\\d+)</b>").getMatch(0);
+            waitStr = new Regex(br.getRequest().getHtmlCode(), "class=\"seconds yellow\"><b>(\\d+)</b>").getMatch(0);
             if (StringUtils.isEmpty(waitStr)) {
-                waitStr = new Regex(correctedBR, "class=\"seconds[^\"]+\"><b>(\\d+)</b>").getMatch(0);
+                waitStr = new Regex(br.getRequest().getHtmlCode(), "class=\"seconds[^\"]+\"><b>(\\d+)</b>").getMatch(0);
             }
         }
         return waitStr;
