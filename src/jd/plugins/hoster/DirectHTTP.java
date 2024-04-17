@@ -114,11 +114,6 @@ public class DirectHTTP extends antiDDoSForHost implements DownloadConnectionVer
     public static final String  FORCE_NOVERIFIEDFILESIZE                     = "forcenoverifiedfilesize";
     public static final String  TRY_ALL                                      = "tryall";
     public static final String  POSSIBLE_URLPARAM                            = "POSSIBLE_GETPARAM";
-    // 2024-03-08: TODO: Check if this (BYPASS_CLOUDFLARE_BGJ) is still needed
-    @Deprecated
-    public static final String  BYPASS_CLOUDFLARE_BGJ                        = "bpCfBgj";                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            // TODO:
-    // Remove
-    // this?
     public static final String  PROPERTY_COOKIES                             = "COOKIES";
     public static final String  PROPERTY_HEADERS                             = "customHeader";
     public static final String  PROPERTY_MAX_CONCURRENT                      = "PROPERTY_MAX_CONCURRENT";
@@ -388,7 +383,7 @@ public class DirectHTTP extends antiDDoSForHost implements DownloadConnectionVer
             @Override
             public HashResult getHashResult(HashInfo hashInfo, File outputPartFile) {
                 final HashResult ret = super.getHashResult(hashInfo, outputPartFile);
-                if (ret == null || ret.match() || !downloadLink.hasProperty(BYPASS_CLOUDFLARE_BGJ)) {
+                if (ret == null || ret.match()) {
                     return ret;
                 } else {
                     return new HashResult(HashInfo.parse(ret.getFileHash()), ret.getFileHash());
@@ -457,11 +452,6 @@ public class DirectHTTP extends antiDDoSForHost implements DownloadConnectionVer
             downloadLink.setProperty(PROPERTY_ServerComaptibleForByteRangeRequest, Property.NULL);
         }
         long downloadCurrentRaw = downloadLink.getDownloadCurrentRaw();
-        if (downloadLink.getProperty(BYPASS_CLOUDFLARE_BGJ) != null) {
-            logger.info("Apply Cloudflare BGJ bypass");
-            resume = false;
-            chunks = 1;
-        }
         resume = isResumable(downloadLink, optionSet, resume);
         chunks = getMaxChunks(downloadLink, optionSet, chunks);
         logger.info("Resumable:" + resume + "|MaxChunks:" + chunks + "|ServerComaptibleForByteRangeRequest:" + downloadLink.getProperty(PROPERTY_ServerComaptibleForByteRangeRequest));
@@ -614,9 +604,6 @@ public class DirectHTTP extends antiDDoSForHost implements DownloadConnectionVer
         String ret = customDownloadURL;
         if (ret == null) {
             ret = downloadLink.getDownloadURL();
-        }
-        if (downloadLink.getProperty(BYPASS_CLOUDFLARE_BGJ) != null) {
-            ret = URLHelper.parseLocation(new URL(ret), "&bpcfbgj=" + System.nanoTime());
         }
         return ret;
     }
@@ -1063,16 +1050,6 @@ public class DirectHTTP extends antiDDoSForHost implements DownloadConnectionVer
                 followURLConnection(br, urlConnection);
                 return this.requestFileInformation(downloadLink, retry + 1, optionSet);
             }
-            if (urlConnection.getHeaderField("cf-bgj") != null && !downloadLink.hasProperty(BYPASS_CLOUDFLARE_BGJ)) {
-                // TODO: add support for "Cf-Polished: status=not_needed"
-                if (RequestMethod.HEAD.equals(urlConnection.getRequest().getRequestMethod())) {
-                    followURLConnection(br, urlConnection);
-                } else {
-                    urlConnection.disconnect();
-                }
-                downloadLink.setProperty(BYPASS_CLOUDFLARE_BGJ, Boolean.TRUE);
-                return this.requestFileInformation(downloadLink, retry + 1, optionSet);
-            }
             String streamMod = null;
             for (Entry<String, List<String>> header : urlConnection.getHeaderFields().entrySet()) {
                 if (StringUtils.startsWithCaseInsensitive(header.getKey(), "X-Mod-H264-Streaming")) {
@@ -1429,7 +1406,6 @@ public class DirectHTTP extends antiDDoSForHost implements DownloadConnectionVer
             link.removeProperty(PROPERTY_OPTION_SET);
         }
         link.removeProperty(FORCE_NOVERIFIEDFILESIZE);
-        link.removeProperty(BYPASS_CLOUDFLARE_BGJ);
         putSessionValue(link, null, null);
         /* E.g. filename set in crawler --> We don't want to lose that. */
         final String fixName = link.getStringProperty(FIXNAME, null);
