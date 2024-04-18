@@ -1404,33 +1404,34 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
     }
 
     protected String getFUID(final String url, URL_TYPE type) {
-        if (url != null && type != null) {
-            try {
-                switch (type) {
-                case IMAGE:
-                    if (isImagehoster()) {
-                        return new Regex(new URL(url).getPath(), "/(?:th|i)/\\d+/([a-z0-9]{12})").getMatch(0);
-                    } else {
-                        throw new IllegalArgumentException("Unsupported type:" + type + "|" + url);
-                    }
-                case EMBED_VIDEO:
-                    return new Regex(new URL(url).getPath(), "/embed-([a-z0-9]{12})").getMatch(0);
-                case EMBED_VIDEO_2:
-                    return new Regex(new URL(url).getPath(), "/e/([a-z0-9]{12})").getMatch(0);
-                case FILE:
-                    return new Regex(new URL(url).getPath(), "/file/([a-z0-9]{12})").getMatch(0);
-                case SHORT:
-                    return new Regex(new URL(url).getPath(), "/d/([a-z0-9]+)").getMatch(0);
-                case OFFICIAL_VIDEO_DOWNLOAD:
-                    return new Regex(new URL(url).getPath(), "/d/([a-z0-9]{12})").getMatch(0);
-                case NORMAL:
-                    return new Regex(new URL(url).getPath(), "/([a-z0-9]{12})").getMatch(0);
-                default:
+        if (url == null || type == null) {
+            return null;
+        }
+        try {
+            switch (type) {
+            case IMAGE:
+                if (isImagehoster()) {
+                    return new Regex(new URL(url).getPath(), "/(?:th|i)/\\d+/([a-z0-9]{12})").getMatch(0);
+                } else {
                     throw new IllegalArgumentException("Unsupported type:" + type + "|" + url);
                 }
-            } catch (MalformedURLException e) {
-                logger.log(e);
+            case EMBED_VIDEO:
+                return new Regex(new URL(url).getPath(), "/embed-([a-z0-9]{12})").getMatch(0);
+            case EMBED_VIDEO_2:
+                return new Regex(new URL(url).getPath(), "/e/([a-z0-9]{12})").getMatch(0);
+            case FILE:
+                return new Regex(new URL(url).getPath(), "/file/([a-z0-9]{12})").getMatch(0);
+            case SHORT:
+                return new Regex(new URL(url).getPath(), "/d/([a-z0-9]+)").getMatch(0);
+            case OFFICIAL_VIDEO_DOWNLOAD:
+                return new Regex(new URL(url).getPath(), "/d/([a-z0-9]{12})").getMatch(0);
+            case NORMAL:
+                return new Regex(new URL(url).getPath(), "/([a-z0-9]{12})").getMatch(0);
+            default:
+                throw new IllegalArgumentException("Unsupported type:" + type + "|" + url);
             }
+        } catch (MalformedURLException e) {
+            logger.log(e);
         }
         return null;
     }
@@ -4000,6 +4001,8 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
             throw new PluginException(LinkStatus.ERROR_FATAL, "Uploader has disabled downloads for this file");
         } else if (br.containsHTML("(?i)>\\s*Downloads are disabled for your country")) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "Downloads are disabled for your country", 60 * 60 * 1000l);
+        } else if (br.containsHTML(">\\s*File was locked by administrator")) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "File was locked by administrator");
         }
         /*
          * Errorhandling for accounts that are valid but cannot be used yet because the user has to add his mail to the account via website.

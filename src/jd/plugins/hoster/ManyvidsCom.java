@@ -167,6 +167,10 @@ public class ManyvidsCom extends PluginForHost {
             if (mvtoken != null) {
                 loginform.put("mvtoken", Encoding.urlEncode(mvtoken));
             }
+            /*
+             * Important: Form contains "userName" field (camelcase). If we do not remove it before putting in the username, it will be put
+             * into the existing camelcase field which will make the form-request fail (returns blank page)!
+             */
             loginform.remove("username");
             loginform.put("username", Encoding.urlEncode(account.getUser()));
             loginform.put("password", Encoding.urlEncode(account.getPass()));

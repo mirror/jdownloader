@@ -655,7 +655,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
             /* Prevent handling down below from picking up specific parts of the URL as used desired file-path. */
             sourceurl = sourceurl.replaceAll("(?i)/start/\\d+/end/\\d+$", "");
         }
-        final boolean isDownloadPage = sourceurl.matches("https?://[^/]+/download/.+");
+        final boolean isDownloadPage = sourceurl.matches("(?i)https?://[^/]+/download/.+");
         /* The following request will return an empty map if the given identifier is invalid. */
         final Browser brc = br.cloneBrowser();
         /* The json answer can be really big. */
@@ -709,10 +709,8 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         final Map<String, FilePackage> packagemap = new HashMap<String, FilePackage>();
         packagemap.put(identifier, fpRoot);
         final boolean crawlOriginalFilesOnly = cfg.isFileCrawlerCrawlOnlyOriginalVersions();
-        final boolean crawlArchiveView = cfg.isFileCrawlerCrawlArchiveView();
         final boolean crawlMetadataFiles = cfg.isFileCrawlerCrawlMetadataFiles();
         final boolean crawlThumbnails = cfg.isFileCrawlerCrawlThumbnails();
-        final boolean crawlRestrictedItems = cfg.isFileCrawlerCrawlRestrictedItems();
         logger.info("Crawling all files below path: " + desiredSubpathDecoded);
         final List<String> skippedItemsFilepaths = new ArrayList<String>();
         final List<List<String>> originalFilesListsForVideoStreams = new ArrayList<List<String>>();
@@ -732,7 +730,6 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
             // final Object originalO = filemap.get("original");
             /* Boolean as string */
             final boolean isAccountRequiredForDownload = StringUtils.equalsIgnoreCase((String) filemap.get("private"), "true");
-            final boolean isRestrictedDownload = isAccountRequiredForDownload && isAccessRestricted;
             String pathWithFilename = filemap.get("name").toString();
             if (Encoding.isHtmlEntityCoded(pathWithFilename)) {
                 /* Will sometimes contain "&amp;" */
@@ -805,9 +802,6 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                 file.setSha1Hash(sha1);
             }
             file.setProperty(ArchiveOrg.PROPERTY_TIMESTAMP_FROM_API_LAST_MODIFIED, filemap.get("mtime"));
-            // if (isAccountRequiredForDownload && isAccessRestricted) {
-            // file.setProperty(ArchiveOrg.PROPERTY_IS_RESTRICTED, true);
-            // }
             if (isAccountRequiredForDownload) {
                 file.setProperty(ArchiveOrg.PROPERTY_IS_ACCOUNT_REQUIRED, true);
             }
@@ -853,16 +847,9 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
             } else if (isThumbnail && !crawlThumbnails) {
                 /* Only include thumbnails if wished by the user. */
                 skippedItemsFilepaths.add(pathWithFilename);
-            } else if (isRestrictedDownload && !crawlRestrictedItems) {
-                skippedItemsFilepaths.add(pathWithFilename);
             } else {
                 ret.add(file);
             }
-            // TODO: Check this: Make this work or remove this feature
-            // if (crawlArchiveView && isArchiveViewSupported) {
-            // final DownloadLink archiveViewURL = createDownloadlink(url + "/");
-            // ret.add(archiveViewURL);
-            // }
             final Object original = filemap.get("original");
             if (original instanceof List) {
                 originalFilesListsForVideoStreams.add((List<String>) original);
@@ -890,15 +877,24 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         if (playlistCrawlMode == PlaylistCrawlMode.DEFAULT) {
             playlistCrawlMode = PlaylistCrawlMode.AUTO;
         }
-        if (singleDesiredFile != null) {
-            /* Single file which user wants */
-            ret.clear(); // Clear our list of results
-            ret.add(singleDesiredFile); // Add desired result only
-            return ret;
-        } else if (desiredSubpathItems.size() > 0) {
-            /* User desired item(s) are available -> Return only them */
-            return desiredSubpathItems;
-        } else if (StringUtils.equalsIgnoreCase(mediatype, "texts")) {
+        if (desiredSubpathDecoded != null) {
+            if (singleDesiredFile != null) {
+                /* Single file which user wants */
+                ret.clear(); // Clear our list of results
+                ret.add(singleDesiredFile); // Add desired result only
+                return ret;
+            } else if (desiredSubpathItems.size() > 0) {
+                /* User desired item(s) are available -> Return only them */
+                return desiredSubpathItems;
+            }
+            // final SingleFilePathNotFoundMode mode = cfg.getSingleFilePathNonFoundMode();
+            // if (mode == SingleFilePathNotFoundMode.ADD_NOTHING_AND_DISPLAY_ADDED_URL_AS_OFFLINE) {
+            // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            // } else {
+            // logger.info("Single desired path was not found -> Adding all results instead");
+            // }
+        }
+        if (StringUtils.equalsIgnoreCase(mediatype, "texts")) {
             /* Book crawl handling */
             final BookCrawlMode mode = cfg.getBookCrawlMode();
             /* Decide whether or not we need to crawl the loose book pages. */
@@ -1394,7 +1390,8 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final ArchiveOrgConfig cfg = PluginJsonConfig.get(ArchiveOrgConfig.class);
         final boolean crawlOriginalFilesOnly = cfg.isFileCrawlerCrawlOnlyOriginalVersions();
-        final boolean crawlArchiveView = cfg.isFileCrawlerCrawlArchiveView();
+        // final boolean crawlArchiveView = cfg.isFileCrawlerCrawlArchiveView();
+        final boolean crawlArchiveView = false;
         final boolean crawlMetadataFiles = cfg.isFileCrawlerCrawlMetadataFiles();
         final String[] items = new Regex(xmlResponse, "<file\\s*(.*?)\\s*</file>").getColumn(0);
         if (items == null || items.length == 0) {

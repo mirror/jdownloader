@@ -14,8 +14,7 @@ import org.jdownloader.plugins.config.Type;
 
 @PluginHost(host = "archive.org", type = Type.CRAWLER)
 public interface ArchiveOrgConfig extends PluginConfigInterface {
-    final String                    text_FileCrawlerCrawlOnlyOriginalVersions                    = "File crawler: Download only original versions of files?";
-    final String                    text_FileCrawlerCrawlArchiveView                             = "File crawler: Include archive view?";
+    final String                    text_FileCrawlerCrawlOnlyOriginalVersions                    = "File crawler: Add only original versions of files?";
     final String                    text_FileCrawlerCrawlMetadataFiles                           = "File crawler: Include metadata files (typically .xml & .sqlite files)?";
     final String                    text_PlaylistFilenameScheme                                  = "Playlist filename scheme";
     final String                    text_BookImageQuality                                        = "Book image quality (0 = highest, 10 = lowest)";
@@ -29,10 +28,6 @@ public interface ArchiveOrgConfig extends PluginConfigInterface {
             return text_FileCrawlerCrawlOnlyOriginalVersions;
         }
 
-        public String getFileCrawlerCrawlArchiveView_label() {
-            return text_FileCrawlerCrawlArchiveView;
-        }
-
         public String getFileCrawlerCrawlMetadataFiles_label() {
             return text_FileCrawlerCrawlMetadataFiles;
         }
@@ -41,8 +36,8 @@ public interface ArchiveOrgConfig extends PluginConfigInterface {
             return "File crawler: Crawl thumbnails?";
         }
 
-        public String getFileCrawlerCrawlRestrictedItems_label() {
-            return "File crawler: Crawl restricted [=un-downloadable] items?";
+        public String getSingleFilePathNonFoundMode_label() {
+            return "File crawler: What to do when single file/folder-path is not found?";
         }
 
         public String getPlaylistFilenameScheme_label() {
@@ -80,14 +75,6 @@ public interface ArchiveOrgConfig extends PluginConfigInterface {
 
     @AboutConfig
     @DefaultBooleanValue(false)
-    @DescriptionForConfigEntry(text_FileCrawlerCrawlArchiveView)
-    @Order(20)
-    boolean isFileCrawlerCrawlArchiveView();
-
-    void setFileCrawlerCrawlArchiveView(boolean b);
-
-    @AboutConfig
-    @DefaultBooleanValue(false)
     @DescriptionForConfigEntry(text_FileCrawlerCrawlMetadataFiles)
     @Order(25)
     boolean isFileCrawlerCrawlMetadataFiles();
@@ -102,13 +89,36 @@ public interface ArchiveOrgConfig extends PluginConfigInterface {
 
     void setFileCrawlerCrawlThumbnails(boolean b);
 
-    @AboutConfig
-    @DefaultBooleanValue(true)
-    @DescriptionForConfigEntry("Crawl restricted items although they can't be downloaded?")
-    @Order(27)
-    boolean isFileCrawlerCrawlRestrictedItems();
+    final SingleFilePathNotFoundMode default_SingleFilePathNotFoundMode = SingleFilePathNotFoundMode.ADD_ALL;
 
-    void setFileCrawlerCrawlRestrictedItems(boolean b);
+    public static enum SingleFilePathNotFoundMode implements LabelInterface {
+        ADD_ALL {
+            @Override
+            public String getLabel() {
+                return "Add all (other) items";
+            }
+        },
+        ADD_NOTHING_AND_DISPLAY_ADDED_URL_AS_OFFLINE {
+            @Override
+            public String getLabel() {
+                return "Display added URL as offline and add nothing";
+            }
+        },
+        DEFAULT {
+            @Override
+            public String getLabel() {
+                return "Default: " + default_SingleFilePathNotFoundMode.getLabel();
+            }
+        };
+    }
+
+    @AboutConfig
+    @DefaultEnumValue("DEFAULT")
+    @Order(27)
+    @DescriptionForConfigEntry("What to do when a single added file/folder-path is not found?")
+    SingleFilePathNotFoundMode getSingleFilePathNonFoundMode();
+
+    void setSingleFilePathNonFoundMode(final SingleFilePathNotFoundMode mode);
 
     public static enum PlaylistFilenameScheme implements LabelInterface {
         PLAYLIST_TITLE_WITH_TRACK_NUMBER {

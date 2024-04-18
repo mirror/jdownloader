@@ -88,19 +88,22 @@ public class MultiupOrgCrawler extends antiDDoSForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         String contenturl = param.getCryptedUrl();
-        contenturl = contenturl.replaceFirst("/(en|fr)/", "/");
+        contenturl = contenturl.replaceFirst("(?i)/(en|fr)/", "/");
         contenturl = contenturl.replaceFirst("(?i)http://", "https://");
-        final String uid = getFUID(contenturl);
-        if (uid == null) {
-            /* Developer mistake */
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
+        String uid = getFUID(contenturl);
         String filename = getFilename(contenturl);
         String filesize = getFileSize(contenturl);
-        if (filename != null) {
+        if (filename != null && uid != null) {
             contenturl = new Regex(contenturl, "(https?://[^/]+)").getMatch(0) + "/download/" + uid + "/" + filename;
         }
         getPage(contenturl);
+        if (uid == null) {
+            getFUID(br.getURL());
+            if (uid == null) {
+                /* Invalid URL / content offline */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+        }
         final String csrftoken = br.getRegex("_csrf_token\"\\s*value\\s*=\\s*\"(.*?)\"").getMatch(0);
         final String mirror = contenturl.replace("/en/download/", "/en/mirror/").replace("/download/", "/en/mirror/");
         if (csrftoken != null) {
@@ -116,7 +119,9 @@ public class MultiupOrgCrawler extends antiDDoSForDecrypt {
         if (filesize == null) {
             filesize = webSiteFileSize;
         }
-        if (br.containsHTML("The file does not exist any more\\.<|<h1>The server returned a \"404 Not Found\"\\.</h2>|<h1>Oops! An Error Occurred</h1>|>File not found|>No link currently available")) {
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("The file does not exist any more\\.<|<h1>\\s*The server returned a \"404 Not Found\"\\.</h2>|<h1>\\s*Oops! An Error Occurred\\s*</h1>|>\\s*File not found|>\\s*No link currently available")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (br.containsHTML("cloudflare\\.com/turnstile/")) {
@@ -129,6 +134,7 @@ public class MultiupOrgCrawler extends antiDDoSForDecrypt {
             form.put("g-recaptcha-response", Encoding.urlEncode(response));
             submitForm(form);
             if (br.containsHTML("h-recaptcha")) {
+                /* This should never happen */
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
         } else if (br.containsHTML("g-recaptcha")) {
@@ -140,23 +146,25 @@ public class MultiupOrgCrawler extends antiDDoSForDecrypt {
                 throw new PluginException(LinkStatus.ERROR_CAPTCHA);
             }
         }
-        String[] links = br.getRegex("\\s+link\\s*=\\s*\"((https?://)?[^\"]+)\"\\s+").getColumn(0);
-        if (links == null || links.length == 0) {
-            links = br.getRegex("\\s+href\\s*=\\s*\"([^\"]+)\"\\s+").getColumn(0);
-            if (links == null || links.length == 0) {
+        String[] urls = br.getRegex("\\s+link\\s*=\\s*\"((https?://)?[^\"]+)\"\\s+").getColumn(0);
+        if (urls == null || urls.length == 0) {
+            urls = br.getRegex("\\s+href\\s*=\\s*\"([^\"]+)\"\\s+").getColumn(0);
+            if (urls == null || urls.length == 0) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        for (String singleLink : links) {
+        int index = -1;
+        for (final String url : urls) {
+            index++;
+            logger.info("Crawling mirror " + index + "/" + urls.length);
             if (isAbort()) {
                 break;
             }
             String finalURL = null;
-            if (StringUtils.containsIgnoreCase(singleLink, "/redirect-to-host/")) {
-                singleLink = br.getURL(singleLink).toString();
+            if (StringUtils.containsIgnoreCase(url, "/redirect-to-host/")) {
                 final Browser brc = br.cloneBrowser();
                 brc.setFollowRedirects(false);
-                brc.getPage(singleLink);
+                brc.getPage(url);
                 boolean retry = true;
                 while (!isAbort()) {
                     finalURL = brc.getRedirectLocation();
@@ -166,7 +174,7 @@ public class MultiupOrgCrawler extends antiDDoSForDecrypt {
                             if (retry && StringUtils.containsIgnoreCase(finalURL, "multinews.me")) {
                                 // first/randomly opens sort of *show some ads* website, on retry the real destination is given
                                 retry = false;
-                                brc.getPage(singleLink);
+                                brc.getPage(url);
                                 continue;
                             }
                             if (!StringUtils.containsIgnoreCase(finalURL, "/redirect-to-host/") || finalURL.startsWith("http")) {
@@ -193,8 +201,8 @@ public class MultiupOrgCrawler extends antiDDoSForDecrypt {
                         break;
                     }
                 }
-            } else if (singleLink.startsWith("http")) {
-                finalURL = singleLink.trim().replaceFirst(":/+", "://");
+            } else if (url.startsWith("http")) {
+                finalURL = url.trim().replaceFirst(":/+", "://");
             }
             if (finalURL != null) {
                 final DownloadLink downloadLink = createDownloadlink(finalURL);
@@ -221,7 +229,7 @@ public class MultiupOrgCrawler extends antiDDoSForDecrypt {
                 multiNewsWorkaround = page;
             }
             super.getPage(page);
-            if (br.containsHTML("<title>Redirect</title>")) {
+            if (br.containsHTML("<title>\\s*Redirect\\s*</title>")) {
                 final String location = br.getRegex("window\\.opener\\.location\\s*=\\s*'([^']+)'\\s*;").getMatch(0);
                 if (location != null) {
                     Thread.sleep(1000);
@@ -293,8 +301,8 @@ public class MultiupOrgCrawler extends antiDDoSForDecrypt {
         return fileName;
     }
 
-    private String getFUID(String parameter) {
-        final String fuid = new Regex(parameter, "(?:_|/)([a-f0-9]{32})").getMatch(0);
+    private String getFUID(final String url) {
+        final String fuid = new Regex(url, "(?:_|/)([a-f0-9]{32})").getMatch(0);
         return fuid;
     }
 

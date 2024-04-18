@@ -60,6 +60,9 @@ public class WebArchiveOrg extends PluginForDecrypt {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
             ret.add("https?://" + buildHostsPatternPart(domains) + "/web/[0-9]+.+");
+            // TODO: Testing a better Regex down below
+            // ret.add("https?://" + buildHostsPatternPart(domains) + "/[0-9]+((if|im|oe)_|\\*)?/.+");
+            // https?://web\.archive\.org/web/[0-9]+((if|im|oe)_|\*)?/.+
         }
         return ret.toArray(new String[0]);
     }
@@ -77,7 +80,6 @@ public class WebArchiveOrg extends PluginForDecrypt {
             /* Look for direct-URLs */
             final Browser brc = br.cloneBrowser();
             brc.setFollowRedirects(false);
-            brc.getPage(param.getCryptedUrl());
             brc.getPage("https://web.archive.org/web/2oe_/http://wayback-fakeurl.archive.org/yt/" + Encoding.urlEncode(youtubeVideoID));
             final String directurl = brc.getRedirectLocation();
             if (directurl == null) {
