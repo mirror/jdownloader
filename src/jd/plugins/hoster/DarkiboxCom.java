@@ -122,7 +122,15 @@ public class DarkiboxCom extends XFileSharingProBasic {
         // }
         if (!uglyTempWorkaround && Thread.currentThread() instanceof SingleDownloadController) {
             // Wait before download1 form is sent
-            Thread.sleep(3100l);
+            final int waitSeconds;
+            final String waitStr = this.regexWaittime(br);
+            if (waitStr != null) {
+                waitSeconds = Integer.parseInt(waitStr);
+            } else {
+                /* Fallback */
+                waitSeconds = 3;
+            }
+            this.sleep(waitSeconds * 1001l, this.getDownloadLink());
             uglyTempWorkaround = true;
         }
         return super.getDllinkViaOfficialVideoDownload(br, link, account, returnFilesize);

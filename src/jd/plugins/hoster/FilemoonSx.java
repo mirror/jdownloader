@@ -195,7 +195,7 @@ public class FilemoonSx extends XFileSharingProBasic {
             dlform.put("file_code", this.getFUIDFromURL(link));
             dlform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
             this.submitForm(dlform);
-            if (isSpecialError404(br)) {
+            if (br.containsHTML("class=\"error e404\"|>\\s*Page not found")) {
                 /* 2023-05-04 */
                 if (streamDownloadurl != null) {
                     logger.info("Official download is not possible -> Fallback to stream download");
@@ -228,17 +228,13 @@ public class FilemoonSx extends XFileSharingProBasic {
     protected void checkErrors(final Browser br, final String html, final DownloadLink link, final Account account, final boolean checkAll) throws NumberFormatException, PluginException {
         super.checkErrors(br, html, link, account, checkAll);
         /* 2022-11-04: Website failure after captcha on "/download/..." page */
-        if (isSpecialError404(br)) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404");
+        if (isOffline(link, br)) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (isRefererBlocked(br)) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "Custom referer needed to download this item");
         } else if (br.containsHTML(">\\s*This video is not available in your country")) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "GEO-blocked");
         }
-    }
-
-    private boolean isSpecialError404(final Browser br) {
-        return br.containsHTML("(?i)class=\"error e404\"|>\\s*Page not found");
     }
 
     private boolean isRefererBlocked(final Browser br) {
@@ -247,7 +243,7 @@ public class FilemoonSx extends XFileSharingProBasic {
 
     @Override
     protected boolean isOffline(final DownloadLink link, final Browser br) {
-        if (br.containsHTML("(?i)<h1>\\s*Page not found|class=\"error e404\"")) {
+        if (br.containsHTML("<h1>\\s*Page not found|class=\"error e404\"")) {
             return true;
         } else {
             return super.isOffline(link, br);
