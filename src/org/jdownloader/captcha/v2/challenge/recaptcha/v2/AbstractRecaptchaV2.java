@@ -428,7 +428,7 @@ public abstract class AbstractRecaptchaV2<T extends Plugin> {
                     if (siteKey != null) {
                         return siteKey;
                     }
-                    siteKey = new Regex(script, "google\\.\\w+/recaptcha/api\\.js\\?render=(" + apiKeyRegex + ")").getMatch(0);
+                    siteKey = new Regex(script, "google\\.\\w+/recaptcha/(?:enterprise|api)\\.js\\?render=(" + apiKeyRegex + ")").getMatch(0);
                     if (siteKey != null) {
                         return siteKey;
                     }
@@ -440,7 +440,7 @@ public abstract class AbstractRecaptchaV2<T extends Plugin> {
             final String[] iframes = new Regex(source, "<\\s*iframe\\s+(?:.*?<\\s*/\\s*iframe\\s*>|[^>]+\\s*/\\s*>)").getColumn(-1);
             if (iframes != null) {
                 for (final String iframe : iframes) {
-                    final String siteKey = new Regex(iframe, "google\\.com/recaptcha/api/fallback\\?k=(" + apiKeyRegex + ")").getMatch(0);
+                    final String siteKey = new Regex(iframe, "google\\.com/recaptcha/(?:api|enterprise)/fallback\\?k=(" + apiKeyRegex + ")").getMatch(0);
                     if (siteKey != null) {
                         return siteKey;
                     }
