@@ -30,7 +30,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.parser.UrlQuery;
@@ -136,8 +135,12 @@ public class BeegCom extends PluginForHost {
             /* 2021-07-26: Seems like all objects in this array lead to the same video. */
             final List<Map<String, Object>> vids = (List<Map<String, Object>>) entries.get("fc_facts");
             final Map<String, Object> file = (Map<String, Object>) entries.get("file");
+            final List<Map<String, Object>> data = (List<Map<String, Object>>) file.get("data");
             final Map<String, Object> stuff = (Map<String, Object>) file.get("stuff");
             filename = (String) stuff.get("sf_name");
+            if (StringUtils.isEmpty(filename) && data != null && data.size() > 0) {
+                filename = (String) data.get(0).get("cd_value");
+            }
             Map<String, String> qualities_http = null;
             Map<String, String> qualities_hls = null;
             for (final Map<String, Object> vid : vids) {
@@ -147,12 +150,13 @@ public class BeegCom extends PluginForHost {
                     break;
                 }
             }
-            if (qualities_http == null) {
+            if (qualities_http == null || qualities_http.size() == 0) {
                 /* E.g. videos without "t" parameter inside URL. */
                 qualities_http = (Map<String, String>) file.get("resources");
             }
-            if (qualities_hls == null) {
+            if (qualities_hls == null || qualities_hls.size() == 0) {
                 qualities_hls = (Map<String, String>) file.get("hls_resources");
+
             }
             Map<String, String> chosenQualities = null;
             if (qualities_http != null) {
@@ -335,7 +339,11 @@ public class BeegCom extends PluginForHost {
                     con = br.openGetConnection(dllink);
                     if (this.looksLikeDownloadableContent(con)) {
                         if (con.getCompleteContentLength() > 0) {
-                            link.setVerifiedFileSize(con.getCompleteContentLength());
+                            if (con.isContentDecoded()) {
+                                link.setDownloadSize(con.getCompleteContentLength());
+                            } else {
+                                link.setVerifiedFileSize(con.getCompleteContentLength());
+                            }
                         }
                     } else {
                         server_issue = true;

@@ -24,12 +24,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -52,6 +46,12 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.XvideosCom;
 import jd.plugins.hoster.XvideosCore;
+
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class XvideosComProfile extends PluginForDecrypt {
@@ -300,7 +300,7 @@ public class XvideosComProfile extends PluginForDecrypt {
         fp.setName(username);
         final String userID = br.getRegex("profile-report-form-(\\d+)_").getMatch(0);
         /* Crawl quickies if user has some -> Short 30 seconds clips */
-        crawlQuickies: if (br.containsHTML("\"has_quickies\":true")) {
+        crawlQuickies: if (br.containsHTML("\"has_quickies\"\\s*:\\s*true")) {
             logger.info("Crawling quickies...");
             if (userID == null) {
                 logger.warning("Quickies crawler failed because: Failed to find userID");
@@ -318,22 +318,31 @@ public class XvideosComProfile extends PluginForDecrypt {
                     /* Skip dupes */
                     continue;
                 }
-                final String videourl = brc.getURL(singleLink).toExternalForm();
-                final DownloadLink dl = createDownloadlink(videourl);
+                String videourl = brc.getURL(singleLink).toExternalForm();
+                final String correctVideoID[] = new Regex(videourl, "/([a-z0-9]+)/([^/\\?]+)$").getRow(0);
                 if (plg != null && !plg.canHandle(videourl)) {
-                    logger.warning("Detected URL goes into nirvana: " + videourl);
+                    if (correctVideoID != null) {
+                        // rewrite into supported URL format
+                        videourl = br.getURL("/video." + correctVideoID[0] + "/" + correctVideoID[1]).toExternalForm();
+                    } else {
+                        logger.warning("Detected URL goes into nirvana: " + videourl);
+                    }
                 }
+                final DownloadLink dl = createDownloadlink(videourl);
                 /* Usually we will crawl a lot of URLs at this stage --> Set onlinestatus right away! */
                 dl.setAvailable(true);
                 fp.add(dl);
                 final String nameTemp;
                 if (!StringUtils.isEmpty(title)) {
-                    nameTemp = videoID + "_" + title;
+                    nameTemp = (correctVideoID != null ? correctVideoID[0] : videoID) + "_" + title;
                 } else {
-                    nameTemp = videoID;
+                    nameTemp = (correctVideoID != null ? correctVideoID[0] : videoID);
                 }
                 dl.setName(nameTemp + ".mp4");
                 /* Packagizer properties */
+                if (correctVideoID != null) {
+                    dl.setProperty(XvideosCore.PROPERTY_VIDEOID, correctVideoID);
+                }
                 dl.setProperty(XvideosCore.PROPERTY_USERNAME, username);
                 dl._setFilePackage(fp);
                 ret.add(dl);
@@ -380,22 +389,31 @@ public class XvideosComProfile extends PluginForDecrypt {
                     continue;
                 }
                 final String titleURL = new Regex(singleLink, "/([^/]+)$").getMatch(0);
-                final String videourl = br.getURL(singleLink).toExternalForm();
-                final DownloadLink dl = createDownloadlink(videourl);
+                String videourl = br.getURL(singleLink).toExternalForm();
+                final String correctVideoID[] = new Regex(videourl, "/([a-z0-9]+)/([^/\\?]+)$").getRow(0);
                 if (plg != null && !plg.canHandle(videourl)) {
-                    logger.warning("Detected URL goes into nirvana: " + videourl);
+                    if (correctVideoID != null) {
+                        // rewrite into supported URL format
+                        videourl = br.getURL("/video." + correctVideoID[0] + "/" + correctVideoID[1]).toExternalForm();
+                    } else {
+                        logger.warning("Detected URL goes into nirvana: " + videourl);
+                    }
                 }
+                final DownloadLink dl = createDownloadlink(videourl);
                 /* Usually we will crawl a lot of URLs at this stage --> Set onlinestatus right away! */
                 dl.setAvailable(true);
                 fp.add(dl);
                 final String nameTemp;
                 if (titleURL != null) {
-                    nameTemp = videoID + "_" + cleanUrlTitle(titleURL);
+                    nameTemp = (correctVideoID != null ? correctVideoID[0] : videoID) + "_" + cleanUrlTitle(titleURL);
                 } else {
-                    nameTemp = videoID;
+                    nameTemp = (correctVideoID != null ? correctVideoID[0] : videoID);
                 }
                 dl.setName(nameTemp + ".mp4");
                 /* Packagizer properties */
+                if (correctVideoID != null) {
+                    dl.setProperty(XvideosCore.PROPERTY_VIDEOID, correctVideoID);
+                }
                 dl.setProperty(XvideosCore.PROPERTY_USERNAME, username);
                 dl._setFilePackage(fp);
                 ret.add(dl);

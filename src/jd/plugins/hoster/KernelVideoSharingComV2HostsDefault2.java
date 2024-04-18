@@ -25,6 +25,9 @@ import jd.plugins.HostPlugin;
 public class KernelVideoSharingComV2HostsDefault2 extends KernelVideoSharingComV2 {
     public KernelVideoSharingComV2HostsDefault2(final PluginWrapper wrapper) {
         super(wrapper);
+        if ("cambro.tv".equals(getHost())) {
+            enablePremium();
+        }
     }
 
     public static List<String[]> getPluginDomains() {
