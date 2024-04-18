@@ -21,8 +21,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 import jd.PluginWrapper;
@@ -31,10 +29,12 @@ import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.parser.html.Form.MethodType;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.AccountInvalidException;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -102,24 +102,7 @@ public class ManyvidsCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         // 2024-01-26: Not used
-        this.setBrowserExclusive();
-        br.getPage(link.getPluginPatternMatcher());
-        if (this.br.getHttpConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        String filename = br.getRegex("").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("").getMatch(0);
-        }
-        String filesize = br.getRegex("").getMatch(0);
-        if (StringUtils.isEmpty(filename)) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        link.setName(Encoding.htmlDecode(filename.trim()));
-        if (!StringUtils.isEmpty(filesize)) {
-            link.setDownloadSize(SizeFormatter.getSize(filesize));
-        }
-        return AvailableStatus.TRUE;
+        return AvailableStatus.UNCHECKABLE;
     }
 
     @Override
@@ -130,22 +113,7 @@ public class ManyvidsCom extends PluginForHost {
 
     private void handleDownload(final DownloadLink link, final Account account) throws Exception, PluginException {
         // 2024-01-26: Not used
-        String dllink = br.getRegex("").getMatch(0);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, this.isResumeable(link, account), 0);
-        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            if (dl.getConnection().getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-            }
-            try {
-                br.followConnection(true);
-            } catch (final IOException e) {
-                logger.log(e);
-            }
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl.startDownload();
+        throw new AccountRequiredException();
     }
 
     @Override
@@ -172,24 +140,34 @@ public class ManyvidsCom extends PluginForHost {
                 } else {
                     logger.info("Cookie login failed");
                     br.clearCookies(null);
+                    account.clearCookies("");
                 }
             }
             logger.info("Performing full login");
             br.getPage("https://www." + this.getHost() + "/Login/");
-            final String rcKey = br.getRegex("data-recaptchav3-site-key=\"([^\"]+)").getMatch(0);
+            final String rcKey = br.getRegex("enterprise\\.js\\?render=([^\"]+)").getMatch(0);
             if (rcKey == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                logger.warning("Failed to find reCaptcha sitekey");
             }
-            final String mvtoken = br.getRegex("data-mvtoken=\"([^\"]+)").getMatch(0);
-            if (mvtoken == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            final String mvtoken = br.getRegex("data-mvtoken=\"([^\"]+)").getMatch(0); // 2024-04-18: Not needed anymore
+            Form loginform = br.getFormbyProperty("id", "loginAccountSubmitForm");
+            if (loginform == null) {
+                for (final Form form : br.getForms()) {
+                    if (form.hasInputFieldByName("password")) {
+                        loginform = form;
+                        break;
+                    }
+                }
             }
-            final Form loginform = br.getFormbyProperty("id", "loginAccountSubmitForm");
             if (loginform == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            loginform.setMethod(MethodType.POST);
             loginform.setAction("/includes/login-access-user.php");
-            loginform.put("mvtoken", Encoding.urlEncode(mvtoken));
+            if (mvtoken != null) {
+                loginform.put("mvtoken", Encoding.urlEncode(mvtoken));
+            }
+            loginform.remove("username");
             loginform.put("username", Encoding.urlEncode(account.getUser()));
             loginform.put("password", Encoding.urlEncode(account.getPass()));
             final CaptchaHelperHostPluginRecaptchaV2 rc2 = new CaptchaHelperHostPluginRecaptchaV2(this, br, rcKey) {
@@ -205,32 +183,37 @@ public class ManyvidsCom extends PluginForHost {
             };
             final String rcToken = rc2.getToken();
             loginform.put("captcha", Encoding.urlEncode(rcToken));
+            loginform.put("previousPage", "/");
             loginform.put("user_action", "login");
             br.submitForm(loginform);
-            final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
-            final String serversideErrorMsg = (String) entries.get("error");
-            if (serversideErrorMsg != null) {
-                /*
-                 * E.g. {"internalStatus":7,
-                 * "error":"We do not recognize the location in which you are logging in from. An email has been sent to you with further instructions to login."
-                 * }
-                 */
-                throw new AccountInvalidException(serversideErrorMsg);
-            }
-            final int internalStatus = ((Number) entries.get("internalStatus")).intValue();
-            if (internalStatus != 3 && internalStatus != 6) {
-                /* Messages according to: https://www.manyvids.com/js/compiled.js */
-                final String customErrormessage;
-                if (internalStatus == 0) {
-                    customErrormessage = "Check Username & Password are correct and re-try.";
-                } else if (internalStatus == 2) {
-                    customErrormessage = "Invalid credentials";
-                } else if (internalStatus == 4) {
-                    customErrormessage = "You need to verify your account before you are able to log in to manyvids. Please check your email inbox.";
-                } else {
-                    customErrormessage = "Unknown error status " + internalStatus;
+            if (br.getRequest().getHtmlCode().startsWith("{")) {
+                final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+                final String serversideErrorMsg = (String) entries.get("error");
+                if (serversideErrorMsg != null) {
+                    /*
+                     * E.g. {"internalStatus":7,
+                     * "error":"We do not recognize the location in which you are logging in from. An email has been sent to you with further instructions to login."
+                     * }
+                     */
+                    throw new AccountInvalidException(serversideErrorMsg);
                 }
-                throw new AccountInvalidException(customErrormessage);
+                final int internalStatus = ((Number) entries.get("internalStatus")).intValue();
+                if (internalStatus != 3 && internalStatus != 6) {
+                    /* Messages according to: https://www.manyvids.com/js/compiled.js */
+                    final String customErrormessage;
+                    if (internalStatus == 0) {
+                        customErrormessage = "Check Username & Password are correct and re-try.";
+                    } else if (internalStatus == 2) {
+                        customErrormessage = "Invalid credentials";
+                    } else if (internalStatus == 4) {
+                        customErrormessage = "You need to verify your account before you are able to log in to manyvids. Please check your email inbox.";
+                    } else {
+                        customErrormessage = "Unknown error status " + internalStatus;
+                    }
+                    throw new AccountInvalidException(customErrormessage);
+                }
+            } else {
+                logger.warning("Login response is not json -> Login possibly failed");
             }
             br.getPage("/");
             if (!checkLogin(br)) {

@@ -157,6 +157,8 @@ public class DarkiboxCom extends XFileSharingProBasic {
         super.checkErrors(br, html, link, account, checkAll);
         if (br.containsHTML(">\\s*You are not able to download Files")) {
             throw new PluginException(LinkStatus.ERROR_FATAL, "Website error 'You are not able to download Files'");
+        } else if (br.containsHTML(">\\s*File was locked by administrator")) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Website error 'File was locked by administrator'");
         }
     }
 

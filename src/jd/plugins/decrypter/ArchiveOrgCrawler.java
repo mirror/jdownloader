@@ -655,6 +655,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
             /* Prevent handling down below from picking up specific parts of the URL as used desired file-path. */
             sourceurl = sourceurl.replaceAll("(?i)/start/\\d+/end/\\d+$", "");
         }
+        final boolean isDownloadPage = sourceurl.matches("https?://[^/]+/download/.+");
         /* The following request will return an empty map if the given identifier is invalid. */
         final Browser brc = br.cloneBrowser();
         /* The json answer can be really big. */
@@ -675,7 +676,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
             return this.crawlCollection(identifier);
         }
         final ArchiveOrgConfig cfg = PluginJsonConfig.get(ArchiveOrgConfig.class);
-        final String desiredSubpath = new Regex(sourceurl, "/" + Pattern.quote(identifier) + "/(.+)").getMatch(0);
+        final String desiredSubpath = new Regex(sourceurl, ".*/(" + Pattern.quote(identifier) + "/.+)").getMatch(0);
         String desiredSubpathDecoded = null;
         if (desiredSubpath != null) {
             /*
@@ -689,6 +690,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         final ArrayList<DownloadLink> originalItems = new ArrayList<DownloadLink>();
         final ArrayList<DownloadLink> audioPlaylistItems = new ArrayList<DownloadLink>();
         final ArrayList<DownloadLink> desiredSubpathItems = new ArrayList<DownloadLink>();
+        DownloadLink singleDesiredFile = null;
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final Object descriptionObject = root_metadata.get("description");
         final String description;
@@ -768,6 +770,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                 thisPath = identifier;
                 filename = pathWithFilename;
             }
+            final String fullPath = identifier + "/" + pathWithFilename;
             final Object fileSizeO = filemap.get("size");
             final Object audioTrackPositionO = filemap.get("track");
             String url = "https://archive.org/download/" + identifier;
@@ -827,9 +830,13 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                 packagemap.put(thisPath, fp);
             }
             file._setFilePackage(fp);
-            if (desiredSubpathDecoded != null && pathWithFilename.startsWith(desiredSubpathDecoded)) {
+            if (desiredSubpathDecoded != null && fullPath.startsWith(desiredSubpathDecoded)) {
                 /* Add item to list of results which match our given subpath. */
-                desiredSubpathItems.add(file);
+                if (fullPath.endsWith(desiredSubpathDecoded)) {
+                    singleDesiredFile = file;
+                } else if (fullPath.startsWith(desiredSubpathDecoded)) {
+                    desiredSubpathItems.add(file);
+                }
             }
             if (isOriginal && totalLengthSecondsStrForVideoStreams == null) {
                 originalItems.add(file);
@@ -868,7 +875,6 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
             logger.info("Skipped file items: " + skippedItemsFilepaths.size());
             logger.info(skippedItemsFilepaths.toString());
         }
-        /* Handle playlist related stuff */
         final FilePackage playlistpackage = FilePackage.getInstance();
         final String metadataTitle = (String) root_metadata.get("title");
         if (!StringUtils.isEmpty(metadataTitle)) {
@@ -884,7 +890,12 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         if (playlistCrawlMode == PlaylistCrawlMode.DEFAULT) {
             playlistCrawlMode = PlaylistCrawlMode.AUTO;
         }
-        if (desiredSubpathItems.size() > 0) {
+        if (singleDesiredFile != null) {
+            /* Single file which user wants */
+            ret.clear(); // Clear our list of results
+            ret.add(singleDesiredFile); // Add desired result only
+            return ret;
+        } else if (desiredSubpathItems.size() > 0) {
             /* User desired item(s) are available -> Return only them */
             return desiredSubpathItems;
         } else if (StringUtils.equalsIgnoreCase(mediatype, "texts")) {
@@ -1003,7 +1014,6 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                 video.setAvailable(true);
                 video._setFilePackage(playlistpackage);
                 videoPlaylistItems.add(video);
-                ret.add(video);
                 /* Increment counters */
                 position++;
                 offsetSeconds += secondsPerSegment;
@@ -1013,13 +1023,17 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                  * Original file is not downloadable at all -> Force-return playlist items to provide downloadable items for the user.
                  */
                 return videoPlaylistItems;
+            } else if (isDownloadPage && playlistCrawlMode == PlaylistCrawlMode.AUTO) {
+                logger.info("Skipping video playlist because user added '/download/' page in auto mode");
             } else if (playlistCrawlMode == PlaylistCrawlMode.PLAYLIST_ONLY) {
                 /* User prefers to only get stream downloads slash "video playlist". */
                 return videoPlaylistItems;
             } else if (playlistCrawlMode == PlaylistCrawlMode.PLAYLIST_AND_FILES || playlistCrawlMode == PlaylistCrawlMode.AUTO) {
+                /* Return playlist items and original files */
                 ret.addAll(videoPlaylistItems);
             } else {
                 /* Do not return any playlist items but only original files. */
+                logger.info("Skipping video playlist because user wants original files only");
             }
         } else if (audioPlaylistItems.size() > 0) {
             /* Audio playlist handling */
@@ -1037,12 +1051,15 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
             if (playlistCrawlMode == PlaylistCrawlMode.PLAYLIST_ONLY) {
                 /* Return playlist items only */
                 return audioPlaylistItems;
+            } else if (isDownloadPage && playlistCrawlMode == PlaylistCrawlMode.AUTO) {
+                logger.info("Skipping audio playlist because user added '/download/' page in auto mode");
             } else if (playlistCrawlMode == PlaylistCrawlMode.AUTO || playlistCrawlMode == PlaylistCrawlMode.PLAYLIST_AND_FILES) {
                 /* Return playlist and original files. */
                 ret.addAll(audioPlaylistItems);
                 return ret;
             } else {
                 /* Do not return any playlist items but only original files. */
+                logger.info("Skipping audio playlist vecause user wants original files only");
             }
         }
         if (desiredSubpathDecoded != null && desiredSubpathItems.isEmpty()) {
