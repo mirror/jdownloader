@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.appwork.storage.TypeRef;
+import org.appwork.storage.simplejson.MinimalMemoryMap;
 import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -479,9 +480,14 @@ public class RedditComCrawler extends PluginForDecrypt {
                             final String url = Encoding.htmlOnlyDecode(mp4);
                             final String filenameFromURL = Plugin.getFileNameFromURL(url);
                             final DownloadLink direct = this.createDownloadlink(DirectHTTP.createURLForThisPlugin(url));
-                            if (filenameFromURL != null) {
-                                /* Filename from URL contains .gif extension but this is a .mp4 file -> Correct that */
-                                direct.setFinalFileName(this.correctOrApplyFileNameExtension(filenameFromURL, ".mp4"));
+                            if (filenameFromURL != null && StringUtils.endsWithCaseInsensitive(filenameFromURL, ".gif")) {
+                                /*
+                                 * Filename from URL contains .gif extension but this is a .mp4 file
+                                 *
+                                 * -> Correct that but keep .gif to signal source of the mp4
+                                 */
+                                direct.setFinalFileName(this.correctOrApplyFileNameExtension(filenameFromURL, ".gif.mp4"));
+                                direct.setProperty(RedditCom.PROPERTY_VIDEO_SOURCE, "gif");
                             }
                             direct.setProperty(RedditCom.PROPERTY_TYPE, RedditCom.PROPERTY_TYPE_video);
                             direct.setAvailable(true);
@@ -500,6 +506,14 @@ public class RedditComCrawler extends PluginForDecrypt {
                         if (videoID != null) {
                             final DownloadLink video = this.createDownloadlink(generateRedditSelfhostedVideoURL(videoID));
                             video.setProperty(RedditCom.PROPERTY_TYPE, RedditCom.PROPERTY_TYPE_video);
+                            final Object fallback_url = reddit_video_preview.get("fallback_url");
+                            if (fallback_url != null) {
+                                final Map<String, Object> videoFallback = new MinimalMemoryMap<String, Object>();
+                                videoFallback.put("fallback_url", fallback_url);
+                                videoFallback.put("height", reddit_video_preview.get("height"));
+                                videoFallback.put("bitrate_kbps", reddit_video_preview.get("bitrate_kbps"));
+                                video.setProperty(RedditCom.PROPERTY_VIDEO_FALLBACK, videoFallback);
+                            }
                             /* Skip availablecheck as we know that this content is online and it is a directurl. */
                             video.setAvailable(true);
                             thisCrawledLinks.add(video);
@@ -731,7 +745,11 @@ public class RedditComCrawler extends PluginForDecrypt {
                         if (StringUtils.equalsIgnoreCase(type, RedditCom.PROPERTY_TYPE_text)) {
                             extensionWithDot = ".txt";
                         } else if (StringUtils.equalsIgnoreCase(type, RedditCom.PROPERTY_TYPE_video)) {
-                            extensionWithDot = ".mp4";
+                            if (StringUtils.equalsIgnoreCase("gif", thisCrawledLink.getStringProperty(RedditCom.PROPERTY_VIDEO_SOURCE))) {
+                                extensionWithDot = ".gif.mp4";
+                            } else {
+                                extensionWithDot = ".mp4";
+                            }
                         } else {
                             /* Obtain extension from URL. */
                             extensionWithDot = Plugin.getFileNameExtensionFromString(thisCrawledLink.getPluginPatternMatcher());

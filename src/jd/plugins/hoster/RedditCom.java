@@ -83,9 +83,11 @@ public class RedditCom extends PluginForHost {
     public static final String PROPERTY_CRAWLER_FILENAME               = "crawler_filename";
     public static final String PROPERTY_SERVER_FILENAME_WITHOUT_EXT    = "server_filename_without_ext";
     public static final String PROPERTY_TYPE                           = "type";
+    public static final String PROPERTY_VIDEO_FALLBACK                 = "video_fallback";
     public static final String PROPERTY_TYPE_text                      = "text";
     public static final String PROPERTY_TYPE_image                     = "image";
     public static final String PROPERTY_TYPE_video                     = "video";
+    public static final String PROPERTY_VIDEO_SOURCE                   = "video_source";
     private final String       PROPERTY_DIRECTURL_LAST_USED            = "directurl_last_used";
     private final String       PROPERTY_LAST_USED_DOWNLOAD_STREAM_TYPE = "last_used_download_stream_type";
     private final String       PATTERN_TEXT                            = "reddidtext://([a-z0-9]+)";
@@ -253,6 +255,15 @@ public class RedditCom extends PluginForHost {
                 final String[] dashRepresentations = br.getRegex("<Representation(.*?)</Representation>").getColumn(0);
                 String highestQualityVideoDownloadurl = null;
                 int highestBandwidth = -1;
+                final Map<String, Object> videoFallBack = getVideoFallback(link);
+                if (videoFallBack != null) {
+                    final String fallback_url = StringUtils.valueOfOrNull(videoFallBack.get("fallback_url"));
+                    if (fallback_url != null && StringUtils.containsIgnoreCase(fallback_url, "DASH_")) {
+                        highestQualityVideoDownloadurl = fallback_url;
+                        final String bitrate_kbps = StringUtils.valueOfOrNull(videoFallBack.get("bitrate_kbps"));
+                        highestBandwidth = bitrate_kbps != null ? Integer.parseInt(bitrate_kbps) * 1000 : -1;
+                    }
+                }
                 for (final String dashRepresentation : dashRepresentations) {
                     final String framerateStr = new Regex(dashRepresentation, "frameRate=\"(\\d+)\"").getMatch(0);
                     final String heightStr = new Regex(dashRepresentation, "height=\"(\\d+)\"").getMatch(0);
@@ -261,10 +272,10 @@ public class RedditCom extends PluginForHost {
                         continue;
                     }
                     final int bandwidth = Integer.parseInt(new Regex(dashRepresentation, "bandwidth=\"(\\d+)\"").getMatch(0));
-                    if (bandwidth > highestBandwidth) {
+                    if (highestBandwidth == -1 || bandwidth > highestBandwidth) {
                         highestBandwidth = bandwidth;
+                        highestQualityVideoDownloadurl = new Regex(dashRepresentation, "<BaseURL>([^<]+)</BaseURL>").getMatch(0);
                     }
-                    highestQualityVideoDownloadurl = new Regex(dashRepresentation, "<BaseURL>([^<]+)</BaseURL>").getMatch(0);
                 }
                 if (highestQualityVideoDownloadurl != null) {
                     highestQualityVideoDownloadurl = br.getURL(highestQualityVideoDownloadurl).toString();
@@ -287,13 +298,29 @@ public class RedditCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    private Map<String, Object> getVideoFallback(final DownloadLink link) {
+        final Object ret = link.getProperty(PROPERTY_VIDEO_FALLBACK);
+        if (ret instanceof Map) {
+            return (Map<String, Object>) ret;
+        } else if (ret instanceof String) {
+            return restoreFromString((String) ret, TypeRef.MAP);
+        } else {
+            return null;
+        }
+    }
+
     private VideoDownloadStreamType getVideoDownloadStreamType(final DownloadLink link) {
         final String lastDownloadStreamTypeString = link.getStringProperty(PROPERTY_LAST_USED_DOWNLOAD_STREAM_TYPE);
         if (lastDownloadStreamTypeString != null) {
             /* Prefer last used value */
-            for (final VideoDownloadStreamType dltype : VideoDownloadStreamType.values()) {
-                if (StringUtils.equalsIgnoreCase(dltype.name(), lastDownloadStreamTypeString)) {
-                    return dltype;
+            try {
+                return VideoDownloadStreamType.valueOf(lastDownloadStreamTypeString);
+            } catch (Exception e) {
+                for (final VideoDownloadStreamType dltype : VideoDownloadStreamType.values()) {
+                    if (StringUtils.equalsIgnoreCase(dltype.name(), lastDownloadStreamTypeString)) {
+                        link.setProperty(PROPERTY_LAST_USED_DOWNLOAD_STREAM_TYPE, dltype.name());
+                        return dltype;
+                    }
                 }
             }
         }
@@ -308,11 +335,18 @@ public class RedditCom extends PluginForHost {
             con = brc.openHeadConnection(url);
             this.connectionErrorhandling(brc, con);
             if (con.getCompleteContentLength() > 0) {
-                link.setVerifiedFileSize(con.getCompleteContentLength());
+                if (con.isContentDecoded()) {
+                    link.setDownloadSize(con.getCompleteContentLength());
+                } else {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                }
             }
-            final String ext = getExtensionFromMimeType(con.getContentType());
+            String ext = getExtensionFromMimeType(con.getContentType());
             String fileName = link.getName();
             if (ext != null && fileName != null) {
+                if (StringUtils.equalsIgnoreCase("gif", link.getStringProperty(RedditCom.PROPERTY_VIDEO_SOURCE))) {
+                    ext = ".gif" + ext;
+                }
                 if (fileName.indexOf(".") < 0) {
                     fileName = fileName + "." + ext;
                 } else {

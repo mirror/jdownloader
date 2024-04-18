@@ -26,7 +26,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -57,7 +56,7 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.TumblrCom;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tumblr.com" }, urls = { "https?://(?![a-z0-9]+\\.media\\.tumblr\\.com/.+)[\\w\\.\\-]+?tumblr\\.com(?:/image/\\d+|/post/\\d+|/likes|/?$|/blog/view/[^/]+(?:/\\d+)?)(?:\\?password=.+)?" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tumblr.com" }, urls = { "https?://(?![a-z0-9]+\\.media\\.tumblr\\.com/.+)[\\w\\.\\-]+?tumblr\\.com(?:/image/\\d+|/post/\\d+|/likes|/archive|/?$|/blog/view/[^/]+(?:/\\d+)?)(?:\\?password=.+)?" })
 public class TumblrComDecrypter extends PluginForDecrypt {
     public TumblrComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
@@ -838,7 +837,9 @@ public class TumblrComDecrypter extends PluginForDecrypt {
         do {
             logger.info("Crawling page: " + (pageIndex + 1) + ": " + this.br.getURL());
             final List<Object> postsO = (List<Object>) JavaScriptEngineFactory.walkJson(entries, "response/posts");
-            this.crawlMultiplePostsArrayJsonAPI(ret, postsO);
+            final ArrayList<DownloadLink> nextPosts = new ArrayList<DownloadLink>();
+            this.crawlMultiplePostsArrayJsonAPI(nextPosts, postsO);
+            ret.addAll(nextPosts);
             final String nextPageURL = (String) JavaScriptEngineFactory.walkJson(entries, "response/_links/next/href");
             crawledPosts += postsO.size();
             logger.info("Crawled posts: " + crawledPosts + " / " + postsCount);
