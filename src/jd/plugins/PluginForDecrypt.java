@@ -240,6 +240,11 @@ public abstract class PluginForDecrypt extends Plugin {
         return new DownloadLink(null, null, getHost(), urlDecode ? Encoding.urlDecode(link, true) : link, true);
     }
 
+    @Override
+    public Browser createNewBrowserInstance() {
+        return new PluginBrowser<PluginForDecrypt>(this);
+    }
+
     /**
      * creates a offline link.
      *
