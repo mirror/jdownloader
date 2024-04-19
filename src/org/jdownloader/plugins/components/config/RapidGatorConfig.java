@@ -35,6 +35,10 @@ public interface RapidGatorConfig extends PluginConfigInterface {
             return text_EnableResumeFree;
         }
 
+        public String getEnableFreeDownloadModeCaptchaDuringPreDownloadWait_label() {
+            return "Free downloads: Handle captcha during pre download wait time?";
+        }
+
         public String getExperimentalEnforceSSL_label() {
             return text_ExperimentalEnforceSSL;
         }
@@ -81,6 +85,14 @@ public interface RapidGatorConfig extends PluginConfigInterface {
     boolean isEnableResumeFree();
 
     void setEnableResumeFree(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
+    @DescriptionForConfigEntry("This may save some time for free- and free account downloads.")
+    @Order(22)
+    boolean isEnableFreeDownloadModeCaptchaDuringPreDownloadWait();
+
+    void setEnableFreeDownloadModeCaptchaDuringPreDownloadWait(boolean b);
 
     @AboutConfig
     @DefaultBooleanValue(false)

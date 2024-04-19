@@ -101,7 +101,7 @@ public interface ArchiveOrgConfig extends PluginConfigInterface {
         ADD_NOTHING_AND_DISPLAY_ADDED_URL_AS_OFFLINE {
             @Override
             public String getLabel() {
-                return "Display added URL as offline and add nothing";
+                return "Display added URL as offline";
             }
         },
         DEFAULT {

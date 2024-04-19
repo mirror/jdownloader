@@ -150,6 +150,9 @@ public class RapidGatorNet extends PluginForHost {
     private final int                  FREE_CAPTCHA_EXPIRE_TIME_MILLIS             = 105 * 1000;
     /* Don't touch the following! */
     private static final AtomicInteger freeRunning                                 = new AtomicInteger(0);
+    private static final String        PROPERTY_LAST_USED_CAPTCHA_TYPE             = "last_used_captcha_type";
+    private static final String        CAPTCHA_TYPE_SOLVEMEDIA                     = "solvemedia";
+    private static final String        CAPTCHA_TYPE_RECAPTCHA                      = "recaptcha";
 
     @Override
     public String getAGBLink() {
@@ -470,27 +473,29 @@ public class RapidGatorNet extends PluginForHost {
                     if (waitSecondsStr == null) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                    logger.info("Pre download wait in seconds according to website: " + waitSecondsStr);
+                    logger.info("Pre download wait in seconds: " + waitSecondsStr);
                     long waitMillis = Long.parseLong(waitSecondsStr) * 1000;
                     final Browser br2 = br.cloneBrowser();
                     br2.getHeaders().put("X-Requested-With", "XMLHttpRequest");
                     br2.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
                     /* Trigger serverside countdown. */
                     br2.getPage("/download/AjaxStartTimer?fid=" + fid);
-                    Map<String, Object> entries = restoreFromString(br2.getRequest().getHtmlCode(), TypeRef.MAP);
-                    String state = (String) entries.get("state");
+                    final Map<String, Object> respstarttimer = restoreFromString(br2.getRequest().getHtmlCode(), TypeRef.MAP);
+                    String state = (String) respstarttimer.get("state");
                     if (!"started".equalsIgnoreCase(state)) {
                         /* This should be a very very rare case. */
                         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Error in pre download step #1 | state: " + state);
                     }
-                    final String sid = (String) entries.get("sid");
+                    final String sid = (String) respstarttimer.get("sid");
                     if (StringUtils.isEmpty(sid)) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                    final boolean allowSolvemediaCaptchaDuringWait = true;
+                    final boolean allowCaptchaDuringWait = true;
                     String solvemediaChid = null;
                     String solvemediaCode = null;
-                    if (allowSolvemediaCaptchaDuringWait) {
+                    String recaptchaV2Response = null;
+                    final String lastUsedCaptchaType = this.getPluginConfig().getStringProperty(PROPERTY_LAST_USED_CAPTCHA_TYPE);
+                    if (allowCaptchaDuringWait && (CAPTCHA_TYPE_RECAPTCHA.equals(lastUsedCaptchaType) || CAPTCHA_TYPE_SOLVEMEDIA.equals(lastUsedCaptchaType))) {
                         /**
                          * 2023-10-03: A small trick: We know their Solvemedia key and can thus always obtain captcha solutions at any point
                          * of time. </br>
@@ -498,12 +503,20 @@ public class RapidGatorNet extends PluginForHost {
                          * to do in browser.
                          */
                         final long timeBeforeCaptchaInput = Time.systemIndependentCurrentJVMTimeMillis();
-                        final SolveMedia sm = new SolveMedia(br);
-                        sm.setChallengeKey("oy3wKTaFP368dkJiGUqOVjBR2rOOR7GR"); // 2023-10-03
-                        sm.setSecure(true);
-                        final File cf = sm.downloadCaptcha(getLocalCaptchaFile());
-                        solvemediaCode = getCaptchaCode(cf, link);
-                        solvemediaChid = sm.getChallenge(solvemediaCode);
+                        if (CAPTCHA_TYPE_RECAPTCHA.equals(lastUsedCaptchaType)) {
+                            /* reCaptcha captcha */
+                            final CaptchaHelperHostPluginRecaptchaV2 rc2 = new CaptchaHelperHostPluginRecaptchaV2(this, br, "6LcSUAsUAAAAAKBeQQE893pf0Io66-mIeKWPl5yF");
+                            this.waitBeforeInteractiveCaptcha(link, waitMillis, rc2.getSolutionTimeout());
+                            recaptchaV2Response = rc2.getToken();
+                        } else {
+                            /* Solvemedia captcha */
+                            final SolveMedia sm = new SolveMedia(br);
+                            sm.setChallengeKey("oy3wKTaFP368dkJiGUqOVjBR2rOOR7GR"); // 2023-10-03
+                            sm.setSecure(true);
+                            final File cf = sm.downloadCaptcha(getLocalCaptchaFile());
+                            solvemediaCode = getCaptchaCode(cf, link);
+                            solvemediaChid = sm.getChallenge(solvemediaCode);
+                        }
                         final long millisecondsPassedDuringCaptcha = Time.systemIndependentCurrentJVMTimeMillis() - timeBeforeCaptchaInput;
                         waitMillis -= millisecondsPassedDuringCaptcha;
                     }
@@ -511,10 +524,10 @@ public class RapidGatorNet extends PluginForHost {
                     logger.info("Waiting pre-download seconds: " + finalWaittimeMillis / 1000);
                     sleep(finalWaittimeMillis, link);
                     br2.getPage("/download/AjaxGetDownloadLink?sid=" + sid);
-                    entries = restoreFromString(br2.getRequest().getHtmlCode(), TypeRef.MAP);
-                    state = (String) entries.get("state");
+                    final Map<String, Object> respgetdownloadlink = restoreFromString(br2.getRequest().getHtmlCode(), TypeRef.MAP);
+                    state = (String) respgetdownloadlink.get("state");
                     if (!"done".equalsIgnoreCase(state)) {
-                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Error in pre download step #2 | state: " + state + " | code: " + entries.get("code"));
+                        throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Error in pre download step #2 | state: " + state + " | code: " + respgetdownloadlink.get("code"));
                     }
                     /*
                      * Work with URLConnection adapter so we can easily access this URL without Exception on non-allowed http response-code.
@@ -534,7 +547,7 @@ public class RapidGatorNet extends PluginForHost {
                             do {
                                 captchaAttempts++;
                                 if (SolveMedia.containsSolvemediaCaptcha(br)) {
-                                    /* 2023-10-02: They are currently using this captcha. */
+                                    this.getPluginConfig().setProperty(PROPERTY_LAST_USED_CAPTCHA_TYPE, CAPTCHA_TYPE_SOLVEMEDIA);
                                     captchaform.put("DownloadCaptchaForm[captcha]", "");
                                     if (solvemediaCode == null || solvemediaChid == null) {
                                         /* Only solve captcha if it hasn't been solved before. */
@@ -555,11 +568,19 @@ public class RapidGatorNet extends PluginForHost {
                                     }
                                     captchaform.put("adcopy_challenge", Encoding.urlEncode(solvemediaChid));
                                     captchaform.put("adcopy_response", Encoding.urlEncode(solvemediaCode));
-                                } else if (CaptchaHelperHostPluginRecaptchaV2.containsRecaptchaV2Class(br2)) {
-                                    final CaptchaHelperHostPluginRecaptchaV2 rc2 = new CaptchaHelperHostPluginRecaptchaV2(this, br);
-                                    final String recaptchaV2Response = rc2.getToken();
-                                    captchaform.put("DownloadCaptchaForm[verifyCode]", recaptchaV2Response);
+                                } else if (CaptchaHelperHostPluginRecaptchaV2.containsRecaptchaV2Class(br)) {
+                                    /* 2024-04-19: They are currently using this captcha. */
+                                    this.getPluginConfig().setProperty(PROPERTY_LAST_USED_CAPTCHA_TYPE, CAPTCHA_TYPE_RECAPTCHA);
+                                    if (recaptchaV2Response == null) {
+                                        /* Only solve captcha if it hasn't been solved before. */
+                                        final CaptchaHelperHostPluginRecaptchaV2 rc2 = new CaptchaHelperHostPluginRecaptchaV2(this, br);
+                                        recaptchaV2Response = rc2.getToken();
+                                    }
+                                    /* 2024-04-19: Yes, captcha response needs to be two times in this Form. */
+                                    captchaform.put("DownloadCaptchaForm[verifyCode]", Encoding.urlEncode(recaptchaV2Response));
+                                    captchaform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                                 } else if (br.containsHTML("//api\\.adscapchta\\.com/")) {
+                                    this.getPluginConfig().removeProperty(PROPERTY_LAST_USED_CAPTCHA_TYPE);
                                     captchaform.put("DownloadCaptchaForm[captcha]", "");
                                     final String captchaAdress = captchaform.getRegex("<iframe src=\'(https?://api\\.adscaptcha\\.com/NoScript\\.aspx\\?CaptchaId=\\d+&PublicKey=[^\'<>]+)").getMatch(0);
                                     final String captchaType = new Regex(captchaAdress, "CaptchaId=(\\d+)&").getMatch(0);
@@ -587,6 +608,7 @@ public class RapidGatorNet extends PluginForHost {
                                     captchaform.put("adscaptcha_challenge_field", Encoding.urlEncode(code));
                                 } else {
                                     /* This should never happen! */
+                                    this.getPluginConfig().removeProperty(PROPERTY_LAST_USED_CAPTCHA_TYPE);
                                     logger.warning("Unknown captcha type is required");
                                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                                 }
@@ -718,6 +740,15 @@ public class RapidGatorNet extends PluginForHost {
             } else {
                 throw pe;
             }
+        }
+    }
+
+    protected void waitBeforeInteractiveCaptcha(final DownloadLink link, final long waitMillis, final int captchaTimeoutMillis) throws PluginException {
+        if (waitMillis > captchaTimeoutMillis) {
+            final int prePrePreDownloadWait = (int) (waitMillis - captchaTimeoutMillis);
+            logger.info("Waittime is higher than interactive captcha timeout --> Waiting a part of it before solving captcha to avoid captcha-token-timeout");
+            logger.info("Pre-pre download waittime seconds: " + (prePrePreDownloadWait / 1000));
+            this.sleep(prePrePreDownloadWait, link);
         }
     }
 
