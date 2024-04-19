@@ -1455,6 +1455,7 @@ YoutubeDash_handleFree_error_=Falha ao unir.
 YoutubeHelper_getDescription_3d=3D se o vídeo for lado-a-lado ou centro-acima-abaixo
 YoutubeHelper_getDescription_age=Proteção de idade true|false
 YoutubeHelper_getDescription_alternative=(se disponível, preferir o alternativo. Ex.: localizado)
+YoutubeHelper_getDescription_atid=Usuário/URL do canal @ID
 YoutubeHelper_getDescription_audioCodec=Codec de áudio (ex.: MP3, AAC, ...)
 YoutubeHelper_getDescription_audioQuality=Bitrate de áudio (ex.: 128kbit)
 YoutubeHelper_getDescription_best_height=Mehor altura de resolução de vídeo em pixels
