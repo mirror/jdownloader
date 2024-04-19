@@ -406,6 +406,7 @@ public class RapidGatorNet extends PluginForHost {
         if (account != null) {
             this.loginWebsite(account, true);
         }
+        final RapidGatorConfig cfg = PluginJsonConfig.get(RapidGatorConfig.class);
         try {
             final String directlinkproperty = getDirectlinkProperty(account);
             String storedDirecturl = null;
@@ -441,7 +442,7 @@ public class RapidGatorNet extends PluginForHost {
                     }
                 } else {
                     /* Free + free account */
-                    if (PluginJsonConfig.get(RapidGatorConfig.class).isActivateExperimentalWaittimeHandling()) {
+                    if (cfg.isActivateExperimentalWaittimeHandling()) {
                         currentIP = new BalancedWebIPCheck(br.getProxy()).getExternalIP().getIP();
                         logger.info("currentIP = " + currentIP);
                         synchronized (blockedIPsMap) {
@@ -457,7 +458,7 @@ public class RapidGatorNet extends PluginForHost {
                     if (account != null && !this.isLoggedINWebsite(br)) {
                         throw new AccountUnavailableException("Session expired?", 1 * 60 * 1000l);
                     }
-                    if (PluginJsonConfig.get(RapidGatorConfig.class).isActivateExperimentalWaittimeHandling()) {
+                    if (cfg.isActivateExperimentalWaittimeHandling()) {
                         final long lastdownload_timestamp = getPluginSavedLastDownloadTimestamp(currentIP);
                         final long passedTimeSinceLastFreeDownloadMilliseconds = System.currentTimeMillis() - lastdownload_timestamp;
                         logger.info("Wait between free downloads to prevent your IP from getting blocked for 1 day!");
@@ -490,12 +491,11 @@ public class RapidGatorNet extends PluginForHost {
                     if (StringUtils.isEmpty(sid)) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
-                    final boolean allowCaptchaDuringWait = true;
                     String solvemediaChid = null;
                     String solvemediaCode = null;
                     String recaptchaV2Response = null;
                     final String lastUsedCaptchaType = this.getPluginConfig().getStringProperty(PROPERTY_LAST_USED_CAPTCHA_TYPE);
-                    if (allowCaptchaDuringWait && (CAPTCHA_TYPE_RECAPTCHA.equals(lastUsedCaptchaType) || CAPTCHA_TYPE_SOLVEMEDIA.equals(lastUsedCaptchaType))) {
+                    if (cfg.isEnableFreeDownloadModeCaptchaDuringPreDownloadWait() && (CAPTCHA_TYPE_RECAPTCHA.equals(lastUsedCaptchaType) || CAPTCHA_TYPE_SOLVEMEDIA.equals(lastUsedCaptchaType))) {
                         /**
                          * 2023-10-03: A small trick: We know their Solvemedia key and can thus always obtain captcha solutions at any point
                          * of time. </br>
@@ -652,7 +652,7 @@ public class RapidGatorNet extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
-            if (PluginJsonConfig.get(RapidGatorConfig.class).isExperimentalEnforceSSL() && !StringUtils.startsWithCaseInsensitive(finalDownloadURL, "https")) {
+            if (cfg.isExperimentalEnforceSSL() && !StringUtils.startsWithCaseInsensitive(finalDownloadURL, "https")) {
                 logger.info("Enforcing https on final downloadurl");
                 finalDownloadURL = finalDownloadURL.replaceFirst("(?i)^http://", "https://");
             }
