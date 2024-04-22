@@ -603,7 +603,7 @@ public abstract class PluginForDecrypt extends Plugin {
 
     /** This gets executed whenever the user does not answer a captcha which then runs into timeout. */
     public void onCaptchaTimeout(final CrawledLink link, Challenge<?> challenge) throws CaptchaException, PluginException {
-        switch (JsonConfig.create(CaptchaSettings.class).getCrawlerCaptchaTimeoutAction()) {
+        switch (JsonConfig.create(CaptchaSettings.class).getOnCrawlerCaptchaTimeoutAction()) {
         case RETRY:
             throw new PluginException(LinkStatus.ERROR_RETRY);
         case ASK:

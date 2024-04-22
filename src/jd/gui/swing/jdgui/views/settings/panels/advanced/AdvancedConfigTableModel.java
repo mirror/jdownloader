@@ -59,7 +59,19 @@ public class AdvancedConfigTableModel extends ExtTableModel<AdvancedConfigEntry>
         return result;
     }
 
-    private boolean contains(String value, final String[] finds) {
+    private boolean contains(final String values[], final String[] finds) {
+        if (values == null) {
+            return false;
+        }
+        for (final String value : values) {
+            if (contains(value, finds)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean contains(final String value, final String[] finds) {
         if (StringUtils.isEmpty(value) || finds == null) {
             return false;
         }

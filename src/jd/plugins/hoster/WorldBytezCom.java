@@ -18,17 +18,19 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.Regex;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountRequiredException;
+import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.Regex;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class WorldBytezCom extends XFileSharingProBasic {
@@ -128,6 +130,20 @@ public class WorldBytezCom extends XFileSharingProBasic {
                 throw e;
             }
         }
+    }
+
+    @Override
+    protected void checkErrorsLastResort(final Browser br, final Account account) throws PluginException {
+        if (br.containsHTML("(?i)>\\s*If You Are Using VPN Please Disable To Continue Downloading\\s*<") && account != null) {
+            /*
+             * <h2 style="color: aliceblue;">Oops File Not Found</h2>
+             *
+             * <h2 style="color: aliceblue;">If You Are Using VPN Please Disable To Continue Downloading</h2> <h2 style="color: aliceblue;">
+             * We apologize for any inconvenience caused.</h2>
+             */
+            throw new AccountUnavailableException("VPN/IP blocked!", 15 * 60 * 1000l);
+        }
+        super.checkErrorsLastResort(br, account);
     }
 
     @Override

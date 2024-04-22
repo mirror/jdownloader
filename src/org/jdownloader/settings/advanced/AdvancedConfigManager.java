@@ -1,9 +1,15 @@
 package org.jdownloader.settings.advanced;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
+
+import jd.controlling.downloadcontroller.DownloadControllerConfig;
+import jd.controlling.faviconcontroller.FavIconsConfig;
+import jd.controlling.linkchecker.LinkCheckerConfig;
+import jd.controlling.linkcrawler.LinkCrawlerConfig;
 
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.JsonConfig;
@@ -44,11 +50,6 @@ import org.jdownloader.updatev2.InternetConnectionSettings;
 import org.jdownloader.updatev2.LastChanceSettings;
 import org.jdownloader.updatev2.UpdateSettings;
 import org.jdownloader.updatev2.gui.LAFOptions;
-
-import jd.controlling.downloadcontroller.DownloadControllerConfig;
-import jd.controlling.faviconcontroller.FavIconsConfig;
-import jd.controlling.linkchecker.LinkCheckerConfig;
-import jd.controlling.linkcrawler.LinkCrawlerConfig;
 
 public class AdvancedConfigManager {
     private static final AdvancedConfigManager INSTANCE = new AdvancedConfigManager();
@@ -114,51 +115,65 @@ public class AdvancedConfigManager {
         }
         logger.info("Register " + cf._getStorageHandler().getConfigInterface());
         for (KeyHandler m : cf._getStorageHandler().getKeyHandler()) {
-            if (m.getAnnotation(AboutConfig.class) != null && (m.getAnnotation(DevConfig.class) == null || !Application.isJared(null))) {
-                if (m.getSetMethod() == null) {
-                    throw new RuntimeException("Setter for " + m.getKey() + " missing");
-                } else if (m.getGetMethod() == null) {
-                    throw new RuntimeException("Getter for " + m.getKey() + " missing");
-                } else {
-                    configInterfaces.add(new AdvancedConfigEntry(cf, m));
-                }
+            final AdvancedConfigEntry configEntry = toConfigEntry(m, cf);
+            if (configEntry != null) {
+                configInterfaces.add(configEntry);
             }
         }
         eventSender.fireEvent(new AdvancedConfigEvent(this, AdvancedConfigEvent.Types.UPDATED, cf));
     }
 
+    private AdvancedConfigEntry toConfigEntry(KeyHandler m, ConfigInterface cf) {
+        if (m.getAnnotation(AboutConfig.class) != null && (m.getAnnotation(DevConfig.class) == null || !Application.isJared(null))) {
+            if (m.getSetMethod() == null) {
+                throw new RuntimeException("Setter for " + m.getKey() + " in " + cf + " missing");
+            } else if (m.getGetMethod() == null) {
+                throw new RuntimeException("Getter for " + m.getKey() + " in " + cf + " missing");
+            } else {
+                return new AdvancedConfigEntry(cf, m);
+            }
+        }
+        return null;
+    }
+
     @SuppressWarnings("unchecked")
     public java.util.List<AdvancedConfigEntry> listPluginsInterfaces() {
+        final Set<String> configInterfaces = new HashSet<String>();
         final ArrayList<AdvancedConfigEntry> ret = new ArrayList<AdvancedConfigEntry>();
         final PluginClassLoaderChild pluginClassLoader = PluginClassLoader.getInstance().getChild();
         for (final LazyHostPlugin hplg : HostPluginController.getInstance().list()) {
             final String ifName = hplg.getConfigInterface();
-            if (StringUtils.isNotEmpty(ifName)) {
+            if (StringUtils.isNotEmpty(ifName) && configInterfaces.add(ifName)) {
                 try {
                     final PluginConfigInterface cf = PluginJsonConfig.get(hplg, (Class<PluginConfigInterface>) pluginClassLoader.loadClass(ifName));
                     for (KeyHandler m : cf._getStorageHandler().getKeyHandler()) {
-                        if (m.getAnnotation(AboutConfig.class) != null && (m.getAnnotation(DevConfig.class) == null || !Application.isJared(null))) {
-                            if (m.getSetMethod() == null) {
-                                throw new RuntimeException("Setter for " + m.getKey() + " missing");
-                            } else if (m.getGetMethod() == null) {
-                                throw new RuntimeException("Getter for " + m.getKey() + " missing");
-                            } else {
-                                ret.add(new AdvancedConfigEntry(cf, m));
-                            }
+                        final AdvancedConfigEntry configEntry = toConfigEntry(m, cf);
+                        if (configEntry != null) {
+                            ret.add(configEntry);
                         }
                     }
                 } catch (Throwable e) {
-                    e.printStackTrace();
+                    logger.log(e);
                 }
-                System.out.println(ifName);
             }
         }
         for (final LazyCrawlerPlugin cplg : CrawlerPluginController.getInstance().list()) {
             final String ifName = cplg.getConfigInterface();
-            if (StringUtils.isNotEmpty(ifName)) {
-                System.out.println(ifName);
+            if (StringUtils.isNotEmpty(ifName) && configInterfaces.add(ifName)) {
+                try {
+                    final PluginConfigInterface cf = PluginJsonConfig.get(cplg, (Class<PluginConfigInterface>) pluginClassLoader.loadClass(ifName));
+                    for (KeyHandler m : cf._getStorageHandler().getKeyHandler()) {
+                        final AdvancedConfigEntry configEntry = toConfigEntry(m, cf);
+                        if (configEntry != null) {
+                            ret.add(configEntry);
+                        }
+                    }
+                } catch (Throwable e) {
+                    logger.log(e);
+                }
             }
         }
+        // ContainerPluginController.getInstance().list().get(0).getConfigInterface()
         return ret;
     }
 

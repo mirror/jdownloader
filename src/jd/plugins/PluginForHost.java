@@ -752,7 +752,7 @@ public abstract class PluginForHost extends Plugin {
 
     /** This gets executed whenever the user does not answer a captcha which then runs into timeout. */
     public void onCaptchaTimeout(final DownloadLink link, Challenge<?> challenge) throws CaptchaException, PluginException, InterruptedException {
-        switch (JsonConfig.create(CaptchaSettings.class).getHosterCaptchaTimeoutAction()) {
+        switch (JsonConfig.create(CaptchaSettings.class).getOnHosterCaptchaTimeoutAction()) {
         case RETRY:
             throw new PluginException(LinkStatus.ERROR_RETRY);
         case ASK:

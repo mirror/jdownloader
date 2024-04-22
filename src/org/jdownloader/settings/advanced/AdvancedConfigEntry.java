@@ -3,6 +3,9 @@ package org.jdownloader.settings.advanced;
 import java.awt.Dialog.ModalityType;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Type;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Locale;
 
 import jd.gui.swing.jdgui.JDGui;
@@ -27,6 +30,7 @@ import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 
 public class AdvancedConfigEntry {
+
     private final ConfigInterface configInterface;
     private final KeyHandler<?>   keyHandler;
 
@@ -43,13 +47,22 @@ public class AdvancedConfigEntry {
         return configInterface;
     }
 
-    public String internalKey = null;
+    public String internalKey[] = null;
 
-    public String getInternalKey() {
+    public String[] getInternalKey() {
         if (internalKey == null) {
-            final String ret = getKey().replaceAll("[^a-zA-Z0-9 ]+", "").replace("colour", "color").replace("directory", "folder").toLowerCase(Locale.ENGLISH);
-            internalKey = ret;
-            return ret;
+            final List<String> ret = new ArrayList<String>();
+            ret.add(getKey());
+            final String[] lookupKeys = getKeyHandler().getBackwardsCompatibilityLookupKeys();
+            if (lookupKeys != null) {
+                ret.addAll(Arrays.asList(lookupKeys));
+            }
+            for (int i = 0; i < ret.size(); i++) {
+                final String key = ret.get(i).replaceAll("[^a-zA-Z0-9 ]+", "").replace("colour", "color").replace("directory", "folder").toLowerCase(Locale.ENGLISH);
+                ret.set(i, key);
+            }
+            internalKey = ret.toArray(new String[0]);
+            return internalKey;
         } else {
             return internalKey;
         }
@@ -138,7 +151,7 @@ public class AdvancedConfigEntry {
 
     public boolean hasDescription() {
         if (hasDescription == null) {
-            hasDescription = keyHandler.getAnnotation(DescriptionForConfigEntry.class) != null;
+            hasDescription = getKeyHandler().getAnnotation(DescriptionForConfigEntry.class) != null;
         }
         return hasDescription;
     }
@@ -147,7 +160,7 @@ public class AdvancedConfigEntry {
 
     public boolean hasHexColorString() {
         if (hasHexColorString == null) {
-            hasHexColorString = keyHandler.getAnnotation(HexColorString.class) != null;
+            hasHexColorString = getKeyHandler().getAnnotation(HexColorString.class) != null;
         }
         return hasHexColorString;
     }
@@ -156,7 +169,7 @@ public class AdvancedConfigEntry {
 
     public boolean hasDefaultValue() {
         if (hasDefaultValue == null) {
-            hasDefaultValue = keyHandler.hasDefaultValue();
+            hasDefaultValue = getKeyHandler().hasDefaultValue();
         }
         return hasDefaultValue;
     }
@@ -165,7 +178,7 @@ public class AdvancedConfigEntry {
         if (!hasDescription()) {
             return null;
         } else {
-            final DescriptionForConfigEntry an = keyHandler.getAnnotation(DescriptionForConfigEntry.class);
+            final DescriptionForConfigEntry an = getKeyHandler().getAnnotation(DescriptionForConfigEntry.class);
             if (an != null) {
                 return an.value();
             } else {
@@ -175,7 +188,7 @@ public class AdvancedConfigEntry {
     }
 
     public Class<? extends AdvandedValueEditor> getAdvancedValueEditor() {
-        final AdvancedValueEditorFactory an = keyHandler.getAnnotation(AdvancedValueEditorFactory.class);
+        final AdvancedValueEditorFactory an = getKeyHandler().getAnnotation(AdvancedValueEditorFactory.class);
         if (an != null) {
             return an.value();
         } else {
@@ -187,7 +200,7 @@ public class AdvancedConfigEntry {
 
     public boolean hasKeywords() {
         if (hasKeywords == null) {
-            hasKeywords = keyHandler.getAnnotation(ConfigEntryKeywords.class) != null;
+            hasKeywords = getKeyHandler().getAnnotation(ConfigEntryKeywords.class) != null;
         }
         return hasKeywords;
     }
@@ -196,7 +209,7 @@ public class AdvancedConfigEntry {
         if (!hasKeywords()) {
             return null;
         } else {
-            final ConfigEntryKeywords an = keyHandler.getAnnotation(ConfigEntryKeywords.class);
+            final ConfigEntryKeywords an = getKeyHandler().getAnnotation(ConfigEntryKeywords.class);
             if (an != null) {
                 return an.value();
             } else {
@@ -209,7 +222,7 @@ public class AdvancedConfigEntry {
 
     public boolean hasValidator() {
         if (hasValidator == null) {
-            hasValidator = keyHandler.getAnnotation(SpinnerValidator.class) != null;
+            hasValidator = getKeyHandler().getAnnotation(SpinnerValidator.class) != null;
         }
         return hasValidator;
     }
@@ -218,7 +231,7 @@ public class AdvancedConfigEntry {
         if (!hasValidator()) {
             return null;
         } else {
-            final SpinnerValidator an = keyHandler.getAnnotation(SpinnerValidator.class);
+            final SpinnerValidator an = getKeyHandler().getAnnotation(SpinnerValidator.class);
             if (an != null) {
                 return new org.jdownloader.settings.advanced.RangeValidator(an.min(), an.max());
             } else {
@@ -291,12 +304,12 @@ public class AdvancedConfigEntry {
     }
 
     public Object getDefault() {
-        return keyHandler.getDefaultValue();
+        return getKeyHandler().getDefaultValue();
     }
 
     public String getTypeString() {
         final Validator v = getValidator();
-        final Type gen = keyHandler.getGetMethod().getGenericReturnType();
+        final Type gen = getKeyHandler().getGetMethod().getGenericReturnType();
         String ret;
         if (gen instanceof Class) {
             ret = ((Class<?>) gen).getSimpleName();
@@ -314,6 +327,6 @@ public class AdvancedConfigEntry {
     }
 
     public Class<?> getClazz() {
-        return keyHandler.getRawClass();
+        return getKeyHandler().getRawClass();
     }
 }

@@ -10,6 +10,7 @@ import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DefaultEnumValue;
 import org.appwork.storage.config.annotations.DefaultIntValue;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
+import org.appwork.storage.config.annotations.LookUpKeys;
 import org.appwork.storage.config.annotations.SpinnerValidator;
 import org.jdownloader.captcha.v2.CaptchaQualityEnsuranceRule;
 
@@ -60,17 +61,19 @@ public interface CaptchaSettings extends ConfigInterface {
 
     @AboutConfig
     @DefaultEnumValue("SKIP")
+    @LookUpKeys({ "captchatimeoutaction", "hostercaptchatimeoutaction" })
     @DescriptionForConfigEntry("Defines what should happen if a captcha prompt runs into a timeout meaning that neither the user nor any captcha solver did answer the captcha prompt. This setting affects all HOSTER download/account-check processes.")
-    CAPTCHA_TIMEOUT_ACTION getHosterCaptchaTimeoutAction();
+    CAPTCHA_TIMEOUT_ACTION getOnHosterCaptchaTimeoutAction();
 
-    void setHosterCaptchaTimeoutAction(CAPTCHA_TIMEOUT_ACTION b);
+    void setOnHosterCaptchaTimeoutAction(CAPTCHA_TIMEOUT_ACTION b);
 
     @AboutConfig
     @DefaultEnumValue("SKIP")
+    @LookUpKeys("crawlercaptchatimeoutaction")
     @DescriptionForConfigEntry("Defines what should happen if a captcha prompt runs into a timeout meaning that neither the user nor any captcha solver did answer the captcha prompt. This setting affects all CRAWLER processes.")
-    CAPTCHA_TIMEOUT_ACTION getCrawlerCaptchaTimeoutAction();
+    CAPTCHA_TIMEOUT_ACTION getOnCrawlerCaptchaTimeoutAction();
 
-    void setCrawlerCaptchaTimeoutAction(CAPTCHA_TIMEOUT_ACTION b);
+    void setOnCrawlerCaptchaTimeoutAction(CAPTCHA_TIMEOUT_ACTION b);
 
     @AboutConfig
     @DefaultIntValue(300000)
