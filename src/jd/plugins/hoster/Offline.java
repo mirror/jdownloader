@@ -47,6 +47,12 @@ import org.jdownloader.plugins.controller.host.HostPluginController;
  */
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class Offline extends PluginForHost {
+
+    public static String getOfflineVersion() {
+        final HostPlugin hostPlugin = Offline.class.getAnnotation(HostPlugin.class);
+        return hostPlugin != null ? hostPlugin.revision() : "";
+    }
+
     /**
      *
      * @param wrapper
@@ -64,7 +70,7 @@ public class Offline extends PluginForHost {
         // each entry in List<String[]> will result in one PluginForHost
         List<String[]> ret = null;
         final Map<String, Object> cache = HostPluginController.PLUGIN_UPDATE_CACHE.get();
-        final String cacheID = Offline.class.getName() + "-PluginDomains";
+        final String cacheID = Offline.class.getName() + "-PluginDomains." + getOfflineVersion();
         if (cache != null && (ret = (List<String[]>) cache.get(cacheID)) != null) {
             return ret;
         }
