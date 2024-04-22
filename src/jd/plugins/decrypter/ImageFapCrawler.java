@@ -221,6 +221,9 @@ public class ImageFapCrawler extends PluginForDecrypt {
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(authorsName + " - " + galleryName + " - " + galleryIDStr);
         final String baseURL = URLHelper.getUrlWithoutParams(br._getURL());
+        // required to have correct page 0 with correct view param -> finds correct maxPage(depending from view param) and more results on
+        // first(0) page
+        getPage(this.br, baseURL + "?" + query.toString());
         int maxPage = this.findMaxPage(br);
         int page = 0;
         while (!this.isAbort()) {

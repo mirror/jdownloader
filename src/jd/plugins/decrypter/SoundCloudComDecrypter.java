@@ -517,13 +517,18 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
                 final String permalinkURL = item.get("permalink_url").toString();
                 ret.add(createDownloadlink(permalinkURL));
             } else if (StringUtils.equalsIgnoreCase(type, "track")) {
-                ret.addAll(this.crawlProcessSingleTrack(item));
+                if (trackmap == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                } else {
+                    ret.addAll(this.crawlProcessSingleTrack(trackmap));
+                }
             } else {
                 /* Expect us to either have a single track item or have-found a single track item. */
                 if (trackmap == null) {
-                    throw new IllegalArgumentException("WTF");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                } else {
+                    ret.addAll(this.crawlProcessSingleTrack(trackmap));
                 }
-                ret.addAll(this.crawlProcessSingleTrack(trackmap));
             }
         }
         if (fp != null) {

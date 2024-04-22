@@ -12,18 +12,17 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.WeakHashMap;
 
-import jd.controlling.downloadcontroller.DownloadLinkCandidateResult.RESULT;
-import jd.controlling.proxy.AbstractProxySelectorImpl;
-import jd.plugins.Account;
-
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.ConditionalSkipReason;
 import org.jdownloader.plugins.WaitWhileWaitingSkipReasonIsSet;
 import org.jdownloader.plugins.WaitingSkipReason;
 import org.jdownloader.plugins.WaitingSkipReason.CAUSE;
 
-public class ProxyInfoHistory {
+import jd.controlling.downloadcontroller.DownloadLinkCandidateResult.RESULT;
+import jd.controlling.proxy.AbstractProxySelectorImpl;
+import jd.plugins.Account;
 
+public class ProxyInfoHistory {
     public static final class WaitingSkipReasonContainer {
         private final WaitingSkipReason         skipReason;
         private WaitWhileWaitingSkipReasonIsSet waitWhile = null;
@@ -69,7 +68,6 @@ public class ProxyInfoHistory {
     }
 
     private final Map<WaitingSkipReason.CAUSE, Map<AbstractProxySelectorImpl, List<WaitingSkipReasonContainer>>> causeMapping = new LinkedHashMap<WaitingSkipReason.CAUSE, Map<AbstractProxySelectorImpl, List<WaitingSkipReasonContainer>>>();
-
     private final Map<AbstractProxySelectorImpl, Map<String, Map<Account, List<WaitingSkipReasonContainer>>>>    history      = new LinkedHashMap<AbstractProxySelectorImpl, Map<String, Map<Account, List<WaitingSkipReasonContainer>>>>();
 
     private List<WaitingSkipReasonContainer> getInteralWaitingSkipReasonList(DownloadLinkCandidate candidate) {
@@ -203,7 +201,7 @@ public class ProxyInfoHistory {
         return list;
     }
 
-    protected void validate() {
+    public void validate() {
         Iterator<Entry<AbstractProxySelectorImpl, Map<String, Map<Account, List<WaitingSkipReasonContainer>>>>> it1 = history.entrySet().iterator();
         while (it1.hasNext()) {
             Entry<AbstractProxySelectorImpl, Map<String, Map<Account, List<WaitingSkipReasonContainer>>>> next1 = it1.next();
@@ -280,7 +278,6 @@ public class ProxyInfoHistory {
             list.add(container);
             add(container, proxyInfo);
             Collections.sort(list, new Comparator<WaitingSkipReasonContainer>() {
-
                 @Override
                 public int compare(WaitingSkipReasonContainer o1, WaitingSkipReasonContainer o2) {
                     long x = o1.skipReason.getTimeOutTimeStamp();

@@ -488,7 +488,7 @@ public class LinkSnappyCom extends PluginForHost {
             Map<String, Object> entries = null;
             String passCode = link.getDownloadPassword();
             String dllink = null;
-            boolean enteredCorrectPassword = false;
+            Boolean enteredCorrectPassword = null;
             for (int wrongPasswordAttempts = 0; wrongPasswordAttempts <= 3; wrongPasswordAttempts++) {
                 final Map<String, Object> urlinfo = new HashMap<String, Object>();
                 urlinfo.put("link", link.getDefaultPlugin().buildExternalDownloadURL(link, this));
@@ -499,9 +499,16 @@ public class LinkSnappyCom extends PluginForHost {
                 br.getPage(urlRequest + URLEncode.encodeURIComponent(JSonStorage.serializeToJson(urlinfo)));
                 entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
                 final List<Object> ressourcelist = (List<Object>) entries.get("links");
+                if (ressourcelist == null) {
+                    enteredCorrectPassword = null;
+                    break;
+                }
                 entries = (Map<String, Object>) ressourcelist.get(0);
                 final String message = this.getError(entries);
                 if (this.isErrorDownloadPasswordRequiredOrWrong(message)) {
+                    if (urlinfo.containsKey("linkpass")) {
+                        enteredCorrectPassword = false;
+                    }
                     wrongPasswordAttempts += 1;
                     passCode = getUserInput("Password?", link);
                     /**
@@ -516,11 +523,11 @@ public class LinkSnappyCom extends PluginForHost {
                     break;
                 }
             }
-            if (!enteredCorrectPassword) {
+            if (Boolean.FALSE.equals(enteredCorrectPassword)) {
                 /* Allow next candidate to try */
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
             }
-            if (passCode != null) {
+            if (Boolean.TRUE.equals(enteredCorrectPassword) && passCode != null) {
                 link.setDownloadPassword(passCode);
             }
             handleErrors(link, account, entries);

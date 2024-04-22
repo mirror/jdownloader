@@ -40,24 +40,6 @@ import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 import javax.swing.text.JTextComponent;
 
-import jd.controlling.AccountController;
-import jd.controlling.TaskQueue;
-import jd.controlling.accountchecker.AccountChecker;
-import jd.controlling.accountchecker.AccountChecker.AccountCheckJob;
-import jd.controlling.downloadcontroller.DownloadController;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
-import jd.controlling.proxy.AbstractProxySelectorImpl;
-import jd.controlling.reconnect.Reconnecter;
-import jd.plugins.Account;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-import net.sourceforge.htmlunit.corejs.javascript.Function;
-import net.sourceforge.htmlunit.corejs.javascript.ScriptableObject;
-
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.MigPanel;
@@ -96,8 +78,31 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.views.ArraySet;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.WaitingSkipReason;
 import org.jdownloader.settings.SoundSettings;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
+
+import jd.controlling.AccountController;
+import jd.controlling.TaskQueue;
+import jd.controlling.accountchecker.AccountChecker;
+import jd.controlling.accountchecker.AccountChecker.AccountCheckJob;
+import jd.controlling.downloadcontroller.DownloadController;
+import jd.controlling.downloadcontroller.DownloadSession;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.DownloadWatchDogJob;
+import jd.controlling.downloadcontroller.ProxyInfoHistory;
+import jd.controlling.downloadcontroller.ProxyInfoHistory.WaitingSkipReasonContainer;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
+import jd.controlling.proxy.AbstractProxySelectorImpl;
+import jd.controlling.reconnect.Reconnecter;
+import jd.plugins.Account;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import net.sourceforge.htmlunit.corejs.javascript.Function;
+import net.sourceforge.htmlunit.corejs.javascript.ScriptableObject;
 
 public class ScriptEnvironment {
     private static HashMap<String, Object>                       GLOBAL_PROPERTIES = new HashMap<String, Object>();
@@ -993,6 +998,53 @@ public class ScriptEnvironment {
         }
     }
 
+    @ScriptAPI(description = "Perform a fake reconnect and optionally wait for it", parameters = { "true|false (Wait for fake reconnect)" }, example = "fakeReconnect(false);")
+    public static void fakeReconnect(final boolean wait) throws EnvironmentException {
+        final AtomicBoolean executedFlag = new AtomicBoolean(false);
+        DownloadWatchDog.getInstance().enqueueJob(new DownloadWatchDogJob() {
+            @Override
+            public boolean isHighPriority() {
+                return true;
+            }
+
+            @Override
+            public void interrupt() {
+            }
+
+            @Override
+            public void execute(DownloadSession currentSession) {
+                try {
+                    final ProxyInfoHistory proxyInfoHistory = currentSession.getProxyInfoHistory();
+                    proxyInfoHistory.validate();
+                    final List<WaitingSkipReasonContainer> reconnects = proxyInfoHistory.list(WaitingSkipReason.CAUSE.IP_BLOCKED, null);
+                    if (reconnects != null) {
+                        for (WaitingSkipReasonContainer reconnect : reconnects) {
+                            if (reconnect.getProxySelector().isReconnectSupported()) {
+                                reconnect.invalidate();
+                            }
+                        }
+                    }
+                } finally {
+                    synchronized (executedFlag) {
+                        executedFlag.set(true);
+                        executedFlag.notifyAll();
+                    }
+                }
+            }
+        });
+        if (wait) {
+            try {
+                synchronized (executedFlag) {
+                    if (!executedFlag.get()) {
+                        executedFlag.wait();
+                    }
+                }
+            } catch (InterruptedException e) {
+                throw new EnvironmentException(e);
+            }
+        }
+    }
+
     @ScriptAPI(description = "Perform a sleep and wait for x milliseconds", parameters = { "milliseconds" }, example = "sleep(1000);")
     public static void sleep(int millis) throws EnvironmentException {
         try {
@@ -1009,6 +1061,7 @@ public class ScriptEnvironment {
      * TODO: this implementation does only use toExportString method in ugle string result, no list, just plain string
      *
      * please rewrite to return proper json/sandbox ojects(preferred) in a list
+     *
      * @return
      * @throws EnvironmentException
      */
@@ -1030,10 +1083,11 @@ public class ScriptEnvironment {
 
     @ScriptAPI(description = "(experimental) Get proxy banlist", parameters = { "" }, example = "experimental_proxybanlist();")
     /**
-     * TODO: this implementation does use getBanList().toString() which is neither stable nor anything usefull as
-     * the result contains localized strings.
+     * TODO: this implementation does use getBanList().toString() which is neither stable nor anything usefull as the result contains
+     * localized strings.
      *
      * please rewrite to return proper json/sandbox ojects(preferred) in a list
+     *
      * @return
      * @throws EnvironmentException
      */
