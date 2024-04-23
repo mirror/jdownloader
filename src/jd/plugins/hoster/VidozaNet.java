@@ -18,19 +18,16 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
-import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class VidozaNet extends XFileSharingProBasic {
@@ -62,7 +59,7 @@ public class VidozaNet extends XFileSharingProBasic {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "vidoza.net", "vidoza.org" });
+        ret.add(new String[] { "vidoza.net", "vidoza.org", "videzz.net" });
         return ret;
     }
 
@@ -120,28 +117,13 @@ public class VidozaNet extends XFileSharingProBasic {
     }
 
     @Override
-    public AvailableStatus requestFileInformationWebsite(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
-        try {
-            return super.requestFileInformationWebsite(link, account, isDownload);
-        } catch (final PluginException e) {
-            if (e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND && !this.isEmbedURL(br.getURL())) {
-                /* 2022-05-17: Special handling for seemingly offline files which may still be playable and downloadable via embed URL. */
-                /* File-title can even be given for offline items! */
-                final String title = br.getRegex("<title>Watch ([^<]*?)( mp4)?</title>").getMatch(0);
-                if (title != null) {
-                    link.setFinalFileName(Encoding.htmlDecode(title) + ".mp4");
-                }
-                requestFileInformationVideoEmbed(br.cloneBrowser(), link, account, true);
-                return AvailableStatus.TRUE;
-            } else {
-                throw e;
-            }
-        }
-    }
-
-    @Override
     protected boolean isOffline(final DownloadLink link, final Browser br) {
-        if (br.containsHTML("/embed-\\.html\"|Reason for deletion:")) {
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            return true;
+        } else if (br.containsHTML(">\\s*Conversion stage\\s*:") && br.containsHTML("<title>\\s*Watch\\s*</title>")) {
+            /* 2024-04-23: Special offline - embed-only item which is actually offline e.g.: https://videzz.net/3ka8sbjnm59j */
+            return true;
+        } else if (br.containsHTML("/embed-\\.html\"|Reason for deletion:")) {
             return true;
         } else {
             return super.isOffline(link, br);
@@ -162,5 +144,14 @@ public class VidozaNet extends XFileSharingProBasic {
     @Override
     protected boolean isVideohosterEmbed() {
         return true;
+    }
+
+    @Override
+    protected boolean trustAvailablecheckVideoEmbed() {
+        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            return true;
+        } else {
+            return false;
+        }
     }
 }

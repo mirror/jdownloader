@@ -127,9 +127,11 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
     // return this.rewriteHost(getPluginDomains(), host);
     // }
     public static final String getDefaultAnnotationPatternPart() {
-        return "/(?:d/[A-Za-z0-9]+|(?:embed-|e/)?[a-z0-9]{12}(?:/[^/]+(?:\\.html)?)?)";
+        return "/(d/[A-Za-z0-9]+|(d|e)/[a-z0-9]{12}|embed-[a-z0-9]{12}\\.html|[a-z0-9]{12}(/[^/]+(?:\\.html)?)?)";
     }
 
+    @Deprecated
+    /** Deprecated since 2024-04-23, use getDefaultAnnotationPatternPart instead! */
     public static final String getDefaultAnnotationPatternPartXFSNew() {
         return "/(d|e)/[a-z0-9]{12}";
     }
@@ -1183,12 +1185,12 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
         if (br.getRequest().getHtmlCode().equalsIgnoreCase("File was deleted")) {
             /* Should be valid for all XFS hosts e.g. speedvideo.net, uqload.com */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        this.checkErrors(br, br.getRequest().getHtmlCode(), link, account, false);
-        if (isOffline(link, br)) {
+        } else if (isOffline(link, br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        this.checkErrors(br, br.getRequest().getHtmlCode(), link, account, false);
         final String dllink = getDllink(link, account, br, getCorrectBR(br));
+        boolean isFilesizeSet = false;
         if (!StringUtils.isEmpty(dllink)) {
             this.videoStreamDownloadurl = dllink;
             if (findAndSetFilesize && !dllink.contains(".m3u8")) {
@@ -1196,8 +1198,23 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
                 if (checkDirectLinkAndSetFilesize(link, dllink, true) != null) {
                     /* Directurl is valid -> Store it */
                     storeDirecturl(link, account, dllink);
+                    isFilesizeSet = true;
                 }
             }
+        }
+        final String[] fileInfo = internal_getFileInfoArray();
+        scanInfo(fileInfo);
+        processFileInfo(fileInfo, br, link);
+        if (!StringUtils.isEmpty(fileInfo[0])) {
+            /* Correct- and set filename */
+            setFilename(fileInfo[0], link, br);
+        } else {
+            /* Fallback */
+            this.setWeakFilename(link, br);
+        }
+        /* Set filesize */
+        if (!StringUtils.isEmpty(fileInfo[1]) && !isFilesizeSet) {
+            link.setDownloadSize(SizeFormatter.getSize(fileInfo[1]));
         }
     }
 
@@ -1237,6 +1254,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
         }
+        // this.checkErrors(br, url, link, account, false);
         final String[] fileInfo = internal_getFileInfoArray();
         scanInfo(fileInfo);
         processFileInfo(fileInfo, br, link);
@@ -1562,6 +1580,13 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
             quotedFUID = Pattern.quote(urlFUID);
         }
         String filename = new Regex(html, "name=\"fname\"[^>]*value=\"([^\"]+)\"").getMatch(0);
+        if (StringUtils.isEmpty(filename)) {
+            /* 2024-04-23: e.g. oceanoffile.com */
+            filename = new Regex(html, "class\\s*=\\s*\"dfilename\"[^>]*>\\s*(?:<div>)?\\s*([^<>\"]*?)</").getMatch(0);
+            if (StringUtils.isEmpty(filename)) {
+                filename = new Regex(html, "<div[^>]*id\\s*=\\s*\"dfilename\"[^>]*>\\s*(?:<div>)?\\s*([^<>\"]*?)</").getMatch(0);
+            }
+        }
         String filesizeBytesStr = null;
         String filesizeWithUnit = null;
         {
@@ -1624,21 +1649,19 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
             // filename = filename.replaceFirst(Pattern.quote(filesizeWithUnit) + "$", "");
             // }
             // }
-            if (!supports_availablecheck_filesize_bytes_from_sharebox()) {
+            if (!supports_availablecheck_filesize_bytes_from_sharebox() && filesizeBytesStr != null) {
+                logger.info("Ignoring this possible filesize_bytes string: " + filesizeBytesStr);
                 filesizeBytesStr = null;
             }
         }
         /* Standard traits from base page */
         if (StringUtils.isEmpty(filename)) {
-            filename = new Regex(html, "name=\"fname\"[^>]*value=\"([^\"]+)\"").getMatch(0);
+            filename = new Regex(html, "(?i)You have requested.*?https?://(?:www\\.)?[^/]+/" + urlFUID + "/([^<>\"]+)<").getMatch(0);
             if (StringUtils.isEmpty(filename)) {
-                filename = new Regex(html, "(?i)You have requested.*?https?://(?:www\\.)?[^/]+/" + urlFUID + "/([^<>\"]+)<").getMatch(0);
+                filename = new Regex(html, "<h2>\\s*Download File\\s*(?:<(?:span|b)[^>]*>)?\\s*(.+?)\\s*(</(?:span|b|h2)>)").getMatch(0);
+                /* traits from download1 page below */
                 if (StringUtils.isEmpty(filename)) {
-                    filename = new Regex(html, "<h2>\\s*Download File\\s*(?:<(?:span|b)[^>]*>)?\\s*(.+?)\\s*(</(?:span|b|h2)>)").getMatch(0);
-                    /* traits from download1 page below */
-                    if (StringUtils.isEmpty(filename)) {
-                        filename = new Regex(html, "Filename:?\\s*(<[^>]+>\\s*)+?([^<>\"]+)").getMatch(1);
-                    }
+                    filename = new Regex(html, "Filename:?\\s*(<[^>]+>\\s*)+?([^<>\"]+)").getMatch(1);
                 }
             }
         }
@@ -1693,12 +1716,6 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
                     filename = new Regex(html, Pattern.compile("<title>\\s*(.*?\\.(png|jpe?g|gif))\\s*-\\s*(" + Pattern.quote(getHost()) + "|" + Pattern.quote(websiteName) + ")\\s*</title>", Pattern.CASE_INSENSITIVE)).getMatch(0);
                 }
             }
-            if (StringUtils.isEmpty(filename)) {
-                filename = new Regex(html, "class\\s*=\\s*\"dfilename\">\\s*(?:<div>)?\\s*([^<>\"]*?)</").getMatch(0);
-                if (StringUtils.isEmpty(filename)) {
-                    filename = new Regex(html, "<div[^>]*id\\s*=\\s*\"dfilename\">\\s*(?:<div>)?\\s*([^<>\"]*?)</").getMatch(0);
-                }
-            }
             if (internal_isVideohosterEmbed(this.br) && (StringUtils.isEmpty(filename) || StringUtils.equalsIgnoreCase("No title", filename))) {
                 /* 2019-10-15: E.g. vidoza.net */
                 final String curFileName = br.getRegex("var\\s*curFileName\\s*=\\s*\"(.*?)\"").getMatch(0);
@@ -1730,13 +1747,10 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
                 /* Starting from here - more unsafe attempts */
                 if (StringUtils.isEmpty(filesizeWithUnit)) {
                     filesizeWithUnit = new Regex(html, "\\((\\d+\\s*bytes)\\)").getMatch(0);
+                    /* Generic failover */
                     if (StringUtils.isEmpty(filesizeWithUnit)) {
-                        filesizeWithUnit = new Regex(html, "</font>[ ]+\\(([^<>\"'/]+)\\)(.*?)</font>").getMatch(0);
+                        filesizeWithUnit = scanGenericFileSize(html);
                     }
-                }
-                /* Generic failover */
-                if (StringUtils.isEmpty(filesizeWithUnit)) {
-                    filesizeWithUnit = scanGenericFileSize(html);
                 }
             }
         }
