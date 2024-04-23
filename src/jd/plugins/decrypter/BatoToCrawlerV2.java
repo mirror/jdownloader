@@ -157,7 +157,8 @@ public class BatoToCrawlerV2 extends PluginForDecrypt {
             } else if (titleChapter != null) {
                 fp.setName(titleChapter);
             } else {
-                fp = null;
+                /* Fallback */
+                fp.setName(br._getURL().getPath());
             }
             String imgsText = br.getRegex("const (?:imgHttpLis|imgHttps) = \\[(.*?);").getMatch(0);
             imgsText = imgsText.replace("\"", "");
@@ -165,8 +166,14 @@ public class BatoToCrawlerV2 extends PluginForDecrypt {
             final int padLength = StringUtils.getPadLength(imgs.length);
             for (int index = 0; index < imgs.length; index++) {
                 String url = imgs[index];
-                final String params = imgParams[index];
-                url = url + "?" + params;
+                /* 2024-04-23: params are not needed anymore */
+                String params = null;
+                if (imgParams != null && index <= imgParams.length) {
+                    params = imgParams[index];
+                }
+                if (params != null) {
+                    url = url + "?" + params;
+                }
                 final DownloadLink link = createDownloadlink(url);
                 final String fname_without_ext = fp.getName() + " - Page " + StringUtils.formatByPadLength(padLength, index);
                 final String ext = Plugin.getFileNameExtensionFromURL(url);
