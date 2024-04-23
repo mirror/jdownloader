@@ -22,7 +22,6 @@ import jd.plugins.download.Downloadable;
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.IO;
-import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.LogSource;
 import org.jdownloader.plugins.DownloadPluginProgress;
 import org.jdownloader.plugins.SkipReason;
@@ -33,8 +32,6 @@ import org.jdownloader.settings.GeneralSettings;
 public class TextDownloader extends DownloadInterface {
     protected volatile long                   bytesWritten      = 0l;
     private final Downloadable                downloadable;
-    private final DownloadLink                link;
-    private final LogInterface                logger;
     private File                              outputCompleteFile;
     private File                              outputFinalCompleteFile;
     protected Long                            lastModified      = null;
@@ -51,12 +48,11 @@ public class TextDownloader extends DownloadInterface {
             throw new IllegalArgumentException();
         } else if (text == null) {
             throw new IllegalArgumentException("text can't be null");
+        } else {
+            this.downloadable = new DownloadLinkDownloadable(link);
+            downloadable.setDownloadInterface(this);
+            textToWrite = text;
         }
-        this.link = link;
-        logger = plugin.getLogger();
-        this.downloadable = new DownloadLinkDownloadable(link); // Dummy else we will run into an NPE!
-        downloadable.setDownloadInterface(this);
-        textToWrite = text;
     }
 
     public long getBytesLoaded() {
@@ -84,11 +80,12 @@ public class TextDownloader extends DownloadInterface {
                 /* We are about to start downloading so we know that if there was a captcha, it has been solved successfully. */
                 downloadable.validateLastChallengeResponse();
             } catch (final Throwable e) {
-                LogSource.exception(logger, e);
+                LogSource.exception(downloadable.getLogger(), e);
             }
-            logger.finer("Start Download");
+            downloadable.getLogger().finer("Start Download");
             try {
-                if (this.textToWrite == null) {
+                final String textToWrite = this.textToWrite;
+                if (textToWrite == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 DownloadPluginProgress downloadPluginProgress = null;
@@ -114,17 +111,18 @@ public class TextDownloader extends DownloadInterface {
                     downloadPluginProgress = new DownloadPluginProgress(downloadable, this, Color.GREEN.darker());
                     downloadable.addPluginProgress(downloadPluginProgress);
                     downloadable.setAvailable(AvailableStatus.TRUE);
-                    IO.writeToFile(this.outputFinalCompleteFile, this.textToWrite.getBytes("UTF-8"), IO.SYNC.META_AND_DATA);
+                    IO.writeToFile(this.outputFinalCompleteFile, textToWrite.getBytes("UTF-8"), IO.SYNC.META_AND_DATA);
                     /* Set filesize so user can see it in UI. */
                     this.bytesWritten = this.outputFinalCompleteFile.length();
-                    link.setVerifiedFileSize(this.bytesWritten);
+                    downloadable.setVerifiedFileSize(this.bytesWritten);
+                    downloadable.setDownloadBytesLoaded(bytesWritten);
                     /* Set progress to finished - the "download" is complete. */
-                    link.getLinkStatus().setStatus(LinkStatus.FINISHED);
+                    downloadable.setLinkStatus(LinkStatus.FINISHED);
                 } finally {
                     try {
                         downloadable.free(reservation);
                     } catch (final Throwable e) {
-                        LogSource.exception(logger, e);
+                        LogSource.exception(downloadable.getLogger(), e);
                     }
                     try {
                         final long startTimeStamp = getStartTimeStamp();
@@ -135,11 +133,6 @@ public class TextDownloader extends DownloadInterface {
                     }
                     downloadable.removePluginProgress(downloadPluginProgress);
                 }
-                // boolean renameOkay = downloadable.rename(outputPartFile, outputCompleteFile);
-                // if (!renameOkay) {
-                // throw new PluginException(LinkStatus.ERROR_DOWNLOAD_FAILED, _JDT.T.system_download_errors_couldnotrename(),
-                // LinkStatus.VALUE_LOCAL_IO_ERROR);
-                // }
                 return true;
             } finally {
                 try {
@@ -164,7 +157,7 @@ public class TextDownloader extends DownloadInterface {
                     outputCompleteFile.setLastModified(System.currentTimeMillis());
                 }
             } catch (final Throwable ignore) {
-                LogSource.exception(logger, ignore);
+                LogSource.exception(downloadable.getLogger(), ignore);
             }
             return true;
         } else {
@@ -173,12 +166,13 @@ public class TextDownloader extends DownloadInterface {
     }
 
     protected void cleanupDownladInterface() {
+        textToWrite = null;
     }
 
     private void createOutputChannel() throws SkipReasonException {
         try {
             final String fileOutput = downloadable.getFileOutput();
-            logger.info("createOutputChannel for " + fileOutput);
+            downloadable.getLogger().info("createOutputChannel for " + fileOutput);
             final String finalFileOutput = downloadable.getFinalFileOutput();
             outputCompleteFile = new File(fileOutput);
             outputFinalCompleteFile = outputCompleteFile;
@@ -186,7 +180,7 @@ public class TextDownloader extends DownloadInterface {
                 outputFinalCompleteFile = new File(finalFileOutput);
             }
         } catch (Exception e) {
-            logger.log(e);
+            downloadable.getLogger().log(e);
             throw new SkipReasonException(SkipReason.INVALID_DESTINATION, e);
         }
     }
@@ -199,7 +193,7 @@ public class TextDownloader extends DownloadInterface {
     /** signal that we stopped download external */
     public void stopDownload() {
         if (abort.getAndSet(true) == false) {
-            logger.info("externalStop recieved");
+            downloadable.getLogger().info("externalStop recieved");
         }
     }
 
