@@ -36,6 +36,7 @@ import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -121,6 +122,25 @@ public class ORFMediathek extends PluginForHost {
             return "orfmediathek://audio/" + typeAudio.getMatch(0);
         } else {
             return "orfmediathek://playlist/" + link.getStringProperty(PROPERTY_SEGMENT_ID) + "/contentType/" + getContentType(link) + "/" + link.getStringProperty(PROPERTY_VIDEO_ID) + "/delivery/" + link.getStringProperty(PROPERTY_DELIVERY) + "/streamingtype/" + link.getStringProperty(PROPERTY_STREAMING_TYPE) + "/quality/" + link.getStringProperty(PROPERTY_QUALITY_HUMAN_READABLE);
+        }
+    }
+
+    @Override
+    public boolean isResumeable(final DownloadLink link, final Account account) {
+        if (link != null && isVideoProgressiveStream(link)) {
+            return true;
+        } else {
+            /* Other items e.g. thumbnails -> Range requests are not supported */
+            return false;
+        }
+    }
+
+    public int getMaxChunks(final DownloadLink link, final Account account) {
+        if (link != null && isVideoProgressiveStream(link)) {
+            return 0;
+        } else {
+            /* Other items e.g. thumbnails -> Range requests are not supported */
+            return 1;
         }
     }
 
@@ -371,7 +391,7 @@ public class ORFMediathek extends PluginForHost {
             /* 2023-11-27: This should never happen */
             throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported protocol rtmp(e)");
         } else {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, this.isResumeable(link, null), this.getMaxChunks(link, null));
             this.handleConnectionErrors(br, link, dl.getConnection());
             dl.startDownload();
         }

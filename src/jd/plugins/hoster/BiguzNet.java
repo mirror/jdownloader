@@ -25,6 +25,7 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -50,10 +51,7 @@ public class BiguzNet extends PluginForHost {
     // other:
     /* Extension which will be used if no correct extension is found */
     /* Connection stuff */
-    private static final boolean free_resume       = true;
-    private static final int     free_maxchunks    = 0;
-    private static final int     free_maxdownloads = -1;
-    private String               dllink            = null;
+    private String dllink = null;
 
     @Override
     public String getAGBLink() {
@@ -77,6 +75,11 @@ public class BiguzNet extends PluginForHost {
         } catch (final Throwable ignore) {
         }
         return null;
+    }
+
+    @Override
+    public boolean isResumeable(final DownloadLink link, final Account account) {
+        return true;
     }
 
     @Override
@@ -123,7 +126,11 @@ public class BiguzNet extends PluginForHost {
                 con = br.openHeadConnection(this.dllink);
                 handleConnectionErrors(br, con);
                 if (con.getCompleteContentLength() > 0) {
-                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                    if (con.isContentDecoded()) {
+                        link.setDownloadSize(con.getCompleteContentLength());
+                    } else {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
                 }
                 final String ext = Plugin.getExtensionFromMimeTypeStatic(con.getContentType());
                 if (ext != null) {
@@ -145,7 +152,8 @@ public class BiguzNet extends PluginForHost {
         if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
+        // 2024-04-23: max chunks = 1
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, this.isResumeable(link, null), 1);
         handleConnectionErrors(br, dl.getConnection());
         dl.startDownload();
     }
@@ -165,7 +173,7 @@ public class BiguzNet extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return free_maxdownloads;
+        return Integer.MAX_VALUE;
     }
 
     @Override

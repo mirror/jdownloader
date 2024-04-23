@@ -18,6 +18,9 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.Regex;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.plugins.Account;
@@ -28,9 +31,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.Regex;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class WorldBytezCom extends XFileSharingProBasic {
@@ -76,7 +76,7 @@ public class WorldBytezCom extends XFileSharingProBasic {
         return ret.toArray(new String[0]);
     }
 
-    private static final String TYPE_SPECIAL = "https?://[^/]+/\\?op=login\\&redirect=([a-z0-9]+)";
+    private static final String TYPE_SPECIAL = "(?i)https?://[^/]+/\\?op=login\\&redirect=([a-z0-9]+)";
 
     @Override
     public void correctDownloadLink(final DownloadLink link) {

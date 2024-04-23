@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
@@ -43,10 +42,10 @@ public class ThingiverseCom extends antiDDoSForDecrypt {
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            String[] links = getAPISearchLinks(br);
+            final String[] links = getAPISearchLinks(br);
             if (links != null && links.length > 0) {
                 for (String link : links) {
-                    ret.add(createDownloadlink(br.getURL(link).toString()));
+                    ret.add(createDownloadlink(br.getURL(link).toExternalForm()));
                 }
             }
         } else if (StringUtils.containsIgnoreCase(param.getCryptedUrl(), "/thing:")) {
@@ -70,7 +69,7 @@ public class ThingiverseCom extends antiDDoSForDecrypt {
             final String[] imageLinks = br.getRegex("<div class=\"gallery-photo\"[^>]*data-full=\"([^\"]+)\"[^>]*>").getColumn(0);
             if (imageLinks != null && imageLinks.length > 0) {
                 for (String imageLink : imageLinks) {
-                    imageLink = Encoding.htmlDecode(imageLink);
+                    imageLink = Encoding.htmlOnlyDecode(imageLink);
                     final DownloadLink imageDL = createDownloadlink(imageLink);
                     if (fpName != null) {
                         imageDL.setFinalFileName(fpName + "_" + imageLink.hashCode() + ".jpg");
@@ -94,7 +93,7 @@ public class ThingiverseCom extends antiDDoSForDecrypt {
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
             final String thingURL = JavaScriptEngineFactory.walkJson(entries, "thing/public_url").toString();
             if (StringUtils.isEmpty(thingURL)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -132,7 +131,7 @@ public class ThingiverseCom extends antiDDoSForDecrypt {
                 searchValues.put("page", "1");
                 searchValues.put("per_page", "999999999");
                 Browser br2 = br.cloneBrowser();
-                String postURL = br2.getURL(searchValues.get("source")).toString();
+                String postURL = br2.getURL(searchValues.get("source")).toExternalForm();
                 PostRequest post = new PostRequest(postURL);
                 UrlQuery postQuery = new UrlQuery();
                 for (String key : searchValues.keySet()) {

@@ -110,8 +110,7 @@ public class BatoToCrawlerV2 extends PluginForDecrypt {
         }
         br.getPage(param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 404) {
-            ret.add(this.createOfflinelink(param.toString()));
-            return ret;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         FilePackage fp = FilePackage.getInstance();
         fp.setCleanupPackageName(false);
@@ -119,7 +118,7 @@ public class BatoToCrawlerV2 extends PluginForDecrypt {
             String[] chapters = br.getRegex("<a[^>]+class\\s*=\\s*\"[^\"]*chapt[^\"]*\"[^>]+href\\s*=\\s*\"([^\"]*/chapter/[^\"]+)\"").getColumn(0);
             if (chapters != null && chapters.length > 0) {
                 for (String chapter : chapters) {
-                    String url = br.getURL(Encoding.htmlOnlyDecode(chapter)).toString();
+                    String url = br.getURL(Encoding.htmlOnlyDecode(chapter)).toExternalForm();
                     final DownloadLink link = createDownloadlink(url);
                     fp.add(link);
                     distribute(link);
@@ -148,7 +147,6 @@ public class BatoToCrawlerV2 extends PluginForDecrypt {
             final String titleSeries = br.getRegex("<a href=\"/series/\\d+\">([^<]+)</a>").getMatch(0);
             final String titleChapter = br.getRegex("property=\"og:title\" content=\"([^\"]+)").getMatch(0);
             final String chapterNumber = new Regex(titleChapter, "Chapter\\s*(\\d+)").getMatch(0);
-            String imgsText = br.getRegex("const imgHttpLis = \\[(.*?);").getMatch(0);
             if (titleSeries != null && chapterNumber != null && titleChapter != null) {
                 if (titleChapter.matches("(?i)^" + Pattern.quote(titleSeries) + "\\s*-\\s*Chapter\\s*\\d+")) {
                     /* Title of series and chapter title are the same */
@@ -161,11 +159,12 @@ public class BatoToCrawlerV2 extends PluginForDecrypt {
             } else {
                 fp = null;
             }
+            String imgsText = br.getRegex("const (?:imgHttpLis|imgHttps) = \\[(.*?);").getMatch(0);
             imgsText = imgsText.replace("\"", "");
             final String[] imgs = imgsText.split(",");
-            int index = 0;
             final int padLength = StringUtils.getPadLength(imgs.length);
-            for (String url : imgs) {
+            for (int index = 0; index < imgs.length; index++) {
+                String url = imgs[index];
                 final String params = imgParams[index];
                 url = url + "?" + params;
                 final DownloadLink link = createDownloadlink(url);
