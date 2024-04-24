@@ -1239,6 +1239,7 @@ public class VKontakteRuHoster extends PluginForHost {
         } else if (br.containsHTML("class=\"TopNavBtn__profileImg\"")) {
             return true;
         } else if ((userIDStr = br.getRegex("id: (\\d+),").getMatch(0)) != null && !userIDStr.equals("0")) {
+            // 2024-04-24
             return true;
         } else {
             return false;

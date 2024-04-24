@@ -29,6 +29,7 @@ import jd.parser.html.HTMLSearch;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
@@ -74,8 +75,8 @@ public class ArdmediathekEmbed extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final String parameter = param.getCryptedUrl();
-        br.getPage(parameter);
+        final String contenturl = param.getCryptedUrl().replaceFirst("^(?i)http://", "https://");
+        br.getPage(contenturl);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -131,6 +132,14 @@ public class ArdmediathekEmbed extends PluginForDecrypt {
             logger.info("Failed to find any downloadable content");
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        final FilePackage fp = FilePackage.getInstance();
+        if (title != null) {
+            fp.setName(title);
+        } else {
+            /* Fallback */
+            fp.setName(br._getURL().getPath());
+        }
+        fp.addLinks(ret);
         return ret;
     }
 }
