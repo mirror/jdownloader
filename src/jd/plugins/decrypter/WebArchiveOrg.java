@@ -4,8 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.DebugMode;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -61,13 +59,7 @@ public class WebArchiveOrg extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            // TODO: Testing a better Regex down below
-            if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-                ret.add("https?://" + buildHostsPatternPart(domains) + "/web/[0-9]+((if|im|oe)_|\\*)?/.+");
-                // https?://web\.archive\.org/web/[0-9]+((if|im|oe)_|\*)?/.+
-            } else {
-                ret.add("https?://" + buildHostsPatternPart(domains) + "/web/[0-9]+.+");
-            }
+            ret.add("https?://" + buildHostsPatternPart(domains) + "/web/[0-9]+((if|im|oe)_|\\*)?/.+");
         }
         return ret.toArray(new String[0]);
     }
