@@ -502,7 +502,7 @@ public class TiktokCom extends PluginForHost {
             } else if (isBotProtectionActive(this.br)) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Captcha-blocked");
             }
-            final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(this.br.toString());
+            final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.getRequest().getHtmlCode());
             final String status_msg = (String) entries.get("status_msg");
             final String type = (String) entries.get("type");
             if (!"video".equalsIgnoreCase(type)) {
@@ -1025,51 +1025,44 @@ public class TiktokCom extends PluginForHost {
 
     public void login(final Account account, final boolean force) throws Exception {
         synchronized (account) {
-            try {
-                br.setFollowRedirects(true);
-                br.setCookiesExclusive(true);
-                final Cookies userCookies = account.loadUserCookies();
-                if (userCookies == null) {
-                    showCookieLoginInfo();
-                    throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_required());
+            br.setFollowRedirects(true);
+            br.setCookiesExclusive(true);
+            final Cookies userCookies = account.loadUserCookies();
+            if (userCookies == null) {
+                showCookieLoginInfo();
+                throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_required());
+            }
+            br.setCookies(userCookies);
+            if (!force) {
+                /* Do not verify cookies */
+                return;
+            }
+            logger.info("Attempting user cookie login");
+            prepBRWebAPI(br);
+            br.getPage("https://www." + getHost() + "/passport/web/account/info/?" + getWebsiteQuery().toString());
+            final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+            final String msg = entries.get("message").toString();
+            if (msg.equals("success")) {
+                /* Save new cookie timestamp */
+                logger.info("User Cookie login successful");
+                /*
+                 * User can enter whatever he wants into the 'username' field but we want unique usernames --> Grab username from json
+                 * response and set it.
+                 */
+                final Map<String, Object> data = (Map<String, Object>) entries.get("data");
+                account.setUser(data.get("username").toString());
+                if (configUseAPI() && !account.hasProperty(PROPERTY_ACCOUNT_HAS_SHOWN_DOWNLOAD_MODE_HINT)) {
+                    showAccountLoginDownloadModeHint();
+                    account.setProperty(PROPERTY_ACCOUNT_HAS_SHOWN_DOWNLOAD_MODE_HINT, true);
                 }
-                br.setCookies(userCookies);
-                if (!force) {
-                    /* Do not verify cookies */
-                    return;
-                }
-                logger.info("Attempting user cookie login");
-                prepBRWebAPI(br);
-                br.getPage("https://www." + getHost() + "/passport/web/account/info/?" + getWebsiteQuery().toString());
-                final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
-                final String msg = entries.get("message").toString();
-                if (msg.equals("success")) {
-                    /* Save new cookie timestamp */
-                    logger.info("User Cookie login successful");
-                    /*
-                     * User can enter whatever he wants into the 'username' field but we want unique usernames --> Grab username from json
-                     * response and set it.
-                     */
-                    final Map<String, Object> data = (Map<String, Object>) entries.get("data");
-                    account.setUser(data.get("username").toString());
-                    if (configUseAPI() && !account.hasProperty(PROPERTY_ACCOUNT_HAS_SHOWN_DOWNLOAD_MODE_HINT)) {
-                        showAccountLoginDownloadModeHint();
-                        account.setProperty(PROPERTY_ACCOUNT_HAS_SHOWN_DOWNLOAD_MODE_HINT, true);
-                    }
-                    return;
+                return;
+            } else {
+                logger.info("User Cookie login failed");
+                if (account.hasEverBeenValid()) {
+                    throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
                 } else {
-                    logger.info("User Cookie login failed");
-                    if (account.hasEverBeenValid()) {
-                        throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
-                    } else {
-                        throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
-                    }
+                    throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
                 }
-            } catch (final PluginException e) {
-                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
-                    account.clearCookies("");
-                }
-                throw e;
             }
         }
     }

@@ -63,7 +63,7 @@ public class WebArchiveOrg extends PluginForDecrypt {
         for (final String[] domains : pluginDomains) {
             // TODO: Testing a better Regex down below
             if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-                ret.add("https?://" + buildHostsPatternPart(domains) + "/[0-9]+((if|im|oe)_|\\*)?/.+");
+                ret.add("https?://" + buildHostsPatternPart(domains) + "/web/[0-9]+((if|im|oe)_|\\*)?/.+");
                 // https?://web\.archive\.org/web/[0-9]+((if|im|oe)_|\*)?/.+
             } else {
                 ret.add("https?://" + buildHostsPatternPart(domains) + "/web/[0-9]+.+");

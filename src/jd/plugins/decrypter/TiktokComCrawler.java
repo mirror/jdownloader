@@ -260,7 +260,7 @@ public class TiktokComCrawler extends PluginForDecrypt {
                 if (videoJson == null) {
                     videoJson = brc.getRegex("<script\\s*id[^>]*>\\s*(\\{.*?)\\s*</script>").getMatch(0);
                 }
-                final Map<String, Object> root = JavaScriptEngineFactory.jsonToJavaMap(videoJson);
+                final Map<String, Object> root = restoreFromString(videoJson, TypeRef.MAP);
                 Map<String, Object> videoData = (Map<String, Object>) JavaScriptEngineFactory.walkJson(root, "props/pageProps/videoData");
                 if (videoData == null) {
                     // different videoJson when we do not follow the embed/v2 redirect
@@ -335,7 +335,7 @@ public class TiktokComCrawler extends PluginForDecrypt {
                 if (videoJson == null) {
                     videoJson = br.getRegex("<script\\s*id[^>]*>\\s*(\\{.*?)\\s*</script>").getMatch(0);
                 }
-                final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(videoJson);
+                final Map<String, Object> entries = restoreFromString(videoJson, TypeRef.MAP);
                 final Map<String, Object> itemModule = (Map<String, Object>) entries.get("ItemModule");
                 /* 2020-10-12: Hmm reliably checking for offline is complicated so let's try this instead ... */
                 if (itemModule == null || itemModule.isEmpty()) {
@@ -357,7 +357,15 @@ public class TiktokComCrawler extends PluginForDecrypt {
         final String dateFromHtml = TiktokCom.getAndSetDateFromWebsite(this, br, ret.get(0));
         String packagename = null;
         for (final DownloadLink result : ret) {
-            result.setAvailable(true);
+            /**
+             * Set all non-video items always as online. For video items, obey user-setting. </br>
+             * Users may disable the "Fast linkcheck" setting e.g. to let the hoster-plugin find-and add the publish-date to the filename
+             * during extended linkcheck.
+             */
+            final boolean isVideo = StringUtils.equals(result.getStringProperty(TiktokCom.PROPERTY_TYPE), TiktokCom.TYPE_VIDEO);
+            if (cfg.isEnableFastLinkcheck() || !isVideo) {
+                result.setAvailable(true);
+            }
             result.setProperty(TiktokCom.PROPERTY_ALLOW_HEAD_REQUEST, true);
             result.setProperty(TiktokCom.PROPERTY_AWEME_ITEM_ID, contentID);
             TiktokCom.setFilename(result);

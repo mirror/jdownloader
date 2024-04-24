@@ -62,12 +62,9 @@ public class BiqleRuCrawler extends PluginForDecrypt {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "biqle.ru", "biqle.com", "biqle.org" });
-        ret.add(new String[] { "daft.sex" });
+        // ret.add(new String[] { "biqle.ru", "biqle.com", "biqle.org" }); // 2024-04-24: RIP
         ret.add(new String[] { "ukdevilz.com" });
         ret.add(new String[] { "novids.com" });
-        /* 2022-12-22 */
-        ret.add(new String[] { "dsex.to" });
         /* 2022-12-27 */
         ret.add(new String[] { "mat6tube.com" });
         ret.add(new String[] { "noodlemagazine.com" });

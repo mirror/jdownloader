@@ -195,84 +195,91 @@ public class CamvaultXyz extends PluginForHost {
             throw new IllegalArgumentException();
         }
         synchronized (account) {
-            try {
-                br.setCookiesExclusive(true);
-                final Cookies cookies = account.loadCookies("");
-                final Cookies userCookies = account.loadUserCookies();
-                if (cookies != null || userCookies != null) {
-                    logger.info("Attempting cookie login");
-                    if (userCookies != null) {
-                        br.setCookies(this.getHost(), userCookies);
-                    } else {
-                        br.setCookies(this.getHost(), cookies);
-                    }
-                    if (!force) {
-                        /* Don't validate cookies */
-                        return false;
-                    }
-                    br.getPage(checkloginURL);
-                    if (this.isLoggedin(br)) {
-                        logger.info("Cookie login successful");
-                        /* Refresh cookie timestamp */
-                        if (userCookies == null) {
-                            account.saveCookies(br.getCookies(br.getHost()), "");
-                        }
-                        return true;
-                    } else {
-                        logger.info("Cookie login failed");
-                        if (userCookies != null) {
-                            /* Dead end */
-                            if (account.hasEverBeenValid()) {
-                                throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
-                            } else {
-                                throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
-                            }
-                        }
-                    }
+            br.setCookiesExclusive(true);
+            final Cookies cookies = account.loadCookies("");
+            final Cookies userCookies = account.loadUserCookies();
+            if (cookies != null || userCookies != null) {
+                logger.info("Attempting cookie login");
+                if (userCookies != null) {
+                    br.setCookies(this.getHost(), userCookies);
+                } else {
+                    br.setCookies(this.getHost(), cookies);
                 }
-                logger.info("Performing full login");
-                br.getPage("https://" + this.getHost() + "/login.html");
-                boolean hasRequiredCaptcha = false;
-                int tryNumber = 1;
-                while (!hasRequiredCaptcha && tryNumber <= 1) {
-                    logger.info("Login attempt number: " + tryNumber);
-                    final Form loginform = br.getFormbyActionRegex(".*/login.*");
-                    if (loginform == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
-                    loginform.put(Encoding.urlEncode("data[User][username]"), Encoding.urlEncode(account.getUser()));
-                    loginform.put(Encoding.urlEncode("data[User][password]"), Encoding.urlEncode(account.getPass()));
-                    loginform.put(Encoding.urlEncode("data[User][remember]"), "1");
-                    if (CaptchaHelperHostPluginRecaptchaV2.containsRecaptchaV2Class(loginform)) {
-                        final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-                        loginform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-                        hasRequiredCaptcha = true;
-                    }
-                    br.submitForm(loginform);
-                    if (!CaptchaHelperHostPluginRecaptchaV2.containsRecaptchaV2Class(loginform)) {
-                        /* No captcha, no retry */
-                        break;
-                    } else {
-                        /* Captcha required -> Either invalid login credentials or website thinks we might be a bot. */
-                        tryNumber++;
-                        continue;
-                    }
+                if (!force) {
+                    /* Don't validate cookies */
+                    return false;
                 }
                 br.getPage(checkloginURL);
-                if (CamvaultXyzCrawler.isRateLimitReached(br)) {
-                    throw new AccountUnavailableException("Rate limit reached", 1 * 60 * 1000l);
-                } else if (!isLoggedin(br)) {
-                    throw new AccountInvalidException();
-                }
-                account.saveCookies(br.getCookies(br.getHost()), "");
-                return true;
-            } catch (final PluginException e) {
-                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                if (this.isLoggedin(br)) {
+                    logger.info("Cookie login successful");
+                    /* Refresh cookie timestamp */
+                    if (userCookies == null) {
+                        account.saveCookies(br.getCookies(br.getHost()), "");
+                    }
+                    return true;
+                } else {
+                    logger.info("Cookie login failed");
+                    if (userCookies != null) {
+                        /* Dead end */
+                        if (account.hasEverBeenValid()) {
+                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
+                        } else {
+                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
+                        }
+                    }
+                    br.clearCookies(null);
                     account.clearCookies("");
                 }
-                throw e;
             }
+            logger.info("Performing full login");
+            br.getPage("https://" + this.getHost() + "/login.html");
+            boolean hasRequiredCaptcha = false;
+            int tryNumber = 1;
+            while (!this.isAbort() && !hasRequiredCaptcha && tryNumber <= 1) {
+                logger.info("Login attempt number: " + tryNumber);
+                final Form loginform = br.getFormbyActionRegex(".*/login.*");
+                if (loginform == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                loginform.put(Encoding.urlEncode("data[User][username]"), Encoding.urlEncode(account.getUser()));
+                loginform.put(Encoding.urlEncode("data[User][password]"), Encoding.urlEncode(account.getPass()));
+                loginform.put(Encoding.urlEncode("data[User][remember]"), "1");
+                /**
+                 * 2024-04-24: TODO, see website js: </br>
+                 * function onSubmit(token) { ThumbmarkJS.getFingerprint().then( (secureToken) => { $( "#authToken").val(secureToken);
+                 * document.getElementById("UserLoginForm").submit(); } ); }
+                 */
+                // They do not verify this lol
+                loginform.put("data[User][authToken]", "1234567");
+                hasRequiredCaptcha = CaptchaHelperHostPluginRecaptchaV2.containsRecaptchaV2Class(loginform) || loginform.containsHTML("g-recaptcha-response");
+                if (containsReCaptcha(loginform)) {
+                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                    loginform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                    hasRequiredCaptcha = true;
+                }
+                br.submitForm(loginform);
+                if (!hasRequiredCaptcha) {
+                    /* No captcha, no retry */
+                    break;
+                } else {
+                    /* Captcha required -> Either invalid login credentials or website thinks we might be a bot. */
+                    tryNumber++;
+                    continue;
+                }
+            }
+            br.getPage(checkloginURL);
+            if (CamvaultXyzCrawler.isRateLimitReached(br)) {
+                throw new AccountUnavailableException("Rate limit reached", 1 * 60 * 1000l);
+            } else if (!isLoggedin(br)) {
+                throw new AccountInvalidException();
+            }
+            account.saveCookies(br.getCookies(br.getHost()), "");
+            return true;
         }
+    }
+
+    private boolean containsReCaptcha(final Form form) {
+        return CaptchaHelperHostPluginRecaptchaV2.containsRecaptchaV2Class(form) || form.containsHTML("g-recaptcha-response");
     }
 
     private boolean isLoggedin(final Browser br) {
@@ -281,8 +288,8 @@ public class CamvaultXyz extends PluginForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        final AccountInfo ai = new AccountInfo();
         login(account, "https://www." + this.getHost() + "/premium", true);
+        final AccountInfo ai = new AccountInfo();
         long expireTimestamp = 0;
         final String premiumExpiredateStr = br.getRegex("(?i)it will expire at\\s*<strong>(\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2})</strong>").getMatch(0);
         if (premiumExpiredateStr != null) {

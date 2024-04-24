@@ -3038,7 +3038,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
         }
     }
 
-    private final boolean attemptStoredDownloadurlDownload(final DownloadLink link, final Account account) throws Exception {
+    protected final boolean attemptStoredDownloadurlDownload(final DownloadLink link, final Account account) throws Exception {
         final String directurlproperty = getDownloadModeDirectlinkProperty(account);
         final String url = link.getStringProperty(directurlproperty);
         if (StringUtils.isEmpty(url)) {

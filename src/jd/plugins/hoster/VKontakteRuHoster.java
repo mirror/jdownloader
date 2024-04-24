@@ -1233,7 +1233,16 @@ public class VKontakteRuHoster extends PluginForHost {
     }
 
     private static boolean isLoggedinHTML(final Browser br) {
-        return br.containsHTML("id=\"logout_link_td\"|id=\"(?:top_)?logout_link\"");
+        String userIDStr = null;
+        if (br.containsHTML("id=\"logout_link_td\"|id=\"(?:top_)?logout_link\"")) {
+            return true;
+        } else if (br.containsHTML("class=\"TopNavBtn__profileImg\"")) {
+            return true;
+        } else if ((userIDStr = br.getRegex("id: (\\d+),").getMatch(0)) != null && !userIDStr.equals("0")) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     private String regExVKAccountID(final Browser br) {
