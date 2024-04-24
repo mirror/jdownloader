@@ -40,6 +40,28 @@ import javax.swing.event.HyperlinkEvent;
 import javax.swing.event.HyperlinkListener;
 import javax.swing.text.JTextComponent;
 
+import jd.controlling.AccountController;
+import jd.controlling.TaskQueue;
+import jd.controlling.accountchecker.AccountChecker;
+import jd.controlling.accountchecker.AccountChecker.AccountCheckJob;
+import jd.controlling.downloadcontroller.DownloadController;
+import jd.controlling.downloadcontroller.DownloadSession;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.DownloadWatchDogJob;
+import jd.controlling.downloadcontroller.ProxyInfoHistory;
+import jd.controlling.downloadcontroller.ProxyInfoHistory.WaitingSkipReasonContainer;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
+import jd.controlling.proxy.AbstractProxySelectorImpl;
+import jd.controlling.reconnect.Reconnecter;
+import jd.plugins.Account;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import net.sourceforge.htmlunit.corejs.javascript.Function;
+import net.sourceforge.htmlunit.corejs.javascript.ScriptableObject;
+
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.swing.MigPanel;
@@ -81,28 +103,6 @@ import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.WaitingSkipReason;
 import org.jdownloader.settings.SoundSettings;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
-
-import jd.controlling.AccountController;
-import jd.controlling.TaskQueue;
-import jd.controlling.accountchecker.AccountChecker;
-import jd.controlling.accountchecker.AccountChecker.AccountCheckJob;
-import jd.controlling.downloadcontroller.DownloadController;
-import jd.controlling.downloadcontroller.DownloadSession;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.downloadcontroller.DownloadWatchDogJob;
-import jd.controlling.downloadcontroller.ProxyInfoHistory;
-import jd.controlling.downloadcontroller.ProxyInfoHistory.WaitingSkipReasonContainer;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
-import jd.controlling.proxy.AbstractProxySelectorImpl;
-import jd.controlling.reconnect.Reconnecter;
-import jd.plugins.Account;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-import net.sourceforge.htmlunit.corejs.javascript.Function;
-import net.sourceforge.htmlunit.corejs.javascript.ScriptableObject;
 
 public class ScriptEnvironment {
     private static HashMap<String, Object>                       GLOBAL_PROPERTIES = new HashMap<String, Object>();
@@ -552,6 +552,15 @@ public class ScriptEnvironment {
         }
     }
 
+    @ScriptAPI(description = "Gets the system property indicated by the specified key.", parameters = { "system property key", "default value" })
+    public static String getProperty(final String key, final String defaultValue) throws EnvironmentException {
+        try {
+            return System.getProperty(key, defaultValue);
+        } catch (SecurityException e) {
+            throw new EnvironmentException(e);
+        }
+    }
+
     @ScriptAPI(description = "Get an Environment Object")
     public static EnvironmentSandbox getEnvironment() throws EnvironmentException {
         return new EnvironmentSandbox();
@@ -563,7 +572,7 @@ public class ScriptEnvironment {
         return new BrowserSandBox();
     }
 
-    @ScriptAPI(description = "Open a website or path in your default browser/file explorer", parameters = { "URL" }, example = "openURL(\"http://jdownloader.org\");")
+    @ScriptAPI(description = "Open a website or path in your default browser/file explorer", parameters = { "URL" }, example = "openURL(\"https://jdownloader.org\");")
     public static void openURL(String url) throws EnvironmentException {
         askForPermission("open resource in your default browser/file explorer");
         try {
@@ -573,7 +582,7 @@ public class ScriptEnvironment {
         }
     }
 
-    @ScriptAPI(description = "Loads a website (Method: GET) and returns the source code", parameters = { "URL" }, example = "var myhtmlSourceString=getPage(\"http://jdownloader.org\");")
+    @ScriptAPI(description = "Loads a website (Method: GET) and returns the source code", parameters = { "URL" }, example = "var myhtmlSourceString=getPage(\"https://jdownloader.org\");")
     public static String getPage(String fileOrUrl) throws EnvironmentException {
         final BrowserSandBox browser = getBrowser();
         try {
@@ -919,7 +928,7 @@ public class ScriptEnvironment {
         }
     }
 
-    @ScriptAPI(description = "Loads a website (METHOD: POST) and returns the source code", parameters = { "URL", "PostData" }, example = "var myhtmlSourceString=postPage(\"http://support.jdownloader.org/index.php\",\"searchquery=captcha\");")
+    @ScriptAPI(description = "Loads a website (METHOD: POST) and returns the source code", parameters = { "URL", "PostData" }, example = "var myhtmlSourceString=postPage(\"https://support.jdownloader.org/index.php\",\"searchquery=captcha\");")
     public static String postPage(String url, String post) throws EnvironmentException {
         final BrowserSandBox browser = getBrowser();
         try {

@@ -4,6 +4,7 @@ import java.util.ArrayList;
 
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.annotations.AboutConfig;
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DefaultIntValue;
 import org.appwork.storage.config.annotations.DefaultJsonObject;
 import org.appwork.storage.config.annotations.DefaultLongValue;
@@ -38,4 +39,11 @@ public interface FavIconsConfig extends ConfigInterface {
     ArrayList<String> getFailedHosts();
 
     void setFailedHosts(ArrayList<String> hosts);
+
+    @DefaultBooleanValue(false)
+    @AboutConfig
+    @RequiresRestart("A JDownloader Restart is Required")
+    boolean isDebugFlag();
+
+    void setDebugFlag(boolean b);
 }
