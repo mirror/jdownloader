@@ -97,7 +97,7 @@ public class ImagesHackComCrawler extends PluginForDecrypt {
              *
              * There are API calls to get all albums of a user but then the album objects only always contain 5 images meaning we'd have to
              * decrypt the album URLs and return them back into the decrypter. Instead we'll just decrypt all images, find their
-             * corresponding album names (if existant) and set the correct packagenames.
+             * corresponding album names (if existent) and set the correct packagenames.
              */
             this.br.getPage("https://api.imageshack.com/v2/user/" + id_main + "/usage?hide_empty=false&show_private=true&show_hidden=false");
             json = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(br.getRequest().getHtmlCode());

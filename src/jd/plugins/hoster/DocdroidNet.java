@@ -18,6 +18,10 @@ package jd.plugins.hoster;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -32,10 +36,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "docdroid.net" }, urls = { "https?://(?:www\\.)?(?:docdroid\\.net|docdro\\.id)/([A-Za-z0-9\\-]+)(?:/[^/]+)?" })
 public class DocdroidNet extends PluginForHost {
@@ -68,7 +68,7 @@ public class DocdroidNet extends PluginForHost {
         br.setFollowRedirects(true);
         final String linkid = this.getLinkID(link);
         /*
-         * Also oembed API existant but this does not return that much information:
+         * Also oembed API existent but this does not return that much information:
          * https://www.docdroid.net/api/oembed?url=https%3A%2F%2Fwww.docdroid.net%2FC<linkid>%2F<url_filename>
          */
         br.getPage("https://www." + this.getHost() + "/api/document/" + linkid);

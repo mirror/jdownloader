@@ -19,7 +19,6 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.URLEncode;
@@ -144,7 +143,7 @@ public class HidriveCom extends PluginForHost {
                     /* Password protected file */
                     /* {"msg":"Unauthorized: Sharelink XXXXYYYY requires a password","code":"401"} */
                     link.setPasswordProtected(true);
-                    /* Remove password if existant */
+                    /* Remove password if existent */
                     link.setDownloadPassword(null);
                     if (isDownload) {
                         throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");

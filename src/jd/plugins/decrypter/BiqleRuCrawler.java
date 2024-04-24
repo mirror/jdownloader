@@ -331,7 +331,7 @@ public class BiqleRuCrawler extends PluginForDecrypt {
                     ret.add(best);
                 }
             } else {
-                /* Add ALL existant qualities */
+                /* Add ALL existent qualities */
                 for (final Entry<String, DownloadLink> entry : qualityMap.entrySet()) {
                     ret.add(entry.getValue());
                 }

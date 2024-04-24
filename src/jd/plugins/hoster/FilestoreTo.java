@@ -272,7 +272,7 @@ public class FilestoreTo extends PluginForHost {
         } else if (br.containsHTML("(?i)Derzeit haben wir Serverprobleme und arbeiten daran\\. Bitte nochmal versuchen\\.")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server issues", 15 * 60 * 1000l);
         } else if (br.containsHTML(">\\s*Ihr Download ist vorübergehend aufgrund des Verdachtes der")) {
-            throw new AccountUnavailableException("Account blocked due to accountsharing", 30 * 60 * 1000);
+            throw new AccountUnavailableException("Account blocked due to suspicion of account sharing", 30 * 60 * 1000);
         } else if (br.containsHTML("(?i)>\\s*503 - Service Temporarily Unavailable\\s*<")) {
             /* Goes along with correct header responsecode 503 */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 503", 5 * 60 * 1000l);
