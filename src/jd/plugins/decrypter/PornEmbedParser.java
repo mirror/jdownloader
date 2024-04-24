@@ -74,6 +74,7 @@ public abstract class PornEmbedParser extends PluginForDecrypt {
             /* Change domain in URL. */
             return param.getCryptedUrl().replaceFirst(Pattern.quote(addedLinkDomain), this.getHost());
         }
+        /* Return un-modified URL */
         return param.getCryptedUrl();
     }
 
@@ -127,10 +128,11 @@ public abstract class PornEmbedParser extends PluginForDecrypt {
         final DownloadLink selfhosted = this.createDownloadlink(br.getURL());
         final String fileTitle = getFileTitle(param, br);
         if (fileTitle != null) {
+            final String extDefault = ".mp4";
             if (selfhostedContentSetFinalFilename()) {
-                selfhosted.setFinalFileName(fileTitle + ".mp4");
+                selfhosted.setFinalFileName(fileTitle + extDefault);
             } else {
-                selfhosted.setName(fileTitle + ".mp4");
+                selfhosted.setName(fileTitle + extDefault);
             }
         }
         if (selfhostedContentSkipAvailablecheck()) {
@@ -284,20 +286,21 @@ public abstract class PornEmbedParser extends PluginForDecrypt {
         };
         logger.info("PornEmbedParser is being executed...");
         /************************************************************************************************************/
-        // Now check for all existant URLs if they're supported by any plugin tagged as porn plugin
+        // Now check for all existent URLs if they're supported by any plugin tagged as porn plugin
         /************************************************************************************************************/
         final String[] urls = getEmbedURLs(br);
         if (urls != null) {
             for (final String url : urls) {
-                if (allowResult(url)) {
-                    final List<LazyCrawlerPlugin> nextLazyCrawlerPlugins = findNextLazyCrawlerPlugins(url, LazyPlugin.FEATURE.XXX);
-                    if (nextLazyCrawlerPlugins.size() > 0) {
-                        ret.addAll(convert(br, url, nextLazyCrawlerPlugins));
-                    }
-                    final List<LazyHostPlugin> nextLazyHostPlugins = findNextLazyHostPlugins(url, LazyPlugin.FEATURE.XXX);
-                    if (nextLazyHostPlugins.size() > 0) {
-                        ret.addAll(convert(br, url, nextLazyHostPlugins));
-                    }
+                if (!allowResult(url)) {
+                    continue;
+                }
+                final List<LazyCrawlerPlugin> nextLazyCrawlerPlugins = findNextLazyCrawlerPlugins(url, LazyPlugin.FEATURE.XXX);
+                if (nextLazyCrawlerPlugins.size() > 0) {
+                    ret.addAll(convert(br, url, nextLazyCrawlerPlugins));
+                }
+                final List<LazyHostPlugin> nextLazyHostPlugins = findNextLazyHostPlugins(url, LazyPlugin.FEATURE.XXX);
+                if (nextLazyHostPlugins.size() > 0) {
+                    ret.addAll(convert(br, url, nextLazyHostPlugins));
                 }
             }
         }

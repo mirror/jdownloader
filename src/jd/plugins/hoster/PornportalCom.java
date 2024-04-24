@@ -1072,7 +1072,7 @@ public class PornportalCom extends PluginForHost {
                                 final Browser br2 = PornHubCom.prepBr(this.createNewBrowserInstance());
                                 handleExternalLoginStep(br2, account, domain_pornhub);
                                 final boolean isLoggedIN = PornHubCom.isLoggedInHtmlPremium(br2);
-                                /* Look for special account created by this plugin --> Add account if non existant */
+                                /* Look for special account created by this plugin --> Add account if non existent */
                                 final String targetUsername = this.getHost() + "_" + account.getUser();
                                 if (!isLoggedIN) {
                                     logger.info("Pornhub external login failed");
@@ -1089,7 +1089,7 @@ public class PornportalCom extends PluginForHost {
                                     boolean addNewAccount = false;
                                     final PluginForHost pornhubPlugin = getNewPluginForHostInstance(domain_pornhub);
                                     if (pornhubAccount == null) {
-                                        /* Adds account if non existant */
+                                        /* Adds account if non existent */
                                         logger.info("Failed to find special pornhub account --> Creating it");
                                         pornhubAccount = new Account(targetUsername, "123456");
                                         pornhubAccount.setPlugin(pornhubPlugin);

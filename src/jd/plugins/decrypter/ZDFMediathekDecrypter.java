@@ -32,6 +32,15 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -49,15 +58,6 @@ import jd.plugins.hoster.YoutubeDashV2;
 import jd.plugins.hoster.ZdfDeMediathek;
 import jd.plugins.hoster.ZdfDeMediathek.ZdfmediathekConfigInterface;
 import jd.plugins.hoster.ZdfDeMediathek.ZdfmediathekConfigInterface.SubtitleType;
-
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.downloader.hls.M3U8Playlist;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zdf.de", "3sat.de", "phoenix.de" }, urls = { "https?://(?:www\\.)?zdf\\.de/(?:.+/)?[A-Za-z0-9_\\-]+\\.html|https?://(?:www\\.)?zdf\\.de/uri/(?:syncvideoimport_beitrag_\\d+|transfer_SCMS_[a-f0-9\\-]+|[a-z0-9\\-]+)", "https?://(?:www\\.)?3sat\\.de/.+/[A-Za-z0-9_\\-]+\\.html|https?://(?:www\\.)?3sat\\.de/uri/(?:syncvideoimport_beitrag_\\d+|transfer_SCMS_[a-f0-9\\-]+|[a-z0-9\\-]+)", "https?://(?:www\\.)?phoenix\\.de/(?:.*?-\\d+\\.html.*|podcast/[A-Za-z0-9]+/video/rss\\.xml)" })
 public class ZDFMediathekDecrypter extends PluginForDecrypt {
@@ -640,7 +640,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
             /* 2. Grab video streams */
             final Object downloadAllowed_o = JavaScriptEngineFactory.walkJson(player, "attributes/downloadAllowed/value");
             if (downloadAllowed_o != null && downloadAllowed_o instanceof Boolean) {
-                /* Are official video download-URLs existant? */
+                /* Are official video download-URLs existent? */
                 grabDownloadUrlsPossible = ((Boolean) downloadAllowed_o).booleanValue();
             }
             final List<Map<String, Object>> priorityList = (List<Map<String, Object>>) player.get("priorityList");
@@ -822,8 +822,8 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                     final String realQuality = ((String) qualitymap.get("quality")).toLowerCase(Locale.ENGLISH);
                     final ArrayList<Object[]> qualities = new ArrayList<Object[]>();
                     /**
-                     * Sometimes we can modify the final downloadurls and thus get higher quality streams. </br> We want to keep all
-                     * versions though!
+                     * Sometimes we can modify the final downloadurls and thus get higher quality streams. </br>
+                     * We want to keep all versions though!
                      */
                     final List<String[]> betterQualities = getBetterQualities(uri);
                     final HashSet<String> optimizedQualityIdentifiers = new HashSet<String>();
@@ -866,8 +866,8 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                         final DownloadLink dl = createDownloadlink(finalDownloadURL);
                         dl.setContentUrl(param.getCryptedUrl());
                         /**
-                         * Usually filesize is only given for the official downloads.</br> Only set it here if we haven't touched the
-                         * original downloadurls!
+                         * Usually filesize is only given for the official downloads.</br>
+                         * Only set it here if we haven't touched the original downloadurls!
                          */
                         if (thisFilesize > 0) {
                             dl.setAvailable(true);
@@ -1230,9 +1230,11 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
     }
 
     /**
-     * Searches for videos in zdfmediathek that match the given search term. </br> This is mostly used as a workaround to find stuff that is
-     * hosted on their other website on zdfmediathek instead as zdfmediathek is providing a fairly stable search function while other
-     * websites hosting the same content such as kika.de can be complicated to parse. </br> This does not (yet) support pagination!
+     * Searches for videos in zdfmediathek that match the given search term. </br>
+     * This is mostly used as a workaround to find stuff that is hosted on their other website on zdfmediathek instead as zdfmediathek is
+     * providing a fairly stable search function while other websites hosting the same content such as kika.de can be complicated to parse.
+     * </br>
+     * This does not (yet) support pagination!
      */
     public ArrayList<DownloadLink> crawlZDFMediathekSearchResultsVOD(final String tvChannel, final String searchTerm, final int maxResults) throws Exception {
         if (StringUtils.isEmpty(tvChannel) || StringUtils.isEmpty(searchTerm)) {

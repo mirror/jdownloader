@@ -93,6 +93,8 @@ public class GenericYetiShareFolder extends PluginForDecrypt {
         ret.add(new String[] { "uply.me" });
         ret.add(new String[] { "rapidu.vip" });
         ret.add(new String[] { "iceyfile.net", "iceyfile.com" });
+        ret.add(new String[] { "anonzip.com" });
+        ret.add(new String[] { "fileknot.io" });
         return ret;
     }
 

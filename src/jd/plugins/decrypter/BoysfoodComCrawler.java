@@ -59,7 +59,7 @@ public class BoysfoodComCrawler extends PornEmbedParser {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/free-porn-videos/\\d+/[a-z0-9\\-]+");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:free-porn-videos|videos)/\\d+/[a-z0-9\\-]+");
         }
         return ret.toArray(new String[0]);
     }
@@ -85,5 +85,16 @@ public class BoysfoodComCrawler extends PornEmbedParser {
     @Override
     protected boolean assumeSelfhostedContentOnNoResults() {
         return true;
+    }
+
+    @Override
+    protected boolean allowResult(final String url) {
+        final String embedregex = "https?://(?:www\\.)?" + buildHostsPatternPart(getPluginDomains().get(0)) + "/embed/\\d+";
+        if (url.matches(embedregex)) {
+            /* Do not allow self-embedded URLs. */
+            return false;
+        } else {
+            return super.allowResult(url);
+        }
     }
 }

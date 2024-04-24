@@ -37,6 +37,7 @@ import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.AccountInvalidException;
+import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -111,52 +112,45 @@ public class FilestoreTo extends PluginForHost {
         synchronized (account) {
             final Cookies cookies = account.loadCookies("");
             this.prepBrowser(br);
-            try {
-                if (cookies != null) {
-                    br.setCookies(getHost(), cookies);
-                    if (!validateCookies) {
-                        logger.info("Trust cookies without login");
-                        return false;
-                    }
-                    logger.info("Validating login cookies...");
-                    if (validateCookiesURL != null) {
-                        br.getPage(validateCookiesURL);
-                    } else {
-                        br.getPage("http://" + this.getHost() + "/konto");
-                    }
-                    if (this.isLoggedinHTML(br)) {
-                        logger.info("Cookie login successful");
-                        /* refresh saved cookies timestamp */
-                        account.saveCookies(br.getCookies(getHost()), "");
-                        return true;
-                    } else {
-                        logger.info("Cookie login failed");
-                        br.clearCookies(getHost());
-                        account.clearCookies("");
-                    }
+            if (cookies != null) {
+                br.setCookies(getHost(), cookies);
+                if (!validateCookies) {
+                    logger.info("Trust cookies without login");
+                    return false;
                 }
-                logger.info("Performing full login");
-                br.getPage("http://" + this.getHost() + "/login");
-                final Form form = br.getFormbyKey("Email");
-                InputField email = form.getInputFieldByNameRegex("(?i)Email");
-                email.setValue(Encoding.urlEncode(account.getUser()));
-                InputField password = form.getInputFieldByNameRegex("(?i)Password");
-                password.setValue(Encoding.urlEncode(account.getPass()));
-                br.submitForm(form);
+                logger.info("Validating login cookies...");
                 if (validateCookiesURL != null) {
                     br.getPage(validateCookiesURL);
-                }
-                if (!this.isLoggedinHTML(br)) {
-                    throw new AccountInvalidException();
                 } else {
+                    br.getPage("http://" + this.getHost() + "/konto");
+                }
+                if (this.isLoggedinHTML(br)) {
+                    logger.info("Cookie login successful");
+                    /* refresh saved cookies timestamp */
                     account.saveCookies(br.getCookies(getHost()), "");
                     return true;
-                }
-            } catch (final PluginException e) {
-                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                } else {
+                    logger.info("Cookie login failed");
+                    br.clearCookies(null);
                     account.clearCookies("");
                 }
-                throw e;
+            }
+            logger.info("Performing full login");
+            br.getPage("http://" + this.getHost() + "/login");
+            final Form form = br.getFormbyKey("Email");
+            InputField email = form.getInputFieldByNameRegex("(?i)Email");
+            email.setValue(Encoding.urlEncode(account.getUser()));
+            InputField password = form.getInputFieldByNameRegex("(?i)Password");
+            password.setValue(Encoding.urlEncode(account.getPass()));
+            br.submitForm(form);
+            if (validateCookiesURL != null) {
+                br.getPage(validateCookiesURL);
+            }
+            if (!this.isLoggedinHTML(br)) {
+                throw new AccountInvalidException();
+            } else {
+                account.saveCookies(br.getCookies(getHost()), "");
+                return true;
             }
         }
     }
@@ -277,6 +271,8 @@ public class FilestoreTo extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML("(?i)Derzeit haben wir Serverprobleme und arbeiten daran\\. Bitte nochmal versuchen\\.")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server issues", 15 * 60 * 1000l);
+        } else if (br.containsHTML(">\\s*Ihr Download ist vorübergehend aufgrund des Verdachtes der")) {
+            throw new AccountUnavailableException("Account blocked due to accountsharing", 30 * 60 * 1000);
         } else if (br.containsHTML("(?i)>\\s*503 - Service Temporarily Unavailable\\s*<")) {
             /* Goes along with correct header responsecode 503 */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 503", 5 * 60 * 1000l);
@@ -294,12 +290,12 @@ public class FilestoreTo extends PluginForHost {
             }
         }
         // form 1
-        Form dlform = br.getFormByRegex("(?i)>Download</button>");
+        Form dlform = br.getFormByRegex("(?i)>\\s*Download\\s*</button>");
         if (dlform != null) {
             br.submitForm(dlform);
         }
         // form 2
-        dlform = br.getFormByRegex("(?i)>Download starten</button>");
+        dlform = br.getFormByRegex("(?i)>\\s*Download starten\\s*</button>");
         if (dlform != null) {
             // not enforced
             if (account == null || AccountType.FREE.equals(account.getType())) {

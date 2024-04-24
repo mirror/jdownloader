@@ -15,22 +15,27 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.decrypter.BoysfoodComCrawler;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class BoysfoodCom extends PluginForHost {
@@ -46,13 +51,9 @@ public class BoysfoodCom extends PluginForHost {
     /* DEV NOTES */
     // Tags: Porn plugin
     // other:
-    /* Connection stuff */
-    private static final boolean free_resume       = true;
-    private static final int     free_maxchunks    = 0;
-    private static final int     free_maxdownloads = -1;
-    private String               dllink            = null;
-    private static final String  TYPE_EMBED        = "(?:https?://[^/]+)?/embed/(\\d+)/?";
-    private static final String  TYPE_NORMAL       = "(?:https?://[^/]+)?/free-porn-videos/(\\d+)/([a-z0-9\\-]+)";
+    private String              dllink      = null;
+    private static final String TYPE_EMBED  = "(?:https?://[^/]+)?/embed/(\\d+)/?";
+    private static final String TYPE_NORMAL = "(?:https?://[^/]+)?/(?:free-porn-videos|videos)/(\\d+)/([a-z0-9\\-]+)";
 
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
@@ -73,7 +74,7 @@ public class BoysfoodCom extends PluginForHost {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:free-porn-videos/\\d+/[a-z0-9\\-]+|embed/\\d+/?)");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:(?:free-porn-videos|videos)/\\d+/[a-z0-9\\-]+|embed/\\d+/?)");
         }
         return ret.toArray(new String[0]);
     }
@@ -125,7 +126,16 @@ public class BoysfoodCom extends PluginForHost {
     }
 
     @Override
+    public boolean isResumeable(DownloadLink link, final Account account) {
+        return true;
+    }
+
+    @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        return requestFileInformation(link, false);
+    }
+
+    private AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
         if (!link.isNameSet()) {
             link.setName(getWeakFilename(link));
         }
@@ -147,53 +157,69 @@ public class BoysfoodCom extends PluginForHost {
         if (titleByURL != null) {
             link.setFinalFileName(titleByURL + ".mp4");
         }
-        dllink = br.getRegex("(?i)Download:\\s*<a href=\"(https?://[^\"]+)").getMatch(0);
+        dllink = br.getRegex("Download:\\s*<a href=\"(https?://[^\"]+)").getMatch(0);
+        if (dllink == null) {
+            // 2024-04-24
+            dllink = br.getRegex("\"contentUrl\": \"(https?://[^\"]+)").getMatch(0);
+        }
         if (!StringUtils.isEmpty(dllink)) {
             /* Fix encoding */
-            this.dllink = this.dllink.replace("&amp;", "&");
-            URLConnectionAdapter con = null;
-            try {
-                con = br.openHeadConnection(this.dllink);
-                if (!this.looksLikeDownloadableContent(con)) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Video broken?");
-                } else {
-                    if (con.getCompleteContentLength() > 0) {
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
-                    }
-                }
-            } finally {
+            this.dllink = Encoding.htmlOnlyDecode(this.dllink);
+            if (!isDownload) {
+                URLConnectionAdapter con = null;
                 try {
-                    con.disconnect();
-                } catch (final Throwable e) {
+                    con = br.openHeadConnection(this.dllink);
+                    handleConnectionErrors(br, con);
+                    if (con.getCompleteContentLength() > 0) {
+                        if (con.isContentDecoded()) {
+                            link.setDownloadSize(con.getCompleteContentLength());
+                        } else {
+                            link.setVerifiedFileSize(con.getCompleteContentLength());
+                        }
+                    }
+                } finally {
+                    try {
+                        con.disconnect();
+                    } catch (final Throwable e) {
+                    }
                 }
             }
         }
         return AvailableStatus.TRUE;
     }
 
+    private void handleConnectionErrors(final Browser br, final URLConnectionAdapter con) throws PluginException, IOException {
+        if (!this.looksLikeDownloadableContent(con)) {
+            br.followConnection(true);
+            if (con.getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+            } else if (con.getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Video broken?");
+            }
+        }
+    }
+
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
-        requestFileInformation(link);
+        requestFileInformation(link, true);
         if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
-        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            br.followConnection(true);
-            if (dl.getConnection().getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
-            }
-        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, this.isResumeable(link, null), 0);
+        handleConnectionErrors(br, dl.getConnection());
         dl.startDownload();
     }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return free_maxdownloads;
+        return Integer.MAX_VALUE;
+    }
+
+    @Override
+    public SiteTemplate siteTemplateType() {
+        return SiteTemplate.KernelVideoSharing;
     }
 
     @Override

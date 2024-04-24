@@ -2245,7 +2245,7 @@ public class SaveTv extends PluginForHost {
     }
 
     /**
-     * @return: Returns a random number for the DownloadLink - uses saved random number if existant - if not, creates random number and
+     * @return: Returns a random number for the DownloadLink - uses saved random number if existent - if not, creates random number and
      *          saves it.
      */
     private static String getRandomNumber(final DownloadLink dl) {
