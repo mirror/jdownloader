@@ -3,10 +3,10 @@
   "dependencies":null,
   "filter":null,
   "installed":{
-    "date":"2024-04-11T18:19:23 CEST",
+    "date":"2024-04-24T11:44:15 CEST",
     "dependencies":null,
     "description":"The Bouncy Castle Crypto package is a Java implementation of cryptographic algorithms. This jar contains JCE provider and lightweight API for the Bouncy Castle Cryptography APIs for JDK 1.5 to JDK 1.8.",
-    "hashes":{"bcprov-jdk15on.jar":"e7e91031a1f07bdb60ce79c5910751039c0a9c8839d3347175db81a001233da0"},
+    "hashes":{"bcprov-jdk15on.jar":"b6758a0a72ed44dfdb316e50a67919cc4640e160a26b8a7e9d989cdcb3fc8a7f"},
     "licenses":[{
       "name":"Bouncy Castle Licence",
       "url":"http://www.bouncycastle.org/licence.html",
@@ -14,7 +14,7 @@
     }],
     "minJRE":"JVM_1_5",
     "name":"Bouncy Castle Provider",
-    "version":"1.78"
+    "version":"1.78.1"
   },
   "minJRE":"1.6",
   "provider":"maven",

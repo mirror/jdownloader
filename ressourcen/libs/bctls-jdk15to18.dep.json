@@ -3,23 +3,23 @@
   "dependencies":null,
   "filter":null,
   "installed":{
-    "date":"2024-04-12T08:47:22 CEST",
+    "date":"2024-04-24T11:44:16 CEST",
     "dependencies":[
       {
         "groupId":"org.bouncycastle",
         "artifactId":"bcprov-jdk15to18",
-        "version":"1.78",
+        "version":"1.78.1",
         "type":"jar"
       },
       {
         "groupId":"org.bouncycastle",
         "artifactId":"bcutil-jdk15to18",
-        "version":"1.78",
+        "version":"1.78.1",
         "type":"jar"
       }
     ],
     "description":"The Bouncy Castle Java APIs for TLS and DTLS, including a provider for the JSSE.",
-    "hashes":{"bctls-jdk15on.jar":"560be3e126f53ca18df11fcd6c88f6db480a85e600cccfa4ba1cc11c9649cae0"},
+    "hashes":{"bctls-jdk15on.jar":"b7ac4d55c1852e306f7771fa654bcaa1ffc18d67adb4d4f6c1f98f82e2757ef0"},
     "licenses":[{
       "name":"Bouncy Castle Licence",
       "url":"http://www.bouncycastle.org/licence.html",
@@ -27,7 +27,7 @@
     }],
     "minJRE":"JVM_1_5",
     "name":"Bouncy Castle JSSE provider and TLS/DTLS API",
-    "version":"1.78"
+    "version":"1.78.1"
   },
   "minJRE":"1.6",
   "provider":"maven",
