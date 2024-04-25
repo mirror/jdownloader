@@ -244,8 +244,4 @@ public class Offline extends PluginForHost {
     public boolean hasCaptcha(DownloadLink link, jd.plugins.Account acc) {
         return false;
     }
-    // @Override
-    // public boolean allowCreateAccountUsageRule() {
-    // return false;
-    // }
 }

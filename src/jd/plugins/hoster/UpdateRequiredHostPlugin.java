@@ -91,10 +91,6 @@ public class UpdateRequiredHostPlugin extends PluginForHost {
     public LazyPlugin.FEATURE[] getFeatures() {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.INTERNAL };
     }
-    // @Override
-    // public boolean allowCreateAccountUsageRule() {
-    // return false;
-    // }
 
     @Override
     public void reset() {
