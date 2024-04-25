@@ -114,11 +114,11 @@ public class SankakucomplexCom extends antiDDoSForHost {
         }
         br.setFollowRedirects(true);
         final String host = new URL(link.getPluginPatternMatcher()).getHost();
-        br.setCookie("https://" + host, "locale", "en");
-        br.setCookie("https://" + host, "hide-news-ticker", "1");
-        br.setCookie("https://" + host, "auto_page", "1");
-        br.setCookie("https://" + host, "hide_resized_notice", "1");
-        br.setCookie("https://" + host, "blacklisted_tags", "");
+        br.setCookie(host, "locale", "en");
+        br.setCookie(host, "hide-news-ticker", "1");
+        br.setCookie(host, "auto_page", "1");
+        br.setCookie(host, "hide_resized_notice", "1");
+        br.setCookie(host, "blacklisted_tags", "");
         if (account != null) {
             this.login(account, false);
         }
@@ -126,7 +126,8 @@ public class SankakucomplexCom extends antiDDoSForHost {
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(?i)<title>\\s*404: Page Not Found\\s*<")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        if (br.containsHTML(">\\s*You lack the access rights required to view this content")) {
+        if (br.containsHTML(">\\s*You lack the access rights required to view this content") || br.containsHTML(">\\s*Nothing is visible to you here")) {
+            /* Content can only be downloaded by premium users */
             link.setProperty(PROPERTY_IS_PREMIUMONLY, true);
         } else {
             link.removeProperty(PROPERTY_IS_PREMIUMONLY);
@@ -145,10 +146,8 @@ public class SankakucomplexCom extends antiDDoSForHost {
             dllink = br.getRegex("<meta content=\"(//[^<>\"]+)\" property=og:image>").getMatch(0);
         }
         if (dllink != null) {
-            dllink = br.getURL(dllink).toString();
-            if (Encoding.isHtmlEntityCoded(dllink)) {
-                dllink = Encoding.htmlDecode(dllink);
-            }
+            dllink = br.getURL(dllink).toExternalForm();
+            dllink = Encoding.htmlOnlyDecode(dllink);
         }
         String filename = fileID;
         String ext = null;
@@ -215,10 +214,21 @@ public class SankakucomplexCom extends antiDDoSForHost {
             this.login(account, false);
         }
         getPage(SankakucomplexComCrawler.API_BASE + "/posts?lang=de&page=1&limit=1&tags=id_range:" + fileID);
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        final Object obj = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.OBJECT);
+        if (obj instanceof Map) {
+            /* We only get a map if something went wrong. */
+            final Map<String, Object> errormap = (Map<String, Object>) obj;
+            final String errorcode = (String) errormap.get("code");
+            if (StringUtils.equalsIgnoreCase(errorcode, "snackbar__content-belongs-to-premium-client")) {
+                link.setProperty(PROPERTY_IS_PREMIUMONLY, true);
+                return AvailableStatus.TRUE;
+            } else if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
-        final List<Object> ressourcelist = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.LIST);
+        final List<Object> ressourcelist = (List<Object>) obj;
         if (ressourcelist.isEmpty()) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }

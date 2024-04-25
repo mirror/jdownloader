@@ -1437,11 +1437,6 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
                         }
                     }
                 }
-                /* TODO: Maybe skip URLs that do not contain current FUID (if FUID exists). E.g. failure: privat-zapisi.biz */
-                // if (!dllinkTmp.contains(this.getFUID(this.getDownloadLink()))) {
-                // logger.info("Skipping URL because it doesn't contain FUID: " + dllinkTmp);
-                // continue;
-                // }
                 if (!addQualityURL(this.getDownloadLink(), qualityMap, dllinkTmp)) {
                     if (uncryptedUrlWithoutQualityIndicator == null) {
                         uncryptedUrlWithoutQualityIndicator = dllinkTmp;
