@@ -89,28 +89,13 @@ public class NewRuleAction extends AbstractAddAction {
             }
         }
         final Collection<LazyHostPlugin> plugins = HostPluginController.getInstance().list();
+        /* Collect all domains which the user is allowed to create usage rules for. */
         for (final LazyHostPlugin plugin : plugins) {
-            /**
-             * Collect domains of all plugins which: </br>
-             * - Support premium download/account </br>
-             * - and: Are not a multihoster </br>
-             * Some multihosters do support downloading their own selfhosted files in account mode but this is the exception. </br>
-             * Examples: high-way.me, premiumize.me
-             */
-            // if (!plugin.isPremium()) {
-            // /* Plugin does not support accounts so it does not make sense to be able to create a rule for it. */
-            // continue;
-            // } else if (multihosterDomains.contains(plugin.getHost())) {
-            // /* Plugin is a multihost -> It does not make sense to be able to create a rule for a multihoster itself. */
-            // continue;
-            // } else {
-            // domains.add(DomainInfo.getInstance(plugin.getHost()));
-            // }
             if (allowAccountUsageRuleCreation(plugin)) {
                 domains.add(DomainInfo.getInstance(plugin.getHost()));
             }
         }
-        /* Sort our unsorted results. */
+        /* Sort results. */
         final ArrayList<DomainInfo> lst = new ArrayList<DomainInfo>(domains);
         Collections.sort(lst, new Comparator<DomainInfo>() {
             @Override
