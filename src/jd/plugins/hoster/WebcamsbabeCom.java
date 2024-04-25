@@ -64,7 +64,7 @@ public class WebcamsbabeCom extends KernelVideoSharingComV2 {
         if (url == null) {
             return null;
         } else {
-            return new Regex(url, "/videos/\\d+-(.+)\\.html$").getMatch(0);
+            return new Regex(url, "(?i)/videos/\\d+-(.+)\\.html$").getMatch(0);
         }
     }
 

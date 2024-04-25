@@ -126,46 +126,40 @@ public class MulherespeladasvipCom extends KernelVideoSharingComV2 {
     @Override
     public void login(final Account account, final boolean validateCookies) throws Exception {
         synchronized (account) {
-            try {
-                br.setCookiesExclusive(true);
-                final Cookies cookies = account.loadCookies("");
-                if (cookies != null) {
-                    this.br.setCookies(this.getHost(), cookies);
-                    if (!validateCookies) {
-                        logger.info("Trust cookies without check");
-                        return;
-                    }
-                    getPage(getProtocol() + this.getHost() + "/");
-                    if (isLoggedIN(br)) {
-                        logger.info("Cookie login successful");
-                        account.saveCookies(this.br.getCookies(this.getHost()), "");
-                        return;
-                    } else {
-                        logger.info("Cookie login failed");
-                        br.clearCookies(br.getHost());
-                    }
+            br.setCookiesExclusive(true);
+            final Cookies cookies = account.loadCookies("");
+            if (cookies != null) {
+                this.br.setCookies(cookies);
+                if (!validateCookies) {
+                    logger.info("Trust cookies without check");
+                    return;
                 }
-                /* 2020-11-04: Login-URL that fits most of all websites (example): https://www.porngem.com/login-required/ */
-                logger.info("Performing full login");
-                getPage(getProtocol() + this.getHost() + "/videos/login/");
-                final Form loginform = br.getFormbyActionRegex(".*/login.*");
-                if (loginform == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                loginform.put("remember_me", "1");
-                loginform.put("username", Encoding.urlEncode(account.getUser()));
-                loginform.put("pass", Encoding.urlEncode(account.getPass()));
-                this.submitForm(loginform);
-                if (!isLoggedIN(br)) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-                account.saveCookies(this.br.getCookies(this.getHost()), "");
-            } catch (final PluginException e) {
-                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                getPage(getProtocol() + this.getHost() + "/");
+                if (isLoggedIN(br)) {
+                    logger.info("Cookie login successful");
+                    account.saveCookies(this.br.getCookies(this.getHost()), "");
+                    return;
+                } else {
+                    logger.info("Cookie login failed");
+                    br.clearCookies(br.getHost());
                     account.clearCookies("");
                 }
-                throw e;
             }
+            /* 2020-11-04: Login-URL that fits most of all websites (example): https://www.porngem.com/login-required/ */
+            logger.info("Performing full login");
+            getPage(getProtocol() + this.getHost() + "/videos/login/");
+            final Form loginform = br.getFormbyActionRegex(".*/login.*");
+            if (loginform == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            loginform.put("remember_me", "1");
+            loginform.put("username", Encoding.urlEncode(account.getUser()));
+            loginform.put("pass", Encoding.urlEncode(account.getPass()));
+            this.submitForm(loginform);
+            if (!isLoggedIN(br)) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+            account.saveCookies(br.getCookies(br.getHost()), "");
         }
     }
 }

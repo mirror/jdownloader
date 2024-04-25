@@ -20,7 +20,6 @@ import java.util.List;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
-import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
@@ -57,13 +56,6 @@ public class MrdeepfakesCom extends KernelVideoSharingComV2 {
         return ret.toArray(new String[0]);
     }
 
-    public void correctDownloadLink(final DownloadLink link) {
-        /** 2021-03-35: Special: Fix embed URLs as they won't work! */
-        if (this.isEmbedURL(link.getPluginPatternMatcher())) {
-            link.setPluginPatternMatcher(generateContentURL(this.getHost(), this.getFUID(link), this.getURLTitle(link.getPluginPatternMatcher())));
-        }
-    }
-
     @Override
     String generateContentURL(final String host, final String fuid, final String urlSlug) {
         if (host == null || fuid == null || urlSlug == null) {
@@ -74,11 +66,16 @@ public class MrdeepfakesCom extends KernelVideoSharingComV2 {
 
     @Override
     protected boolean isPrivateVideoWebsite(final Browser br) {
-        if (br.containsHTML("(?i)class=\"message\">\\s*This video is a Premium video uploaded by")) {
+        if (br.containsHTML("class=\"message\">\\s*This video is a Premium video uploaded by")) {
             /* 2022-09-05 */
             return true;
         } else {
             return super.isPrivateVideoWebsite(br);
         }
+    }
+
+    @Override
+    protected boolean useEmbedWorkaround() {
+        return true;
     }
 }

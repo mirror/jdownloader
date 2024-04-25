@@ -20,7 +20,6 @@ import java.util.List;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
-import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
@@ -51,11 +50,6 @@ public class Sex3Com extends KernelVideoSharingComV2 {
     }
 
     @Override
-    public void correctDownloadLink(final DownloadLink link) {
-        link.setPluginPatternMatcher(link.getPluginPatternMatcher().replaceAll("/embed/", "/"));
-    }
-
-    @Override
     protected String regexNormalTitleWebsite(final Browser br) {
         String title = br.getRegex("<title>([^<]+)</title>").getMatch(0);
         if (title != null) {
@@ -69,5 +63,10 @@ public class Sex3Com extends KernelVideoSharingComV2 {
     @Override
     String generateContentURL(final String host, final String fuid, final String urlSlug) {
         return generateContentURLDefaultVideosPatternOnlyNumbers(host, fuid);
+    }
+
+    @Override
+    protected boolean useEmbedWorkaround() {
+        return true;
     }
 }

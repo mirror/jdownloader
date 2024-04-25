@@ -56,11 +56,6 @@ public class PorntrexCom extends KernelVideoSharingComV2 {
     }
 
     @Override
-    public Class<? extends KVSConfig> getConfigInterface() {
-        return KVSConfigPorntrexCom.class;
-    }
-
-    @Override
     String generateContentURL(final String host, final String fuid, final String urlSlug) {
         if (host == null || fuid == null || urlSlug == null) {
             return null;
@@ -71,5 +66,10 @@ public class PorntrexCom extends KernelVideoSharingComV2 {
     @Override
     protected boolean preferTitleHTML() {
         return true;
+    }
+
+    @Override
+    public Class<? extends KVSConfig> getConfigInterface() {
+        return KVSConfigPorntrexCom.class;
     }
 }

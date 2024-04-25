@@ -61,7 +61,8 @@ public class CamwhoreshdCom extends KernelVideoSharingComV2 {
 
     @Override
     protected String getDllink(final DownloadLink link, final Browser br) throws PluginException, IOException {
-        final String embed = br.getRegex("(https?://www.cwtvembeds.com/embed/\\d+)").getMatch(0);
+        /* Special handling */
+        final String embed = br.getRegex("(https?://(?:www\\.)?(cwtvembeds\\.com|camwhores\\.lol)/embed/\\d+)").getMatch(0);
         if (embed != null && !StringUtils.equals(br._getURL().getPath(), new URL(embed).getPath())) {
             br.setFollowRedirects(true);
             br.getPage(embed);

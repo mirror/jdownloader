@@ -73,59 +73,54 @@ public class ThisvidCom extends KernelVideoSharingComV2 {
     @Override
     public void login(final Account account, final boolean validateCookies) throws Exception {
         synchronized (account) {
-            try {
-                br.setFollowRedirects(true);
-                br.setCookiesExclusive(true);
-                final Cookies cookies = account.loadCookies("");
-                if (cookies != null) {
-                    this.br.setCookies(this.getHost(), cookies);
-                    if (!validateCookies) {
-                        logger.info("Trust cookies without check");
-                        return;
-                    }
-                    getPage("https://" + this.getHost() + "/");
-                    if (isLoggedIN(br)) {
-                        logger.info("Cookie login successful");
-                        account.saveCookies(this.br.getCookies(this.getHost()), "");
-                        return;
-                    } else {
-                        logger.info("Cookie login failed");
-                    }
+            br.setFollowRedirects(true);
+            br.setCookiesExclusive(true);
+            final Cookies cookies = account.loadCookies("");
+            if (cookies != null) {
+                br.setCookies(cookies);
+                if (!validateCookies) {
+                    logger.info("Trust cookies without check");
+                    return;
                 }
-                br.clearCookies(this.getHost());
-                getPage("https://" + this.getHost() + "/login.php");
-                final Form loginform = br.getFormbyProperty("id", "logon_form");
-                if (loginform == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                loginform.put("username", Encoding.urlEncode(account.getUser()));
-                loginform.put("pass", Encoding.urlEncode(account.getPass()));
-                loginform.put("remember_me", "1");
-                final String captchaURL = br.getRegex("(/captcha/logon/[^\"]+)\"").getMatch(0);
-                if (captchaURL != null) {
-                    final String code = this.getCaptchaCode(captchaURL, this.getDownloadLink());
-                    loginform.put("code", Encoding.urlEncode(code));
-                } else if (containsRecaptchaV2Class(loginform)) {
-                    final String rcKey = br.getRegex("data-recaptcha-key=\"([^\"]+)\"").getMatch(0);
-                    final String token;
-                    if (rcKey != null) {
-                        token = new CaptchaHelperHostPluginRecaptchaV2(this, br, rcKey).getToken();
-                    } else {
-                        token = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-                    }
-                    loginform.put("g-recaptcha-response", Encoding.urlEncode(token));
-                }
-                this.submitForm(loginform);
-                if (!isLoggedIN(br)) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-                account.saveCookies(this.br.getCookies(this.getHost()), "");
-            } catch (final PluginException e) {
-                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                getPage("https://" + this.getHost() + "/");
+                if (isLoggedIN(br)) {
+                    logger.info("Cookie login successful");
+                    account.saveCookies(this.br.getCookies(this.getHost()), "");
+                    return;
+                } else {
+                    logger.info("Cookie login failed");
+                    br.clearCookies(null);
                     account.clearCookies("");
                 }
-                throw e;
             }
+            br.clearCookies(this.getHost());
+            getPage("https://" + this.getHost() + "/login.php");
+            final Form loginform = br.getFormbyProperty("id", "logon_form");
+            if (loginform == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            loginform.put("username", Encoding.urlEncode(account.getUser()));
+            loginform.put("pass", Encoding.urlEncode(account.getPass()));
+            loginform.put("remember_me", "1");
+            final String captchaURL = br.getRegex("(/captcha/logon/[^\"]+)\"").getMatch(0);
+            if (captchaURL != null) {
+                final String code = this.getCaptchaCode(captchaURL, this.getDownloadLink());
+                loginform.put("code", Encoding.urlEncode(code));
+            } else if (containsRecaptchaV2Class(loginform)) {
+                final String rcKey = br.getRegex("data-recaptcha-key=\"([^\"]+)\"").getMatch(0);
+                final String token;
+                if (rcKey != null) {
+                    token = new CaptchaHelperHostPluginRecaptchaV2(this, br, rcKey).getToken();
+                } else {
+                    token = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                }
+                loginform.put("g-recaptcha-response", Encoding.urlEncode(token));
+            }
+            this.submitForm(loginform);
+            if (!isLoggedIN(br)) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+            account.saveCookies(br.getCookies(br.getHost()), "");
         }
     }
 

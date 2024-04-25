@@ -48,10 +48,6 @@ public class CamVideosOrg extends KernelVideoSharingComV2 {
          */
         return true;
     }
-    // @Override
-    // protected String regexNormalTitleWebsite(final Browser br) {
-    // return super.regexNormalTitleWebsite(br);
-    // }
 
     @Override
     protected boolean preferTitleHTML() {

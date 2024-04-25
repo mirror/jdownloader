@@ -57,17 +57,17 @@ public class XfreehdCom extends KernelVideoSharingComV2 {
     }
 
     @Override
+    protected String generateContentURL(final String host, final String fuid, final String urlTitle) {
+        return generateContentURLDefaultVideosPattern(host, fuid, urlTitle);
+    }
+
+    @Override
     protected boolean isLoggedIN(final Browser br) {
         if (br.containsHTML("/logout")) {
             return true;
         } else {
             return false;
         }
-    }
-
-    @Override
-    protected String generateContentURL(final String host, final String fuid, final String urlTitle) {
-        return generateContentURLDefaultVideosPattern(host, fuid, urlTitle);
     }
 
     @Override

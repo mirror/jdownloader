@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jd.PluginWrapper;
+import jd.parser.Regex;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
@@ -27,7 +28,6 @@ public class XxxsexzooCom extends KernelVideoSharingComV2 {
         super(wrapper);
     }
 
-    /** Add all KVS hosts to this list that fit the main template without the need of ANY changes to this class. */
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
@@ -47,7 +47,7 @@ public class XxxsexzooCom extends KernelVideoSharingComV2 {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/video/[^/\\?#]+");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/[a-z0-9\\-]+/([^/\\?#]+)");
         }
         return ret.toArray(new String[0]);
     }
@@ -55,6 +55,14 @@ public class XxxsexzooCom extends KernelVideoSharingComV2 {
     @Override
     String generateContentURL(final String host, final String fuid, final String urlSlug) {
         return this.getProtocol() + appendWWWIfRequired(host) + "/video/" + fuid + "/" + urlSlug + "/";
+    }
+
+    protected String getFUIDFromURL(final String url) {
+        if (url == null) {
+            return null;
+        } else {
+            return new Regex(url, this.getSupportedLinks()).getMatch(0);
+        }
     }
 
     @Override

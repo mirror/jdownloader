@@ -59,16 +59,7 @@ public class FrprnCom extends KernelVideoSharingComV2 {
 
     @Override
     protected String getFUID(final DownloadLink link) {
-        return new Regex(link.getPluginPatternMatcher(), "(\\d+)/?$").getMatch(0);
-    }
-
-    @Override
-    public void correctDownloadLink(final DownloadLink link) {
-        /** 2021-03-02: Website is broken - only embed URLs are working! */
-        // TODO: Remove this and make use of getContentURL
-        final String newURL = "https://" + this.getHost() + "/embed/" + this.getFUID(link);
-        link.setPluginPatternMatcher(newURL);
-        link.setContentUrl(newURL);
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
     @Override

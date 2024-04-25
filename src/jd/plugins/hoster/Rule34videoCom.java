@@ -61,11 +61,6 @@ public class Rule34videoCom extends KernelVideoSharingComV2 {
     }
 
     @Override
-    public Class<? extends KVSConfig> getConfigInterface() {
-        return KVSConfigRule34videoCom.class;
-    }
-
-    @Override
     protected AvailableStatus requestFileInformationWebsite(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
         final AvailableStatus status = super.requestFileInformationWebsite(link, account, isDownload);
         /* Collect some information for custom filenames */
@@ -82,5 +77,10 @@ public class Rule34videoCom extends KernelVideoSharingComV2 {
             link.setProperty(PROPERTY_FUID, fuid);
         }
         return status;
+    }
+
+    @Override
+    public Class<? extends KVSConfig> getConfigInterface() {
+        return KVSConfigRule34videoCom.class;
     }
 }

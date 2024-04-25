@@ -24,6 +24,7 @@ import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.hoster.CamwhoresTv;
@@ -89,7 +90,8 @@ public class CamwhoresTvCrawler extends PornEmbedParser {
 
     @Override
     protected boolean isSelfhosted(final Browser br) {
-        final boolean isSelfhostedContent = br.containsHTML(Pattern.quote(br.getHost()) + "/embed/\\d+");
+        final String videoID = new Regex(br.getURL(), "(?i)/videos/(\\d+)").getMatch(0);
+        final boolean isSelfhostedContent = br.containsHTML(Pattern.quote(br.getHost()) + "/embed/" + videoID);
         final boolean isPrivate = br.containsHTML("(?i)>\\s*This video is a private video uploaded");
         if (isSelfhostedContent || isPrivate) {
             return true;
@@ -100,7 +102,12 @@ public class CamwhoresTvCrawler extends PornEmbedParser {
 
     @Override
     protected String getFileTitle(final CryptedLink param, final Browser br) {
-        final String urltitle = new Regex(param.getCryptedUrl(), "/videos/(?:\\d+/|private/)([^/]+)/$").getMatch(0);
-        return CamwhoresTv.removeUnwantedURLTitleStuffStatic(urltitle);
+        final String titleHTML = br.getRegex("video_title\\s*:\\s*'([^<>\"\\']+)'").getMatch(0);
+        if (titleHTML != null) {
+            return Encoding.htmlDecode(titleHTML).trim();
+        } else {
+            final String urltitle = new Regex(param.getCryptedUrl(), "/videos/(?:\\d+/|private/)([^/]+)/$").getMatch(0);
+            return CamwhoresTv.removeUnwantedURLTitleStuffStatic(urltitle);
+        }
     }
 }

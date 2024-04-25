@@ -23,7 +23,6 @@ import org.jdownloader.plugins.controller.LazyPlugin;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.Regex;
-import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.PluginDependencies;
 import jd.plugins.decrypter.SmutrComCrawler;
@@ -62,13 +61,6 @@ public class SmutrCom extends KernelVideoSharingComV2 {
     }
 
     @Override
-    public void correctDownloadLink(final DownloadLink link) {
-        if (link.getPluginPatternMatcher().matches(pattern_embedded)) {
-            link.setPluginPatternMatcher("https://" + this.getHost() + "/v/" + new Regex(link.getPluginPatternMatcher(), pattern_embedded).getMatch(0) + "/");
-        }
-    }
-
-    @Override
     protected String regexNormalTitleWebsite(final Browser br) {
         String title = SmutrComCrawler.getFileTitleStatic(br);
         if (title != null) {
@@ -94,5 +86,10 @@ public class SmutrCom extends KernelVideoSharingComV2 {
             return null;
         }
         return this.getProtocol() + host + "/v/" + fuid + "/";
+    }
+
+    @Override
+    protected boolean useEmbedWorkaround() {
+        return true;
     }
 }

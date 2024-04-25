@@ -56,7 +56,7 @@ public class XxxTube extends KernelVideoSharingComV2 {
 
     @Override
     protected boolean isPrivateVideoWebsite(final Browser br) {
-        if (br.containsHTML("(?i)>\\s*Buy premium to see full video")) {
+        if (br.containsHTML(">\\s*Buy premium to see full video")) {
             return true;
         } else {
             return super.isPrivateVideoWebsite(br);

@@ -45,7 +45,7 @@ public class TubewolfCom extends KernelVideoSharingComV2 {
         return buildSupportedNames(getPluginDomains());
     }
 
-    private static final String TYPE_CUSTOM = "https?://(?:www\\.)?[^/]+/movies/([a-z0-9\\-]+)/?";
+    private static final String TYPE_CUSTOM = "(?i)https?://(?:www\\.)?[^/]+/movies/([a-z0-9\\-]+)/?";
 
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();

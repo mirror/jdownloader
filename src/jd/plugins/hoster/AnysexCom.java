@@ -71,7 +71,7 @@ public class AnysexCom extends KernelVideoSharingComV2 {
     }
 
     @Override
-    String generateContentURL(final String host, final String fuid, final String urlSlug) {
+    protected String generateContentURL(final String host, final String fuid, final String urlSlug) {
         return generateContentURLDefaultVideosPatternOnlyNumbers(host, fuid);
     }
 }

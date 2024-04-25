@@ -18,13 +18,13 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.plugins.HostPlugin;
 import jd.plugins.decrypter.CamwhoresTvCrawler;
-
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class CamwhoresTv extends KernelVideoSharingComV2 {
@@ -53,6 +53,7 @@ public class CamwhoresTv extends KernelVideoSharingComV2 {
 
     @Override
     protected String getWorkingDomain(final String url) {
+        /* They have a lot of domains but only the main one is working. */
         return getHost();
     }
 
@@ -60,6 +61,7 @@ public class CamwhoresTv extends KernelVideoSharingComV2 {
      * Override this and add dead domains so upper handling can auto update added URLs and change domain if it contains a dead domain. This
      * way a lot of "old" URLs will continue to work in JD while they may fail in browser.
      */
+    @Override
     protected ArrayList<String> getDeadDomains() {
         return CamwhoresTvCrawler.getDeadDomainsStatic();
     }
@@ -125,5 +127,10 @@ public class CamwhoresTv extends KernelVideoSharingComV2 {
             urltitle = urltitle.trim();
         }
         return urltitle;
+    }
+
+    @Override
+    protected boolean preferTitleHTML() {
+        return true;
     }
 }
