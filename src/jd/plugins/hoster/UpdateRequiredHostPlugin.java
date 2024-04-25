@@ -1,5 +1,8 @@
 package jd.plugins.hoster;
 
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.plugins.controller.host.PluginFinder;
+
 import jd.PluginWrapper;
 import jd.plugins.Account;
 import jd.plugins.AccountInfo;
@@ -9,9 +12,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.host.PluginFinder;
 
 /**
  * This plugin only serves as a FallBack in case another plugin could not be initiated
@@ -91,6 +91,10 @@ public class UpdateRequiredHostPlugin extends PluginForHost {
     public LazyPlugin.FEATURE[] getFeatures() {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.INTERNAL };
     }
+    // @Override
+    // public boolean allowCreateAccountUsageRule() {
+    // return false;
+    // }
 
     @Override
     public void reset() {

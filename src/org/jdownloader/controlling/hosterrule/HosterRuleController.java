@@ -32,7 +32,6 @@ import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.logging.LogController;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.plugins.controller.host.PluginFinder;
 import org.jdownloader.settings.advanced.AdvancedConfigManager;
@@ -44,6 +43,7 @@ import jd.controlling.AccountControllerListener;
 import jd.controlling.downloadcontroller.AccountCache;
 import jd.controlling.downloadcontroller.AccountCache.CachedAccount;
 import jd.controlling.downloadcontroller.DownloadSession;
+import jd.gui.swing.jdgui.views.settings.panels.accountmanager.orderpanel.NewRuleAction;
 import jd.gui.swing.jdgui.views.settings.panels.accountmanager.orderpanel.dialog.EditHosterRuleDialog;
 import jd.plugins.Account;
 import jd.plugins.DownloadLink;
@@ -216,7 +216,7 @@ public class HosterRuleController implements AccountControllerListener {
         } else {
             final LazyHostPlugin lazy = plugin.getLazyP();
             final boolean isUpdateRequiredPlugin = "UpdateRequired".equalsIgnoreCase(lazy.getDisplayName());
-            final boolean isOfflinePlugin = lazy.getClassName().endsWith("r.Offline");
+            final boolean isOfflinePlugin = lazy.isOfflinePlugin();
             if (!isUpdateRequiredPlugin && !isOfflinePlugin) {
                 final boolean changed = !StringUtils.equalsIgnoreCase(rule.getHoster(), lazy.getHost());
                 if (changed) {
@@ -361,19 +361,27 @@ public class HosterRuleController implements AccountControllerListener {
             }
         }
         hr.getAccounts().removeAll(removeAccountGroups);
-        boolean isRuleForMultihoster = false;
-        for (final Account acc : AccountController.getInstance().list(host)) {
-            if (accounts.add(acc)) {
-                final AccountReference ar = new AccountReference(acc);
-                if (defaultAccountGroup == null) {
-                    defaultAccountGroup = new AccountGroup(_GUI.T.HosterRuleController_validateRule_single_hoster_account());
-                    hr.getAccounts().add(0, defaultAccountGroup);
+        Boolean isHosterpluginAllowsUsageRuleCreation = null;
+        final List<Account> accs = AccountController.getInstance().list(host);
+        if (accs != null && accs.size() > 0) {
+            for (final Account acc : accs) {
+                if (accounts.add(acc)) {
+                    final AccountReference ar = new AccountReference(acc);
+                    if (defaultAccountGroup == null) {
+                        defaultAccountGroup = new AccountGroup(_GUI.T.HosterRuleController_validateRule_single_hoster_account());
+                        hr.getAccounts().add(0, defaultAccountGroup);
+                    }
+                    defaultAccountGroup.getChildren().add(ar);
                 }
-                defaultAccountGroup.getChildren().add(ar);
+                if (isHosterpluginAllowsUsageRuleCreation == null) {
+                    isHosterpluginAllowsUsageRuleCreation = NewRuleAction.allowAccountUsageRuleCreation(acc.getPlugin().getLazyP());
+                }
             }
-            if (acc.getPlugin().hasFeature(FEATURE.MULTIHOST)) {
-                isRuleForMultihoster = true;
-            }
+        } else {
+            final PluginFinder pluginFinder = new PluginFinder(logger);
+            final DownloadLink dummy = new DownloadLink(null, "", hr.getHoster(), "", false);
+            final PluginForHost plugin = pluginFinder.assignPlugin(dummy, false);
+            isHosterpluginAllowsUsageRuleCreation = NewRuleAction.allowAccountUsageRuleCreation(plugin.getLazyP());
         }
         final List<Account> multiAccs = AccountController.getInstance().getMultiHostAccounts(host);
         if (multiAccs != null) {
@@ -397,10 +405,11 @@ public class HosterRuleController implements AccountControllerListener {
             defaultNoAccountGroup.getChildren().add(new FreeAccountReference(host));
             hr.getAccounts().add(defaultNoAccountGroup);
         }
-        if (isRuleForMultihoster) {
+        if (Boolean.FALSE.equals(isHosterpluginAllowsUsageRuleCreation)) {
             // TODO: Maybe auto-delete such invalid rules
-            logger.info("Disable rule for host " + host + " because: Rules for multihosters are not allowed");
+            logger.info("Disable and removed rule for host " + host + " because: plugin does not allow usage rule creation");
             hr.setEnabled(false);
+            this.remove(hr);
             return;
         }
     }

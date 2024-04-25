@@ -3248,7 +3248,7 @@ public class LinkCrawler {
     private void permanentOffline(CrawledLink link) {
         final DownloadLink dl = link.getDownloadLink();
         try {
-            if (dl != null && dl.getDefaultPlugin().getLazyP().getClassName().endsWith("r.Offline")) {
+            if (dl != null && dl.getDefaultPlugin().getLazyP().isOfflinePlugin()) {
                 final PackageInfo dpi;
                 if (link.getDesiredPackageInfo() == null) {
                     dpi = new PackageInfo();

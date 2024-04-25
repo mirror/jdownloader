@@ -7,16 +7,16 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
-import jd.plugins.Account;
-import jd.plugins.DownloadLink;
-import jd.plugins.PluginForHost;
-
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.UniqueAlltimeID;
 import org.appwork.utils.logging2.LogInterface;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
+
+import jd.plugins.Account;
+import jd.plugins.DownloadLink;
+import jd.plugins.PluginForHost;
 
 public class PluginFinder {
     private final HashMap<String, LazyHostPlugin> hostMappings            = new HashMap<String, LazyHostPlugin>();
@@ -235,7 +235,7 @@ public class PluginFinder {
             final String host = lazyHostPlugin.getHost();
             if (pluginCaches.containsKey(host)) {
                 final PluginForHost pluginForHost = pluginCaches.get(host);
-                if (pluginForHost != null && (pluginForHost.isPremiumEnabled() || pluginForHost.getLazyP().getClassName().endsWith("r.Offline"))) {
+                if (pluginForHost != null && (pluginForHost.isPremiumEnabled() || pluginForHost.getLazyP().isOfflinePlugin())) {
                     try {
                         if (!assignPlugin || pluginForHost.assignPlugin(acc)) {
                             return pluginForHost;
@@ -246,7 +246,7 @@ public class PluginFinder {
                 }
             }
             try {
-                if (lazyHostPlugin != null && (lazyHostPlugin.isPremium() || lazyHostPlugin.getClassName().endsWith("r.Offline"))) {
+                if (lazyHostPlugin != null && (lazyHostPlugin.isPremium() || lazyHostPlugin.isOfflinePlugin())) {
                     final PluginForHost pluginForHost = getPlugin(lazyHostPlugin);
                     try {
                         if (!assignPlugin || pluginForHost.assignPlugin(acc)) {
