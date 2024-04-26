@@ -143,12 +143,12 @@ public class VoeSx extends XFileSharingProBasic {
 
     @Override
     protected boolean supportsAPIMassLinkcheck() {
-        return isAPIKey(this.getAPIKey());
+        return looksLikeValidAPIKey(this.getAPIKey());
     }
 
     @Override
     protected boolean supportsAPISingleLinkcheck() {
-        return isAPIKey(this.getAPIKey());
+        return looksLikeValidAPIKey(this.getAPIKey());
     }
 
     @Override

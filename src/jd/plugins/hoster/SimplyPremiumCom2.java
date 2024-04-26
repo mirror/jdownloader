@@ -15,26 +15,17 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
-
-import javax.swing.JComponent;
-import javax.swing.JLabel;
 
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.handler.KeyHandler;
-import org.appwork.swing.MigPanel;
-import org.appwork.swing.components.ExtPasswordField;
 import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
-import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.gui.InputChangedCallbackInterface;
-import org.jdownloader.plugins.accounts.AccountBuilderInterface;
 import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
 import org.jdownloader.plugins.components.usenet.UsenetConfigPanel;
 import org.jdownloader.plugins.components.usenet.UsenetServer;
@@ -42,7 +33,6 @@ import org.jdownloader.plugins.config.AccountConfigInterface;
 import org.jdownloader.plugins.config.Order;
 
 import jd.PluginWrapper;
-import jd.gui.swing.components.linkbutton.JLink;
 import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
@@ -143,93 +133,6 @@ public class SimplyPremiumCom2 extends HighWayCore {
         thread.setDaemon(true);
         thread.start();
         return thread;
-    }
-
-    @Override
-    public AccountBuilderInterface getAccountFactory(final InputChangedCallbackInterface callback) {
-        return new SimplyPremiumAccountFactory(callback);
-    }
-
-    public static class SimplyPremiumAccountFactory extends MigPanel implements AccountBuilderInterface {
-        /**
-         *
-         */
-        private static final long serialVersionUID = 1L;
-        private final JLabel      apikeyLabel;
-
-        private String getPassword() {
-            if (this.pass == null) {
-                return null;
-            } else {
-                return correctPassword(new String(this.pass.getPassword()));
-            }
-        }
-
-        public boolean updateAccount(Account input, Account output) {
-            if (!StringUtils.equals(input.getUser(), output.getUser())) {
-                output.setUser(input.getUser());
-                return true;
-            } else if (!StringUtils.equals(input.getPass(), output.getPass())) {
-                output.setPass(input.getPass());
-                return true;
-            } else {
-                return false;
-            }
-        }
-
-        private final ExtPasswordField pass;
-
-        public SimplyPremiumAccountFactory(final InputChangedCallbackInterface callback) {
-            super("ins 0, wrap 2", "[][grow,fill]", "");
-            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                add(new JLabel("Hier findest du deinen API Key:"));
-            } else {
-                add(new JLabel("Click here to find your API Key:"));
-            }
-            add(new JLink("https://www.simply-premium.com/profile"));
-            add(apikeyLabel = new JLabel("API Key:"));
-            add(this.pass = new ExtPasswordField() {
-                @Override
-                public void onChanged() {
-                    callback.onChangedInput(this);
-                }
-            }, "");
-            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                pass.setHelpText("Gib deinen API Key ein");
-            } else {
-                pass.setHelpText("Enter your API Key");
-            }
-        }
-
-        @Override
-        public JComponent getComponent() {
-            return this;
-        }
-
-        @Override
-        public void setAccount(Account defaultAccount) {
-            if (defaultAccount != null) {
-                // name.setText(defaultAccount.getUser());
-                pass.setText(defaultAccount.getPass());
-            }
-        }
-
-        @Override
-        public boolean validateInputs() {
-            final String pw = getPassword();
-            if (HighWayCore.isAPIKey(pw)) {
-                apikeyLabel.setForeground(Color.BLACK);
-                return true;
-            } else {
-                apikeyLabel.setForeground(Color.RED);
-                return false;
-            }
-        }
-
-        @Override
-        public Account getAccount() {
-            return new Account(null, getPassword());
-        }
     }
 
     public static interface SimplyPremiumComConfigInterface extends UsenetAccountConfigInterface {

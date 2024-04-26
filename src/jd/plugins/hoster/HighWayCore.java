@@ -120,7 +120,11 @@ public abstract class HighWayCore extends UseNet {
 
     @Override
     public LazyPlugin.FEATURE[] getFeatures() {
-        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.MULTIHOST, LazyPlugin.FEATURE.USENET };
+        if (this.useApikeyLogin()) {
+            return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.MULTIHOST, LazyPlugin.FEATURE.USENET, LazyPlugin.FEATURE.API_KEY_LOGIN };
+        } else {
+            return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.MULTIHOST, LazyPlugin.FEATURE.USENET };
+        }
     }
 
     /** Returns true if an account is required to download the given item. */
@@ -801,10 +805,10 @@ public abstract class HighWayCore extends UseNet {
     public void login(final Account account, final boolean validateCookies) throws IOException, PluginException, InterruptedException {
         synchronized (account) {
             if (useApikeyLogin()) {
-                account.setPass(correctPassword(account.getPass()));
-                if (!isAPIKey(account.getPass())) {
+                if (!this.looksLikeValidAPIKey(account.getPass())) {
                     throw new AccountInvalidException("Invalid API key format");
                 }
+                account.setPass(correctPassword(account.getPass()));
             }
             br.getHeaders().put(HTTPConstants.HEADER_REQUEST_AUTHORIZATION, "Basic " + Encoding.Base64Encode(account.getUser() + ":" + account.getPass()));
             final Cookies cookies = account.loadCookies("");
@@ -840,16 +844,6 @@ public abstract class HighWayCore extends UseNet {
             this.checkErrors(this.br, this.getDownloadLink(), account);
             /* No Exception --> Assume that login was successful */
             account.saveCookies(br.getCookies(br.getHost()), "");
-        }
-    }
-
-    protected static boolean isAPIKey(final String str) {
-        if (str == null) {
-            return false;
-        } else if (str.matches("[A-Za-z0-9]{32}")) {
-            return true;
-        } else {
-            return false;
         }
     }
 
@@ -1031,6 +1025,22 @@ public abstract class HighWayCore extends UseNet {
             return account.getIntegerProperty(PROPERTY_ACCOUNT_MAX_DOWNLOADS_ACCOUNT, defaultMaxdlsUsenet);
         }
         return 1;
+    }
+
+    @Override
+    protected String getAPILoginHelpURL() {
+        return "https://members.cocoleech.com/settings";
+    }
+
+    @Override
+    protected boolean looksLikeValidAPIKey(final String str) {
+        if (str == null) {
+            return false;
+        } else if (correctPassword(str).matches("[A-Za-z0-9]{32}")) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     @Override

@@ -130,12 +130,6 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
         return "/(d/[A-Za-z0-9]+|(d|e)/[a-z0-9]{12}|embed-[a-z0-9]{12}\\.html|[a-z0-9]{12}(/[^/]+(?:\\.html)?)?)";
     }
 
-    @Deprecated
-    /** Deprecated since 2024-04-23, use getDefaultAnnotationPatternPart instead! */
-    public static final String getDefaultAnnotationPatternPartXFSNew() {
-        return "/(d|e)/[a-z0-9]{12}";
-    }
-
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
@@ -5899,11 +5893,6 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
         } else {
             return this.getAPIKeyFromConfig();
         }
-    }
-
-    protected boolean isAPIKey(final String str) {
-        // TODO: 2023-11-30: Remove this
-        return looksLikeValidAPIKey(str);
     }
 
     @Override

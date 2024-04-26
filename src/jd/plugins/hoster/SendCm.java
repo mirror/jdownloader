@@ -512,7 +512,7 @@ public class SendCm extends XFileSharingProBasic {
 
     @Override
     protected boolean supportsAPIMassLinkcheck() {
-        if (isAPIKey(this.getAPIKey())) {
+        if (looksLikeValidAPIKey(this.getAPIKey())) {
             return true;
         } else {
             return false;
@@ -531,7 +531,7 @@ public class SendCm extends XFileSharingProBasic {
 
     @Override
     protected boolean supportsAPISingleLinkcheck() {
-        return isAPIKey(this.getAPIKey());
+        return looksLikeValidAPIKey(this.getAPIKey());
     }
 
     @Override

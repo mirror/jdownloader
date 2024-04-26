@@ -67,6 +67,19 @@ abstract public class ZeveraCore extends UseNet {
     }
 
     @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        final List<LazyPlugin.FEATURE> ret = new ArrayList<LazyPlugin.FEATURE>();
+        ret.add(LazyPlugin.FEATURE.MULTIHOST);
+        if (this.supportsUsenet(null)) {
+            ret.add(LazyPlugin.FEATURE.USENET);
+        }
+        if (!usePairingLogin(null)) {
+            ret.add(LazyPlugin.FEATURE.API_KEY_LOGIN);
+        }
+        return ret.toArray(new LazyPlugin.FEATURE[0]);
+    }
+
+    @Override
     public String getAGBLink() {
         return "https://www." + this.getHost() + "/legal#tos";
     }
@@ -107,16 +120,6 @@ abstract public class ZeveraCore extends UseNet {
         }
     }
 
-    protected static boolean isAPIKEY(final String str) {
-        if (str == null) {
-            return false;
-        } else if (str.matches("[a-z0-9]{16}")) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
     /**
      * Returns how many max. chunks per file are allowed for current download mode based on account availability and account type. <br />
      * Override this function to set chunks settings!
@@ -137,7 +140,7 @@ abstract public class ZeveraCore extends UseNet {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         /* Direct URLs can be downloaded without account! */
-        return -1;
+        return Integer.MAX_VALUE;
     }
 
     public int getMaxSimultaneousFreeAccountDownloads() {
@@ -147,7 +150,7 @@ abstract public class ZeveraCore extends UseNet {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
+        return Integer.MAX_VALUE;
     }
 
     @Override
@@ -194,9 +197,9 @@ abstract public class ZeveraCore extends UseNet {
         }
         /* See: https://app.swaggerhub.com/apis-docs/premiumize.me/api/1.6.7#/ */
         callAPI(this.br, account, "/api/item/details?id=" + fileID);
-        final Map<String, Object> details;
         final Map<String, Object> entries = this.handleAPIErrors(this, br, link, account);
         final Object detailsO = entries.get("details");
+        final Map<String, Object> details;
         if (detailsO instanceof Map) {
             details = (Map<String, Object>) detailsO;
         } else {
@@ -258,11 +261,6 @@ abstract public class ZeveraCore extends UseNet {
             /* This should never happen */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-    }
-
-    @Override
-    public LazyPlugin.FEATURE[] getFeatures() {
-        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.MULTIHOST };
     }
 
     @Override
@@ -405,7 +403,7 @@ abstract public class ZeveraCore extends UseNet {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Final downloadurl did not lead to downloadable content", 3 * 60 * 1000l);
             }
         }
-        // TODO: Make use of this
+        // TODO: 2024-04-26: Work in progress: Make use of this
         final int maxChunks;
         final String cacheStatus = dl.getConnection().getRequest().getResponseHeader("X-Cached");
         if (StringUtils.equalsIgnoreCase(cacheStatus, "hit")) {
@@ -518,7 +516,7 @@ abstract public class ZeveraCore extends UseNet {
         if (supportsUsenet(account)) {
             supportedHostsAllDomains.add("usenet");
         } else {
-            /* Remove this in case it was contained in the serverside list. */
+            /* Remove this in case it was contained in the serverside list because we know that it is not supported. */
             supportedHostsAllDomains.remove("usenet");
         }
         ai.setMultiHostSupport(this, new ArrayList<String>(supportedHostsAllDomains));
@@ -921,7 +919,7 @@ abstract public class ZeveraCore extends UseNet {
 
     public static String getAPIKey(final Account account) throws AccountInvalidException {
         String str = account.getPass().trim();
-        if (isAPIKEY(str)) {
+        if (looksLikeValidAPIKey_STATIC(str)) {
             return str;
         } else {
             throw new AccountInvalidException("Invalid API key format");
@@ -1069,6 +1067,32 @@ abstract public class ZeveraCore extends UseNet {
             } else {
                 return query.get("id");
             }
+        }
+    }
+
+    @Override
+    protected String getAPILoginHelpURL() {
+        return "https://www." + getHost() + "/account";
+    }
+
+    @Override
+    protected boolean looksLikeValidAPIKey(final String str) {
+        if (str == null) {
+            return false;
+        } else if (looksLikeValidAPIKey_STATIC(str)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    protected static boolean looksLikeValidAPIKey_STATIC(final String str) {
+        if (str == null) {
+            return false;
+        } else if (str.matches("[a-z0-9]{16}")) {
+            return true;
+        } else {
+            return false;
         }
     }
 

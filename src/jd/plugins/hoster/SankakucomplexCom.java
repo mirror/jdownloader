@@ -218,11 +218,6 @@ public class SankakucomplexCom extends PluginForHost {
         if (!link.isNameSet()) {
             link.setName(fileID);
         }
-        final String storedDirecturl = checkDirectLink(link, PROPERTY_DIRECTURL);
-        if (storedDirecturl != null) {
-            /* This means we must have checked this one before so filesize/name has already been set -> Done! */
-            return AvailableStatus.TRUE;
-        }
         if (account != null) {
             this.login(account, false);
         }

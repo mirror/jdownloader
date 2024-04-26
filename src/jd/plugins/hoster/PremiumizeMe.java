@@ -15,30 +15,19 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
-
-import javax.swing.JComponent;
-import javax.swing.JLabel;
 
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.handler.KeyHandler;
-import org.appwork.swing.MigPanel;
-import org.appwork.swing.components.ExtPasswordField;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.gui.InputChangedCallbackInterface;
-import org.jdownloader.plugins.accounts.AccountBuilderInterface;
 import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
 import org.jdownloader.plugins.components.usenet.UsenetConfigPanel;
 import org.jdownloader.plugins.components.usenet.UsenetServer;
 import org.jdownloader.plugins.config.AccountConfigInterface;
 import org.jdownloader.plugins.config.Order;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
-import jd.gui.swing.components.linkbutton.JLink;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.HostPlugin;
@@ -95,24 +84,22 @@ public class PremiumizeMe extends ZeveraCore {
     }
 
     public static interface PremiumizeMeConfigInterface extends UsenetAccountConfigInterface {
+        /** 2024-04-26: Removed pairing login setting */
         public class Translation {
-            public String getEnablePairingLogin_label() {
-                return "Enable pairing login?\r\nOnce enabled, you won't be able to use Usenet with Premiumize in JD anymore!!";
-            }
-
+            // public String getEnablePairingLogin_label() {
+            // return "Enable pairing login?\r\nOnce enabled, you won't be able to use Usenet with Premiumize in JD anymore!!";
+            // }
             public String getEnableBoosterPointsUnlimitedTrafficWorkaround_label() {
                 return "Enable booster points unlimited traffic workaround for this account? \r\nThis is only for owners of booster-points! \r\nMore information: premiumize.me/booster";
             }
         }
 
         public static final PremiumizeMeConfigInterface.Translation TRANSLATION = new Translation();
-
-        // @AboutConfig
-        @DefaultBooleanValue(false)
-        @Order(20)
-        boolean isEnablePairingLogin();
-
-        void setEnablePairingLogin(boolean b);
+        // @DefaultBooleanValue(false)
+        // @Order(20)
+        // boolean isEnablePairingLogin();
+        //
+        // void setEnablePairingLogin(boolean b);
 
         @AboutConfig
         @DefaultBooleanValue(false)
@@ -123,23 +110,29 @@ public class PremiumizeMe extends ZeveraCore {
     };
 
     @Override
-    public AccountBuilderInterface getAccountFactory(InputChangedCallbackInterface callback) {
-        return new PremiumizeAccountFactory(callback);
-    }
-
-    @Override
     protected PluginConfigPanelNG createConfigPanel() {
         return new UsenetConfigPanel() {
             private static final long serialVersionUID = 1L;
+            // @Override
+            // protected boolean showKeyHandler(KeyHandler<?> keyHandler) {
+            // return "enablepairinglogin".equals(keyHandler.getKey()) ||
+            // "enableboosterpointsunlimitedtrafficworkaround".equals(keyHandler.getKey());
+            // }
+            //
+            // @Override
+            // protected boolean useCustomUI(KeyHandler<?> keyHandler) {
+            // return !"enablepairinglogin".equals(keyHandler.getKey()) &&
+            // !"enableboosterpointsunlimitedtrafficworkaround".equals(keyHandler.getKey());
+            // }
 
             @Override
             protected boolean showKeyHandler(KeyHandler<?> keyHandler) {
-                return "enablepairinglogin".equals(keyHandler.getKey()) || "enableboosterpointsunlimitedtrafficworkaround".equals(keyHandler.getKey());
+                return "enableboosterpointsunlimitedtrafficworkaround".equals(keyHandler.getKey());
             }
 
             @Override
             protected boolean useCustomUI(KeyHandler<?> keyHandler) {
-                return !"enablepairinglogin".equals(keyHandler.getKey()) && !"enableboosterpointsunlimitedtrafficworkaround".equals(keyHandler.getKey());
+                return !"enableboosterpointsunlimitedtrafficworkaround".equals(keyHandler.getKey());
             }
 
             @Override
@@ -156,18 +149,16 @@ public class PremiumizeMe extends ZeveraCore {
     }
 
     @Override
-    public LazyPlugin.FEATURE[] getFeatures() {
-        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.MULTIHOST, LazyPlugin.FEATURE.USENET };
-    }
-
-    @Override
     public boolean supportsUsenet(final Account account) {
-        /*
-         * 2019-12-18: At the moment usenet client support is only working with apikey login, not yet in pairing login mode. Premiumize is
-         * working on making this possible in pairing mode as well.
+        /**
+         * 2019-12-18: At the moment usenet client support is only working with apikey login, not yet in pairing login mode. </br>
+         * Premiumize is working on making this possible in pairing mode as well.
          */
-        return !usePairingLogin(account);
-        // return true;
+        if (usePairingLogin(account)) {
+            return false;
+        } else {
+            return true;
+        }
     }
 
     @Override
@@ -176,11 +167,14 @@ public class PremiumizeMe extends ZeveraCore {
          * 2021-01-29: Hardcoded-disabled this because API changes would be required to make Usenet work when logged in via this method.
          * Also some users enabled this by mistake and then failed to login (WTF)
          */
-        if (false && this.getAccountJsonConfig(account).isEnablePairingLogin()) {
-            return true;
-        } else {
-            return false;
-        }
+        // if (account == null) {
+        // return false;
+        // } else if (false && this.getAccountJsonConfig(account).isEnablePairingLogin()) {
+        // return true;
+        // } else {
+        // return false;
+        // }
+        return false;
     }
 
     @Override
@@ -198,81 +192,6 @@ public class PremiumizeMe extends ZeveraCore {
         ret.addAll(UsenetServer.createServerList("usenet.premiumize.me", false, 119));
         ret.addAll(UsenetServer.createServerList("usenet.premiumize.me", true, 563));
         return ret;
-    }
-
-    public static class PremiumizeAccountFactory extends MigPanel implements AccountBuilderInterface {
-        /**
-         *
-         */
-        private static final long serialVersionUID = 1L;
-        private final String      APIKEYHELP       = "Enter your API Key";
-        private final JLabel      apikeyLabel;
-
-        private String getPassword() {
-            if (this.pass == null) {
-                return null;
-            } else {
-                return new String(this.pass.getPassword());
-            }
-        }
-
-        public boolean updateAccount(Account input, Account output) {
-            if (!StringUtils.equals(input.getUser(), output.getUser())) {
-                output.setUser(input.getUser());
-                return true;
-            } else if (!StringUtils.equals(input.getPass(), output.getPass())) {
-                output.setPass(input.getPass());
-                return true;
-            } else {
-                return false;
-            }
-        }
-
-        private final ExtPasswordField pass;
-
-        public PremiumizeAccountFactory(final InputChangedCallbackInterface callback) {
-            super("ins 0, wrap 2", "[][grow,fill]", "");
-            add(new JLabel("Click here to find your API Key:"));
-            add(new JLink("https://www.premiumize.me/account"));
-            add(apikeyLabel = new JLabel("API Key:"));
-            add(this.pass = new ExtPasswordField() {
-                @Override
-                public void onChanged() {
-                    callback.onChangedInput(this);
-                }
-            }, "");
-            pass.setHelpText(APIKEYHELP);
-        }
-
-        @Override
-        public JComponent getComponent() {
-            return this;
-        }
-
-        @Override
-        public void setAccount(Account defaultAccount) {
-            if (defaultAccount != null) {
-                // name.setText(defaultAccount.getUser());
-                pass.setText(defaultAccount.getPass());
-            }
-        }
-
-        @Override
-        public boolean validateInputs() {
-            final String password = getPassword();
-            if (isAPIKEY(password)) {
-                apikeyLabel.setForeground(Color.BLACK);
-                return true;
-            } else {
-                apikeyLabel.setForeground(Color.RED);
-                return false;
-            }
-        }
-
-        @Override
-        public Account getAccount() {
-            return new Account(null, getPassword());
-        }
     }
 
     @Override

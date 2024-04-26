@@ -20,12 +20,10 @@ import java.util.Map;
 
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
-import jd.nutils.encoding.Encoding;
 import jd.parser.html.HTMLParser;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -34,7 +32,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cnet.com" }, urls = { "https?://(?:www\\.)?download\\.cnet\\.com/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+-(\\d+)\\.html" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "cnet.com" }, urls = { "https?://(?:www\\.)?download\\.cnet\\.com/([A-Za-z0-9\\-_]+)/([A-Za-z0-9\\-_]+)-(\\d+)\\.html" })
 public class CnetCom extends PluginForHost {
     public CnetCom(PluginWrapper wrapper) {
         super(wrapper);
@@ -56,52 +54,23 @@ public class CnetCom extends PluginForHost {
     }
 
     private String getFID(final DownloadLink link) {
-        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(2);
     }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        final Regex urlinfo = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks());
+        final String titleFromURL = urlinfo.getMatch(0);
+        final String subTitleFromURL = urlinfo.getMatch(1);
+        link.setName(titleFromURL.replace("-", " ").trim() + " - " + subTitleFromURL.replace("-", " ").trim());
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         this.br.setAllowedResponseCodes(500);
         br.getPage(link.getPluginPatternMatcher());
-        if (br.containsHTML("(>Whoops\\! You broke the Internet\\!<|>No, really,  it looks like you clicked on a borked link)") || this.br.getHttpConnection().getResponseCode() == 404 || this.br.getHttpConnection().getResponseCode() == 500 || br.getURL().contains("/most-popular/")) {
+        if (br.containsHTML("(>Whoops\\! You broke the Internet\\!<|>No, really,  it looks like you clicked on a borked link)") || br.getHttpConnection().getResponseCode() == 404 || br.getHttpConnection().getResponseCode() == 500) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        // // External mirrors are of course not supported
-        // if (br.containsHTML(">Visit Site<")) {
-        // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        // }
-        /*
-         * 2021-10-06: Alternative API to get file information:
-         * https://cmg-prod.apigee.net/v1/xapi/composer/download/pages/post-download/<fid>/web?contentOnly=true&apiKey=<apikey>
-         */
-        String filename = br.getRegex("<meta property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<title>([^<>\"]*?) \\- CNET Download\\.com</title>").getMatch(0);
-        }
-        if (filename == null) {
-            filename = br.getRegex("\\&fileName=([^<>\"]*?)(\\'|\")").getMatch(0);
-        }
-        if (filename == null) {
-            /* 2021-10-06 */
-            filename = br.getRegex("class=\"c-productSummary_title g-text-xxlarge\"[^>]*>([^<>\"]+)</h1>").getMatch(0);
-        }
-        String filesize = br.getRegex(">File size:</span>([^<>\"]*?)</li>").getMatch(0);
-        if (filesize == null) {
-            filesize = br.getRegex(">File Size:</span> <span>([^<>\"]*?)</span>").getMatch(0);
-        }
-        if (filesize == null) {
-            filesize = br.getRegex(">File Size:</div>[\t\n\r ]+<div class=\"product-landing-quick-specs-row-content\">([^<>\"]*?)</div>").getMatch(0);
-        }
-        if (filename != null) {
-            link.setName(Encoding.htmlDecode(filename).trim());
-        }
-        if (filesize != null) {
-            link.setDownloadSize(SizeFormatter.getSize(filesize));
-        }
-        if (br.containsHTML("(?i)>\\s*Visit Site\\s*<")) {
-            throw new PluginException(LinkStatus.ERROR_FATAL, "Not downloadable (external download, see browser)");
+        } else if (br.getURL().contains("/most-popular/")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         return AvailableStatus.TRUE;
     }
@@ -128,7 +97,6 @@ public class CnetCom extends PluginForHost {
             dllink = JavaScriptEngineFactory.walkJson(entries, "data/item/url").toString();
         } else {
             /* Try to get installer without adware */
-            final String currPath = br._getURL().getPath();
             String continueLink = null;
             String[] urls = HTMLParser.getHttpLinks(br.getRequest().getHtmlCode(), br.getURL());
             for (final String url : urls) {

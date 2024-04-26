@@ -15,20 +15,7 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.awt.Color;
-
-import javax.swing.JComponent;
-import javax.swing.JLabel;
-
-import org.appwork.swing.MigPanel;
-import org.appwork.swing.components.ExtPasswordField;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.gui.InputChangedCallbackInterface;
-import org.jdownloader.plugins.accounts.AccountBuilderInterface;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 import jd.PluginWrapper;
-import jd.gui.swing.components.linkbutton.JLink;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.HostPlugin;
@@ -82,16 +69,6 @@ public class ZeveraCom extends ZeveraCore {
     }
 
     @Override
-    public AccountBuilderInterface getAccountFactory(InputChangedCallbackInterface callback) {
-        return new ZeveraAccountFactory(callback);
-    }
-
-    @Override
-    public LazyPlugin.FEATURE[] getFeatures() {
-        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.MULTIHOST };
-    }
-
-    @Override
     public boolean supportsUsenet(final Account account) {
         return false;
     }
@@ -100,85 +77,6 @@ public class ZeveraCom extends ZeveraCore {
     public boolean usePairingLogin(final Account account) {
         /** 2019-08-05: Pairing login is not supported by this service! */
         return false;
-    }
-
-    public static class ZeveraAccountFactory extends MigPanel implements AccountBuilderInterface {
-        /**
-         *
-         */
-        private static final long serialVersionUID = 1L;
-        private final String      APIKEYHELP       = "Enter your API Key";
-        private final JLabel      apikeyLabel;
-
-        private String getPassword() {
-            if (this.pass == null) {
-                return null;
-            } else if (EMPTYPW.equals(new String(this.pass.getPassword()))) {
-                return null;
-            } else {
-                return new String(this.pass.getPassword());
-            }
-        }
-
-        public boolean updateAccount(Account input, Account output) {
-            boolean changed = false;
-            if (!StringUtils.equals(input.getUser(), output.getUser())) {
-                output.setUser(input.getUser());
-                changed = true;
-            }
-            if (!StringUtils.equals(input.getPass(), output.getPass())) {
-                output.setPass(input.getPass());
-                changed = true;
-            }
-            return changed;
-        }
-
-        private final ExtPasswordField pass;
-        private static String          EMPTYPW = "                 ";
-
-        public ZeveraAccountFactory(final InputChangedCallbackInterface callback) {
-            super("ins 0, wrap 2", "[][grow,fill]", "");
-            add(new JLabel("Click here to find your API Key:"));
-            add(new JLink("https://www.zevera.com/account"));
-            add(apikeyLabel = new JLabel("API Key:"));
-            add(this.pass = new ExtPasswordField() {
-                @Override
-                public void onChanged() {
-                    callback.onChangedInput(this);
-                }
-            }, "");
-            pass.setHelpText(APIKEYHELP);
-        }
-
-        @Override
-        public JComponent getComponent() {
-            return this;
-        }
-
-        @Override
-        public void setAccount(Account defaultAccount) {
-            if (defaultAccount != null) {
-                // name.setText(defaultAccount.getUser());
-                pass.setText(defaultAccount.getPass());
-            }
-        }
-
-        @Override
-        public boolean validateInputs() {
-            final String password = getPassword();
-            if (isAPIKEY(password)) {
-                apikeyLabel.setForeground(Color.BLACK);
-                return true;
-            } else {
-                apikeyLabel.setForeground(Color.RED);
-                return false;
-            }
-        }
-
-        @Override
-        public Account getAccount() {
-            return new Account(null, getPassword());
-        }
     }
 
     @Override

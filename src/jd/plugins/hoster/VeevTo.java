@@ -66,17 +66,7 @@ public class VeevTo extends XFileSharingProBasic {
     }
 
     public static String[] getAnnotationUrls() {
-        return VeevTo.buildAnnotationUrls(getPluginDomains());
-    }
-
-    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
-        final List<String> ret = new ArrayList<String>();
-        for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + getDefaultAnnotationPatternPartXFSNew());
-            // TODO: 2024-04-23: Use the line down below instead
-            // ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + getDefaultAnnotationPatternPart());
-        }
-        return ret.toArray(new String[0]);
+        return XFileSharingProBasic.buildAnnotationUrls(getPluginDomains());
     }
 
     @Override

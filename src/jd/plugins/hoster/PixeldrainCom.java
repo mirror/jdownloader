@@ -15,19 +15,13 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import javax.swing.JComponent;
-import javax.swing.JLabel;
-
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.storage.JSonMapperException;
 import org.appwork.storage.TypeRef;
-import org.appwork.swing.MigPanel;
-import org.appwork.swing.components.ExtPasswordField;
 import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
@@ -36,16 +30,14 @@ import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.parser.UrlQuery;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.gui.InputChangedCallbackInterface;
-import org.jdownloader.plugins.accounts.AccountBuilderInterface;
 import org.jdownloader.plugins.components.config.PixeldrainConfig;
 import org.jdownloader.plugins.components.config.PixeldrainConfig.ActionOnCaptchaRequired;
 import org.jdownloader.plugins.components.config.PixeldrainConfig.ActionOnSpeedLimitReached;
 import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
-import jd.gui.swing.components.linkbutton.JLink;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
@@ -70,6 +62,15 @@ public class PixeldrainCom extends PluginForHost {
     public PixeldrainCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://pixeldrain.com/#pro");
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        if (useAPIForLogin()) {
+            return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.API_KEY_LOGIN };
+        } else {
+            return null;
+        }
     }
 
     @Override
@@ -110,10 +111,9 @@ public class PixeldrainCom extends PluginForHost {
     }
 
     /* Docs: https://pixeldrain.com/api */
-    public static final String    API_BASE                                      = "https://pixeldrain.com/api";
-    protected static final String PIXELDRAIN_JD_API_HELP_PAGE                   = "https://pixeldrain.com/user/connect_app?app=jdownloader";
-    private static final String   PROPERTY_CAPTCHA_REQUIRED                     = "captcha_required";
-    private static final String   PROPERTY_ACCOUNT_HAS_SHOWN_APIKEY_HELP_DIALOG = "has_shown_apikey_help_dialog";
+    public static final String  API_BASE                                      = "https://pixeldrain.com/api";
+    private static final String PROPERTY_CAPTCHA_REQUIRED                     = "captcha_required";
+    private static final String PROPERTY_ACCOUNT_HAS_SHOWN_APIKEY_HELP_DIALOG = "has_shown_apikey_help_dialog";
 
     @Override
     public boolean isResumeable(final DownloadLink link, final Account account) {
@@ -154,7 +154,10 @@ public class PixeldrainCom extends PluginForHost {
         }
     }
 
-    /** Enable this if API should be used for account login. */
+    /**
+     * Enable this if API should be used for account login. </br>
+     * 2024-04-26: This will remain hardcoded on true since there are no plans to support the old website mode again.
+     */
     private static boolean useAPIForLogin() {
         return true;
     }
@@ -255,7 +258,7 @@ public class PixeldrainCom extends PluginForHost {
                             }
                         }
                         if (data == null) {
-                            /* FileID not in response, so its offline */
+                            /* FileID not in response, so it's offline */
                             link.setAvailable(false);
                         } else {
                             setDownloadLinkInfo(this, link, account, data);
@@ -347,7 +350,6 @@ public class PixeldrainCom extends PluginForHost {
              */
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, String.format("You are speed limited. Change your IP, try again later or allow speed limited downloads in %s plugin settings.", this.getHost()), 15 * 60 * 1000l);
         }
-        String dllink = API_BASE + "/file/" + this.getFID(link);
         final UrlQuery query = new UrlQuery();
         query.add("download", "");
         if (this.hasCaptcha(link, account)) {
@@ -358,7 +360,7 @@ public class PixeldrainCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait to avoid captcha", 5 * 60 * 1000l);
             }
         }
-        dllink += "?" + query.toString();
+        final String dllink = API_BASE + "/file/" + this.getFID(link) + "?" + query.toString();
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, this.isResumeable(link, account), this.getMaxChunks(account));
         if (!looksLikeDownloadableContent(dl.getConnection())) {
             br.followConnection(true);
@@ -397,53 +399,47 @@ public class PixeldrainCom extends PluginForHost {
     @Deprecated
     private void loginWebsite(final Account account, final boolean force) throws Exception {
         synchronized (account) {
-            try {
-                br.setCookiesExclusive(true);
-                final Cookies cookies = account.loadCookies("");
-                if (cookies != null) {
-                    logger.info("Attempting cookie login");
-                    this.br.setCookies(this.getHost(), cookies);
-                    if (!force) {
-                        logger.info("Cookies are still fresh --> Trust cookies without login");
-                        return;
-                    }
-                    br.getPage("https://" + this.getHost() + "/user");
-                    if (this.isLoggedinWebsite(this.br)) {
-                        logger.info("Cookie login successful");
-                        /* Refresh cookie timestamp */
-                        account.saveCookies(this.br.getCookies(br.getHost()), "");
-                        return;
-                    } else {
-                        logger.info("Cookie login failed");
-                        br.clearCookies(br.getHost());
-                    }
+            br.setCookiesExclusive(true);
+            final Cookies cookies = account.loadCookies("");
+            if (cookies != null) {
+                logger.info("Attempting cookie login");
+                this.br.setCookies(this.getHost(), cookies);
+                if (!force) {
+                    logger.info("Cookies are still fresh --> Trust cookies without login");
+                    return;
                 }
-                logger.info("Performing full login");
-                br.getPage("https://" + this.getHost() + "/login");
-                final Form loginform = br.getFormByInputFieldKeyValue("form", "login");
-                if (loginform == null) {
-                    logger.warning("Failed to find loginform");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                loginform.put("username", Encoding.urlEncode(account.getUser()));
-                loginform.put("password", Encoding.urlEncode(account.getPass()));
-                final URLConnectionAdapter con = br.openFormConnection(loginform);
-                if (con.getResponseCode() == 400) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+                br.getPage("https://" + this.getHost() + "/user");
+                if (this.isLoggedinWebsite(this.br)) {
+                    logger.info("Cookie login successful");
+                    /* Refresh cookie timestamp */
+                    account.saveCookies(this.br.getCookies(br.getHost()), "");
+                    return;
                 } else {
-                    br.followConnection(true);
-                }
-                if (!isLoggedinWebsite(this.br)) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-                account.saveCookies(this.br.getCookies(br.getHost()), "");
-                return;
-            } catch (final PluginException e) {
-                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                    logger.info("Cookie login failed");
+                    br.clearCookies(null);
                     account.clearCookies("");
                 }
-                throw e;
             }
+            logger.info("Performing full login");
+            br.getPage("https://" + this.getHost() + "/login");
+            final Form loginform = br.getFormByInputFieldKeyValue("form", "login");
+            if (loginform == null) {
+                logger.warning("Failed to find loginform");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            loginform.put("username", Encoding.urlEncode(account.getUser()));
+            loginform.put("password", Encoding.urlEncode(account.getPass()));
+            final URLConnectionAdapter con = br.openFormConnection(loginform);
+            if (con.getResponseCode() == 400) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            } else {
+                br.followConnection(true);
+            }
+            if (!isLoggedinWebsite(this.br)) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+            account.saveCookies(this.br.getCookies(br.getHost()), "");
+            return;
         }
     }
 
@@ -454,13 +450,7 @@ public class PixeldrainCom extends PluginForHost {
 
     private void loginAPI(final Account account, final boolean force) throws Exception {
         synchronized (account) {
-            /* Correct user input */
-            account.setPass(correctPassword(account.getPass()));
             final String apikey = account.getPass();
-            if (!isAPIKEY(apikey)) {
-                showApiLoginInformation(account);
-                throw new AccountInvalidException("Invalid API key format");
-            }
             /* Set login auth header */
             br.getHeaders().put(HTTPConstants.HEADER_REQUEST_AUTHORIZATION, "Basic " + Encoding.Base64Encode(":" + apikey));
             if (!force) {
@@ -470,13 +460,19 @@ public class PixeldrainCom extends PluginForHost {
             logger.info("Validating apikey");
             br.getPage(getAPIURLUser());
             final Map<String, Object> response = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
-            if (br.getHttpConnection().getResponseCode() == 401 || (Boolean) response.get("success") == Boolean.FALSE) {
+            final Object successO = response.get("success");
+            if (br.getHttpConnection().getResponseCode() == 401 || (successO != null && !Boolean.TRUE.equals(response.get("success")))) {
                 if (!account.hasEverBeenValid()) {
                     showApiLoginInformation(account);
                 }
-                throw new AccountInvalidException("Invalid API key");
+                final String message = (String) response.get("message");
+                if (message != null) {
+                    /* Display message from API */
+                    throw new AccountInvalidException(message);
+                } else {
+                    throw new AccountInvalidException("Invalid API key");
+                }
             }
-            return;
         }
     }
 
@@ -509,7 +505,7 @@ public class PixeldrainCom extends PluginForHost {
         return entries;
     }
 
-    /** Shows special login information once per account. */
+    /** Shows special login information if it hasn't lready been displayed once for the current account. */
     private void showApiLoginInformation(final Account account) {
         synchronized (account) {
             /* Do not display this dialog if it has been displayed before for this account. */
@@ -527,17 +523,17 @@ public class PixeldrainCom extends PluginForHost {
                                 title = "Pixeldrain - Login";
                                 message += "Hallo liebe(r) Pixeldrain NutzerIn\r\n";
                                 message += "Um deinen Pixeldrain Account in JDownloader verwenden zu können, musst du auf folgender Pixeldrain Seite einen API Key erstellen und ihn in JDownloader in das 'Passwort' bzw. 'API Key' Feld eingeben:\r\n";
-                                message += PIXELDRAIN_JD_API_HELP_PAGE;
+                                message += getAPILoginHelpURL();
                             } else {
                                 title = "Pixeldrain - Login";
                                 message += "Hello dear Pixeldrain user\r\n";
                                 message += "In order to use an account of this service in JDownloader, you need to generate an API key on the following page and put it into the 'Password' or 'API Key' field in JDownloader:\r\n";
-                                message += PIXELDRAIN_JD_API_HELP_PAGE;
+                                message += getAPILoginHelpURL();
                             }
                             final ConfirmDialog dialog = new ConfirmDialog(UIOManager.LOGIC_COUNTDOWN, title, message);
                             dialog.setTimeout(3 * 60 * 1000);
                             if (CrossSystem.isOpenBrowserSupported() && !Application.isHeadless()) {
-                                CrossSystem.openURL(PIXELDRAIN_JD_API_HELP_PAGE);
+                                CrossSystem.openURL(getAPILoginHelpURL());
                             }
                             final ConfirmDialogInterface ret = UIOManager.I().show(ConfirmDialogInterface.class, dialog);
                             ret.throwCloseExceptions();
@@ -549,24 +545,6 @@ public class PixeldrainCom extends PluginForHost {
                 thread.setDaemon(true);
                 thread.start();
             }
-        }
-    }
-
-    protected static boolean isAPIKEY(final String str) {
-        if (str == null) {
-            return false;
-        } else if (str.matches("[a-f0-9]{32}")) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    private static String correctPassword(final String pw) {
-        if (pw == null) {
-            return null;
-        } else {
-            return pw.replace("-", "").trim();
         }
     }
 
@@ -596,10 +574,10 @@ public class PixeldrainCom extends PluginForHost {
             /* Assume it's a free account */
             account.setType(AccountType.FREE);
             ai.setUnlimitedTraffic();
-            account.setMaxSimultanDownloads(5);
+            account.setMaxSimultanDownloads(this.getMaxSimultanFreeDownloadNum());
         } else {
             account.setType(AccountType.PREMIUM);
-            account.setMaxSimultanDownloads(-1);
+            account.setMaxSimultanDownloads(this.getMaxSimultanPremiumDownloadNum());
         }
         account.setConcurrentUsePossible(true);
         final long monthlyTrafficMax = ((Number) subscription.get("monthly_transfer_cap")).longValue();
@@ -629,7 +607,7 @@ public class PixeldrainCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
+        return Integer.MAX_VALUE;
     }
 
     @Override
@@ -649,95 +627,24 @@ public class PixeldrainCom extends PluginForHost {
     }
 
     @Override
-    public AccountBuilderInterface getAccountFactory(final InputChangedCallbackInterface callback) {
-        if (useAPIForLogin()) {
-            return new PixeldrainAccountFactory(callback);
-        } else {
-            return super.getAccountFactory(callback);
-        }
-    }
-
-    public static class PixeldrainAccountFactory extends MigPanel implements AccountBuilderInterface {
-        /**
-         *
-         */
-        private static final long serialVersionUID = 1L;
-        private final String      APIKEYHELP       = "Enter your API Key";
-
-        private String getPassword() {
-            if (this.pass == null) {
-                return null;
-            } else if (StringUtils.isEmpty(new String(this.pass.getPassword()))) {
-                return null;
-            } else {
-                return correctPassword(new String(this.pass.getPassword()));
-            }
-        }
-
-        public boolean updateAccount(Account input, Account output) {
-            boolean changed = false;
-            if (!StringUtils.equals(input.getUser(), output.getUser())) {
-                output.setUser(input.getUser());
-                changed = true;
-            }
-            if (!StringUtils.equals(input.getPass(), output.getPass())) {
-                output.setPass(input.getPass());
-                changed = true;
-            }
-            return changed;
-        }
-
-        private final ExtPasswordField pass;
-        private final JLabel           apikeyLabel;
-
-        public PixeldrainAccountFactory(final InputChangedCallbackInterface callback) {
-            super("ins 0, wrap 2", "[][grow,fill]", "");
-            add(new JLabel("You can find your API Key here:"));
-            add(new JLink(PIXELDRAIN_JD_API_HELP_PAGE));
-            add(apikeyLabel = new JLabel("API Key: [a-f]{32}"));
-            add(this.pass = new ExtPasswordField() {
-                @Override
-                public void onChanged() {
-                    callback.onChangedInput(this);
-                }
-            }, "");
-            pass.setHelpText(APIKEYHELP);
-        }
-
-        @Override
-        public JComponent getComponent() {
-            return this;
-        }
-
-        @Override
-        public void setAccount(Account defaultAccount) {
-            if (defaultAccount != null) {
-                // name.setText(defaultAccount.getUser());
-                pass.setText(defaultAccount.getPass());
-            }
-        }
-
-        @Override
-        public boolean validateInputs() {
-            final String password = getPassword();
-            if (isAPIKEY(password)) {
-                apikeyLabel.setForeground(Color.BLACK);
-                return true;
-            } else {
-                apikeyLabel.setForeground(Color.RED);
-                return false;
-            }
-        }
-
-        @Override
-        public Account getAccount() {
-            return new Account(null, getPassword());
-        }
+    public Class<? extends PixeldrainConfig> getConfigInterface() {
+        return PixeldrainConfig.class;
     }
 
     @Override
-    public Class<? extends PixeldrainConfig> getConfigInterface() {
-        return PixeldrainConfig.class;
+    protected String getAPILoginHelpURL() {
+        return "https://" + getHost() + "/user/connect_app?app=jdownloader";
+    }
+
+    @Override
+    protected boolean looksLikeValidAPIKey(final String str) {
+        if (str == null) {
+            return false;
+        } else if (str.replace("-", "").matches("[A-Fa-f0-9]{32}")) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     @Override

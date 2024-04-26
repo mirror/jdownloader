@@ -38,7 +38,6 @@ import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
@@ -85,25 +84,6 @@ public class NovaFileCom extends XFileSharingProBasicSpecialFilejoker {
             return URL_TYPE.SHORT;
         } else {
             return super.getURLType(url);
-        }
-    }
-
-    @Override
-    public AvailableStatus requestFileInformationWebsite(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
-        /* Set fallback-filename */
-        if (!link.isNameSet()) {
-            setWeakFilename(link, null);
-        }
-        return requestFileInformationWebsiteXFSOld(link, account, isDownload);
-    }
-
-    @Override
-    protected String buildURLPath(final DownloadLink link, final String fuid, final URL_TYPE type) {
-        /* Special / workaround: Do not allow "/file/..." links so be altered. */
-        if (link != null && link.getPluginPatternMatcher() != null && link.getPluginPatternMatcher().matches("(?i)https?://[^/]+/file/.+")) {
-            return "/file/" + fuid;
-        } else {
-            return super.buildURLPath(link, fuid, type);
         }
     }
 
