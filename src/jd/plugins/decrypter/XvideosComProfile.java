@@ -24,6 +24,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -46,12 +52,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.XvideosCom;
 import jd.plugins.hoster.XvideosCore;
-
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class XvideosComProfile extends PluginForDecrypt {
@@ -93,6 +93,7 @@ public class XvideosComProfile extends PluginForDecrypt {
             sb.append("(");
             sb.append("pornstar-channels/[A-Za-z0-9\\-_]+#_tabRed");
             sb.append("|(?:profiles|(?:pornstar-|amateur-|model-)?(?:channels|models|pornstars))/[A-Za-z0-9\\-_]+.*");
+            sb.append("|[A-Za-z0-9\\-_]+$");
             sb.append("|favorite/\\d+/[a-z0-9\\_]+");
             sb.append("|account/favorites/\\d+");
             sb.append(")");
@@ -176,7 +177,11 @@ public class XvideosComProfile extends PluginForDecrypt {
         } else if ((param.getCryptedUrl().matches(TYPE_USER) && premiumAccountActive) || param.getCryptedUrl().matches(TYPE_USER_PREMIUM)) {
             return crawlChannelPremium(param);
         } else {
-            return crawlChannel(contenturl);
+            if (!br.containsHTML("id\\s*=\\s*\"profile-title\"")) {
+                return new ArrayList<DownloadLink>();
+            } else {
+                return crawlChannel(contenturl);
+            }
         }
     }
 
@@ -284,7 +289,10 @@ public class XvideosComProfile extends PluginForDecrypt {
     }
 
     private ArrayList<DownloadLink> crawlChannel(final String url) throws IOException, PluginException, DecrypterRetryException {
-        final String username = new Regex(url, TYPE_USER).getMatch(0);
+        String username = new Regex(url, TYPE_USER).getMatch(0);
+        if (username == null) {
+            username = new Regex(url, "/([A-Za-z0-9\\-_]+)$").getMatch(0);
+        }
         if (username == null) {
             /* Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

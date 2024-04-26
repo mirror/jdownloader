@@ -20,6 +20,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.utils.Regex;
+import org.jdownloader.plugins.components.config.XFSConfigVideoFilemoonSx;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
@@ -29,14 +34,8 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
 import jd.plugins.Plugin;
 import jd.plugins.PluginDependencies;
-import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.Regex;
-import org.jdownloader.plugins.components.config.XFSConfigVideoFilemoonSx;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 @PluginDependencies(dependencies = { FilemoonSxCrawler.class })
@@ -85,13 +84,13 @@ public class FilemoonSxCrawler extends PluginForDecrypt {
             ret.add(link);
             return ret;
         }
-        ret.add(link);
         try {
+            ret.add(link);
             hosterPlugin.setDownloadLink(link);
             final AvailableStatus status = hosterPlugin.requestFileInformation(link);
             link.setAvailableStatus(status);
             distribute(link);
-        } catch (PluginException e) {
+        } catch (Exception e) {
             logger.log(e);
             return ret;
         }

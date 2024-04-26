@@ -25,6 +25,7 @@ import java.util.Locale;
 import java.util.regex.Pattern;
 
 import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 import org.jdownloader.plugins.components.config.SerienStreamToConfig;
@@ -153,22 +154,25 @@ public class SerienStreamTo extends PluginForDecrypt {
             final String userLanguagePrioListStr = PluginJsonConfig.get(SerienStreamToConfig.class).getLanguagePriorityString();
             if (userLanguagePrioListStr != null) {
                 /* Find internal ID of user preferred languages e.g. */
-                final ArrayList<String> userAllowedLanguageTitles = new ArrayList<String>();
-                userAllowedLanguageTitles.addAll(Arrays.asList(userLanguagePrioListStr.replace(" ", "").split(",")));
+                final List<String> userAllowedLanguageTitles = new ArrayList<String>();
+                userAllowedLanguageTitles.addAll(Arrays.asList(userLanguagePrioListStr.split(",")));
                 final String languageFlagsHTML = br.getRegex("<div class=\"changeLanguage\">(.*?)</div>").getMatch(0);
                 if (languageFlagsHTML != null) {
-                    final HashMap<String, String> languageTitleToIDMapping = new HashMap<String, String>();
                     final String[][] languageTitleIDMappings = new Regex(languageFlagsHTML, "<img[^>]*data-lang-key=\"(\\d+)\" title=\"([^\"]+)\"").getMatches();
                     if (languageTitleIDMappings.length > 0) {
-                        /* Collect mappings e.g. "Deutsch" -> "0" */
-                        for (final String[] languageInfo : languageTitleIDMappings) {
-                            languageTitleToIDMapping.put(languageInfo[1].toLowerCase(Locale.ENGLISH), languageInfo[0]);
-                        }
-                        /* Find available languages which are wanted by user (keep prio/original sort) */
-                        final String[] userPreferredLanguageTitles = userLanguagePrioListStr.toLowerCase(Locale.ENGLISH).replace(" ", "").split(",");
-                        for (final String userPreferredLanguageTitle : userPreferredLanguageTitles) {
-                            if (languageTitleToIDMapping.containsKey(userPreferredLanguageTitle)) {
-                                userLanguageIDsPrioList.add(languageTitleToIDMapping.get(userPreferredLanguageTitle));
+                        for (final String userPreferredLanguageTitle : userAllowedLanguageTitles) {
+                            final String userPreferredLanguageTitleMatcher[] = userPreferredLanguageTitle.split("\\s+");
+                            for (String[] languageTitleIDMapping : languageTitleIDMappings) {
+                                boolean match = true;
+                                for (String userPreferredLanguageTitleMatch : userPreferredLanguageTitleMatcher) {
+                                    if (!StringUtils.containsIgnoreCase(languageTitleIDMapping[1], userPreferredLanguageTitleMatch)) {
+                                        match = false;
+                                        break;
+                                    }
+                                }
+                                if (match) {
+                                    userLanguageIDsPrioList.add(languageTitleIDMapping[0]);
+                                }
                             }
                         }
                         logger.info("Found " + userLanguageIDsPrioList.size() + "/" + userAllowedLanguageTitles.size() + " user preferred languages");
