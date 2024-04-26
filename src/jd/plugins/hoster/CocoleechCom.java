@@ -269,7 +269,7 @@ public class CocoleechCom extends PluginForHost {
         if (statusmsg.equalsIgnoreCase("Incorrect log-in or password.")) {
             throw new AccountInvalidException(statusmsg);
         } else if (statusmsg.equalsIgnoreCase("Incorrect API key.")) {
-            String errormsg = statusmsg + "\r\nFind your API Key here: members.cocoleech.com/settings";
+            String errormsg = statusmsg + "\r\nFind your API Key here: " + getAPILoginHelpURL().replaceFirst("(?i)^https?://", "");
             errormsg += "\r\nIf you're using myjdownloader, enter your API Key into both the username and password fields.";
             throw new AccountInvalidException(errormsg);
         } else if (statusmsg.equalsIgnoreCase("Premium membership expired.")) {
@@ -320,7 +320,7 @@ public class CocoleechCom extends PluginForHost {
 
     @Override
     protected String getAPILoginHelpURL() {
-        return "https://members.cocoleech.com/settings";
+        return "https://members." + getHost() + "/settings";
     }
 
     @Override

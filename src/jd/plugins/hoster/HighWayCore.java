@@ -1029,7 +1029,7 @@ public abstract class HighWayCore extends UseNet {
 
     @Override
     protected String getAPILoginHelpURL() {
-        return "https://members.cocoleech.com/settings";
+        return "https://www." + getHost() + "/profile";
     }
 
     @Override
