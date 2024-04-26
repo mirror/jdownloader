@@ -73,6 +73,11 @@ public class VoeSxCrawler extends PluginForDecrypt {
         return ret.toArray(new String[0]);
     }
 
+    @Override
+    public int getMaxConcurrentProcessingInstances() {
+        return 1;
+    }
+
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final XFSConfigVideoVoeSx cfg = PluginJsonConfig.get(XFSConfigVideoVoeSx.class);
