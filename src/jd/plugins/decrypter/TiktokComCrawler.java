@@ -357,13 +357,7 @@ public class TiktokComCrawler extends PluginForDecrypt {
         final String dateFromHtml = TiktokCom.getAndSetDateFromWebsite(this, br, ret.get(0));
         String packagename = null;
         for (final DownloadLink result : ret) {
-            /**
-             * Set all non-video items always as online. For video items, obey user-setting. </br>
-             * Users may disable the "Fast linkcheck" setting e.g. to let the hoster-plugin find-and add the publish-date to the filename
-             * during extended linkcheck.
-             */
-            final boolean isVideo = StringUtils.equals(result.getStringProperty(TiktokCom.PROPERTY_TYPE), TiktokCom.TYPE_VIDEO);
-            if (cfg.isEnableFastLinkcheck() || !isVideo) {
+            if (cfg.isEnableFastLinkcheck()) {
                 result.setAvailable(true);
             }
             result.setProperty(TiktokCom.PROPERTY_ALLOW_HEAD_REQUEST, true);

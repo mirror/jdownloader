@@ -35,10 +35,9 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.parser.UrlQuery;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.gui.InputChangedCallbackInterface;
-import org.jdownloader.plugins.accounts.AccountBuilderInterface;
 import org.jdownloader.plugins.components.config.OneFichierConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -58,7 +57,6 @@ import jd.plugins.AccountInfo;
 import jd.plugins.AccountInvalidException;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.AccountUnavailableException;
-import jd.plugins.DefaultEditAccountPanelAPIKeyLogin;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -126,11 +124,16 @@ public class OneFichierCom extends PluginForHost {
         super(wrapper);
         this.enablePremium("https://www.1fichier.com/en/register.pl");
     }
+
     /* 2024-04-26: Removed this as user can switch between API-key and website login. E-Mail is not given in API-Key login */
-    // @Override
-    // public LazyPlugin.FEATURE[] getFeatures() {
-    // return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.USERNAME_IS_EMAIL };
-    // }
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        if (PluginJsonConfig.get(OneFichierConfigInterface.class).isUsePremiumAPIEnabled()) {
+            return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.API_KEY_LOGIN };
+        } else {
+            return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.USERNAME_IS_EMAIL };
+        }
+    }
 
     @Override
     public void init() {
@@ -315,7 +318,7 @@ public class OneFichierCom extends PluginForHost {
         postData.put("url", link.getPluginPatternMatcher());
         postData.put("pass", link.getDownloadPassword());
         performAPIRequest(API_BASE + "/file/info.cgi", JSonStorage.serializeToJson(postData));
-        final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
+        final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         final String errorMsg = (String) entries.get("message");
         if (br.getHttpConnection().getResponseCode() == 404) {
             /* E.g. message": "Resource not found #469" */
@@ -749,7 +752,7 @@ public class OneFichierCom extends PluginForHost {
             return ai;
         }
         handleErrorsAPI(account);
-        final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
+        final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         final String mail = (String) entries.get("email");
         if (!StringUtils.isEmpty(mail)) {
             /* don't store the complete username for security purposes. */
@@ -818,7 +821,7 @@ public class OneFichierCom extends PluginForHost {
     private void handleErrorsAPI(final Account account) throws PluginException {
         Map<String, Object> entries = null;
         try {
-            entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         } catch (final Exception ignore) {
             throw new AccountUnavailableException("Invalid API response", 60 * 1000);
         }
@@ -890,24 +893,24 @@ public class OneFichierCom extends PluginForHost {
     }
 
     private static void errorInvalidAPIKey(final Account account) throws PluginException {
-        if (account != null) {
-            /* Assume APIKey is invalid or simply not valid anymore (e.g. user disabled or changed APIKey) */
-            final StringBuilder sb = new StringBuilder();
-            sb.append("Invalid API Key!");
-            sb.append("\r\nYou can find your API Key here: 1fichier.com/console/params.pl");
-            sb.append("\r\nIf you bought a 'premium key'/'Voucher'/'Activation key' from a reseller, you first need to create a 1fichier account and redeem that code here: 1fichier.com/console/vu.pl");
-            sb.append("\r\nPlease keep in mind that API Keys are only available for premium customers.");
-            sb.append("\r\nInformation for 1fichier.com FREE-account users:");
-            sb.append("\r\nIf you do not own a premium- but only a free account, Go to Settings -> Plugins -> 1fichier.com -> 'Use premium API' -> Disable this -> Now try to login again, this time with username & password.");
-            throw new AccountInvalidException(sb.toString());
-        } else {
+        if (account == null) {
+            /* This should never happen */
             throw new AccountRequiredException();
         }
+        /* Assume APIKey is invalid or simply not valid anymore (e.g. user disabled or changed APIKey) */
+        final StringBuilder sb = new StringBuilder();
+        sb.append("Invalid API Key!");
+        sb.append("\r\nYou can find your API Key here: 1fichier.com/console/params.pl");
+        sb.append("\r\nIf you bought a 'premium key'/'Voucher'/'Activation key' from a reseller, you first need to create a 1fichier account and redeem that code here: 1fichier.com/console/vu.pl");
+        sb.append("\r\nPlease keep in mind that API Keys are only available for premium customers.");
+        sb.append("\r\nInformation for 1fichier.com FREE-account users:");
+        sb.append("\r\nIf you do not own a premium- but only a free account, Go to Settings -> Plugins -> 1fichier.com -> 'Use premium API' -> Disable this -> Now try to login again, this time with username & password.");
+        throw new AccountInvalidException(sb.toString());
     }
 
     private String getAPIErrormessage(final Browser br) {
         try {
-            final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
+            final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
             return (String) entries.get("message");
         } catch (final Throwable e) {
             /* E.g. no valid json in browser. */
@@ -1464,15 +1467,6 @@ public class OneFichierCom extends PluginForHost {
         br.setAllowedResponseCodes(new int[] { 401, 403, 503 });
         setPremiumAPIHeaders(br, account);
         return br;
-    }
-
-    @Override
-    public AccountBuilderInterface getAccountFactory(final InputChangedCallbackInterface callback) {
-        if (PluginJsonConfig.get(getLazyP(), OneFichierConfigInterface.class).isUsePremiumAPIEnabled()) {
-            return new DefaultEditAccountPanelAPIKeyLogin(callback, this);
-        } else {
-            return super.getAccountFactory(callback);
-        }
     }
 
     @Override
