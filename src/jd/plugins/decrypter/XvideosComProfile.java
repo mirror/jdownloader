@@ -24,12 +24,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -52,6 +46,12 @@ import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.XvideosCom;
 import jd.plugins.hoster.XvideosCore;
+
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class XvideosComProfile extends PluginForDecrypt {
@@ -349,7 +349,7 @@ public class XvideosComProfile extends PluginForDecrypt {
                 dl.setName(nameTemp + ".mp4");
                 /* Packagizer properties */
                 if (correctVideoID != null) {
-                    dl.setProperty(XvideosCore.PROPERTY_VIDEOID, correctVideoID);
+                    dl.setProperty(XvideosCore.PROPERTY_VIDEOID, correctVideoID[0]);
                 }
                 dl.setProperty(XvideosCore.PROPERTY_USERNAME, username);
                 dl._setFilePackage(fp);
@@ -420,7 +420,7 @@ public class XvideosComProfile extends PluginForDecrypt {
                 dl.setName(nameTemp + ".mp4");
                 /* Packagizer properties */
                 if (correctVideoID != null) {
-                    dl.setProperty(XvideosCore.PROPERTY_VIDEOID, correctVideoID);
+                    dl.setProperty(XvideosCore.PROPERTY_VIDEOID, correctVideoID[0]);
                 }
                 dl.setProperty(XvideosCore.PROPERTY_USERNAME, username);
                 dl._setFilePackage(fp);
