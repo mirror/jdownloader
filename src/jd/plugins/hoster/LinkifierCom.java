@@ -39,6 +39,11 @@ public class LinkifierCom extends PluginForHost {
     }
 
     @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.MULTIHOST, LazyPlugin.FEATURE.USERNAME_IS_EMAIL };
+    }
+
+    @Override
     public String getAGBLink() {
         return "https://www.linkifier.com/terms-of-use/";
     }
@@ -260,10 +265,5 @@ public class LinkifierCom extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
         link.removeProperty("retryRequests");
-    }
-
-    @Override
-    public LazyPlugin.FEATURE[] getFeatures() {
-        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.MULTIHOST };
     }
 }

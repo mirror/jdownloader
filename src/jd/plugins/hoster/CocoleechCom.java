@@ -15,28 +15,19 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.awt.Color;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import javax.swing.JComponent;
-import javax.swing.JLabel;
-
 import org.appwork.storage.JSonMapperException;
 import org.appwork.storage.TypeRef;
-import org.appwork.swing.MigPanel;
-import org.appwork.swing.components.ExtPasswordField;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.gui.InputChangedCallbackInterface;
-import org.jdownloader.plugins.accounts.AccountBuilderInterface;
 import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
-import jd.gui.swing.components.linkbutton.JLink;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
@@ -76,8 +67,7 @@ public class CocoleechCom extends PluginForHost {
 
     @Override
     public LazyPlugin.FEATURE[] getFeatures() {
-        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.MULTIHOST };
-        /// return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.MULTIHOST, LazyPlugin.FEATURE.API_KEY_LOGIN };
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.MULTIHOST, LazyPlugin.FEATURE.API_KEY_LOGIN };
     }
 
     @Override
@@ -329,100 +319,20 @@ public class CocoleechCom extends PluginForHost {
     }
 
     @Override
-    public AccountBuilderInterface getAccountFactory(InputChangedCallbackInterface callback) {
-        return new CocoleechAccountFactory(callback);
-        // return super.getAccountFactory(callback);
+    protected String getAPILoginHelpURL() {
+        return "https://members.cocoleech.com/settings";
     }
 
-    public static class CocoleechAccountFactory extends MigPanel implements AccountBuilderInterface {
-        /**
-         *
-         */
-        private static final long serialVersionUID = 1L;
-        private final String      APIKEYHELP       = "Enter your API Key";
-        private final JLabel      apikeyLabel;
-
-        private String getPassword() {
-            if (this.pass == null) {
-                return null;
-            } else {
-                return correctPassword(new String(this.pass.getPassword()));
-            }
-        }
-
-        public boolean updateAccount(Account input, Account output) {
-            if (!StringUtils.equals(input.getUser(), output.getUser())) {
-                output.setUser(input.getUser());
-                return true;
-            } else if (!StringUtils.equals(input.getPass(), output.getPass())) {
-                output.setPass(input.getPass());
-                return true;
-            } else {
-                return false;
-            }
-        }
-
-        private final ExtPasswordField pass;
-
-        public CocoleechAccountFactory(final InputChangedCallbackInterface callback) {
-            super("ins 0, wrap 2", "[][grow,fill]", "");
-            add(new JLabel("Click here to find your API Key:"));
-            add(new JLink("https://members.cocoleech.com/settings"));
-            add(apikeyLabel = new JLabel("API Key:"));
-            add(this.pass = new ExtPasswordField() {
-                @Override
-                public void onChanged() {
-                    callback.onChangedInput(this);
-                }
-            }, "");
-            pass.setHelpText(APIKEYHELP);
-        }
-
-        @Override
-        public JComponent getComponent() {
-            return this;
-        }
-
-        @Override
-        public void setAccount(Account defaultAccount) {
-            if (defaultAccount != null) {
-                // name.setText(defaultAccount.getUser());
-                pass.setText(defaultAccount.getPass());
-            }
-        }
-
-        @Override
-        public boolean validateInputs() {
-            final String pw = getPassword();
-            if (CocoleechCom.isAPIKey(pw)) {
-                apikeyLabel.setForeground(Color.BLACK);
-                return true;
-            } else {
-                apikeyLabel.setForeground(Color.RED);
-                return false;
-            }
-        }
-
-        @Override
-        public Account getAccount() {
-            return new Account(null, getPassword());
+    @Override
+    protected boolean looksLikeValidAPIKey(final String str) {
+        if (str == null) {
+            return false;
+        } else if (str.matches("[a-f0-9]{24}")) {
+            return true;
+        } else {
+            return false;
         }
     }
-    // @Override
-    // protected String getAPILoginHelpURL() {
-    // return "https://members.cocoleech.com/settings";
-    // }
-    //
-    // @Override
-    // protected boolean looksLikeValidAPIKey(final String str) {
-    // if (str == null) {
-    // return false;
-    // } else if (str.matches("[a-f0-9]{24}")) {
-    // return true;
-    // } else {
-    // return false;
-    // }
-    // }
 
     @Override
     public void reset() {

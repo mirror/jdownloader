@@ -29,6 +29,7 @@ import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -46,22 +47,22 @@ public class CommonsWikimediaOrg extends PluginForHost {
     // Tags:
     // protocol: https
     // other:
-    /* Connection stuff */
     /* 2021-09-13, disabled, not every document supports ranges */
-    private static final boolean free_resume       = false;
-    private static final int     free_maxchunks    = 0;
-    private static final int     free_maxdownloads = -1;
-    private static final boolean use_api           = true;
-    private String               dllink            = null;
-    private static final String  TYPE_WIKIPEDIA_1  = "https?://commons\\.[^/]+/wiki/(File:.+)";
-    private static final String  TYPE_WIKIPEDIA_2  = "https?://([a-z]{2})\\.wikipedia\\.org/wiki/([^/]+/media/)?([A-Za-z0-9%]+.*)";
+    private static final boolean use_api          = true;
+    private String               dllink           = null;
+    private static final String  TYPE_WIKIPEDIA_1 = "https?://commons\\.[^/]+/wiki/(File:.+)";
+    private static final String  TYPE_WIKIPEDIA_2 = "https?://([a-z]{2})\\.wikipedia\\.org/wiki/([^/]+/media/)?([A-Za-z0-9%]+.*)";
 
     @Override
     public String getAGBLink() {
         return "https://wikimediafoundation.org/wiki/Terms_of_Use";
     }
 
-    @SuppressWarnings("deprecation")
+    @Override
+    public boolean isResumeable(final DownloadLink link, final Account account) {
+        return false;
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         dllink = null;
@@ -79,7 +80,7 @@ public class CommonsWikimediaOrg extends PluginForHost {
         } else {
             url_title = new Regex(link.getPluginPatternMatcher(), TYPE_WIKIPEDIA_2).getMatch(2);
         }
-        url_title = Encoding.urlDecode(url_title, false);
+        url_title = Encoding.htmlOnlyDecode(url_title).trim();
         /* TODO: Consider moving this into a crawler because theoretically we can always have multiple items. */
         if (use_api) {
             /* Docs: https://www.mediawiki.org/wiki/API:Query */
@@ -89,8 +90,13 @@ public class CommonsWikimediaOrg extends PluginForHost {
             } else if (this.br.containsHTML("\"invalid\"")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            final Map<String, Object> root = restoreFromString(br.toString(), TypeRef.MAP);
-            final Map<String, Object> page = (Map<String, Object>) JavaScriptEngineFactory.walkJson(root, "query/pages/{0}");
+            final Map<String, Object> root = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+            final Map<String, Object> pagesmap = (Map<String, Object>) JavaScriptEngineFactory.walkJson(root, "query/pages");
+            if (pagesmap == null) {
+                /* E.g. https://en.wikipedia.org/wiki/Common...vick7ZohHNPCpJ */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            final Map<String, Object> page = (Map<String, Object>) JavaScriptEngineFactory.walkJson(pagesmap, "{0}");
             final Object imageinfoO = page.get("imageinfo");
             if (imageinfoO == null) {
                 if (page.containsKey("missing")) {
@@ -179,7 +185,11 @@ public class CommonsWikimediaOrg extends PluginForHost {
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     }
                     if (con.getCompleteContentLength() > 0) {
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                        if (con.isContentDecoded()) {
+                            link.setDownloadSize(con.getCompleteContentLength());
+                        } else {
+                            link.setVerifiedFileSize(con.getCompleteContentLength());
+                        }
                     }
                 } finally {
                     try {
@@ -195,7 +205,7 @@ public class CommonsWikimediaOrg extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, this.isResumeable(link, null), 1);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             br.followConnection(true);
             if (dl.getConnection().getResponseCode() == 403) {
@@ -211,7 +221,7 @@ public class CommonsWikimediaOrg extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return free_maxdownloads;
+        return Integer.MAX_VALUE;
     }
 
     @Override

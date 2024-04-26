@@ -15,7 +15,6 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.awt.Color;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -24,27 +23,19 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import javax.swing.JComponent;
-import javax.swing.JLabel;
-
 import org.appwork.storage.JSonMapperException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
-import org.appwork.swing.MigPanel;
-import org.appwork.swing.components.ExtPasswordField;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.Time;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperHostPluginHCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.gui.InputChangedCallbackInterface;
-import org.jdownloader.plugins.accounts.AccountBuilderInterface;
 import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings.SIZEUNIT;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
-import jd.gui.swing.components.linkbutton.JLink;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -71,7 +62,7 @@ public class FikperCom extends PluginForHost {
 
     @Override
     public LazyPlugin.FEATURE[] getFeatures() {
-        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.USERNAME_IS_EMAIL };
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.API_KEY_LOGIN };
     }
 
     @Override
@@ -489,26 +480,15 @@ public class FikperCom extends PluginForHost {
     /** Using API: https://sapi.fikper.com/api/reference/ */
     private Map<String, Object> login(final Account account, final boolean force) throws Exception {
         synchronized (account) {
-            try {
-                br.setFollowRedirects(true);
-                br.setCookiesExclusive(true);
-                account.setPass(correctPassword(account.getPass()));
-                if (!isApiKey(account.getPass())) {
-                    throw new AccountInvalidException("Invalid API key format! Find your API key here: fikper.com/settings/api\r\nHeadless users: Enter that API key into username and password field.");
-                }
-                prepareBrowserAPI(br, account);
-                if (!force) {
-                    return null;
-                }
-                br.getPage(API_BASE + "api/account");
-                final Map<String, Object> entries = checkErrorsAPI(br, null, account);
-                return entries;
-            } catch (final PluginException e) {
-                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
-                    account.clearCookies("");
-                }
-                throw e;
+            br.setFollowRedirects(true);
+            br.setCookiesExclusive(true);
+            prepareBrowserAPI(br, account);
+            if (!force) {
+                return null;
             }
+            br.getPage(API_BASE + "api/account");
+            final Map<String, Object> entries = checkErrorsAPI(br, null, account);
+            return entries;
         }
     }
 
@@ -650,11 +630,6 @@ public class FikperCom extends PluginForHost {
         }
     }
 
-    @Override
-    public AccountBuilderInterface getAccountFactory(InputChangedCallbackInterface callback) {
-        return new FikperAccountFactory(callback);
-    }
-
     public static Browser prepareBrowserAPI(final Browser br, final Account account) throws Exception {
         if (br == null) {
             return null;
@@ -664,94 +639,19 @@ public class FikperCom extends PluginForHost {
         return br;
     }
 
-    public static class FikperAccountFactory extends MigPanel implements AccountBuilderInterface {
-        private static final long serialVersionUID = 1L;
-        private final String      PINHELP          = "Enter your API Key";
-
-        private String getPassword() {
-            if (this.pass == null) {
-                return null;
-            } else {
-                final String pw = new String(this.pass.getPassword()).trim();
-                if (EMPTYPW.equals(pw)) {
-                    return null;
-                } else {
-                    return correctPassword(pw);
-                }
-            }
-        }
-
-        public boolean updateAccount(Account input, Account output) {
-            boolean changed = false;
-            if (!StringUtils.equals(input.getUser(), output.getUser())) {
-                output.setUser(input.getUser());
-                changed = true;
-            }
-            if (!StringUtils.equals(input.getPass(), output.getPass())) {
-                output.setPass(input.getPass());
-                changed = true;
-            }
-            return changed;
-        }
-
-        private final ExtPasswordField pass;
-        private static String          EMPTYPW = " ";
-        private final JLabel           idLabel;
-
-        public FikperAccountFactory(final InputChangedCallbackInterface callback) {
-            super("ins 0, wrap 2", "[][grow,fill]", "");
-            add(new JLabel("Click here to find your API Key"));
-            add(new JLink("https://fikper.com/settings/api"));
-            this.add(this.idLabel = new JLabel("Enter your API Key:"));
-            add(this.pass = new ExtPasswordField() {
-                @Override
-                public void onChanged() {
-                    callback.onChangedInput(this);
-                }
-            }, "");
-            pass.setHelpText(PINHELP);
-        }
-
-        @Override
-        public JComponent getComponent() {
-            return this;
-        }
-
-        @Override
-        public void setAccount(Account defaultAccount) {
-            if (defaultAccount != null) {
-                // name.setText(defaultAccount.getUser());
-                pass.setText(defaultAccount.getPass());
-            }
-        }
-
-        @Override
-        public boolean validateInputs() {
-            final String password = getPassword();
-            if (!isApiKey(password)) {
-                idLabel.setForeground(Color.RED);
-                return false;
-            } else {
-                idLabel.setForeground(Color.BLACK);
-                return true;
-            }
-        }
-
-        @Override
-        public Account getAccount() {
-            return new Account(null, getPassword());
-        }
+    @Override
+    protected String getAPILoginHelpURL() {
+        return "https://fikper.com/settings/api";
     }
 
-    private static boolean isApiKey(final String str) {
-        return str != null && str.matches("[A-Za-z0-9]{20,}");
-    }
-
-    private static String correctPassword(final String pw) {
-        if (pw == null) {
-            return null;
+    @Override
+    protected boolean looksLikeValidAPIKey(final String str) {
+        if (str == null) {
+            return false;
+        } else if (str.matches("[A-Za-z0-9]{20,}")) {
+            return true;
         } else {
-            return pw.trim();
+            return false;
         }
     }
 

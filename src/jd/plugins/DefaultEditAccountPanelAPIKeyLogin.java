@@ -9,6 +9,7 @@ import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtPasswordField;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.gui.InputChangedCallbackInterface;
+import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.accounts.AccountBuilderInterface;
 
 import jd.gui.swing.components.linkbutton.JLink;
@@ -48,17 +49,16 @@ public class DefaultEditAccountPanelAPIKeyLogin extends MigPanel implements Acco
     public DefaultEditAccountPanelAPIKeyLogin(final InputChangedCallbackInterface callback, final PluginForHost plg) {
         super("ins 0, wrap 2", "[][grow,fill]", "");
         this.plg = plg;
-        // TODO: Add translation
-        add(new JLabel("API key login instructions:"));
-        add(new JLink("Click here", plg.getAPILoginHelpURL()));
-        this.add(this.idLabel = new JLabel("Enter your API Key:"));
+        add(new JLabel(_GUI.T.jd_gui_swing_components_AccountDialog_generic_instructions()));
+        add(new JLink(_GUI.T.jd_gui_swing_components_AccountDialog_generic_instructions_click_here_for_instructions(), plg.getAPILoginHelpURL()));
+        this.add(this.idLabel = new JLabel(_GUI.T.jd_gui_swing_components_AccountDialog_api_key()));
         add(this.pass = new ExtPasswordField() {
             @Override
             public void onChanged() {
                 callback.onChangedInput(this);
             }
         }, "");
-        pass.setHelpText("Enter your API Key");
+        pass.setHelpText(_GUI.T.jd_gui_swing_components_AccountDialog_api_key_help());
     }
 
     public void setAccount(final Account defaultAccount) {

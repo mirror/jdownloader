@@ -291,14 +291,29 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "About JDownloader" })
     String jd_gui_swing_components_AboutDialog_title();
 
+    @Default(lngs = { "en" }, values = { "Instructions:" })
+    String jd_gui_swing_components_AccountDialog_generic_instructions();
+
+    @Default(lngs = { "en" }, values = { "Click here for instructions" })
+    String jd_gui_swing_components_AccountDialog_generic_instructions_click_here_for_instructions();
+
     @Default(lngs = { "en" }, values = { "Name:" })
     String jd_gui_swing_components_AccountDialog_name();
 
     @Default(lngs = { "en" }, values = { "E-Mail:" })
     String jd_gui_swing_components_AccountDialog_email();
 
+    @Default(lngs = { "en" }, values = { "Cookie login instructions:" })
+    String jd_gui_swing_components_AccountDialog_cookies_text_cookie_login_instructions();
+
     @Default(lngs = { "en" }, values = { "Cookies:" })
     String jd_gui_swing_components_AccountDialog_cookies();
+
+    @Default(lngs = { "en" }, values = { "API Key:" })
+    String jd_gui_swing_components_AccountDialog_api_key();
+
+    @Default(lngs = { "en" }, values = { "Enter your API key" })
+    String jd_gui_swing_components_AccountDialog_api_key_help();
 
     @Default(lngs = { "en" }, values = { "Pass:" })
     String jd_gui_swing_components_AccountDialog_pass();

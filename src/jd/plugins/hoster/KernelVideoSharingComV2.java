@@ -2011,7 +2011,7 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
         }
     }
 
-    /** Returns user selected stream quality. -1 = BEST/default */
+    /** Returns user selected stream quality (video height). -1 = BEST/default */
     protected final int getPreferredStreamQuality() {
         final Class<? extends KVSConfig> cfgO = this.getConfigInterface();
         if (cfgO != null) {

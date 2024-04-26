@@ -20,7 +20,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.formatter.SizeFormatter;
 
@@ -95,7 +94,8 @@ public class OneFichierComFolder extends PluginForDecrypt {
          * Basically their folder API call is only for internal folders of the current user -> Not useful for us! See also:
          * https://1fichier.com/api.html
          */
-        if (OneFichierCom.canUseAPI(account) && false) {
+        final boolean internal_allow_api_usage_in_crawler = false;
+        if (OneFichierCom.canUseAPI(account) && internal_allow_api_usage_in_crawler) {
             /* Use premium API */
             crawlAPI(param, account);
         } else {

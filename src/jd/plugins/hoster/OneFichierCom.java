@@ -15,7 +15,6 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
-import java.awt.Color;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -26,13 +25,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
-import javax.swing.JComponent;
-import javax.swing.JLabel;
-
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
-import org.appwork.swing.MigPanel;
-import org.appwork.swing.components.ExtPasswordField;
 import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.DebugMode;
@@ -45,13 +39,11 @@ import org.jdownloader.gui.InputChangedCallbackInterface;
 import org.jdownloader.plugins.accounts.AccountBuilderInterface;
 import org.jdownloader.plugins.components.config.OneFichierConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.AccountController;
-import jd.gui.swing.components.linkbutton.JLink;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.requests.GetRequest;
@@ -66,6 +58,7 @@ import jd.plugins.AccountInfo;
 import jd.plugins.AccountInvalidException;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.AccountUnavailableException;
+import jd.plugins.DefaultEditAccountPanelAPIKeyLogin;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -133,11 +126,11 @@ public class OneFichierCom extends PluginForHost {
         super(wrapper);
         this.enablePremium("https://www.1fichier.com/en/register.pl");
     }
-
-    @Override
-    public LazyPlugin.FEATURE[] getFeatures() {
-        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.USERNAME_IS_EMAIL };
-    }
+    /* 2024-04-26: Removed this as user can switch between API-key and website login. E-Mail is not given in API-Key login */
+    // @Override
+    // public LazyPlugin.FEATURE[] getFeatures() {
+    // return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.USERNAME_IS_EMAIL };
+    // }
 
     @Override
     public void init() {
@@ -1321,21 +1314,11 @@ public class OneFichierCom extends PluginForHost {
 
     /** Required to authenticate via API. Wrapper for setPremiumAPIHeaders(String). */
     public static void setPremiumAPIHeaders(final Browser br, final Account account) throws PluginException {
-        final String apiKey = getAPIKey(account);
-        if (apiKey == null) {
+        final String apiKey = account.getPass();
+        if (apiKey == null || !looksLikeValidAPIKeySTATIC(apiKey)) {
             errorInvalidAPIKey(account);
         } else {
             setPremiumAPIHeaders(br, apiKey);
-        }
-    }
-
-    public static String getAPIKey(final Account account) {
-        /* 2021-02-18: Remove linebreaks from the end RE forum: https://board.jdownloader.org/showthread.php?t=83954 */
-        final String apiKey = StringUtils.trim(account != null ? account.getPass() : null);
-        if (isApiKey(apiKey)) {
-            return apiKey;
-        } else {
-            return null;
         }
     }
 
@@ -1344,7 +1327,7 @@ public class OneFichierCom extends PluginForHost {
          * true = use premium API, false = use combination of website + OLD basic auth API - ONLY RELEVANT FOR PREMIUM USERS; IF ENABLED,
          * USER HAS TO ENTER API_KEY INSTEAD OF USERNAME:PASSWORD (or APIKEY:APIKEY)!!
          */
-        if (account != null && (account.getType() == AccountType.PREMIUM || account.getType() == AccountType.UNKNOWN) && getAPIKey(account) != null) {
+        if (account != null && (account.getType() == AccountType.PREMIUM || account.getType() == AccountType.UNKNOWN) && looksLikeValidAPIKeySTATIC(account.getPass())) {
             return PluginJsonConfig.get(OneFichierConfigInterface.class).isUsePremiumAPIEnabled();
         } else {
             return false;
@@ -1486,92 +1469,30 @@ public class OneFichierCom extends PluginForHost {
     @Override
     public AccountBuilderInterface getAccountFactory(final InputChangedCallbackInterface callback) {
         if (PluginJsonConfig.get(getLazyP(), OneFichierConfigInterface.class).isUsePremiumAPIEnabled()) {
-            return new OnefichierAccountFactory(callback);
+            return new DefaultEditAccountPanelAPIKeyLogin(callback, this);
         } else {
             return super.getAccountFactory(callback);
         }
     }
 
-    public static class OnefichierAccountFactory extends MigPanel implements AccountBuilderInterface {
-        private static final long serialVersionUID = 1L;
-        private final String      PINHELP          = "Enter your API Key";
-
-        private String getPassword() {
-            if (this.pass == null) {
-                return null;
-            } else {
-                final String pw = new String(this.pass.getPassword()).trim();
-                if (EMPTYPW.equals(pw)) {
-                    return null;
-                } else {
-                    return pw;
-                }
-            }
-        }
-
-        public boolean updateAccount(Account input, Account output) {
-            boolean changed = false;
-            if (!StringUtils.equals(input.getUser(), output.getUser())) {
-                output.setUser(input.getUser());
-                changed = true;
-            }
-            if (!StringUtils.equals(input.getPass(), output.getPass())) {
-                output.setPass(input.getPass());
-                changed = true;
-            }
-            return changed;
-        }
-
-        private final ExtPasswordField pass;
-        private static String          EMPTYPW = " ";
-        private final JLabel           idLabel;
-
-        public OnefichierAccountFactory(final InputChangedCallbackInterface callback) {
-            super("ins 0, wrap 2", "[][grow,fill]", "");
-            add(new JLabel("Click here to find your API Key (premium users only)"));
-            add(new JLink("https://1fichier.com/console/params.pl"));
-            this.add(this.idLabel = new JLabel("Enter your API Key:"));
-            add(this.pass = new ExtPasswordField() {
-                @Override
-                public void onChanged() {
-                    callback.onChangedInput(this);
-                }
-            }, "");
-            pass.setHelpText(PINHELP);
-        }
-
-        @Override
-        public JComponent getComponent() {
-            return this;
-        }
-
-        @Override
-        public void setAccount(Account defaultAccount) {
-            if (defaultAccount != null) {
-                // name.setText(defaultAccount.getUser());
-                pass.setText(defaultAccount.getPass());
-            }
-        }
-
-        @Override
-        public boolean validateInputs() {
-            final String password = getPassword();
-            if (!isApiKey(password)) {
-                idLabel.setForeground(Color.RED);
-                return false;
-            }
-            idLabel.setForeground(Color.BLACK);
-            return getPassword() != null;
-        }
-
-        @Override
-        public Account getAccount() {
-            return new Account(null, getPassword());
-        }
+    @Override
+    protected String getAPILoginHelpURL() {
+        return "https://1fichier.com/console/params.pl";
     }
 
-    private static boolean isApiKey(final String str) {
-        return str != null && str.matches("[A-Za-z0-9\\-_=]{32}");
+    @Override
+    protected boolean looksLikeValidAPIKey(final String str) {
+        return looksLikeValidAPIKeySTATIC(str);
+    }
+
+    public static boolean looksLikeValidAPIKeySTATIC(final String str) {
+        if (str == null) {
+            return false;
+        } else if (str.matches("[A-Za-z0-9\\-_=]{32}")) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     @Override
