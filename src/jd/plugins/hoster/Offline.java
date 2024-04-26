@@ -147,6 +147,7 @@ public class Offline extends PluginForHost {
         ret.add(new String[] { "streamhide.to", "streamhide.com", "guccihide.com", "guccihide.store", "streamhide.com", "streamtb.me", "louishide.com", "ahvsh.com" });
         ret.add(new String[] { "smoozed.com" });
         ret.add(new String[] { "asmfile.com", "filetut.com" });
+        ret.add(new String[] { "chedrives.com", "chedrive.net", "chedrive.com" });
         if (cache != null) {
             cache.put(cacheID, ret);
         }

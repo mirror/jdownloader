@@ -16,13 +16,15 @@
 package jd.plugins.hoster;
 
 import java.net.URL;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.plugins.components.config.SankakucomplexComConfig;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 
@@ -33,23 +35,42 @@ import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
-import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.SankakucomplexComCrawler;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sankakucomplex.com" }, urls = { "https?://(?:beta|chan|idol|www)\\.sankakucomplex\\.com/(?:[a-z]{2}/)?(?:post/show|posts)/([A-Za-z0-9]+)" })
-public class SankakucomplexCom extends antiDDoSForHost {
+public class SankakucomplexCom extends PluginForHost {
     public SankakucomplexCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("https://chan.sankakucomplex.com/user/signup");
+        this.enablePremium("https://chan.sankakucomplex.com/users/signup");
+    }
+
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        setDefaultCookies(br, getHost());
+        br.setFollowRedirects(true);
+        return br;
+    }
+
+    private static void setDefaultCookies(final Browser br, final String host) {
+        br.setCookie(host, "locale", "en");
+        br.setCookie(host, "lang", "en");
+        br.setCookie(host, "hide-news-ticker", "1");
+        br.setCookie(host, "auto_page", "1");
+        br.setCookie(host, "hide_resized_notice", "1");
+        br.setCookie(host, "blacklisted_tags", "");
     }
 
     /* Extension which will be used if no correct extension is found */
@@ -64,6 +85,9 @@ public class SankakucomplexCom extends antiDDoSForHost {
     public static final String         PROPERTY_PAGE_NUMBER_MAX              = "page_number_max";
     public static final String         PROPERTY_SOURCE                       = "source";
     private final String               TIMESTAMP_LAST_TIME_FILE_MAYBE_BROKEN = "timestamp_last_time_file_maybe_broken";
+    private static final String        PROPERTY_ACCOUNT_ACCESS_TOKEN         = "access_token";
+    /* 2024-04-26: Refresh-token is currently not used. */
+    private static final String        PROPERTY_ACCOUNT_REFRESH_TOKEN        = "refresh_token";
     /* Don't touch the following! */
     private static final AtomicInteger freeRunning                           = new AtomicInteger(0);
 
@@ -112,37 +136,32 @@ public class SankakucomplexCom extends antiDDoSForHost {
         if (!link.isNameSet()) {
             link.setName(fileID);
         }
-        br.setFollowRedirects(true);
         final String host = new URL(link.getPluginPatternMatcher()).getHost();
-        br.setCookie(host, "locale", "en");
-        br.setCookie(host, "hide-news-ticker", "1");
-        br.setCookie(host, "auto_page", "1");
-        br.setCookie(host, "hide_resized_notice", "1");
-        br.setCookie(host, "blacklisted_tags", "");
+        setDefaultCookies(br, host);
         if (account != null) {
             this.login(account, false);
         }
-        getPage("https://chan.sankakucomplex.com/post/show/" + fileID);
+        br.getPage("https://chan." + getHost() + "/post/show/" + fileID);
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(?i)<title>\\s*404: Page Not Found\\s*<")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (br.containsHTML(">\\s*You lack the access rights required to view this content") || br.containsHTML(">\\s*Nothing is visible to you here")) {
-            /* Content can only be downloaded by premium users */
+            /* Content can only be downloaded by premium users or mature content which can only be downloaded by logged in users. */
             link.setProperty(PROPERTY_IS_PREMIUMONLY, true);
         } else {
             link.removeProperty(PROPERTY_IS_PREMIUMONLY);
         }
-        final String storedDirecturl = checkDirectLink(link, PROPERTY_DIRECTURL);
-        if (storedDirecturl != null) {
-            /* This means we must have checked this one before so filesize/name has already been set -> Done! */
-            return AvailableStatus.TRUE;
-        }
+        final String previouslyStoredDirecturl = checkDirectLink(link, PROPERTY_DIRECTURL);
         String dllink = br.getRegex("(?i)<li>Original: <a href=\"(//[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) {
-            dllink = br.getRegex("<a href=\"(//[^<>\"]*?)\">Save this file").getMatch(0);
+            dllink = br.getRegex("<a href=\"(//[^<>\"]*?)\">\\s*Save this file").getMatch(0);
+            if (dllink == null) {
+                /* 2024-04-26 */
+                dllink = br.getRegex("Post\\.prepare_download\\(\\&#39;(//[^\"<>]+)&#39;,").getMatch(0);
+            }
         }
         if (dllink == null) {
-            /* 2021-02-23 */
+            /* 2021-02-23: Image download - if the upper handling fails on videos, this may make us download an image vs a video */
             dllink = br.getRegex("<meta content=\"(//[^<>\"]+)\" property=og:image>").getMatch(0);
         }
         if (dllink != null) {
@@ -152,7 +171,7 @@ public class SankakucomplexCom extends antiDDoSForHost {
         String filename = fileID;
         String ext = null;
         if (dllink != null) {
-            ext = new Regex(dllink, "[a-z0-9]+(\\.[a-z]+)(\\?|$)").getMatch(0);
+            ext = Plugin.getFileNameExtensionFromURL(dllink);
         }
         if (ext == null) {
             ext = getFileNameExtensionFromString(dllink, default_Extension);
@@ -161,21 +180,16 @@ public class SankakucomplexCom extends antiDDoSForHost {
         if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
             ext = default_Extension;
         }
-        if (!filename.endsWith(ext)) {
-            filename += ext;
-        }
+        filename = this.correctOrApplyFileNameExtension(filename, ext);
         link.setFinalFileName(filename);
-        final String sizeStr = br.getRegex("(?i)<li>\\s*Original\\s*:\\s*<a href.*?title=\"([0-9\\,]+) bytes").getMatch(0);
-        if (sizeStr != null) {
-            /* Size is given --> We don't have to check for it! */
-            link.setDownloadSize(Long.parseLong(sizeStr.replace(",", "")));
+        final String filesizeBytesStr = br.getRegex("([0-9,]+) bytes").getMatch(0);
+        if (filesizeBytesStr != null) {
+            link.setDownloadSize(Long.parseLong(filesizeBytesStr.replace(",", "")));
         }
         if (dllink != null) {
             link.setProperty(PROPERTY_DIRECTURL, dllink);
-            if (sizeStr == null && !isDownload) {
+            if (filesizeBytesStr == null && !isDownload && previouslyStoredDirecturl == null) {
                 final Browser br2 = br.cloneBrowser();
-                // In case the link redirects to the finallink
-                br2.setFollowRedirects(true);
                 URLConnectionAdapter con = null;
                 try {
                     con = br2.openHeadConnection(dllink);
@@ -204,7 +218,6 @@ public class SankakucomplexCom extends antiDDoSForHost {
         if (!link.isNameSet()) {
             link.setName(fileID);
         }
-        br.setFollowRedirects(true);
         final String storedDirecturl = checkDirectLink(link, PROPERTY_DIRECTURL);
         if (storedDirecturl != null) {
             /* This means we must have checked this one before so filesize/name has already been set -> Done! */
@@ -213,7 +226,7 @@ public class SankakucomplexCom extends antiDDoSForHost {
         if (account != null) {
             this.login(account, false);
         }
-        getPage(SankakucomplexComCrawler.API_BASE + "/posts?lang=de&page=1&limit=1&tags=id_range:" + fileID);
+        br.getPage(SankakucomplexComCrawler.API_BASE + "/posts?lang=de&page=1&limit=1&tags=id_range:" + fileID);
         final Object obj = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.OBJECT);
         if (obj instanceof Map) {
             /* We only get a map if something went wrong. */
@@ -348,10 +361,9 @@ public class SankakucomplexCom extends antiDDoSForHost {
             boolean valid = false;
             try {
                 final Browser br2 = br.cloneBrowser();
-                br2.setFollowRedirects(true);
                 URLConnectionAdapter con = br2.openHeadConnection(dllink);
                 try {
-                    if (this.looksLikeDownloadableContent(con) && !con.getURL().toString().contains("expired.png")) {
+                    if (this.looksLikeDownloadableContent(con) && !con.getURL().getPath().contains("expired.png")) {
                         valid = true;
                         return dllink;
                     } else {
@@ -373,59 +385,87 @@ public class SankakucomplexCom extends antiDDoSForHost {
 
     private boolean login(final Account account, final boolean force) throws Exception {
         synchronized (account) {
-            try {
-                br.setFollowRedirects(true);
-                br.setCookiesExclusive(true);
-                final Cookies cookies = account.loadCookies("");
-                if (cookies != null) {
-                    logger.info("Attempting cookie login");
-                    this.br.setCookies(this.getHost(), cookies);
-                    if (!force && System.currentTimeMillis() - account.getCookiesTimeStamp("") < 5 * 60 * 1000l) {
-                        logger.info("Cookies are still fresh --> Trust cookies without login");
-                        return false;
-                    }
-                    br.getPage("https://chan." + this.getHost() + "/user/home");
-                    if (this.isLoggedin()) {
-                        logger.info("Cookie login successful");
-                        /* Refresh cookie timestamp */
-                        account.saveCookies(this.br.getCookies(this.getHost()), "");
-                        return true;
-                    } else {
-                        logger.info("Cookie login failed");
-                    }
+            br.setCookiesExclusive(true);
+            final Cookies cookies = account.loadCookies("");
+            final String logincheckurl = "https://chan." + this.getHost() + "/en/users/home";
+            if (cookies != null) {
+                logger.info("Attempting cookie login");
+                this.br.setCookies(cookies);
+                if (!force) {
+                    /* Do not validate cookies */
+                    return false;
                 }
-                logger.info("Performing full login");
-                br.getPage("https://chan." + this.getHost() + "/user/login");
-                final Form loginform = br.getFormbyActionRegex(".*user/authenticate");
-                if (loginform == null) {
-                    logger.warning("Failed to find loginform");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                loginform.put("user%5Bname%5D", Encoding.urlEncode(account.getUser()));
-                loginform.put("user%5Bpassword%5D", Encoding.urlEncode(account.getPass()));
-                br.submitForm(loginform);
-                if (!isLoggedin()) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-                account.saveCookies(this.br.getCookies(this.getHost()), "");
-                return true;
-            } catch (final PluginException e) {
-                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                br.getPage(logincheckurl);
+                if (this.isLoggedin(br)) {
+                    logger.info("Cookie login successful");
+                    /* Refresh cookie timestamp */
+                    account.saveCookies(br.getCookies(br.getHost()), "");
+                    return true;
+                } else {
+                    logger.info("Cookie login failed");
+                    br.clearCookies(null);
                     account.clearCookies("");
                 }
-                throw e;
             }
+            logger.info("Performing full login");
+            /*
+             * 2024-04-26: It is really important to have the right URL here in order to properly login in a way which also works for 'old'
+             * "chan." subdomain.
+             */
+            br.getPage("https://login." + getHost() + "/oidc/auth?response_type=code&scope=openid&client_id=sankaku-channel-legacy&redirect_uri=https%3A%2F%2Fchan.sankakucomplex.com%2Fsso%2Fcallback&route=login");
+            final String _grant = br.getCookie(br.getHost(), "_grant", Cookies.NOTDELETEDPATTERN);
+            if (StringUtils.isEmpty(_grant)) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            final Map<String, Object> loginpost = new HashMap<String, Object>();
+            final Map<String, Object> loginpost_mfaParams = new HashMap<String, Object>();
+            loginpost_mfaParams.put("login", account.getUser());
+            loginpost.put("login", account.getUser());
+            loginpost.put("mfaParams", loginpost_mfaParams);
+            loginpost.put("password", account.getPass());
+            br.postPageRaw("/auth/token", JSonStorage.serializeToJson(loginpost));
+            final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+            if (!Boolean.TRUE.equals(entries.get("success"))) {
+                /* E.g. {"success":false,"code":"snackbar-message__not_found"} */
+                throw new AccountInvalidException();
+            }
+            final String access_token = entries.get("access_token").toString();
+            final String refresh_token = entries.get("refresh_token").toString();
+            if (StringUtils.isEmpty(access_token)) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            br.setCookie(br.getHost(), "accessToken", access_token);
+            br.setCookie(br.getHost(), "position", "0");
+            br.setCookie(br.getHost(), "refreshToken", refresh_token);
+            // br.setCookie(br.getHost(), "ssoLoginValid", System.currentTimeMillis() + "");
+            final UrlQuery query = new UrlQuery();
+            query.add("access_token", Encoding.urlEncode(access_token));
+            query.add("state", "lang=en&theme=white");
+            br.postPage("/oidc/interaction/" + _grant + "/login", query);
+            /* Double-check */
+            br.getPage(logincheckurl);
+            if (!this.isLoggedin(br)) {
+                throw new AccountInvalidException("Unknown login failure");
+            }
+            account.saveCookies(br.getCookies(br.getHost()), "");
+            account.setProperty(PROPERTY_ACCOUNT_ACCESS_TOKEN, access_token);
+            account.setProperty(PROPERTY_ACCOUNT_REFRESH_TOKEN, refresh_token);
+            return true;
         }
     }
 
-    private boolean isLoggedin() {
-        return br.getCookie(this.getHost(), "pass_hash", Cookies.NOTDELETEDPATTERN) != null;
+    private boolean isLoggedin(final Browser br) {
+        if (br.containsHTML("/users/logout")) {
+            return true;
+        } else {
+            return false;
+        }
     }
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        final AccountInfo ai = new AccountInfo();
         login(account, true);
+        final AccountInfo ai = new AccountInfo();
         ai.setUnlimitedTraffic();
         if (br.containsHTML("(?i)>\\s*Subscription Level\\s*:\\s*<a href=\"[^\"]+\">\\s*Plus\\s*<")) {
             account.setType(AccountType.PREMIUM);

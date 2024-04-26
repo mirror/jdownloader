@@ -26,6 +26,7 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
+import jd.parser.html.HTMLParser;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -41,7 +42,7 @@ public class CnetCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://download.cnet.com/";
+        return "https://download.cnet.com/";
     }
 
     @Override
@@ -94,7 +95,7 @@ public class CnetCom extends PluginForHost {
             filesize = br.getRegex(">File Size:</div>[\t\n\r ]+<div class=\"product-landing-quick-specs-row-content\">([^<>\"]*?)</div>").getMatch(0);
         }
         if (filename != null) {
-            link.setName(Encoding.htmlDecode(filename.trim()));
+            link.setName(Encoding.htmlDecode(filename).trim());
         }
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
@@ -108,12 +109,12 @@ public class CnetCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link);
-        /* 2021-10-06 */
-        final boolean useAPI = true;
+        /* 2024-04-26: Disabled API */
+        final boolean useAPI = false;
         String dllink = null;
         if (useAPI) {
             /* 2021-10-06: See https://download.cnet.com/a/neutron/7dbdf09.modern.js */
-            String apikey = br.getRegex("(?i)apikey=([A-Za-z0-9\\-_]+)").getMatch(0);
+            String apikey = br.getRegex("apikey=([A-Za-z0-9\\-_]+)").getMatch(0);
             if (apikey == null) {
                 /* 2023-06-29 */
                 apikey = "ZHqYnHs4B8F0aQnLAwylfp2rWfPhBfqC";
@@ -127,24 +128,25 @@ public class CnetCom extends PluginForHost {
             dllink = JavaScriptEngineFactory.walkJson(entries, "data/item/url").toString();
         } else {
             /* Try to get installer without adware */
-            String continueLink = br.getRegex("<a href=\\'(https?://[^<>\"]*?)\\' class=\"dln\\-a\">[\t\n\r ]+<span class=\"dln\\-cta\">Direct Download Link</span>").getMatch(0);
-            /* If not, we can only download the installer with ads */
-            if (continueLink == null) {
-                continueLink = br.getRegex("<a href=\\'(https?://[^<>\"]*?)\\' class=\"dln\\-a\">[\t\n\r ]+<span class=\"dln\\-cta\">Download Now</span>").getMatch(0);
+            final String currPath = br._getURL().getPath();
+            String continueLink = null;
+            String[] urls = HTMLParser.getHttpLinks(br.getRequest().getHtmlCode(), br.getURL());
+            for (final String url : urls) {
+                if (url.contains("internalDownload")) {
+                    continueLink = url;
+                    break;
+                }
             }
             if (continueLink == null) {
-                /* 2021-10-06 */
-                continueLink = br.getRegex("uppercase c-globalButton-medium c-globalButton-standard\"[^>]*><a href=\"(/[^\"]+)\"").getMatch(0);
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Not downloadable (external download, see browser)");
             }
-            if (continueLink != null) { // 20170614 continueLink is no longer available?
-                br.getPage(continueLink);
-            }
-            dllink = br.getRegex("data-download-now-url=\"(https?://[^<>\"]*?)\"").getMatch(0);
-            if (dllink == null) {
-                dllink = br.getRegex("http\\-equiv=\"refresh\" content=\\'0;url=(https?://[^<>\"]*?)\\'").getMatch(0);
-            }
-            if (dllink == null) {
-                dllink = br.getRegex("data-dl-url=\\'(https?://[^<>\"]*?)\\'").getMatch(0);
+            br.getPage(continueLink);
+            urls = HTMLParser.getHttpLinks(br.getRequest().getHtmlCode(), br.getURL());
+            for (final String url : urls) {
+                if (url.contains("internalDownload") && url.contains("token")) {
+                    dllink = url;
+                    break;
+                }
             }
         }
         if (StringUtils.isEmpty(dllink)) {

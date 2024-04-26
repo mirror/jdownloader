@@ -16,166 +16,62 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.Map.Entry;
-import java.util.Random;
+import java.util.List;
+
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
-import jd.config.SubConfiguration;
-import jd.controlling.ProgressController;
-import jd.nutils.encoding.Encoding;
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-import jd.plugins.PluginForDecrypt;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "cliphunter.com" }, urls = { "https?://(?:www\\.)?cliphunter\\.com/w/(\\d+)/(\\w+)" })
-public class ClipHunterComDecrypt extends PluginForDecrypt {
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
+public class ClipHunterComDecrypt extends PornEmbedParser {
     public ClipHunterComDecrypt(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    /* [0] = Value for LinkedHashMap, [1] or higher = To display in filename. */
-    /**
-     * sync with hoster
-     */
-    public static final String[][] qualities     = { { "_fhd.mp4", "p1080.mp4" }, { "_hd.mp4", "_p720.mp4", "p720.mp4" }, { "_h.flv", "_p540.mp4", "540p.flv" }, { "_p.mp4", "_p480.mp4", "480p.mp4", "_p.mp4" }, { "_l.flv", "_p360.mp4", "360pflv.flv" }, { "_i.mp4", "360p.mp4" }, { "unknown", "_s.flv", "_p.mp4" } };
-    private String                 parameter     = null;
-    private String                 title         = null;
-    private boolean                fastlinkcheck = false;
-
-    @SuppressWarnings("deprecation")
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        parameter = param.toString();
-        br.setFollowRedirects(true);
-        br.setCookie(this.getHost(), "qchange", "h");
-        br.setAllowedResponseCodes(new int[] { 410 });
-        br.getPage(parameter);
-        if (br.getURL().contains("error/missing") || br.containsHTML("(>Ooops, This Video is not available|>This video was removed and is no longer available at our site|<title></title>|var flashVars = \\{d: \\'\\'\\};)") || this.br.getHttpConnection().getResponseCode() == 404 || this.br.getHttpConnection().getResponseCode() == 410) {
-            final DownloadLink dl = this.createOfflinelink(parameter);
-            dl.setName(new Regex(parameter, "cliphunter\\.com/w/\\d+/(.+)").getMatch(0));
-            decryptedLinks.add(dl);
-            return decryptedLinks;
-        }
-        final boolean use_url_title = true;
-        final String url_title = new Regex(parameter, this.getSupportedLinks()).getMatch(1);
-        if (use_url_title) {
-            title = url_title;
-            title = title.replace("_", " ");
-        }
-        if (title == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
-        }
-        title = Encoding.htmlDecode(title.trim());
-        final LinkedHashMap<String, String> foundQualities = jd.plugins.hoster.ClipHunterCom.findAvailableVideoQualities(this.br);
-        if (foundQualities == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
-        } else if (foundQualities.isEmpty()) {
-            final DownloadLink dl = this.createOfflinelink(parameter);
-            dl.setName(new Regex(parameter, "cliphunter\\.com/w/\\d+/(.+)").getMatch(0));
-            decryptedLinks.add(dl);
-            return decryptedLinks;
-        }
-        /** Decrypt qualities, selected by the user */
-        final ArrayList<String> selectedQualities = new ArrayList<String>();
-        final SubConfiguration cfg = SubConfiguration.getConfig("cliphunter.com");
-        boolean q360p = cfg.getBooleanProperty("ALLOW_360P", false);
-        boolean q360pflv = cfg.getBooleanProperty("ALLOW_360PFLV", false);
-        boolean q480p = cfg.getBooleanProperty("ALLOW_480P", false);
-        boolean q540p = cfg.getBooleanProperty("ALLOW_540P", false);
-        boolean q720p = cfg.getBooleanProperty("ALLOW_720P", false);
-        boolean q1080p = cfg.getBooleanProperty("ALLOW_1080P", false);
-        if (q360p == false && q360pflv == false && q480p == false && q540p == false && q720p == false && q1080p == false) {
-            q360p = true;
-            q360pflv = true;
-            q480p = true;
-            q540p = true;
-            q720p = true;
-            q1080p = true;
-        }
-        if (q360p) {
-            selectedQualities.add("_i.mp4");
-        }
-        if (q360pflv) {
-            selectedQualities.add("_l.flv");
-        }
-        if (q480p) {
-            selectedQualities.add("_p.mp4");
-        }
-        if (q540p) {
-            selectedQualities.add("_h.flv");
-        }
-        if (q720p) {
-            selectedQualities.add("_hd.mp4");
-        }
-        if (q1080p) {
-            selectedQualities.add("_fhd.mp4");
-        }
-        fastlinkcheck = cfg.getBooleanProperty("FASTLINKCHECK", false);
-        if (foundQualities.size() == 1) {
-            /* Only 1 quality found --> Add that */
-            final Iterator<Entry<String, String>> it = foundQualities.entrySet().iterator();
-            while (it.hasNext()) {
-                final Entry<String, String> entry = it.next();
-                final String quality = entry.getKey();
-                final String url = entry.getValue();
-                if (url != null) {
-                    final String[] quality_arr = { quality, quality };
-                    decryptedLinks.add(createDownloadlinkFromVideoid(quality_arr, url));
-                }
-            }
-        } else if (cfg.getBooleanProperty("ALLOW_BEST", false)) {
-            String dllink = null;
-            for (final String quality[] : qualities) {
-                dllink = foundQualities.get(quality[0]);
-                if (dllink != null) {
-                    decryptedLinks.add(createDownloadlinkFromVideoid(quality, dllink));
-                    break;
-                }
-            }
-        } else {
-            for (final String selectedQuality : selectedQualities) {
-                final String dllink = foundQualities.get(selectedQuality);
-                for (final String[] quality : qualities) {
-                    final String currentQualityValue = quality[0];
-                    if ((currentQualityValue == selectedQuality && dllink != null)) {
-                        decryptedLinks.add(createDownloadlinkFromVideoid(quality, dllink));
-                        break;
-                    }
-                }
-            }
-        }
-        final FilePackage fp = FilePackage.getInstance();
-        fp.setName(title);
-        fp.addLinks(decryptedLinks);
-        return decryptedLinks;
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
     }
 
-    private DownloadLink createDownloadlinkFromVideoid(final String[] quality, final String dllink) {
-        final DownloadLink dl = createDownloadlink("http://cliphunterdecrypted.com/" + System.currentTimeMillis() + new Random().nextInt(100000));
-        String thisfilename = title; // + "_" + quality[1];
-        if (!thisfilename.endsWith(".mp4") && !thisfilename.endsWith(".flv")) {
-            /* Add extension if necessary */
-            if (dllink.contains(".mp4")) {
-                thisfilename += ".mp4";
-            } else {
-                thisfilename += ".flv";
-            }
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "cliphunter.com" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/videos/(\\d+)/([a-z0-9\\-]+)/?");
         }
-        dl.setContentUrl(parameter);
-        dl.setFinalFileName(thisfilename);
-        dl.setProperty("directlink", dllink);
-        dl.setProperty("originallink", parameter);
-        dl.setProperty("selectedquality", quality[0]);
-        if (fastlinkcheck) {
-            dl.setAvailable(true);
-        }
-        return dl;
+        return ret.toArray(new String[0]);
+    }
+
+    @Override
+    protected boolean isOffline(final Browser br) {
+        return br.getHttpConnection().getResponseCode() == 404 || br.getURL().contains("404.php");
+    }
+
+    @Override
+    protected String getFileTitle(final CryptedLink param, final Browser br) {
+        return new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(1).replace("-", " ").trim();
     }
 }

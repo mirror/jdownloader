@@ -173,10 +173,12 @@ public class MvpdjCom extends PluginForHost {
             }
         }
         if (dllink != null && !isDownload) {
-            final Browser br2 = br.cloneBrowser();
+            /* 2024-04-26: Use new browser instance here as this may return response 404 if a referer value is set. */
+            final Browser br2 = new Browser();
             // In case the link redirects to the finallink
             URLConnectionAdapter con = null;
             try {
+                final boolean allowHeadConnection = true;
                 con = br2.openHeadConnection(dllink);
                 handleConnectionErrors(br2, con);
                 /* Especially for official account-downloads, server-filenames might be crippled! */
@@ -194,7 +196,11 @@ public class MvpdjCom extends PluginForHost {
                     link.setFinalFileName(filename_header);
                 }
                 if (con.getCompleteContentLength() > 0) {
-                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                    if (con.isContentDecoded()) {
+                        link.setDownloadSize(con.getCompleteContentLength());
+                    } else {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
                 }
             } finally {
                 try {
@@ -216,8 +222,10 @@ public class MvpdjCom extends PluginForHost {
         if (StringUtils.isEmpty(this.dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
-        handleConnectionErrors(br, dl.getConnection());
+        /* 2024-04-26: Use new browser instance here as this may return response 404 if a referer value is set. */
+        final Browser dlbrowser = new Browser();
+        dl = jd.plugins.BrowserAdapter.openDownload(dlbrowser, link, dllink, true, 0);
+        handleConnectionErrors(dlbrowser, dl.getConnection());
         dl.startDownload();
     }
 

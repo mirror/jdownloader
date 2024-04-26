@@ -132,6 +132,8 @@ public class CehennempassPw extends PluginForHost {
         handleDownload(link);
     }
 
+    private final int maxChunks = 1;
+
     private void handleDownload(final DownloadLink link) throws Exception, PluginException {
         final String directlinkproperty = "free_directlink";
         if (!attemptStoredDownloadurlDownload(link, directlinkproperty)) {
@@ -140,13 +142,15 @@ public class CehennempassPw extends PluginForHost {
             if (StringUtils.isEmpty(dllink)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, maxChunks);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 br.followConnection(true);
                 if (dl.getConnection().getResponseCode() == 403) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 5 * 60 * 1000l);
                 } else if (dl.getConnection().getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 5 * 60 * 1000l);
+                } else if (dl.getConnection().getResponseCode() == 503) {
+                    throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error 503 too many connections", 5 * 60 * 1000l);
                 } else {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
@@ -168,7 +172,7 @@ public class CehennempassPw extends PluginForHost {
         }
         try {
             final Browser brc = br.cloneBrowser();
-            dl = new jd.plugins.BrowserAdapter().openDownload(brc, link, url, true, 0);
+            dl = new jd.plugins.BrowserAdapter().openDownload(brc, link, url, true, maxChunks);
             if (this.looksLikeDownloadableContent(dl.getConnection())) {
                 return true;
             } else {
