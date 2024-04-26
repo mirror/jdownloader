@@ -19,10 +19,6 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.Regex;
-import org.jdownloader.plugins.components.config.XFSConfigVideoVoeSx;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
@@ -33,6 +29,10 @@ import jd.plugins.FilePackage;
 import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.Regex;
+import org.jdownloader.plugins.components.config.XFSConfigVideoVoeSx;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class VoeSxCrawler extends PluginForDecrypt {
@@ -84,12 +84,14 @@ public class VoeSxCrawler extends PluginForDecrypt {
         final PluginForHost hosterPlugin = this.getNewPluginForHostInstance(this.getHost());
         final DownloadLink link = new DownloadLink(hosterPlugin, this.getHost(), param.getCryptedUrl(), true);
         try {
-            ret.add(link);
             hosterPlugin.setDownloadLink(link);
             final AvailableStatus status = hosterPlugin.requestFileInformation(link);
+            ret.add(link);
             link.setAvailableStatus(status);
             distribute(link);
         } catch (Exception e) {
+            // prefer fresh instance
+            ret.add(this.createDownloadlink(param.getCryptedUrl()));
             logger.log(e);
             return ret;
         }
@@ -127,7 +129,9 @@ public class VoeSxCrawler extends PluginForDecrypt {
         } else {
             logger.info("This item does not have any subtitles");
         }
-        fp.addLinks(ret);
+        if (ret.size() > 0) {
+            fp.addLinks(ret);
+        }
         return ret;
     }
 }

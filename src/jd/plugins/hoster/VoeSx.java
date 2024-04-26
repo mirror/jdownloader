@@ -20,13 +20,6 @@ import java.net.URL;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-import org.jdownloader.plugins.components.config.XFSConfigVideo.DownloadMode;
-import org.jdownloader.plugins.components.config.XFSConfigVideoVoeSx;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -42,6 +35,13 @@ import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.VoeSxCrawler;
+
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+import org.jdownloader.plugins.components.config.XFSConfigVideo.DownloadMode;
+import org.jdownloader.plugins.components.config.XFSConfigVideoVoeSx;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 @PluginDependencies(dependencies = { VoeSxCrawler.class })
@@ -224,25 +224,34 @@ public class VoeSx extends XFileSharingProBasic {
         /* 2021-03-09: Special: New browser required else they won't let us stream some videos at all! */
         final boolean embedOnly = br.containsHTML(">\\s*This video can be watched as embed only");
         br.setFollowRedirects(true);
-        br.getPage(this.getMainPage(link) + "/e/" + this.getFUIDFromURL(link));
-        if (this.isOffline(link, br)) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        boolean fallBackFileName = true;
+        try {
+            br.getPage(this.getMainPage(link) + "/e/" + this.getFUIDFromURL(link));
+            if (this.isOffline(link, br)) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            final String[] fileInfo = internal_getFileInfoArray();
+            scanInfo(br.getRequest().getHtmlCode(), fileInfo);
+            processFileInfo(fileInfo, br, link);
+            if (!StringUtils.isEmpty(fileInfo[0])) {
+                /* Correct- and set filename */
+                setFilename(fileInfo[0], link, br);
+                fallBackFileName = false;
+            } else {
+                /* Fallback. Do this again as now we got the html code available so we can e.g. know if this is a video-filehoster or not. */
+                fallBackFileName = true;
+            }
+            final String dllink = getDllinkVideohost(link, account, br, br.getRequest().getHtmlCode());
+            if (StringUtils.isEmpty(dllink) && embedOnly) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, "This video can be watched as embed only");
+            } else {
+                return dllink;
+            }
+        } finally {
+            if (fallBackFileName) {
+                this.setWeakFilename(link, br);
+            }
         }
-        final String[] fileInfo = internal_getFileInfoArray();
-        scanInfo(br.getRequest().getHtmlCode(), fileInfo);
-        processFileInfo(fileInfo, br, link);
-        if (!StringUtils.isEmpty(fileInfo[0])) {
-            /* Correct- and set filename */
-            setFilename(fileInfo[0], link, br);
-        } else {
-            /* Fallback. Do this again as now we got the html code available so we can e.g. know if this is a video-filehoster or not. */
-            this.setWeakFilename(link, br);
-        }
-        final String dllink = getDllinkVideohost(link, account, br, br.getRequest().getHtmlCode());
-        if (StringUtils.isEmpty(dllink) && embedOnly) {
-            throw new PluginException(LinkStatus.ERROR_FATAL, "This video can be watched as embed only");
-        }
-        return dllink;
     }
 
     @Override
