@@ -19,19 +19,11 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import javax.swing.SwingUtilities;
 
-import jd.http.Browser;
-import net.sourceforge.htmlunit.corejs.javascript.Context;
-import net.sourceforge.htmlunit.corejs.javascript.EcmaError;
-import net.sourceforge.htmlunit.corejs.javascript.NativeJavaMethod;
-import net.sourceforge.htmlunit.corejs.javascript.ScriptRuntime;
-import net.sourceforge.htmlunit.corejs.javascript.ScriptableObject;
-import net.sourceforge.htmlunit.corejs.javascript.UniqueTag;
-import net.sourceforge.htmlunit.corejs.javascript.tools.shell.Global;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.simplejson.MinimalMemoryMap;
 import org.appwork.uio.CloseReason;
+import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.ExceptionDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
@@ -47,6 +39,15 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.scripting.JSHtmlUnitPermissionRestricter;
 import org.jdownloader.scripting.JSShutterDelegate;
+
+import jd.http.Browser;
+import net.sourceforge.htmlunit.corejs.javascript.Context;
+import net.sourceforge.htmlunit.corejs.javascript.EcmaError;
+import net.sourceforge.htmlunit.corejs.javascript.NativeJavaMethod;
+import net.sourceforge.htmlunit.corejs.javascript.ScriptRuntime;
+import net.sourceforge.htmlunit.corejs.javascript.ScriptableObject;
+import net.sourceforge.htmlunit.corejs.javascript.UniqueTag;
+import net.sourceforge.htmlunit.corejs.javascript.tools.shell.Global;
 
 public class ScriptThread extends Thread implements JSShutterDelegate {
     private final ScriptEntry                  script;
@@ -372,10 +373,11 @@ public class ScriptThread extends Thread implements JSShutterDelegate {
     }
 
     public void requireJavascript(final String fileOrUrl) throws IOException {
+        final String permissionID = "ASK_TO_REQUIRE_JS_" + fileOrUrl;
         final ConfirmDialog d = new ConfirmDialog(0 | Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN | UIOManager.LOGIC_DONT_SHOW_AGAIN_IGNORES_CANCEL, T.T.securityLoading_title(), T.T.securityLoading(fileOrUrl), new AbstractIcon(IconKey.ICON_SERVER, 32), null, null) {
             @Override
             public String getDontShowAgainKey() {
-                return "ASK_TO_REQUIRE_JS_" + fileOrUrl;
+                return permissionID;
             }
 
             @Override
@@ -389,11 +391,11 @@ public class ScriptThread extends Thread implements JSShutterDelegate {
             }
         };
         d.setDoNotShowAgainSelected(true);
-        // Integer ret = JSonStorage.getPlainStorage("Dialogs").get(d.getDontShowAgainKey(), -1);
-        // if (ret != null && ret > 0) {
-        // return;
-        // }
-        if (d.show().getCloseReason() == CloseReason.OK) {
+        ConfirmDialogInterface dialog = null;
+        if (!isCheckPermissions() || isPermissionSet(permissionID) || (dialog = d.show()).getCloseReason() == CloseReason.OK) {
+            if (dialog != null && dialog.isDontShowAgainSelected()) {
+                setPermissionSet(permissionID);
+            }
             final String js;
             if (fileOrUrl.matches("^https?\\:\\/\\/.+")) {
                 // url
