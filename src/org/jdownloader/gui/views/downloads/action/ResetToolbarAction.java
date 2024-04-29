@@ -2,11 +2,6 @@ package org.jdownloader.gui.views.downloads.action;
 
 import java.awt.event.ActionEvent;
 
-import jd.gui.swing.jdgui.MainTabbedPane;
-import jd.gui.swing.jdgui.interfaces.View;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-
 import org.appwork.swing.exttable.ExtTableEvent;
 import org.appwork.swing.exttable.ExtTableListener;
 import org.appwork.utils.swing.EDTRunner;
@@ -15,9 +10,16 @@ import org.jdownloader.gui.event.GUIEventSender;
 import org.jdownloader.gui.toolbar.action.AbstractToolBarAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
+import org.jdownloader.gui.views.components.packagetable.PackageControllerTable.SelectionInfoCallback;
 import org.jdownloader.gui.views.downloads.DownloadsView;
 import org.jdownloader.gui.views.downloads.table.DownloadsTable;
 import org.jdownloader.gui.views.downloads.table.DownloadsTableModel;
+
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.gui.swing.jdgui.MainTabbedPane;
+import jd.gui.swing.jdgui.interfaces.View;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 
 public class ResetToolbarAction extends AbstractToolBarAction implements ExtTableListener {
     /**
@@ -36,8 +38,12 @@ public class ResetToolbarAction extends AbstractToolBarAction implements ExtTabl
     @Override
     public void actionPerformed(ActionEvent e) {
         if (isEnabled()) {
-            final SelectionInfo<FilePackage, DownloadLink> rawSelection = DownloadsTable.getInstance().getSelectionInfo();
-            ResetAction.reset(rawSelection.getChildren());
+            DownloadsTable.getInstance().getSelectionInfo(new SelectionInfoCallback<FilePackage, DownloadLink>() {
+                @Override
+                public void onSelectionInfo(SelectionInfo<FilePackage, DownloadLink> selectionInfo) {
+                    DownloadWatchDog.getInstance().reset(selectionInfo.getChildren());
+                }
+            });
         }
     }
 
@@ -53,13 +59,17 @@ public class ResetToolbarAction extends AbstractToolBarAction implements ExtTabl
     }
 
     private void updateState() {
-        new EDTRunner() {
-
+        DownloadsTable.getInstance().getSelectionInfo(new SelectionInfoCallback<FilePackage, DownloadLink>() {
             @Override
-            protected void runInEDT() {
-                setEnabled(!DownloadsTable.getInstance().getSelectionInfo().isEmpty());
+            public void onSelectionInfo(final SelectionInfo<FilePackage, DownloadLink> selectionInfo) {
+                new EDTRunner() {
+                    @Override
+                    protected void runInEDT() {
+                        setEnabled(!selectionInfo.isEmpty());
+                    }
+                };
             }
-        };
+        });
     }
 
     @Override

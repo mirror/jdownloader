@@ -11,19 +11,6 @@ import javax.swing.event.ListSelectionListener;
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 
-import jd.controlling.downloadcontroller.DownloadController;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.gui.swing.jdgui.interfaces.View;
-import jd.gui.swing.jdgui.menu.ChunksEditor;
-import jd.gui.swing.jdgui.menu.ParalellDownloadsEditor;
-import jd.gui.swing.jdgui.menu.ParallelDownloadsPerHostEditor;
-import jd.gui.swing.jdgui.menu.SpeedlimitEditor;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLinkProperty;
-import jd.plugins.FilePackage;
-import jd.plugins.FilePackageProperty;
-
 import org.appwork.controlling.StateEvent;
 import org.appwork.controlling.StateEventListener;
 import org.appwork.storage.config.ValidationException;
@@ -41,7 +28,20 @@ import org.jdownloader.gui.views.downloads.DownloadsView;
 import org.jdownloader.gui.views.downloads.table.DownloadsTable;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
-public class DownloadOverview extends AbstractOverviewPanel<AggregatedNumbers> implements DownloadControllerListener, HierarchyListener, GenericConfigEventListener<Boolean>, GUIListener {
+import jd.controlling.downloadcontroller.DownloadController;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.gui.swing.jdgui.interfaces.View;
+import jd.gui.swing.jdgui.menu.ChunksEditor;
+import jd.gui.swing.jdgui.menu.ParalellDownloadsEditor;
+import jd.gui.swing.jdgui.menu.ParallelDownloadsPerHostEditor;
+import jd.gui.swing.jdgui.menu.SpeedlimitEditor;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLinkProperty;
+import jd.plugins.FilePackage;
+import jd.plugins.FilePackageProperty;
+
+public class DownloadOverview extends AbstractOverviewPanel<AggregatedNumbers, FilePackage, DownloadLink> implements DownloadControllerListener, HierarchyListener, GenericConfigEventListener<Boolean>, GUIListener {
     private final class FailedEntry extends DataEntry<AggregatedNumbers> {
         private FailedEntry(String label) {
             super(label);

@@ -12,6 +12,9 @@ import java.util.WeakHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicLong;
 
+import javax.swing.SwingUtilities;
+
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.ModifyLock;
 import org.appwork.utils.event.queue.Queue;
 import org.appwork.utils.event.queue.Queue.QueuePriority;
@@ -102,6 +105,13 @@ public abstract class PackageController<PackageType extends AbstractPackageNode<
              * this queue can't be killed
              */
         }
+
+        public <E, T extends Throwable> E addWait(QueueAction<E, T> item) throws T {
+            if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && SwingUtilities.isEventDispatchThread()) {
+                new Exception("This should be done via callback to avoid queue<->edt deadlocks").printStackTrace();
+            }
+            return super.addWait(item);
+        };
     };
 
     /**

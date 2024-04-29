@@ -24,6 +24,7 @@ import org.appwork.utils.swing.EDTRunner;
 import org.jdownloader.gui.event.GUIEventSender;
 import org.jdownloader.gui.event.GUIListener;
 import org.jdownloader.gui.views.SelectionInfo;
+import org.jdownloader.gui.views.components.packagetable.PackageControllerTable.SelectionInfoCallback;
 import org.jdownloader.gui.views.components.packagetable.PackageControllerTableModel;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings.Position;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
@@ -31,45 +32,39 @@ import org.jdownloader.updatev2.gui.LAFOptions;
 
 import jd.SecondLevelLaunch;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
+import jd.controlling.packagecontroller.AbstractPackageNode;
 import jd.gui.swing.jdgui.JDGui;
 import jd.gui.swing.jdgui.interfaces.View;
 
-public abstract class AbstractOverviewPanel<T> extends MigPanel implements GUIListener, GenericConfigEventListener<Boolean>, HierarchyListener {
+public abstract class AbstractOverviewPanel<T, ParentType extends AbstractPackageNode<ChildrenType, ParentType>, ChildrenType extends AbstractPackageChildrenNode<ParentType>> extends MigPanel implements GUIListener, GenericConfigEventListener<Boolean>, HierarchyListener {
+    private List<DataEntry<T>>                                            dataEntries;
+    protected final AtomicBoolean                                         visible      = new AtomicBoolean(false);
+    protected final NullsafeAtomicReference<Timer>                        updateTimer  = new NullsafeAtomicReference<Timer>(null);
+    protected final AtomicBoolean                                         hasSelection = new AtomicBoolean(false);
+    protected final DelayedRunnable                                       slowDelayer;
+    protected final DelayedRunnable                                       fastDelayer;
+    private final GenericConfigEventListener<Boolean>                     relayoutListener;
+    protected final PackageControllerTableModel<ParentType, ChildrenType> tableModel;
+    private static final ScheduledExecutorService                         SERVICE      = DelayedRunnable.getNewScheduledExecutorService();
 
-    private List<DataEntry<T>>                        dataEntries;
-    protected final AtomicBoolean                     visible      = new AtomicBoolean(false);
-    protected final NullsafeAtomicReference<Timer>    updateTimer  = new NullsafeAtomicReference<Timer>(null);
-    protected final AtomicBoolean                     hasSelection = new AtomicBoolean(false);
-
-    protected final DelayedRunnable                   slowDelayer;
-    protected final DelayedRunnable                   fastDelayer;
-    private final GenericConfigEventListener<Boolean> relayoutListener;
-    protected final PackageControllerTableModel       tableModel;
-
-    private static final ScheduledExecutorService     SERVICE      = DelayedRunnable.getNewScheduledExecutorService();
-
-    public AbstractOverviewPanel(PackageControllerTableModel tableModel) {
+    public AbstractOverviewPanel(PackageControllerTableModel<ParentType, ChildrenType> tableModel) {
         super("ins " + LAFOptions.getInstance().getExtension().customizeOverviewPanelInsets(), "[][grow,fill][]", "[grow,fill]");
-
         this.tableModel = tableModel;
         LAFOptions.getInstance().applyPanelBackground(this);
         GUIEventSender.getInstance().addListener(this, true);
         final MigPanel info = new MigPanel("ins 2 0 0 0", "[grow]10[grow]", "[grow,fill]2[grow,fill]");
         info.setOpaque(false);
         relayoutListener = new GenericConfigEventListener<Boolean>() {
-
             @Override
             public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
                 new EDTRunner() {
-
                     @Override
                     protected void runInEDT() {
                         layoutInfoPanel(info);
                         update();
-
                         revalidate();
                     }
-
                 };
             }
 
@@ -80,14 +75,12 @@ public abstract class AbstractOverviewPanel<T> extends MigPanel implements GUILi
         layoutInfoPanel(info);
         add(info, "pushy,growy");
         slowDelayer = new DelayedRunnable(SERVICE, 500, 5000) {
-
             @Override
             public void delayedrun() {
                 update();
             }
         };
         fastDelayer = new DelayedRunnable(SERVICE, 50, 200) {
-
             @Override
             public void delayedrun() {
                 update();
@@ -96,29 +89,22 @@ public abstract class AbstractOverviewPanel<T> extends MigPanel implements GUILi
         CFG_GUI.OVERVIEW_PANEL_TOTAL_INFO_VISIBLE.getEventSender().addListener(this, true);
         CFG_GUI.OVERVIEW_PANEL_SELECTED_INFO_VISIBLE.getEventSender().addListener(this, true);
         CFG_GUI.OVERVIEW_PANEL_VISIBLE_ONLY_INFO_VISIBLE.getEventSender().addListener(this, true);
-
         CFG_GUI.OVERVIEW_PANEL_SMART_INFO_VISIBLE.getEventSender().addListener(this, true);
-
         this.addHierarchyListener(this);
         onConfigValueModified(null, null);
-
         SecondLevelLaunch.GUI_COMPLETE.executeWhenReached(new Runnable() {
-
             public void run() {
                 visible.set(isViewActive());
                 fastDelayer.run();
             }
         });
         onConfigValueModified(null, null);
-
     }
 
     protected boolean isViewActive() {
         return new EDTHelper<Boolean>() {
-
             @Override
             public Boolean edtRun() {
-
                 return isActiveView(JDGui.getInstance().getMainTabbedPane().getSelectedView());
             }
         }.getReturnValue();
@@ -153,10 +139,8 @@ public abstract class AbstractOverviewPanel<T> extends MigPanel implements GUILi
         // filtered
         // speed
         // eta
-
         ArrayList<DataEntry<T>> row1 = new ArrayList<DataEntry<T>>();
         ArrayList<DataEntry<T>> row2 = new ArrayList<DataEntry<T>>();
-
         for (Entry<String, Position> es : map.entrySet()) {
             DataEntry<T> v = idMap.get(es.getKey());
             if (v == null) {
@@ -178,21 +162,16 @@ public abstract class AbstractOverviewPanel<T> extends MigPanel implements GUILi
                     x++;
                     continue;
                 }
-
                 row.set(x, v);
                 idMap.remove(v.getId());
                 break;
-
             }
-
         }
-
         addloop: for (int i = 0; i < dataEntries.size(); i++) {
             DataEntry<T> v = dataEntries.get(i);
             if (!idMap.containsKey(v.getId())) {
                 continue;
             }
-
             if (i % 2 == 0) {
                 int index = 0;
                 while (true) {
@@ -206,7 +185,6 @@ public abstract class AbstractOverviewPanel<T> extends MigPanel implements GUILi
                         index++;
                     }
                 }
-
             } else {
                 int index = 0;
                 while (true) {
@@ -221,20 +199,16 @@ public abstract class AbstractOverviewPanel<T> extends MigPanel implements GUILi
                     }
                 }
             }
-
         }
-
         if (save) {
             CFG_GUI.CFG.setOverviewPositions(map);
         }
-
         for (DataEntry<T> de : row1) {
             if (de == null) {
                 continue;
             }
             de.addTo(info);
         }
-
         boolean first = true;
         for (DataEntry<T> de : row2) {
             if (de == null) {
@@ -245,7 +219,6 @@ public abstract class AbstractOverviewPanel<T> extends MigPanel implements GUILi
             } else {
                 de.addTo(info);
             }
-
             first = false;
         }
     }
@@ -257,21 +230,16 @@ public abstract class AbstractOverviewPanel<T> extends MigPanel implements GUILi
     protected abstract List<DataEntry<T>> createDataEntries();
 
     public void removeListeners() {
-
         new EDTRunner() {
-
             @Override
             protected void runInEDT() {
-
                 stopUpdateTimer();
                 GUIEventSender.getInstance().removeListener(AbstractOverviewPanel.this);
                 CFG_GUI.OVERVIEW_PANEL_TOTAL_INFO_VISIBLE.getEventSender().removeListener(AbstractOverviewPanel.this);
                 CFG_GUI.OVERVIEW_PANEL_SELECTED_INFO_VISIBLE.getEventSender().removeListener(AbstractOverviewPanel.this);
                 CFG_GUI.OVERVIEW_PANEL_VISIBLE_ONLY_INFO_VISIBLE.getEventSender().removeListener(AbstractOverviewPanel.this);
                 CFG_GUI.OVERVIEW_PANEL_SMART_INFO_VISIBLE.getEventSender().removeListener(AbstractOverviewPanel.this);
-
                 removeHierarchyListener(AbstractOverviewPanel.this);
-
             }
         };
     }
@@ -295,23 +263,25 @@ public abstract class AbstractOverviewPanel<T> extends MigPanel implements GUILi
 
     @Override
     public void onConfigValueModified(KeyHandler<Boolean> keyHandler, Boolean newValue) {
-        new EDTHelper<Void>() {
-
+        tableModel.getTable().getSelectionInfo(new SelectionInfoCallback<ParentType, ChildrenType>() {
             @Override
-            public Void edtRun() {
-                final SelectionInfo<?, ?> selectionInfo = tableModel.getTable().getSelectionInfo();
-                final boolean containsSelection = !selectionInfo.isEmpty();
-                hasSelection.set(containsSelection);
-                fastDelayer.run();
-                return null;
+            public void onSelectionInfo(final SelectionInfo<ParentType, ChildrenType> selectionInfo) {
+                new EDTHelper<Void>() {
+                    @Override
+                    public Void edtRun() {
+                        final boolean containsSelection = !selectionInfo.isEmpty();
+                        hasSelection.set(containsSelection);
+                        fastDelayer.run();
+                        return null;
+                    }
+                }.start(true);
             }
-        }.start(true);
+        });
     }
 
     @Override
     public void onGuiMainTabSwitch(View oldView, final View newView) {
         new EDTRunner() {
-
             @Override
             protected void runInEDT() {
                 if (isActiveView(newView)) {
@@ -324,7 +294,6 @@ public abstract class AbstractOverviewPanel<T> extends MigPanel implements GUILi
                 }
             }
         };
-
     }
 
     abstract protected boolean isActiveView(View newView);
@@ -404,7 +373,6 @@ public abstract class AbstractOverviewPanel<T> extends MigPanel implements GUILi
             }
         }
         new EDTRunner() {
-
             @Override
             protected void runInEDT() {
                 if (!isDisplayable() || visible.get() == false) {

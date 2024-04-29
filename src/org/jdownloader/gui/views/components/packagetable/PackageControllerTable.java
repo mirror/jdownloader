@@ -17,6 +17,7 @@ import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.swing.JTable;
 import javax.swing.KeyStroke;
@@ -26,18 +27,14 @@ import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.TableModel;
 
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
-import jd.controlling.packagecontroller.AbstractPackageNode;
-import jd.controlling.packagecontroller.PackageController;
-import jd.gui.swing.jdgui.BasicJDTable;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.scheduler.DelayedRunnable;
 import org.appwork.swing.exttable.ExtColumn;
 import org.appwork.swing.exttable.ExtComponentRowHighlighter;
 import org.appwork.swing.exttable.ExtOverlayRowHighlighter;
 import org.appwork.swing.exttable.ExtTable;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.event.queue.Queue;
 import org.appwork.utils.event.queue.QueueAction;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.swing.EDTHelper;
@@ -55,6 +52,12 @@ import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.updatev2.gui.LAFOptions;
+
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
+import jd.controlling.packagecontroller.AbstractPackageNode;
+import jd.controlling.packagecontroller.PackageController;
+import jd.gui.swing.jdgui.BasicJDTable;
 
 public abstract class PackageControllerTable<ParentType extends AbstractPackageNode<ChildrenType, ParentType>, ChildrenType extends AbstractPackageChildrenNode<ParentType>> extends BasicJDTable<AbstractNode> {
     protected class SelectionInfoCache {
@@ -199,8 +202,19 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
         }
     }
 
+    @Deprecated
     public SelectionInfo<ParentType, ChildrenType> getSelectionInfo() {
+        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && !SwingUtilities.isEventDispatchThread()) {
+            new Exception("This should be done via callback to avoid edt<->queue deadlocks").printStackTrace();
+        }
         return getSelectionInfo(true, true);
+    }
+
+    public void getSelectionInfo(final SelectionInfoCallback<ParentType, ChildrenType> callback) {
+        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && !SwingUtilities.isEventDispatchThread()) {
+            new Exception("This should be done via callback to avoid edt<->queue deadlocks").printStackTrace();
+        }
+        getSelectionInfo(callback, true, true);
     }
 
     protected volatile WeakReference<AbstractNode> contextMenuTrigger = new WeakReference<AbstractNode>(null);
@@ -250,6 +264,10 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
         return null;
     }
 
+    public static interface SelectionInfoCallback<PackageType extends AbstractPackageNode<ChildrenType, PackageType>, ChildrenType extends AbstractPackageChildrenNode<PackageType>> {
+        void onSelectionInfo(SelectionInfo<PackageType, ChildrenType> selectionInfo);
+    }
+
     /** access within EDT only **/
     protected volatile SelectionInfoCache selectionOnly_TableData      = null;
     /** access within EDT only **/
@@ -257,11 +275,11 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
     /** access within EDT only **/
     protected volatile SelectionInfoCache all_TableData                = null;
 
-    public SelectionInfo<ParentType, ChildrenType> getSelectionInfo(final boolean selectionOnly, final boolean useTableModelData) {
+    public void getSelectionInfo(final SelectionInfoCallback<ParentType, ChildrenType> callback, final boolean selectionOnly, final boolean useTableModelData) {
         if (selectionOnly) {
-            return new EDTHelper<SelectionInfo<ParentType, ChildrenType>>() {
+            new EDTHelper<Void>() {
                 @Override
-                public SelectionInfo<ParentType, ChildrenType> edtRun() {
+                public Void edtRun() {
                     final long currentSelectionVersion = selectionVersion.get();
                     if (useTableModelData) {
                         SelectionInfoCache lselectionOnly_TableData = selectionOnly_TableData;
@@ -270,12 +288,14 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
                         if (lselectionOnly_TableData != null && lselectionOnly_TableData.getSelectionVersion() == currentSelectionVersion && lselectionOnly_TableData.getDataVersion() == dataVersion) {
                             SelectionInfo<ParentType, ChildrenType> ret = lselectionOnly_TableData.getSelectionInfo();
                             if (ret.getRawContext() == contextMenuTrigger) {
-                                return ret;
+                                callback.onSelectionInfo(ret);
+                                return null;
                             }
                             if (ret instanceof PackageControllerTableModelSelectionOnlySelectionInfo) {
                                 ret = new PackageControllerTableModelSelectionOnlySelectionInfo(contextMenuTrigger, (PackageControllerTableModelSelectionOnlySelectionInfo<?, ?>) ret);
                                 selectionOnly_TableData = new SelectionInfoCache(currentSelectionVersion, dataVersion, ret);
-                                return ret;
+                                callback.onSelectionInfo(ret);
+                                return null;
                             }
                         }
                         final SelectionInfo<ParentType, ChildrenType> selectionInfo;
@@ -284,43 +304,82 @@ public abstract class PackageControllerTable<ParentType extends AbstractPackageN
                         } else {
                             selectionInfo = new PackageControllerTableModelSelectionOnlySelectionInfo<ParentType, ChildrenType>(contextMenuTrigger, getModel());
                         }
-                        lselectionOnly_TableData = new SelectionInfoCache(currentSelectionVersion, dataVersion, selectionInfo);
-                        selectionOnly_TableData = lselectionOnly_TableData;
-                        return selectionInfo;
+                        selectionOnly_TableData = lselectionOnly_TableData = new SelectionInfoCache(currentSelectionVersion, dataVersion, selectionInfo);
+                        callback.onSelectionInfo(selectionInfo);
                     } else {
                         SelectionInfoCache lselectionOnly_ControllerData = selectionOnly_ControllerData;
                         if (lselectionOnly_ControllerData != null && lselectionOnly_ControllerData.getSelectionVersion() == currentSelectionVersion) {
-                            return lselectionOnly_ControllerData.getSelectionInfo();
-                        }
-                        if (getSelectionModel().isSelectionEmpty()) {
+                            callback.onSelectionInfo(selectionOnly_ControllerData.getSelectionInfo());
+                        } else if (getSelectionModel().isSelectionEmpty()) {
                             final SelectionInfo<ParentType, ChildrenType> selectionInfo = new EmptySelectionInfo<ParentType, ChildrenType>(getController());
-                            lselectionOnly_ControllerData = new SelectionInfoCache(currentSelectionVersion, -1, selectionInfo);
-                            selectionOnly_ControllerData = lselectionOnly_ControllerData;
-                            return selectionInfo;
+                            selectionOnly_ControllerData = lselectionOnly_ControllerData = new SelectionInfoCache(currentSelectionVersion, -1, selectionInfo);
+                            callback.onSelectionInfo(selectionInfo);
                         } else {
                             throw new WTFException("You really want an unfiltered filtered view?!");
                         }
                     }
+                    return null;
                 }
-            }.getReturnValue();
+            }.start();
         } else {
             if (useTableModelData) {
-                return new EDTHelper<SelectionInfo<ParentType, ChildrenType>>() {
+                new EDTHelper<Void>() {
                     @Override
-                    public SelectionInfo<ParentType, ChildrenType> edtRun() {
+                    public Void edtRun() {
                         final long dataVersion = tableModel.getTableDataVersion();
                         SelectionInfoCache lall_TableData = all_TableData;
                         if (lall_TableData != null && lall_TableData.getDataVersion() == dataVersion) {
-                            return lall_TableData.getSelectionInfo();
+                            callback.onSelectionInfo(lall_TableData.getSelectionInfo());
+                        } else {
+                            final SelectionInfo<ParentType, ChildrenType> selectionInfo = new PackageControllerTableModelSelectionInfo<ParentType, ChildrenType>(null, getModel());
+                            all_TableData = lall_TableData = new SelectionInfoCache(-1, dataVersion, selectionInfo);
+                            callback.onSelectionInfo(selectionInfo);
                         }
-                        final SelectionInfo<ParentType, ChildrenType> selectionInfo = new PackageControllerTableModelSelectionInfo<ParentType, ChildrenType>(null, getModel());
-                        lall_TableData = new SelectionInfoCache(-1, dataVersion, selectionInfo);
-                        all_TableData = lall_TableData;
-                        return selectionInfo;
+                        return null;
                     }
-                }.getReturnValue();
+                }.start();
             } else {
-                return getModel().getController().getSelectionInfo();
+                getModel().getController().getQueue().add(new QueueAction<Void, RuntimeException>(Queue.QueuePriority.HIGH) {
+                    @Override
+                    protected Void run() throws RuntimeException {
+                        final SelectionInfo<ParentType, ChildrenType> selectionInfo = getModel().getController().getSelectionInfo();
+                        callback.onSelectionInfo(selectionInfo);
+                        return null;
+                    }
+                });
+            }
+        }
+    }
+
+    @Deprecated
+    public SelectionInfo<ParentType, ChildrenType> getSelectionInfo(final boolean selectionOnly, final boolean useTableModelData) {
+        final AtomicReference<Object> ret = new AtomicReference<Object>();
+        ret.set(ret);// help value to differ between result that may also be null
+        final SelectionInfoCallback<ParentType, ChildrenType> callback = new SelectionInfoCallback<ParentType, ChildrenType>() {
+            @Override
+            public void onSelectionInfo(SelectionInfo<ParentType, ChildrenType> selectionInfo) {
+                synchronized (ret) {
+                    ret.set(selectionInfo);
+                    ret.notifyAll();
+                }
+            }
+        };
+        getSelectionInfo(callback, selectionOnly, useTableModelData);
+        while (true) {
+            Object selection = null;
+            if ((selection = ret.get()) == ret) {
+                try {
+                    synchronized (ret) {
+                        if ((selection = ret.get()) == ret) {
+                            ret.wait();
+                        }
+                    }
+                } catch (InterruptedException e) {
+                    LogController.CL().log(e);
+                    return null;
+                }
+            } else {
+                return (SelectionInfo<ParentType, ChildrenType>) selection;
             }
         }
     }

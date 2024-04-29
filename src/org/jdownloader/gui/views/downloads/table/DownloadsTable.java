@@ -28,12 +28,6 @@ import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 import javax.swing.TransferHandler;
 
-import jd.controlling.TaskQueue;
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-import net.miginfocom.swing.MigLayout;
-
 import org.appwork.swing.exttable.DropHighlighter;
 import org.appwork.swing.exttable.ExtCheckBoxMenuItem;
 import org.appwork.swing.exttable.ExtColumn;
@@ -62,8 +56,13 @@ import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings.DeleteFileOptions;
 import org.jdownloader.settings.staticreferences.CFG_GUI;
 
-public class DownloadsTable extends PackageControllerTable<FilePackage, DownloadLink> {
+import jd.controlling.TaskQueue;
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import net.miginfocom.swing.MigLayout;
 
+public class DownloadsTable extends PackageControllerTable<FilePackage, DownloadLink> {
     private static final long          serialVersionUID = 8843600834248098174L;
     private HashMap<KeyStroke, Action> shortCutActions;
     private final LogSource            logger;
@@ -72,7 +71,6 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
     public DownloadsTable(final DownloadsTableModel tableModel) {
         super(tableModel);
         INSTANCE = this;
-
         this.addRowHighlighter(new DropHighlighter(null, new Color(27, 164, 191, 75)));
         this.setTransferHandler(new DownloadsTableTransferHandler(this));
         this.setDragEnabled(true);
@@ -80,16 +78,13 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
         logger = LogController.getInstance().getLogger(DownloadsTable.class.getName());
         setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN);
         setLayout(new MigLayout("ins 0", "[grow]", "[grow]"));
-
     }
 
     protected void fireColumnModelUpdate() {
         super.fireColumnModelUpdate();
         new EDTRunner() {
-
             @Override
             protected void runInEDT() {
-
                 boolean alllocked = true;
                 for (ExtColumn<?> c : getModel().getColumns()) {
                     if (c.isResizable()) {
@@ -99,17 +94,14 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
                 }
                 if (alllocked) {
                     JScrollPane sp = (JScrollPane) getParent().getParent();
-
                     CFG_GUI.HORIZONTAL_SCROLLBARS_IN_DOWNLOAD_TABLE_ENABLED.setValue(true);
                     setColumnSaveID("hBAR");
                     setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
                     sp.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
                     sp.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-
                 }
             }
         };
-
     }
 
     protected JPopupMenu columnControlMenu(final ExtColumn<AbstractNode> extColumn) {
@@ -130,17 +122,19 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
 
     @Override
     protected boolean onShortcutDelete(final java.util.List<AbstractNode> selectedObjects, final KeyEvent evt, final boolean direct) {
-        final SelectionInfo<FilePackage, DownloadLink> selectionInfo = getSelectionInfo();
-        TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
-
+        getSelectionInfo(new SelectionInfoCallback<FilePackage, DownloadLink>() {
             @Override
-            protected Void run() throws RuntimeException {
-                DownloadTabActionUtils.deleteLinksRequest(selectionInfo, _GUI.T.RemoveSelectionAction_actionPerformed_(), DeleteFileOptions.REMOVE_LINKS_ONLY, evt.isControlDown());
-                return null;
+            public void onSelectionInfo(final SelectionInfo<FilePackage, DownloadLink> selectionInfo) {
+                TaskQueue.getQueue().add(new QueueAction<Void, RuntimeException>() {
+                    @Override
+                    protected Void run() throws RuntimeException {
+                        DownloadTabActionUtils.deleteLinksRequest(selectionInfo, _GUI.T.RemoveSelectionAction_actionPerformed_(), DeleteFileOptions.REMOVE_LINKS_ONLY, evt.isControlDown());
+                        return null;
+                    }
+                });
             }
         });
         return true;
-
     }
 
     @Override
@@ -151,10 +145,8 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
 
     @Override
     protected boolean onHeaderSortClick(final MouseEvent e1, final ExtColumn<AbstractNode> oldSortColumn, String oldSortId, ExtColumn<AbstractNode> newColumn) {
-
         // own thread to
         new Timer(100, new ActionListener() {
-
             public void actionPerformed(ActionEvent e) {
                 Timer t = (Timer) e.getSource();
                 t.stop();
@@ -166,7 +158,6 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
                         HelpDialog.show(e1.getLocationOnScreen(), "downloadtabe_sortwarner", Dialog.STYLE_SHOW_DO_NOT_DISPLAY_AGAIN, _GUI.T.DownloadsTable_actionPerformed_sortwarner_title(getModel().getSortColumn().getName()), _GUI.T.DownloadsTable_actionPerformed_sortwarner_text(), new AbstractIcon(IconKey.ICON_SORT, 32));
                     }
                 }
-
             }
         }).start();
         return false;
@@ -228,7 +219,6 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
         if (ks == KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask())) {
             return true;
         }
-
         return false;
     }
 
@@ -238,7 +228,6 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
         try {
             final InputMap map = getInputMap(condition);
             final ActionMap am = getActionMap();
-
             if (map != null && am != null && isEnabled()) {
                 final Object binding = map.get(stroke);
                 final Action action = (binding == null) ? null : am.get(binding);
@@ -256,7 +245,6 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
         } catch (Exception e) {
             e.printStackTrace();
         }
-
         return actionNotified || super.processKeyBinding(stroke, evt, condition, pressed);
     }
 
@@ -291,12 +279,10 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
     }
 
     public void updateContextShortcuts() {
-
         final InputMap input = getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
         final InputMap input2 = getInputMap(JComponent.WHEN_FOCUSED);
         final InputMap input3 = getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
         final ActionMap actions = getActionMap();
-
         if (shortCutActions != null) {
             for (Entry<KeyStroke, Action> ks : shortCutActions.entrySet()) {
                 Object binding = input.get(ks.getKey());
@@ -304,14 +290,11 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
                 input2.remove(ks.getKey());
                 input3.remove(ks.getKey());
                 actions.remove(binding);
-
             }
         }
-
         shortCutActions = new HashMap<KeyStroke, Action>();
         fillActions(MenuManagerDownloadTableContext.getInstance().getMenuData());
         fillActions(MenuManagerDownloadTabBottomBar.getInstance().getMenuData());
-
     }
 
     private void fillActions(MenuContainer menuData) {
@@ -321,9 +304,7 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
         final InputMap input = getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
         final InputMap input2 = getInputMap(JComponent.WHEN_FOCUSED);
         final InputMap input3 = getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
-
         final ActionMap actions = getActionMap();
-
         for (MenuItemData mi : menuData.getItems()) {
             if (!mi._isValidated()) {
                 return;
@@ -340,7 +321,6 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
                         if (keystroke != null) {
                             linkAction(input, input2, input3, actions, action, keystroke);
                         }
-
                     }
                 }
                 continue;
@@ -375,7 +355,6 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-
             }
         }
     }
@@ -415,20 +394,16 @@ public class DownloadsTable extends PackageControllerTable<FilePackage, Download
             } catch (Exception e) {
                 logger.log(e);
             }
-
             logger.info(keystroke + " -> " + action);
-
             input.put(keystroke, key);
             input2.put(keystroke, key);
             input3.put(keystroke, key);
             actions.put(key, action);
             shortCutActions.put(keystroke, action);
-
         }
     }
 
     public static DownloadsTable getInstance() {
         return INSTANCE;
     }
-
 }
