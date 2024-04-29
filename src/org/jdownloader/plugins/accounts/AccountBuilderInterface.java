@@ -5,7 +5,6 @@ import javax.swing.JComponent;
 import jd.plugins.Account;
 
 public interface AccountBuilderInterface {
-
     JComponent getComponent();
 
     void setAccount(Account defaultAccount);
@@ -15,5 +14,4 @@ public interface AccountBuilderInterface {
     Account getAccount();
 
     boolean updateAccount(Account input, Account output);
-
 }

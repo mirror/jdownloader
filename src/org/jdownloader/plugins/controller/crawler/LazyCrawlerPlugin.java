@@ -58,6 +58,16 @@ public class LazyCrawlerPlugin extends LazyPlugin<PluginForDecrypt> {
         return averageRuntime;
     }
 
+    private String[] sitesSupported = null;
+
+    public String[] getSitesSupported() {
+        return sitesSupported;
+    }
+
+    protected void setSitesSupported(String[] sitesSupported) {
+        this.sitesSupported = sitesSupported;
+    }
+
     public void updateCrawlRuntime(long r) {
         synchronized (this) {
             decrypts++;

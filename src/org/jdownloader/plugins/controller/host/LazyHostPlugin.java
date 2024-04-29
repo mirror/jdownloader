@@ -12,8 +12,7 @@ public class LazyHostPlugin extends LazyPlugin<PluginForHost> {
         CONFIG,
         PREMIUM,
         REWRITE,
-        ALLOW,
-        SITESUPPORT
+        ALLOW
     }
 
     private String        premiumUrl;
@@ -70,12 +69,14 @@ public class LazyHostPlugin extends LazyPlugin<PluginForHost> {
         setProperty(hasConfig, PROPERTY.CONFIG);
     }
 
-    public boolean isSitesSupported() {
-        return getProperty(PROPERTY.SITESUPPORT);
+    private String[] sitesSupported = null;
+
+    public String[] getSitesSupported() {
+        return sitesSupported;
     }
 
-    protected void setSitesSupported(boolean b) {
-        setProperty(b, PROPERTY.SITESUPPORT);
+    protected void setSitesSupported(String[] sitesSupported) {
+        this.sitesSupported = sitesSupported;
     }
 
     protected synchronized final void setProperty(final boolean b, final PROPERTY property) {

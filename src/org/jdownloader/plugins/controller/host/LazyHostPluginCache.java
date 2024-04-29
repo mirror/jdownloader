@@ -22,7 +22,7 @@ import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 import org.jdownloader.plugins.controller.LazyPluginClass;
 
 public class LazyHostPluginCache {
-    private static final long CACHEVERSION = 13042022001l + LazyPlugin.FEATURE.CACHEVERSION;
+    private static final long CACHEVERSION = 29042024001l + LazyPlugin.FEATURE.CACHEVERSION;
 
     public static ByteArrayOutputStream readFile(File file) throws IOException {
         final FileInputStream fis = new FileInputStream(file);
@@ -84,18 +84,27 @@ public class LazyHostPluginCache {
                         final int flags = is.ensureRead();
                         lazyHostPlugin.setPremium((flags & (1 << 0)) != 0);
                         lazyHostPlugin.setHasConfig((flags & (1 << 1)) != 0);
-                        lazyHostPlugin.setSitesSupported((flags & (1 << 3)) != 0);
-                        if ((flags & (1 << 5)) != 0) {
+                        if ((flags & (1 << 4)) != 0) {
                             lazyHostPlugin.setPremiumUrl(is.readString(stringBuffer));
                         }
-                        if ((flags & (1 << 6)) != 0) {
+                        if ((flags & (1 << 5)) != 0) {
                             lazyHostPlugin.setHasRewrite(true);
                         }
-                        if ((flags & (1 << 7)) != 0) {
+                        if ((flags & (1 << 6)) != 0) {
                             lazyHostPlugin.setHasAllowHandle(true);
                         }
-                        if ((flags & (1 << 4)) != 0) {
+                        if ((flags & (1 << 3)) != 0) {
                             lazyHostPlugin.setConfigInterface(is.readString(stringBuffer));
+                        }
+                        final int sitesSupportedNumber = is.readShort();
+                        if (sitesSupportedNumber == 0) {
+                            lazyHostPlugin.setSitesSupported(null);
+                        } else {
+                            final List<String> sitesSupportedNames = new ArrayList<String>();
+                            for (int index = 0; index < sitesSupportedNumber; index++) {
+                                sitesSupportedNames.add(is.readString(stringBuffer));
+                            }
+                            lazyHostPlugin.setSitesSupported(sitesSupportedNames.toArray(new String[0]));
                         }
                         if ((flags & (1 << 2)) != 0) {
                             final ArrayList<LazyPlugin.FEATURE> features = new ArrayList<LazyPlugin.FEATURE>(LazyPlugin.FEATURE.values().length);
@@ -183,20 +192,17 @@ public class LazyHostPluginCache {
                     if (features != null && features.length > 0) {
                         flags |= (1 << 2);
                     }
-                    if (plugin.isSitesSupported()) {
+                    if (plugin.isHasConfig() && plugin.getConfigInterface() != null) {
                         flags |= (1 << 3);
                     }
-                    if (plugin.isHasConfig() && plugin.getConfigInterface() != null) {
+                    if (plugin.isPremium() && plugin.getPremiumUrl() != null) {
                         flags |= (1 << 4);
                     }
-                    if (plugin.isPremium() && plugin.getPremiumUrl() != null) {
+                    if (plugin.isHasRewrite()) {
                         flags |= (1 << 5);
                     }
-                    if (plugin.isHasRewrite()) {
-                        flags |= (1 << 6);
-                    }
                     if (plugin.isHasAllowHandle()) {
-                        flags |= (1 << 7);
+                        flags |= (1 << 6);
                     }
                     bos.write(flags);
                     if (plugin.isPremium() && plugin.getPremiumUrl() != null) {
@@ -204,6 +210,13 @@ public class LazyHostPluginCache {
                     }
                     if (plugin.isHasConfig() && plugin.getConfigInterface() != null) {
                         os.writeString(plugin.getConfigInterface());
+                    }
+                    final String[] sitesSupported = plugin.getSitesSupported();
+                    os.writeShort(sitesSupported == null ? 0 : sitesSupported.length);
+                    if (sitesSupported != null) {
+                        for (String siteSupported : sitesSupported) {
+                            os.writeString(siteSupported);
+                        }
                     }
                     if (features != null && features.length > 0) {
                         for (final LazyPlugin.FEATURE feature : LazyPlugin.FEATURE.values()) {

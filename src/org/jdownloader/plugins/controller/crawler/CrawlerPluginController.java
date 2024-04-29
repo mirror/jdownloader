@@ -263,6 +263,12 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
                                     } else {
                                         lazyCrawlerPlugin.setConfigInterface(null);
                                     }
+                                    try {
+                                        lazyCrawlerPlugin.setSitesSupported(plg.siteSupportedNames());
+                                    } catch (Throwable e) {
+                                        logger.log(e);
+                                        lazyCrawlerPlugin.setSitesSupported(null);
+                                    }
                                     lazyCrawlerPlugin.setMaxConcurrentInstances(plg.getMaxConcurrentProcessingInstances());
                                     lazyCrawlerPlugin.setHasConfig(plg.hasConfig());
                                     lazyCrawlerPlugin.setFeatures(plg.getFeatures());
@@ -321,7 +327,7 @@ public class CrawlerPluginController extends PluginController<PluginForDecrypt> 
 
     /*
      * returns the list of available plugins
-     * 
+     *
      * can return null if controller is not initiated yet and ensureLoaded is false
      */
     public static List<LazyCrawlerPlugin> list(boolean ensureLoaded) {

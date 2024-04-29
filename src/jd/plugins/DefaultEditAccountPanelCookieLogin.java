@@ -8,6 +8,9 @@ import javax.swing.JLabel;
 import javax.swing.text.DefaultHighlighter;
 import javax.swing.text.Highlighter.HighlightPainter;
 
+import jd.gui.swing.components.linkbutton.JLink;
+import jd.http.Cookies;
+
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtPasswordField;
 import org.appwork.swing.components.ExtTextField;
@@ -17,9 +20,6 @@ import org.jdownloader.gui.InputChangedCallbackInterface;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.plugins.accounts.AccountBuilderInterface;
 import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
-
-import jd.gui.swing.components.linkbutton.JLink;
-import jd.http.Cookies;
 
 public class DefaultEditAccountPanelCookieLogin extends MigPanel implements AccountBuilderInterface {
     /**
@@ -77,7 +77,6 @@ public class DefaultEditAccountPanelCookieLogin extends MigPanel implements Acco
         this.cookieLoginOnly = this.plg.hasFeature(FEATURE.COOKIE_LOGIN_ONLY);
         this.cookieLoginOptional = this.plg.hasFeature(FEATURE.COOKIE_LOGIN_OPTIONAL);
         if (cookieLoginOnly) {
-            add(new JLabel(_GUI.T.jd_gui_swing_components_AccountDialog_generic_instructions()));
             add(new JLink(_GUI.T.jd_gui_swing_components_AccountDialog_generic_instructions_click_here_for_instructions(), "https://support.jdownloader.org/Knowledgebase/Article/View/account-cookie-login-instructions"));
         }
         if (this.usernameIsEmail) {

@@ -363,10 +363,10 @@ public class HostPluginController extends PluginController<PluginForHost> {
                                         lazyHostPlugin.setHasRewrite(false);
                                     }
                                     try {
-                                        lazyHostPlugin.setSitesSupported(plg.siteSupportedNames() != null);
+                                        lazyHostPlugin.setSitesSupported(plg.siteSupportedNames());
                                     } catch (Throwable e) {
                                         logger.log(e);
-                                        lazyHostPlugin.setSitesSupported(false);
+                                        lazyHostPlugin.setSitesSupported(null);
                                     }
                                     lazyHostPlugin.setFeatures(plg.getFeatures());
                                 } catch (Throwable e) {

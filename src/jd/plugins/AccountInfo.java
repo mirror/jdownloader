@@ -27,6 +27,10 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.regex.Pattern;
 
+import jd.config.Property;
+import jd.http.Browser;
+import jd.nutils.NaturalOrderComparator;
+
 import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
@@ -36,10 +40,6 @@ import org.jdownloader.logging.LogController;
 import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.plugins.controller.host.PluginFinder;
-
-import jd.config.Property;
-import jd.http.Browser;
-import jd.nutils.NaturalOrderComparator;
 
 public class AccountInfo extends Property implements AccountTrafficView {
     private static final long serialVersionUID       = 1825140346023286206L;
@@ -397,41 +397,31 @@ public class AccountInfo extends Property implements AccountTrafficView {
                         if (lazyHostPlugin.isFallbackPlugin()) {
                             continue;
                         }
-                        if (lazyHostPlugin.isSitesSupported()) {
-                            try {
-                                final PluginForHost plg = pluginFinder.getPlugin(lazyHostPlugin);
-                                if (plg == null || plg.getLazyP().isFallbackPlugin()) {
-                                    continue;
-                                }
-                                final String[] siteSupportedNames = plg.siteSupportedNames();
-                                if (siteSupportedNames != null) {
-                                    final Iterator<String> it = nonTldHosts.iterator();
-                                    while (it.hasNext()) {
-                                        final String nonTldHost = it.next();
-                                        for (final String siteSupportedName : siteSupportedNames) {
-                                            if (StringUtils.equalsIgnoreCase(siteSupportedName, nonTldHost)) {
-                                                final List<LazyHostPlugin> list = new ArrayList<LazyHostPlugin>();
-                                                map.put(nonTldHost, list);
-                                                list.add(lazyHostPlugin);
-                                                it.remove();
-                                                continue loop;
-                                            } else if (StringUtils.containsIgnoreCase(siteSupportedName, nonTldHost)) {
-                                                List<LazyHostPlugin> list = map.get(nonTldHost);
-                                                if (list == null) {
-                                                    list = new ArrayList<LazyHostPlugin>();
-                                                    map.put(nonTldHost, list);
-                                                    list.add(lazyHostPlugin);
-                                                } else if (!list.contains(lazyHostPlugin)) {
-                                                    list.add(lazyHostPlugin);
-                                                }
-                                            }
+                        final String[] siteSupportedNames = lazyHostPlugin.getSitesSupported();
+                        if (siteSupportedNames != null) {
+                            final Iterator<String> it = nonTldHosts.iterator();
+                            while (it.hasNext()) {
+                                final String nonTldHost = it.next();
+                                for (final String siteSupportedName : siteSupportedNames) {
+                                    if (StringUtils.equalsIgnoreCase(siteSupportedName, nonTldHost)) {
+                                        final List<LazyHostPlugin> list = new ArrayList<LazyHostPlugin>();
+                                        map.put(nonTldHost, list);
+                                        list.add(lazyHostPlugin);
+                                        it.remove();
+                                        continue loop;
+                                    } else if (StringUtils.containsIgnoreCase(siteSupportedName, nonTldHost)) {
+                                        List<LazyHostPlugin> list = map.get(nonTldHost);
+                                        if (list == null) {
+                                            list = new ArrayList<LazyHostPlugin>();
+                                            map.put(nonTldHost, list);
+                                            list.add(lazyHostPlugin);
+                                        } else if (!list.contains(lazyHostPlugin)) {
+                                            list.add(lazyHostPlugin);
                                         }
                                     }
-                                    continue loop;
                                 }
-                            } catch (Throwable e) {
-                                logger.log(e);
                             }
+                            continue loop;
                         }
                         final String pattern = lazyHostPlugin.getPatternSource();
                         for (final String nonTldHost : nonTldHosts) {

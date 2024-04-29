@@ -78,6 +78,8 @@ import org.appwork.utils.swing.dialog.Dialog;
 import org.appwork.utils.swing.dialog.DialogNoAnswerException;
 import org.appwork.utils.swing.dialog.ProxyDialog;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.controller.crawler.CrawlerPluginController;
+import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
 import org.jdownloader.plugins.controller.host.PluginFinder;
 import org.jdownloader.translate._JDT;
 import org.jdownloader.updatev2.FilterList;
@@ -240,6 +242,19 @@ public class ProxyController implements ProxySelectorInterface {
             final List<String> assigned = ai.setMultiHostSupport(null, Arrays.asList(new String[] { host }), pluginFinder);
             if (assigned != null && assigned.size() == 1) {
                 assignedHost = assigned.get(0);
+            }
+        }
+        if (assignedHost == null) {
+            for (LazyCrawlerPlugin crawler : CrawlerPluginController.getInstance().list()) {
+                final String[] sitesSupportedNames = crawler.getSitesSupported();
+                if (sitesSupportedNames != null) {
+                    for (String siteSupportedName : sitesSupportedNames) {
+                        if (StringUtils.equalsIgnoreCase(host, siteSupportedName)) {
+                            assignedHost = crawler.getDisplayName();
+                            break;
+                        }
+                    }
+                }
             }
         }
         if (mapping != null) {

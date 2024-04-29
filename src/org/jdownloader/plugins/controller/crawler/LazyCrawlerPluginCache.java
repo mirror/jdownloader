@@ -21,7 +21,7 @@ import org.jdownloader.plugins.controller.LazyPluginClass;
 import org.jdownloader.plugins.controller.host.LazyHostPluginCache;
 
 public class LazyCrawlerPluginCache {
-    private static final long CACHEVERSION = 13042022001l + LazyPlugin.FEATURE.CACHEVERSION;
+    private static final long CACHEVERSION = 29042024001l + LazyPlugin.FEATURE.CACHEVERSION;
 
     public static List<LazyCrawlerPlugin> read(File file, final AtomicLong lastModification) throws IOException {
         final ArrayList<LazyCrawlerPlugin> ret = new ArrayList<LazyCrawlerPlugin>();
@@ -60,7 +60,7 @@ public class LazyCrawlerPluginCache {
                     }
                     final LazyPluginClass lazyPluginClass = new LazyPluginClass(className, sha256, lastModified, interfaceVersion, revision, dependencies);
                     final int lazyCrawlerPluginSize = is.readShort();
-                    for (int lazyHostPluginIndex = 0; lazyHostPluginIndex < lazyCrawlerPluginSize; lazyHostPluginIndex++) {
+                    for (int lazyCrawlerPluginIndex = 0; lazyCrawlerPluginIndex < lazyCrawlerPluginSize; lazyCrawlerPluginIndex++) {
                         final LazyCrawlerPlugin lazyCrawlerPlugin = new LazyCrawlerPlugin(lazyPluginClass, is.readString(stringBuffer), is.readString(stringBuffer), null, null);
                         lazyCrawlerPlugin.setPluginUsage(is.readLongOptimized());
                         lazyCrawlerPlugin.setMaxConcurrentInstances((int) is.readLongOptimized());
@@ -68,6 +68,16 @@ public class LazyCrawlerPluginCache {
                         lazyCrawlerPlugin.setHasConfig((flags & (1 << 1)) != 0);
                         if ((flags & (1 << 4)) != 0) {
                             lazyCrawlerPlugin.setConfigInterface(is.readString(stringBuffer));
+                        }
+                        final int sitesSupportedNumber = is.readShort();
+                        if (sitesSupportedNumber == 0) {
+                            lazyCrawlerPlugin.setSitesSupported(null);
+                        } else {
+                            final List<String> sitesSupportedNames = new ArrayList<String>();
+                            for (int index = 0; index < sitesSupportedNumber; index++) {
+                                sitesSupportedNames.add(is.readString(stringBuffer));
+                            }
+                            lazyCrawlerPlugin.setSitesSupported(sitesSupportedNames.toArray(new String[0]));
                         }
                         if ((flags & (1 << 2)) != 0) {
                             final ArrayList<FEATURE> features = new ArrayList<FEATURE>(FEATURE.values().length);
@@ -159,6 +169,13 @@ public class LazyCrawlerPluginCache {
                     bos.write(flags);
                     if (plugin.isHasConfig() && plugin.getConfigInterface() != null) {
                         os.writeString(plugin.getConfigInterface());
+                    }
+                    final String[] sitesSupported = plugin.getSitesSupported();
+                    os.writeShort(sitesSupported == null ? 0 : sitesSupported.length);
+                    if (sitesSupported != null) {
+                        for (String siteSupported : sitesSupported) {
+                            os.writeString(siteSupported);
+                        }
                     }
                     if (features != null && features.length > 0) {
                         for (final FEATURE feature : FEATURE.values()) {
