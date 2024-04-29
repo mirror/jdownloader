@@ -90,7 +90,7 @@ public class EPornerCom extends PluginForHost {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:\\w+\\.)?" + buildHostsPatternPart(domains) + "/((?:hd\\-porn/|video-)\\w+(/([^/]+))?|photo/[A-Za-z0-9]+(/[\\w\\-]+/)?)");
+            ret.add("https?://(?:\\w+\\.)?" + buildHostsPatternPart(domains) + "/((?:hd\\-porn/|video-)\\w+(/([^/]+))?|photo/[A-Za-z0-9]+(/[\\w\\-]+/)?|dload/(\\w+)/(\\d+)/(\\d+)-(\\d+)p(-av1)?\\.mp4)");
         }
         return ret.toArray(new String[0]);
     }
@@ -100,9 +100,11 @@ public class EPornerCom extends PluginForHost {
         return "https://www.eporner.com/terms/";
     }
 
-    private final Pattern      PATTERN_VIDEO      = Pattern.compile("(?i)https?://[^/]+/(?:hd\\-porn/|video-)(\\w+)(/([^/]+))?");
-    private final Pattern      PATTERN_PHOTO      = Pattern.compile("(?i)https?://[^/]+/photo/([A-Za-z0-9]+)(/([\\w\\-]+)/)?");
-    public static final String PROPERTY_DIRECTURL = "directurl";
+    private final Pattern      PATTERN_VIDEO           = Pattern.compile("(?i)https?://[^/]+/(?:hd\\-porn/|video-)(\\w+)(/([^/]+))?");
+    private final Pattern      PATTERN_VIDEO_URL       = Pattern.compile("(?i)https?://[^/]+/dload/(\\w+)/(\\d+)/(\\d+)-(\\d+)p(-av1)?\\.mp4");
+    private final Pattern      PATTERN_PHOTO           = Pattern.compile("(?i)https?://[^/]+/photo/([A-Za-z0-9]+)(/([\\w\\-]+)/)?");
+    public static final String PROPERTY_DIRECTURL      = "directurl";
+    public static final String PROPERTY_LAST_DIRECTURL = "directurl";
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
@@ -123,9 +125,12 @@ public class EPornerCom extends PluginForHost {
         final Regex videoRegex = new Regex(link.getPluginPatternMatcher(), PATTERN_VIDEO);
         if (videoRegex.patternFind()) {
             return videoRegex.getMatch(0);
-        } else {
-            return new Regex(link.getPluginPatternMatcher(), PATTERN_PHOTO).getMatch(0);
         }
+        final Regex videoUrlRegex = new Regex(link.getPluginPatternMatcher(), PATTERN_VIDEO_URL);
+        if (videoUrlRegex.patternFind()) {
+            return videoUrlRegex.getMatch(0);
+        }
+        return new Regex(link.getPluginPatternMatcher(), PATTERN_PHOTO).getMatch(0);
     }
 
     @Override
@@ -136,12 +141,16 @@ public class EPornerCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
         final String extDefault;
         final boolean isVideo;
-        final Regex videoRegex = new Regex(link.getPluginPatternMatcher(), PATTERN_VIDEO);
+        Regex videoRegex = null;
         String titleByURL = null;
-        if (videoRegex.patternFind()) {
+        if ((videoRegex = new Regex(link.getPluginPatternMatcher(), PATTERN_VIDEO)).patternFind()) {
             extDefault = ".mp4";
             isVideo = true;
             titleByURL = videoRegex.getMatch(2);
+        } else if ((videoRegex = new Regex(link.getPluginPatternMatcher(), PATTERN_VIDEO_URL)).patternFind()) {
+            extDefault = ".mp4";
+            isVideo = true;
+            titleByURL = null;
         } else {
             extDefault = ".jpg";
             isVideo = false;
@@ -159,7 +168,7 @@ public class EPornerCom extends PluginForHost {
         if (account != null) {
             this.login(account, false);
         }
-        br.getPage(link.getPluginPatternMatcher());
+        br.getPage(getPluginContentURL(link));
         if (this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (this.br.getHttpConnection().getResponseCode() == 410) {
@@ -185,12 +194,8 @@ public class EPornerCom extends PluginForHost {
             if (betterTitleByURL != null) {
                 fallbackFilename = betterTitleByURL.replace("-", " ").trim() + extDefault;
             }
-            final String vq = getPreferredStreamQuality();
-            final EpornerComConfig cfg = PluginJsonConfig.get(this.getConfigInterface());
-            PreferredVideoCodec codec = cfg.getPreferredVideoCodec();
-            if (codec == PreferredVideoCodec.DEFAULT) {
-                codec = PreferredVideoCodec.H264;
-            }
+            final String vq = getPreferredStreamQuality(link);
+            PreferredVideoCodec codec = getPreferredVideoCodec(link);
             /* Official downloadurls */
             final String[][] dloadinfo = br.getRegex("(?i)href=\"(/dload/[^<>\"]+)\"[^>]*>[^<]* MP4 \\((\\d+)p, ([^<>\"]+)\\)</a>").getMatches();
             if (dloadinfo != null && dloadinfo.length != 0) {
@@ -308,7 +313,9 @@ public class EPornerCom extends PluginForHost {
             link.setFinalFileName(fallbackFilename);
         }
         if (dllink != null && !isBadDirecturl(dllink)) {
-            link.setProperty(PROPERTY_DIRECTURL, dllink);
+            final String completeURL = br.getURL(dllink).toExternalForm();
+            link.setProperty(PROPERTY_DIRECTURL, completeURL);
+            link.setProperty(PROPERTY_LAST_DIRECTURL, completeURL);
         }
         /*
          * 2020-05-26: Checking their downloadlink counts towards their daily downloadlimit so only check them if the filesize has not been
@@ -341,10 +348,36 @@ public class EPornerCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    private PreferredVideoCodec getPreferredVideoCodec(DownloadLink link) {
+        final Regex videoUrlRegex = new Regex(link.getProperty(PROPERTY_LAST_DIRECTURL, link.getPluginPatternMatcher()), PATTERN_VIDEO_URL);
+        if (videoUrlRegex.patternFind()) {
+            if ("-av1".equalsIgnoreCase(videoUrlRegex.getMatch(4))) {
+                return PreferredVideoCodec.AV1;
+            } else {
+                return PreferredVideoCodec.H264;
+            }
+        }
+        final EpornerComConfig cfg = PluginJsonConfig.get(this.getConfigInterface());
+        PreferredVideoCodec ret = cfg.getPreferredVideoCodec();
+        if (ret == PreferredVideoCodec.DEFAULT) {
+            ret = PreferredVideoCodec.H264;
+        }
+        return ret;
+    }
+
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
         handleDownload(link, null);
+    }
+
+    @Override
+    public String getPluginContentURL(DownloadLink link) {
+        if (new Regex(link.getPluginPatternMatcher(), PATTERN_VIDEO_URL).patternFind()) {
+            return "https://www.eporner.com/video-" + this.getFID(link) + "/";
+        } else {
+            return link.getPluginPatternMatcher();
+        }
     }
 
     public void handleDownload(final DownloadLink link, final Account account) throws Exception {
@@ -362,6 +395,7 @@ public class EPornerCom extends PluginForHost {
             }
         }
         try {
+            link.setProperty(PROPERTY_LAST_DIRECTURL, directurl);
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, directurl, true, 0);
             connectionErrorhandling(dl.getConnection(), link, account);
         } catch (final Exception e) {
@@ -417,7 +451,11 @@ public class EPornerCom extends PluginForHost {
         throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Broken video?", 5 * 60 * 1000l);
     }
 
-    private String getPreferredStreamQuality() {
+    private String getPreferredStreamQuality(final DownloadLink downloadLink) {
+        final Regex videoUrlRegex = new Regex(downloadLink.getProperty(PROPERTY_LAST_DIRECTURL, downloadLink.getPluginPatternMatcher()), PATTERN_VIDEO_URL);
+        if (videoUrlRegex.patternFind()) {
+            return videoUrlRegex.getMatch(1) + "p";
+        }
         final EpornerComConfig cfg = PluginJsonConfig.get(this.getConfigInterface());
         final PreferredStreamQuality quality = cfg.getPreferredStreamQuality();
         switch (quality) {
@@ -531,6 +569,8 @@ public class EPornerCom extends PluginForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
+        link.removeProperty(PROPERTY_LAST_DIRECTURL);
+        link.removeProperty(PROPERTY_DIRECTURL);
     }
 
     @Override

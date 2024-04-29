@@ -40,7 +40,6 @@ import org.appwork.storage.TypeRef;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultEnumValue;
 import org.appwork.storage.config.annotations.DefaultOnNull;
-import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.appwork.storage.config.annotations.LabelInterface;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.HexFormatter;
@@ -501,7 +500,6 @@ public class WeTransferCom extends PluginForHost {
         @AboutConfig
         @DefaultEnumValue("DEFAULT")
         @Order(10)
-        @DescriptionForConfigEntry("Single .zip download is recommended. Loose file download may lave you with corrupted files or wrongly named .zip files.")
         @DefaultOnNull
         CrawlMode getCrawlMode2();
 

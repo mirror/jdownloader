@@ -408,6 +408,20 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         return this.crawlMetadataJsonV2(identifier, sourceurl);
     }
 
+    private int parseAudioTrackPosition(Object audioTrackPositionO) throws PluginException {
+        if (audioTrackPositionO == null) {
+            return -1;
+        } else if (audioTrackPositionO instanceof Number) {
+            return ((Number) audioTrackPositionO).intValue();
+        } else if (audioTrackPositionO instanceof String) {
+            // eg 02/09
+            final String number = ((String) audioTrackPositionO).replaceFirst("/\\d+", "");
+            return Integer.parseInt(number);
+        } else {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Unsupported:" + audioTrackPositionO);
+        }
+    }
+
     /** Work in progress, see https://archive.org/metadata/<identifier> */
     private ArrayList<DownloadLink> crawlMetadataJsonV2(final String identifier, String sourceurl) throws Exception {
         if (StringUtils.isEmpty(identifier)) {
@@ -581,7 +595,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                 /* Track position given -> Item must be part of a playlist. */
                 final DownloadLink audioPlaylistItem = this.createDownloadlink(url);
                 audioPlaylistItem.setProperties(file.getProperties());
-                audioPlaylistItem.setProperty(ArchiveOrg.PROPERTY_PLAYLIST_POSITION, Integer.parseInt(audioTrackPositionO.toString()));
+                audioPlaylistItem.setProperty(ArchiveOrg.PROPERTY_PLAYLIST_POSITION, parseAudioTrackPosition(audioTrackPositionO));
                 /* Add item to list of playlist results. */
                 audioPlaylistItems.add(audioPlaylistItem);
             }
@@ -1588,7 +1602,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         int playlistSize = filepathToPlaylistItemMapping != null ? filepathToPlaylistItemMapping.size() : null;
         for (final Map<String, Object> filemap : filemaps) {
             final String source = filemap.get("source").toString(); // "original" or "derivative"
-            final String audioTrackPositionStr = (String) filemap.get("track");
+            final Object audioTrackPositionO = filemap.get("track");
             String filenameOrPath = (String) filemap.get("orig");
             final Object sizeO = filemap.get("size");
             if (StringUtils.isEmpty(filenameOrPath)) {
@@ -1601,13 +1615,13 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
             int audioTrackPosition = -1;
             if (playlistItem != null) {
                 /* Get track position from mapping. Trust this mapping more than "track" field in metadata. */
-                audioTrackPosition = playlistItem.getIntegerProperty(ArchiveOrg.PROPERTY_PLAYLIST_POSITION, -1);
-            } else if (audioTrackPositionStr != null) {
+                audioTrackPosition = playlistItem.getIntegerProperty(ArchiveOrg.PROPERTY_PLAYLIST_POSITION, parseAudioTrackPosition(audioTrackPositionO));
+            } else if (audioTrackPositionO != null) {
                 /*
                  * Obtain position from metadata. This is not the position we want but we will also set it as a property, it could be useful
                  * too.
                  */
-                audioTrackPosition = Integer.parseInt(audioTrackPositionStr);
+                audioTrackPosition = parseAudioTrackPosition(audioTrackPositionO);
             }
             if (filepathToPlaylistItemMapping != null && (playlistItem == null || !source.equalsIgnoreCase("original"))) {
                 /* Skip non audio and non-original files if a filenameToTrackPositionMapping is available. */
