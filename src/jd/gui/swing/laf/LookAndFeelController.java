@@ -16,6 +16,8 @@ package jd.gui.swing.laf;
 
 import java.io.File;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
@@ -103,9 +105,11 @@ public class LookAndFeelController implements LAFManagerInterface {
             lafTheme = LookAndFeelType.DEFAULT;
             CFG_GUI.CFG.setLookAndFeelTheme(lafTheme);
         }
-        if (LookAndFeelType.DEFAULT.equals(lafTheme) || lafTheme.isAvailable() || lafTheme.getExtensionID() == null) {
+        if (LookAndFeelType.DEFAULT.equals(lafTheme) || lafTheme.getExtensionID() == null) {
             return;
-        } else if (UpdateController.getInstance().isExtensionInstalled(lafTheme.getExtensionID())) {
+        } else if (!lafTheme.isSupported()) {
+            return;
+        } else if (UpdateController.getInstance().isExtensionInstalled(lafTheme.getExtensionID()) && lafTheme.isAvailable()) {
             return;
         } else if (UIOManager.I().showConfirmDialog(0, _GUI.T.LookAndFeelController_handleThemesInstallation_title_(), _GUI.T.LookAndFeelController_handleThemesInstallation_message_(lafTheme.name()), new AbstractIcon(IconKey.ICON_UPDATERICON0, 64), null, null)) {
             final LookAndFeelType finalLafTheme = lafTheme;
@@ -113,7 +117,12 @@ public class LookAndFeelController implements LAFManagerInterface {
                 public void run() {
                     try {
                         UpdateController.getInstance().setGuiVisible(true);
-                        UpdateController.getInstance().runExtensionInstallation(finalLafTheme.getExtensionID());
+                        if (UpdateController.getInstance().isExtensionInstalled(finalLafTheme.getExtensionID())) {
+                            // reinstall laf as isAvailable did return false
+                            UpdateController.getInstance().runExtensionsFullUpdate(new ArrayList<String>(Arrays.asList(finalLafTheme.getExtensionID())));
+                        } else {
+                            UpdateController.getInstance().runExtensionInstallation(finalLafTheme.getExtensionID());
+                        }
                         while (true) {
                             Thread.sleep(500);
                             if (!UpdateController.getInstance().isRunning()) {

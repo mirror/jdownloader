@@ -66,6 +66,7 @@ public enum LookAndFeelType {
     WHITE_VISION("synthetica-themes", "de.javasoft.plaf.synthetica.SyntheticaWhiteVisionLookAndFeel"),
     JD_PLAIN("theme-plain", "org.jdownloader.gui.laf.plain.PlainLookAndFeel"),
     DEFAULT(null, "org.jdownloader.gui.laf.jddefault.JDDefaultLookAndFeel");
+
     private final String clazz;
     private final String extensionID;
     private final long   minimumJVMVersoin;
@@ -92,9 +93,13 @@ public enum LookAndFeelType {
         this(extensionID, clazz, JVMVersion.JAVA_1_6);
     }
 
+    public boolean isSupported() {
+        return JVMVersion.isMinimum(getMinimumJVMVersion());
+    }
+
     public boolean isAvailable() {
         try {
-            if (JVMVersion.isMinimum(getMinimumJVMVersion())) {
+            if (isSupported()) {
                 // do not use Class.forName here since this would load the class
                 final String path = "/" + getClazz().replace(".", "/") + ".class";
                 final URL classPath = getClass().getResource(path);
