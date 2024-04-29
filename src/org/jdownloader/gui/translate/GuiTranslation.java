@@ -2499,6 +2499,9 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "%s1" })
     String ExtensionQuickToggleAction_name_selected2(String name);
 
+    @Default(lngs = { "en" }, values = { "Toggle  the '%s1' Extension" })
+    String ExtensionQuickToggleAction_name_toggle(String name);
+
     @Default(lngs = { "en" }, values = { "%s1" })
     String ExtensionQuickToggleAction_name_deselected2(String name);
 
