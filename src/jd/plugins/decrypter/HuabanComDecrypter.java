@@ -16,9 +16,11 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.TypeRef;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -54,61 +56,54 @@ public class HuabanComDecrypter extends PluginForDecrypt {
         /* Sometimes html can be very big */
         br.setLoadLimit(br.getLoadLimit() * 4);
         // final boolean loggedIN = getUserLogin(false);
-        String fpName = null;
         br.getPage(parameter);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        fpName = br.getRegex("<title>(.*?)</title>").getMatch(0);
+        String fpName = br.getRegex("<title>(.*?)</title>").getMatch(0);
         if (fpName == null) {
             fpName = boardid;
         }
-        if (fpName == null) {
-            logger.warning("Decrypter broken for link: " + parameter);
-            return null;
-        }
         int page = 0;
-        long lnumberof_pins = 0;
+        long numberof_pins = 0;
         fp = FilePackage.getInstance();
-        fp.setName(Encoding.htmlDecode(fpName.trim()));
-        String json_source = null;
+        fp.setName(Encoding.htmlDecode(fpName).trim());
+        fp.setPackageKey("huaban://board/" + boardid);
         String last_pin_id = null;
-        Map<String, Object> entries = null;
+        final int max_pins_per_page = 40;
+        final HashSet<String> dupes = new HashSet<String>();
         do {
             if (this.isAbort()) {
                 logger.info("Decryption aborted by user: " + parameter);
                 throw new InterruptedException();
             }
             final List<Object> resource_data_list;
+            final Map<String, Object> entries;
             if (page == 0) {
-                json_source = br.getRegex("type=\"application/json\">(\\{.*?\\})</script>").getMatch(0);
+                final String json_source = br.getRegex("type=\"application/json\">(\\{.*?\\})</script>").getMatch(0);
                 if (json_source == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json_source);
+                entries = restoreFromString(json_source, TypeRef.MAP);
                 final Map<String, Object> pageProps = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "props/pageProps");
                 final Map<String, Object> serversideBoard = (Map<String, Object>) pageProps.get("serversideBoard");
                 if (serversideBoard == null) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                lnumberof_pins = JavaScriptEngineFactory.toLong(serversideBoard.get("pin_count"), 0);
-                if (lnumberof_pins == 0) {
+                numberof_pins = JavaScriptEngineFactory.toLong(serversideBoard.get("pin_count"), 0);
+                if (numberof_pins == 0) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
                 resource_data_list = (List) pageProps.get("serverSidePins");
             } else {
-                this.br.getHeaders().put("Accept", "application/json");
-                this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                this.br.getHeaders().put("X-Request", "JSON");
-                this.br.getPage("/boards/" + boardid + "?max=" + last_pin_id + "&limit=20&wfl=1");
-                json_source = this.br.toString();
-                if (json_source == null) {
-                    break;
-                }
-                entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json_source);
-                entries = (Map<String, Object>) entries.get("board");
+                br.getHeaders().put("Accept", "application/json");
+                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                br.getHeaders().put("X-Request", "JSON");
+                br.getPage("/v3/boards/" + boardid + "/pins?limit=" + max_pins_per_page + "&max=" + last_pin_id + "&fields=pins:PIN%7Cboard:BOARD_DETAIL%7Ccheck");
+                entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
                 resource_data_list = (List) entries.get("pins");
             }
+            int numberofNewItemsThisPage = 0;
             for (final Object pint : resource_data_list) {
                 final Map<String, Object> single_pin_data = (Map<String, Object>) pint;
                 final String pin_directlink = getDirectlinkFromJson(single_pin_data);
@@ -117,9 +112,13 @@ public class HuabanComDecrypter extends PluginForDecrypt {
                 final String username = Long.toString(JavaScriptEngineFactory.toLong(single_pin_data.get("user_id"), 0));
                 final String pinner_name = Long.toString(JavaScriptEngineFactory.toLong(single_pin_data.get("via_user_id"), 0));
                 if (pin_id.equals("0") || (username.equals("0") && pinner_name.equals("0"))) {
-                    logger.warning("Decrypter broken for link: " + parameter);
-                    return null;
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
+                if (!dupes.add(pin_id)) {
+                    /* Skip dupes */
+                    continue;
+                }
+                numberofNewItemsThisPage++;
                 String filename = pin_id;
                 final String content_url = "http://huaban.com/pins/" + pin_id;
                 final DownloadLink dl = createDownloadlink(content_url);
@@ -145,9 +144,22 @@ public class HuabanComDecrypter extends PluginForDecrypt {
                 distribute(dl);
                 last_pin_id = pin_id;
             }
-            logger.info("Crawled " + ret.size() + "/" + lnumberof_pins + " PINs so far");
-            page++;
-        } while (last_pin_id != null && ret.size() < lnumberof_pins);
+            logger.info("Crawled  page " + page + " | Found " + ret.size() + "/" + numberof_pins + " PINs so far");
+            if (ret.size() > numberof_pins) {
+                logger.info("Stopping because: Found all items");
+                break;
+            } else if (numberofNewItemsThisPage < max_pins_per_page) {
+                /* Fail-safe */
+                logger.info("Stopping because: Reached last page(?)");
+                break;
+            } else if (this.isAbort()) {
+                logger.info("Stopping because: Aborted by user");
+                throw new InterruptedException();
+            } else {
+                /* Continue to next page */
+                page++;
+            }
+        } while (true);
         return ret;
     }
 

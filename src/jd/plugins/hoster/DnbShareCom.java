@@ -13,21 +13,24 @@
 //
 //    You should have received a copy of the GNU General Public License
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.parser.html.HTMLParser;
 import jd.parser.html.InputField;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.formatter.SizeFormatter;
 
 /**
  * @author raztoki
@@ -35,15 +38,19 @@ import org.appwork.utils.formatter.SizeFormatter;
  */
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "dnbshare.com" }, urls = { "^https?://[\\w\\.]*?dnbshare\\.com/download/[^<>\"/]*?(?:\\.mp3|\\.html)$" })
 public class DnbShareCom extends PluginForHost {
-
     @SuppressWarnings("deprecation")
     public DnbShareCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.AUDIO_STREAMING };
+    }
+
+    @Override
     public String getAGBLink() {
-        return "http://www.dnbshare.com/faq#tos";
+        return "https://" + getHost() + "/faq#tos";
     }
 
     @Override
@@ -56,8 +63,18 @@ public class DnbShareCom extends PluginForHost {
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
-        if (br.containsHTML("not found\\.|was deleted due to low activity|was deleted due to reported infringement") || br.getHttpConnection().getResponseCode() == 404) {
+        if (!link.isNameSet()) {
+            /* Set weak-filename */
+            String nameFromURL = Plugin.getFileNameFromURL(link.getPluginPatternMatcher());
+            if (nameFromURL != null) {
+                nameFromURL = nameFromURL.replaceFirst("\\.html$", "");
+                link.setName(nameFromURL);
+            }
+        }
+        br.getPage(link.getPluginPatternMatcher());
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("not found\\.|was deleted due to low activity|was deleted due to reported infringement")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("name=\"file\" value=\"([^<>\"]*?)\"").getMatch(0);
@@ -68,15 +85,19 @@ public class DnbShareCom extends PluginForHost {
             filename = new Regex(link.getDownloadURL(), "/([^/]+)\\.html").getMatch(0);
         }
         final String filesize = br.getRegex("<em>Filesize</em>: (.*?)</li>").getMatch(0);
-        if (filename == null || filesize == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (filename != null) {
+            link.setName(filename.trim());
+        } else {
+            logger.warning("Failed to find filename");
         }
-        link.setName(filename.trim());
-        link.setDownloadSize(SizeFormatter.getSize(filesize.replaceAll(",", "\\.")));
+        if (filesize != null) {
+            link.setDownloadSize(SizeFormatter.getSize(filesize.replaceAll(",", "\\.")));
+        } else {
+            logger.warning("Failed to find filesize");
+        }
         return AvailableStatus.TRUE;
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
@@ -88,29 +109,39 @@ public class DnbShareCom extends PluginForHost {
             for (final InputField i : download.getInputFields()) {
                 i.setKey(i.getKey().replaceFirst("^dlform-", ""));
             }
-            int wait = 10;
-            final String waittime = br.getRegex("var c = (\\d+);").getMatch(0);
-            if (waittime != null) {
-                wait = Integer.parseInt(waittime);
+            int waitSeconds = 10;
+            final String waittimeSecondsStr = br.getRegex("var c = (\\d+);").getMatch(0);
+            if (waittimeSecondsStr != null) {
+                waitSeconds = Integer.parseInt(waittimeSecondsStr);
             }
-            sleep(wait * 1001l, link);
+            sleep(waitSeconds * 1001l, link);
             br.setFollowRedirects(false);
             br.submitForm(download);
             dllink = br.getRedirectLocation();
         }
         if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -2);
-        if (dl.getConnection().getContentType().contains("html")) {
-            if (dl.getConnection().getResponseCode() == 503) {
-                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Connection limit reached, please contact our support!", 2 * 60 * 1000l);
+            final String[] urls = HTMLParser.getHttpLinks(br.getRequest().getHtmlCode(), br.getURL());
+            for (final String url : urls) {
+                if (StringUtils.containsIgnoreCase(url, "play=")) {
+                    dllink = url;
+                    break;
+                }
             }
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (dllink == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+        }
+        dllink = dllink.replace("play=1", "play=0");
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, -2);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+            if (dl.getConnection().getResponseCode() == 503) {
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Error 503 Connection limit reached", 2 * 60 * 1000l);
+            } else {
+                br.followConnection();
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         dl.startDownload();
-
     }
 
     @Override
@@ -120,5 +151,4 @@ public class DnbShareCom extends PluginForHost {
     @Override
     public void resetDownloadlink(DownloadLink link) {
     }
-
 }
