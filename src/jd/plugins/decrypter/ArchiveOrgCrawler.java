@@ -430,8 +430,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         if (identifier.startsWith("@")) {
             /* ideantifier looks to be a user profile. */
             return this.crawlProfile(identifier, sourceurl);
-        }
-        if (sourceurl != null) {
+        } else if (sourceurl != null) {
             /* Correct source-URL */
             /* Remove params so that URL-paths will be correct down below. */
             sourceurl = URLHelper.getUrlWithoutParams(sourceurl);
