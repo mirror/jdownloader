@@ -20,7 +20,6 @@ import java.util.Collections;
 
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
@@ -34,9 +33,10 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "etsy.com" }, urls = { "https?://(?:www\\.)?etsy\\.com/(?:[^/]+/)?listing/([0-9]+)/([a-z0-9\\-]+)" })
-public class Etsy extends antiDDoSForDecrypt {
+public class Etsy extends PluginForDecrypt {
     public Etsy(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -47,8 +47,7 @@ public class Etsy extends antiDDoSForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        br.setFollowRedirects(true);
-        getPage(param.getCryptedUrl());
+        br.getPage(param.getCryptedUrl());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -64,7 +63,7 @@ public class Etsy extends antiDDoSForDecrypt {
                 title = nameMatches[0];
             }
         }
-        // Detail page images
+        /* Detail page images */
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         ArrayList<String> links = new ArrayList<String>();
         /* Images */
@@ -75,7 +74,8 @@ public class Etsy extends antiDDoSForDecrypt {
             ret.add(createDownloadlink(Encoding.htmlDecode(link)));
         }
         if (ret.isEmpty()) {
-            if (br.containsHTML("interstitial\\.captcha-delivery\\.com")) {
+            final String dataDomeHeader = br.getRequest().getResponseHeader("X-DataDome");
+            if (br.containsHTML("interstitial\\.captcha-delivery\\.com") || dataDomeHeader != null) {
                 throw new DecrypterRetryException(RetryReason.BLOCKED_BY, "Anti bot captcha/page");
             } else if (br.containsHTML("<div elementtiming=\"ux-nla-message\">")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -97,7 +97,7 @@ public class Etsy extends antiDDoSForDecrypt {
 
     @Override
     public int getMaxConcurrentProcessingInstances() {
-        /* 2023-01-11: Prevent anti bot page from showing up */
+        /* 2023-01-11: Try to prevent anti bot page from showing up */
         return 1;
     }
 }

@@ -93,11 +93,14 @@ public class GoogleDriveDirectoryIndex extends PluginForHost {
      * https://gitlab.com/ParveenBhadooOfficial/Google-Drive-Index/-/blob/master/README.md </br>
      * Be sure to add all domains to crawler plugin GoogleDriveDirectoryIndex.java too!
      */
-    /* Connection stuff */
-    private final boolean FREE_RESUME            = true;
-    private final int     FREE_MAXCHUNKS         = 0;
-    private final boolean ACCOUNT_FREE_RESUME    = true;
-    private final int     ACCOUNT_FREE_MAXCHUNKS = 0;
+    @Override
+    public boolean isResumeable(final DownloadLink link, final Account account) {
+        return true;
+    }
+
+    public int getMaxChunks(final DownloadLink link, final Account account) {
+        return 0;
+    }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
@@ -114,7 +117,11 @@ public class GoogleDriveDirectoryIndex extends PluginForHost {
             con = br.openGetConnection(link.getPluginPatternMatcher());
             handleConnectionErrors(br, con, null);
             if (con.getCompleteContentLength() > 0) {
-                link.setVerifiedFileSize(con.getCompleteContentLength());
+                if (con.isContentDecoded()) {
+                    link.setDownloadSize(con.getCompleteContentLength());
+                } else {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                }
             }
             /* Usually final filename is already set by crawler plugin. */
             final String fname = Plugin.getFileNameFromDispositionHeader(con);
@@ -132,12 +139,12 @@ public class GoogleDriveDirectoryIndex extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        handleDownload(link, null, FREE_RESUME, FREE_MAXCHUNKS);
+        handleDownload(link, null);
     }
 
-    private void handleDownload(final DownloadLink link, final Account account, final boolean resumable, final int maxchunks) throws Exception, PluginException {
+    private void handleDownload(final DownloadLink link, final Account account) throws Exception, PluginException {
         requestFileInformation(link, account);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher(), resumable, maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher(), this.isResumeable(link, account), this.getMaxChunks(link, account));
         handleConnectionErrors(br, dl.getConnection(), account);
         dl.startDownload();
     }
@@ -169,6 +176,11 @@ public class GoogleDriveDirectoryIndex extends PluginForHost {
 
     public void login(final Account account) throws Exception {
         synchronized (account) {
+            String pw = account.getPass();
+            if (pw == null) {
+                /* Allow empty password! */
+                pw = "";
+            }
             br.getHeaders().put("Authorization", "Basic " + Encoding.Base64Encode(account.getUser() + ":" + account.getPass()));
         }
     }
@@ -184,7 +196,7 @@ public class GoogleDriveDirectoryIndex extends PluginForHost {
 
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        this.handleDownload(link, account, ACCOUNT_FREE_RESUME, ACCOUNT_FREE_MAXCHUNKS);
+        this.handleDownload(link, account);
     }
 
     @Override

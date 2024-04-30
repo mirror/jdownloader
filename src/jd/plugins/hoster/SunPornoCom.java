@@ -104,9 +104,19 @@ public class SunPornoCom extends PluginForHost {
             title = Encoding.htmlDecode(title).trim();
             link.setFinalFileName(title + extDefault);
         }
-        dllink = br.getRegex("src:\"(https?://[^\"]+)\",type:\"video/mp4\",res:\"high\"").getMatch(0);
+        final String[] resolutions = new String[] { "high", "low" };
+        for (final String resolution : resolutions) {
+            dllink = br.getRegex("src:\"(https?://[^\"]+)\",type:\"video/mp4\",res:\"" + resolution + "\"").getMatch(0);
+            if (dllink == null) {
+                dllink = br.getRegex("<source src=\"(https?://[^\"]+)\"[^>]*type=.video/mp4[^>]*res=\"" + resolution + "\"").getMatch(0);
+            }
+            if (dllink != null) {
+                break;
+            }
+        }
+        /* Wider attempts */
         if (dllink == null) {
-            dllink = br.getRegex("src:\"(https?://[^\"]+)\",type:\"video/mp4\",res:\"low\"").getMatch(0);
+            dllink = br.getRegex("<source src=\"(https?://[^\"]+)\"[^>]*type=.video/mp4").getMatch(0);
         }
         if (!StringUtils.isEmpty(dllink) && !isDownload) {
             final boolean doKeyHandling = false; // 2024-02-29: Not needed anymore

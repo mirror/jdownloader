@@ -77,7 +77,7 @@ public class HuabanComDecrypter extends PluginForDecrypt {
         do {
             if (this.isAbort()) {
                 logger.info("Decryption aborted by user: " + parameter);
-                return ret;
+                throw new InterruptedException();
             }
             final List<Object> resource_data_list;
             if (page == 0) {
@@ -86,11 +86,16 @@ public class HuabanComDecrypter extends PluginForDecrypt {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 entries = (Map<String, Object>) JavaScriptEngineFactory.jsonToJavaObject(json_source);
-                lnumberof_pins = JavaScriptEngineFactory.toLong(entries.get("pin_count"), 0);
+                final Map<String, Object> pageProps = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "props/pageProps");
+                final Map<String, Object> serversideBoard = (Map<String, Object>) pageProps.get("serversideBoard");
+                if (serversideBoard == null) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                lnumberof_pins = JavaScriptEngineFactory.toLong(serversideBoard.get("pin_count"), 0);
                 if (lnumberof_pins == 0) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                resource_data_list = (List) JavaScriptEngineFactory.walkJson(entries, "props/pageProps/serverSidePins");
+                resource_data_list = (List) pageProps.get("serverSidePins");
             } else {
                 this.br.getHeaders().put("Accept", "application/json");
                 this.br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
@@ -140,7 +145,7 @@ public class HuabanComDecrypter extends PluginForDecrypt {
                 distribute(dl);
                 last_pin_id = pin_id;
             }
-            logger.info("Decrypter " + ret.size() + " of " + lnumberof_pins + " pins");
+            logger.info("Crawled " + ret.size() + "/" + lnumberof_pins + " PINs so far");
             page++;
         } while (last_pin_id != null && ret.size() < lnumberof_pins);
         return ret;
