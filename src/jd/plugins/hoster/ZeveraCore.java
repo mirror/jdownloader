@@ -40,6 +40,8 @@ import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.AccountController;
 import jd.http.Browser;
+import jd.http.requests.FormData;
+import jd.http.requests.PostFormDataRequest;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -281,24 +283,42 @@ abstract public class ZeveraCore extends UseNet {
                 final String hash_md5 = link.getMD5Hash();
                 final String hash_sha1 = link.getSha1Hash();
                 final String hash_sha256 = link.getSha256Hash();
-                final UrlQuery query = new UrlQuery();
-                query.add("src", URLEncode.encodeURIComponent(link.getDefaultPlugin().buildExternalDownloadURL(link, this)));
-                if (hash_md5 != null) {
-                    query.add("hash_md5", hash_md5);
-                }
-                if (hash_sha1 != null) {
-                    query.add("hash_sha1", hash_sha1);
-                }
-                if (hash_sha256 != null) {
-                    query.add("hash_sha256", hash_sha256);
-                }
                 /* https://app.swaggerhub.com/apis-docs/premiumize.me/api/1.6.7#/transfer/transferDirectdl */
                 String url = "https://www." + account.getHoster() + "/api/transfer/directdl";
                 final boolean useWorkaround = true;
                 if (!useWorkaround && !usePairingLogin(account)) {
                     url += "?apikey=" + getAPIKey(account);
                 }
-                br.postPage(url, query);
+                PostFormDataRequest req = null;
+                UrlQuery query = null;
+                if (false) {
+                    query = new UrlQuery();
+                    query.add("src", URLEncode.encodeURIComponent(link.getDefaultPlugin().buildExternalDownloadURL(link, this)));
+                    if (hash_md5 != null) {
+                        query.add("hash_md5", hash_md5);
+                    }
+                    if (hash_sha1 != null) {
+                        query.add("hash_sha1", hash_sha1);
+                    }
+                    if (hash_sha256 != null) {
+                        query.add("hash_sha256", hash_sha256);
+                    }
+                    br.postPage(url, query);
+                } else {
+                    req = br.createPostFormDataRequest(url);
+                    req.addFormData(new FormData("src", link.getDefaultPlugin().buildExternalDownloadURL(link, this)));
+                    req.addFormData(new FormData("folder_id", "null"));
+                    if (hash_md5 != null) {
+                        req.addFormData(new FormData("hash_md5", hash_md5));
+                    }
+                    if (hash_sha1 != null) {
+                        req.addFormData(new FormData("hash_sha1", hash_md5));
+                    }
+                    if (hash_sha256 != null) {
+                        req.addFormData(new FormData("hash_sha256", hash_sha256));
+                    }
+                    br.getPage(req);
+                }
                 final boolean useSlotBlockingQueueHandling = true;
                 Map<String, Object> entries;
                 if (useSlotBlockingQueueHandling) {
@@ -323,7 +343,11 @@ abstract public class ZeveraCore extends UseNet {
                         do {
                             this.sleep(waitSecondsPerLoop * 1000l, link, "deferred queue handling: Waiting sec " + passedSeconds + "/" + maxWaitHumanReadable);
                             passedSeconds += waitSecondsPerLoop;
-                            br.postPage(url, query);
+                            if (query != null) {
+                                br.postPage(url, query);
+                            } else {
+                                br.getPage(req.cloneRequest());
+                            }
                             entries = this.handleAPIErrors(this, br, link, account, API_STATUS_FOR_QUEUE_DEFERRED_HANDLING);
                             status = (String) entries.get("status");
                             logger.info("Waited seconds: " + passedSeconds + "/" + maxWaitHumanReadable + " | Serverside 'delay' value: " + delay);
