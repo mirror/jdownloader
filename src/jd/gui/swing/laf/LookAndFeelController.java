@@ -246,7 +246,8 @@ public class LookAndFeelController implements LAFManagerInterface {
                 } else {
                     new SyntheticaHelper(LAFOptions.getInstance().getCfg()).load(laf, liz);
                 }
-                UIManager.put(ExtTooltip.APPWORK_TOOLTIP_FOREGROUND, LAFOptions.getInstance().getColorForTooltipForeground());
+                ExtTooltip.setForgroundColor(LAFOptions.getInstance().getColorForTooltipForeground());
+                UIManager.put(/* ExtTooltip.APPWORK_TOOLTIP_FOREGROUND */"Appwork.Tooltip.Foreground", LAFOptions.getInstance().getColorForTooltipForeground());
             } else {
                 /* init for all other laf */
                 UIManager.setLookAndFeel(laf);
