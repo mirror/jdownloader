@@ -56,4 +56,32 @@ public interface SankakucomplexComConfig extends PluginConfigInterface {
     int getPostTagCrawlerMaxPageLimit();
 
     void setPostTagCrawlerMaxPageLimit(int pages);
+    // public static enum LinkcheckMode implements LabelInterface {
+    // API {
+    // @Override
+    // public String getLabel() {
+    // return "Prefer API";
+    // }
+    // },
+    // WEBSITE {
+    // @Override
+    // public String getLabel() {
+    // return "Prefer website";
+    // }
+    // },
+    // DEFAULT {
+    // @Override
+    // public String getLabel() {
+    // return "Default: TODO";
+    // }
+    // };
+    // }
+    //
+    // @AboutConfig
+    // @DefaultEnumValue("DEFAULT_1")
+    // @Order(120)
+    // @DescriptionForConfigEntry("TODO")
+    // LinkcheckMode getStoryPackagenameSchemeType();
+    //
+    // void setStoryPackagenameSchemeType(final LinkcheckMode mode);
 }

@@ -120,6 +120,7 @@ public class SankakucomplexCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        // final Account account = AccountController.getInstance().getValidAccount(this.getHost());
         return requestFileInformation(link, null);
     }
 

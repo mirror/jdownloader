@@ -259,7 +259,7 @@ public class GoogleDriveDirectoryIndex extends PluginForHost {
         private final ExtPasswordField              pass;
         private final InputChangedCallbackInterface callback;
         private JLabel                              usernameLabel = null;
-        private final JLabel                        passwordOrCookiesLabel;
+        private final JLabel                        passwordLabel;
         private final PluginForHost                 plg;
 
         public boolean updateAccount(Account input, Account output) {
@@ -294,7 +294,7 @@ public class GoogleDriveDirectoryIndex extends PluginForHost {
                 }
             });
             name.setHelpText(_GUI.T.jd_gui_swing_components_AccountDialog_help_username());
-            add(passwordOrCookiesLabel = new JLabel(_GUI.T.jd_gui_swing_components_AccountDialog_pass()));
+            add(passwordLabel = new JLabel(_GUI.T.jd_gui_swing_components_AccountDialog_pass()));
             add(this.pass = new ExtPasswordField() {
                 @Override
                 public void onChanged() {
@@ -327,11 +327,11 @@ public class GoogleDriveDirectoryIndex extends PluginForHost {
                 usernameLabel.setForeground(Color.BLACK);
                 userok = true;
             }
-            final String pw = getPassword();
+            // final String pw = getPassword();
             if (!passok) {
-                passwordOrCookiesLabel.setForeground(Color.RED);
+                passwordLabel.setForeground(Color.RED);
             } else {
-                passwordOrCookiesLabel.setForeground(Color.BLACK);
+                passwordLabel.setForeground(Color.BLACK);
             }
             if (userok && passok) {
                 return true;
