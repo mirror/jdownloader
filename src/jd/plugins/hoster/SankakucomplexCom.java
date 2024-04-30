@@ -30,6 +30,7 @@ import org.jdownloader.plugins.config.PluginJsonConfig;
 
 import jd.PluginWrapper;
 import jd.config.Property;
+import jd.controlling.AccountController;
 import jd.http.Browser;
 import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
@@ -73,8 +74,6 @@ public class SankakucomplexCom extends PluginForHost {
         br.setCookie(host, "blacklisted_tags", "");
     }
 
-    /* Extension which will be used if no correct extension is found */
-    private static final String        default_Extension                     = ".jpg";
     private final boolean              useAPI                                = true;
     public static final String         PROPERTY_UPLOADER                     = "uploader";
     public static final String         PROPERTY_DIRECTURL                    = "directurl";
@@ -120,8 +119,15 @@ public class SankakucomplexCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        // final Account account = AccountController.getInstance().getValidAccount(this.getHost());
-        return requestFileInformation(link, null);
+        final Account account = AccountController.getInstance().getValidAccount(this.getHost());
+        final AvailableStatus status = requestFileInformation(link, null);
+        if (status == AvailableStatus.TRUE && link.hasProperty(PROPERTY_IS_PREMIUMONLY) && useAPI && !link.isSizeSet() && account != null) {
+            /* Workaround for when some file information is missing when link leads to account-only content and is checked via API. */
+            logger.info("Failed to find filesize via API and item is only available via account while we have an account -> Checking status again via website in hope to obtain all information");
+            return requestFileInformationWebsite(link, account, false);
+        } else {
+            return status;
+        }
     }
 
     public AvailableStatus requestFileInformation(final DownloadLink link, final Account account) throws Exception {
@@ -175,13 +181,11 @@ public class SankakucomplexCom extends PluginForHost {
             ext = Plugin.getFileNameExtensionFromURL(dllink);
         }
         if (ext == null) {
-            ext = getFileNameExtensionFromString(dllink, default_Extension);
+            ext = getFileNameExtensionFromString(dllink);
         }
-        /* Make sure that we get a correct extension */
-        if (ext == null || !ext.matches("\\.[A-Za-z0-9]{3,5}")) {
-            ext = default_Extension;
+        if (ext != null) {
+            filename = this.correctOrApplyFileNameExtension(filename, ext);
         }
-        filename = this.correctOrApplyFileNameExtension(filename, ext);
         link.setFinalFileName(filename);
         final String filesizeBytesStr = br.getRegex("([0-9,]+) bytes").getMatch(0);
         if (filesizeBytesStr != null) {

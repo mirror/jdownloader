@@ -30,6 +30,25 @@ import java.util.Map.Entry;
 import java.util.WeakHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.storage.JSonMapperException;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.Exceptions;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.Time;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.net.URLHelper;
+import org.jdownloader.captcha.v2.Challenge;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
+import org.jdownloader.plugins.components.config.RapidGatorConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
@@ -54,25 +73,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.storage.JSonMapperException;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.Exceptions;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.Time;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.net.URLHelper;
-import org.jdownloader.captcha.v2.Challenge;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia;
-import org.jdownloader.plugins.components.config.RapidGatorConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class RapidGatorNet extends PluginForHost {
@@ -309,8 +309,8 @@ public class RapidGatorNet extends PluginForHost {
         try {
             if (this.looksLikeDownloadableContent(con)) {
                 /**
-                 * Looks like direct-downloadable item. </br> Either we're logged in as a premium user or this item was made hot-linked by a
-                 * premium user.
+                 * Looks like direct-downloadable item. </br>
+                 * Either we're logged in as a premium user or this item was made hot-linked by a premium user.
                  */
                 if (con.getCompleteContentLength() > 0) {
                     if (con.isContentDecoded()) {
@@ -501,8 +501,9 @@ public class RapidGatorNet extends PluginForHost {
                     if (cfg.isEnableFreeDownloadModeCaptchaDuringPreDownloadWait() && lastUsedCaptchaType != null) {
                         /**
                          * 2023-10-03: A small trick: We know their Solvemedia key and can thus always obtain captcha solutions at any point
-                         * of time. </br> Requesting the captcha here basically allows us to solve it during the serverside wait time which
-                         * is impossible to do in browser.
+                         * of time. </br>
+                         * Requesting the captcha here basically allows us to solve it during the serverside wait time which is impossible
+                         * to do in browser.
                          */
                         final long timeBeforeCaptchaInput = Time.systemIndependentCurrentJVMTimeMillis();
                         if (CAPTCHA_TYPE_RECAPTCHA.equals(lastUsedCaptchaType)) {
@@ -726,8 +727,8 @@ public class RapidGatorNet extends PluginForHost {
             }
             link.setProperty(directlinkproperty, dl.getConnection().getURL().toExternalForm());
             /**
-             * Save timestamp when download was started. </br> Serverside wait time until next download can be started counts from beginning
-             * of first/last download.
+             * Save timestamp when download was started. </br>
+             * Serverside wait time until next download can be started counts from beginning of first/last download.
              */
             if (currentIP != null) {
                 synchronized (blockedIPsMap) {
@@ -784,10 +785,11 @@ public class RapidGatorNet extends PluginForHost {
     public int getChallengeTimeout(Challenge<?> challenge) {
         /**
          * If users need more than X seconds to enter the captcha [in free download mode before final download-step] and we actually send
-         * the captcha input after this time has passed, rapidgator will 'ban' the IP of the user for at least 60 minutes. </br> RG will
-         * first display a precise errormessage but then it will display the same message which is displayed when the user has reached the
-         * daily/hourly download-limit. </br> This function exists to avoid this. Instead of sending the captcha it can throw a retry
-         * exception, avoiding the 60+ minutes IP 'ban'.
+         * the captcha input after this time has passed, rapidgator will 'ban' the IP of the user for at least 60 minutes. </br>
+         * RG will first display a precise errormessage but then it will display the same message which is displayed when the user has
+         * reached the daily/hourly download-limit. </br>
+         * This function exists to avoid this. Instead of sending the captcha it can throw a retry exception, avoiding the 60+ minutes IP
+         * 'ban'.
          */
         if (useShortChallengeTimeoutToAvoidServersideBan) {
             return FREE_CAPTCHA_EXPIRE_TIME_MILLIS;
@@ -1076,26 +1078,30 @@ public class RapidGatorNet extends PluginForHost {
             for (int i = 1; i <= 3; i++) {
                 logger.info("Website login attempt " + i + " of 3");
                 br.getPage("/auth/login");
-                final Form loginForm = br.getFormbyProperty("id", "login");
-                if (loginForm == null) {
+                Form loginform = br.getFormbyProperty("id", "login");
+                if (loginform == null) {
+                    /* 2024-04-30: Form id was changed to "registration" -> id="registration" hm */
+                    loginform = br.getFormbyActionRegex(".*/auth/login");
+                }
+                if (loginform == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                String user = loginForm.getBestVariable("email");
-                String pass = loginForm.getBestVariable("password");
+                String user = loginform.getBestVariable("email");
+                String pass = loginform.getBestVariable("password");
                 if (user == null) {
                     user = "LoginForm%5Bemail%5D";
                 }
                 if (pass == null) {
                     pass = "LoginForm%5Bpassword%5D";
                 }
-                loginForm.put(user, Encoding.urlEncode(account.getUser()));
-                loginForm.put(pass, Encoding.urlEncode(account.getPass()));
+                loginform.put(user, Encoding.urlEncode(account.getUser()));
+                loginform.put(pass, Encoding.urlEncode(account.getPass()));
                 final String captcha_url = br.getRegex("\"(/auth/captcha/v/[a-z0-9]+)\"").getMatch(0);
                 if (captcha_url != null) {
                     /* Login-captcha */
                     final DownloadLink dummyLink = new DownloadLink(this, "Account", this.getHost(), "https://" + this.getHost(), true);
                     final String code = getCaptchaCode(captcha_url, dummyLink);
-                    loginForm.put("LoginForm%5BverifyCode%5D", Encoding.urlEncode(code));
+                    loginform.put("LoginForm%5BverifyCode%5D", Encoding.urlEncode(code));
                 } else if (i > 1 && !accountRequires2FALoginCode) {
                     /* 2nd+ attempt but no captcha and no 2FA login -> Invalid login credentials */
                     throw new AccountInvalidException();
@@ -1108,9 +1114,9 @@ public class RapidGatorNet extends PluginForHost {
                         logger.info("Login abort: Invalid 2FA code format");
                         break;
                     }
-                    loginForm.put("LoginForm%5BtwoStepAuthCode%5D", twoFACode);
+                    loginform.put("LoginForm%5BtwoStepAuthCode%5D", twoFACode);
                 }
-                br.submitForm(loginForm);
+                br.submitForm(loginform);
                 if (isLoggedINWebsite(br)) {
                     logger.info("Login success");
                     loginSuccess = true;
@@ -1123,7 +1129,8 @@ public class RapidGatorNet extends PluginForHost {
                     if (br.containsHTML(">\\s*Invalid auth code")) {
                         /**
                          * 2FA code required or previously entered code is invalid. This also means that the users' login credentials are
-                         * valid. </br> Ask user for 2FA login code in next round.
+                         * valid. </br>
+                         * Ask user for 2FA login code in next round.
                          */
                         logger.info("2FA code needed");
                         accountRequires2FALoginCode = true;
