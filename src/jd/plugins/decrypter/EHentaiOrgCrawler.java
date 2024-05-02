@@ -72,8 +72,9 @@ public class EHentaiOrgCrawler extends PluginForDecrypt {
         if (account != null) {
             hostplugin.login(this.br, account, false);
         }
-        final String galleryid = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(1);
-        final String galleryhash = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(2);
+        final Regex urlinfo = new Regex(param.getCryptedUrl(), this.getSupportedLinks());
+        final String galleryid = urlinfo.getMatch(1);
+        final String galleryhash = urlinfo.getMatch(2);
         /*
          * 2020-11-10: Do not modify URL based on account availability. Not all account owners have access to exhentai.org! Accessing the
          * wrong domain will result in a blank page!
@@ -104,31 +105,33 @@ public class EHentaiOrgCrawler extends PluginForDecrypt {
         }
         String title = hostplugin.getTitle(br);
         if (title == null) {
+            /* Fallback */
             title = br._getURL().getPath();
         }
         title = Encoding.htmlDecode(title).trim();
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(title);
-        fp.setProperty(FilePackage.PROPERTY_PACKAGE_KEY, galleryid);
+        fp.setPackageKey(getHost() + "://gallery/" + galleryid);
         final GalleryCrawlMode mode = cfg.getGalleryCrawlMode();
         if (mode == GalleryCrawlMode.ZIP_ONLY || mode == GalleryCrawlMode.ZIP_AND_IMAGES) {
             /* Crawl process can take some time so let's add this always existing URL first */
-            final DownloadLink galleryArchive = this.createDownloadlink("ehentaiarchive://" + galleryid + "/" + galleryhash);
-            galleryArchive.setProperty(EHentaiOrg.PROPERTY_GALLERY_URL, br.getURL());
-            galleryArchive.setContentUrl(br.getURL());
-            galleryArchive.setFinalFileName(title + ".zip");
+            final DownloadLink ziparchive = this.createDownloadlink("ehentaiarchive://" + galleryid + "/" + galleryhash);
+            ziparchive.setProperty(EHentaiOrg.PROPERTY_GALLERY_URL, br.getURL());
+            ziparchive.setContentUrl(br.getURL());
+            ziparchive.setFinalFileName(title + ".zip");
             final String archiveFileSize = br.getRegex("(?i)>\\s*File Size\\s*:\\s*</td><td[^>]+>([^<>\"]+)</td>").getMatch(0);
             if (archiveFileSize != null) {
-                galleryArchive.setDownloadSize(SizeFormatter.getSize(archiveFileSize));
+                ziparchive.setDownloadSize(SizeFormatter.getSize(archiveFileSize));
             } else {
                 logger.warning("Failed to find archive-size in html code");
             }
-            galleryArchive.setAvailable(true);
-            ret.add(galleryArchive);
+            ziparchive.setAvailable(true);
+            ziparchive._setFilePackage(fp);
+            ret.add(ziparchive);
             if (mode == GalleryCrawlMode.ZIP_ONLY) {
                 return ret;
             } else {
-                distribute(galleryArchive);
+                distribute(ziparchive);
             }
         }
         final String uploaderName = br.getRegex("<a href=\"https://[^/]+/uploader/([^<>\"]+)\">([^<>\"]+)</a>\\&nbsp; <a href=\"[^\"]+\"><img class=\"ygm\" src=\"[^\"]+\" alt=\"PM\" title=\"Contact Uploader\" />").getMatch(0);
@@ -155,16 +158,16 @@ public class EHentaiOrgCrawler extends PluginForDecrypt {
         }
         /* Check if the user has activated "Multi page View" in his account --> Switch to required URL if needed. */
         final boolean isMultiPageViewActive = br.containsHTML("/mpv/\\d+/[^/]+/#page\\d+");
-        final String mpv_url = "https://" + br.getHost() + "/mpv/" + galleryid + "/" + galleryhash + "/";
-        if (isMultiPageViewActive && !br.getURL().contains("/mpv/")) {
+        final String mpv_url = br.getURL("/mpv/" + galleryid + "/" + galleryhash + "/").toExternalForm();
+        boolean isMultiPageURL = StringUtils.containsIgnoreCase(br.getURL(), "/mpv/");
+        if (isMultiPageViewActive && !isMultiPageURL) {
             logger.info("Switching to multi page view ...");
             br.getPage(mpv_url);
         }
         /* Check again as we could also get redirected to a normal gallery URL containing '/g/' */
-        final boolean isMultiPageURL = StringUtils.containsIgnoreCase(br.getURL(), "/mpv/");
+        isMultiPageURL = StringUtils.containsIgnoreCase(br.getURL(), "/mpv/");
         int imagecounter = 1;
         int numberofImages = -1;
-        boolean isFirstPage = true;
         for (int page = startPage; page <= pagemax; page++) {
             // if (isMultiPageViewActive) {
             // logger.info("Multi-Page-View active --> Trying to deactivate it");
@@ -184,14 +187,8 @@ public class EHentaiOrgCrawler extends PluginForDecrypt {
             // br.submitForm(settings);
             // br.getPage(previousURL);
             // }
+            final boolean isLastPage = page == pagemax;
             final Browser br2 = br.cloneBrowser();
-            if (!isFirstPage) {
-                final int sleepBeforeNextPageMillis = new Random().nextInt(5000);
-                logger.info("Sleep before accessing next page: " + sleepBeforeNextPageMillis);
-                sleep(sleepBeforeNextPageMillis, param);
-                query.addAndReplace("p", Integer.toString(page));
-                br2.getPage(br._getURL().getPath() + "?" + query.toString());
-            }
             final Regex paginationinfo = br.getRegex(">\\s*Showing (\\d+) - (\\d+) of (\\d+) images");
             if (paginationinfo.patternFind()) {
                 imagecounter = Integer.parseInt(paginationinfo.getMatch(0));
@@ -246,7 +243,14 @@ public class EHentaiOrgCrawler extends PluginForDecrypt {
                 logger.info("Stopping because: Decryption aborted by user: " + contenturl);
                 return ret;
             }
-            isFirstPage = false;
+            /* Continue to next page unless current page is the last page. */
+            if (!isLastPage) {
+                final int sleepBeforeNextPageMillis = new Random().nextInt(5000);
+                logger.info("Sleep before accessing next page: " + sleepBeforeNextPageMillis);
+                sleep(sleepBeforeNextPageMillis, param);
+                query.addAndReplace("p", Integer.toString(page));
+                br2.getPage(br._getURL().getPath() + "?" + query.toString());
+            }
         }
         return ret;
     }

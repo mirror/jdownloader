@@ -23,6 +23,7 @@ import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -43,18 +44,15 @@ public class EfuktCom extends PluginForHost {
     }
 
     /* Connection stuff */
-    private static final boolean free_resume       = true;
-    private static final int     free_maxchunks    = 0;
-    private static final int     free_maxdownloads = -1;
-    private String               dllink            = null;
+    private String dllink = null;
 
     @Override
     public String getAGBLink() {
         return "http://efukt.com/tos/";
     }
 
-    private final String PATTERN_1 = "https?://(?:www\\.)?efukt\\.com/(\\d+)([A-Za-z0-9_\\-]+)\\.html";
-    private final String PATTERN_2 = "https?://(?:www\\.)?efukt\\.com/view\\.gif\\.php\\?id=(\\d+)";
+    private final String PATTERN_1 = "(?i)https?://(?:www\\.)?efukt\\.com/(\\d+)([A-Za-z0-9_\\-]+)\\.html";
+    private final String PATTERN_2 = "(?i)https?://(?:www\\.)?efukt\\.com/view\\.gif\\.php\\?id=(\\d+)";
 
     @Override
     public String getLinkID(final DownloadLink link) {
@@ -74,26 +72,35 @@ public class EfuktCom extends PluginForHost {
         return fid;
     }
 
-    @SuppressWarnings("deprecation")
+    @Override
+    public boolean isResumeable(final DownloadLink link, final Account account) {
+        return true;
+    }
+
+    public int getMaxChunks(final DownloadLink link, final Account account) {
+        return 0;
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        return requestFileInformation(link, false);
+    }
+
+    private AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
+        dllink = null;
         final String expectedExt;
-        if (link.getPluginPatternMatcher().contains("gif.php")) {
+        if (StringUtils.containsIgnoreCase(link.getPluginPatternMatcher(), "gif.php")) {
             expectedExt = ".gif";
         } else {
             expectedExt = ".mp4";
         }
         if (!link.isNameSet()) {
             final String fid = this.getFID(link);
-            if (link.getPluginPatternMatcher().contains("gif.php")) {
-                link.setName(fid + expectedExt);
-            } else {
-                link.setName(fid + expectedExt);
-            }
+            link.setName(fid + expectedExt);
         }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
+        br.getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (!this.canHandle(br.getURL())) {
@@ -111,7 +118,7 @@ public class EfuktCom extends PluginForHost {
         } else {
             dllink = br.getRegex("source\\s*src=\"(https?[^<>\"]*?)\"\\s*type=\"video").getMatch(0);
             if (dllink == null) {
-                dllink = br.getRegex("(?:file|url):[\t\n\r ]*?(?:\"|\\')(https?[^<>\"]*?)(?:\"|\\')").getMatch(0);
+                dllink = br.getRegex("(?:file|url):\\s*(?:\"|\\')(https?[^<>\"]*?)(?:\"|\\')").getMatch(0);
             }
         }
         if (title != null) {
@@ -120,23 +127,30 @@ public class EfuktCom extends PluginForHost {
             link.setName(title + expectedExt);
         }
         if (dllink != null) {
-            URLConnectionAdapter con = null;
-            try {
-                con = br.openGetConnection(dllink);
-                handleConnectionErrors(br, con);
-                if (con.getCompleteContentLength() > 0) {
-                    link.setVerifiedFileSize(con.getCompleteContentLength());
-                }
-                if (title != null) {
-                    final String ext = Plugin.getExtensionFromMimeTypeStatic(con.getContentType());
-                    if (ext != null) {
-                        link.setFinalFileName(title + "." + ext);
-                    }
-                }
-            } finally {
+            dllink = Encoding.htmlOnlyDecode(dllink);
+            if (!isDownload) {
+                URLConnectionAdapter con = null;
                 try {
-                    con.disconnect();
-                } catch (final Throwable e) {
+                    con = br.openGetConnection(dllink);
+                    handleConnectionErrors(br, con);
+                    if (con.getCompleteContentLength() > 0) {
+                        if (con.isContentDecoded()) {
+                            link.setDownloadSize(con.getCompleteContentLength());
+                        } else {
+                            link.setVerifiedFileSize(con.getCompleteContentLength());
+                        }
+                    }
+                    if (title != null) {
+                        final String ext = Plugin.getExtensionFromMimeTypeStatic(con.getContentType());
+                        if (ext != null) {
+                            link.setFinalFileName(title + "." + ext);
+                        }
+                    }
+                } finally {
+                    try {
+                        con.disconnect();
+                    } catch (final Throwable e) {
+                    }
                 }
             }
         }
@@ -145,11 +159,11 @@ public class EfuktCom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
-        requestFileInformation(link);
+        requestFileInformation(link, true);
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, this.isResumeable(link, null), this.getMaxChunks(link, null));
         handleConnectionErrors(br, dl.getConnection());
         dl.startDownload();
     }
@@ -167,21 +181,20 @@ public class EfuktCom extends PluginForHost {
         }
         /* 2022-12-19: Looks like etag can vary so we'll double-check for Content-Length header. */
         final String etag = con.getRequest().getResponseHeader("etag");
-        // 2022-12-19: Content-Length: 73003
         if (StringUtils.equalsIgnoreCase(etag, "\"637be5da-11d2b\"") || StringUtils.equalsIgnoreCase(etag, "\"63a05f27-11d2b\"")) {
             con.disconnect();
             /* Dummy video containing text "Video removed" */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (con.getCompleteContentLength() == 73003) {
             con.disconnect();
-            /* Dummy video containing text "Video removed" */
+            /* 2022-12-19: Dummy video containing text "Video removed" */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
     }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return free_maxdownloads;
+        return Integer.MAX_VALUE;
     }
 
     @Override

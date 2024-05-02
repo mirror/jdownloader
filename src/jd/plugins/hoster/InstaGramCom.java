@@ -137,8 +137,6 @@ public class InstaGramCom extends PluginForHost {
      * https://instagram.api-docs.io/1.0 </br>
      */
     public static final String   ALT_API_BASE                                = "https://i.instagram.com/api/v1";
-    /* Connection stuff */
-    private final boolean        RESUME                                      = true;
     /* Chunkload makes no sense for pictures/small files */
     private final int            MAXCHUNKS_pictures                          = 1;
     /* 2020-01-21: Multi chunks are possible but it's better not to do this to avoid getting blocked! */
@@ -206,6 +204,11 @@ public class InstaGramCom extends PluginForHost {
         } else {
             return link.getStringProperty(PROPERTY_internal_media_id);
         }
+    }
+
+    @Override
+    public boolean isResumeable(final DownloadLink link, final Account account) {
+        return true;
     }
 
     @Override
@@ -633,7 +636,7 @@ public class InstaGramCom extends PluginForHost {
              * User-Agents.
              */
             br.getHeaders().put("User-Agent", "curl/7.64.1");
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, this.dllink, RESUME, maxchunks);
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, this.dllink, this.isResumeable(link, null), maxchunks);
             if (!looksLikeDownloadableContent(dl.getConnection())) {
                 link.removeProperty(PROPERTY_DIRECTURL);
                 br.followConnection(true);

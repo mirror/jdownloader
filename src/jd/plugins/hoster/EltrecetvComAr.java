@@ -17,63 +17,88 @@ package jd.plugins.hoster;
 
 import java.util.Map;
 
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "eltrecetv.com.ar" }, urls = { "https?://(?:www\\.)?eltrecetv\\.com\\.ar/.+" })
-public class EltrecetvComAr extends antiDDoSForHost {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "eltrecetv.com.ar" }, urls = { "https?://(?:www\\.)?eltrecetv\\.com\\.ar/.+\\d+/?$" })
+public class EltrecetvComAr extends PluginForHost {
     public EltrecetvComAr(final PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.VIDEO_STREAMING };
+    }
+
+    @Override
     public String getAGBLink() {
-        return "http://www.eltrecetv.com.ar/terminos";
+        return "https://www." + getHost() + "/terminos";
     }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return Integer.MAX_VALUE;
     }
 
     private String hlsurl = null;
 
+    protected String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), "(\\d+)/?$").getMatch(0);
+    }
+
+    @Override
+    public String getMirrorID(DownloadLink link) {
+        String fid = null;
+        if (link != null && StringUtils.equals(getHost(), link.getHost()) && (fid = getFID(link)) != null) {
+            return getHost() + "://" + fid;
+        } else {
+            return super.getMirrorID(link);
+        }
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        final String extDefault = ".mp4";
+        final String fid = this.getFID(link);
+        if (!link.isNameSet() && fid != null) {
+            link.setName(fid + extDefault);
+        }
+        hlsurl = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        getPage(link.getPluginPatternMatcher());
-        final String playerdata = br.getRegex("(playerId/[^/]+/contentId/\\d+)").getMatch(0);
+        br.getPage(link.getPluginPatternMatcher());
         if (br.getRequest().getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        final String playerdata = br.getRegex("(playerId/[^/]+/contentId/\\d+)").getMatch(0);
+        String title = null;
+        String subtitle = br.getRegex("class=\"article__dropline\"[^>]*>([^<]+)").getMatch(0);
         if (playerdata != null) {
             br.getPage("https://api.vodgc.net/player/conf/" + playerdata);
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
             hlsurl = (String) entries.get("m3u8_url");
             if (StringUtils.isEmpty(hlsurl)) {
                 hlsurl = (String) JavaScriptEngineFactory.walkJson(entries, "sources/{0}/src");
             }
-            String filename = (String) entries.get("video_name");
-            if (StringUtils.isEmpty(filename)) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            filename = Encoding.htmlDecode(filename).trim();
-            link.setFinalFileName(filename + ".mp4");
+            title = entries.get("video_name").toString();
         } else {
             /* 2021-09-15 */
             final String playerContentID = br.getRegex("data-content-id=\"(\\d+)\"").getMatch(0);
@@ -86,10 +111,23 @@ public class EltrecetvComAr extends antiDDoSForHost {
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
             /* 2021-09-15: HTTP stream is also available but only in lower quality 480p. */
             this.hlsurl = JavaScriptEngineFactory.walkJson(entries, "sources/{0}/src").toString();
-            link.setFinalFileName(entries.get("video_name") + ".mp4");
+            title = entries.get("video_name").toString();
+        }
+        if (title != null && subtitle != null) {
+            title = Encoding.htmlDecode(title).trim();
+            subtitle = Encoding.htmlDecode(subtitle).trim();
+            link.setFinalFileName(title + " - " + subtitle + extDefault);
+        } else if (title != null) {
+            title = Encoding.htmlDecode(title).trim();
+            link.setFinalFileName(title + extDefault);
+        } else if (subtitle != null) {
+            subtitle = Encoding.htmlDecode(subtitle).trim();
+            link.setFinalFileName(subtitle + extDefault);
+        } else {
+            logger.warning("Failed to find videoTitle");
         }
         return AvailableStatus.TRUE;
     }

@@ -323,9 +323,9 @@ public interface GuiTranslation extends TranslateInterface {
 
     @Default(lngs = { "en", "de" }, values = { "Enter two-factor authentication code", "Gib den Zwei-Faktor-Authentifizierungscode ein" })
     String jd_gui_swing_components_AccountDialog_2FA_login();
-    // @Default(lngs = { "en", "de" }, values = { "Invalid two-factor authentication code format!", "Ungültiges
-    // Zwei-Faktor-Authentifizierungscode-Format!" })
-    // String jd_gui_swing_components_AccountDialog_2FA_login_invalid_format();
+
+    @Default(lngs = { "en", "de" }, values = { "Invalid two-factor authentication code format!\r\nExpected format: %s", "Ungültiges Zwei-Faktor-Authentifizierungscode-Format!\r\nErwartetes Format: %s" })
+    String jd_gui_swing_components_AccountDialog_2FA_login_invalid_format(String s);
 
     @Default(lngs = { "en", "de" }, values = { "Invalid two-factor authentication code!", "Ungültiger Zwei-Faktor-Authentifizierungscode!" })
     String jd_gui_swing_components_AccountDialog_2FA_login_invalid();

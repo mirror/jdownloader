@@ -1627,6 +1627,41 @@ public abstract class PluginForHost extends Plugin {
         return getUserInput(_GUI.T.AskForPasswordDialog_AskForPasswordDialog_title_(), message, link);
     }
 
+    /**
+     * Asks user to enter 2FA login code. </br>
+     *
+     * @params pattern: Allowed pattern of 2FA code. If a pattern is given and the entered code does not match the pattern, an exception
+     *         will be thrown.
+     */
+    protected String getTwoFACode(final Account account, Object patternO) throws PluginException {
+        if (account == null) {
+            throw new IllegalArgumentException();
+        }
+        Pattern pattern = null;
+        if (patternO != null) {
+            if (patternO instanceof Pattern) {
+                pattern = (Pattern) patternO;
+            } else if (patternO instanceof String) {
+                pattern = Pattern.compile(patternO.toString());
+            } else {
+                throw new IllegalArgumentException();
+            }
+        }
+        final DownloadLink dl_dummy = new DownloadLink(this, "Account 2FA login", this.getHost(), "https://" + account.getHoster(), true);
+        String twoFACode = getUserInput(org.jdownloader.gui.translate._GUI.T.jd_gui_swing_components_AccountDialog_2FA_login(), dl_dummy);
+        if (twoFACode != null) {
+            twoFACode = twoFACode.trim();
+        }
+        /* Validate result */
+        if (StringUtils.isEmpty(twoFACode)) {
+            /* This should never happen. */
+            throw new AccountInvalidException("Invalid/empty 2FA result.");
+        } else if (pattern != null && !new Regex(twoFACode, pattern).patternFind()) {
+            throw new AccountInvalidException(org.jdownloader.gui.translate._GUI.T.jd_gui_swing_components_AccountDialog_2FA_login_invalid_format(pattern.toString()));
+        }
+        return twoFACode;
+    }
+
     public long getAvailableStatusTimeout(DownloadLink link, AvailableStatus availableStatus) {
         if (availableStatus != null) {
             switch (availableStatus) {

@@ -24,11 +24,11 @@ public class FilePathChecker {
         ERROR_ON_ALREADY_EXIST
     }
 
-    public static void createFilePath(final File file) throws BadDestinationException, IOException {
+    public static void createFilePath(final File file) throws IOException {
         createFilePath(file, new CheckFlag[] { CheckFlag.IS_FILE, CheckFlag.CHECK_FILE_WRITE, CheckFlag.CHECK_FILE_FOR_TOO_LONG_FILENAME });
     }
 
-    public static void createFolderPath(final File file) throws BadDestinationException, IOException {
+    public static void createFolderPath(final File file) throws IOException {
         createFilePath(file, new CheckFlag[] { CheckFlag.CHECK_FOLDER_CREATE });
     }
 
@@ -37,12 +37,12 @@ public class FilePathChecker {
      *
      * @throws InterruptedException
      */
-    public static void createFilePath(final File file, final CheckFlag... flags) throws BadDestinationException, IOException {
+    public static void createFilePath(final File file, final CheckFlag... flags) throws IOException {
         boolean isFile = false;
         boolean checkFileWrite = false;
         boolean checkFolderCreate = false;
         boolean allowCheckForTooLongFilename = false;
-        boolean errorOnAlreadyExist = false;
+        boolean errorOnFileAlreadyExist = false;
         if (flags != null) {
             for (final CheckFlag flag : flags) {
                 if (flag == CheckFlag.IS_FILE) {
@@ -54,7 +54,7 @@ public class FilePathChecker {
                 } else if (flag == CheckFlag.CHECK_FILE_FOR_TOO_LONG_FILENAME) {
                     allowCheckForTooLongFilename = true;
                 } else if (flag == CheckFlag.ERROR_ON_ALREADY_EXIST) {
-                    errorOnAlreadyExist = true;
+                    errorOnFileAlreadyExist = true;
                 }
             }
         }
@@ -64,6 +64,9 @@ public class FilePathChecker {
             throw new BadFilePathException(file, BadFilePathException.Reason.FILE_ALREADY_EXISTS_AS_FOLDER);
         } else if (file.exists()) {
             /* Already exists -> No need to do anything. */
+            if (file.isFile() && errorOnFileAlreadyExist) {
+                throw new BadFilePathException(file, BadFilePathException.Reason.FILE_ALREADY_EXISTS);
+            }
             return;
         }
         if (file.getParentFile() == null) {
@@ -147,12 +150,12 @@ public class FilePathChecker {
         /**
          * Create a list of the full folder path structure.
          */
-        final List<File> pathList = new ArrayList<File>();
+        final List<File> pathlist = new ArrayList<File>();
         int loop = 0;
         File next = file;
         int folderCreateStartSegmentIndex = -1;
         while (true) {
-            pathList.add(0, next);
+            pathlist.add(0, next);
             if (folderCreateStartSegmentIndex != -1 || (folderCreateStartSegmentIndex == -1 && !next.exists())) {
                 folderCreateStartSegmentIndex = loop;
             }
@@ -169,14 +172,14 @@ public class FilePathChecker {
              * This may look more complicated compared to File.mkdirs() but this way we can know exactly at which point a directory could
              * not be created.
              */
-            folderCreateStartSegmentIndex = pathList.size() - folderCreateStartSegmentIndex - 1;
-            for (int index = folderCreateStartSegmentIndex; index < pathList.size(); index++) {
-                final boolean isLastItem = index == pathList.size() - 1;
+            folderCreateStartSegmentIndex = pathlist.size() - folderCreateStartSegmentIndex - 1;
+            for (int index = folderCreateStartSegmentIndex; index < pathlist.size(); index++) {
+                final boolean isLastItem = index == pathlist.size() - 1;
                 if (isFile && isLastItem) {
                     /* Last path segment is file -> Do not create folder! */
                     break;
                 }
-                final File thisfolder = pathList.get(index);
+                final File thisfolder = pathlist.get(index);
                 if (!thisfolder.exists() && !thisfolder.mkdir() && !thisfolder.isDirectory()) {
                     /* Folder creation failed -> Check/assume why */
                     if (CrossSystem.isWindows() && looksLikeTooLongWindowsPathOrFilename(thisfolder)) {
@@ -204,7 +207,7 @@ public class FilePathChecker {
                     /* Filename looks to be too long but we don't check. */
                     // throw e1;
                     /* We're not checking for too long filename -> Assume it is a permission problem */
-                    throw new BadFilePathException(file, BadFilePathException.Reason.PERMISSION_PROBLEM, pathList.size() - 1);
+                    throw new BadFilePathException(file, BadFilePathException.Reason.PERMISSION_PROBLEM, pathlist.size() - 1);
                 }
                 final File writeTest2 = new File(writeTest1.getParent(), "jd_accessCheck_" + new UniqueAlltimeID().getID());
                 if (writeTest2.exists()) {
@@ -214,18 +217,18 @@ public class FilePathChecker {
                      * Assume that we didn't write this file -> We don't know if the problem is that the filename is too long or if there is
                      * a permission issue -> Assume permission issue.
                      */
-                    throw new BadFilePathException(file, BadFilePathException.Reason.PERMISSION_PROBLEM, pathList.size() - 1);
+                    throw new BadFilePathException(file, BadFilePathException.Reason.PERMISSION_PROBLEM, pathlist.size() - 1);
                 }
                 try {
                     fileWriteCheck(writeTest2);
                 } catch (final IOException e2) {
                     /* Permission issue because we were unable to write any file in this directory. */
-                    throw new BadFilePathException(file, BadFilePathException.Reason.PERMISSION_PROBLEM, pathList.size() - 1);
+                    throw new BadFilePathException(file, BadFilePathException.Reason.PERMISSION_PROBLEM, pathlist.size() - 1);
                 }
                 /*
                  * We assume that the given filename is too long because writing a file with a shorter filename was successful.
                  */
-                throw new BadFilePathException(file, BadFilePathException.Reason.PATH_SEGMENT_TOO_LONG, pathList.size() - 1);
+                throw new BadFilePathException(file, BadFilePathException.Reason.PATH_SEGMENT_TOO_LONG, pathlist.size() - 1);
             }
         }
     }
@@ -265,7 +268,7 @@ public class FilePathChecker {
         return str.length() > 255;
     }
 
-    public static void main(String[] args) throws BadDestinationException, IOException {
+    public static void main(String[] args) throws IOException {
         final File testfile = new File("JD:\\\\Windows\\\\jdfoldertest");
         final BadFilePathException permissionErrorExpectedResult = new BadFilePathException(testfile, BadFilePathException.Reason.PERMISSION_PROBLEM);
     }

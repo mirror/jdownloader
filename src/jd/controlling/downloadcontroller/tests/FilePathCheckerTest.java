@@ -1,14 +1,17 @@
 package jd.controlling.downloadcontroller.tests;
 
 import java.io.File;
+import java.io.RandomAccessFile;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.appwork.testframework.AWTest;
+import org.appwork.utils.IO;
 import org.appwork.utils.os.CrossSystem;
 
 import jd.controlling.downloadcontroller.BadFilePathException;
 import jd.controlling.downloadcontroller.FilePathChecker;
+import jd.controlling.downloadcontroller.FilePathChecker.CheckFlag;
 
 public class FilePathCheckerTest extends AWTest {
     public static void main(String[] args) {
@@ -21,26 +24,34 @@ public class FilePathCheckerTest extends AWTest {
         final File testBasePath = new File(windowsTestBasePath);
         System.out.print(testBasePath.getAbsolutePath());
         try {
+            /* Prepare test: create required files and folders */
+            if (testBasePath.exists()) {
+                /* Folder existed before this test got executed thus we're not allowed to delete it once our tests are done. */
+                final File[] filesfolders = testBasePath.listFiles();
+                if (filesfolders == null || filesfolders.length == 0) {
+                    allowDeleteFolderRecursive = true;
+                } else {
+                    allowDeleteFolderRecursive = false;
+                }
+            } else {
+                /*
+                 * Folder did not exist before this test was executed thus we can delete that folder and all files inside of it once our
+                 * test is done.
+                 */
+                testBasePath.mkdirs();
+                allowDeleteFolderRecursive = true;
+            }
+            final File testfile = new File(testBasePath, "testfile.txt");
+            final RandomAccessFile raffile = IO.open(testfile, "rw");
+            raffile.close();
+            CLEANUP.add(testfile);
+            final File testfolderWithFilename = new File(testBasePath, "test_folder_with_filename.txt");
+            testfolderWithFilename.mkdirs();
+            CLEANUP.add(testfolderWithFilename);
             if (CrossSystem.isWindows()) {
                 /* Windows specific tests */
                 /********************************************************************/
                 /* Folder tests */
-                if (testBasePath.exists()) {
-                    /* Folder existed before this test got executed thus we're not allowed to delete it once our tests are done. */
-                    final File[] filesfolders = testBasePath.listFiles();
-                    if (filesfolders == null || filesfolders.length == 0) {
-                        allowDeleteFolderRecursive = true;
-                    } else {
-                        allowDeleteFolderRecursive = false;
-                    }
-                } else {
-                    /*
-                     * Folder did not exist before this test was executed thus we can delete that folder and all files inside of it once our
-                     * test is done.
-                     */
-                    testBasePath.mkdirs();
-                    allowDeleteFolderRecursive = true;
-                }
                 // testBasePathNoWrite.setWritable(false);
                 final File testBasePathNoWrite = new File(windowsTestBasePath, "nowrite");
                 testBasePathNoWrite.setReadOnly();
@@ -66,9 +77,12 @@ public class FilePathCheckerTest extends AWTest {
                 final File longfilenameTest = new File(testBasePath, "too_long_filename_test_Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy.txt");
                 CLEANUP.add(longfilenameTest);
                 testFileCreationFail(longfilenameTest, new BadFilePathException(longfilenameTest, BadFilePathException.Reason.PATH_SEGMENT_TOO_LONG));
-            } else {
-                // TODO: Add tests for other OS'
             }
+            /* Test with file that already exists */
+            testFileCreationFail(testfile, new BadFilePathException(testfile, BadFilePathException.Reason.FILE_ALREADY_EXISTS), new CheckFlag[] { CheckFlag.ERROR_ON_ALREADY_EXIST });
+            /* Test: File we want to create but it already exists as a folder */
+            final File testInvalidFilePath = new File(testfolderWithFilename.getAbsolutePath());
+            testFileCreationFail(testInvalidFilePath, new BadFilePathException(testInvalidFilePath, BadFilePathException.Reason.FILE_ALREADY_EXISTS_AS_FOLDER));
             /* Valid folder path */
             final File normalFolderAndSubfolderTest = new File(testBasePath, "subfolder");
             CLEANUP.add(normalFolderAndSubfolderTest);
@@ -82,6 +96,8 @@ public class FilePathCheckerTest extends AWTest {
             cleanup();
             if (allowDeleteFolderRecursive) {
                 deleteRecursive(testBasePath);
+            } else {
+                System.out.println("TEST ENDED BUT SOME TEST FILES MAY BE LEFT!");
             }
         }
     }
@@ -126,6 +142,18 @@ public class FilePathCheckerTest extends AWTest {
     public static void testFileCreationFail(final File file, final BadFilePathException expectedException) throws Exception {
         try {
             FilePathChecker.createFilePath(file);
+            throw new Exception("Expected Exception did not occur");
+        } catch (final BadFilePathException bf) {
+            // bf.printStackTrace();
+            if (bf.getReason() != expectedException.getReason()) {
+                throw new Exception("Expected FailureReason " + expectedException.getReason() + " | Got: " + bf.getReason());
+            }
+        }
+    }
+
+    public static void testFileCreationFail(final File file, final BadFilePathException expectedException, final CheckFlag... flags) throws Exception {
+        try {
+            FilePathChecker.createFilePath(file, flags);
             throw new Exception("Expected Exception did not occur");
         } catch (final BadFilePathException bf) {
             // bf.printStackTrace();
