@@ -245,6 +245,7 @@ public class SendCm extends XFileSharingProBasic {
             } else {
                 dl_dummy = new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true);
             }
+            // String twoFACode = this.getTwoFACode(account, "^\\d{6}$");
             String twoFACode = getUserInput("Enter verification code sent to your E-Mail", dl_dummy);
             if (twoFACode != null) {
                 twoFACode = twoFACode.trim();
