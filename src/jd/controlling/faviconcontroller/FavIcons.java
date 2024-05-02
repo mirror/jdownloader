@@ -294,11 +294,9 @@ public class FavIcons {
                                                 siteSupportedNames = new String[0];
                                             }
                                             final Object result = pluginInstance.getFavIcon(host);
-                                            if (result instanceof BufferedImage) {
-                                                favicon = (BufferedImage) result;
-                                                if (favicon != null) {
-                                                    logger.clear();
-                                                }
+                                            if (result instanceof Image) {
+                                                favicon = IconIO.toBufferedImage((Image) result);
+                                                logger.clear();
                                             } else if (result instanceof String) {
                                                 tryHosts.add((String) result);
                                             } else if (result instanceof Collection) {
