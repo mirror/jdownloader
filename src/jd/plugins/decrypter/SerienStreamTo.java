@@ -20,8 +20,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 import org.appwork.utils.Regex;
@@ -137,19 +139,23 @@ public class SerienStreamTo extends PluginForDecrypt {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        final Set<String> dupes = new HashSet<String>();
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String title = br.getRegex("<meta property=\"og:title\" content=\"(?:Episode\\s*\\d+\\s|Staffel\\s*\\d+\\s|Filme?\\s*\\d*\\s|von\\s)+([^\"]+)\"/>").getMatch(0);
         final String itemSlug = new Regex(br.getURL(), "https?://[^/]+/[^/]+/[^/]+/(.*)").getMatch(0);
         // If we're on a show site, add the seasons, if we're on a season page, add the episodes and so on ...
         final String[][] itemLinks = br.getRegex("href=\"([^\"]+" + Pattern.quote(itemSlug) + "/[^\"]+)\"").getMatches();
         for (String[] itemLink : itemLinks) {
-            ret.add(createDownloadlink(br.getURL(Encoding.htmlDecode(itemLink[0])).toString()));
+            final String url = br.getURL(Encoding.htmlDecode(itemLink[0])).toExternalForm();
+            if (dupes.add(url)) {
+                ret.add(createDownloadlink(url));
+            }
         }
         /* Videos are on external sites (not in embeds), so harvest those if we can get our hands on them. */
         final String[] episodeHTMLs = br.getRegex("<li class=\"[^\"]*episodeLink\\d+\"(.*?)</a>").getColumn(0);
         if (episodeHTMLs.length > 0) {
-            final ArrayList<String> userLanguageIDsPrioList = new ArrayList<String>();
-            final ArrayList<String> userHosterPrioList = new ArrayList<String>();
+            final Set<String> userLanguageIDsPrioList = new LinkedHashSet<String>();
+            final Set<String> userHosterPrioList = new LinkedHashSet<String>();
             /* Collect language name -> ID mapping if needed */
             final String userLanguagePrioListStr = PluginJsonConfig.get(SerienStreamToConfig.class).getLanguagePriorityString();
             if (userLanguagePrioListStr != null) {
@@ -239,35 +245,38 @@ public class SerienStreamTo extends PluginForDecrypt {
             List<String> urlsToProcess = null;
             if (!userHosterPrioList.isEmpty()) {
                 /* Get user preferred mirrors by host (+ language) */
-                List<String> preferredMirrorsByHost = null;
                 for (final String userAllowedHoster : userHosterPrioList) {
-                    if (packagesByHoster.containsKey(userAllowedHoster)) {
-                        preferredMirrorsByHost = packagesByHoster.get(userAllowedHoster);
+                    if (urlsToProcess != null && urlsToProcess.size() > 0) {
                         break;
                     }
-                }
-                if (preferredMirrorsByHost != null) {
-                    logger.info("Found user priorized mirrors by host");
-                    /* Combine this with users' language priority if given. */
-                    List<String> preferredMirrorsByLanguage = null;
-                    for (final String languageKey : userLanguageIDsPrioList) {
-                        if (packagesByLanguageKey.containsKey(languageKey)) {
-                            preferredMirrorsByLanguage = packagesByLanguageKey.get(languageKey);
-                            break;
-                        }
-                    }
-                    if (preferredMirrorsByLanguage != null) {
-                        logger.info("Combining users preferred mirrors by host + language");
-                        urlsToProcess = new ArrayList<String>();
-                        for (final String preferredMirrorByHost : preferredMirrorsByHost) {
-                            if (preferredMirrorsByLanguage.contains(preferredMirrorByHost)) {
-                                urlsToProcess.add(preferredMirrorByHost);
+                    if (packagesByHoster.containsKey(userAllowedHoster)) {
+                        final List<String> preferredMirrorsByHost = packagesByHoster.get(userAllowedHoster);
+                        if (preferredMirrorsByHost != null && preferredMirrorsByHost.size() > 0) {
+                            logger.info("Found user priorized mirrors by host:" + userAllowedHoster);
+                            /* Combine this with users' language priority if given. */
+                            for (final String languageKey : userLanguageIDsPrioList) {
+                                if (packagesByLanguageKey.containsKey(languageKey)) {
+                                    final List<String> preferredMirrorsByLanguage = packagesByLanguageKey.get(languageKey);
+                                    if (preferredMirrorsByLanguage != null) {
+                                        logger.info("Combining users preferred mirrors by host + language:" + userAllowedHoster + "|" + languageKey);
+                                        urlsToProcess = new ArrayList<String>();
+                                        for (final String preferredMirrorByHost : preferredMirrorsByHost) {
+                                            if (preferredMirrorsByLanguage.contains(preferredMirrorByHost)) {
+                                                urlsToProcess.add(preferredMirrorByHost);
+                                            }
+                                        }
+                                        if (urlsToProcess.size() > 0) {
+                                            break;
+                                        }
+                                    } else {
+                                        urlsToProcess = preferredMirrorsByHost;
+                                    }
+                                }
                             }
                         }
-                    } else {
-                        urlsToProcess = preferredMirrorsByHost;
                     }
-                } else {
+                }
+                if (urlsToProcess == null) {
                     logger.info("Failed to find user priorized mirrors by host");
                 }
             } else if (!userLanguageIDsPrioList.isEmpty()) {
