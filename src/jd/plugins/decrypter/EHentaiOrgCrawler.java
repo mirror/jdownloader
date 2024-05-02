@@ -15,7 +15,6 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
-import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -23,14 +22,15 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.Files;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.plugins.components.config.EhentaiConfig;
 import org.jdownloader.plugins.components.config.EhentaiConfig.GalleryCrawlMode;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -50,7 +50,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.EHentaiOrg;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "e-hentai.org" }, urls = { "https?://(?:[a-z0-9\\-]+\\.)?(?:e-hentai\\.org|exhentai\\.org)/(g|mpv)/(\\d+)/([a-z0-9]+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "e-hentai.org" }, urls = { "https?://(?:[a-z0-9\\-]+\\.)?(?:e-hentai\\.org|exhentai\\.org)/(g|mpv)/(\\d+)/([a-z0-9]+).*" })
 public class EHentaiOrgCrawler extends PluginForDecrypt {
     public EHentaiOrgCrawler(PluginWrapper wrapper) {
         super(wrapper);
@@ -83,16 +83,16 @@ public class EHentaiOrgCrawler extends PluginForDecrypt {
         // } else {
         // parameter = "https://exhentai.org/" + gallerytype + "/" + galleryid + "/" + galleryhash + "/";
         // }
-        final String parameter = param.getCryptedUrl();
+        final String contenturl = param.getCryptedUrl();
         if (galleryid == null || galleryhash == null) {
             /* This should never happen */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        } else if (Browser.getHost(parameter).equals("exhentai.org") && account == null) {
+        } else if (Browser.getHost(contenturl).equals("exhentai.org") && account == null) {
             /* Account required to crawl URLs of this host! */
             throw new AccountRequiredException();
         }
         EHentaiOrg.prepBR(br);
-        br.getPage(parameter);
+        br.getPage(contenturl);
         if (EHentaiOrg.isOffline(br)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML("Key missing, or incorrect key provided") || br.containsHTML("class=\"d\"") || br.toString().matches("Your IP address has been temporarily banned for excessive pageloads.+")) {
@@ -102,11 +102,9 @@ public class EHentaiOrgCrawler extends PluginForDecrypt {
             logger.warning("Blank page --> Are you trying to access exhentai.org without the appropriate rights?");
             throw new AccountRequiredException();
         }
-        final String uploaderName = br.getRegex("<a href=\"https://[^/]+/uploader/([^<>\"]+)\">([^<>\"]+)</a>\\&nbsp; <a href=\"[^\"]+\"><img class=\"ygm\" src=\"[^\"]+\" alt=\"PM\" title=\"Contact Uploader\" />").getMatch(0);
-        final String tagsCommaSeparated = br.getRegex("<meta name=\"description\" content=\"[^\"]+ - Tags: ([^\"]+)\" />").getMatch(0);
         String title = hostplugin.getTitle(br);
         if (title == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Gallery title can not be found");
+            title = br._getURL().getPath();
         }
         title = Encoding.htmlDecode(title).trim();
         final FilePackage fp = FilePackage.getInstance();
@@ -122,15 +120,20 @@ public class EHentaiOrgCrawler extends PluginForDecrypt {
             final String archiveFileSize = br.getRegex("(?i)>\\s*File Size\\s*:\\s*</td><td[^>]+>([^<>\"]+)</td>").getMatch(0);
             if (archiveFileSize != null) {
                 galleryArchive.setDownloadSize(SizeFormatter.getSize(archiveFileSize));
+            } else {
+                logger.warning("Failed to find archive-size in html code");
             }
             galleryArchive.setAvailable(true);
             ret.add(galleryArchive);
-            distribute(galleryArchive);
+            if (mode == GalleryCrawlMode.ZIP_ONLY) {
+                return ret;
+            } else {
+                distribute(galleryArchive);
+            }
         }
-        if (mode == GalleryCrawlMode.ZIP_ONLY) {
-            return ret;
-        }
-        /* Now add all single images */
+        final String uploaderName = br.getRegex("<a href=\"https://[^/]+/uploader/([^<>\"]+)\">([^<>\"]+)</a>\\&nbsp; <a href=\"[^\"]+\"><img class=\"ygm\" src=\"[^\"]+\" alt=\"PM\" title=\"Contact Uploader\" />").getMatch(0);
+        final String tagsCommaSeparated = br.getRegex("<meta name=\"description\" content=\"[^\"]+ - Tags: ([^\"]+)\" />").getMatch(0);
+        /* Crawl all single images */
         int pagemax = 0;
         final String[] pages = br.getRegex("/?p=(\\d+)\" onclick=").getColumn(0);
         if (pages != null && pages.length != 0) {
@@ -141,6 +144,15 @@ public class EHentaiOrgCrawler extends PluginForDecrypt {
                 }
             }
         }
+        final UrlQuery query = UrlQuery.parse(contenturl);
+        final String startPageStr = query.get("p");
+        final int startPage;
+        if (startPageStr != null && startPageStr.matches("\\d+")) {
+            logger.info("Using page given in URL as start page: " + startPageStr);
+            startPage = Integer.parseInt(startPageStr);
+        } else {
+            startPage = 0;
+        }
         /* Check if the user has activated "Multi page View" in his account --> Switch to required URL if needed. */
         final boolean isMultiPageViewActive = br.containsHTML("/mpv/\\d+/[^/]+/#page\\d+");
         final String mpv_url = "https://" + br.getHost() + "/mpv/" + galleryid + "/" + galleryhash + "/";
@@ -149,9 +161,11 @@ public class EHentaiOrgCrawler extends PluginForDecrypt {
             br.getPage(mpv_url);
         }
         /* Check again as we could also get redirected to a normal gallery URL containing '/g/' */
-        final boolean isMultiPageURL = br.getURL().contains("/mpv/");
-        int counter = 1;
-        for (int page = 0; page <= pagemax; page++) {
+        final boolean isMultiPageURL = StringUtils.containsIgnoreCase(br.getURL(), "/mpv/");
+        int imagecounter = 1;
+        int numberofImages = -1;
+        boolean isFirstPage = true;
+        for (int page = startPage; page <= pagemax; page++) {
             // if (isMultiPageViewActive) {
             // logger.info("Multi-Page-View active --> Trying to deactivate it");
             // final String previousURL = br.getURL();
@@ -170,11 +184,21 @@ public class EHentaiOrgCrawler extends PluginForDecrypt {
             // br.submitForm(settings);
             // br.getPage(previousURL);
             // }
-            logger.info(String.format("Crawling page %d of %d", page, pagemax));
             final Browser br2 = br.cloneBrowser();
-            if (page > 0) {
-                sleep(new Random().nextInt(5000), param);
-                br2.getPage(parameter + "?p=" + page);
+            if (!isFirstPage) {
+                final int sleepBeforeNextPageMillis = new Random().nextInt(5000);
+                logger.info("Sleep before accessing next page: " + sleepBeforeNextPageMillis);
+                sleep(sleepBeforeNextPageMillis, param);
+                query.addAndReplace("p", Integer.toString(page));
+                br2.getPage(br._getURL().getPath() + "?" + query.toString());
+            }
+            final Regex paginationinfo = br.getRegex(">\\s*Showing (\\d+) - (\\d+) of (\\d+) images");
+            if (paginationinfo.patternFind()) {
+                imagecounter = Integer.parseInt(paginationinfo.getMatch(0));
+                numberofImages = Integer.parseInt(paginationinfo.getMatch(2));
+            } else {
+                /* Not great, not terrible */
+                logger.warning("Failed to find paginationInfo in html code");
             }
             if (isMultiPageURL) {
                 /* 2020-05-21: New feature of the websites which some users can activate in their account */
@@ -183,56 +207,62 @@ public class EHentaiOrgCrawler extends PluginForDecrypt {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 final String json_imagelist = br.getRegex("imagelist\\s*=\\s*(\\[\\{.*?\\])").getMatch(0);
-                final List<Object> ressourcelist = (List<Object>) JavaScriptEngineFactory.jsonToJavaObject(json_imagelist);
-                for (final Object pictureO : ressourcelist) {
-                    final Map<String, Object> entries = (Map<String, Object>) pictureO;
+                final List<Map<String, Object>> ressourcelist = (List<Map<String, Object>>) restoreFromString(json_imagelist, TypeRef.OBJECT);
+                for (final Map<String, Object> entries : ressourcelist) {
                     final String originalFilename = (String) entries.get("n");
                     final String imagekey = (String) entries.get("k");
                     if (StringUtils.isEmpty(originalFilename) || StringUtils.isEmpty(imagekey)) {
                         /* Skip invalid items (this should never happen) */
                         continue;
                     }
-                    final String url = mpv_url + "#page" + counter;
-                    final DownloadLink dl = getDownloadlink(url, galleryid, uploaderName, tagsCommaSeparated, title, originalFilename, counter);
+                    final String url = mpv_url + "#page" + page;
+                    final DownloadLink dl = getDownloadlink(url, galleryid, uploaderName, tagsCommaSeparated, title, originalFilename, numberofImages, imagecounter);
                     dl.setProperty(EHentaiOrg.PROPERTY_MPVKEY, mpvkey);
                     dl.setProperty(EHentaiOrg.PROPERTY_IMAGEKEY, imagekey);
                     fp.add(dl);
                     distribute(dl);
                     ret.add(dl);
-                    counter++;
+                    imagecounter++;
                 }
                 logger.info("Stopping because: mpv URLs have all objects on the first page");
                 break;
             } else {
                 final String[][] links = br2.getRegex("\"(https?://(?:(?:g\\.)?e-hentai|exhentai)\\.org/s/[a-z0-9]+/" + galleryid + "-\\d+)\">\\s*<img[^<>]*title\\s*=\\s*\"(.*?)\"[^<>]*src\\s*=\\s*\"(.*?)\"").getMatches();
                 if (links == null || links.length == 0 || title == null) {
-                    logger.warning("Decrypter broken for link: " + parameter);
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 for (final String link[] : links) {
                     final String singleLink = link[0];
                     final String originalFilename = new Regex(link[1], "\\s*(?:Page\\s*\\d+\\s*:?)?\\s+(.*?\\.(jpe?g|png|gif))").getMatch(0);
-                    final DownloadLink dl = getDownloadlink(singleLink, galleryid, uploaderName, tagsCommaSeparated, title, originalFilename, counter);
+                    final DownloadLink dl = getDownloadlink(singleLink, galleryid, uploaderName, tagsCommaSeparated, title, originalFilename, numberofImages, imagecounter);
                     fp.add(dl);
                     distribute(dl);
                     ret.add(dl);
-                    counter++;
+                    imagecounter++;
                 }
             }
+            logger.info("Crawled page " + (page + 1) + "/" + (pagemax + 1) + " | Found items so far: " + ret.size() + "/" + numberofImages);
             if (this.isAbort()) {
-                logger.info("Stopping because: Decryption aborted by user: " + parameter);
+                logger.info("Stopping because: Decryption aborted by user: " + contenturl);
                 return ret;
             }
+            isFirstPage = false;
         }
         return ret;
     }
 
     final Set<String> dupes = new HashSet<String>();
 
-    private DownloadLink getDownloadlink(final String url, final String galleryID, final String uploaderName, final String tagsCommaSeparated, final String fpName, final String originalFilename, final int imagePos) {
+    private DownloadLink getDownloadlink(final String url, final String galleryID, final String uploaderName, final String tagsCommaSeparated, final String fpName, final String originalFilename, final int numberofItems, final int imagePos) {
         final DownloadLink dl = createDownloadlink(url);
-        final DecimalFormat df = new DecimalFormat("0000");
-        final String imgposition = df.format(imagePos);
+        final int padLength;
+        if (numberofItems == -1) {
+            /* We don't know how many items to expect -> Use fixed pad length */
+            padLength = 4;
+        } else {
+            padLength = StringUtils.getPadLength(numberofItems);
+        }
+        final String imgposition = StringUtils.formatByPadLength(padLength, imagePos);
         final String namepart = fpName + "_" + galleryID + "-" + imgposition;
         final String extension;
         if (StringUtils.isNotEmpty(originalFilename) && Files.getExtension(originalFilename) != null) {

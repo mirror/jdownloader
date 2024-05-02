@@ -55,6 +55,11 @@ public class FilestoreTo extends PluginForHost {
     }
 
     @Override
+    public void init() {
+        Browser.setRequestIntervalLimitGlobal(getHost(), 500);
+    }
+
+    @Override
     public LazyPlugin.FEATURE[] getFeatures() {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.USERNAME_IS_EMAIL };
     }
@@ -122,7 +127,7 @@ public class FilestoreTo extends PluginForHost {
                 if (validateCookiesURL != null) {
                     br.getPage(validateCookiesURL);
                 } else {
-                    br.getPage("http://" + this.getHost() + "/konto");
+                    br.getPage("https://" + this.getHost() + "/konto");
                 }
                 if (this.isLoggedinHTML(br)) {
                     logger.info("Cookie login successful");
@@ -136,7 +141,7 @@ public class FilestoreTo extends PluginForHost {
                 }
             }
             logger.info("Performing full login");
-            br.getPage("http://" + this.getHost() + "/login");
+            br.getPage("https://" + this.getHost() + "/login");
             final Form form = br.getFormbyKey("Email");
             InputField email = form.getInputFieldByNameRegex("(?i)Email");
             email.setValue(Encoding.urlEncode(account.getUser()));
@@ -185,7 +190,7 @@ public class FilestoreTo extends PluginForHost {
             return running + 1;
         } else {
             /* Allow unlimited amount of downloads to start at the same time. */
-            return -1;
+            return Integer.MAX_VALUE;
         }
     }
 
@@ -299,12 +304,12 @@ public class FilestoreTo extends PluginForHost {
         if (dlform != null) {
             // not enforced
             if (account == null || AccountType.FREE.equals(account.getType())) {
-                final String waittime = br.getRegex("data-wait=\"(\\d+)\"").getMatch(0);
-                int wait = 10;
-                if (waittime != null) {
-                    wait = Integer.parseInt(waittime);
+                final String waitSecondsStr = br.getRegex("data-wait=\"(\\d+)\"").getMatch(0);
+                int waitSeconds = 10;
+                if (waitSecondsStr != null) {
+                    waitSeconds = Integer.parseInt(waitSecondsStr);
                 }
-                sleep(wait * 1001l, getDownloadLink());
+                sleep(waitSeconds * 1001l, getDownloadLink());
             }
             br.submitForm(dlform);
         }
@@ -396,11 +401,6 @@ public class FilestoreTo extends PluginForHost {
         ret = ret.replaceAll("&nbsp;", " ");
         // ret = ret.replaceAll("(<[^>]+>)", " ");
         return ret;
-    }
-
-    @Override
-    public void init() {
-        Browser.setRequestIntervalLimitGlobal(getHost(), 500);
     }
 
     @Override

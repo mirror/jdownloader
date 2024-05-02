@@ -321,6 +321,15 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Pass or cookies:" })
     String jd_gui_swing_components_AccountDialog_pass_or_cookies();
 
+    @Default(lngs = { "en", "de" }, values = { "Enter two-factor authentication code", "Gib den Zwei-Faktor-Authentifizierungscode ein" })
+    String jd_gui_swing_components_AccountDialog_2FA_login();
+    // @Default(lngs = { "en", "de" }, values = { "Invalid two-factor authentication code format!", "Ungültiges
+    // Zwei-Faktor-Authentifizierungscode-Format!" })
+    // String jd_gui_swing_components_AccountDialog_2FA_login_invalid_format();
+
+    @Default(lngs = { "en", "de" }, values = { "Invalid two-factor authentication code!", "Ungültiger Zwei-Faktor-Authentifizierungscode!" })
+    String jd_gui_swing_components_AccountDialog_2FA_login_invalid();
+
     @Default(lngs = { "en" }, values = { "Add new Account" })
     String jd_gui_swing_components_AccountDialog_title();
 

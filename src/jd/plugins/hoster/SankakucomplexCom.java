@@ -167,6 +167,8 @@ public class SankakucomplexCom extends PluginForHost {
                 dllink = br.getRegex("Post\\.prepare_download\\(\\&#39;(//[^\"<>]+)&#39;,").getMatch(0);
             }
         }
+        String filename = fileID;
+        String ext = null;
         if (dllink == null) {
             /* 2021-02-23: Image download - if the upper handling fails on videos, this may make us download an image vs a video */
             dllink = br.getRegex("<meta content=\"(//[^<>\"]+)\" property=og:image>").getMatch(0);
@@ -175,8 +177,6 @@ public class SankakucomplexCom extends PluginForHost {
             dllink = br.getURL(dllink).toExternalForm();
             dllink = Encoding.htmlOnlyDecode(dllink);
         }
-        String filename = fileID;
-        String ext = null;
         if (dllink != null) {
             ext = Plugin.getFileNameExtensionFromURL(dllink);
         }
@@ -205,7 +205,7 @@ public class SankakucomplexCom extends PluginForHost {
                             link.setVerifiedFileSize(con.getCompleteContentLength());
                         }
                     } else {
-                        throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                        logger.info("Final downloadurl did not lead to file -> File broken/unavailable serverside?");
                     }
                 } finally {
                     try {

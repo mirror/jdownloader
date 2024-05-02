@@ -2040,10 +2040,6 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
             filename = new Regex(filename_src, ">([^>]+)</td>$").getMatch(0);
         }
         if (filename == null) {
-            /* 2020-12-07 e.g. sama-share.com, pandafiles.com */
-            filename = br.getRegex("name=\"file_name\"[^>]*value=\"([^<>\"]+)\"").getMatch(0);
-        }
-        if (filename == null) {
             /* 2021-05-12: New XFS style e.g. userupload.net */
             filename = br.getRegex("(?i)<label>\\s*Filename\\s*</label>\\s*<input[^>]*class=\"form-control form-control-plaintext\"[^>]*value=\"([^\"]+)\"").getMatch(0);
         }

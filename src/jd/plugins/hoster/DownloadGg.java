@@ -19,6 +19,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -29,8 +31,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class DownloadGg extends PluginForHost {
@@ -142,10 +142,6 @@ public class DownloadGg extends PluginForHost {
     }
 
     private void handleDownload(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
-        if (br.containsHTML("class=\"wrap-banned-txt\"")) {
-            /* 2022-04-11 */
-            throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Your IP has been banned");
-        }
         final Form dlform = br.getFormbyActionRegex("download/.+");
         if (dlform == null) {
             logger.warning("Failed to find dlform");
@@ -153,7 +149,7 @@ public class DownloadGg extends PluginForHost {
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlform, resumable, maxchunks);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            br.followConnection(true);
+            br.followConnection();
             if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
