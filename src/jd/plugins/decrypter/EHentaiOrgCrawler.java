@@ -168,7 +168,8 @@ public class EHentaiOrgCrawler extends PluginForDecrypt {
         isMultiPageURL = StringUtils.containsIgnoreCase(br.getURL(), "/mpv/");
         int imagecounter = 1;
         int numberofImages = -1;
-        for (int page = startPage; page <= pagemax; page++) {
+        int page = startPage;
+        do {
             // if (isMultiPageViewActive) {
             // logger.info("Multi-Page-View active --> Trying to deactivate it");
             // final String previousURL = br.getURL();
@@ -188,7 +189,6 @@ public class EHentaiOrgCrawler extends PluginForDecrypt {
             // br.getPage(previousURL);
             // }
             final boolean isLastPage = page == pagemax;
-            final Browser br2 = br.cloneBrowser();
             final Regex paginationinfo = br.getRegex(">\\s*Showing (\\d+) - (\\d+) of (\\d+) images");
             if (paginationinfo.patternFind()) {
                 imagecounter = Integer.parseInt(paginationinfo.getMatch(0));
@@ -224,7 +224,7 @@ public class EHentaiOrgCrawler extends PluginForDecrypt {
                 logger.info("Stopping because: mpv URLs have all objects on the first page");
                 break;
             } else {
-                final String[][] links = br2.getRegex("\"(https?://(?:(?:g\\.)?e-hentai|exhentai)\\.org/s/[a-z0-9]+/" + galleryid + "-\\d+)\">\\s*<img[^<>]*title\\s*=\\s*\"(.*?)\"[^<>]*src\\s*=\\s*\"(.*?)\"").getMatches();
+                final String[][] links = br.getRegex("\"(https?://(?:(?:g\\.)?e-hentai|exhentai)\\.org/s/[a-z0-9]+/" + galleryid + "-\\d+)\">\\s*<img[^<>]*title\\s*=\\s*\"(.*?)\"[^<>]*src\\s*=\\s*\"(.*?)\"").getMatches();
                 if (links == null || links.length == 0 || title == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
@@ -242,15 +242,21 @@ public class EHentaiOrgCrawler extends PluginForDecrypt {
             if (this.isAbort()) {
                 logger.info("Stopping because: Decryption aborted by user: " + contenturl);
                 return ret;
-            }
-            /* Continue to next page unless current page is the last page. */
-            if (!isLastPage) {
+            } else if (isLastPage) {
+                logger.info("Stopping because: Reached last page: " + page + "/" + pagemax);
+                break;
+            } else {
+                /* Continue to next page */
+                page++;
                 final int sleepBeforeNextPageMillis = new Random().nextInt(5000);
                 logger.info("Sleep before accessing next page: " + sleepBeforeNextPageMillis);
                 sleep(sleepBeforeNextPageMillis, param);
                 query.addAndReplace("p", Integer.toString(page));
-                br2.getPage(br._getURL().getPath() + "?" + query.toString());
+                br.getPage(br._getURL().getPath() + "?" + query.toString());
             }
+        } while (!this.isAbort() && page <= pagemax);
+        if (startPage == 0 && numberofImages != -1 && ret.size() < numberofImages) {
+            logger.warning("Failed to find some items | Found only " + ret.size() + " of expected " + numberofImages + " items");
         }
         return ret;
     }
