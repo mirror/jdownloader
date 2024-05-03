@@ -4,9 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.TypeRef;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -17,6 +14,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.DirectHTTP;
+
+import org.appwork.storage.TypeRef;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class GermanTVChannelMediathek extends PluginForDecrypt {
@@ -45,6 +45,7 @@ public class GermanTVChannelMediathek extends PluginForDecrypt {
         link.setFinalFileName(Encoding.htmlDecode((String) map.get("name")).trim() + ".mp4");
         final String customHost = br.getHost(true).replaceFirst("(?i)www.", "");
         link.setProperty(DirectHTTP.PROPERTY_CUSTOM_HOST, customHost);
+        link.setProperty(DirectHTTP.PROPERTY_REQUEST_TYPE, "HEAD");
         link.setContentUrl(br.getURL());
         link.setAvailable(true);
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
