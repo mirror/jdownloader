@@ -26,16 +26,6 @@ import java.util.Map;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.utils.IO;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-import org.mozilla.javascript.Context;
-import org.mozilla.javascript.FunctionObject;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -59,6 +49,17 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.DirectHTTP;
 import jd.plugins.hoster.GoogleDriveDirectoryIndex;
+
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.storage.JSonStorage;
+import org.appwork.utils.IO;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.FunctionObject;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 @PluginDependencies(dependencies = { jd.plugins.hoster.GoogleDriveDirectoryIndex.class })
@@ -89,8 +90,7 @@ public class GoogleDriveDirectoryIndexCrawler extends PluginForDecrypt {
 
     /**
      * Crawler plugin that can handle instances of this project:
-     * https://gitlab.com/ParveenBhadooOfficial/Google-Drive-Index/-/blob/master/README.md or:</br>
-     * https://github.com/alx-xlx/goindex </br>
+     * https://gitlab.com/ParveenBhadooOfficial/Google-Drive-Index/-/blob/master/README.md or:</br> https://github.com/alx-xlx/goindex </br>
      * Be sure to add all domains to host plugin GoogleDriveDirectoryIndex.java too!
      */
     public GoogleDriveDirectoryIndexCrawler(PluginWrapper wrapper) {
@@ -165,7 +165,11 @@ public class GoogleDriveDirectoryIndexCrawler extends PluginForDecrypt {
                 }
             }
             if (con.getCompleteContentLength() > 0) {
-                direct.setVerifiedFileSize(con.getCompleteContentLength());
+                if (con.isContentDecoded()) {
+                    direct.setDownloadSize(con.getCompleteContentLength());
+                } else {
+                    direct.setVerifiedFileSize(con.getCompleteContentLength());
+                }
             }
             direct.setAvailable(true);
             return direct;
@@ -192,6 +196,7 @@ public class GoogleDriveDirectoryIndexCrawler extends PluginForDecrypt {
         /* Older versions required urlquery, newer expect json POST body */
         URLConnectionAdapter con = null;
         try {
+            br.getHeaders().put(HTTPConstants.HEADER_REQUEST_REFERER, contenturl);
             con = br.openGetConnection(contenturl);
             /* Check if we got a single direct downloadable file */
             final DownloadLink direct = getDirectDownload(con);

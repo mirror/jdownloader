@@ -25,6 +25,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
 
@@ -79,11 +80,11 @@ public class AccountController implements AccountControllerListener, AccountProp
     private final HashMap<String, List<Account>>                                 MULTIHOSTER_ACCOUNTS;
     private static AccountController                                             INSTANCE         = new AccountController();
     private final Eventsender<AccountControllerListener, AccountControllerEvent> broadcaster      = new Eventsender<AccountControllerListener, AccountControllerEvent>() {
-                                                                                                      @Override
-                                                                                                      protected void fireEvent(final AccountControllerListener listener, final AccountControllerEvent event) {
-                                                                                                          listener.onAccountControllerEvent(event);
-                                                                                                      }
-                                                                                                  };
+        @Override
+        protected void fireEvent(final AccountControllerListener listener, final AccountControllerEvent event) {
+            listener.onAccountControllerEvent(event);
+        }
+    };
 
     public Eventsender<AccountControllerListener, AccountControllerEvent> getEventSender() {
         return broadcaster;
@@ -601,13 +602,13 @@ public class AccountController implements AccountControllerListener, AccountProp
      * Adds account to list of accounts. If account already exists, it will be enabled (and checked) in case it is currently disabled. </br>
      * If password of new account differs from existing accounts' password, existing accounts' password will be updated.
      */
-    public void addAccount(final Account account, final boolean forceAccountCheckOnPropertyChange) {
+    public Account addAccount(final Account account, final boolean forceAccountCheckOnPropertyChange) {
         if (account == null) {
-            return;
+            return null;
         } else if (account.getPlugin() == null) {
             new PluginFinder().assignPlugin(account, true);
         } else if (account.getHoster() == null) {
-            return;
+            return null;
         }
         Account existingAccount = null;
         synchronized (AccountController.this) {
@@ -647,18 +648,40 @@ public class AccountController implements AccountControllerListener, AccountProp
             }
         }
         if (existingAccount != null) {
+            final AccountError newError = account.getError();
+            final AccountInfo newAccountInfo = account.getAccountInfo();
             /* Existing account found -> Update password of existing account */
             if (!StringUtils.equals(existingAccount.getPass(), account.getPass())) {
-                existingAccount.setPass(account.getPass(), forceAccountCheckOnPropertyChange);
+                // at this stage the logins of account are correct
+                existingAccount.setPass(account.getPass(), false);
             }
-            // reuse properties and accountInfos from new account
-            existingAccount.setError(null, -1, null, forceAccountCheckOnPropertyChange);
-            existingAccount.setAccountInfo(account.getAccountInfo());
-            existingAccount.setProperties(account.getProperties());
+            if (newError == null) {
+                // no error -> replace
+                existingAccount.setError(null, -1, null, false);
+                existingAccount.setAccountInfo(newAccountInfo);
+                existingAccount.setProperties(account.getProperties());
+            } else {
+                // error -> merge
+                existingAccount.setError(newError, account.getTmpDisabledTimeout(), account.getErrorString(), false);
+                if (newAccountInfo != null) {
+                    final AccountInfo oldAccountInfo = existingAccount.getAccountInfo();
+                    if (oldAccountInfo != null) {
+                        for (Map.Entry<String, Object> entry : oldAccountInfo.getProperties().entrySet()) {
+                            newAccountInfo.setProperty(entry.getKey(), entry.getValue());
+                        }
+                    }
+                    existingAccount.setAccountInfo(newAccountInfo);
+                }
+                for (Map.Entry<String, Object> entry : account.getProperties().entrySet()) {
+                    existingAccount.setProperty(entry.getKey(), entry.getValue());
+                }
+            }
             existingAccount.setEnabled(true, forceAccountCheckOnPropertyChange);
             getEventSender().fireEvent(new AccountControllerEvent(this, AccountControllerEvent.Types.ACCOUNT_CHECKED, existingAccount));
+            return existingAccount;
         } else {
             getEventSender().fireEvent(new AccountControllerEvent(this, AccountControllerEvent.Types.ADDED, account));
+            return account;
         }
     }
 

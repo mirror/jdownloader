@@ -23,6 +23,7 @@ import java.util.Locale;
 import java.util.TimeZone;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.regex.Pattern;
 
 import jd.config.Property;
 import jd.controlling.AccountController;
@@ -322,7 +323,16 @@ public class Account extends Property {
     }
 
     public String getPass() {
-        return pass;
+        return pass = processPassword(pass);
+    }
+
+    protected String processPassword(final String password) {
+        final PluginForHost plugin = getPlugin();
+        if (plugin != null && password != null) {
+            return password.replaceAll("(?i)<" + Pattern.quote(plugin.getHost()) + ":EMPTY>", "");
+        } else {
+            return password;
+        }
     }
 
     public boolean isValid() {
@@ -691,7 +701,7 @@ public class Account extends Property {
     }
 
     public void setPass(String newPass, final boolean forceAccountCheckOnChange) {
-        newPass = trim(newPass);
+        newPass = processPassword(trim(newPass));
         if (!StringUtils.equals(this.pass, newPass)) {
             this.pass = newPass;
             if (forceAccountCheckOnChange) {
