@@ -113,17 +113,21 @@ public class EHentaiOrgCrawler extends PluginForDecrypt {
         fp.setName(title);
         fp.setPackageKey(getHost() + "://gallery/" + galleryid);
         final GalleryCrawlMode mode = cfg.getGalleryCrawlMode();
+        final String zipArchiveFileSizeStr = br.getRegex("(?i)>\\s*File Size\\s*:\\s*</td><td[^>]+>([^<>\"]+)</td>").getMatch(0);
+        long zipArchiveFileSize = -1;
+        if (zipArchiveFileSizeStr != null) {
+            zipArchiveFileSize = SizeFormatter.getSize(zipArchiveFileSizeStr);
+        } else {
+            logger.warning("Failed to find archive-size in html code");
+        }
         if (mode == GalleryCrawlMode.ZIP_ONLY || mode == GalleryCrawlMode.ZIP_AND_IMAGES) {
             /* Crawl process can take some time so let's add this always existing URL first */
             final DownloadLink ziparchive = this.createDownloadlink("ehentaiarchive://" + galleryid + "/" + galleryhash);
             ziparchive.setProperty(EHentaiOrg.PROPERTY_GALLERY_URL, br.getURL());
             ziparchive.setContentUrl(br.getURL());
             ziparchive.setFinalFileName(title + ".zip");
-            final String archiveFileSize = br.getRegex("(?i)>\\s*File Size\\s*:\\s*</td><td[^>]+>([^<>\"]+)</td>").getMatch(0);
-            if (archiveFileSize != null) {
-                ziparchive.setDownloadSize(SizeFormatter.getSize(archiveFileSize));
-            } else {
-                logger.warning("Failed to find archive-size in html code");
+            if (zipArchiveFileSize != -1) {
+                ziparchive.setDownloadSize(zipArchiveFileSize);
             }
             ziparchive.setAvailable(true);
             ziparchive._setFilePackage(fp);
@@ -169,6 +173,7 @@ public class EHentaiOrgCrawler extends PluginForDecrypt {
         int imagecounter = 1;
         int numberofImages = -1;
         int page = startPage;
+        long estimatedBytesPerImage = -1;
         do {
             // if (isMultiPageViewActive) {
             // logger.info("Multi-Page-View active --> Trying to deactivate it");
@@ -193,6 +198,9 @@ public class EHentaiOrgCrawler extends PluginForDecrypt {
             if (paginationinfo.patternFind()) {
                 imagecounter = Integer.parseInt(paginationinfo.getMatch(0));
                 numberofImages = Integer.parseInt(paginationinfo.getMatch(2));
+                if (zipArchiveFileSize != -1) {
+                    estimatedBytesPerImage = zipArchiveFileSize / numberofImages;
+                }
             } else {
                 /* Not great, not terrible */
                 logger.warning("Failed to find paginationInfo in html code");
@@ -216,6 +224,9 @@ public class EHentaiOrgCrawler extends PluginForDecrypt {
                     final DownloadLink dl = getDownloadlink(url, galleryid, uploaderName, tagsCommaSeparated, title, originalFilename, numberofImages, imagecounter);
                     dl.setProperty(EHentaiOrg.PROPERTY_MPVKEY, mpvkey);
                     dl.setProperty(EHentaiOrg.PROPERTY_IMAGEKEY, imagekey);
+                    if (estimatedBytesPerImage != -1) {
+                        dl.setDownloadSize(estimatedBytesPerImage);
+                    }
                     fp.add(dl);
                     distribute(dl);
                     ret.add(dl);
@@ -232,6 +243,9 @@ public class EHentaiOrgCrawler extends PluginForDecrypt {
                     final String singleLink = link[0];
                     final String originalFilename = new Regex(link[1], "\\s*(?:Page\\s*\\d+\\s*:?)?\\s+(.*?\\.(jpe?g|png|gif))").getMatch(0);
                     final DownloadLink dl = getDownloadlink(singleLink, galleryid, uploaderName, tagsCommaSeparated, title, originalFilename, numberofImages, imagecounter);
+                    if (estimatedBytesPerImage != -1) {
+                        dl.setDownloadSize(estimatedBytesPerImage);
+                    }
                     fp.add(dl);
                     distribute(dl);
                     ret.add(dl);

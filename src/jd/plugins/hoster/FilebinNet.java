@@ -17,6 +17,9 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -25,9 +28,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "filebin.net" }, urls = { "https?://(?:www\\.)?filebin\\.net/(?:qr/)?([a-z0-9]{12,})" })
 public class FilebinNet extends PluginForHost {
@@ -63,9 +63,8 @@ public class FilebinNet extends PluginForHost {
     }
 
     /* Connection stuff */
-    private static final boolean FREE_RESUME       = true;
-    private static final int     FREE_MAXCHUNKS    = 0;
-    private static final int     FREE_MAXDOWNLOADS = 20;
+    private static final boolean FREE_RESUME    = true;
+    private static final int     FREE_MAXCHUNKS = 0;
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
@@ -79,10 +78,12 @@ public class FilebinNet extends PluginForHost {
         } else if (br.containsHTML("(?i)>\\s*This bin is empty")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String filesize = br.getRegex("(?i)Total size</dt>\\s*<dd class=\"col-sm-9\">[^\\(]+\\((\\d+) bytes\\)").getMatch(0);
+        final String filesize = br.getRegex("(?i)Total size\\s*</dt>\\s*<dd class=\"col-sm-9\">[^\\(]+\\((\\d+) bytes\\)").getMatch(0);
         if (filesize != null) {
             /* Do not set verifiedFilesize as it may vary! */
             link.setDownloadSize(SizeFormatter.getSize(filesize));
+        } else {
+            logger.warning("Failed to find filesize");
         }
         return AvailableStatus.TRUE;
     }
@@ -94,7 +95,7 @@ public class FilebinNet extends PluginForHost {
 
     private void handleDownload(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         requestFileInformation(link);
-        String dllink = "/archive/" + this.getFID(link) + "/zip";
+        final String dllink = "/archive/" + this.getFID(link) + "/zip";
         if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -114,7 +115,7 @@ public class FilebinNet extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return FREE_MAXDOWNLOADS;
+        return Integer.MAX_VALUE;
     }
 
     @Override
