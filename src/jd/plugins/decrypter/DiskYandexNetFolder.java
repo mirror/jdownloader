@@ -23,12 +23,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -48,6 +42,12 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.hoster.DiskYandexNet;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class DiskYandexNetFolder extends PluginForDecrypt {
     public DiskYandexNetFolder(PluginWrapper wrapper) {
@@ -64,12 +64,12 @@ public class DiskYandexNetFolder extends PluginForDecrypt {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "yandex.net", "yandex.com", "yandex.com.tr", "yandex.ru", "yandex.ua", "yadi.sk", "yadisk.cc", "yandex.kz" });
+        ret.add(new String[] { "disk.yandex.net", "yandex.net", "yandex.com", "yandex.com.tr", "yandex.ru", "yandex.ua", "yadi.sk", "yadisk.cc", "yandex.kz" });
         return ret;
     }
 
     public static String[] getAnnotationNames() {
-        return new String[] { "disk.yandex.net" };
+        return buildAnnotationNames(getPluginDomains());
     }
 
     @Override
