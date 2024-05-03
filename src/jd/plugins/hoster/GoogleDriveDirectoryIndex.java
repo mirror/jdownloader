@@ -119,17 +119,24 @@ public class GoogleDriveDirectoryIndex extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        return requestFileInformation(link, null);
+        return requestFileInformation(link, null, false);
     }
 
-    private AvailableStatus requestFileInformation(final DownloadLink link, final Account account) throws Exception {
+    private AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
         this.setBrowserExclusive();
         if (account != null) {
             login(account);
         }
         URLConnectionAdapter con = null;
         try {
-            con = br.openGetConnection(link.getPluginPatternMatcher());
+            /* 2024-05-03: Needed in some cases or error 401 will be returned even with correct authorization. */
+            br.getHeaders().put("Referer", link.getPluginPatternMatcher());
+            if (isDownload) {
+                dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher(), this.isResumeable(link, account), this.getMaxChunks(link, account));
+                con = dl.getConnection();
+            } else {
+                con = br.openGetConnection(link.getPluginPatternMatcher());
+            }
             handleConnectionErrors(br, con, null);
             if (con.getCompleteContentLength() > 0) {
                 if (con.isContentDecoded()) {
@@ -145,7 +152,9 @@ public class GoogleDriveDirectoryIndex extends PluginForHost {
             }
         } finally {
             try {
-                con.disconnect();
+                if (!isDownload) {
+                    con.disconnect();
+                }
             } catch (final Throwable e) {
             }
         }
@@ -158,9 +167,11 @@ public class GoogleDriveDirectoryIndex extends PluginForHost {
     }
 
     private void handleDownload(final DownloadLink link, final Account account) throws Exception, PluginException {
-        requestFileInformation(link, account);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, link.getPluginPatternMatcher(), this.isResumeable(link, account), this.getMaxChunks(link, account));
-        handleConnectionErrors(br, dl.getConnection(), account);
+        requestFileInformation(link, account, true);
+        if (dl == null) {
+            /* This should never happen */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
         dl.startDownload();
     }
 

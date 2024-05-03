@@ -4,6 +4,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.TypeRef;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -15,30 +18,36 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.DirectHTTP;
 
-import org.appwork.storage.TypeRef;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class GermanTVChannelMediathek extends PluginForDecrypt {
-
     public GermanTVChannelMediathek(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.VIDEO_STREAMING };
     }
 
     @Override
     public ArrayList<DownloadLink> decryptIt(CryptedLink parameter, ProgressController progress) throws Exception {
         br.setFollowRedirects(true);
         br.getPage(parameter.getCryptedUrl());
-        final String ldJson = br.getRegex("\"application/ld\\+json\"\\s*>\\s*(\\{.*?\\})\\s*</script>").getMatch(0);
-        if (ldJson == null) {
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final String json = br.getRegex("\"application/ld\\+json\"\\s*>\\s*(\\{.*?\\})\\s*</script>").getMatch(0);
+        if (json == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final Map<String, Object> map = restoreFromString(ldJson, TypeRef.MAP);
+        final Map<String, Object> map = restoreFromString(json, TypeRef.MAP);
         final DownloadLink link = createDownloadlink("directhttp://" + (String) map.get("contentUrl"), false);
-        link.setFinalFileName(Encoding.htmlDecode((String) map.get("name")) + ".mp4");
-        final String customHost = br.getHost(true).replaceFirst("www.", "");
+        link.setFinalFileName(Encoding.htmlDecode((String) map.get("name")).trim() + ".mp4");
+        final String customHost = br.getHost(true).replaceFirst("(?i)www.", "");
         link.setProperty(DirectHTTP.PROPERTY_CUSTOM_HOST, customHost);
         link.setContentUrl(br.getURL());
+        link.setAvailable(true);
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         ret.add(link);
         return ret;
     }
@@ -46,8 +55,6 @@ public class GermanTVChannelMediathek extends PluginForDecrypt {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        /* Please try to sort website based on old/new style */
-        /* Websites using the NEW style: */
         ret.add(new String[] { "frankenfernsehen.tv" });
         ret.add(new String[] { "baden-tv.com" });
         ret.add(new String[] { "muenchen.tv" });
@@ -77,5 +84,4 @@ public class GermanTVChannelMediathek extends PluginForDecrypt {
         }
         return ret.toArray(new String[0]);
     }
-
 }

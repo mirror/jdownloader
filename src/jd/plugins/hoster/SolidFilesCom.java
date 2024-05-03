@@ -19,9 +19,14 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.config.SolidFilesComConfig;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -34,10 +39,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.config.SolidFilesComConfig;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class SolidFilesCom extends PluginForHost {
@@ -81,17 +82,12 @@ public class SolidFilesCom extends PluginForHost {
     }
 
     /* Connection stuff */
-    private static final boolean FREE_RESUME                  = true;
-    private static final int     FREE_MAXCHUNKS               = 1;
-    private static final int     FREE_MAXDOWNLOADS            = 20;
-    private final boolean        ACCOUNT_FREE_RESUME          = true;
-    private final int            ACCOUNT_FREE_MAXCHUNKS       = 1;
-    // private final int ACCOUNT_FREE_MAXDOWNLOADS = 20;
-    // private final boolean ACCOUNT_PREMIUM_RESUME = true;
-    // private final int ACCOUNT_PREMIUM_MAXCHUNKS = 1;
-    private final int            ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-    public static final String   PROPERTY_DIRECT_DOWNLOAD     = "directDownload";
-    private static final String  TYPE_EMBED                   = "https?://[^/]+/e/([A-Za-z0-9]+)";
+    private static final boolean FREE_RESUME              = true;
+    private static final int     FREE_MAXCHUNKS           = 1;
+    private final boolean        ACCOUNT_FREE_RESUME      = true;
+    private final int            ACCOUNT_FREE_MAXCHUNKS   = 1;
+    public static final String   PROPERTY_DIRECT_DOWNLOAD = "directDownload";
+    private static final String  TYPE_EMBED               = "https?://[^/]+/e/([A-Za-z0-9]+)";
 
     @Override
     public void correctDownloadLink(final DownloadLink link) {
@@ -124,6 +120,19 @@ public class SolidFilesCom extends PluginForHost {
         br.setFollowRedirects(true);
         if (link.getBooleanProperty(SolidFilesCom.PROPERTY_DIRECT_DOWNLOAD, false)) {
             return AvailableStatus.TRUE;
+        }
+        URLConnectionAdapter con = null;
+        try {
+            con = br.openGetConnection(link.getPluginPatternMatcher());
+            if (con.getResponseCode() == 503) {
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Error 503 website under maintenance", 8 * 60 * 60 * 1000l);
+            }
+            br.followConnection();
+        } finally {
+            try {
+                con.disconnect();
+            } catch (final Throwable e) {
+            }
         }
         br.getPage(link.getPluginPatternMatcher());
         isOffline(false);
@@ -267,19 +276,18 @@ public class SolidFilesCom extends PluginForHost {
         }
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         login(account, true);
         prepBRAjax(account);
-        br.getPage("https://www." + this.getHost() + "/api/payments?limit=25&offset=0");
+        br.getPage("/api/payments?limit=25&offset=0");
         ai.setUnlimitedTraffic();
         final String subscriptioncount = PluginJSonUtils.getJsonValue(br, "count");
         if (subscriptioncount == null || subscriptioncount.equals("0")) {
             account.setType(AccountType.FREE);
             /* free accounts can still have captcha */
-            account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+            account.setMaxSimultanDownloads(this.getMaxSimultanFreeDownloadNum());
             account.setConcurrentUsePossible(false);
         } else {
             /* TODO: Add expire date */
@@ -288,10 +296,9 @@ public class SolidFilesCom extends PluginForHost {
             // ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH));
             // }
             account.setType(AccountType.PREMIUM);
-            account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+            account.setMaxSimultanDownloads(this.getMaxSimultanPremiumDownloadNum());
             account.setConcurrentUsePossible(true);
         }
-        account.setValid(true);
         return ai;
     }
 
@@ -329,7 +336,7 @@ public class SolidFilesCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return ACCOUNT_PREMIUM_MAXDOWNLOADS;
+        return Integer.MAX_VALUE;
     }
 
     @Override
@@ -343,7 +350,7 @@ public class SolidFilesCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return FREE_MAXDOWNLOADS;
+        return Integer.MAX_VALUE;
     }
 
     @Override

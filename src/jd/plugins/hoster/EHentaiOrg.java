@@ -103,7 +103,6 @@ public class EHentaiOrg extends PluginForHost {
     // Tags:
     // protocol: no https
     // other:
-    private static final int    free_maxdownloads                                            = -1;
     private String              dllink                                                       = null;
     private String              dllinkOriginal                                               = null;
     private final boolean       ENABLE_RANDOM_UA                                             = true;
@@ -117,6 +116,8 @@ public class EHentaiOrg extends PluginForHost {
     public static final String  PROPERTY_MPVKEY                                              = "mpvkey";
     public static final String  PROPERTY_IMAGEKEY                                            = "imagekey";
     private final String        PROPERTY_FORCED_DIRECTURL_PROPERTY                           = "forced_directurl_property";
+    private final String        PROPERTY_TIMESTAMP_LAST_BROKEN_IMAGE_FAIL                    = "timestamp_last_broken_image_fail";
+    private final String        PROPERTY_TIMESTAMP_LAST_BROKEN_IMAGE_RETRY                   = "timestamp_last_broken_image_retry";
     /* This shall be set to true if we know that an item is downloadable as original image. */
     private final String        PROPERTY_IS_ORIGINAL_DOWNLOAD_AVAILABLE                      = "is_original_download_available";
     private final String        PROPERTY_ACCOUNT_IMAGE_POINTS_LEFT                           = "image_points_left";
@@ -165,7 +166,7 @@ public class EHentaiOrg extends PluginForHost {
     private Boolean requiresImagePoints(final String url, final boolean userPrefersOriginalImages) {
         if (new Regex(url, TYPE_ARCHIVE).patternFind()) {
             return Boolean.TRUE;
-        } else if (url.contains(this.host_ehentai) && userPrefersOriginalImages) {
+        } else if (url.contains(host_ehentai) && userPrefersOriginalImages) {
             return Boolean.TRUE;
         } else {
             /* We can never be 100% sure that no points are required. */
@@ -236,7 +237,7 @@ public class EHentaiOrg extends PluginForHost {
                 if (continue_url == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                continue_url = Encoding.htmlDecode(continue_url);
+                continue_url = Encoding.htmlOnlyDecode(continue_url);
                 br.getPage(continue_url);
                 /* Another step */
                 final String continue_url2 = br.getRegex("document\\.getElementById\\(\"continue\"\\).*?document\\.location\\s*=\\s*\"((?:/|http)[^\"]+)\"").getMatch(0);
@@ -267,7 +268,6 @@ public class EHentaiOrg extends PluginForHost {
             }
         } else if (new Regex(link.getPluginPatternMatcher(), TYPE_SINGLE_IMAGE_MULTI_PAGE_VIEW).patternFind()) {
             /* 2020-05-21: New linktype "Multi Page View" */
-            br.setFollowRedirects(true);
             final Regex urlinfo = new Regex(link.getPluginPatternMatcher(), TYPE_SINGLE_IMAGE_MULTI_PAGE_VIEW);
             final String galleryid = urlinfo.getMatch(0);
             final String page = urlinfo.getMatch(2);
@@ -287,7 +287,7 @@ public class EHentaiOrg extends PluginForHost {
             postData.put("page", page);
             postData.put("imgkey", imagekey);
             postData.put("mpvkey", mpvkey);
-            if (link.getPluginPatternMatcher().contains(this.host_exhentai)) {
+            if (link.getPluginPatternMatcher().contains(host_exhentai)) {
                 br.postPageRaw("https://exhentai.org/api.php", JSonStorage.serializeToJson(postData));
             } else {
                 br.postPageRaw("https://api.e-hentai.org/api.php", JSonStorage.serializeToJson(postData));
@@ -367,6 +367,26 @@ public class EHentaiOrg extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         checkErrors(br, link, account);
+        // TODO: 2024-05-03: Add functionality and test this
+        final long timestampLastFailDueToBrokenImage = link.getLongProperty(PROPERTY_TIMESTAMP_LAST_BROKEN_IMAGE_FAIL, 0);
+        final long timestampLastBrokenImageRetry = link.getLongProperty(PROPERTY_TIMESTAMP_LAST_BROKEN_IMAGE_RETRY, 0);
+        brokenimagehandling: if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && timestampLastFailDueToBrokenImage > 0 && System.currentTimeMillis() - timestampLastBrokenImageRetry > 15 * 60 * 1000) {
+            /**
+             * Download of this image has just recently failed due to the image being serverside broken/unavailable. </br>
+             * Website has a feature called 'Reload broken image' which we are making use of here. </br>
+             * This will give us the same image hosted on a different CDN.
+             */
+            logger.info("Attempting to 'Reload broken image'");
+            final String reloadBrokenImageStr = br.getRegex("id=\"loadfail\"[^>]*onclick=\"return nl\\('([^']+)'\\)").getMatch(0);
+            if (reloadBrokenImageStr == null) {
+                logger.warning("Failed to find special 'reload broken image string' -> Proceeding as normal in hope that download will work this time");
+                break brokenimagehandling;
+            }
+            br.getPage("nl=" + Encoding.urlEncode(reloadBrokenImageStr));
+            checkErrors(br, link, account);
+            /* Save timestamp so we won't do this over and over again */
+            link.setProperty(PROPERTY_TIMESTAMP_LAST_BROKEN_IMAGE_RETRY, true);
+        }
         String ext = null;
         String originalFileName = br.getRegex("(?i)<div>([^<>]*\\.(jpe?g|png|gif))\\s*::\\s*\\d+").getMatch(0);
         final String extDefault = ".jpg";
@@ -955,12 +975,12 @@ public class EHentaiOrg extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return free_maxdownloads;
+        return Integer.MAX_VALUE;
     }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return free_maxdownloads;
+        return Integer.MAX_VALUE;
     }
 
     @Override
@@ -980,6 +1000,8 @@ public class EHentaiOrg extends PluginForHost {
     public void resetDownloadlink(final DownloadLink link) {
         if (link != null) {
             link.removeProperty(PROPERTY_FORCED_DIRECTURL_PROPERTY);
+            /* This will allow an instant fresh attempt for serverside "broken" images on next download attempt. */
+            link.removeProperty(PROPERTY_TIMESTAMP_LAST_BROKEN_IMAGE_RETRY);
         }
     }
 }
