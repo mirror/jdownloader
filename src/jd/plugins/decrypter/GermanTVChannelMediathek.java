@@ -43,7 +43,7 @@ public class GermanTVChannelMediathek extends PluginForDecrypt {
         final Map<String, Object> map = restoreFromString(json, TypeRef.MAP);
         final DownloadLink link = createDownloadlink("directhttp://" + (String) map.get("contentUrl"), false);
         link.setFinalFileName(Encoding.htmlDecode((String) map.get("name")).trim() + ".mp4");
-        final String customHost = br.getHost(true).replaceFirst("(?i)www.", "");
+        final String customHost = br.getHost(true).replaceFirst("(?i)^www.", "");
         link.setProperty(DirectHTTP.PROPERTY_CUSTOM_HOST, customHost);
         link.setProperty(DirectHTTP.PROPERTY_REQUEST_TYPE, "HEAD");
         link.setContentUrl(br.getURL());
