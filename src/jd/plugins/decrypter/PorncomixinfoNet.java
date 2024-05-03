@@ -117,7 +117,7 @@ public class PorncomixinfoNet extends PluginForDecrypt {
                 if (StringUtils.endsWithCaseInsensitive(url, "cover.jpg") || StringUtils.endsWithCaseInsensitive(url, "cover.webp")) {
                     final DownloadLink link = createDownloadlink(DirectHTTP.createURLForThisPlugin(url));
                     ret.add(link);
-                } else if (url.endsWith(".webp")) {
+                } else if (StringUtils.endsWithCaseInsensitive(url, ".webp")) {
                     webpurls.add(url);
                 }
             }

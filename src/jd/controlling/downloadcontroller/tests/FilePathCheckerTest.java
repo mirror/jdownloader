@@ -97,13 +97,14 @@ public class FilePathCheckerTest extends AWTest {
             if (allowDeleteFolderRecursive) {
                 deleteRecursive(testBasePath);
             } else {
-                System.out.println("TEST ENDED BUT SOME TEST FILES MAY BE LEFT!");
+                System.out.println("!! TEST ENDED BUT SOME TEST FILES MAY BE LEFT !!");
             }
         }
     }
 
     private final List<File> CLEANUP = new CopyOnWriteArrayList<File>();
 
+    /** Deletes files created during tests. */
     private void cleanup() {
         for (final File next : CLEANUP) {
             if (next.delete() || !next.exists()) {
@@ -132,8 +133,8 @@ public class FilePathCheckerTest extends AWTest {
             FilePathChecker.createFolderPath(file);
             throw new Exception("Expected Exception did not occur");
         } catch (final BadFilePathException bf) {
-            // bf.printStackTrace();
             if (bf.getReason() != expectedException.getReason()) {
+                bf.printStackTrace();
                 throw new Exception("Expected FailureReason " + expectedException.getReason() + " | Got: " + bf.getReason());
             }
         }
@@ -144,8 +145,8 @@ public class FilePathCheckerTest extends AWTest {
             FilePathChecker.createFilePath(file);
             throw new Exception("Expected Exception did not occur");
         } catch (final BadFilePathException bf) {
-            // bf.printStackTrace();
             if (bf.getReason() != expectedException.getReason()) {
+                bf.printStackTrace();
                 throw new Exception("Expected FailureReason " + expectedException.getReason() + " | Got: " + bf.getReason());
             }
         }
@@ -156,8 +157,8 @@ public class FilePathCheckerTest extends AWTest {
             FilePathChecker.createFilePath(file, flags);
             throw new Exception("Expected Exception did not occur");
         } catch (final BadFilePathException bf) {
-            // bf.printStackTrace();
             if (bf.getReason() != expectedException.getReason()) {
+                bf.printStackTrace();
                 throw new Exception("Expected FailureReason " + expectedException.getReason() + " | Got: " + bf.getReason());
             }
         }
@@ -167,7 +168,7 @@ public class FilePathCheckerTest extends AWTest {
         try {
             FilePathChecker.createFolderPath(file);
         } catch (final BadFilePathException bf) {
-            // bf.printStackTrace();
+            bf.printStackTrace();
             throw new Exception("Folder creation failed");
         }
     }
@@ -176,7 +177,7 @@ public class FilePathCheckerTest extends AWTest {
         try {
             FilePathChecker.createFilePath(file);
         } catch (final BadFilePathException bf) {
-            // bf.printStackTrace();
+            bf.printStackTrace();
             throw new Exception("File creation failed");
         }
     }

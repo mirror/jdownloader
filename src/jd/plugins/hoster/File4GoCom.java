@@ -78,7 +78,9 @@ public class File4GoCom extends antiDDoSForHost {
         // do not follow redirects, as they can lead to 404 which is faked based on country of origin ?
         getPage(getContentURL(link));
         redirectControl(br);
-        if (br.containsHTML(">404 ARQUIVO N�O ENCOTRADO<|Arquivo Temporariamente Indisponivel|ARQUIVO DELATADO PELO USUARIO OU REMOVIDO POR <|ARQUIVO DELATADO POR <b>INATIVIDADE|O arquivo Não foi encotrado em nossos servidores")) {
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML(">\\s*404 ARQUIVO N�O ENCOTRADO<|Arquivo Temporariamente Indisponivel|ARQUIVO DELATADO PELO USUARIO OU REMOVIDO POR <|ARQUIVO DELATADO POR <b>INATIVIDADE|O arquivo Não foi encotrado em nossos servidores")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex(">Nome:</b>\\s*(.*?)\\s*(?:</p>)?</span>").getMatch(0);
@@ -110,7 +112,8 @@ public class File4GoCom extends antiDDoSForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link);
-        String directLink = checkDirectLink(link, "directlink");
+        final String directlinkproperty = "directlink";
+        String directLink = checkDirectLink(link, directlinkproperty);
         if (directLink == null) {
             Form form = br.getFormByRegex(".*CRIAR DOWNLOAD.*");
             if (form == null) {
@@ -139,7 +142,7 @@ public class File4GoCom extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        link.setProperty("directlink", directLink);
+        link.setProperty(directlinkproperty, directLink);
         dl.startDownload();
     }
 
@@ -174,49 +177,45 @@ public class File4GoCom extends antiDDoSForHost {
 
     private void login(final Account account, final boolean force) throws Exception {
         synchronized (account) {
-            try {
-                // Load cookies
-                final Cookies cookies = account.loadCookies("");
-                if (cookies != null) {
-                    br.setCookies(cookies);
-                    if (!force) {
-                        /* Do not verify cookies */
-                        return;
-                    }
-                    if (isLoggedIN(br)) {
-                        logger.info("Cookie login successful");
-                        account.saveCookies(br.getCookies(br.getHost()), "");
-                        return;
-                    } else {
-                        logger.info("Cookie login failed");
-                        br.clearCookies(null);
-                    }
-                }
-                logger.info("Performing full login");
-                getPage(MAINPAGE);
-                redirectControl(br);
-                postPage("/login.html", "acao=logar&login=" + Encoding.urlEncode(account.getUser()) + "&senha=" + Encoding.urlEncode(account.getPass()));
-                redirectControl(br);
-                final String lang = System.getProperty("user.language");
-                if (br.getHttpConnection().getResponseCode() == 404) {
-                    if ("de".equalsIgnoreCase(lang)) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nServer Fehler 404 - Login momentan nicht möglich!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nIServer error 404 - login not possible at the moment!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
+            // Load cookies
+            final Cookies cookies = account.loadCookies("");
+            if (cookies != null) {
+                br.setCookies(cookies);
+                if (!force) {
+                    /* Do not verify cookies */
+                    return;
                 }
                 if (isLoggedIN(br)) {
-                    if ("de".equalsIgnoreCase(lang)) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    } else {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
+                    logger.info("Cookie login successful");
+                    account.saveCookies(br.getCookies(br.getHost()), "");
+                    return;
+                } else {
+                    logger.info("Cookie login failed");
+                    br.clearCookies(null);
+                    account.clearCookies("");
                 }
-                account.saveCookies(br.getCookies(br.getHost()), "");
-            } catch (final PluginException e) {
-                account.clearCookies("");
-                throw e;
             }
+            logger.info("Performing full login");
+            getPage(MAINPAGE);
+            redirectControl(br);
+            postPage("/login.html", "acao=logar&login=" + Encoding.urlEncode(account.getUser()) + "&senha=" + Encoding.urlEncode(account.getPass()));
+            redirectControl(br);
+            final String lang = System.getProperty("user.language");
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                if ("de".equalsIgnoreCase(lang)) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nServer Fehler 404 - Login momentan nicht möglich!", PluginException.VALUE_ID_PREMIUM_TEMP_DISABLE);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nIServer error 404 - login not possible at the moment!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+            }
+            if (isLoggedIN(br)) {
+                if ("de".equalsIgnoreCase(lang)) {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nSchnellhilfe: \r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen?\r\nFalls dein Passwort Sonderzeichen enthält, ändere es und versuche es erneut!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid username/password!\r\nQuick help:\r\nYou're sure that the username and password you entered are correct?\r\nIf your password contains special characters, change it (remove them) and try again!", PluginException.VALUE_ID_PREMIUM_DISABLE);
+                }
+            }
+            account.saveCookies(br.getCookies(br.getHost()), "");
         }
     }
 
@@ -293,7 +292,7 @@ public class File4GoCom extends antiDDoSForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
+        return Integer.MAX_VALUE;
     }
 
     @Override

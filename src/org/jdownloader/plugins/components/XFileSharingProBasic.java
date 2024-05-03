@@ -734,6 +734,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
         try {
             final URL url = new URL(originalURL);
             final String urlHost = getPreferredHost(link, url);
+            final String urlHostWithoutWww = urlHost.replaceFirst("(?i)www\\.", "");
             final String protocol;
             if (this.useHTTPS()) {
                 protocol = "https://";
@@ -746,7 +747,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
             final String pluginHost = this.getHost();
             final List<String> deadDomains = this.getDeadDomains();
             final String host;
-            if (deadDomains != null && deadDomains.contains(urlHost)) {
+            if (deadDomains != null && (deadDomains.contains(urlHost) || deadDomains.contains(urlHostWithoutWww))) {
                 /* Fallback to plugin domain */
                 /* e.g. down.xx.com -> down.yy.com, keep subdomain(s) */
                 host = urlHost.replaceFirst("(?i)" + Pattern.quote(Browser.getHost(url, false)) + "$", pluginHost);

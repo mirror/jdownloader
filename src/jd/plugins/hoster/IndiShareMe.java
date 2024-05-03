@@ -68,6 +68,20 @@ public class IndiShareMe extends XFileSharingProBasic {
     }
 
     @Override
+    protected List<String> getDeadDomains() {
+        final ArrayList<String> deadDomains = new ArrayList<String>();
+        deadDomains.add("indishare.cc");
+        deadDomains.add("indi-share.com");
+        deadDomains.add("indishare.co");
+        deadDomains.add("indishare.com");
+        deadDomains.add("indishare.me");
+        deadDomains.add("india-share.com");
+        deadDomains.add("news4town.com");
+        deadDomains.add("down-indi1.com");
+        return deadDomains;
+    }
+
+    @Override
     public boolean isResumeable(final DownloadLink link, final Account account) {
         if (account != null && account.getType() == AccountType.FREE) {
             /* Free Account */
