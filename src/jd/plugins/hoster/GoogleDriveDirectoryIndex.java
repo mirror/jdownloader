@@ -128,6 +128,7 @@ public class GoogleDriveDirectoryIndex extends PluginForHost {
             login(account);
         }
         URLConnectionAdapter con = null;
+        boolean success = false;
         try {
             /* 2024-05-03: Needed in some cases or error 401 will be returned even with correct authorization. */
             br.getHeaders().put("Referer", link.getPluginPatternMatcher());
@@ -138,6 +139,7 @@ public class GoogleDriveDirectoryIndex extends PluginForHost {
                 con = br.openGetConnection(link.getPluginPatternMatcher());
             }
             handleConnectionErrors(br, con, null);
+            success = true;
             if (con.getCompleteContentLength() > 0) {
                 if (con.isContentDecoded()) {
                     link.setDownloadSize(con.getCompleteContentLength());
@@ -152,7 +154,7 @@ public class GoogleDriveDirectoryIndex extends PluginForHost {
             }
         } finally {
             try {
-                if (!isDownload) {
+                if (!success || !isDownload) {
                     con.disconnect();
                 }
             } catch (final Throwable e) {
