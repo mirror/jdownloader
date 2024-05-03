@@ -42,12 +42,19 @@ import jd.plugins.PluginException;
 public class File4GoCom extends antiDDoSForHost {
     public File4GoCom(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium(MAINPAGE);
+        this.enablePremium();
+    }
+
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.setFollowRedirects(true);
+        return br;
     }
 
     @Override
     public String getAGBLink() {
-        return MAINPAGE;
+        return "http://www." + getHost();
     }
 
     @Override
@@ -64,17 +71,15 @@ public class File4GoCom extends antiDDoSForHost {
         return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
-    private static final String MAINPAGE = "http://www.file4go.net";
-
-    /** 2023-01-24: They're GEO-blocking all except brazil IPs via Cloudflare! */
+    /** 2023-01-24: They're GEO-blocking all except brazil/PT IPs via Cloudflare! */
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
-        br.setCookie(MAINPAGE, "animesonline", "1");
-        br.setCookie(MAINPAGE, "musicasab", "1");
-        br.setCookie(MAINPAGE, "poup", "1");
-        br.setCookie(MAINPAGE, "noadvtday", "0");
-        br.setCookie(MAINPAGE, "hellpopab", "1");
+        br.setCookie(getHost(), "animesonline", "1");
+        br.setCookie(getHost(), "musicasab", "1");
+        br.setCookie(getHost(), "poup", "1");
+        br.setCookie(getHost(), "noadvtday", "0");
+        br.setCookie(getHost(), "hellpopab", "1");
         // do not follow redirects, as they can lead to 404 which is faked based on country of origin ?
         getPage(getContentURL(link));
         redirectControl(br);
@@ -152,7 +157,6 @@ public class File4GoCom extends antiDDoSForHost {
             URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
-                br2.setFollowRedirects(true);
                 con = br2.openHeadConnection(dllink);
                 if (this.looksLikeDownloadableContent(con)) {
                     if (con.getCompleteContentLength() > 0) {
@@ -196,7 +200,7 @@ public class File4GoCom extends antiDDoSForHost {
                 }
             }
             logger.info("Performing full login");
-            getPage(MAINPAGE);
+            getPage("http://www." + getHost());
             redirectControl(br);
             postPage("/login.html", "acao=logar&login=" + Encoding.urlEncode(account.getUser()) + "&senha=" + Encoding.urlEncode(account.getPass()));
             redirectControl(br);
@@ -220,7 +224,7 @@ public class File4GoCom extends antiDDoSForHost {
     }
 
     private boolean isLoggedIN(final Browser br) {
-        if (br.getCookie(MAINPAGE, "FILE4GO", Cookies.NOTDELETEDPATTERN) != null) {
+        if (br.getCookie(br.getHost(), "FILE4GO", Cookies.NOTDELETEDPATTERN) != null) {
             return true;
         } else {
             return false;
