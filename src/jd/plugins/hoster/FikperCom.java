@@ -329,14 +329,15 @@ public class FikperCom extends PluginForHost {
                 final long timeBefore = Time.systemIndependentCurrentJVMTimeMillis();
                 final int waitBeforeDownloadMillis = ((Number) entries.get("delayTime")).intValue();
                 final boolean skipPreDownloadWaittime = true; // 2022-11-14: Wait time is skippable
-                final boolean useHcaptcha = false;
-                final boolean useSolvemediaCaptcha = true;
+                final boolean useHcaptcha = true;
+                /* 2024-05-03: Solvemedia captcha is broken serverside so fikper.com switched back to hCaptcha. */
+                final boolean useSolvemediaCaptcha = false;
                 final Map<String, Object> postdata = new HashMap<String, Object>();
                 if (useHcaptcha) {
                     /* 2023-01-16 */
                     final CaptchaHelperHostPluginHCaptcha hCaptcha = getHcaptchaHelper(br);
                     final String hCaptchaResponse = hCaptcha.getToken();
-                    postdata.put("recaptcha", hCaptchaResponse);
+                    postdata.put("captchaValue", hCaptchaResponse);
                 } else if (useSolvemediaCaptcha) {
                     /* 2023-07-27 */
                     final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
