@@ -832,10 +832,7 @@ public class MegaConz extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else {
             link.setDownloadSize(Long.parseLong(fileSize));
-            try {
-                link.setVerifiedFileSize(Long.parseLong(fileSize));
-            } catch (final Throwable e) {
-            }
+            link.setVerifiedFileSize(Long.parseLong(fileSize));
         }
         final String at = valueOf(response.get("at"));
         if (at == null) {
@@ -846,7 +843,7 @@ public class MegaConz extends PluginForHost {
             fileInfo = decrypt(at, keyString);
         } catch (final StringIndexOutOfBoundsException e) {
             /* key is incomplete */
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, null, e);
         }
         final String fileName = valueOf(fileInfo.get("n"));
         if (fileName == null) {
