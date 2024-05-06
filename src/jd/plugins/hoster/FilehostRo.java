@@ -22,6 +22,7 @@ import org.appwork.utils.formatter.SizeFormatter;
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -40,11 +41,6 @@ public class FilehostRo extends PluginForHost {
         return "http://www.filehost.ro/termeni_de_utilizare/";
     }
 
-    /* Connection stuff */
-    private static final boolean FREE_RESUME       = false;
-    private static final int     FREE_MAXCHUNKS    = 1;
-    private static final int     FREE_MAXDOWNLOADS = 1;
-
     @Override
     public String getLinkID(final DownloadLink link) {
         final String fid = getFID(link);
@@ -59,12 +55,14 @@ public class FilehostRo extends PluginForHost {
         return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        if (!link.isNameSet()) {
+            link.setName(this.getFID(link));
+        }
         this.setBrowserExclusive();
-        this.br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
+        br.setFollowRedirects(true);
+        br.getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML(">Acest fisier nu exista in baza de date")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -73,25 +71,34 @@ public class FilehostRo extends PluginForHost {
             filename = br.getRegex("color=blue size=2>([^<>\"]*?)<").getMatch(0);
         }
         String filesize = br.getRegex("<br>([^<>\"]*?), \\d+ download\\-uri").getMatch(0);
-        link.setName(Encoding.htmlDecode(filename).trim());
+        if (filename != null) {
+            link.setName(Encoding.htmlDecode(filename).trim());
+        } else {
+            logger.warning("Failed to find filename");
+        }
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
+        } else {
+            logger.warning("Failed to find filesize");
         }
         return AvailableStatus.TRUE;
     }
 
     @Override
-    public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
-        requestFileInformation(downloadLink);
-        doFree(downloadLink, FREE_RESUME, FREE_MAXCHUNKS);
+    public void handleFree(final DownloadLink link) throws Exception, PluginException {
+        requestFileInformation(link);
+        doFree(link);
     }
 
-    private void doFree(final DownloadLink downloadLink, final boolean resumable, final int maxchunks) throws Exception, PluginException {
-        String dllink = br.getRegex("\"(https?://[^/]+\\.filehost\\.ro/download/[^<>\"]*?)\"").getMatch(0);
+    private void doFree(final DownloadLink link) throws Exception, PluginException {
+        if (br.containsHTML(">\\s*Pentru a putea downloada va rugam sa va autentificati")) {
+            throw new AccountRequiredException();
+        }
+        final String dllink = br.getRegex("\"(https?://[^/]+\\.filehost\\.ro/download/[^<>\"]*?)\"").getMatch(0);
         if (dllink == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, resumable, maxchunks);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             br.followConnection(true);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -101,7 +108,7 @@ public class FilehostRo extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return FREE_MAXDOWNLOADS;
+        return 1;
     }
 
     @Override

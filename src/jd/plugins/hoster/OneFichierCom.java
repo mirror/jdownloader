@@ -612,7 +612,7 @@ public class OneFichierCom extends PluginForHost {
                 } else {
                     waitMilliseconds = defaultWaitMinutes * 60 * 1000l;
                 }
-                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Wait between downloads", waitMilliseconds);
+                throw new AccountUnavailableException("Wait between downloads", waitMilliseconds);
             } else {
                 final boolean preferReconnect = PluginJsonConfig.get(OneFichierConfigInterface.class).isPreferReconnectEnabled();
                 if (waittimeMinutesStr != null && preferReconnect) {

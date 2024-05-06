@@ -203,14 +203,15 @@ public class EHentaiOrg extends PluginForHost {
                 br.getHeaders().put("User-Agent", UserAgents.stringUserAgent());
             }
         }
-        if (new Regex(link.getPluginPatternMatcher(), TYPE_ARCHIVE).patternFind()) {
+        final Regex regexarchive = new Regex(link.getPluginPatternMatcher(), TYPE_ARCHIVE);
+        if (regexarchive.patternFind()) {
             /* Account archive download */
             if (account == null) {
                 /* Cannot check without account */
                 throw new AccountRequiredException();
             }
-            final String galleryid = new Regex(link.getPluginPatternMatcher(), "(\\d+)/([a-z0-9]+)$").getMatch(0);
-            final String galleryhash = new Regex(link.getPluginPatternMatcher(), "(\\d+)/([a-z0-9]+)$").getMatch(1);
+            final String galleryid = regexarchive.getMatch(0);
+            final String galleryhash = regexarchive.getMatch(1);
             final String host; // e-hentai.org or exhentai.org
             if (link.hasProperty(PROPERTY_GALLERY_URL)) {
                 host = Browser.getHost(link.getStringProperty(PROPERTY_GALLERY_URL), false);
@@ -302,7 +303,7 @@ public class EHentaiOrg extends PluginForHost {
                 filesizeStr = new Regex(origInfo, "(\\d+\\.\\d{1,2} [A-Za-z]+)").getMatch(0);
                 String directurl = entries.get("lf").toString();
                 /* Make sure we get an absolute URL. */
-                directurl = br.getURL(directurl).toString();
+                directurl = br.getURL(directurl).toExternalForm();
                 this.dllinkOriginal = directurl;
                 link.setProperty(PROPERTY_IS_ORIGINAL_DOWNLOAD_AVAILABLE, true);
             } else {
@@ -379,10 +380,11 @@ public class EHentaiOrg extends PluginForHost {
             logger.info("Attempting to 'Reload broken image'");
             final String reloadBrokenImageStr = br.getRegex("id=\"loadfail\"[^>]*onclick=\"return nl\\('([^']+)'\\)").getMatch(0);
             if (reloadBrokenImageStr == null) {
+                /* This should never happen */
                 logger.warning("Failed to find special 'reload broken image string' -> Proceeding as normal in hope that download will work this time");
                 break brokenimagehandling;
             }
-            br.getPage("nl=" + Encoding.urlEncode(reloadBrokenImageStr));
+            br.getPage("?nl=" + Encoding.urlEncode(reloadBrokenImageStr));
             checkErrors(br, link, account);
             /* Save timestamp so we won't do this over and over again */
             link.setProperty(PROPERTY_TIMESTAMP_LAST_BROKEN_IMAGE_RETRY, true);
@@ -482,6 +484,7 @@ public class EHentaiOrg extends PluginForHost {
         IP_BLOCK
     };
 
+    /*** Returns true if we know for sure that the original version/image of this item is downloadable. */
     private boolean isOriginalDownloadable(final DownloadLink link) {
         return link.getBooleanProperty(PROPERTY_IS_ORIGINAL_DOWNLOAD_AVAILABLE, false);
     }
@@ -496,7 +499,7 @@ public class EHentaiOrg extends PluginForHost {
                     account.setProperty(PROPERTY_ACCOUNT_TIMESTAMP_IMAGE_POINTS_LIMIT_REACHED, System.currentTimeMillis());
                 } else if (limitType == LIMIT_TYPE.IMAGE_VIEW) {
                     /* Determine which domain was in use and thus on which domain the limit is sitting. */
-                    if (url.contains(this.host_ehentai)) {
+                    if (url.contains(host_ehentai)) {
                         account.setProperty(this.PROPERTY_ACCOUNT_TIMESTAMP_IMAGE_VIEW_LIMIT_REACHED_EHENTAI, System.currentTimeMillis());
                     } else {
                         account.setProperty(this.PROPERTY_ACCOUNT_TIMESTAMP_IMAGE_VIEW_LIMIT_REACHED_EXHENTAI, System.currentTimeMillis());
@@ -582,7 +585,7 @@ public class EHentaiOrg extends PluginForHost {
                 br.followConnection(true);
                 /* Rare error: E.g. "403 picture" is smaller than 1 KB but is still downloaded content (picture). */
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error - file is too small:" + dl.getConnection().getCompleteContentLength(), 2 * 60 * 1000l);
-            } else if (requiresAccount(dl.getConnection().getURL().toString())) {
+            } else if (requiresAccount(dl.getConnection().getURL().toExternalForm())) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         } catch (final Exception e) {
@@ -596,9 +599,9 @@ public class EHentaiOrg extends PluginForHost {
         /* Store directurl to be able to re-use it later. */
         if (storedDirecturl == null) {
             if (!StringUtils.isEmpty(this.dllinkOriginal) && cfg.isAccountDownloadsPreferOriginalQuality()) {
-                link.setProperty(directurl, dl.getConnection().getURL().toString());
+                link.setProperty(directurl, dl.getConnection().getURL().toExternalForm());
             } else {
-                link.setProperty(directurl, dl.getConnection().getURL().toString());
+                link.setProperty(directurl, dl.getConnection().getURL().toExternalForm());
                 if (cfg.isAccountDownloadsPreferOriginalQuality()) {
                     /* User wants original but that is not available -> Remember that we were forced to download normal image instead. */
                     link.setProperty(PROPERTY_FORCED_DIRECTURL_PROPERTY, directurlpropertyNormal);
@@ -625,11 +628,14 @@ public class EHentaiOrg extends PluginForHost {
                 link.setFinalFileName(newFilename);
             }
         }
-        dl.startDownload();
+        if (dl.startDownload()) {
+            /* Download was successful -> Remove some properties related to download-failures. */
+            link.removeProperty(PROPERTY_TIMESTAMP_LAST_BROKEN_IMAGE_RETRY);
+        }
     }
 
     private void checkForCachedAccountLimits(final Account account, final DownloadLink link, final String url, final boolean userPrefersOriginalImages) throws PluginException {
-        final boolean isEhentai = url.contains(this.host_ehentai);
+        final boolean isEhentai = url.contains(host_ehentai);
         if (Boolean.TRUE.equals(this.requiresImagePoints(url, userPrefersOriginalImages))) {
             /* Image points are required to download original images from e-hentai.org -> Check cached limits. */
             final int imagePointsLeft = this.getImagePointsLeft(account);

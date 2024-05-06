@@ -19,6 +19,9 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -30,9 +33,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "fileim.com" }, urls = { "https?://(?:www\\.)?fileim\\.com/file/([a-z0-9]+)\\.html" })
 public class FileImCom extends PluginForHost {
@@ -88,11 +88,15 @@ public class FileImCom extends PluginForHost {
         final String filesizeVague = br.getRegex("id=\"FileSize\">([^<>\"]*?)<").getMatch(0);
         if (filename != null) {
             link.setFinalFileName(Encoding.htmlDecode(filename).trim());
+        } else {
+            logger.warning("Failed to find filename");
         }
         if (filesizeBytes != null) {
             link.setVerifiedFileSize(Long.parseLong(filesizeBytes));
         } else if (filesizeVague != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesizeVague.replaceAll("(\\(|\\))", "")));
+        } else {
+            logger.warning("Failed to find filesize");
         }
         return AvailableStatus.TRUE;
     }
@@ -157,7 +161,15 @@ public class FileImCom extends PluginForHost {
             br.followConnection(true);
             final String errorcodeStr = br.getRegex("\\[(\\d+)\\]：").getMatch(0);
             if (errorcodeStr != null) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Error " + errorcodeStr);
+                final String errorText;
+                if (br.getRequest().getHtmlCode().length() <= 100) {
+                    /* Complete html response = Human readable error message */
+                    errorText = br.getRequest().getHtmlCode();
+                } else {
+                    /* html response may contain other garbage -> Create custom error text */
+                    errorText = "Error " + Encoding.htmlDecode(errorcodeStr).trim();
+                }
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errorText);
             } else if (br.containsHTML("(?i)<div>\\s*Another download is started")) {
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Hoster believes your IP address is already downloading", 10 * 60 * 1000l);
             } else {

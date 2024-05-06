@@ -130,7 +130,11 @@ public class EHentaiOrgCrawler extends PluginForDecrypt {
                 ziparchive.setDownloadSize(zipArchiveFileSize);
             }
             ziparchive.setAvailable(true);
-            ziparchive._setFilePackage(fp);
+            /**
+             * 2024-05-06: Do not sert FilePackage here so .zip and images go into separate packages. </br>
+             * This was done based on user feedback: https://board.jdownloader.org/showpost.php?p=534063&postcount=11
+             */
+            // ziparchive._setFilePackage(fp);
             ret.add(ziparchive);
             if (mode == GalleryCrawlMode.ZIP_ONLY) {
                 return ret;
@@ -174,6 +178,7 @@ public class EHentaiOrgCrawler extends PluginForDecrypt {
         int numberofImages = -1;
         int page = startPage;
         long estimatedBytesPerImage = -1;
+        boolean setEstimatedFilesize = false;
         do {
             // if (isMultiPageViewActive) {
             // logger.info("Multi-Page-View active --> Trying to deactivate it");
@@ -205,6 +210,13 @@ public class EHentaiOrgCrawler extends PluginForDecrypt {
                 /* Not great, not terrible */
                 logger.warning("Failed to find paginationInfo in html code");
             }
+            if (estimatedBytesPerImage != -1 && cfg.isAccountDownloadsPreferOriginalQuality() && account != null) {
+                /*
+                 * User prefers original image downloads and has also added an account so let's set the calculated estimated filesize of the
+                 * original images.
+                 */
+                setEstimatedFilesize = true;
+            }
             if (isMultiPageURL) {
                 /* 2020-05-21: New feature of the websites which some users can activate in their account */
                 final String mpvkey = br.getRegex("var mpvkey\\s*=\\s*\"([a-z0-9]+)\";").getMatch(0);
@@ -224,7 +236,7 @@ public class EHentaiOrgCrawler extends PluginForDecrypt {
                     final DownloadLink dl = getDownloadlink(url, galleryid, uploaderName, tagsCommaSeparated, title, originalFilename, numberofImages, imagecounter);
                     dl.setProperty(EHentaiOrg.PROPERTY_MPVKEY, mpvkey);
                     dl.setProperty(EHentaiOrg.PROPERTY_IMAGEKEY, imagekey);
-                    if (estimatedBytesPerImage != -1) {
+                    if (setEstimatedFilesize) {
                         dl.setDownloadSize(estimatedBytesPerImage);
                     }
                     fp.add(dl);
@@ -243,7 +255,7 @@ public class EHentaiOrgCrawler extends PluginForDecrypt {
                     final String singleLink = link[0];
                     final String originalFilename = new Regex(link[1], "\\s*(?:Page\\s*\\d+\\s*:?)?\\s+(.*?\\.(jpe?g|png|gif))").getMatch(0);
                     final DownloadLink dl = getDownloadlink(singleLink, galleryid, uploaderName, tagsCommaSeparated, title, originalFilename, numberofImages, imagecounter);
-                    if (estimatedBytesPerImage != -1) {
+                    if (setEstimatedFilesize) {
                         dl.setDownloadSize(estimatedBytesPerImage);
                     }
                     fp.add(dl);
