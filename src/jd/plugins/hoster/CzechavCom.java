@@ -16,6 +16,12 @@
 package jd.plugins.hoster;
 
 import java.util.ArrayList;
+import java.util.Locale;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.config.CzechavComConfigInterface;
+import org.jdownloader.plugins.config.PluginConfigInterface;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -38,10 +44,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.CzechavComCrawler;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.config.CzechavComConfigInterface;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "czechav.com" }, urls = { "" })
 public class CzechavCom extends PluginForHost {
     public CzechavCom(PluginWrapper wrapper) {
@@ -56,13 +58,11 @@ public class CzechavCom extends PluginForHost {
     }
 
     /* Connection stuff */
-    // private static final boolean FREE_RESUME = false;
-    // private static final int FREE_MAXCHUNKS = 1;
-    private static final int     FREE_MAXDOWNLOADS            = 1;
     private static final boolean ACCOUNT_PREMIUM_RESUME       = true;
     private static final int     ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
     private static final int     ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
     public static final String   PROPERTY_IMAGE_POSITION      = "image_position";
+    public static final String   PROPERTY_VIDEO_HEIGHT        = "video_height";
 
     public static Browser prepBR(final Browser br) {
         br.setFollowRedirects(true);
@@ -87,9 +87,9 @@ public class CzechavCom extends PluginForHost {
             if (!this.looksLikeDownloadableContent(con)) {
                 /* Refresh directurl */
                 logger.info("Refreshing directurl...");
-                final String videoResolution = CzechavComCrawler.getVideoResolution(link.getPluginPatternMatcher());
+                final String videoMarker = getVideoUniqueMarker(link);
                 final int imagePosition = link.getIntegerProperty(PROPERTY_IMAGE_POSITION, -1);
-                if (videoResolution == null && imagePosition == -1) {
+                if (videoMarker == null && imagePosition == -1) {
                     /* This should never happen */
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
@@ -101,8 +101,7 @@ public class CzechavCom extends PluginForHost {
                         hit = result;
                         break;
                     } else {
-                        final String videoResolutionTmp = CzechavComCrawler.getVideoResolution(result.getPluginPatternMatcher());
-                        if (StringUtils.equals(videoResolutionTmp, videoResolution)) {
+                        if (StringUtils.equals(getVideoUniqueMarker(result), videoMarker)) {
                             hit = result;
                             break;
                         }
@@ -120,7 +119,11 @@ public class CzechavCom extends PluginForHost {
                 }
             }
             if (con.getCompleteContentLength() > 0) {
-                link.setVerifiedFileSize(con.getCompleteContentLength());
+                if (con.isContentDecoded()) {
+                    link.setDownloadSize(con.getCompleteContentLength());
+                } else {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                }
             }
         } finally {
             try {
@@ -131,6 +134,14 @@ public class CzechavCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    private String getVideoUniqueMarker(final DownloadLink link) {
+        String marker = link.getStringProperty(PROPERTY_VIDEO_HEIGHT, null);
+        if (marker == null) {
+            marker = CzechavComCrawler.getVideoResolutionFromURL(link.getPluginPatternMatcher());
+        }
+        return marker;
+    }
+
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         throw new AccountRequiredException();
@@ -138,52 +149,48 @@ public class CzechavCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return FREE_MAXDOWNLOADS;
+        return 1;
     }
 
     public void login(final Account account, final boolean force) throws Exception {
         synchronized (account) {
-            try {
-                br.setCookiesExclusive(true);
-                prepBR(br);
-                final Cookies cookies = account.loadCookies("");
-                if (cookies != null) {
-                    /*
-                     * Try to avoid login captcha at all cost! Important: ALWAYS check this as their cookies can easily become invalid e.g.
-                     * when the user logs in via browser.
-                     */
-                    br.setCookies(account.getHoster(), cookies);
-                    if (!force) {
-                        /* Do not verify cookies */
-                        return;
-                    }
-                    br.getPage("https://" + account.getHoster() + "/members/galleries/");
-                    if (this.isLoggedIN(br)) {
-                        logger.info("Cookie login successful");
-                        return;
-                    } else {
-                        logger.info("Cookie login failed --> Performing full login");
-                        account.clearCookies("");
-                        br.clearCookies(br.getHost());
-                    }
+            br.setCookiesExclusive(true);
+            prepBR(br);
+            final Cookies cookies = account.loadCookies("");
+            if (cookies != null) {
+                /*
+                 * Try to avoid login captcha at all cost! Important: ALWAYS check this as their cookies can easily become invalid e.g. when
+                 * the user logs in via browser.
+                 */
+                br.setCookies(getHost(), cookies);
+                if (!force) {
+                    /* Do not verify cookies */
+                    return;
                 }
-                br.getPage("https://" + this.getHost() + "/members/login/");
-                Form loginform = br.getFormbyProperty("id", "login_form");
-                if (loginform == null) {
-                    loginform = br.getForm(0);
+                br.getPage("https://" + getHost() + "/members/galleries/");
+                if (this.isLoggedIN(br)) {
+                    logger.info("Cookie login successful");
+                    return;
+                } else {
+                    logger.info("Cookie login failed --> Performing full login");
+                    account.clearCookies("");
+                    br.clearCookies(null);
                 }
-                loginform.put("username", Encoding.urlEncode(account.getUser()));
-                loginform.put("password", Encoding.urlEncode(account.getPass()));
-                loginform.put("remember_me", "on");
-                br.submitForm(loginform);
-                if (!this.isLoggedIN(br)) {
-                    throw new AccountInvalidException();
-                }
-                account.saveCookies(br.getCookies(account.getHoster()), "");
-            } catch (final PluginException e) {
-                account.clearCookies("");
-                throw e;
             }
+            br.getPage("https://" + this.getHost() + "/members/login/");
+            Form loginform = br.getFormbyProperty("id", "login_form");
+            if (loginform == null) {
+                loginform = br.getForm(0);
+            }
+            loginform.put("username", Encoding.urlEncode(account.getUser()));
+            loginform.put("password", Encoding.urlEncode(account.getPass()));
+            /* We want long lasting cookies. */
+            loginform.put("remember_me", "on");
+            br.submitForm(loginform);
+            if (!this.isLoggedIN(br)) {
+                throw new AccountInvalidException();
+            }
+            account.saveCookies(br.getCookies(br.getHost()), "");
         }
     }
 
@@ -197,11 +204,18 @@ public class CzechavCom extends PluginForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        final AccountInfo ai = new AccountInfo();
         login(account, true);
+        br.getPage("/members/profile/");
+        final AccountInfo ai = new AccountInfo();
+        final String expireDateStr = br.getRegex("Expiring (\\d{2}\\.\\d{2}\\.\\d{4})").getMatch(0);
+        if (expireDateStr != null) {
+            ai.setValidUntil(TimeFormatter.getMilliSeconds(expireDateStr, "dd.MM.yyyy", Locale.ENGLISH));
+        } else {
+            logger.warning("Failed to find expire date");
+        }
         ai.setUnlimitedTraffic();
         account.setType(AccountType.PREMIUM);
-        account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+        account.setMaxSimultanDownloads(this.getMaxSimultanPremiumDownloadNum());
         account.setConcurrentUsePossible(true);
         return ai;
     }
@@ -255,7 +269,7 @@ public class CzechavCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return ACCOUNT_PREMIUM_MAXDOWNLOADS;
+        return Integer.MAX_VALUE;
     }
 
     @Override

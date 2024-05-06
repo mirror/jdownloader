@@ -21,6 +21,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.config.CzechavComConfigInterface;
 import org.jdownloader.plugins.components.config.CzechavComConfigInterface.QualitySelectionFallbackMode;
 import org.jdownloader.plugins.config.PluginJsonConfig;
@@ -81,52 +82,70 @@ public class CzechavComCrawler extends PluginForDecrypt {
             title = fid.replace("-", " ").trim();
         }
         title = Encoding.htmlDecode(title).trim();
-        final String[] videourls = br.getRegex("<option value=\"([^\"]+)\">\\d+p</option>").getColumn(0);
+        final String[] videourls = br.getRegex("<option value=\"([^\"]+)\">[^<]*</option>").getColumn(0);
+        final String[] videoheights = br.getRegex(">\\s*(\\d+)p[^<]*</option>").getColumn(0);
         final ArrayList<DownloadLink> allResults = new ArrayList<DownloadLink>();
         final ArrayList<DownloadLink> bestResults = new ArrayList<DownloadLink>();
         final HashMap<String, List<DownloadLink>> qualities = new HashMap<String, List<DownloadLink>>();
+        int index = -1;
         for (String videourl : videourls) {
-            if (videourl.startsWith("//")) {
-                videourl = br.getURL(videourl).toString();
+            index++;
+            videourl = br.getURL(Encoding.htmlOnlyDecode(videourl)).toExternalForm();
+            String videoheightStr = new Regex(videourl, "x(\\d+)").getMatch(0);
+            if (videoheightStr == null && videoheights != null && videoheights.length == videourls.length) {
+                videoheightStr = videoheights[index];
             }
-            videourl = videourl.replace("&amp;", "&");
-            final String quality = new Regex(videourl, "x(\\d+)").getMatch(0);
-            if (quality != null) {
-                final String quality_url = getVideoResolution(videourl);
-                final String ext = getFileNameExtensionFromURL(videourl, ".mp4");
-                final DownloadLink link = new DownloadLink(hostPlugin, this.getHost(), this.getHost(), videourl, true);
-                final String filenameFromURL = Plugin.extractFileNameFromURL(videourl);
-                if (filenameFromURL != null) {
-                    link.setName(filenameFromURL);
-                } else {
-                    link.setName(title + "_" + quality_url + ext);
-                }
-                link.setAvailable(true);
-                allResults.add(link);
-                List<DownloadLink> list = qualities.get(quality);
-                if (list == null) {
-                    list = new ArrayList<DownloadLink>();
-                    qualities.put(quality, list);
-                }
-                list.add(link);
+            if (videoheightStr == null) {
+                logger.warning("Skipping unknown quality | URL: " + videourl);
+                continue;
             }
+            final String videoResolution = getVideoResolutionFromURL(videourl);
+            final String qualityStringForFilename;
+            if (videoResolution != null) {
+                qualityStringForFilename = videoResolution;
+            } else {
+                qualityStringForFilename = videoheightStr;
+            }
+            final String ext = getFileNameExtensionFromURL(videourl, ".mp4");
+            final DownloadLink link = new DownloadLink(hostPlugin, this.getHost(), this.getHost(), videourl, true);
+            final String filenameFromURL = Plugin.extractFileNameFromURL(videourl);
+            if (!StringUtils.isEmpty(filenameFromURL)) {
+                link.setName(filenameFromURL);
+            } else {
+                link.setName(title + "_" + qualityStringForFilename + ext);
+            }
+            link.setProperty(CzechavCom.PROPERTY_VIDEO_HEIGHT, videoheightStr);
+            link.setAvailable(true);
+            allResults.add(link);
+            List<DownloadLink> list = qualities.get(videoheightStr);
+            if (list == null) {
+                list = new ArrayList<DownloadLink>();
+                qualities.put(videoheightStr, list);
+            }
+            list.add(link);
         }
         if (qualities.isEmpty()) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (cfg.isCrawlImages() || crawlAll) {
             final String[] imageURLs = br.getRegex("class=\"open\" href=\"(https?://[^\"]+)").getColumn(0);
-            int position = 0;
-            for (final String imageURL : imageURLs) {
-                final DownloadLink image = new DownloadLink(hostPlugin, this.getHost(), this.getHost(), imageURL, true);
-                image.setAvailable(true);
-                image.setProperty(CzechavCom.PROPERTY_IMAGE_POSITION, position);
-                image.setName(Plugin.extractFileNameFromURL(imageURL));
-                selectedAndFoundItems.add(image);
-                allResults.add(image);
-                position++;
+            if (imageURLs != null && imageURLs.length > 0) {
+                int position = 0;
+                for (final String imageURL : imageURLs) {
+                    final DownloadLink image = new DownloadLink(hostPlugin, this.getHost(), this.getHost(), imageURL, true);
+                    image.setAvailable(true);
+                    image.setProperty(CzechavCom.PROPERTY_IMAGE_POSITION, position);
+                    final String filenameFromURL = Plugin.extractFileNameFromURL(imageURL);
+                    if (filenameFromURL != null) {
+                        image.setName(Plugin.extractFileNameFromURL(imageURL));
+                    }
+                    selectedAndFoundItems.add(image);
+                    allResults.add(image);
+                    position++;
+                }
             }
         }
+        /* Pick qualities selected by user */
         if (qualities.containsKey("2160")) {
             if (cfg.isGrab2160pVideoEnabled()) {
                 selectedAndFoundItems.addAll(qualities.get("2160"));
@@ -167,50 +186,55 @@ public class CzechavComCrawler extends PluginForDecrypt {
                 bestResults.addAll(qualities.get("360"));
             }
         }
+        final ArrayList<DownloadLink> finalResults;
         if (crawlAll) {
-            return allResults;
-        }
-        if (cfg.isGrabOtherResolutionsVideoEnabled()) {
-            final Iterator<Entry<String, List<DownloadLink>>> it = qualities.entrySet().iterator();
-            while (it.hasNext()) {
-                final Entry<String, List<DownloadLink>> next = it.next();
-                final int q = Integer.valueOf(next.getKey());
-                switch (q) {
-                case 2160:
-                case 1080:
-                case 720:
-                case 540:
-                case 360:
-                    continue;
-                default:
-                    selectedAndFoundItems.addAll(next.getValue());
-                    break;
+            finalResults = allResults;
+        } else {
+            finalResults = new ArrayList<DownloadLink>();
+            if (cfg.isGrabOtherResolutionsVideoEnabled()) {
+                final Iterator<Entry<String, List<DownloadLink>>> it = qualities.entrySet().iterator();
+                while (it.hasNext()) {
+                    final Entry<String, List<DownloadLink>> next = it.next();
+                    final int q = Integer.valueOf(next.getKey());
+                    switch (q) {
+                    case 2160:
+                    case 1080:
+                    case 720:
+                    case 540:
+                    case 360:
+                        continue;
+                    default:
+                        selectedAndFoundItems.addAll(next.getValue());
+                        break;
+                    }
                 }
             }
-        }
-        final ArrayList<DownloadLink> finalResults = new ArrayList<DownloadLink>();
-        if (cfg.isGrabBestVideoVersionEnabled()) {
-            finalResults.addAll(bestResults);
-        } else if (!selectedAndFoundItems.isEmpty()) {
-            finalResults.addAll(selectedAndFoundItems);
-        }
-        if (finalResults.isEmpty()) {
-            final QualitySelectionFallbackMode mode = cfg.getQualitySelectionFallbackMode();
-            if (mode == QualitySelectionFallbackMode.BEST && bestResults.size() > 0) {
+            if (cfg.isGrabBestVideoVersionEnabled()) {
                 finalResults.addAll(bestResults);
-            } else if (mode == QualitySelectionFallbackMode.ALL) {
-                finalResults.addAll(allResults);
-            } else {
-                // QualitySelectionFallbackMode.NONE
+            } else if (!selectedAndFoundItems.isEmpty()) {
+                finalResults.addAll(selectedAndFoundItems);
+            }
+            if (finalResults.isEmpty()) {
+                final QualitySelectionFallbackMode mode = cfg.getQualitySelectionFallbackMode();
+                if (mode == QualitySelectionFallbackMode.BEST && bestResults.size() > 0) {
+                    finalResults.addAll(bestResults);
+                } else if (mode == QualitySelectionFallbackMode.ALL) {
+                    finalResults.addAll(allResults);
+                } else {
+                    // QualitySelectionFallbackMode.NONE
+                }
             }
         }
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(title);
-        fp.addLinks(finalResults);
+        for (final DownloadLink result : finalResults) {
+            result._setFilePackage(fp);
+            result.setContainerUrl(param.getCryptedUrl());
+        }
         return finalResults;
     }
 
-    public static String getVideoResolution(final String url) {
+    public static String getVideoResolutionFromURL(final String url) {
         return new Regex(url, "(\\d+x\\d+)").getMatch(0);
     }
 
@@ -227,6 +251,7 @@ public class CzechavComCrawler extends PluginForDecrypt {
         }
     }
 
+    @Override
     public boolean hasCaptcha(final CryptedLink link, final jd.plugins.Account acc) {
         return false;
     }

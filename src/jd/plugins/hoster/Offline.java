@@ -151,6 +151,7 @@ public class Offline extends PluginForHost {
         ret.add(new String[] { "sama-share.com", "samaup.co", "samaup.com", "samaup.cc" });
         ret.add(new String[] { "file2btc.com" });
         ret.add(new String[] { "subscene.com" });
+        ret.add(new String[] { "filesonic.me" });
         if (cache != null) {
             cache.put(cacheID, ret);
         }
