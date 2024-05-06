@@ -469,7 +469,7 @@ public class OrfAt extends PluginForDecrypt {
             /* Do not crawl gapless streams */
             crawlGapless = false;
         }
-        if (crawlGapless) {
+        gaplessHandling: if (crawlGapless) {
             /* Gapless video handling */
             logger.info("Crawling gapless video streams");
             // TODO: 2024-03-18: Add auto fallback to progressive video chapters if user prefers gapless && gapless is HLS split
@@ -478,12 +478,12 @@ public class OrfAt extends PluginForDecrypt {
             final Map<String, Object> sourcesForGaplessVideo = (Map<String, Object>) entries.get("sources");
             if (sourcesForGaplessVideo == null || sourcesForGaplessVideo.isEmpty()) {
                 logger.info("No gapless sources available -> Returning items we found so far");
-                return ret;
+                break gaplessHandling;
             }
             final List<Map<String, Object>> sources_hls = (List<Map<String, Object>>) sourcesForGaplessVideo.get("hls");
             if (sources_hls == null || sources_hls.isEmpty()) {
                 logger.info("No gapless sources available -> Returning items we found so far");
-                return ret;
+                break gaplessHandling;
             }
             final String segmentID = "gapless";
             final List<DownloadLink> videoresults = new ArrayList<DownloadLink>();
@@ -824,7 +824,7 @@ public class OrfAt extends PluginForDecrypt {
                 link.setAvailable(true);
                 videoresults.add(link);
             }
-            /* Collrect thumbnail results */
+            /* Collect thumbnail results */
             /* Set additional properties */
             for (final DownloadLink videoresult : videoresults) {
                 videoresult.setProperty(ORFMediathek.PROPERTY_VIDEO_ID, contentIDSlashPlaylistIDSlashVideoID);

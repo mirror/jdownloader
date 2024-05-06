@@ -69,7 +69,6 @@ public class VimmNetCrawler extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         br.setFollowRedirects(true);
         final String contentid = new Regex(param.getCryptedUrl(), this.getSupportedLinks()).getMatch(0);
         final String contenturl = "https://" + this.getHost() + "/vault/" + contentid;
@@ -77,21 +76,22 @@ public class VimmNetCrawler extends PluginForDecrypt {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String[] jsons = br.getRegex("var media = (\\{.*?\\});").getColumn(0);
-        if (jsons == null || jsons.length == 0) {
+        final String jsonarrayStr = br.getRegex("var allMedia = (\\[.*?\\]);").getMatch(0);
+        if (jsonarrayStr == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final List<Map<String, Object>> resourcelist = (List<Map<String, Object>>) restoreFromString(jsonarrayStr, TypeRef.OBJECT);
         final String downloadformatsText = br.getRegex("<select[^<]*id=\"download_format\"[^<]*>(.*?)</select>").getMatch(0);
         final String[][] downloadformatsOptions = downloadformatsText != null ? new Regex(downloadformatsText, "<option[^<]*value=\"(\\d+)\"[^>]*>([^<]+)</option>").getMatches() : null;
-        for (final String json : jsons) {
-            final Map<String, Object> entries = restoreFromString(json, TypeRef.MAP);
-            final String mediaID = entries.get("ID").toString();
-            final String preSetFilename = entries.get("GoodTitle").toString();
+        for (final Map<String, Object> resource : resourcelist) {
+            final String mediaID = resource.get("ID").toString();
+            final String preSetFilename = resource.get("GoodTitle").toString();
             final DownloadLink link = this.createDownloadlink(contenturl + "#?media_id=" + mediaID);
             link.setProperty(VimmNet.PROPERTY_MEDIA_ID, mediaID);
             link.setProperty(VimmNet.PROPERTY_PRE_GIVEN_FILENAME, preSetFilename);
-            final String filesizeZippedStr = entries.get("Zipped").toString();
-            final Object filesizeAltZippedStr = entries.get("AltZipped");
+            final String filesizeZippedStr = resource.get("Zipped").toString();
+            final Object filesizeAltZippedStr = resource.get("AltZipped");
             if (filesizeZippedStr != null && filesizeZippedStr.matches("\\d+")) {
                 link.setDownloadSize(Long.parseLong(filesizeZippedStr) * 1024);
             }
@@ -100,7 +100,7 @@ public class VimmNetCrawler extends PluginForDecrypt {
              * them. </br>
              * See fields GoodHash, GoodMd5, GoodSha1
              */
-            if (filesizeAltZippedStr != null && jsons.length == 1 && downloadformatsOptions != null && downloadformatsOptions.length >= 2) {
+            if (filesizeAltZippedStr != null && resourcelist.size() == 1 && downloadformatsOptions != null && downloadformatsOptions.length >= 2) {
                 /* Alternative version is available */
                 /* Add format properties to first format */
                 link.setProperty(VimmNet.PROPERTY_FORMAT_ID, downloadformatsOptions[0][0]);
