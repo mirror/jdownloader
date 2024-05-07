@@ -204,6 +204,7 @@ public class OrfAt extends PluginForDecrypt {
         final ORFMediathek hosterplugin = (ORFMediathek) this.getNewPluginForHostInstance("orf.at");
         final Map<String, Long> qualityIdentifierToFilesizeMapGLOBAL = new HashMap<String, Long>();
         final List<String> selectedQualities = new ArrayList<String>();
+        /* Collect user desired video qualities. */
         if (cfg == null || cfg.getBooleanProperty(ORFMediathek.Q_VERYLOW, ORFMediathek.Q_VERYLOW_default)) {
             selectedQualities.add("VERYLOW");
         }
@@ -328,7 +329,6 @@ public class OrfAt extends PluginForDecrypt {
                     progressiveStreamFilesizeCheck: if (selectedQualities.contains(fmtHumanReadable) && isProgressive && !settingEnableFastCrawl && !qualityIdentifierToFilesizeMap.containsKey(fmtHumanReadable) && !has_active_youth_protection) {
                         logger.info("Checking progressive URL to find filesize: " + url_directlink_video);
                         URLConnectionAdapter con = null;
-                        boolean isGeoBlocked = false;
                         try {
                             final Browser brc = br.cloneBrowser();
                             con = brc.openHeadConnection(url_directlink_video);
@@ -337,7 +337,6 @@ public class OrfAt extends PluginForDecrypt {
                                 continue;
                             } else if (ORFMediathek.isGeoBlocked(con.getURL().toExternalForm())) {
                                 /* Item is GEO-blocked */
-                                isGeoBlocked = true;
                                 throw new DecrypterRetryException(RetryReason.GEO);
                             }
                             final long filesize = con.getCompleteContentLength();
@@ -351,7 +350,7 @@ public class OrfAt extends PluginForDecrypt {
                                 }
                             }
                         } catch (final Exception e) {
-                            if (isGeoBlocked) {
+                            if (e instanceof DecrypterRetryException) {
                                 throw e;
                             } else {
                                 /* Ignore Exception */
@@ -506,7 +505,7 @@ public class OrfAt extends PluginForDecrypt {
             }
             final List<Map<String, Object>> sources_hls = (List<Map<String, Object>>) sourcesForGaplessVideo.get("hls");
             if (sources_hls == null || sources_hls.isEmpty()) {
-                logger.info("No gapless sources available -> Returning items we found so far");
+                logger.info("No gapless HLS sources available -> Returning items we found so far");
                 break gaplessHandling;
             }
             final String segmentID = "gapless";
@@ -580,6 +579,7 @@ public class OrfAt extends PluginForDecrypt {
                 }
             }
             final ArrayList<DownloadLink> thisFinalResults = new ArrayList<DownloadLink>();
+            /* Sollect all chosen results and add subtitle if user wants to download subtitle. */
             for (final DownloadLink chosenVideoResult : videoSelectedResults) {
                 thisFinalResults.add(chosenVideoResult);
                 /* Add a subtitle-result for each chosen video quality */
@@ -617,18 +617,22 @@ public class OrfAt extends PluginForDecrypt {
                 ret.add(result);
             }
         }
-        /* Add more properties which are the same for all results */
+        /**
+         * Add more properties which are the same for all results. </br>
+         * It is important that all items run through this loop!
+         */
         for (final DownloadLink result : ret) {
-            if (result.hasProperty(ORFMediathek.PROPERTY_CONTENT_TYPE)) {
-                result.setContentUrl(sourceurl);
-                result.setProperty(ORFMediathek.PROPERTY_VIDEO_ID, contentIDSlashPlaylistIDSlashVideoID);
-                result.setProperty(ORFMediathek.PROPERTY_SOURCEURL, sourceurl);
-                if (has_active_youth_protection) {
-                    result.setProperty(ORFMediathek.PROPERTY_AGE_RESTRICTED, true);
-                }
-                result.setFinalFileName(ORFMediathek.getFormattedVideoFilename(result));
-                result.setAvailable(true);
+            if (!result.hasProperty(ORFMediathek.PROPERTY_CONTENT_TYPE)) {
+                continue;
             }
+            result.setContentUrl(sourceurl);
+            result.setProperty(ORFMediathek.PROPERTY_VIDEO_ID, contentIDSlashPlaylistIDSlashVideoID);
+            result.setProperty(ORFMediathek.PROPERTY_SOURCEURL, sourceurl);
+            if (has_active_youth_protection) {
+                result.setProperty(ORFMediathek.PROPERTY_AGE_RESTRICTED, true);
+            }
+            result.setFinalFileName(ORFMediathek.getFormattedVideoFilename(result));
+            result.setAvailable(true);
         }
         fp.addLinks(ret);
         return ret;
