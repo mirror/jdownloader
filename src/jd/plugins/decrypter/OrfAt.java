@@ -1529,7 +1529,7 @@ public class OrfAt extends PluginForDecrypt {
             ret.add(thumbnail);
         }
         final Map<String, Object> subtitlemap = (Map<String, Object>) JavaScriptEngineFactory.walkJson(episode, "_embedded/subtitle");
-        final String subtitleURL = subtitlemap != null ? (String) subtitlemap.get("") : null;
+        final String subtitleURL = subtitlemap != null ? (String) subtitlemap.get("srt_url") : null;
         if (!StringUtils.isEmpty(subtitleURL)) {
             final DownloadLink subtitle = this.createDownloadlink(subtitleURL);
             subtitle.setFinalFileName(title + ".srt");
