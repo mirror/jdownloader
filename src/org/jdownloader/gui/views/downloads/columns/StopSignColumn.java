@@ -9,7 +9,10 @@ import javax.swing.table.JTableHeader;
 
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.packagecontroller.AbstractNode;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
+import jd.controlling.packagecontroller.AbstractPackageNode;
 
+import org.appwork.swing.components.ExtMergedIcon;
 import org.appwork.swing.exttable.ExtTableHeaderRenderer;
 import org.appwork.swing.exttable.columns.ExtTextColumn;
 import org.jdownloader.gui.IconKey;
@@ -19,7 +22,8 @@ import org.jdownloader.images.NewTheme;
 
 public class StopSignColumn extends ExtTextColumn<AbstractNode> {
 
-    private final Icon icon;
+    private final Icon stopMarkIcon;
+    private final Icon stopMarkPackage;
 
     public ExtTableHeaderRenderer getHeaderRenderer(final JTableHeader jTableHeader) {
 
@@ -52,7 +56,9 @@ public class StopSignColumn extends ExtTextColumn<AbstractNode> {
 
     public StopSignColumn() {
         super(_GUI.T.StopSignColumn_StopSignColumn());
-        icon = NewTheme.I().getIcon(IconKey.ICON_STOPSIGN, 16);
+        stopMarkIcon = NewTheme.I().getIcon(IconKey.ICON_STOPSIGN, 16);
+        final Icon packageIcon = NewTheme.I().getIcon(IconKey.ICON_PACKAGE_OPEN, 12);
+        stopMarkPackage = new ExtMergedIcon(stopMarkIcon, 0, 0).add(packageIcon, 6, 6);
     }
 
     @Override
@@ -67,8 +73,19 @@ public class StopSignColumn extends ExtTextColumn<AbstractNode> {
 
     @Override
     protected Icon getIcon(AbstractNode value) {
-        if (DownloadWatchDog.getInstance().getSession().isStopMark(value)) {
-            return icon;
+        final Object stopMark = DownloadWatchDog.getInstance().getSession().getStopMark();
+        if (stopMark instanceof AbstractPackageNode) {
+            if (value == stopMark) {
+                return stopMarkPackage;
+            } else if (value instanceof AbstractPackageChildrenNode && ((AbstractPackageChildrenNode) value).getParentNode() == stopMark) {
+                return stopMarkPackage;
+            }
+        } else if (stopMark instanceof AbstractPackageChildrenNode) {
+            if (value == stopMark) {
+                return stopMarkIcon;
+            } else if (((AbstractPackageChildrenNode) stopMark).getParentNode() == value) {
+                return stopMarkIcon;
+            }
         }
         return null;
     }
@@ -77,8 +94,9 @@ public class StopSignColumn extends ExtTextColumn<AbstractNode> {
     protected String getTooltipText(AbstractNode obj) {
         if (DownloadWatchDog.getInstance().getSession().isStopMark(obj)) {
             return _GUI.T.jd_gui_swing_jdgui_views_downloadview_TableRenderer_stopmark();
+        } else {
+            return null;
         }
-        return null;
     }
 
     @Override

@@ -6,6 +6,8 @@ import jd.controlling.downloadcontroller.DownloadSession;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.downloadcontroller.DownloadWatchDogJob;
 import jd.controlling.packagecontroller.AbstractNode;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
+import jd.controlling.packagecontroller.AbstractPackageNode;
 import jd.gui.swing.jdgui.JDGui;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
@@ -26,18 +28,27 @@ public class StopsignAction extends CustomizableTableContextAppAction<FilePackag
     public void requestUpdate(Object requestor) {
         super.requestUpdate(requestor);
         if (hasSelection()) {
-            if (DownloadWatchDog.getInstance().getSession().isStopMark(getSelection().getRawContext())) {
-                setName(_GUI.T.gui_table_contextmenu_stopmark_unset());
+            final Object stopMark = DownloadWatchDog.getInstance().getSession().getStopMark();
+            final Object value = getSelection().getRawContext();
+            if (stopMark instanceof AbstractPackageNode) {
+                if (value == stopMark) {
+                    setName(_GUI.T.gui_table_contextmenu_stopmark_unset());
+                } else {
+                    setName(_GUI.T.gui_table_contextmenu_stopmark_set());
+                }
+            } else if (stopMark instanceof AbstractPackageChildrenNode) {
+                if (value == stopMark) {
+                    setName(_GUI.T.gui_table_contextmenu_stopmark_unset());
+                } else {
+                    setName(_GUI.T.gui_table_contextmenu_stopmark_set());
+                }
             } else {
-                setName(_GUI.T.gui_table_contextmenu_stopmark_set());
+                setName(_GUI.T.gui_table_contextmenu_stopmark());
             }
-        } else {
-            setName(_GUI.T.gui_table_contextmenu_stopmark());
         }
     }
 
     public StopsignAction() {
-
         setIconKey(IconKey.ICON_STOPSIGN);
     }
 

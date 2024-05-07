@@ -23,12 +23,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.TimeZone;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.downloader.hds.HDSDownloader;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hds.HDSContainer;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -46,6 +40,12 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.OrfAt;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.downloader.hds.HDSDownloader;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hds.HDSContainer;
+import org.jdownloader.plugins.components.hls.HlsContainer;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "orf.at" }, urls = { "" })
 public class ORFMediathek extends PluginForHost {
@@ -269,8 +269,7 @@ public class ORFMediathek extends PluginForHost {
         if (isAgeRestricted(url)) {
             if (System.currentTimeMillis() - link.getLongProperty(PROPERTY_AGE_RESTRICTED_LAST_RECRAWL_TIMESTAMP, 0) < 30 * 60 * 1000) {
                 /**
-                 * Recrawl has just happened and we were still unable to download the item :( </br>
-                 * This should never happen!
+                 * Recrawl has just happened and we were still unable to download the item :( </br> This should never happen!
                  */
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Jugendschutz-Recrawl fehlgeschlagen Grund 1", 10 * 60 * 1000l);
             }
@@ -540,8 +539,9 @@ public class ORFMediathek extends PluginForHost {
     private static final String[] SUBTITLE_FORMATS = new String[] { "SAMI (.smi)", "SRT (.srt)", "TTML (.ttml)", "WebVTT (.vtt)", "XML (.xml)" };
 
     private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_SUBTITLES, "Download subtitle").setDefaultValue(Q_SUBTITLES_default));
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), SETTING_SELECTED_SUBTITLE_FORMAT, SUBTITLE_FORMATS, "Preferred subtitle format").setDefaultValue(SETTING_SELECTED_SUBTITLE_FORMAT_default));
+        final ConfigEntry subtitle = new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_SUBTITLES, "Download subtitle").setDefaultValue(Q_SUBTITLES_default);
+        getConfig().addEntry(subtitle);
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), SETTING_SELECTED_SUBTITLE_FORMAT, SUBTITLE_FORMATS, "Preferred subtitle format").setDefaultValue(SETTING_SELECTED_SUBTITLE_FORMAT_default).setEnabledCondidtion(subtitle, true));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_THUMBNAIL, "Download thumbnail").setDefaultValue(Q_THUMBNAIL_default));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Video quality settings"));

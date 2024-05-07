@@ -23,10 +23,6 @@ import java.util.Locale;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -41,6 +37,10 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class SubyShareCom extends XFileSharingProBasic {
@@ -422,7 +422,7 @@ public class SubyShareCom extends XFileSharingProBasic {
 
     @Override
     protected void getPage(final Browser br, String page, final boolean correctBr) throws Exception {
-        getPage(br, page);
+        super.getPage(br, page, false);
         handleAntiDdosChallenge(br, page);
         if (correctBr) {
             correctBR(br);
@@ -431,7 +431,7 @@ public class SubyShareCom extends XFileSharingProBasic {
 
     @Override
     protected void postPage(final Browser br, String page, final String postdata, final boolean correctBr) throws Exception {
-        postPage(br, page, postdata);
+        super.postPage(br, page, postdata, false);
         handleAntiDdosChallenge(br, null);
         if (correctBr) {
             correctBR(br);
@@ -440,7 +440,7 @@ public class SubyShareCom extends XFileSharingProBasic {
 
     @Override
     protected void submitForm(final Browser br, final Form form, final boolean correctBr) throws Exception {
-        submitForm(br, form);
+        super.submitForm(br, form, false);
         handleAntiDdosChallenge(br, null);
         if (correctBr) {
             correctBR(br);
