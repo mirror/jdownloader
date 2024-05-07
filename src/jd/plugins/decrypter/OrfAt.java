@@ -220,9 +220,10 @@ public class OrfAt extends PluginForDecrypt {
         if (cfg == null || cfg.getBooleanProperty(ORFMediathek.Q_VERYHIGH, ORFMediathek.Q_VERYHIGH_default)) {
             selectedQualities.add("VERYHIGH");
         }
+
+        final int subtitleFormatSettingInt = cfg.getIntegerProperty(ORFMediathek.SETTING_SELECTED_SUBTITLE_FORMAT, ORFMediathek.SETTING_SELECTED_SUBTITLE_FORMAT_default);
         final String subtitle_ext;
         final String subtitle_key_name;
-        final int subtitleFormatSettingInt = cfg.getIntegerProperty(ORFMediathek.SETTING_SELECTED_SUBTITLE_FORMAT, ORFMediathek.SETTING_SELECTED_SUBTITLE_FORMAT_default);
         switch (subtitleFormatSettingInt) {
         case 0:
             subtitle_ext = ".smi";
