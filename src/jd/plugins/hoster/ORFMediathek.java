@@ -42,6 +42,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.OrfAt;
@@ -52,6 +53,8 @@ public class ORFMediathek extends PluginForHost {
     /* Variables related to plugin settings */
     public static final String  Q_SUBTITLES                                    = "Q_SUBTITLES";
     public static final boolean Q_SUBTITLES_default                            = true;
+    public final static String  SETTING_SELECTED_SUBTITLE_FORMAT               = "selected_subtitle_format";
+    public static final int     SETTING_SELECTED_SUBTITLE_FORMAT_default       = 3;
     public static final String  Q_THUMBNAIL                                    = "Q_THUMBNAIL";
     public static final boolean Q_THUMBNAIL_default                            = true;
     public static final String  Q_BEST                                         = "Q_BEST_2";
@@ -94,6 +97,7 @@ public class ORFMediathek extends PluginForHost {
     public static String        CONTENT_TYPE_IMAGE                             = "image";
     public static String        CONTENT_TYPE_SUBTITLE                          = "subtitle";
     public static String        CONTENT_TYPE_VIDEO                             = "video";
+    public static String        CONTENT_EXT_HINT                               = "ext_hint";
 
     public ORFMediathek(PluginWrapper wrapper) {
         super(wrapper);
@@ -121,7 +125,16 @@ public class ORFMediathek extends PluginForHost {
         if (typeAudio.patternFind()) {
             return "orfmediathek://audio/" + typeAudio.getMatch(0);
         } else {
-            return "orfmediathek://playlist/" + link.getStringProperty(PROPERTY_SEGMENT_ID) + "/contentType/" + getContentType(link) + "/" + link.getStringProperty(PROPERTY_VIDEO_ID) + "/delivery/" + link.getStringProperty(PROPERTY_DELIVERY) + "/streamingtype/" + link.getStringProperty(PROPERTY_STREAMING_TYPE) + "/quality/" + link.getStringProperty(PROPERTY_QUALITY_HUMAN_READABLE);
+            String contentTypeString = getContentType(link);
+            final String extHint = link.getStringProperty(CONTENT_EXT_HINT);
+            if (extHint != null) {
+                /*
+                 * E.g. given for subtitle items. We want to allow the user to add different subtitle-formats for the same video at the same
+                 * time.
+                 */
+                contentTypeString += "_" + extHint;
+            }
+            return "orfmediathek://playlist/" + link.getStringProperty(PROPERTY_SEGMENT_ID) + "/contentType/" + contentTypeString + "/" + link.getStringProperty(PROPERTY_VIDEO_ID) + "/delivery/" + link.getStringProperty(PROPERTY_DELIVERY) + "/streamingtype/" + link.getStringProperty(PROPERTY_STREAMING_TYPE) + "/quality/" + link.getStringProperty(PROPERTY_QUALITY_HUMAN_READABLE);
         }
     }
 
@@ -210,7 +223,11 @@ public class ORFMediathek extends PluginForHost {
                 con = br2.openHeadConnection(dllink);
                 handleConnectionErrors(br2, link, con);
                 if (con.getCompleteContentLength() > 0) {
-                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                    if (con.isContentDecoded()) {
+                        link.setDownloadSize(con.getCompleteContentLength());
+                    } else {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
                 }
             } finally {
                 try {
@@ -398,10 +415,15 @@ public class ORFMediathek extends PluginForHost {
     }
 
     public static String getFormattedVideoFilename(final DownloadLink link) {
-        final String ext;
+        String ext;
         final boolean isImage = isImage(link);
         if (isSubtitle(link)) {
-            ext = ".srt";
+            final String directurl = link.getStringProperty(PROPERTY_DIRECTURL);
+            ext = link.getStringProperty(CONTENT_EXT_HINT);
+            if (ext == null) {
+                /* Items before/until revision 48956; typically .srt files. */
+                ext = Plugin.getFileNameExtensionFromString(directurl);
+            }
         } else if (isImage) {
             ext = ".jpeg";
         } else {
@@ -468,7 +490,7 @@ public class ORFMediathek extends PluginForHost {
     protected boolean looksLikeDownloadableContent(final URLConnectionAdapter con, final DownloadLink link) {
         if (super.looksLikeDownloadableContent(con)) {
             return true;
-        } else if (isSubtitle(link) && isSubtitleContent(con)) {
+        } else if (isSubtitle(link) && looksLikeSubtitleContent(con)) {
             return true;
         } else if (isSubtitle(link) && con.isOK()) {
             /* 2023-08-15 e.g. https://api-tvthek.orf.at/assets/subtitles/0158/88/3bca2b4fb96099bfd35871d61a63ab06342eacc6.srt */
@@ -479,8 +501,21 @@ public class ORFMediathek extends PluginForHost {
         }
     }
 
-    private static boolean isSubtitleContent(final URLConnectionAdapter con) {
-        return con.getResponseCode() == 200 && (StringUtils.containsIgnoreCase(con.getContentType(), "text/xml") || StringUtils.containsIgnoreCase(con.getContentType(), "text/vtt"));
+    private static boolean looksLikeSubtitleContent(final URLConnectionAdapter con) {
+        final String contenttype = con.getContentType();
+        if (con.getResponseCode() != 200) {
+            return false;
+        } else if (StringUtils.isEmpty(contenttype)) {
+            /* No content-type given -> We can't check for subtitle content-type */
+            return false;
+        }
+        final String[] subtitlecontenttypes = new String[] { "application/smil", "application/x-srt", "application/ttml+xml", "text/vtt", "application/xml", "text/xml" };
+        for (final String subtitlecontenttype : subtitlecontenttypes) {
+            if (StringUtils.equalsIgnoreCase(contenttype, subtitlecontenttype)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
@@ -501,10 +536,12 @@ public class ORFMediathek extends PluginForHost {
         return "JDownloader's ORF Plugin helps downloading videos from on.orf.at. ORF provides different video qualities and types of media.";
     }
 
-    private static final String[] VIDEO_FORMATS = new String[] { "All formats", "Multiple video chapters", "Single video (\"gapless\")" };
+    private static final String[] VIDEO_FORMATS    = new String[] { "All formats", "Multiple video chapters", "Single video (\"gapless\")" };
+    private static final String[] SUBTITLE_FORMATS = new String[] { "SAMI (.smi)", "SRT (.srt)", "TTML (.ttml)", "WebVTT (.vtt)", "XML (.xml)" };
 
     private void setConfigElements() {
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_SUBTITLES, "Download subtitle").setDefaultValue(Q_SUBTITLES_default));
+        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_COMBOBOX_INDEX, getPluginConfig(), SETTING_SELECTED_SUBTITLE_FORMAT, SUBTITLE_FORMATS, "Preferred subtitle format").setDefaultValue(SETTING_SELECTED_SUBTITLE_FORMAT_default));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), Q_THUMBNAIL, "Download thumbnail").setDefaultValue(Q_THUMBNAIL_default));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_SEPARATOR));
         getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_LABEL, "Video quality settings"));

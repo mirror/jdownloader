@@ -219,8 +219,27 @@ public class OrfAt extends PluginForDecrypt {
         if (cfg == null || cfg.getBooleanProperty(ORFMediathek.Q_VERYHIGH, ORFMediathek.Q_VERYHIGH_default)) {
             selectedQualities.add("VERYHIGH");
         }
+        final String subtitle_ext;
+        final String subtitle_key_name;
+        final int subtitleFormatSettingInt = cfg.getIntegerProperty(ORFMediathek.SETTING_SELECTED_SUBTITLE_FORMAT, ORFMediathek.SETTING_SELECTED_SUBTITLE_FORMAT_default);
+        if (subtitleFormatSettingInt == 0) {
+            subtitle_ext = ".smi";
+            subtitle_key_name = "sami_url";
+        } else if (subtitleFormatSettingInt == 1) {
+            subtitle_ext = ".srt";
+            subtitle_key_name = "srt_url";
+        } else if (subtitleFormatSettingInt == 2) {
+            subtitle_ext = ".ttml";
+            subtitle_key_name = "ttml_url";
+        } else if (subtitleFormatSettingInt == 3) {
+            subtitle_ext = ".vtt";
+            subtitle_key_name = "vtt_url";
+        } else {
+            subtitle_ext = ".xml";
+            subtitle_key_name = "xml_url";
+        }
         final Map<String, Object> gapless_subtitlemap = (Map<String, Object>) _embedded.get("subtitle");
-        final String gapless_subtitleurl = gapless_subtitlemap != null ? (String) gapless_subtitlemap.get("srt_url") : null;
+        final String gapless_subtitleurl = gapless_subtitlemap != null ? (String) gapless_subtitlemap.get(subtitle_key_name) : null;
         String thumbnailurlFromFirstSegment = null;
         final boolean settingPreferBestVideo = cfg != null ? cfg.getBooleanProperty(ORFMediathek.Q_BEST, ORFMediathek.Q_BEST_default) : false;
         final boolean settingEnableFastCrawl = cfg != null ? cfg.getBooleanProperty(ORFMediathek.SETTING_ENABLE_FAST_CRAWL, ORFMediathek.SETTING_ENABLE_FAST_CRAWL_default) : true;
@@ -253,16 +272,20 @@ public class OrfAt extends PluginForDecrypt {
                     thumbnailurlFromFirstSegment = thumbnailurl;
                 }
                 final List<Map<String, Object>> sources = (List<Map<String, Object>>) thisplaylist.get("sources");
-                final List<Map<String, Object>> subtitle_list = (List<Map<String, Object>>) thisplaylist.get("subtitles");
+                final List<Map<String, Object>> subtitlemaps = (List<Map<String, Object>>) thisplaylist.get("subtitles");
                 String subtitleurl = null;
-                if (subtitle_list != null && subtitle_list.size() > 0) {
-                    /* [0] = .srt, [1] = WEBVTT .vtt */
-                    if (subtitle_list.size() > 1) {
-                        subtitleurl = (String) JavaScriptEngineFactory.walkJson(subtitle_list.get(1), "src");
-                    } else if (subtitle_list.size() == 1) {
-                        subtitleurl = (String) JavaScriptEngineFactory.walkJson(subtitle_list.get(0), "src");
-                    } else {
-                        subtitleurl = null;
+                if (subtitlemaps != null && subtitlemaps.size() > 0) {
+                    /* Look for subtitle in user preferred format */
+                    for (final Map<String, Object> subtitlemap : subtitlemaps) {
+                        final String url = subtitlemap.get("src").toString();
+                        final String type = subtitlemap.get("type").toString();
+                        if (StringUtils.endsWithCaseInsensitive(url, subtitle_ext) || type.equalsIgnoreCase(subtitle_ext.replace(".", ""))) {
+                            subtitleurl = url;
+                            break;
+                        }
+                    }
+                    if (subtitleurl == null) {
+                        logger.warning("Selected subtitle format hasn't been found -> Looks like the assumption that all formats are always available is wrong");
                     }
                 }
                 if (subtitleurl == null && segments.size() == 1 && gapless_subtitleurl != null) {
@@ -415,6 +438,7 @@ public class OrfAt extends PluginForDecrypt {
                         subtitle.setProperties(chosenVideoResult.getProperties());
                         subtitle.setProperty(ORFMediathek.PROPERTY_DIRECTURL, subtitleurl);
                         subtitle.setProperty(ORFMediathek.PROPERTY_CONTENT_TYPE, ORFMediathek.CONTENT_TYPE_SUBTITLE);
+                        subtitle.setProperty(ORFMediathek.CONTENT_EXT_HINT, subtitle_ext);
                         subtitle.setAvailable(true);
                         subtitle.setContentUrl(sourceurl);
                         finalresults.add(subtitle);
@@ -567,6 +591,7 @@ public class OrfAt extends PluginForDecrypt {
                     subtitle.setProperties(chosenVideoResult.getProperties());
                     subtitle.setProperty(ORFMediathek.PROPERTY_DIRECTURL, gapless_subtitleurl);
                     subtitle.setProperty(ORFMediathek.PROPERTY_CONTENT_TYPE, ORFMediathek.CONTENT_TYPE_SUBTITLE);
+                    subtitle.setProperty(ORFMediathek.CONTENT_EXT_HINT, subtitle_ext);
                     thisFinalResults.add(subtitle);
                 }
             }
@@ -1504,7 +1529,7 @@ public class OrfAt extends PluginForDecrypt {
             ret.add(thumbnail);
         }
         final Map<String, Object> subtitlemap = (Map<String, Object>) JavaScriptEngineFactory.walkJson(episode, "_embedded/subtitle");
-        final String subtitleURL = subtitlemap != null ? (String) subtitlemap.get("srt_url") : null;
+        final String subtitleURL = subtitlemap != null ? (String) subtitlemap.get("") : null;
         if (!StringUtils.isEmpty(subtitleURL)) {
             final DownloadLink subtitle = this.createDownloadlink(subtitleURL);
             subtitle.setFinalFileName(title + ".srt");

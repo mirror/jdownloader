@@ -169,10 +169,10 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
         do {
             try {
                 getPage(param.getCryptedUrl());
-                if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(?i)No such user exist|No such folder")) {
+                if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("No such user exist|No such folder")) {
                     logger.info("Incorrect URL, Invalid user or empty folder");
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-                } else if (br.containsHTML("(?i)>\\s*?Guest access not possible")) {
+                } else if (br.containsHTML(">\\s*?Guest access not possible")) {
                     /* 2019-08-13: Rare special case E.g. easybytez.com */
                     if (loggedIN) {
                         logger.info("We are loggedIN but still cannot view this folder --> Wrong account or crawler plugin failure");
@@ -210,11 +210,9 @@ public class GenericXFileShareProFolder extends antiDDoSForDecrypt {
         final ArrayList<String> dupes = new ArrayList<String>();
         dupes.add(param.getCryptedUrl());
         /* prevents continuous loop. */
-        int lastArraySize = 0;
         int page = 1;
         do {
             logger.info("Crawling page: " + page);
-            lastArraySize = ret.size();
             final ArrayList<DownloadLink> newResults = parsePage(dupes, fp, param);
             if (newResults.isEmpty()) {
                 /* Fail-safe */

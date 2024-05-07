@@ -921,7 +921,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
     protected boolean isOffline(final DownloadLink link, final Browser br) {
         if (br.getHttpConnection().getResponseCode() == 404) {
             return true;
-        } else if (br.containsHTML("(No such file|>\\s*File Not Found\\s*<|>\\s*The file was removed by|Reason for deletion:\n|File Not Found|>\\s*The file expired|>\\s*Sorry, we can't find the page you're looking for|>\\s*File could not be found due to expiration or removal by the file owner|>\\s*The file of the above link no longer exists|>\\s*video you are looking for is not found|>\\s*The file you were looking for doesn't exist)")) {
+        } else if (br.containsHTML("(No such file|>\\s*File Not Found\\s*<|>\\s*The file was removed by|>\\s*Reason for deletion:?|File Not Found|>\\s*The file expired|>\\s*Sorry, we can't find the page you're looking for|>\\s*File could not be found due to expiration or removal by the file owner|>\\s*The file of the above link no longer exists|>\\s*video you are looking for is not found|>\\s*The file you were looking for doesn't exist)")) {
             return true;
         } else {
             return false;
@@ -3594,9 +3594,9 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
         /* Allow ' in URL */
         patterns.add(Pattern.compile("\"" + String.format("(https?://(?:\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|%s)(?::\\d+)?/(?:files|d|cgi\\-bin/dl\\.cgi|dl)/(?:\\d+/)?[a-z0-9]+/[^<>\"/]*)", this.getDllinkHostPattern()) + "\""));
         /* Allow ' in URL but must end on '); */
-        patterns.add(Pattern.compile(String.format("(https?://(?:\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|%s)(?::\\d+)?/(?:files|d|cgi\\-bin/dl\\.cgi|dl)/(?:\\d+/)?[a-z0-9]+/[^<>\"/]*)", this.getDllinkHostPattern()) + "'\\s*\\)\\s*;"));
+        patterns.add(Pattern.compile(String.format("(https?://(?:\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|%s)(?::\\d+)?/(?:files|d|cgi\\-bin/dl\\.cgi|dl)/(?:\\d+/)?[a-z0-9]+/[^<>\"/']*)", this.getDllinkHostPattern()) + "'\\s*\\)\\s*;"));
         /* Don't allow ' in URL */
-        patterns.add(Pattern.compile(String.format("(https?://(?:\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|%s)(?::\\d+)?/(?:files|d|cgi\\-bin/dl\\.cgi|dl)/(?:\\d+/)?[a-z0-9]+/[^<>\"\\'/]*)", this.getDllinkHostPattern())));
+        patterns.add(Pattern.compile(String.format("(https?://(?:\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}\\.\\d{1,3}|%s)(?::\\d+)?/(?:files|d|cgi\\-bin/dl\\.cgi|dl)/(?:\\d+/)?[a-z0-9]+/[^<>\"'/]*)", this.getDllinkHostPattern())));
         return patterns;
     }
 
