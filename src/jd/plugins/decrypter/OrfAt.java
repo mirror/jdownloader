@@ -12,14 +12,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
 import jd.controlling.ProgressController;
@@ -38,6 +30,14 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.DirectHTTP;
 import jd.plugins.hoster.ORFMediathek;
+
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class OrfAt extends PluginForDecrypt {
@@ -103,10 +103,10 @@ public class OrfAt extends PluginForDecrypt {
     private final String                                      PROPERTY_SLUG         = "slug";
     /* E.g. https://radiothek.orf.at/ooe --> "ooe" --> Channel == "oe2o" */
     private static LinkedHashMap<String, Map<String, Object>> CHANNEL_CACHE         = new LinkedHashMap<String, Map<String, Object>>() {
-                                                                                        protected boolean removeEldestEntry(Map.Entry<String, Map<String, Object>> eldest) {
-                                                                                            return size() > 50;
-                                                                                        };
-                                                                                    };
+        protected boolean removeEldestEntry(Map.Entry<String, Map<String, Object>> eldest) {
+            return size() > 50;
+        };
+    };
     public SubConfiguration                                   cfg                   = null;
 
     /** Wrapper for podcast URLs containing md5 file-hashes inside URL. */
@@ -223,21 +223,32 @@ public class OrfAt extends PluginForDecrypt {
         final String subtitle_ext;
         final String subtitle_key_name;
         final int subtitleFormatSettingInt = cfg.getIntegerProperty(ORFMediathek.SETTING_SELECTED_SUBTITLE_FORMAT, ORFMediathek.SETTING_SELECTED_SUBTITLE_FORMAT_default);
-        if (subtitleFormatSettingInt == 0) {
+        switch (subtitleFormatSettingInt) {
+        case 0:
             subtitle_ext = ".smi";
             subtitle_key_name = "sami_url";
-        } else if (subtitleFormatSettingInt == 1) {
+            break;
+        case 1:
             subtitle_ext = ".srt";
             subtitle_key_name = "srt_url";
-        } else if (subtitleFormatSettingInt == 2) {
+            break;
+        case 2:
             subtitle_ext = ".ttml";
             subtitle_key_name = "ttml_url";
-        } else if (subtitleFormatSettingInt == 3) {
+            break;
+        case 3:
             subtitle_ext = ".vtt";
             subtitle_key_name = "vtt_url";
-        } else {
+            break;
+        case 4:
             subtitle_ext = ".xml";
             subtitle_key_name = "xml_url";
+            break;
+        default:
+            logger.info("Unsupported subtitle selection:" + subtitleFormatSettingInt);
+            subtitle_ext = ".vtt";
+            subtitle_key_name = "vtt_url";
+            break;
         }
         final Map<String, Object> gapless_subtitlemap = (Map<String, Object>) _embedded.get("subtitle");
         final String gapless_subtitleurl = gapless_subtitlemap != null ? (String) gapless_subtitlemap.get(subtitle_key_name) : null;
@@ -553,9 +564,8 @@ public class OrfAt extends PluginForDecrypt {
             }
             if (videoresults.isEmpty()) {
                 /**
-                 * All possible results were skipped? -> This should never happen / very very rare case. </br>
-                 * Either all available video resolutions are unsupported resolutions or GEO-blocked detection failed or something super
-                 * unexpected happened.
+                 * All possible results were skipped? -> This should never happen / very very rare case. </br> Either all available video
+                 * resolutions are unsupported resolutions or GEO-blocked detection failed or something super unexpected happened.
                  */
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -618,8 +628,7 @@ public class OrfAt extends PluginForDecrypt {
             }
         }
         /**
-         * Add more properties which are the same for all results. </br>
-         * It is important that all items run through this loop!
+         * Add more properties which are the same for all results. </br> It is important that all items run through this loop!
          */
         for (final DownloadLink result : ret) {
             if (!result.hasProperty(ORFMediathek.PROPERTY_CONTENT_TYPE)) {
