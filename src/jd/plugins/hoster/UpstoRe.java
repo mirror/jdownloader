@@ -673,11 +673,11 @@ public class UpstoRe extends antiDDoSForHost {
                 final Entry<String, Long> ipentry = it.next();
                 final String ip = ipentry.getKey();
                 final long timestamp = ipentry.getValue();
-                if (System.currentTimeMillis() - timestamp >= FREE_RECONNECTWAIT) {
+                if (ip == null || System.currentTimeMillis() - timestamp >= FREE_RECONNECTWAIT) {
                     /* Remove old entries */
                     it.remove();
                 }
-                if (ip.equals(currentIP.get())) {
+                if (ip != null && ip.equals(currentIP.get())) {
                     lastdownload = timestamp;
                 }
             }
