@@ -139,7 +139,7 @@ public class MissavCom extends PluginForHost {
         }
         br.getHeaders().put("Origin", "https://" + br.getHost());
         br.getPage("https://surrit.com/" + videoHash + "/playlist.m3u8");
-        VideoQuality qual = PluginJsonConfig.get(MissavComConfig.class).getVideoQuality();
+        VideoQuality qual = PluginJsonConfig.get(getConfigInterface()).getVideoQuality();
         if (VideoQuality.DEFAULT.equals(qual)) {
             qual = MissavComConfig.DEFAULT_MODE;
         }
@@ -177,7 +177,7 @@ public class MissavCom extends PluginForHost {
     }
 
     @Override
-    public Class<? extends PluginConfigInterface> getConfigInterface() {
+    public Class<MissavComConfig> getConfigInterface() {
         return MissavComConfig.class;
     }
 
