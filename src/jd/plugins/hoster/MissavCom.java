@@ -30,7 +30,7 @@ import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.MissavComCrawler;
-import jd.plugins.hoster.MissavCom.MissavComPluginConfig.VideoQuality;
+import jd.plugins.hoster.MissavCom.MissavComConfig.VideoQuality;
 
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultEnumValue;
@@ -51,7 +51,7 @@ public class MissavCom extends PluginForHost {
         super(wrapper);
     }
 
-    public static interface MissavComPluginConfig extends PluginConfigInterface {
+    public static interface MissavComConfig extends PluginConfigInterface {
         public static final TRANSLATION  TRANSLATION  = new TRANSLATION();
         public static final VideoQuality DEFAULT_MODE = VideoQuality.BEST;
 
@@ -198,9 +198,9 @@ public class MissavCom extends PluginForHost {
         }
         br.getHeaders().put("Origin", "https://" + br.getHost());
         br.getPage("https://surrit.com/" + videoHash + "/playlist.m3u8");
-        VideoQuality qual = ((MissavCom.MissavComPluginConfig) PluginJsonConfig.get(getConfigInterface())).getVideoQuality();
+        VideoQuality qual = PluginJsonConfig.get(MissavComConfig.class).getVideoQuality();
         if (VideoQuality.DEFAULT.equals(qual)) {
-            qual = MissavCom.MissavComPluginConfig.DEFAULT_MODE;
+            qual = MissavComConfig.DEFAULT_MODE;
         }
         int targetHeight = 0;
         if (qual == VideoQuality.Q360P) {
@@ -233,11 +233,6 @@ public class MissavCom extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return Integer.MAX_VALUE;
-    }
-
-    @Override
-    public Class<? extends PluginConfigInterface> getConfigInterface() {
-        return MissavCom.MissavComPluginConfig.class;
     }
 
     @Override
