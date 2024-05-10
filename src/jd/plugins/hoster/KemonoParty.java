@@ -25,9 +25,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.downloader.text.TextDownloader;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -42,6 +39,9 @@ import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.KemonoPartyCrawler;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.downloader.text.TextDownloader;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 @PluginDependencies(dependencies = { KemonoPartyCrawler.class })
@@ -204,8 +204,10 @@ public class KemonoParty extends PluginForHost {
             if (!isDownload) {
                 URLConnectionAdapter con = null;
                 try {
-                    con = br.openHeadConnection(link.getPluginPatternMatcher());
-                    handleConnectionErrors(br, con);
+                    final Browser brc = br.cloneBrowser();
+                    brc.setFollowRedirects(true);
+                    con = brc.openHeadConnection(link.getPluginPatternMatcher());
+                    handleConnectionErrors(brc, con);
                     if (con.getCompleteContentLength() > 0) {
                         if (con.isContentDecoded()) {
                             link.setDownloadSize(con.getCompleteContentLength());
@@ -228,6 +230,15 @@ public class KemonoParty extends PluginForHost {
             }
         }
         return AvailableStatus.TRUE;
+    }
+
+    @Override
+    protected boolean looksLikeDownloadableContent(URLConnectionAdapter urlConnection) {
+        if ((urlConnection.getResponseCode() == 200 || urlConnection.getResponseCode() == 206) && getFileNameFromDispositionHeader(urlConnection) != null) {
+            return true;
+        } else {
+            return super.looksLikeDownloadableContent(urlConnection);
+        }
     }
 
     private void handleConnectionErrors(final Browser br, final URLConnectionAdapter con) throws PluginException, IOException {

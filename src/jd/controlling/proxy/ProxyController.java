@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
@@ -447,25 +448,52 @@ public class ProxyController implements ProxySelectorInterface {
     public List<AbstractProxySelectorImpl> getProxySelectors(final DownloadLinkCandidate downloadLinkCandidate, final boolean ignoreConnectBans, final boolean ignoreAllBans) {
         final LinkedHashSet<AbstractProxySelectorImpl> ret = new LinkedHashSet<AbstractProxySelectorImpl>();
         try {
+            final List<String> hosts = new ArrayList<String>();
             final CachedAccount cachedAccount = downloadLinkCandidate.getCachedAccount();
             final Account acc = cachedAccount.getAccount();
             final PluginForHost pluginForHost = cachedAccount.getPlugin();
-            final String pluginHost = pluginForHost.getHost(downloadLinkCandidate.getLink(), acc, false);
+            final String tldHost = pluginForHost.getHost(downloadLinkCandidate.getLink(), acc, false);
+            hosts.add(tldHost);
+            if (pluginForHost.isHandlingMultipleHosts()) {
+                // process Plugin.siteSupportedNames and Plugin.rewriteHost and Plugin.getMatcher
+                final PluginFinder pluginFinder = new PluginFinder(getLogger());
+                String assignedHost = assignHost(pluginFinder, null, tldHost);
+                if (assignedHost != null && !hosts.contains(assignedHost)) {
+                    hosts.add(0, assignedHost);
+                }
+                final String fullHost = pluginForHost.getHost(downloadLinkCandidate.getLink(), acc, true);
+                if (!hosts.contains(fullHost)) {
+                    hosts.add(0, fullHost);
+                    assignedHost = assignHost(pluginFinder, null, fullHost);
+                    if (assignedHost != null && !hosts.contains(assignedHost)) {
+                        hosts.add(0, assignedHost);
+                    }
+                }
+            }
             int maxResults;
             if (pluginForHost.isProxyRotationEnabled(cachedAccount.getAccount() != null)) {
                 maxResults = Integer.MAX_VALUE;
             } else {
                 maxResults = 1;
             }
-            for (final AbstractProxySelectorImpl selector : _getList()) {
-                try {
-                    if (selector.isEnabled() && selector.isAllowedByFilter(pluginHost, acc) && maxResults-- > 0) {
+            final List<AbstractProxySelectorImpl> selectors = new ArrayList<AbstractProxySelectorImpl>(_getList());
+            for (final String host : hosts) {
+                if (selectors.size() == 0 || maxResults == 0) {
+                    break;
+                }
+                final Iterator<AbstractProxySelectorImpl> it = selectors.iterator();
+                while (it.hasNext()) {
+                    final AbstractProxySelectorImpl selector = it.next();
+                    if (maxResults == 0) {
+                        break;
+                    } else if (!selector.isEnabled()) {
+                        it.remove();
+                    } else if (selector.isAllowedByFilter(host, acc) && maxResults-- > 0) {
+                        it.remove();
                         if (ignoreAllBans || !selector.isSelectorBannedFor(pluginForHost, ignoreConnectBans)) {
                             ret.add(selector);
                         }
                     }
-                } catch (Throwable e) {
-                    getLogger().log(e);
                 }
             }
         } catch (Throwable e) {
@@ -1150,16 +1178,38 @@ public class ProxyController implements ProxySelectorInterface {
                 acc = null;
                 proxyRotationEnabled = true;
             }
-            final String host = Browser.getHost(url, true);
-            final String plgHost;
+            final List<String> hosts = new ArrayList<String>();
             if (plugin == null || plugin.isHandlingMultipleHosts()) {
-                plgHost = host;
+                final String tldHost = Browser.getHost(url, false);
+                hosts.add(tldHost);
+                final PluginFinder pluginFinder = new PluginFinder(getLogger());
+                String assignedHost = assignHost(pluginFinder, null, tldHost);
+                if (assignedHost != null && !hosts.contains(assignedHost)) {
+                    hosts.add(0, assignedHost);
+                }
+                final String fullHost = Browser.getHost(url, true);
+                if (!hosts.contains(fullHost)) {
+                    hosts.add(0, fullHost);
+                    assignedHost = assignHost(pluginFinder, null, fullHost);
+                    if (assignedHost != null && !hosts.contains(assignedHost)) {
+                        hosts.add(0, assignedHost);
+                    }
+                }
             } else {
-                plgHost = plugin.getHost();
+                hosts.add(plugin.getHost());
             }
-            for (final AbstractProxySelectorImpl selector : _getList()) {
-                try {
-                    if (selector.isEnabled() && selector.isAllowedByFilter(plgHost, acc)) {
+            final List<AbstractProxySelectorImpl> selectors = new ArrayList<AbstractProxySelectorImpl>(_getList());
+            for (final String host : hosts) {
+                if (selectors.size() == 0) {
+                    break;
+                }
+                final Iterator<AbstractProxySelectorImpl> it = selectors.iterator();
+                while (it.hasNext()) {
+                    final AbstractProxySelectorImpl selector = it.next();
+                    if (!selector.isEnabled()) {
+                        it.remove();
+                    } else if (selector.isAllowedByFilter(host, acc)) {
+                        it.remove();
                         final List<HTTPProxy> lst = selector.getProxiesByURL(url);
                         if (lst != null) {
                             for (HTTPProxy p : lst) {
@@ -1171,8 +1221,6 @@ public class ProxyController implements ProxySelectorInterface {
                             }
                         }
                     }
-                } catch (Throwable e) {
-                    getLogger().log(e);
                 }
             }
         } catch (Throwable e) {

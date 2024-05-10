@@ -4,6 +4,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import jd.controlling.linkcrawler.LinkCrawler.LinkCrawlerGeneration;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
+import jd.plugins.DownloadConnectionVerifier;
+import jd.plugins.Plugin;
+import jd.plugins.PluginForHost;
+
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
@@ -13,13 +20,6 @@ import org.jdownloader.plugins.controller.PluginClassLoader;
 import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.plugins.controller.host.PluginFinder;
-
-import jd.controlling.linkcrawler.LinkCrawler.LinkCrawlerGeneration;
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
-import jd.plugins.DownloadConnectionVerifier;
-import jd.plugins.Plugin;
-import jd.plugins.PluginForHost;
 
 public abstract class LinkCrawlerDeepInspector {
     /**
@@ -51,7 +51,7 @@ public abstract class LinkCrawlerDeepInspector {
                 final String contentDispositionHeader = urlConnection.getHeaderField(HTTPConstants.HEADER_RESPONSE_CONTENT_DISPOSITION);
                 final String contentDispositionFileName = HTTPConnectionUtils.getFileNameFromDispositionHeader(contentDispositionHeader);
                 final boolean inlineFlag = contentDispositionHeader.matches("(?i)^\\s*inline\\s*;?.*");
-                if (inlineFlag && (contentDispositionFileName != null && contentDispositionFileName.matches("(?i)^.*\\.html?$") || (hasContentType && isTextContent(urlConnection)))) {
+                if (inlineFlag && (contentDispositionFileName != null && contentDispositionFileName.matches("(?i)^.*\\.html?$") || (hasContentType && isHtmlContent(urlConnection)))) {
                     // HTTP/1.1 200 OK
                     // Content-Type: text/html;
                     // Content-Disposition: inline; filename=error.html
@@ -89,11 +89,11 @@ public abstract class LinkCrawlerDeepInspector {
             } else if (filePathName != null && filePathName.matches("(?i).+\\.srt") && isPlainTextContent(urlConnection) && (!hasContentLength || completeContentLength > 512 || hasEtag)) {
                 /*
                  * Accept-Ranges: bytes
-                 *
+                 * 
                  * Content-Type: text/plain
-                 *
+                 * 
                  * ETag: "11968........"
-                 *
+                 * 
                  * Content-Length: 28...
                  */
                 looksLike = true;

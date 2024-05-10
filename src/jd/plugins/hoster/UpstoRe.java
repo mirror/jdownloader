@@ -24,16 +24,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TimeZone;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperHostPluginHCaptcha;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.components.config.UpstoReConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
@@ -53,6 +43,15 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.hcaptcha.CaptchaHelperHostPluginHCaptcha;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.components.config.UpstoReConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class UpstoRe extends antiDDoSForHost {
@@ -99,15 +98,14 @@ public class UpstoRe extends antiDDoSForHost {
     }
 
     /* Constants (limits) */
-    private static final long              FREE_RECONNECTWAIT            = 1 * 60 * 60 * 1000L;
-    private static final long              FREE_RECONNECTWAIT_ADDITIONAL = 60 * 1000l;
-    private final String                   INVALIDLINKS                  = "(?i)https?://[^/]+/(faq|privacy|terms|d/|aff|login|account|dmca|imprint|message|panel|premium|contacts)";
-    private static AtomicReference<String> currentIP                     = new AtomicReference<String>();
-    private static Map<String, Long>       blockedIPsMap                 = new HashMap<String, Long>();
-    private static Object                  CTRLLOCK                      = new Object();
-    private static final String            PROPERTY_last_blockedIPsMap   = "UPSTORE_last_blockedIPsMap";
+    private static final long          FREE_RECONNECTWAIT            = 1 * 60 * 60 * 1000L;
+    private static final long          FREE_RECONNECTWAIT_ADDITIONAL = 60 * 1000l;
+    private final String               INVALIDLINKS                  = "(?i)https?://[^/]+/(faq|privacy|terms|d/|aff|login|account|dmca|imprint|message|panel|premium|contacts)";
+
+    private static Map<String, Long>   blockedIPsMap                 = new HashMap<String, Long>();
+    private static final String        PROPERTY_last_blockedIPsMap   = "UPSTORE_last_blockedIPsMap";
     /* Don't touch the following! */
-    private static final AtomicInteger     freeRunning                   = new AtomicInteger(0);
+    private static final AtomicInteger freeRunning                   = new AtomicInteger(0);
 
     @Override
     public String getLinkID(final DownloadLink link) {
@@ -206,14 +204,15 @@ public class UpstoRe extends antiDDoSForHost {
         final int maxchunks = 1;
         final String storedDirecturl = link.getStringProperty(directurlproperty);
         String dllink = null;
+        String currentIP = null;
         if (storedDirecturl != null) {
             logger.info("Trying to re-use stored directurl: " + storedDirecturl);
             dllink = storedDirecturl;
         } else {
             requestFileInformation(link);
             handleErrorsHTML(this.br);
-            currentIP.set(new BalancedWebIPCheck(null).getExternalIP().getIP());
-            synchronized (CTRLLOCK) {
+
+            synchronized (blockedIPsMap) {
                 /* Load list of saved IPs + timestamp of last download */
                 final Object lastdownloadmap = this.getPluginConfig().getProperty(PROPERTY_last_blockedIPsMap);
                 if (lastdownloadmap != null && lastdownloadmap instanceof Map && blockedIPsMap.isEmpty()) {
@@ -254,7 +253,10 @@ public class UpstoRe extends antiDDoSForHost {
                  * he tries to start more downloads via free accounts afterwards BUT nontheless the limit is only on his IP so he CAN
                  * download using the same free accounts after performing a reconnect!
                  */
-                final long lastdownload = getPluginSavedLastDownloadTimestamp();
+                if (currentIP == null) {
+                    currentIP = new BalancedWebIPCheck(br.getProxy()).getExternalIP().getIP();
+                }
+                final long lastdownload = getPluginSavedLastDownloadTimestamp(currentIP);
                 final long passedTimeSinceLastDl = System.currentTimeMillis() - lastdownload;
                 if (passedTimeSinceLastDl < FREE_RECONNECTWAIT) {
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, FREE_RECONNECTWAIT - passedTimeSinceLastDl);
@@ -287,7 +289,10 @@ public class UpstoRe extends antiDDoSForHost {
                 submitForm(captchaForm);
             }
             if (br.containsHTML("(?i)limit for today|several files recently")) {
-                setDownloadStarted(link, 0);
+                if (currentIP == null) {
+                    currentIP = new BalancedWebIPCheck(br.getProxy()).getExternalIP().getIP();
+                }
+                setDownloadStarted(currentIP, link, 0);
                 throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, 3 * 60 * 60 * 1000l);
             }
             dllink = br.getRegex("<div style=\"margin: 10px auto 20px\" class=\"center\">\\s*<a href=\"(https?://[^<>\"]*?)\"").getMatch(0);
@@ -298,7 +303,10 @@ public class UpstoRe extends antiDDoSForHost {
                 final String reconnectWait = br.getRegex("Please wait (\\d+) minutes before downloading next file").getMatch(0);
                 if (reconnectWait != null) {
                     final long waitmillis = Long.parseLong(reconnectWait) * 60 * 1000l;
-                    setDownloadStarted(link, waitmillis);
+                    if (currentIP == null) {
+                        currentIP = new BalancedWebIPCheck(br.getProxy()).getExternalIP().getIP();
+                    }
+                    setDownloadStarted(currentIP, link, waitmillis);
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, waitmillis + FREE_RECONNECTWAIT_ADDITIONAL);
                 }
                 final String error = br.getRegex("<span class=\"error\"[^>]*>([^<]+)</span>").getMatch(0);
@@ -321,13 +329,17 @@ public class UpstoRe extends antiDDoSForHost {
             /*
              * The download attempt already triggers reconnect waittime! Save timestamp here to calculate correct remaining waittime later!
              */
-            setDownloadStarted(link, 0);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 logger.warning("The final dllink seems not to be a file!");
                 br.followConnection(true);
                 handleErrorsHTML(this.br);
                 handleServerErrors(this.br);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            } else {
+                if (currentIP == null) {
+                    currentIP = new BalancedWebIPCheck(br.getProxy()).getExternalIP().getIP();
+                }
+                setDownloadStarted(currentIP, link, 0);
             }
         } catch (final Exception e) {
             if (storedDirecturl != null) {
@@ -640,8 +652,8 @@ public class UpstoRe extends antiDDoSForHost {
     }
 
     @SuppressWarnings("deprecation")
-    private void setDownloadStarted(final DownloadLink dl, final long remaining_reconnect_wait) throws Exception {
-        synchronized (CTRLLOCK) {
+    private void setDownloadStarted(final String currentIP, final DownloadLink dl, final long remaining_reconnect_wait) throws Exception {
+        synchronized (blockedIPsMap) {
             final long timestamp_download_started;
             if (remaining_reconnect_wait > 0) {
                 /*
@@ -660,29 +672,36 @@ public class UpstoRe extends antiDDoSForHost {
                  */
                 timestamp_download_started = System.currentTimeMillis();
             }
-            blockedIPsMap.put(currentIP.get(), timestamp_download_started);
+            blockedIPsMap.put(currentIP, timestamp_download_started);
             getPluginConfig().setProperty(PROPERTY_last_blockedIPsMap, blockedIPsMap);
         }
     }
 
-    private long getPluginSavedLastDownloadTimestamp() {
-        long lastdownload = 0;
+    private long getPluginSavedLastDownloadTimestamp(final String currentIP) {
+        Long lastIPDownload = null;
+        Long lastUnknownIPDownload = null;
         synchronized (blockedIPsMap) {
+            lastUnknownIPDownload = blockedIPsMap.remove(null);
             final Iterator<Entry<String, Long>> it = blockedIPsMap.entrySet().iterator();
             while (it.hasNext()) {
                 final Entry<String, Long> ipentry = it.next();
                 final String ip = ipentry.getKey();
                 final long timestamp = ipentry.getValue();
-                if (ip == null || System.currentTimeMillis() - timestamp >= FREE_RECONNECTWAIT) {
+                if (System.currentTimeMillis() - timestamp >= FREE_RECONNECTWAIT) {
                     /* Remove old entries */
                     it.remove();
-                }
-                if (ip != null && ip.equals(currentIP.get())) {
-                    lastdownload = timestamp;
+                } else if (ip.equals(currentIP)) {
+                    lastIPDownload = timestamp;
                 }
             }
         }
-        return lastdownload;
+        if (lastIPDownload != null) {
+            return lastIPDownload;
+        } else if (currentIP == null && lastUnknownIPDownload != null) {
+            return lastUnknownIPDownload;
+        } else {
+            return 0;
+        }
     }
 
     @Override
