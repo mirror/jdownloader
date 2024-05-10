@@ -26,6 +26,7 @@ import jd.controlling.downloadcontroller.SingleDownloadController;
 import jd.http.Browser;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -161,8 +162,30 @@ public class DarkiboxCom extends XFileSharingProBasic {
     }
 
     @Override
+    protected AccountInfo fetchAccountInfoWebsite(final Account account) throws Exception {
+        final AccountInfo ai = super.fetchAccountInfoWebsite(account);
+        if (false && Account.AccountType.PREMIUM.equals(account.getType()) && ai.isUnlimitedTraffic()) {
+            // website only shows limit but not left traffic?!
+            this.getPage("?op=my_account");
+            fetchAccountInfoWebsiteTraffic(br, account, ai);
+        }
+        return ai;
+    }
+
+    @Override
+    protected boolean trustAccountInfoAPI(Browser br, Account account, AccountInfo ai) throws Exception {
+        // api and website does not return available traffic
+        return ai != null;
+    }
+
+    @Override
     protected boolean isVideohoster_enforce_video_filename() {
         return true;
+    }
+
+    @Override
+    protected String[] supportsPreciseExpireDate() {
+        return new String[] { "/?op=payments" };
     }
 
     @Override

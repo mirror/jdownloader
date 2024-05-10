@@ -4411,6 +4411,9 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
         boolean allHTML = false;
         String preciseExpireHTML = new Regex(getCorrectBR(br), "<div[^>]*class=\"[^\"]*accexpire[^\"]*\"[^>]*>.*?</div>").getMatch(-1);
         if (preciseExpireHTML == null) {
+            preciseExpireHTML = new Regex(getCorrectBR(br), "<div[^>]*class=((?!</div>).)*expires_in((?!</div>).)*>.*?</div>").getMatch(-1);
+        }
+        if (preciseExpireHTML == null) {
             allHTML = true;
             preciseExpireHTML = getCorrectBR(br);
         }
@@ -4451,8 +4454,8 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
      */
     protected String findAPIKey(final Browser brc) throws Exception {
         String apikey = regexAPIKey(brc);
-        String generateApikeyUrl = this.regexGenerateAPIKeyURL(brc);
-        if (StringUtils.isEmpty(apikey) && generateApikeyUrl != null && allowToGenerateAPIKeyInWebsiteMode()) {
+        String generateApikeyUrl = null;
+        if (StringUtils.isEmpty(apikey) && (generateApikeyUrl = this.regexGenerateAPIKeyURL(brc)) != null && allowToGenerateAPIKeyInWebsiteMode()) {
             generateApikeyUrl = Encoding.htmlOnlyDecode(generateApikeyUrl);
             logger.info("Failed to find apikey but host has api-mod enabled --> Trying to generate first apikey for this account via: " + generateApikeyUrl);
             try {
@@ -4517,7 +4520,15 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
     }
 
     protected String regexAPIKey(final Browser br) {
-        return br.getRegex("/api/account/info\\?key=([a-z0-9]+)").getMatch(0);
+        String ret = br.getRegex("/api/account/info\\?key=([a-z0-9]+)").getMatch(0);
+        if (ret == null) {
+            // darkibox.com, <input type="text" class="form-control" value="......" readonly onfocus="this.select();">
+            final String rets[][] = br.getRegex("<input[^>]*value\\s*=\\s*\"([a-z0-9]{16,})\"[^>]readonly").getMatches();
+            if (rets.length == 1 && rets[0].length == 1) {
+                ret = rets[0][0];
+            }
+        }
+        return ret;
     }
 
     protected String regexGenerateAPIKeyURL(final Browser br) {
@@ -5515,8 +5526,6 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
             ai.setTrafficLeft(SizeFormatter.getSize(premium_bandwidthBytesStr));
         } else if (traffic_leftBytesStr != null) {
             ai.setTrafficLeft(SizeFormatter.getSize(traffic_leftBytesStr));
-        } else {
-            ai.setUnlimitedTraffic();
         }
         {
             /* Now set less relevant account information */
@@ -5575,8 +5584,20 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
                 boolean apiDownloadsPossible = false;
                 try {
                     final Browser brc = br.cloneBrowser();
-                    getPage(brc, this.getAPIBase() + "/file/direct_link?key=" + apikey + "&file_code=xxxxxxyyyyyy");
-                    this.checkErrorsAPI(brc, null, account);
+                    if (false) {
+                        // make sure to use 100% not existing file ID! xxxxxxyyyyyy can exist!
+                        // and direct_link method may trigger traffic reduction
+                        getPage(brc, this.getAPIBase() + "/file/direct_link?key=" + apikey + "&file_code=doesNotExist404");
+                        // should result in {"status":404,"msg":"no file"...
+                        final Map<String, Object> result = this.checkErrorsAPI(brc, null, account);
+                    } else {
+                        getPage(brc, this.getAPIBase() + "/file/direct_link?key=" + apikey + "&file_code=");
+                        // should result in {"status":200,"msg":"uploading"...}
+                        final Map<String, Object> result = this.checkErrorsAPI(brc, null, account);
+                        if ("uploading".equals(result.get("msg")) || "200".equals(StringUtils.valueOfOrNull(result.get("status")))) {
+                            apiDownloadsPossible = true;
+                        }
+                    }
                 } catch (final PluginException ple) {
                     if (ple.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
                         /**

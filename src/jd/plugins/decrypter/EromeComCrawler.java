@@ -174,6 +174,12 @@ public class EromeComCrawler extends PluginForDecrypt {
                 result._setFilePackage(fp);
             }
         } else if ((username = new Regex(br._getURL().getPath(), PATTERN_PROFILE).getMatch(0)) != null) {
+            if (!br.containsHTML("\\?t=posts\"")) {
+                // no profile url
+                return ret;
+            } else if (br.containsHTML("<p>No albums</p>")) {
+                return ret;
+            }
             /* Crawl all album-items of profile */
             final HashSet<String> dupes = new HashSet<String>();
             int page = 1;

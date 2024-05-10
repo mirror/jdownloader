@@ -18,6 +18,14 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.config.MissavComConfig;
+import org.jdownloader.plugins.components.config.MissavComConfig.VideoQuality;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -30,84 +38,12 @@ import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.MissavComCrawler;
-import jd.plugins.hoster.MissavCom.MissavComConfig.VideoQuality;
-
-import org.appwork.storage.config.annotations.AboutConfig;
-import org.appwork.storage.config.annotations.DefaultEnumValue;
-import org.appwork.storage.config.annotations.DefaultOnNull;
-import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
-import org.appwork.storage.config.annotations.LabelInterface;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.config.Order;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 @PluginDependencies(dependencies = { MissavComCrawler.class })
 public class MissavCom extends PluginForHost {
     public MissavCom(PluginWrapper wrapper) {
         super(wrapper);
-    }
-
-    public static interface MissavComConfig extends PluginConfigInterface {
-        public static final TRANSLATION  TRANSLATION  = new TRANSLATION();
-        public static final VideoQuality DEFAULT_MODE = VideoQuality.BEST;
-
-        public static class TRANSLATION {
-            public String getVideoQuality_label() {
-                return "Preferred video quality";
-            }
-        }
-
-        public static enum VideoQuality implements LabelInterface {
-            Q1080P {
-                @Override
-                public String getLabel() {
-                    return "1080p";
-                }
-            },
-            Q720P {
-                @Override
-                public String getLabel() {
-                    return "720p";
-                }
-            },
-            Q480P {
-                @Override
-                public String getLabel() {
-                    return "480p";
-                }
-            },
-            Q360P {
-                @Override
-                public String getLabel() {
-                    return "360p";
-                }
-            },
-            BEST {
-                @Override
-                public String getLabel() {
-                    return "Best";
-                }
-            },
-            DEFAULT {
-                @Override
-                public String getLabel() {
-                    return "Default: " + BEST.getLabel();
-                }
-            };
-        }
-
-        @AboutConfig
-        @DefaultEnumValue("DEFAULT")
-        @Order(10)
-        @DescriptionForConfigEntry("Select preferred video quality")
-        @DefaultOnNull
-        VideoQuality getVideoQuality();
-
-        void setVideoQuality(final VideoQuality mode);
     }
 
     @Override
@@ -233,6 +169,11 @@ public class MissavCom extends PluginForHost {
     @Override
     public int getMaxSimultanFreeDownloadNum() {
         return Integer.MAX_VALUE;
+    }
+
+    @Override
+    public Class<? extends PluginConfigInterface> getConfigInterface() {
+        return MissavComConfig.class;
     }
 
     @Override
