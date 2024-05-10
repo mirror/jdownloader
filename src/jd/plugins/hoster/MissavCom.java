@@ -51,6 +51,65 @@ public class MissavCom extends PluginForHost {
         super(wrapper);
     }
 
+    public static interface MissavComPluginConfig extends PluginConfigInterface {
+        public static final TRANSLATION  TRANSLATION  = new TRANSLATION();
+        public static final VideoQuality DEFAULT_MODE = VideoQuality.BEST;
+
+        public static class TRANSLATION {
+            public String getVideoQuality_label() {
+                return "Preferred video quality";
+            }
+        }
+
+        public static enum VideoQuality implements LabelInterface {
+            Q1080P {
+                @Override
+                public String getLabel() {
+                    return "1080p";
+                }
+            },
+            Q720P {
+                @Override
+                public String getLabel() {
+                    return "720p";
+                }
+            },
+            Q480P {
+                @Override
+                public String getLabel() {
+                    return "480p";
+                }
+            },
+            Q360P {
+                @Override
+                public String getLabel() {
+                    return "360p";
+                }
+            },
+            BEST {
+                @Override
+                public String getLabel() {
+                    return "Best";
+                }
+            },
+            DEFAULT {
+                @Override
+                public String getLabel() {
+                    return "Default: " + BEST.getLabel();
+                }
+            };
+        }
+
+        @AboutConfig
+        @DefaultEnumValue("DEFAULT")
+        @Order(10)
+        @DescriptionForConfigEntry("Select preferred video quality")
+        @DefaultOnNull
+        VideoQuality getVideoQuality();
+
+        void setVideoQuality(final VideoQuality mode);
+    }
+
     @Override
     public Browser createNewBrowserInstance() {
         final Browser br = super.createNewBrowserInstance();
@@ -139,9 +198,9 @@ public class MissavCom extends PluginForHost {
         }
         br.getHeaders().put("Origin", "https://" + br.getHost());
         br.getPage("https://surrit.com/" + videoHash + "/playlist.m3u8");
-        VideoQuality qual = ((MissavComPluginConfig) PluginJsonConfig.get(getConfigInterface())).getVideoQuality();
+        VideoQuality qual = ((MissavCom.MissavComPluginConfig) PluginJsonConfig.get(getConfigInterface())).getVideoQuality();
         if (VideoQuality.DEFAULT.equals(qual)) {
-            qual = MissavComPluginConfig.DEFAULT_MODE;
+            qual = MissavCom.MissavComPluginConfig.DEFAULT_MODE;
         }
         int targetHeight = 0;
         if (qual == VideoQuality.Q360P) {
@@ -178,66 +237,7 @@ public class MissavCom extends PluginForHost {
 
     @Override
     public Class<? extends PluginConfigInterface> getConfigInterface() {
-        return MissavComPluginConfig.class;
-    }
-
-    public interface MissavComPluginConfig extends PluginConfigInterface {
-        public static final TRANSLATION  TRANSLATION  = new TRANSLATION();
-        public static final VideoQuality DEFAULT_MODE = VideoQuality.BEST;
-
-        public static class TRANSLATION {
-            public String getVideoQuality_label() {
-                return "Preferred video quality";
-            }
-        }
-
-        public static enum VideoQuality implements LabelInterface {
-            Q1080P {
-                @Override
-                public String getLabel() {
-                    return "1080p";
-                }
-            },
-            Q720P {
-                @Override
-                public String getLabel() {
-                    return "720p";
-                }
-            },
-            Q480P {
-                @Override
-                public String getLabel() {
-                    return "480p";
-                }
-            },
-            Q360P {
-                @Override
-                public String getLabel() {
-                    return "360p";
-                }
-            },
-            BEST {
-                @Override
-                public String getLabel() {
-                    return "Best";
-                }
-            },
-            DEFAULT {
-                @Override
-                public String getLabel() {
-                    return "Default: " + BEST.getLabel();
-                }
-            };
-        }
-
-        @AboutConfig
-        @DefaultEnumValue("DEFAULT")
-        @Order(10)
-        @DescriptionForConfigEntry("Select preferred video quality")
-        @DefaultOnNull
-        VideoQuality getVideoQuality();
-
-        void setVideoQuality(final VideoQuality mode);
+        return MissavCom.MissavComPluginConfig.class;
     }
 
     @Override
