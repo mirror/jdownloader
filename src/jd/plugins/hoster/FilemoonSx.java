@@ -17,13 +17,9 @@ package jd.plugins.hoster;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-import org.jdownloader.plugins.components.config.XFSConfigVideo.DownloadMode;
-import org.jdownloader.plugins.components.config.XFSConfigVideoFilemoonSx;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -38,6 +34,12 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.decrypter.FilemoonSxCrawler;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+import org.jdownloader.plugins.components.config.XFSConfigVideo.DownloadMode;
+import org.jdownloader.plugins.components.config.XFSConfigVideoFilemoonSx;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class FilemoonSx extends XFileSharingProBasic {
@@ -211,6 +213,21 @@ public class FilemoonSx extends XFileSharingProBasic {
             }
         }
         handleDownload(link, account, dllink, streamDownloadurl, null);
+    }
+
+    @Override
+    public ArrayList<String> getCleanupHTMLRegexes() {
+        final ArrayList<String> ret = super.getCleanupHTMLRegexes();
+        final Iterator<String> it = ret.iterator();
+        while (it.hasNext()) {
+            final String next = it.next();
+            // download link (see getDllink method) is "display: none"
+            if (next.contains("display")) {
+                it.remove();
+                break;
+            }
+        }
+        return ret;
     }
 
     @Override

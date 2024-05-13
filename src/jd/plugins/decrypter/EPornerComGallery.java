@@ -20,8 +20,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.StringUtils;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -37,6 +35,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.DirectHTTP;
 import jd.plugins.hoster.EPornerCom;
+
+import org.appwork.utils.StringUtils;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 @PluginDependencies(dependencies = { EPornerCom.class })
@@ -102,6 +102,8 @@ public class EPornerComGallery extends PluginForDecrypt {
             }
         } else {
             final String[] photoURLsRelative = br.getRegex("href=\"(/photo/[A-Za-z0-9]+/[\\w\\-]+/)").getColumn(0);
+            int photoIndex = 1;
+            int padLength = StringUtils.getPadLength(photoURLsRelative.length);
             for (final String photoURLRelative : photoURLsRelative) {
                 if (!dupes.add(photoURLRelative)) {
                     continue;
@@ -124,7 +126,7 @@ public class EPornerComGallery extends PluginForDecrypt {
                 if (ext == null) {
                     ext = ".jpg";
                 }
-                image.setFinalFileName(photoTitle + ext);
+                image.setFinalFileName(StringUtils.formatByPadLength(padLength, photoIndex++) + "_" + photoTitle + ext);
                 image.setAvailable(true);
                 ret.add(image);
             }
@@ -143,7 +145,7 @@ public class EPornerComGallery extends PluginForDecrypt {
     }
 
     private static String convertThumbnailUrlToFullsize(final String thumbnailURL) {
-        String fullImageURL = thumbnailURL.replace("_296x1000.jpg", "_880x660.jpg");
+        String fullImageURL = thumbnailURL.replaceFirst("_\\d+x\\d+.jpg", ".jpg");
         fullImageURL = fullImageURL.replaceFirst("\\d+x\\d+\\.gif$", ".mp4");
         return fullImageURL;
     }

@@ -21,15 +21,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.config.EpornerComConfig;
-import org.jdownloader.plugins.components.config.EpornerComConfig.PreferredStreamQuality;
-import org.jdownloader.plugins.components.config.EpornerComConfig.PreferredVideoCodec;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -50,6 +41,15 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.components.config.EpornerComConfig;
+import org.jdownloader.plugins.components.config.EpornerComConfig.PreferredStreamQuality;
+import org.jdownloader.plugins.components.config.EpornerComConfig.PreferredVideoCodec;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class EPornerCom extends PluginForHost {
@@ -189,6 +189,7 @@ public class EPornerCom extends PluginForHost {
         String dllinkBestAV1 = null;
         String dllinkSelectedAV1 = null;
         String title = br.getRegex("(?i)<title>([^<]+)</title>").getMatch(0);
+        String pic[] = null;
         if (isVideo) {
             final String betterTitleByURL = new Regex(br.getURL(), PATTERN_VIDEO).getMatch(2);
             if (betterTitleByURL != null) {
@@ -275,9 +276,13 @@ public class EPornerCom extends PluginForHost {
             }
         } else {
             /* Photo */
+            pic = br.getRegex(">\\s*Pic\\s*(\\d+)\\s*of\\s*(\\d+)\\s*see").getRow(0);
             dllink = br.getRegex("src=\"(https?://[^\"]+)\" autoplay ").getMatch(0); // gifs -> mp4
             if (dllink == null) {
-                dllink = br.getRegex("class=\"mainphoto\" src=\"(https?://[^\"]+)").getMatch(0); // normal image -> jpg
+                dllink = br.getRegex("\"contentUrl\"\\s*:\\s*\"(.*?\\.(jpe?g|png))\"").getMatch(0);
+                if (dllink == null) {
+                    dllink = br.getRegex("class=\"mainphoto\" src=\"(https?://[^\"]+)").getMatch(0); // normal image -> jpg
+                }
             }
             final String[] jsons = br.getRegex("<script type=\"application/ld\\+json\">([^<]+)</script>").getColumn(0);
             String betterPhotoTitle = null;
@@ -308,6 +313,10 @@ public class EPornerCom extends PluginForHost {
             title = title.replaceFirst("(?i)\\s*Porn Pic - EPORNER\\s*", "");
             title = title.replaceFirst("\\s*\\- EPORNER Free HD Porn Tube\\s*", "");
             title = title.replaceFirst("\\s*- EPORNER\\s*", "");
+            if (pic != null) {
+                final int padLength = StringUtils.getPadLength(Integer.parseInt(pic[1]));
+                title = StringUtils.formatByPadLength(padLength, Integer.parseInt(pic[0])) + "_" + title;
+            }
             link.setFinalFileName(title + ext);
         } else {
             link.setFinalFileName(fallbackFilename);
@@ -326,6 +335,7 @@ public class EPornerCom extends PluginForHost {
         } else if (link.getView().getBytesTotal() <= 0 && dllink != null && !isBadDirecturl(dllink)) {
             /* Only get filesize from url if we were not able to find it in html --> Saves us time! */
             final Browser br2 = br.cloneBrowser();
+            br2.setFollowRedirects(true);
             // In case the link redirects to the finallink
             URLConnectionAdapter con = null;
             try {
