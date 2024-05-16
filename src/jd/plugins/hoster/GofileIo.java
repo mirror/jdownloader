@@ -28,6 +28,7 @@ import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
 import jd.http.Browser;
+import jd.http.Request;
 import jd.http.URLConnectionAdapter;
 import jd.http.requests.GetRequest;
 import jd.http.requests.PostRequest;
@@ -35,12 +36,15 @@ import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
+import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.GoFileIoCrawler;
 
@@ -70,6 +74,11 @@ public class GofileIo extends PluginForHost {
 
     private String getShortFileIDFromURL(final DownloadLink link) throws PluginException {
         return new Regex(link.getPluginPatternMatcher(), "#file=([a-f0-9]+)").getMatch(0);
+    }
+
+    @Override
+    public void init() {
+        Browser.setRequestIntervalLimitGlobal(getHost(), 350);
     }
 
     /* Connection stuff */
@@ -105,14 +114,15 @@ public class GofileIo extends PluginForHost {
     protected static AtomicReference<String> WEBSITE_TOKEN           = new AtomicReference<String>();
     protected static AtomicLong              WEBSITE_TOKEN_TIMESTAMP = new AtomicLong(-1);
 
-    public static String getWebsiteToken(final Plugin plugin, final Browser br) throws IOException, PluginException {
+    public static String getWebsiteToken(final Plugin plugin, final Browser br) throws Exception {
         synchronized (WEBSITE_TOKEN) {
             String token = WEBSITE_TOKEN.get();
             if (!StringUtils.isEmpty(token) && Time.systemIndependentCurrentJVMTimeMillis() - WEBSITE_TOKEN_TIMESTAMP.get() < TOKEN_EXPIRE) {
                 return token;
             } else {
                 final Browser brc = br.cloneBrowser();
-                brc.getPage("https://" + plugin.getHost() + "/dist/js/alljs.js");
+                final GetRequest req = brc.createGetRequest("https://" + plugin.getHost() + "/dist/js/alljs.js");
+                GofileIo.getPage(plugin, brc, req);
                 token = brc.getRegex("websiteToken\\s*(?::|=)\\s*\"(.*?)\"").getMatch(0);
                 if (token == null) {
                     /* 2024-01-26 */
@@ -132,7 +142,47 @@ public class GofileIo extends PluginForHost {
         }
     }
 
-    public static String getAndSetToken(final Plugin plugin, final Browser br) throws IOException, PluginException {
+    public static Request getPage(final Plugin plugin, final Browser br, final Request request) throws IOException, PluginException, DecrypterRetryException {
+        final int retrySeconds = 5;
+        final int maxtries = 5;
+        for (int i = 0; i <= maxtries; i++) {
+            final URLConnectionAdapter con = br.openRequestConnection(request);
+            try {
+                if (con.getResponseCode() == 429) {
+                    br.followConnection(true);
+                    if (plugin instanceof PluginForDecrypt) {
+                        final PluginForDecrypt pluginForDecrypt = (PluginForDecrypt) plugin;
+                        pluginForDecrypt.sleep(retrySeconds * 1000, pluginForDecrypt.getCurrentLink().getCryptedLink());
+                    } else {
+                        Thread.sleep(retrySeconds * 1000);
+                    }
+                    request.resetConnection();
+                    continue;
+                } else if (con.getResponseCode() == 200) {
+                    br.followConnection();
+                    return request;
+                } else {
+                    br.followConnection(true);
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+            } catch (final InterruptedException e) {
+                if (plugin instanceof PluginForHost) {
+                    throw new PluginException(LinkStatus.ERROR_RETRY, null, e);
+                } else {
+                    throw new DecrypterRetryException(RetryReason.HOST_RATE_LIMIT, null, null, e);
+                }
+            } finally {
+                con.disconnect();
+            }
+        }
+        if (plugin instanceof PluginForHost) {
+            throw new PluginException(LinkStatus.ERROR_RETRY);
+        } else {
+            throw new DecrypterRetryException(RetryReason.HOST_RATE_LIMIT);
+        }
+    }
+
+    public static String getAndSetToken(final Plugin plugin, final Browser br) throws Exception {
         synchronized (TOKEN) {
             final String existingToken = TOKEN.get();
             String token = null;
@@ -147,12 +197,12 @@ public class GofileIo extends PluginForHost {
                     final PostRequest req = brc.createJSonPostRequest("https://api." + plugin.getHost() + "/accounts", new HashMap<String, Object>());
                     req.getHeaders().put(new HTTPHeader(HTTPConstants.HEADER_REQUEST_ORIGIN, "https://" + plugin.getHost()));
                     req.getHeaders().put(new HTTPHeader(HTTPConstants.HEADER_REQUEST_REFERER, "https://" + plugin.getHost()));
-                    brc.getPage(req);
+                    GofileIo.getPage(plugin, brc, req);
                 } else {
                     final GetRequest req = brc.createGetRequest("https://api." + plugin.getHost() + "/createAccount");
                     req.getHeaders().put(new HTTPHeader(HTTPConstants.HEADER_REQUEST_ORIGIN, "https://" + plugin.getHost()));
                     req.getHeaders().put(new HTTPHeader(HTTPConstants.HEADER_REQUEST_REFERER, "https://" + plugin.getHost()));
-                    brc.getPage(req);
+                    GofileIo.getPage(plugin, brc, req);
                 }
                 final Map<String, Object> response = JSonStorage.restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.MAP);
                 if (!"ok".equalsIgnoreCase(response.get("status").toString())) {

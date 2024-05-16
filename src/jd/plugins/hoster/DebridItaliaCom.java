@@ -25,6 +25,7 @@ import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
+import jd.http.requests.GetRequest;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
@@ -37,8 +38,12 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.components.MultiHosterManagement;
+import jd.plugins.download.DownloadLinkDownloadable;
+import jd.plugins.download.Downloadable;
 
+import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.plugins.controller.LazyPlugin;
@@ -187,6 +192,15 @@ public class DebridItaliaCom extends antiDDoSForHost {
         handleDl(link, account, dllink);
     }
 
+    private void updateFileName(final DownloadLink link, final URLConnectionAdapter connection) {
+        if (link.getFinalFileName() == null) {
+            final String serverFilename = getFileNameFromHeader(this.dl.getConnection());
+            if (serverFilename != null) {
+                link.setFinalFileName(serverFilename);
+            }
+        }
+    }
+
     private void handleDl(final DownloadLink link, final Account account, final String dllink) throws Exception {
         if (StringUtils.isEmpty(dllink)) {
             /* This should never happen */
@@ -201,12 +215,7 @@ public class DebridItaliaCom extends antiDDoSForHost {
             br.followConnection(true);
             mhm.handleErrorGeneric(account, link, "Final downloadurl does not lead to file", 50);
         }
-        if (link.getFinalFileName() == null) {
-            final String serverFilename = getFileNameFromHeader(this.dl.getConnection());
-            if (serverFilename != null) {
-                link.setFinalFileName(serverFilename);
-            }
-        }
+        updateFileName(link, dl.getConnection());
         try {
             // start the dl
             if (!this.dl.startDownload()) {
@@ -234,13 +243,50 @@ public class DebridItaliaCom extends antiDDoSForHost {
         }
     }
 
+    @Override
+    public Downloadable newDownloadable(DownloadLink downloadLink, final Browser br) {
+        return new DownloadLinkDownloadable(downloadLink) {
+            @Override
+            public Browser getContextBrowser() {
+                if (br != null) {
+                    return br.cloneBrowser();
+                } else {
+                    return super.getContextBrowser();
+                }
+            }
+
+            @Override
+            protected DispositionHeader parseDispositionHeader(URLConnectionAdapter connection) {
+                final DispositionHeader ret = super.parseDispositionHeader(connection);
+                if (ret != null && isValidFileNameFromHeader(ret.getFilename())) {
+                    return ret;
+                } else {
+                    return null;
+                }
+            }
+        };
+    }
+
     public static String getFileNameFromHeader(final URLConnectionAdapter urlConnection) {
         final String ret = Plugin.getFileNameFromHeader(urlConnection);
-        if (StringUtils.equalsIgnoreCase("Download", ret)) {
+        if (!isValidFileNameFromHeader(ret)) {
             return null;
         } else {
             /* They sometimes return html-encoded filenames - let's fix this! */
             return Encoding.htmlDecode(ret);
+        }
+    }
+
+    private static boolean isValidFileNameFromHeader(final String fileName) {
+        if (StringUtils.isEmpty(fileName)) {
+            return false;
+        } else if (StringUtils.equalsIgnoreCase("Download", fileName)) {
+            return false;
+        } else if ("0".equals(fileName)) {
+            // Content-Disposition: attachment; filename="0"
+            return false;
+        } else {
+            return true;
         }
     }
 
@@ -251,14 +297,17 @@ public class DebridItaliaCom extends antiDDoSForHost {
         try {
             br.setFollowRedirects(true);
             // head connection not possible. -raztoki-20160112
-            con = openAntiDDoSRequestConnection(br, br.createGetRequest(link.getPluginPatternMatcher()));
+            final GetRequest request = br.createGetRequest(link.getPluginPatternMatcher());
+            request.getHeaders().put(HTTPConstants.HEADER_REQUEST_ACCEPT_ENCODING, "identity");
+            con = openAntiDDoSRequestConnection(br, request);
             if (looksLikeDownloadableContent(con)) {
-                if (link.getFinalFileName() == null) {
-                    final String server_filename = getFileNameFromHeader(con);
-                    link.setFinalFileName(server_filename);
-                }
+                updateFileName(link, con);
                 if (con.getCompleteContentLength() > 0) {
-                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                    if (con.isContentDecoded()) {
+                        link.setDownloadSize(con.getCompleteContentLength());
+                    } else {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
                 }
                 link.setAvailable(true);
                 return AvailableStatus.TRUE;
@@ -323,7 +372,9 @@ public class DebridItaliaCom extends antiDDoSForHost {
                 URLConnectionAdapter con = null;
                 try {
                     // 2020-11-17: head connection not possible
-                    con = openAntiDDoSRequestConnection(br2, br2.createGetRequest(dllink));
+                    final GetRequest request = br2.createGetRequest(dllink);
+                    request.getHeaders().put(HTTPConstants.HEADER_REQUEST_ACCEPT_ENCODING, "identity");
+                    con = openAntiDDoSRequestConnection(br2, request);
                     if (!looksLikeDownloadableContent(con)) {
                         throw new IOException();
                     } else {

@@ -3742,22 +3742,22 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
      */
     protected void fixFilename(final URLConnectionAdapter connection, final DownloadLink link) {
         /* TODO: Maybe make use of already given methods to e.g. extract filename without extension from String. */
-        /* Previous (e.h. html) filename without extension */
-        String orgName = null;
+
         /* Server filename with extension */
         String servName = null;
         /* Server filename without extension */
         String servExt = null;
         /* Either final filename from previous download attempt or filename found in HTML. */
-        String orgNameExt = link.getFinalFileName();
-        if (StringUtils.isEmpty(orgNameExt)) {
-            orgNameExt = link.getName();
-        }
+        final String orgNameExt = link.getName();
         /* Extension of orgNameExt */
-        String orgExt = null;
+        final String orgExt;
         if (!StringUtils.isEmpty(orgNameExt) && StringUtils.contains(orgNameExt, ".")) {
             orgExt = orgNameExt.substring(orgNameExt.lastIndexOf("."));
+        } else {
+            orgExt = null;
         }
+        /* Previous (e.h. html) filename without extension */
+        final String orgName;
         if (!StringUtils.isEmpty(orgExt)) {
             orgName = new Regex(orgNameExt, "^(.+)" + Pattern.quote(orgExt) + "$").getMatch(0);
         } else {
@@ -3779,31 +3779,31 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
             /* No extension available */
             servName = servNameExt;
         }
-        final String FFN;
+        final String finalFileName;
         if (StringUtils.equalsIgnoreCase(orgName, this.getFUIDFromURL(link))) {
             /* Current filename only consists of fuid --> Prefer full server filename */
-            FFN = servNameExt;
-            logger.info("fixFileName case 1: prefer servNameExt: orgName == fuid --> Use servNameExt");
+            finalFileName = servNameExt;
+            logger.info("fixFileName case 1: prefer servNameExt: Use servNameExt");
         } else if (StringUtils.isEmpty(orgExt) && !StringUtils.isEmpty(servExt) && (StringUtils.containsIgnoreCase(servName, orgName) && !StringUtils.equalsIgnoreCase(servName, orgName))) {
             /*
              * When partial match of filename exists. eg cut off by quotation mark miss match, or orgNameExt has been abbreviated by hoster
              * --> Prefer server filename
              */
-            FFN = servNameExt;
-            logger.info("fixFileName case 2: prefer servNameExt: previous filename had no extension given && servName contains orgName while servName != orgName --> Use servNameExt");
-        } else if (!StringUtils.isEmpty(orgExt) && !StringUtils.isEmpty(servExt) && !StringUtils.equalsIgnoreCase(orgExt, servExt)) {
+            finalFileName = servNameExt;
+            logger.info("fixFileName case 2: prefer servNameExt: Use servNameExt");
+        } else if (!StringUtils.isEmpty(servExt) && !StringUtils.equalsIgnoreCase(orgExt, servExt)) {
             /*
-             * Current filename has extension given but server filename has other extension --> Swap extensions, trust the name we have but
-             * use extension from server
+             * Current filename has or has no extension given but server filename has other extension --> Swap extensions, trust the name we
+             * have but use extension from server
              */
-            FFN = orgName + servExt;
-            logger.info(String.format("fixFileName case 3: prefer orgName + servExt: Previous filename had no extension given && servName contains orgName while servName != orgName --> Use orgName + servExt | Old ext: %s | New ext: %s", orgExt, servExt));
+            finalFileName = orgName + servExt;
+            logger.info(String.format("fixFileName case 3: Use orgName + servExt | Old ext: %s | New ext: %s", orgExt, servExt));
         } else {
-            FFN = orgNameExt;
+            finalFileName = orgNameExt;
             logger.info("fixFileName case 4: prefer orgNameExt");
         }
-        logger.info("fixFileName: before=" + orgNameExt + "|after=" + FFN);
-        link.setFinalFileName(FFN);
+        logger.info("fixFileName: link=" + orgNameExt + "|server=" + servNameExt + "|final=" + finalFileName);
+        link.setFinalFileName(finalFileName);
     }
 
     /** Returns unique id from inside URL - usually with this pattern: [a-z0-9]{12} */
@@ -3819,7 +3819,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
     public String getFilenameFromURL(final DownloadLink link) {
         try {
             String result = null;
-            final String url_name_RegEx = "/[a-z0-9]{12}/(.*?)(?:\\.html)?$";
+            final String url_name_RegEx = "/[a-z0-9]{12}/(.*?)(?:\\.html|\\?|$)";
             /**
              * It's important that we check the contentURL too as we do alter pluginPatternMatcher in { @link
              * #correctDownloadLink(DownloadLink) }
@@ -3841,7 +3841,15 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
     protected String getFallbackFilename(final DownloadLink link, final Browser br) {
         String filenameURL = this.getFilenameFromURL(link);
         if (filenameURL != null) {
-            return URLEncode.decodeURIComponent(filenameURL);
+            filenameURL = URLEncode.decodeURIComponent(filenameURL);
+            if (getFileNameExtensionFromString(filenameURL) == null) {
+                if (this.internal_isVideohoster_enforce_video_filename(link, br)) {
+                    return filenameURL + ".mp4";
+                } else if (isImagehoster()) {
+                    return filenameURL + ".jpg";
+                }
+            }
+            return filenameURL;
         } else {
             if (this.internal_isVideohoster_enforce_video_filename(link, br)) {
                 return this.getFUIDFromURL(link) + ".mp4";

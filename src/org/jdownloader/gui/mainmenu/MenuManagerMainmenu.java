@@ -46,7 +46,6 @@ import org.jdownloader.gui.toolbar.action.CaptchaToogleMyJDRemoteAction;
 import org.jdownloader.gui.toolbar.action.CaptchaToogleTwoCaptchaAction;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.gui.views.SelectionInfo;
-import org.jdownloader.gui.views.components.packagetable.context.RenameAction;
 import org.jdownloader.gui.views.downloads.action.MenuManagerAction;
 import org.jdownloader.gui.views.linkgrabber.actions.AddContainerAction;
 
@@ -95,7 +94,6 @@ public class MenuManagerMainmenu extends ContextMenuManager<FilePackage, Downloa
         mr.add(createAboutMenu());
         OptionalContainer opt;
         mr.add(opt = new OptionalContainer(false));
-        opt.add(RenameAction.class);
         CaptchaQuickSettingsContainer ocr;
         opt.add(ocr = new CaptchaQuickSettingsContainer());
         ocr.add(CaptchaModeChangeAction.class);

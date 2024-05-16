@@ -32,15 +32,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.downloader.hls.M3U8Playlist;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -58,6 +49,15 @@ import jd.plugins.hoster.YoutubeDashV2;
 import jd.plugins.hoster.ZdfDeMediathek;
 import jd.plugins.hoster.ZdfDeMediathek.ZdfmediathekConfigInterface;
 import jd.plugins.hoster.ZdfDeMediathek.ZdfmediathekConfigInterface.SubtitleType;
+
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zdf.de", "3sat.de", "phoenix.de" }, urls = { "https?://(?:www\\.)?zdf\\.de/(?:.+/)?[A-Za-z0-9_\\-]+\\.html|https?://(?:www\\.)?zdf\\.de/uri/(?:syncvideoimport_beitrag_\\d+|transfer_SCMS_[a-f0-9\\-]+|[a-z0-9\\-]+)", "https?://(?:www\\.)?3sat\\.de/.+/[A-Za-z0-9_\\-]+\\.html|https?://(?:www\\.)?3sat\\.de/uri/(?:syncvideoimport_beitrag_\\d+|transfer_SCMS_[a-f0-9\\-]+|[a-z0-9\\-]+)", "https?://(?:www\\.)?phoenix\\.de/(?:.*?-\\d+\\.html.*|podcast/[A-Za-z0-9]+/video/rss\\.xml)" })
 public class ZDFMediathekDecrypter extends PluginForDecrypt {
@@ -569,10 +569,16 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
         /*
          * Grabbing hls means we make an extra http request --> Only do this if wished by the user or if the user set bad plugin settings!
          */
+        boolean grabHTTPMp4 = false;
+        boolean grabHTTPWebm = false;
         boolean grabHLSVideo = false;
         boolean grabHLSAudio = false;
         for (final String selectedQualityTmp : selectedQualityStringsTmp) {
-            if (selectedQualityTmp.startsWith("hls_webm") || selectedQualityTmp.startsWith("hls_mp4")) {
+            if (selectedQualityTmp.startsWith("http_mp4")) {
+                grabHTTPMp4 = true;
+            } else if (selectedQualityTmp.startsWith("http_webm")) {
+                grabHTTPWebm = true;
+            } else if (selectedQualityTmp.startsWith("hls_webm") || selectedQualityTmp.startsWith("hls_mp4")) {
                 grabHLSVideo = true;
             } else if (selectedQualityTmp.startsWith("hls_aac")) {
                 grabHLSAudio = true;
@@ -692,10 +698,12 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
             final ArrayList<DownloadLink> userSelectedQualitiesTmp = new ArrayList<DownloadLink>();
             final HashMap<String, DownloadLink> selectedQualitiesMapTmp = new HashMap<String, DownloadLink>();
             final List<Object> qualitiesList = entry.getValue();
-            DownloadLink highestHlsDownload = null;
-            DownloadLink highestHTTPDownloadLink = null;
+            DownloadLink highestHLS = null;
+            DownloadLink highestHTTPMp4 = null;
+            DownloadLink highestHTTPWebm = null;
             int highestHlsBandwidth = 0;
-            int highestHTTPQualityValue = 0;
+            int highestHTTPMp4QualityValue = 0;
+            int highestHTTPWebmQualityValue = 0;
             final Set<String> httpQualities = new HashSet<String>();
             for (final Object qualityO : qualitiesList) {
                 final Map<String, Object> qualitymap = (Map<String, Object>) qualityO;
@@ -791,7 +799,7 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                              * one is the BEST.
                              */
                             highestHlsBandwidth = hlscontainer.getBandwidth();
-                            highestHlsDownload = dl;
+                            highestHLS = dl;
                         }
                         setDownloadlinkProperties(dl, final_filename, type, linkid, title, tv_show, date_formatted, tv_station);
                         dl.setProperty(ZdfDeMediathek.PROPERTY_hlsBandwidth, hlscontainer.getBandwidth());
@@ -822,8 +830,8 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                     final String realQuality = ((String) qualitymap.get("quality")).toLowerCase(Locale.ENGLISH);
                     final ArrayList<Object[]> qualities = new ArrayList<Object[]>();
                     /**
-                     * Sometimes we can modify the final downloadurls and thus get higher quality streams. </br>
-                     * We want to keep all versions though!
+                     * Sometimes we can modify the final downloadurls and thus get higher quality streams. </br> We want to keep all
+                     * versions though!
                      */
                     final List<String[]> betterQualities = getBetterQualities(uri);
                     final HashSet<String> optimizedQualityIdentifiers = new HashSet<String>();
@@ -866,8 +874,8 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                         final DownloadLink dl = createDownloadlink(finalDownloadURL);
                         dl.setContentUrl(param.getCryptedUrl());
                         /**
-                         * Usually filesize is only given for the official downloads.</br>
-                         * Only set it here if we haven't touched the original downloadurls!
+                         * Usually filesize is only given for the official downloads.</br> Only set it here if we haven't touched the
+                         * original downloadurls!
                          */
                         if (thisFilesize > 0) {
                             dl.setAvailable(true);
@@ -875,6 +883,8 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                         }
                         setDownloadlinkProperties(dl, final_filename, type, linkid, title, tv_show, date_formatted, tv_station);
                         final String qualitySelectorString = generateQualitySelectorString(protocol, ext, httpQualityIdentifierWeak, language, audio_class);
+                        final boolean isMp4 = StringUtils.startsWithCaseInsensitive(qualitySelectorString, "http_mp4");
+                        final boolean isWebm = StringUtils.startsWithCaseInsensitive(qualitySelectorString, "http_webm");
                         all_found_downloadlinks.put(qualitySelectorString, dl);
                         addDownloadLinkAndGenerateSubtitleDownloadLink(allDownloadLinks, dl);
                         if (containsQuality(selectedQualityStrings, qualitySelectorString)) {
@@ -885,19 +895,28 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                         }
                         /* Find highest quality. */
                         final int httpQualityValueTmp = convertInternalHttpQualityIdentifierToIntegerValue(httpQualityIdentifierWeak);
-                        if (httpQualityValueTmp > highestHTTPQualityValue) {
-                            highestHTTPQualityValue = httpQualityValueTmp;
-                            highestHTTPDownloadLink = dl;
+                        if (isMp4) {
+                            if (httpQualityValueTmp > highestHTTPMp4QualityValue) {
+                                highestHTTPMp4QualityValue = httpQualityValueTmp;
+                                highestHTTPMp4 = dl;
+                            }
+                        } else if (isWebm) {
+                            if (httpQualityValueTmp > highestHTTPWebmQualityValue) {
+                                highestHTTPWebmQualityValue = httpQualityValueTmp;
+                                highestHTTPWebm = dl;
+                            }
                         }
                     }
                 }
             }
             /* Now decide what's the BEST candidate for this round --> Prefer HTTP over HLS */
             DownloadLink best = null;
-            if (highestHlsDownload != null) {
-                best = highestHlsDownload;
-            } else if (highestHTTPDownloadLink != null) {
-                best = highestHTTPDownloadLink;
+            if (highestHTTPMp4 != null && grabHTTPMp4) {
+                best = highestHTTPMp4;
+            } else if (highestHTTPWebm != null && grabHTTPWebm) {
+                best = highestHTTPWebm;
+            } else if (highestHLS != null && grabHLS) {
+                best = highestHLS;
             } else {
                 /* No BEST candidate available in current round! */
             }
@@ -1136,6 +1155,10 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
             return 400;
         } else if (httpQualityIdentifier.equalsIgnoreCase("hd")) {
             return 500;
+        } else if (httpQualityIdentifier.equalsIgnoreCase("fhd")) {
+            return 800;
+        } else if (httpQualityIdentifier.equalsIgnoreCase("uhd")) {
+            return 1000;
         } else {
             /* Unknown quality identifier! */
             return 1;
@@ -1158,6 +1181,8 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
             return "1280x720";
         } else if (httpQualityIdentifier.equalsIgnoreCase("fhd")) {
             return "1920x1080";
+        } else if (httpQualityIdentifier.equalsIgnoreCase("uhd")) {
+            return " 3840x2160";
         } else {
             /* Unknown quality identifier! */
             return null;
@@ -1230,11 +1255,9 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
     }
 
     /**
-     * Searches for videos in zdfmediathek that match the given search term. </br>
-     * This is mostly used as a workaround to find stuff that is hosted on their other website on zdfmediathek instead as zdfmediathek is
-     * providing a fairly stable search function while other websites hosting the same content such as kika.de can be complicated to parse.
-     * </br>
-     * This does not (yet) support pagination!
+     * Searches for videos in zdfmediathek that match the given search term. </br> This is mostly used as a workaround to find stuff that is
+     * hosted on their other website on zdfmediathek instead as zdfmediathek is providing a fairly stable search function while other
+     * websites hosting the same content such as kika.de can be complicated to parse. </br> This does not (yet) support pagination!
      */
     public ArrayList<DownloadLink> crawlZDFMediathekSearchResultsVOD(final String tvChannel, final String searchTerm, final int maxResults) throws Exception {
         if (StringUtils.isEmpty(tvChannel) || StringUtils.isEmpty(searchTerm)) {

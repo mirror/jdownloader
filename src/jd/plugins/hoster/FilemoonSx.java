@@ -23,6 +23,7 @@ import java.util.List;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -139,7 +140,7 @@ public class FilemoonSx extends XFileSharingProBasic {
 
     @Override
     public String getFilenameFromURL(final DownloadLink link) {
-        return new Regex(link.getPluginPatternMatcher(), "https?://[^/]+/./[^/]+/(.+)").getMatch(0);
+        return new Regex(link.getPluginPatternMatcher(), "https?://[^/]+/./[^/]+/(.*?)(?:\\.html|\\?|$)").getMatch(0);
     }
 
     @Override
@@ -228,6 +229,16 @@ public class FilemoonSx extends XFileSharingProBasic {
             }
         }
         return ret;
+    }
+
+    @Override
+    protected String getFileNameFromConnection(URLConnectionAdapter connection, DownloadLink link) {
+        final String ret = super.getFileNameFromConnection(connection, link);
+        if (ret != null) {
+            return ret.replaceFirst("\\s*mkv\\s*mp4$", "");
+        } else {
+            return null;
+        }
     }
 
     @Override

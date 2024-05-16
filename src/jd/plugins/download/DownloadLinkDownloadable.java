@@ -602,6 +602,36 @@ public class DownloadLinkDownloadable implements Downloadable {
         return (T) getDownloadLink().bindData(T);
     }
 
+    protected DispositionHeader parseDispositionHeader(URLConnectionAdapter connection) {
+        return Plugin.parseDispositionHeader(connection);
+    }
+
+    protected String getFileNameFromURL(URLConnectionAdapter connection) {
+        return Plugin.getFileNameFromURL(connection.getURL());
+    }
+
+    protected String getExtensionFromMimeType(URLConnectionAdapter connection) {
+        final PluginForHost plugin = getPlugin();
+        if (plugin != null) {
+            return plugin.getExtensionFromMimeType(connection.getContentType());
+        } else {
+            return null;
+        }
+    }
+
+    protected String correctOrApplyFileNameExtension(String name, URLConnectionAdapter connection) {
+        final PluginForHost plugin = getPlugin();
+        final String ext = getExtensionFromMimeType(connection);
+        if (ext != null) {
+            if (name.indexOf(".") < 0) {
+                name = name + "." + ext;
+            } else if (plugin != null) {
+                name = plugin.correctOrApplyFileNameExtension(name, "." + ext);
+            }
+        }
+        return name;
+    }
+
     @Override
     public void updateFinalFileName() {
         if (getFinalFileName() == null) {
@@ -609,7 +639,7 @@ public class DownloadLinkDownloadable implements Downloadable {
             final DownloadInterface dl = getDownloadInterface();
             final URLConnectionAdapter connection = getDownloadInterface().getConnection();
             logger.info("FinalFileName is not set yet!");
-            final DispositionHeader dispositonHeader = Plugin.parseDispositionHeader(connection);
+            final DispositionHeader dispositonHeader = parseDispositionHeader(connection);
             String name = null;
             if (dispositonHeader != null && StringUtils.isNotEmpty(name = dispositonHeader.getFilename())) {
                 if (dl.fixWrongContentDispositionHeader && dispositonHeader.getEncoding() == null) {
@@ -617,35 +647,15 @@ public class DownloadLinkDownloadable implements Downloadable {
                 }
                 logger.info("FinalFileName: set to '" + name + "' from connection:" + dispositonHeader + "|Content-Type:" + connection.getContentType() + "|fix:" + dl.fixWrongContentDispositionHeader);
                 setFinalFileName(name);
-            } else if (StringUtils.isNotEmpty(name = Plugin.getFileNameFromURL(connection.getURL()))) {
+            } else if (StringUtils.isNotEmpty(name = getFileNameFromURL(connection))) {
                 if (dl.fixWrongContentDispositionHeader) {
                     name = decodeURIComponent(name, null);
                 }
-                final Plugin plugin = getPlugin();
-                if (plugin != null) {
-                    final String ext = plugin.getExtensionFromMimeType(connection.getContentType());
-                    if (ext != null) {
-                        if (name.indexOf(".") < 0) {
-                            name = name + "." + ext;
-                        } else {
-                            name = plugin.correctOrApplyFileNameExtension(name, "." + ext);
-                        }
-                    }
-                }
+                name = correctOrApplyFileNameExtension(name, connection);
                 logger.info("FinalFileName: set to '" + name + "' from url:" + connection.getURL().toString() + "|Content-Type:" + connection.getContentType() + "|fix:" + dl.fixWrongContentDispositionHeader);
                 setFinalFileName(name);
             } else if (StringUtils.isNotEmpty(name = getName())) {
-                final Plugin plugin = getPlugin();
-                if (plugin != null) {
-                    final String ext = plugin.getExtensionFromMimeType(connection.getContentType());
-                    if (ext != null) {
-                        if (name.indexOf(".") < 0) {
-                            name = name + "." + ext;
-                        } else {
-                            name = plugin.correctOrApplyFileNameExtension(name, "." + ext);
-                        }
-                    }
-                }
+                name = correctOrApplyFileNameExtension(name, connection);
                 logger.info("FinalFileName: set to '" + name + "' from plugin");
                 setFinalFileName(name);
             }
