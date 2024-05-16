@@ -910,15 +910,20 @@ public class ZDFMediathekDecrypter extends PluginForDecrypt {
                 }
             }
             /* Now decide what's the BEST candidate for this round --> Prefer HTTP over HLS */
-            DownloadLink best = null;
+            final DownloadLink best;
             if (highestHTTPMp4 != null && grabHTTPMp4) {
                 best = highestHTTPMp4;
+                logger.info("BestMp4:" + highestHTTPMp4);
             } else if (highestHTTPWebm != null && grabHTTPWebm) {
                 best = highestHTTPWebm;
+                logger.info("BestWebm:" + highestHTTPMp4);
             } else if (highestHLS != null && grabHLS) {
                 best = highestHLS;
+                logger.info("BestHLS:" + highestHLS);
             } else {
                 /* No BEST candidate available in current round! */
+                best = null;
+                logger.info("No best?!");
             }
             /* Finally, check which qualities the user actually wants to have. */
             if (grabBest) {
