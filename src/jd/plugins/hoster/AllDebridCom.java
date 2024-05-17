@@ -26,29 +26,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.WeakHashMap;
 
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.storage.TypeRef;
-import org.appwork.storage.config.annotations.AboutConfig;
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.views.downloads.columns.ETAColumn;
-import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.plugins.PluginTaskID;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
-import jd.config.Property;
 import jd.controlling.AccountController;
 import jd.controlling.linkcrawler.CheckableLink;
 import jd.http.Browser;
@@ -75,6 +53,27 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.DownloadLinkDownloadable;
 import jd.plugins.download.HashInfo;
+
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.storage.TypeRef;
+import org.appwork.storage.config.annotations.AboutConfig;
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.views.downloads.columns.ETAColumn;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.plugins.PluginTaskID;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "alldebrid.com" }, urls = { "https?://alldebrid\\.com/f/([A-Za-z0-9\\-_]+)" })
 public class AllDebridCom extends PluginForHost {
@@ -725,7 +724,25 @@ public class AllDebridCom extends PluginForHost {
                 mhm.handleErrorGeneric(account, link, "Final downloadurl did not lead to a file", 50);
             }
         }
-        dl.startDownload();
+        try {
+            dl.startDownload();
+        } catch (PluginException e) {
+            if (StringUtils.containsIgnoreCase(e.getMessage(), "Server: Too Many Requests")) {
+                setRateLimit(link, account);
+            }
+            throw e;
+        }
+    }
+
+    private void setRateLimit(final DownloadLink link, final Account account) {
+        synchronized (RATE_LIMITED) {
+            HashSet<String> set = RATE_LIMITED.get(account);
+            if (set == null) {
+                set = new HashSet<String>();
+                RATE_LIMITED.put(account, set);
+            }
+            set.add(link.getHost());
+        }
     }
 
     private String generteFreshDirecturl(final DownloadLink link, final Account account) throws Exception {
@@ -958,8 +975,8 @@ public class AllDebridCom extends PluginForHost {
                 }
             } catch (final Exception e) {
                 logger.log(e);
-                link.setProperty(property, Property.NULL);
-                link.setProperty(property + "_paws", Property.NULL);
+                link.removeProperty(property);
+                link.removeProperty(property + "_paws");
                 return null;
             } finally {
                 if (con != null) {
@@ -973,7 +990,8 @@ public class AllDebridCom extends PluginForHost {
 
     private int getMaxChunks(final Account account, final DownloadLink link) {
         /* 2020-04-12: Chunks limited to 16 RE: admin */
-        final int defaultMaxChunks = -16;
+        /* 2024-05-17: reports from users/tickets, limited to 4 */
+        final int defaultMaxChunks = -4;
         int chunks = 1;
         if (link.hasProperty(PROPERTY_maxchunks)) {
             chunks = link.getIntegerProperty(PROPERTY_maxchunks, defaultMaxChunks);
@@ -986,10 +1004,12 @@ public class AllDebridCom extends PluginForHost {
             /* Default */
             chunks = defaultMaxChunks;
         }
-        synchronized (RATE_LIMITED) {
-            final HashSet<String> set = RATE_LIMITED.get(account);
-            if (set != null && set.contains(link.getHost())) {
-                chunks = 1;
+        if (chunks != 1) {
+            synchronized (RATE_LIMITED) {
+                final HashSet<String> set = RATE_LIMITED.get(account);
+                if (set != null && set.contains(link.getHost())) {
+                    chunks = 1;
+                }
             }
         }
         return chunks;
@@ -997,17 +1017,10 @@ public class AllDebridCom extends PluginForHost {
 
     private static WeakHashMap<Account, HashSet<String>> RATE_LIMITED = new WeakHashMap<Account, HashSet<String>>();
 
-    private void checkRateLimit(Browser br, URLConnectionAdapter con, final Account account, final DownloadLink downloadLink) throws PluginException {
+    private void checkRateLimit(Browser br, URLConnectionAdapter con, final Account account, final DownloadLink link) throws PluginException {
         if (br.containsHTML("rate limiting, please retry") || con.getResponseCode() == 429) {
             Browser.setRequestIntervalLimitGlobal(br.getHost(), 2000);
-            synchronized (RATE_LIMITED) {
-                HashSet<String> set = RATE_LIMITED.get(account);
-                if (set == null) {
-                    set = new HashSet<String>();
-                    RATE_LIMITED.put(account, set);
-                }
-                set.add(downloadLink.getHost());
-            }
+            setRateLimit(link, account);
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Too many requests:" + br.getHost());
         }
     }
