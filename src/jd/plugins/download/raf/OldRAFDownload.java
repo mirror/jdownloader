@@ -39,9 +39,6 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.logging2.LogSource;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter.DocumentExtensions;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ExtensionsFilterInterface;
 import org.jdownloader.plugins.DownloadPluginProgress;
 import org.jdownloader.plugins.HashCheckPluginProgress;
 import org.jdownloader.plugins.SkipReason;
@@ -58,12 +55,10 @@ import jd.controlling.downloadcontroller.ManagedThrottledConnectionHandler;
 import jd.http.Browser;
 import jd.http.Request;
 import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
 import jd.plugins.BrowserAdapter;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginProgress;
 import jd.plugins.download.DownloadInterface;
@@ -519,81 +514,7 @@ public class OldRAFDownload extends DownloadInterface {
             }
             // Erst hier Dateinamen holen, somit umgeht man das Problem das bei
             // mehrfachAufruf von connect entstehen kann
-            /* Do some filename corrections. */
-            final String filenameFromContentDispositionHeader = Plugin.getFileNameFromDispositionHeader(connection);
-            final String filenameFromURL = Plugin.getFileNameFromURL(connection.getURL());
-            if (this.downloadable.getFinalFileName() == null && (filenameFromContentDispositionHeader != null || this.allowFilenameFromURL)) {
-                if (this.fixWrongContentDispositionHeader) {
-                    this.downloadable.setFinalFileName(Encoding.htmlDecode(filenameFromContentDispositionHeader));
-                } else {
-                    this.downloadable.setFinalFileName(filenameFromContentDispositionHeader);
-                }
-            } else if (this.downloadable.getFinalFileName() == null && (filenameFromURL != null || this.allowFilenameFromURL)) {
-                if (this.fixWrongContentDispositionHeader) {
-                    this.downloadable.setFinalFileName(Encoding.htmlDecode(filenameFromURL));
-                } else {
-                    this.downloadable.setFinalFileName(filenameFromURL);
-                }
-            }
-            /* Now check if we are allowed to fix the filename extension. Filenames from URL can have the wrong extension! */
-            correctFileExtensionLastResort: if (filenameFromContentDispositionHeader == null) {
-                /**
-                 * TODO: Review this: Maybe don't correct filenames if they were forced by the user(?) On the other hand we may know which
-                 * file-extension is the correct one. I'd do it like browsers do it and correct the file-extension.
-                 */
-                /* Maybe only correct all file-types except for document file-types (otherwise .log may be renamed to .log.txt). */
-                /* Fix wrong file-extension */
-                final String extNew = Plugin.getExtensionFromMimeTypeStatic(connection.getContentType());
-                if (extNew == null) {
-                    /* No possible extension found -> We can't correct an existing file extension. */
-                    break correctFileExtensionLastResort;
-                }
-                final String extCurrent = Plugin.getFileNameExtensionFromString(this.downloadable.getName());
-                boolean correctFileExtension;
-                final boolean correctFileExtensionDependingOnCurrentExtension = true;
-                if (correctFileExtensionDependingOnCurrentExtension && extCurrent != null) {
-                    /**
-                     * This attempt is trying to not correct all file types in order to prevent bad corrections. </br>
-                     * Examples for stupid corrections: </br>
-                     * .log -> .log.txt </br>
-                     * .html -> .txt or .html.txt
-                     */
-                    // boolean isPlaintextFileType = false;
-                    // if (extCurrent.matches("(?i)\\.?(txt|xml|html)")) {
-                    // isPlaintextFileType = true;
-                    // }
-                    boolean currentIsDocumentFileType = false;
-                    boolean newIsDocumentFileType = false;
-                    // final boolean isUnknownFileType;
-                    final ExtensionsFilterInterface fileTypeCurrent = CompiledFiletypeFilter.getExtensionsFilterInterface(extCurrent);
-                    final ExtensionsFilterInterface fileTypeNew = CompiledFiletypeFilter.getExtensionsFilterInterface(extNew);
-                    for (final ExtensionsFilterInterface efi : DocumentExtensions.values()) {
-                        if (fileTypeCurrent != null && fileTypeCurrent.isSameExtensionGroup(efi)) {
-                            currentIsDocumentFileType = true;
-                            // break;
-                        }
-                        if (fileTypeNew != null && fileTypeNew.isSameExtensionGroup(efi)) {
-                            newIsDocumentFileType = true;
-                        }
-                    }
-                    if (fileTypeCurrent == null && newIsDocumentFileType) {
-                        /**
-                         * We do now know the current filetype but the "new filetype" would be a document -> Do not allow to correct
-                         * "unknown" file type to document/plaintext. </br>
-                         * This also prevents correction of for example .log -> .log.txt.
-                         */
-                        correctFileExtension = false;
-                    } else {
-                        correctFileExtension = true;
-                    }
-                } else {
-                    /* No current file extension given -> Add new file extension */
-                    correctFileExtension = true;
-                }
-                if (correctFileExtension) {
-                    this.downloadable.setFinalFileName(Plugin.getCorrectOrApplyFileNameExtension(this.downloadable.getName(), "." + extNew));
-                }
-            }
+            downloadable.updateFinalFileName();
             if (connection == null || !connection.isOK()) {
                 if (connection != null) {
                     logger.finest(connection.toString());
