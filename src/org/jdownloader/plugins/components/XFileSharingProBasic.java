@@ -1011,7 +1011,9 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
                 return false;
             }
         } finally {
-            con.disconnect();
+            if (con != null) {
+                con.disconnect();
+            }
             br.setFollowRedirects(followRedirectsOld);
         }
     }
