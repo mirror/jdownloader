@@ -152,6 +152,8 @@ public class Offline extends PluginForHost {
         ret.add(new String[] { "file2btc.com" });
         ret.add(new String[] { "subscene.com" });
         ret.add(new String[] { "filesonic.me" });
+        ret.add(new String[] { "games-database.com", "gamesdatabase.net" });
+        ret.add(new String[] { "global-files.net" });
         if (cache != null) {
             cache.put(cacheID, ret);
         }
