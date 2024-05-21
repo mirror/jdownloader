@@ -83,8 +83,9 @@ public class HentaiAnimestigmaCom extends antiDDoSForDecrypt {
                 con = openAntiDDoSRequestConnection(brc, brc.createHeadRequest(downloadlink));
                 final String contentType = con.getContentType();
                 if (con.isOK() && StringUtils.containsIgnoreCase(contentType, "text/html")) {
+                    brc.followConnection();// follow/finish head request
                     brc.getPage(downloadlink);
-                    String realdownloadlink = brc.getRegex("<source src=\"([^\"]+)\" type='video/mp4'>").getMatch(0);
+                    String realdownloadlink = brc.getRegex("<source src=\"([^\"]+)\" type=\"video/mp4\">").getMatch(0);
                     downloadlink = realdownloadlink;
                 }
             } catch (Exception e) {
