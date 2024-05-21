@@ -9,13 +9,6 @@ import java.util.Locale;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 
-import jd.config.Property;
-import jd.controlling.faviconcontroller.FavIconRequestor;
-import jd.controlling.faviconcontroller.FavIcons;
-import jd.http.Browser;
-import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
-
 import org.appwork.swing.components.IDIcon;
 import org.appwork.swing.components.IconIdentifier;
 import org.appwork.utils.images.IconIO;
@@ -23,11 +16,19 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.images.NewTheme;
 
+import jd.config.Property;
+import jd.controlling.faviconcontroller.FavIconRequestor;
+import jd.controlling.faviconcontroller.FavIcons;
+import jd.http.Browser;
+import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
+
 public class DomainInfo implements FavIconRequestor, Comparable<DomainInfo>, Icon, IDIcon {
     private static final HashMap<String, String> HARDCODEDFAVICONS = new HashMap<String, String>();
     static {
         HARDCODEDFAVICONS.put("http", IconKey.ICON_URL);// 'http links' results in 'http'
         HARDCODEDFAVICONS.put("ftp", IconKey.ICON_URL);
+        HARDCODEDFAVICONS.put("filesystem", IconKey.ICON_HARDDISK);
         HARDCODEDFAVICONS.put("directhttp", IconKey.ICON_URL);
         HARDCODEDFAVICONS.put("f4m", IconKey.ICON_URL);
         HARDCODEDFAVICONS.put("m3u8", IconKey.ICON_URL);
@@ -37,10 +38,10 @@ public class DomainInfo implements FavIconRequestor, Comparable<DomainInfo>, Ico
         HARDCODEDFAVICONS.put("usenet", IconKey.ICON_LOGO_NZB);
         HARDCODEDFAVICONS.put("genericusenet", IconKey.ICON_LOGO_NZB);
     }
-    private static final int                     WIDTH             = 16;
-    private static final int                     HEIGHT            = 16;
-    private final String                         domain;
-    private final IconIdentifier                 iconIdentifier;
+    private static final int     WIDTH  = 16;
+    private static final int     HEIGHT = 16;
+    private final String         domain;
+    private final IconIdentifier iconIdentifier;
 
     private DomainInfo(String tld, String domain) {
         this.tld = Property.dedupeString(tld);
@@ -76,7 +77,7 @@ public class DomainInfo implements FavIconRequestor, Comparable<DomainInfo>, Ico
         return hosterIcon;
     }
 
-    protected Icon getIcon(final String domain, final FavIconRequestor requestor, int width, int height, final boolean updatePermission) {
+    protected Icon getIcon(final FavIconRequestor requestor, int width, int height, final boolean updatePermission) {
         Icon ret = null;
         final NewTheme theme = NewTheme.I();
         if (theme.hasIcon("fav/big." + domain)) {
@@ -88,11 +89,11 @@ public class DomainInfo implements FavIconRequestor, Comparable<DomainInfo>, Ico
         if (ret != null && ret.getIconHeight() >= height && ret.getIconWidth() >= width) {
             return IconIO.getScaledInstance(ret, width, height);
         } else {
-            return getFavIcon(domain, requestor, width, height, updatePermission);
+            return getFavIcon(requestor, width, height, updatePermission);
         }
     }
 
-    protected Icon getFavIcon(final String domain, final FavIconRequestor requestor, int width, int height, final boolean updatePermission) {
+    protected Icon getFavIcon(final FavIconRequestor requestor, int width, int height, final boolean updatePermission) {
         Icon ret = getHosterIcon();
         if (ret == null) {
             final String hardcodedFavIcon = HARDCODEDFAVICONS.get(domain);
@@ -104,9 +105,11 @@ public class DomainInfo implements FavIconRequestor, Comparable<DomainInfo>, Ico
                     ret = FavIcons.getDefaultIcon(domain, false);
                 }
             }
+            if (ret != null) {
+                ret = new ImageIcon(IconIO.getCroppedImage(IconIO.toBufferedImage(ret)));
+            }
         }
         if (ret != null) {
-            ret = new ImageIcon(IconIO.getCroppedImage(IconIO.toBufferedImage(ret)));
             ret = IconIO.getScaledInstance(ret, width, height);
         }
         if (updatePermission) {
@@ -116,7 +119,7 @@ public class DomainInfo implements FavIconRequestor, Comparable<DomainInfo>, Ico
     }
 
     public Icon getFavIcon(final boolean updatePermission) {
-        return getFavIcon(getDomain(), this, WIDTH, HEIGHT, updatePermission);
+        return getFavIcon(this, WIDTH, HEIGHT, updatePermission);
     }
 
     public Icon getFavIcon() {
@@ -133,19 +136,24 @@ public class DomainInfo implements FavIconRequestor, Comparable<DomainInfo>, Ico
 
     private static final HashMap<String, WeakReference<DomainInfo>> CACHE = new HashMap<String, WeakReference<DomainInfo>>();
 
-    public static DomainInfo getInstance(String domain) {
+    private static String getCacheID(String domain) {
+        String ret = domain.toLowerCase(Locale.ENGLISH);
+        int index = ret.indexOf(" ");
+        if (index > 0) {
+            // for examle recaptcha.com (google)
+            ret = ret.substring(0, index);
+        }
+        index = ret.indexOf("/");
+        if (index > 0) {
+            // for examle recaptcha.com/bla
+            ret = ret.substring(0, index);
+        }
+        return ret;
+    }
+
+    public static DomainInfo getInstance(final String domain) {
         if (domain != null) {
-            String lcaseTld = domain.toLowerCase(Locale.ENGLISH);
-            int index = lcaseTld.indexOf(" ");
-            if (index > 0) {
-                // for examle recaptcha.com (google)
-                lcaseTld = lcaseTld.substring(0, index);
-            }
-            index = lcaseTld.indexOf("/");
-            if (index > 0) {
-                // for examle recaptcha.com/bla
-                lcaseTld = lcaseTld.substring(0, index);
-            }
+            final String lcaseTld = getCacheID(domain);
             synchronized (CACHE) {
                 DomainInfo ret = null;
                 WeakReference<DomainInfo> domainInfo = CACHE.get(lcaseTld);
@@ -171,7 +179,7 @@ public class DomainInfo implements FavIconRequestor, Comparable<DomainInfo>, Ico
     }
 
     public Icon getIcon(int size, final boolean updatePermission) {
-        return getIcon(getDomain(), null, size, size, updatePermission);
+        return getIcon(null, size, size, updatePermission);
     }
 
     @Deprecated
