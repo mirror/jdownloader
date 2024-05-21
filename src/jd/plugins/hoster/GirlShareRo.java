@@ -18,6 +18,9 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.appwork.utils.Regex;
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.http.RandomUserAgent;
 import jd.nutils.encoding.Encoding;
@@ -29,9 +32,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.Regex;
-import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "girlshare.ro" }, urls = { "https?://[\\w\\.]*?girlshare\\.ro/([0-9\\.]+)" })
 public class GirlShareRo extends PluginForHost {
@@ -68,6 +68,7 @@ public class GirlShareRo extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
+        br.setFollowRedirects(true);
         br.getHeaders().put("User-Agent", agent.get());
         br.getPage(link.getPluginPatternMatcher());
         if (br.containsHTML("(?i)(<b>Acest fisier nu exista\\.</b>|<title>GirlShare - Acest fisier nu exista\\.</title>)")) {
@@ -116,7 +117,9 @@ public class GirlShareRo extends PluginForHost {
         }
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             br.followConnection(true);
-            if (!br.getURL().contains("girlshare.ro")) {
+            if (dl.getConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (!br.getURL().contains("girlshare.ro")) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 60 * 60 * 1001l);
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
