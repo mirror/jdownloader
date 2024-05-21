@@ -83,8 +83,8 @@ import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChi
 import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
 import org.jdownloader.plugins.controller.crawler.CrawlerPluginController;
 import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
-import org.jdownloader.plugins.controller.host.HostPluginController;
 import org.jdownloader.plugins.controller.host.LazyHostPlugin;
+import org.jdownloader.plugins.controller.host.PluginFinder;
 import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
 import org.jdownloader.translate._JDT;
 
@@ -1022,7 +1022,8 @@ public abstract class Plugin implements ActionListener {
     }
 
     protected PluginForHost getNewPluginForHostInstance(final String host) throws PluginException {
-        final LazyHostPlugin lazyHostPlugin = HostPluginController.getInstance().get(host);
+        final PluginFinder pluginFinder = new PluginFinder(getLogger());
+        final LazyHostPlugin lazyHostPlugin = pluginFinder._assignHost(host);
         if (lazyHostPlugin != null) {
             return getNewPluginInstance(lazyHostPlugin);
         } else {

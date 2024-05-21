@@ -1,9 +1,8 @@
 package org.jdownloader.captcha.v2.solver.antiCaptchaCom;
 
+import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
-
-import jd.http.Browser;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.Storable;
@@ -11,6 +10,7 @@ import org.appwork.storage.TypeRef;
 import org.appwork.utils.IO;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.Base64;
+import org.appwork.utils.net.URLHelper;
 import org.jdownloader.captcha.v2.AbstractResponse;
 import org.jdownloader.captcha.v2.Challenge;
 import org.jdownloader.captcha.v2.SolverStatus;
@@ -24,6 +24,8 @@ import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.NewTheme;
 import org.jdownloader.settings.staticreferences.CFG_ANTICAPTCHA_COM;
+
+import jd.http.Browser;
 
 public class AntiCaptchaComSolver extends AbstractAntiCaptchaComSolver<String> {
     private static final AntiCaptchaComSolver INSTANCE = new AntiCaptchaComSolver();
@@ -118,7 +120,7 @@ public class AntiCaptchaComSolver extends AbstractAntiCaptchaComSolver<String> {
             dataMap.put("clientKey", config.getApiKey());
             dataMap.put("task", task);
             dataMap.put("softId", 832);
-            String json = br.postPageRaw("https://api.anti-captcha.com/createTask", JSonStorage.serializeToJson(dataMap));
+            String json = br.postPageRaw(URLHelper.parseLocation(new URL(config.getApiBase()), "/createTask"), JSonStorage.serializeToJson(dataMap));
             HashMap<String, Object> response = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
             errorHandling(null, response);
             final int taskID = ((Number) response.get("taskId")).intValue();
@@ -127,7 +129,7 @@ public class AntiCaptchaComSolver extends AbstractAntiCaptchaComSolver<String> {
                 dataMap = new HashMap<String, Object>();
                 dataMap.put("clientKey", config.getApiKey());
                 dataMap.put("taskId", taskID);
-                json = br.postPageRaw("https://api.anti-captcha.com/getTaskResult", JSonStorage.serializeToJson(dataMap));
+                json = br.postPageRaw(URLHelper.parseLocation(new URL(config.getApiBase()), "/getTaskResult"), JSonStorage.serializeToJson(dataMap));
                 response = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
                 errorHandling(null, response);
                 logger.info(json);
@@ -171,7 +173,7 @@ public class AntiCaptchaComSolver extends AbstractAntiCaptchaComSolver<String> {
             dataMap.put("clientKey", config.getApiKey());
             dataMap.put("task", task);
             dataMap.put("softId", 832);
-            String json = br.postPageRaw("https://api.anti-captcha.com/createTask", JSonStorage.serializeToJson(dataMap));
+            String json = br.postPageRaw(URLHelper.parseLocation(new URL(config.getApiBase()), "/createTask"), JSonStorage.serializeToJson(dataMap));
             HashMap<String, Object> response = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
             errorHandling(null, response);
             final int taskID = ((Number) response.get("taskId")).intValue();
@@ -180,7 +182,7 @@ public class AntiCaptchaComSolver extends AbstractAntiCaptchaComSolver<String> {
                 dataMap = new HashMap<String, Object>();
                 dataMap.put("clientKey", config.getApiKey());
                 dataMap.put("taskId", taskID);
-                json = br.postPageRaw("https://api.anti-captcha.com/getTaskResult ", JSonStorage.serializeToJson(dataMap));
+                json = br.postPageRaw(URLHelper.parseLocation(new URL(config.getApiBase()), "/getTaskResult"), JSonStorage.serializeToJson(dataMap));
                 response = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
                 errorHandling(null, response);
                 logger.info(json);
@@ -242,7 +244,7 @@ public class AntiCaptchaComSolver extends AbstractAntiCaptchaComSolver<String> {
             dataMap.put("clientKey", config.getApiKey());
             dataMap.put("task", task);
             dataMap.put("softId", 832);
-            String json = br.postPageRaw("https://api.anti-captcha.com/createTask", JSonStorage.serializeToJson(dataMap));
+            String json = br.postPageRaw(URLHelper.parseLocation(new URL(config.getApiBase()), "/createTask"), JSonStorage.serializeToJson(dataMap));
             HashMap<String, Object> response = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
             errorHandling(null, response);
             final int taskID = ((Number) response.get("taskId")).intValue();
@@ -251,7 +253,7 @@ public class AntiCaptchaComSolver extends AbstractAntiCaptchaComSolver<String> {
                 dataMap = new HashMap<String, Object>();
                 dataMap.put("clientKey", config.getApiKey());
                 dataMap.put("taskId", taskID);
-                json = br.postPageRaw("https://api.anti-captcha.com/getTaskResult ", JSonStorage.serializeToJson(dataMap));
+                json = br.postPageRaw(URLHelper.parseLocation(new URL(config.getApiBase()), "/getTaskResult"), JSonStorage.serializeToJson(dataMap));
                 response = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
                 errorHandling(null, response);
                 logger.info(json);
@@ -316,7 +318,7 @@ public class AntiCaptchaComSolver extends AbstractAntiCaptchaComSolver<String> {
             final Browser br = new Browser();
             final HashMap<String, Object> dataMap = new HashMap<String, Object>();
             dataMap.put("clientKey", config.getApiKey());
-            final String json = br.postPageRaw("https://api.anti-captcha.com/getBalance", JSonStorage.serializeToJson(dataMap));
+            final String json = br.postPageRaw(URLHelper.parseLocation(new URL(config.getApiBase()), "/getBalance"), JSonStorage.serializeToJson(dataMap));
             final HashMap<String, Object> response = JSonStorage.restoreFromString(json, TypeRef.HASHMAP);
             errorHandling(null, response);
             ret.setBalance(((Number) response.get("balance")).doubleValue());

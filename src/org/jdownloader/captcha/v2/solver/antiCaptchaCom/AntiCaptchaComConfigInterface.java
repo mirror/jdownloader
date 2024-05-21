@@ -3,6 +3,7 @@ package org.jdownloader.captcha.v2.solver.antiCaptchaCom;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DefaultIntValue;
+import org.appwork.storage.config.annotations.DefaultStringValue;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.appwork.storage.config.annotations.RequiresRestart;
 import org.appwork.storage.config.annotations.SpinnerValidator;
@@ -34,4 +35,10 @@ public interface AntiCaptchaComConfigInterface extends ChallengeSolverConfig {
     @AboutConfig
     @DefaultBooleanValue(false)
     boolean isEnabled();
+
+    @AboutConfig
+    @DefaultStringValue("https://api.anti-captcha.com")
+    String getApiBase();
+
+    void setApiBase(String jser);
 }

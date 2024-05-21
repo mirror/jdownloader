@@ -5,6 +5,7 @@ import java.nio.file.FileStore;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -22,14 +23,15 @@ import org.jdownloader.myjdownloader.client.bindings.StorageInformationStorable;
 public class SystemAPIImpl17 {
     private static Path getPath(final FileStore fileStore) {
         if (CrossSystem.isWindows()) {
-            try {
-                for (final Path rootPath : FileSystems.getDefault().getRootDirectories()) {
+            for (final Path rootPath : FileSystems.getDefault().getRootDirectories()) {
+                try {
                     if (Files.isDirectory(rootPath) && Files.getFileStore(rootPath).equals(fileStore)) {
                         return rootPath;
                     }
+                } catch (NoSuchFileException ignore) {
+                } catch (IOException e) {
+                    LogController.CL().log(e);
                 }
-            } catch (IOException e) {
-                LogController.CL().log(e);
             }
         }
         final String rootPath = new Regex(fileStore.toString(), "^\\s*(.*?) \\(.*?\\)\\s*$").getMatch(0);
@@ -49,6 +51,7 @@ public class SystemAPIImpl17 {
                 final Path pathObj = Paths.get(path);
                 roots.put(pathObj, Files.getFileStore(pathObj));
                 customPath = pathObj;
+            } catch (NoSuchFileException ignore) {
             } catch (InvalidPathException e) {
                 LogController.CL().log(e);
             } catch (IOException e) {

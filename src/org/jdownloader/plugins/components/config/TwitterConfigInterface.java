@@ -13,14 +13,14 @@ import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginHost;
 import org.jdownloader.plugins.config.Type;
 
-@PluginHost(host = "twitter.com", type = Type.HOSTER)
+@PluginHost(host = "x.com", type = Type.HOSTER)
 public interface TwitterConfigInterface extends PluginConfigInterface {
     public static final TRANSLATION TRANSLATION                                              = new TRANSLATION();
     final String                    text_MarkTweetRepliesViaFilename                         = "Append '_reply' to filenames of tweets that are replies to other tweets?";
     final String                    text_CrawlURLsInsideTweetText                            = "Crawl URLs inside post text?\r\nWarning: This may result in endless crawling activity!";
     final String                    text_RegexWhitelistForCrawledUrlsInTweetText             = "RegEx whitelist for crawled URLs in tweet text e.g. '(?i).*(site\\.tld|site2\\.tld).*' [Empty = Allow all URLs]";
     final String                    text_CrawlVideoThumbnail                                 = "Crawl video thumbnail?";
-    final String                    text_GlobalRequestIntervalLimitApiTwitterComMilliseconds = "Define global request limit for api.twitter.com in milliseconds (0 = no limit)";
+    final String                    text_GlobalRequestIntervalLimitApiTwitterComMilliseconds = "Define global request limit for api.x.com in milliseconds (0 = no limit)";
     final String                    text_GlobalRequestIntervalLimitTwimgComMilliseconds      = "Define global request limit for twimg.com in milliseconds (0 = no limit)";
     final String                    text_ProfileCrawlerWaittimeBetweenPaginationMilliseconds = "Profile crawler: Wait time between pagination requests in milliseconds";
 
