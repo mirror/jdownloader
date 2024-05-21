@@ -1279,7 +1279,7 @@ public class VKontakteRu extends PluginForDecrypt {
         } else {
             internalSectionName = "all";
         }
-        String videoAlbumsJson = br.getRegex("let newCur\\s*=\\s*(\\{.*?\\});\\s+").getMatch(0);
+        String videoAlbumsJson = br.getRegex("(?:var|let) newCur\\s*=\\s*(\\{.*?\\});\\s+").getMatch(0);
         if (videoAlbumsJson == null) {
             /* Old regexes/fallback */
             videoAlbumsJson = br.getRegex("extend\\(cur, (\\{\"albumsPreload\".*?\\})\\);\\s+").getMatch(0);

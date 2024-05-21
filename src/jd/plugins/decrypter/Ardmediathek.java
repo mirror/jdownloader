@@ -28,7 +28,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.Hash;
 import org.appwork.utils.StringUtils;
@@ -317,6 +316,29 @@ public class Ardmediathek extends PluginForDecrypt {
             oldArdDocumentID = oldArdDocumentIDFromURL;
             metadata.setTitle(oldArdDocumentID);
             metadata.setContentID(oldArdDocumentID);
+        } else if (param.getCryptedUrl().matches(".*(?i)/tv-programm/[a-f0-9]+.*")) {
+            final String teaserId = new Regex(param.getCryptedUrl(), "/tv-programm/([a-f0-9]+)").getMatch(0);
+            if (teaserId == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            br.getPage("https://programm-api.ard.de/program/api/detail?teaserId=" + teaserId);
+            final Map<String, Object> root = restoreFromString(br.toString(), TypeRef.MAP);
+            final Object video = JavaScriptEngineFactory.walkJson(root, "teaser/video");
+            if (video == null) {
+                // no video available
+                final String title = (String) JavaScriptEngineFactory.walkJson(root, "teaser/title");
+                throw new DecrypterRetryException(RetryReason.FILE_NOT_FOUND, title, null, null);
+            }
+            String webURL = (String) JavaScriptEngineFactory.walkJson(video, "webUrl");
+            if (webURL == null) {
+                webURL = (String) JavaScriptEngineFactory.walkJson(video, "groupingWebUrl");
+                if (webURL == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+            }
+            final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+            ret.add(createDownloadlink(webURL));
+            return ret;
         } else {
             final URL url = new URL(param.getCryptedUrl());
             String ardBase64;

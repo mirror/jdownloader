@@ -22,6 +22,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import org.appwork.utils.Hash;
 import org.appwork.utils.StringUtils;
@@ -404,8 +405,11 @@ public class WebShareCz extends PluginForHost {
         }
         final AccountInfo ai = new AccountInfo();
         final String daysStr = getXMLtagValue("vip_days");
+        final String hoursStr = getXMLtagValue("vip_hours");
+        final String minutesStr = getXMLtagValue("vip_minutes");
+        final long validUntil = TimeUnit.DAYS.toSeconds(daysStr != null ? Integer.parseInt(daysStr) : 0) + TimeUnit.HOURS.toSeconds(hoursStr != null ? Integer.parseInt(hoursStr) : 0) + TimeUnit.MINUTES.toSeconds(minutesStr != null ? Integer.parseInt(minutesStr) : 0);
         String statustext;
-        if (daysStr == null || "0".equals(daysStr)) {
+        if (validUntil == 0) {
             final String credits = getXMLtagValue("credits");
             ai.setTrafficLeft(SizeFormatter.getSize((Long.parseLong(credits) * 10) + "MB"));
             if (ai.getTrafficLeft() > 0) {
@@ -421,7 +425,7 @@ public class WebShareCz extends PluginForHost {
                 statustext = account.getType().getLabel();
             }
         } else {
-            ai.setValidUntil(System.currentTimeMillis() + Integer.parseInt(daysStr) * 24 * 60 * 60 * 1000l);
+            ai.setValidUntil(System.currentTimeMillis() + (validUntil * 1000l));
             ai.setUnlimitedTraffic();
             account.setType(AccountType.PREMIUM);
             account.setConcurrentUsePossible(true);

@@ -101,7 +101,7 @@ public class DncHllArCom extends antiDDoSForDecrypt {
         } else if (link.startsWith("//")) {
             link = protocol + ":" + link;
         }
-        if (new Regex(link, "facebook.com(/|%2F)plugins(/|%2F)|twitter.com(/|%2F)").matches()) {
+        if (new Regex(link, "facebook.com(/|%2F)plugins(/|%2F)|(x|twitter).com(/|%2F)").matches()) {
             return null;
         }
         return link;

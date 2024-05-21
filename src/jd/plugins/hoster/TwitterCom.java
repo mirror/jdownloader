@@ -62,7 +62,7 @@ public class TwitterCom extends PluginForHost {
     public TwitterCom(PluginWrapper wrapper) {
         super(wrapper);
         /* 2020-01-20: Disabled login functionality as it is broken */
-        this.enablePremium("https://twitter.com/signup");
+        this.enablePremium("https://x.com/signup");
     }
 
     @Override
@@ -80,6 +80,16 @@ public class TwitterCom extends PluginForHost {
 
     public static String[] getAnnotationNames() {
         return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    protected String rewriteHost(List<String[]> pluginDomains, String host, String... rewriteEnabledHosts) {
+        return super.rewriteHost(pluginDomains, host, rewriteEnabledHosts);
+    }
+
+    @Override
+    public String rewriteHost(String host) {
+        return this.rewriteHost(getPluginDomains(), host);
     }
 
     @Override
@@ -107,7 +117,7 @@ public class TwitterCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "https://twitter.com/tos";
+        return "https://x.com/tos";
     }
 
     @Override
@@ -338,7 +348,7 @@ public class TwitterCom extends PluginForHost {
                         }
                         br.getHeaders().put("Authorization", "Bearer " + authorization_token);
                         br.getHeaders().put("Accept", "*/*");
-                        br.getHeaders().put("Origin", "https://twitter.com");
+                        br.getHeaders().put("Origin", "https://x.com");
                         br.getHeaders().put("Referer", "https://" + this.getHost() + "/i/videos/tweet/" + tweetID);
                         final Browser brc = br.cloneBrowser();
                         brc.setAllowedResponseCodes(400);
@@ -357,7 +367,7 @@ public class TwitterCom extends PluginForHost {
                              * Without guest_token in header we might often get blocked here with this response: HTTP/1.1 429 Too Many
                              * Requests --> {"errors":[{"message":"Rate limit exceeded","code":88}]}
                              */
-                            brc.getPage("https://api.twitter.com/1.1/videos/tweet/config/" + tweetID + ".json");
+                            brc.getPage("https://" + TwitterComCrawler.getAPIDomain() + "/1.1/videos/tweet/config/" + tweetID + ".json");
                             if (brc.getHttpConnection().getResponseCode() == 400) {
                                 /* Invalid videoID format --> Offline */
                                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -752,7 +762,7 @@ public class TwitterCom extends PluginForHost {
 
     private boolean checkLogin(final Browser br) throws IOException, PluginException {
         TwitterComCrawler.prepAPIHeaders(br);
-        br.getPage("https://api.twitter.com/2/badge_count/badge_count.json?supports_ntab_urt=1");
+        br.getPage("https://" + TwitterComCrawler.getAPIDomain() + "/2/badge_count/badge_count.json?supports_ntab_urt=1");
         /* E.g. check for error "rate-limit reached" */
         this.checkGenericErrors(br);
         if (br.getRequest().getHttpConnection().getResponseCode() == 200) {

@@ -109,7 +109,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
     public static void setRequestIntervallLimits() {
         final TwitterConfigInterface cfg = PluginJsonConfig.get(TwitterConfigInterface.class);
         Browser.setRequestIntervalLimitGlobal("twimg.com", true, cfg.getGlobalRequestIntervalLimitTwimgComMilliseconds());
-        Browser.setRequestIntervalLimitGlobal("api.twitter.com", true, cfg.getGlobalRequestIntervalLimitApiTwitterComMilliseconds());
+        Browser.setRequestIntervalLimitGlobal("api.x.com", true, cfg.getGlobalRequestIntervalLimitApiTwitterComMilliseconds());
     }
 
     private static final Pattern           PATTERN_CARD                                                     = Pattern.compile("(?i)https?://[^/]+/i/cards/tfw/v1/(\\d+)");
@@ -140,7 +140,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
     public static final String             PROPERTY_PINNED_TWEET                                            = "is_pinned_tweet";
     public static final String             PROPERTY_TWEET_ID                                                = "tweetid";
     public static final String             PROPERTY_RELATED_ORIGINAL_FILENAME                               = "related_original_filename";
-    private final String                   API_BASE_GRAPHQL                                                 = "https://twitter.com/i/api/graphql";
+    private final String                   API_BASE_GRAPHQL                                                 = "https://x.com/i/api/graphql";
     private static Map<String, String>     graphqlQueryids                                                  = new HashMap<String, String>();
     /**
      * Enabled Juli 2023: https://www.reuters.com/technology/twitter-now-needs-users-sign-view-tweets-2023-06-30/ </br>
@@ -151,7 +151,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "twitter.com", "x.com" });
+        ret.add(new String[] { "x.com", "twitter.com" });
         return ret;
     }
 
@@ -258,7 +258,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
 
     public static Browser prepAPIHeaders(final Browser br) {
         br.getHeaders().put("Authorization", "Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA");
-        final String csrftoken = br.getCookie("twitter.com", TwitterCom.COOKIE_KEY_LOGINED_CSRFTOKEN, Cookies.NOTDELETEDPATTERN);
+        final String csrftoken = br.getCookie("x.com", TwitterCom.COOKIE_KEY_LOGINED_CSRFTOKEN, Cookies.NOTDELETEDPATTERN);
         if (csrftoken != null) {
             /* Indicates that the user is loggedin. */
             br.getHeaders().put("x-csrf-token", csrftoken);
@@ -315,9 +315,13 @@ public class TwitterComCrawler extends PluginForDecrypt {
         }
     }
 
+    public static String getAPIDomain() {
+        return "api.x.com";
+    }
+
     public static String generateNewGuestToken(final Browser br) throws IOException {
         final Browser brc = br.cloneBrowser();
-        brc.postPage("https://api.twitter.com/1.1/guest/activate.json", "");
+        brc.postPage("https://" + getAPIDomain() + "/1.1/guest/activate.json", "");
         return PluginJSonUtils.getJson(brc, "guest_token");
     }
 
@@ -377,7 +381,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
             // final String queryID = this.getGraphqlQueryID("TweetResultByRestId");
             this.prepareAPI(br, account);
             final String queryID = "0hWvDhmW8YQ-S_ib3azIrw";
-            getPage("https://twitter.com/i/api/graphql/" + queryID + "/TweetResultByRestId?variables=%7B%22tweetId%22%3A%22" + tweetID
+            getPage("https://x.com/i/api/graphql/" + queryID + "/TweetResultByRestId?variables=%7B%22tweetId%22%3A%22" + tweetID
                     + "%22%2C%22withCommunity%22%3Afalse%2C%22includePromotedContent%22%3Afalse%2C%22withVoice%22%3Afalse%7D&features=%7B%22creator_subscriptions_tweet_preview_api_enabled%22%3Atrue%2C%22tweetypie_unmention_optimization_enabled%22%3Atrue%2C%22responsive_web_edit_tweet_api_enabled%22%3Atrue%2C%22graphql_is_translatable_rweb_tweet_is_translatable_enabled%22%3Atrue%2C%22view_counts_everywhere_api_enabled%22%3Atrue%2C%22longform_notetweets_consumption_enabled%22%3Atrue%2C%22responsive_web_twitter_article_tweet_consumption_enabled%22%3Afalse%2C%22tweet_awards_web_tipping_enabled%22%3Afalse%2C%22freedom_of_speech_not_reach_fetch_enabled%22%3Atrue%2C%22standardized_nudges_misinfo%22%3Atrue%2C%22tweet_with_visibility_results_prefer_gql_limited_actions_policy_enabled%22%3Atrue%2C%22longform_notetweets_rich_text_read_enabled%22%3Atrue%2C%22longform_notetweets_inline_media_enabled%22%3Atrue%2C%22responsive_web_graphql_exclude_directive_enabled%22%3Atrue%2C%22verified_phone_label_enabled%22%3Afalse%2C%22responsive_web_media_download_video_enabled%22%3Afalse%2C%22responsive_web_graphql_skip_user_profile_image_extensions_enabled%22%3Afalse%2C%22responsive_web_graphql_timeline_navigation_enabled%22%3Atrue%2C%22responsive_web_enhance_cards_enabled%22%3Afalse%7D");
             entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
             ret = crawlTweets(entries, null, tweetID, null, false);
@@ -451,7 +455,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
                     }
                 } else if (br.getRequest().getHtmlCode().length() <= 100 && !br.containsHTML(tweetID)) {
                     /* E.g. {"data":{"tweetResult":{}}} */
-                    /* Example URL: https://twitter.com/blabla/status/1760679931984683061 */
+                    /* Example URL: https://x.com/blabla/status/1760679931984683061 */
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 } else {
                     /* No results and we don't know why */
@@ -597,7 +601,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
             logger.info("Account required to crawl all media items of a user");
             throw new DecrypterRetryException(RetryReason.NO_ACCOUNT, "ACCOUNT_REQUIRED_TO_CRAWL_MEDIA_ITEMS_OF_PROFILE_" + username, "Account is required to crawl media items of profiles.");
         }
-        final String warningtextNoAccount = "You did not add a Twitter account to JDownloader or you've disabled it.\r\nAdd your twitter.com account under: Settings -> Account Manager -> Add";
+        final String warningtextNoAccount = "You did not add a Twitter account to JDownloader or you've disabled it.\r\nAdd your x.com account under: Settings -> Account Manager -> Add";
         if (account == null) {
             displayBubblenotifyMessage("Profile crawler " + username + " | Warning", "Results may be incomplete!\r\nTwitter is hiding some posts (e.g. NSFW content) or profiles when a user is not logged in\r\n" + warningtextNoAccount);
         }
@@ -1394,10 +1398,10 @@ public class TwitterComCrawler extends PluginForDecrypt {
         final boolean use_old_api_to_get_userid = true;
         final Map<String, Object> user;
         if (use_old_api_to_get_userid && account != null) {
-            /* https://developer.twitter.com/en/docs/accounts-and-users/follow-search-get-users/api-reference/get-users-show */
-            /* https://developer.twitter.com/en/docs/twitter-api/rate-limits */
+            /* https://developer.x.com/en/docs/accounts-and-users/follow-search-get-users/api-reference/get-users-show */
+            /* https://developer.x.com/en/docs/twitter-api/rate-limits */
             /* per 15 mins window, 300 per app, 900 per user */
-            br.getPage("https://api.twitter.com/1.1/users/lookup.json?screen_name=" + username);
+            br.getPage("https://" + getAPIDomain() + "/1.1/users/lookup.json?screen_name=" + username);
             if (br.getHttpConnection().getResponseCode() == 403) {
                 /* {"errors":[{"code":22,"message":"Not authorized to view the specified user."}]} */
                 throw new AccountRequiredException();
@@ -1414,7 +1418,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
             user = users.get(0);
         } else {
             final String queryID = this.getGraphqlQueryID("UserByScreenName");
-            br.getPage("https://api.twitter.com/graphql/" + queryID + "/UserByScreenName?variables=%7B%22screen_name%22%3A%22" + PluginJSonUtils.escape(username)
+            br.getPage("https://" + getAPIDomain() + "/graphql/" + queryID + "/UserByScreenName?variables=%7B%22screen_name%22%3A%22" + PluginJSonUtils.escape(username)
                     + "%22%2C%22withSafetyModeUserFields%22%3Atrue%7D&features=%7B%22hidden_profile_likes_enabled%22%3Atrue%2C%22hidden_profile_subscriptions_enabled%22%3Atrue%2C%22responsive_web_graphql_exclude_directive_enabled%22%3Atrue%2C%22verified_phone_label_enabled%22%3Afalse%2C%22subscriptions_verification_info_is_identity_verified_enabled%22%3Atrue%2C%22subscriptions_verification_info_verified_since_enabled%22%3Atrue%2C%22highlights_tweets_tab_ui_enabled%22%3Atrue%2C%22responsive_web_twitter_article_notes_tab_enabled%22%3Atrue%2C%22creator_subscriptions_tweet_preview_api_enabled%22%3Atrue%2C%22responsive_web_graphql_skip_user_profile_image_extensions_enabled%22%3Afalse%2C%22responsive_web_graphql_timeline_navigation_enabled%22%3Atrue%7D&fieldToggles=%7B%22withAuxiliaryUserLabels%22%3Afalse%7D");
             final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.getRequest().getHtmlCode());
             final Map<String, Object> userNew = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "data/user/result");
@@ -1448,7 +1452,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
     }
 
     /**
-     * https://developer.twitter.com/en/support/twitter-api/error-troubleshooting </br>
+     * https://developer.x.com/en/support/twitter-api/error-troubleshooting </br>
      * Scroll down to "Twitter API error codes"
      */
     private Map<String, Object> handleErrorsAPI(final Browser br) throws Exception {
@@ -1524,34 +1528,34 @@ public class TwitterComCrawler extends PluginForDecrypt {
     }
 
     public static String createTwitterProfileURL(final String user) {
-        return "https://twitter.com/" + user;
+        return "https://x.com/" + user;
     }
 
     public static String createTwitterProfileURLLikes(final String user) {
-        return "https://twitter.com/" + user + "/likes";
+        return "https://x.com/" + user + "/likes";
     }
 
     public static String createTwitterProfileURLMedia(final String user) {
-        return "https://twitter.com/" + user + "/media";
+        return "https://x.com/" + user + "/media";
     }
 
     /** Creates URL that will link to the firt video of a tweet containing at least one video item. */
     public static String createVideourl(final String tweetID) {
-        return "https://twitter.com/i/videos/tweet/" + tweetID;
+        return "https://x.com/i/videos/tweet/" + tweetID;
     }
 
     public static String createVideourlSpecific(final String user, final String tweetID, final int videoPosition) {
-        return "https://twitter.com/" + user + "/status/" + tweetID + "/video/" + videoPosition;
+        return "https://x.com/" + user + "/status/" + tweetID + "/video/" + videoPosition;
     }
 
     public static String createTwitterPostURL(final String user, final String tweetID) {
-        return "https://twitter.com/" + user + "/status/" + tweetID;
+        return "https://x.com/" + user + "/status/" + tweetID;
     }
 
     /** Log in the account via hostplugin */
     private Account getUserLogin(final boolean force) throws Exception {
-        final PluginForHost hostPlugin = getNewPluginForHostInstance("twitter.com");
-        final Account aa = AccountController.getInstance().getValidAccount("twitter.com");
+        final PluginForHost hostPlugin = getNewPluginForHostInstance("x.com");
+        final Account aa = AccountController.getInstance().getValidAccount("x.com");
         if (aa == null) {
             return null;
         }
@@ -1604,7 +1608,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
     }
 
     /**
-     * Crawls items of links like this: https://twitter.com/i/broadcasts/<broadcastID> </br>
+     * Crawls items of links like this: https://x.com/i/broadcasts/<broadcastID> </br>
      * 2023-09-01: Stopped working on this as the streams are DRM protected. Reference: https://board.jdownloader.org/showthread.php?t=94178
      *
      * @throws Exception
@@ -1613,7 +1617,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
     @Deprecated
     private ArrayList<DownloadLink> crawlBroadcast(final String broadcastID) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        br.getPage("https://twitter.com/i/api/1.1/broadcasts/show.json?ids=" + broadcastID + "&include_events=true");
+        br.getPage("https://x.com/i/api/1.1/broadcasts/show.json?ids=" + broadcastID + "&include_events=true");
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -1627,7 +1631,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
         final String tweet_id = bc.get("tweet_id").toString();
         final String thumbnailURL = bc.get("image_url").toString();
         final String media_key = bc.get("media_key").toString();
-        getPage("https://twitter.com/i/api/1.1/live_video_stream/status/" + media_key + "?client=web&use_syndication_guest_id=false&cookie_set_host=twitter.com");
+        getPage("https://x.com/i/api/1.1/live_video_stream/status/" + media_key + "?client=web&use_syndication_guest_id=false&cookie_set_host=x.com");
         final Map<String, Object> entries2 = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         final Map<String, Object> source = (Map<String, Object>) entries2.get("source");
         final String streamType = source.get("streamType").toString();

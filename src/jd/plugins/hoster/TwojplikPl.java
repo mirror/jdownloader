@@ -78,6 +78,11 @@ public class TwojplikPl extends PluginForHost {
     }
 
     @Override
+    public String rewriteHost(String host) {
+        return this.rewriteHost(getPluginDomains(), host);
+    }
+
+    @Override
     public String getAGBLink() {
         return "https://" + getHost() + "/terms-and-conditions";
     }
@@ -85,7 +90,7 @@ public class TwojplikPl extends PluginForHost {
     private static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "twojplik.pl", "plik.to" });
+        ret.add(new String[] { "twojplik.pl", "twojplik.to", "plik.to" });
         return ret;
     }
 

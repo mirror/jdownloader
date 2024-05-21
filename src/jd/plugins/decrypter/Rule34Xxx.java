@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
 import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ExtensionsFilterInterface;
@@ -139,6 +140,7 @@ public class Rule34Xxx extends PluginForDecrypt {
             FilePackage fp = null;
             if (fpName != null) {
                 fp = FilePackage.getInstance();
+                fpName = URLEncode.decodeURIComponent(fpName).trim();
                 fp.setName(fpName);
             }
             final HashSet<String> dupes = new HashSet<String>();

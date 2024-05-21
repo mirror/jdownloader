@@ -5,6 +5,11 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
+import org.jdownloader.plugins.components.usenet.UsenetServer;
+
 import jd.PluginWrapper;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
@@ -14,11 +19,6 @@ import jd.plugins.AccountInfo;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.plugins.components.usenet.UsenetAccountConfigInterface;
-import org.jdownloader.plugins.components.usenet.UsenetServer;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "thundernews.com" }, urls = { "" })
 public class ThunderNewsCom extends UseNet {
@@ -133,9 +133,10 @@ public class ThunderNewsCom extends UseNet {
         final List<UsenetServer> ret = new ArrayList<UsenetServer>();
         ret.addAll(UsenetServer.createServerList("eu.thundernews.com", false, 119, 23, 443, 3128, 7000, 8000, 8080, 9000));
         ret.addAll(UsenetServer.createServerList("us.thundernews.com", false, 119, 23, 443, 3128, 7000, 8000, 8080, 9000));
+        ret.addAll(UsenetServer.createServerList("nl.thundernews.com", false, 119, 23, 443, 3128, 7000, 8000, 8080, 9000));
         ret.addAll(UsenetServer.createServerList("secure.eu.thundernews.com", true, 563, 80, 81));
         ret.addAll(UsenetServer.createServerList("secure.us.thundernews.com", true, 563, 80, 81));
-        ret.addAll(UsenetServer.createServerList("secure.us.thundernews.com", true, 563, 80, 81));
+        ret.addAll(UsenetServer.createServerList("secure.nl.thundernews.com", true, 563, 80, 81));
         return ret;
     }
 }

@@ -268,7 +268,7 @@ public class SrBox extends antiDDoSForDecrypt {
         if (link.startsWith("http://ax-d.pixfuture.net") || link.startsWith("http://www.friendlyduckaffiliates.com/")) {
             return null;
         }
-        if (link.startsWith("http://www.facebook") || link.startsWith("https://twitter.com") || link.startsWith("https://plus.google.com")) {
+        if (link.startsWith("http://www.facebook") || link.startsWith("https://twitter.com") || link.startsWith("https://x.com") || link.startsWith("https://plus.google.com")) {
             return null;
         }
         if (bVerify && link.matches("^" + base + ".*?")) {
