@@ -98,10 +98,13 @@ public class HeavyRCom extends antiDDoSForHost {
         br2.setFollowRedirects(true);
         URLConnectionAdapter con = null;
         try {
-            br2.getHeaders().put(OPEN_RANGE_REQUEST);
-            con = br.openHeadConnection(dllink);
+            con = br2.openGetConnection(dllink);
             if (this.looksLikeDownloadableContent(con)) {
-                downloadLink.setVerifiedFileSize(con.getCompleteContentLength());
+                if (con.isContentDecoded()) {
+                    downloadLink.setDownloadSize(con.getCompleteContentLength());
+                } else {
+                    downloadLink.setVerifiedFileSize(con.getCompleteContentLength());
+                }
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
