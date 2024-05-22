@@ -4114,7 +4114,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
             /* TODO: Maybe add a better check e.g. access mainpage and check loggedin state */
             throw new AccountUnavailableException("Session expired?", 5 * 60 * 1000l);
         }
-        String website_error = br.getRegex("class=\"[^\"]*(err|alert-danger)[^\"]*\"[^>]*>([^<>]+)<").getMatch(0);
+        String website_error = br.getRegex("class=\"[^\"]*(?:err|alert-danger)[^\"]*\"[^>]*>([^<>]+)<").getMatch(0);
         if (website_error != null) {
             if (Encoding.isHtmlEntityCoded(website_error)) {
                 website_error = Encoding.htmlDecode(website_error);
