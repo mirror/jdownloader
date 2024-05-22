@@ -2320,6 +2320,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
         if (StringUtils.isEmpty(officialDownloadURL) && StringUtils.isEmpty(dllink)) {
             logger.warning("Failed to find final downloadurl");
             checkErrors(br, getCorrectBR(br), link, account, false);
+            checkServerErrors(br, link, account);
             checkErrorsLastResort(br, account);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -4113,7 +4114,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
             /* TODO: Maybe add a better check e.g. access mainpage and check loggedin state */
             throw new AccountUnavailableException("Session expired?", 5 * 60 * 1000l);
         }
-        String website_error = br.getRegex("class=\"err\"[^>]*?>([^<>]+)<").getMatch(0);
+        String website_error = br.getRegex("class=\"[^\"]*(err|alert-danger)[^\"]*\"[^>]*>([^<>]+)<").getMatch(0);
         if (website_error != null) {
             if (Encoding.isHtmlEntityCoded(website_error)) {
                 website_error = Encoding.htmlDecode(website_error);
@@ -4162,7 +4163,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
      */
     public void checkServerErrors(final Browser br, final DownloadLink link, final Account account) throws NumberFormatException, PluginException {
         final String html = getCorrectBR(br);
-        if (new Regex(html, "^(No file|error_nofile)$").patternFind()) {
+        if (new Regex(html, "^(No file|error_nofile|Not Found)$").patternFind()) {
             /* Possibly dead file but it is supposed to be online so let's wait and retry! */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'No file'", 30 * 60 * 1000l);
         } else if (new Regex(html, "^Wrong IP$").patternFind()) {
@@ -5212,6 +5213,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
                     if (dlForm == null) {
                         checkErrors(br, getCorrectBR(br), link, account, true);
                         logger.warning("Failed to find Form download2");
+                        checkServerErrors(br, link, account);
                         checkErrorsLastResort(br, account);
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                     }
@@ -5330,6 +5332,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
             if (StringUtils.isEmpty(finalDownloadlink) || (!finalDownloadlink.startsWith("http") && !finalDownloadlink.startsWith("rtmp") && !finalDownloadlink.startsWith("/"))) {
                 logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                 checkErrors(br, getCorrectBR(br), link, account, true);
+                checkServerErrors(br, link, account);
                 checkErrorsLastResort(br, account);
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }

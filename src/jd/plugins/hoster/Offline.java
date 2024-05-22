@@ -154,6 +154,7 @@ public class Offline extends PluginForHost {
         ret.add(new String[] { "filesonic.me" });
         ret.add(new String[] { "games-database.com", "gamesdatabase.net" });
         ret.add(new String[] { "global-files.net" });
+        ret.add(new String[] { "free18.net" });
         if (cache != null) {
             cache.put(cacheID, ret);
         }
