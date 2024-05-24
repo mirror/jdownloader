@@ -94,7 +94,7 @@ public class FromsmashComFolder extends PluginForDecrypt {
                 return token;
             } else {
                 final Browser brc = br.cloneBrowser();
-                prepBR(brc);
+                prepBR(null, brc);
                 brc.postPageRaw("https://iam.eu-central-1.fromsmash.co/account", "{}");
                 final Map<String, Object> response = plugin.restoreFromString(brc.toString(), TypeRef.MAP);
                 final Map<String, Object> account = (Map<String, Object>) response.get("account");
@@ -115,16 +115,18 @@ public class FromsmashComFolder extends PluginForDecrypt {
     }
 
     private String[] getDetails(final CryptedLink param, final Browser br) throws Exception {
-        final String path = new URL(param.getCryptedUrl()).getPath();
+        final URL url = new URL(param.getCryptedUrl());
+        final String path = url.getPath();
         /* Folder name = path without slash and without parameters. */
         final String folderName = path.substring(1, path.length());
         final Browser brc = br.cloneBrowser();
         brc.getHeaders().put("Accept", "application/json, text/plain, */*");
-        brc.getPage("https://link.fromsmash.co/target/fromsmash.com%2F" + URLEncode.encodeURIComponent(folderName) + "?version=10-2019");
+        String host = url.getHost();
+        brc.getPage("https://link.fromsmash.co/target/" + host + "%2F" + URLEncode.encodeURIComponent(folderName) + "?version=10-2019");
         Map<String, Object> json = JavaScriptEngineFactory.jsonToJavaMap(brc.toString());
         final String target = (String) JavaScriptEngineFactory.walkJson(json, "target/target");
-        final String url = (String) JavaScriptEngineFactory.walkJson(json, "target/url");
-        if (target == null && url == null) {
+        final String targetUrl = (String) JavaScriptEngineFactory.walkJson(json, "target/url");
+        if (target == null && targetUrl == null) {
             if (brc.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else {
@@ -132,15 +134,16 @@ public class FromsmashComFolder extends PluginForDecrypt {
             }
         }
         if (target != null) {
-            return new String[] { target, url };
+            return new String[] { target, targetUrl };
         } else {
-            return new String[] { folderName, url };
+            return new String[] { folderName, targetUrl };
         }
     }
 
-    public static Browser prepBR(final Browser br) {
-        br.getHeaders().put(new HTTPHeader(HTTPConstants.HEADER_REQUEST_ORIGIN, "https://fromsmash.com"));
-        br.getHeaders().put(new HTTPHeader(HTTPConstants.HEADER_REQUEST_REFERER, "https://fromsmash.com"));
+    public static Browser prepBR(final URL url, final Browser br) {
+        final String host = url != null ? url.getHost() : "fromsmash.com";
+        br.getHeaders().put(new HTTPHeader(HTTPConstants.HEADER_REQUEST_ORIGIN, "https://" + host));
+        br.getHeaders().put(new HTTPHeader(HTTPConstants.HEADER_REQUEST_REFERER, "https://" + host));
         /* 2021-09-28: Without these headers they will respond with XML. */
         br.getHeaders().put(new HTTPHeader(HTTPConstants.HEADER_REQUEST_ACCEPT, "application/json, text/plain, */*"));
         br.getHeaders().put(new HTTPHeader(HTTPConstants.HEADER_REQUEST_CONTENT_TYPE, "application/json"));
@@ -158,7 +161,7 @@ public class FromsmashComFolder extends PluginForDecrypt {
         final String details[] = getDetails(param, br);
         final String folderID = details[0];
         final String region = new URL(details[1]).getHost();
-        prepBR(br);
+        prepBR(new URL(param.getCryptedUrl()), br);
         String passCode = null;
         int passwordAttempt = 0;
         do {

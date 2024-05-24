@@ -136,6 +136,18 @@ public class ShareplaceOrg extends YetiShareCore {
         }
     }
 
+    @Override
+    public void checkErrors(Browser br, DownloadLink link, Account account) throws PluginException {
+        try {
+            super.checkErrors(br, link, account);
+        } catch (PluginException e) {
+            if (e.getLinkStatus() == LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE && StringUtils.containsIgnoreCase(e.getMessage(), "Could not open file for reading")) {
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error 'Could not open file for reading'", 5 * 60 * 1000l, e);
+            }
+            throw e;
+        }
+    }
+
     public AvailableStatus requestFileInformationOLD(final DownloadLink link) throws Exception {
         final String fid = this.getFID(link);
         if (!link.isNameSet()) {

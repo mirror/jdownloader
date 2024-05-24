@@ -788,7 +788,6 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                 video._setFilePackage(playlistpackage);
                 videoPlaylistItems.add(video);
                 /* Increment counters */
-                position++;
                 offsetSeconds += secondsPerSegment;
             }
             if (isAccessRestricted && playlistCrawlMode == PlaylistCrawlMode.AUTO) {

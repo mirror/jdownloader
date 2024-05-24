@@ -124,12 +124,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
         } else if (new Regex(url, PATTERN_BOARD_SECTION).patternFind()) {
             return this.crawlSection(param);
         } else {
-            if (true) {
-                return crawlAllOtherItems(param.getCryptedUrl());
-            } else {
-                /* TODO: Remove this code after 06/2024. */
-                return crawlBoardPINs(param.getCryptedUrl());
-            }
+            return crawlAllOtherItems(param.getCryptedUrl());
         }
     }
 
@@ -158,9 +153,9 @@ public class PinterestComDecrypter extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final String json = br.getRegex("<script id=\"__PWS_DATA__\" type=\"application/json\">(\\{.*?)</script>").getMatch(0);
+        final String json = br.getRegex("<script id=\"__PWS_INITIAL_PROPS__\" type=\"application/json\">(\\{.*?)</script>").getMatch(0);
         final Map<String, Object> root = restoreFromString(json, TypeRef.MAP);
-        final Map<String, Object> initialReduxState = (Map<String, Object>) JavaScriptEngineFactory.walkJson(root, "props/initialReduxState");
+        final Map<String, Object> initialReduxState = (Map<String, Object>) JavaScriptEngineFactory.walkJson(root, "initialReduxState");
         final Map<String, Object> resources = (Map<String, Object>) initialReduxState.get("resources");
         // final Map<String, Object> resourcesUserResource = (Map<String, Object>) resources.get("UserResource");
         int expectedNumberofItems = 0;
@@ -796,157 +791,6 @@ public class PinterestComDecrypter extends PluginForDecrypt {
                 return new BasicNotify("Pinterest: " + title, msg, new AbstractIcon(IconKey.ICON_INFO, 32));
             }
         });
-    }
-
-    private ArrayList<DownloadLink> crawlBoardPINs(final String contenturl) throws Exception {
-        String targetSectionSlug = null;
-        final String username = URLEncode.decodeURIComponent(new Regex(contenturl, PATTERN_BOARD).getMatch(0));
-        final String boardSlug = URLEncode.decodeURIComponent(new Regex(contenturl, PATTERN_BOARD).getMatch(1));
-        // final String sourceURL;
-        if (new Regex(contenturl, PATTERN_BOARD).patternFind()) {
-            /* Remove targetSection from URL as we cannot use it in this way. */
-            targetSectionSlug = new Regex(contenturl, PATTERN_BOARD_SECTION).getMatch(2);
-        }
-        return crawlBoardPINs(username, boardSlug, targetSectionSlug, contenturl);
-    }
-
-    @Deprecated
-    /**
-     * Deprecated since 2024-02-15. Use {@link #crawlAllOtherItems(String)}
-     */
-    private ArrayList<DownloadLink> crawlBoardPINs(final String username, final String boardSlug, final String targetSectionSlug, final String contenturl) throws Exception {
-        /*
-         * In case the user wants to add a specific section, we have to get to the section overview --> Find sectionID --> Finally crawl
-         * section PINs
-         */
-        if (username == null || boardSlug == null) {
-            throw new IllegalArgumentException();
-        }
-        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final String sourceURL = URLEncode.decodeURIComponent(new URL(contenturl).getPath());
-        prepAPIBRCrawler(this.br);
-        br.getPage("https://www." + this.getHost() + "/resource/BoardResource/get/?source_url=" + URLEncode.encodeURIComponent(sourceURL) + "style%2F&data=%7B%22options%22%3A%7B%22isPrefetch%22%3Afalse%2C%22username%22%3A%22" + URLEncode.encodeURIComponent(username) + "%22%2C%22slug%22%3A%22" + URLEncode.encodeURIComponent(boardSlug) + "%22%2C%22field_set_key%22%3A%22detailed%22%2C%22no_fetch_context_on_resource%22%3Afalse%7D%2C%22context%22%3A%7B%7D%7D&_=" + System.currentTimeMillis());
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        final Map<String, Object> jsonRoot = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
-        final Map<String, Object> boardPageResource = (Map<String, Object>) JavaScriptEngineFactory.walkJson(jsonRoot, "resource_response/data");
-        final String boardID = boardPageResource.get("id").toString();
-        final long section_count = ((Number) boardPageResource.get("section_count")).longValue();
-        /* Find out how many PINs we have to crawl. */
-        final long totalPinCount = ((Number) boardPageResource.get("pin_count")).longValue();
-        final long sectionlessPinCount = ((Number) boardPageResource.get("sectionless_pin_count")).longValue();
-        final long totalInsideSectionsPinCount = (totalPinCount > 0 && sectionlessPinCount < totalPinCount) ? totalPinCount - sectionlessPinCount : 0;
-        logger.info("PINs total: " + totalPinCount + " | PINs inside sections: " + totalInsideSectionsPinCount + " | PINs outside sections: " + sectionlessPinCount);
-        if (totalPinCount == 0) {
-            throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER);
-        }
-        /*
-         * Sections are like folders. Now find all the PINs that are not in any sections (it may happen that we already have everything at
-         * this stage!) Only decrypt these leftover PINs if either the user did not want to have a specified section only or if he wanted to
-         * have a specified section only but we failed to find that.
-         */
-        br.getPage(contenturl);
-        final String json = br.getRegex("<script id=\"__PWS_DATA__\" type=\"application/json\">(\\{.*?)</script>").getMatch(0);
-        final Map<String, Object> tmpMap = restoreFromString(json, TypeRef.MAP);
-        String targetSectionID = null;
-        if (section_count > 0 && targetSectionSlug != null) {
-            /* Small workaround to find sectionID (I've failed to find an API endpoint that returns this section only). */
-            targetSectionID = this.recursiveFindSectionID(tmpMap, targetSectionSlug);
-            if (targetSectionID == null) {
-                logger.warning("Failed to crawl user desired section -> Crawling sectionless PINs only...");
-            } else {
-                final FilePackage fp = FilePackage.getInstance();
-                fp.setName(username + " - " + boardSlug + " - " + targetSectionSlug);
-                fp.setPackageKey("pinterest://board/" + boardID + "/section/" + targetSectionID);
-                ret.addAll(this.crawlSection(br.cloneBrowser(), sourceURL, boardID, targetSectionID, fp));
-                logger.info("Total number of PINs crawled in desired single section: " + ret.size());
-            }
-        } else if (totalInsideSectionsPinCount > 0) {
-            ret.addAll(this.crawlSections(username, boardID, boardSlug, br.cloneBrowser(), contenturl));
-            logger.info("Total number of PINs crawled in sections: " + ret.size());
-        }
-        if (sectionlessPinCount <= 0) {
-            /* No items at all available */
-            logger.info("This board doesn't contain any loose PINs");
-            if (ret.isEmpty()) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            } else {
-                /* We got results -> Return them */
-                return ret;
-            }
-        }
-        /* Find- and set PackageName (Board Name) */
-        final String boardName = boardPageResource.get("name").toString();
-        final Map<String, Object> boardFeedResource = (Map<String, Object>) JavaScriptEngineFactory.walkJson(tmpMap, "props/initialReduxState/resources/BoardFeedResource/{0}");
-        List<Map<String, Object>> pinList = (List<Map<String, Object>>) boardFeedResource.get("data");
-        String nextbookmark = boardFeedResource.get("nextBookmark").toString();
-        final FilePackage fp = FilePackage.getInstance();
-        fp.setName(boardName);
-        fp.setPackageKey("pinterest://board/" + boardID);
-        final int maxItemsPerPage = 15;
-        final Map<String, Object> postDataOptions = new HashMap<String, Object>();
-        final String source_url = new URL(contenturl).getPath();
-        postDataOptions.put("add_vase", true);
-        postDataOptions.put("board_id", boardID);
-        postDataOptions.put("field_set_key", "react_grid_pin");
-        postDataOptions.put("filter_section_pins", false);
-        postDataOptions.put("is_react", true);
-        postDataOptions.put("prepend", false);
-        postDataOptions.put("page_size", maxItemsPerPage);
-        final Map<String, Object> postData = new HashMap<String, Object>();
-        postData.put("options", postDataOptions);
-        postData.put("context", new HashMap<String, Object>());
-        int page = 1;
-        int crawledSectionlessPINs = 0;
-        logger.info("Crawling all sectionless PINs: " + sectionlessPinCount);
-        final List<Integer> pagesWithPossiblyMissingItems = new ArrayList<Integer>();
-        do {
-            for (final Map<String, Object> pin : pinList) {
-                proccessMap(pin, boardID, fp, true);
-            }
-            crawledSectionlessPINs += pinList.size();
-            logger.info("Crawled sectionless PINs page: " + page + " | " + crawledSectionlessPINs + "/" + sectionlessPinCount + " PINs crawled | nextbookmark= " + nextbookmark);
-            if (this.isAbort()) {
-                logger.info("Stopping because: Aborted by user");
-                throw new InterruptedException();
-            } else if (StringUtils.isEmpty(nextbookmark) || nextbookmark.equalsIgnoreCase("-end-")) {
-                logger.info("Stopping because: Reached end");
-                break;
-            } else if (crawledSectionlessPINs >= sectionlessPinCount) {
-                /* Fail-safe */
-                logger.info("Stopping because: Found all sectionless items");
-                break;
-            } else {
-                /* Continue to next page */
-                /* Collect pages with possibly missing items. Only do this if we're not on the last page. */
-                if (pinList.size() < maxItemsPerPage) {
-                    /* Fail-safe */
-                    logger.info("Found page with possibly missing items: " + page);
-                    pagesWithPossiblyMissingItems.add(page);
-                }
-                postDataOptions.put("bookmarks", new String[] { nextbookmark });
-                br.getPage("/resource/BoardFeedResource/get/?source_url=" + Encoding.urlEncode(source_url) + "&data=" + URLEncode.encodeURIComponent(JSonStorage.serializeToJson(postData)) + "&_=" + System.currentTimeMillis());
-                final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
-                final Map<String, Object> resource_response = (Map<String, Object>) entries.get("resource_response");
-                nextbookmark = (String) resource_response.get("bookmark");
-                pinList = (List<Map<String, Object>>) resource_response.get("data");
-                page += 1;
-            }
-        } while (!this.isAbort());
-        final long numberofMissingItems = sectionlessPinCount - crawledSectionlessPINs;
-        if (numberofMissingItems > 0) {
-            /*
-             * 2024-02-13: Sometimes items are missing for unknown reasons e.g. one is missing here:
-             * https://www.pinterest.de/josielindatoth/deserts/
-             */
-            String msg = "Missing items: " + numberofMissingItems;
-            if (pagesWithPossiblyMissingItems.size() > 0) {
-                msg += "\nPages where those items should be located: " + pagesWithPossiblyMissingItems.toString();
-            }
-            this.displayBubblenotifyMessage("Missing PINs in board " + boardName, msg);
-        }
-        return ret;
     }
 
     /**
