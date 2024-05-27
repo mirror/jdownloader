@@ -5649,23 +5649,20 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
             final Map<String, Object> entries = this.checkErrorsAPI(br, null, account);
             final boolean loginAPICheckIfDownloadsAreAllowed = true;
             if (loginAPICheckIfDownloadsAreAllowed) {
-                /* Find out whether or not we can download via API with this account */
+                /**
+                 * Find out whether or not we can download via API with this account. </br>
+                 * Depending on the account-type and/or XFS API config, login via API may be successful but downloading via API is not
+                 * possible. </br>
+                 * We want to determine this here so later we can decide whether we want to try downloads via API.
+                 */
                 boolean apiDownloadsPossible = false;
                 try {
                     final Browser brc = br.cloneBrowser();
-                    if (false) {
-                        // make sure to use 100% not existing file ID! xxxxxxyyyyyy can exist!
-                        // and direct_link method may trigger traffic reduction
-                        getPage(brc, this.getAPIBase() + "/file/direct_link?key=" + apikey + "&file_code=doesNotExist404");
-                        // should result in {"status":404,"msg":"no file"...
-                        final Map<String, Object> result = this.checkErrorsAPI(brc, null, account);
-                    } else {
-                        getPage(brc, this.getAPIBase() + "/file/direct_link?key=" + apikey + "&file_code=");
-                        // should result in {"status":200,"msg":"uploading"...}
-                        final Map<String, Object> result = this.checkErrorsAPI(brc, null, account);
-                        if ("uploading".equals(result.get("msg")) || "200".equals(StringUtils.valueOfOrNull(result.get("status")))) {
-                            apiDownloadsPossible = true;
-                        }
+                    getPage(brc, this.getAPIBase() + "/file/direct_link?key=" + apikey + "&file_code=");
+                    // should result in {"status":200,"msg":"uploading"...}
+                    final Map<String, Object> result = this.checkErrorsAPI(brc, null, account);
+                    if ("uploading".equals(result.get("msg")) || "200".equals(StringUtils.valueOfOrNull(result.get("status")))) {
+                        apiDownloadsPossible = true;
                     }
                 } catch (final PluginException ple) {
                     if (ple.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {

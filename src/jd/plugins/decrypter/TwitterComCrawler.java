@@ -812,7 +812,7 @@ public class TwitterComCrawler extends PluginForDecrypt {
         BubbleNotify.getInstance().show(new AbstractNotifyWindowFactory() {
             @Override
             public AbstractNotifyWindow<?> buildAbstractNotifyWindow() {
-                return new BasicNotify("Twitter: " + title, msg, new AbstractIcon(IconKey.ICON_INFO, 32));
+                return new BasicNotify("TwitterX: " + title, msg, new AbstractIcon(IconKey.ICON_INFO, 32));
             }
         });
     }
