@@ -26,27 +26,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.WeakHashMap;
 
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.storage.TypeRef;
-import org.appwork.storage.config.annotations.AboutConfig;
-import org.appwork.storage.config.annotations.DefaultBooleanValue;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.Application;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.os.CrossSystem;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.views.downloads.columns.ETAColumn;
-import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.plugins.PluginTaskID;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.linkcrawler.CheckableLink;
@@ -74,6 +53,27 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.DownloadLinkDownloadable;
 import jd.plugins.download.HashInfo;
+
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.storage.TypeRef;
+import org.appwork.storage.config.annotations.AboutConfig;
+import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.Application;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.os.CrossSystem;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.views.downloads.columns.ETAColumn;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.plugins.PluginTaskID;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "alldebrid.com" }, urls = { "https?://alldebrid\\.com/f/([A-Za-z0-9\\-_]+)" })
 public class AllDebridCom extends PluginForHost {
@@ -599,17 +599,20 @@ public class AllDebridCom extends PluginForHost {
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
         final String directlinkproperty = getDirectLinkProperty(link, account);
         final String storedDirecturl = link.getStringProperty(directlinkproperty);
-        String dllink;
+        final String dllink;
         if (storedDirecturl != null) {
             logger.info("Trying to re-use stored directurl: " + storedDirecturl);
             dllink = storedDirecturl;
         } else {
             dllink = this.generteFreshDirecturl(link, account);
         }
+        final URL url = new URL(dllink);
+        Browser.setRequestIntervalLimitGlobal(url.getHost(), 250);
         try {
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, this.getMaxChunks(account, link));
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, this.getMaxChunks(account, link, url));
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 br.followConnection(true);
+                checkRateLimit(br, dl.getConnection(), account, link);
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Directurl did not lead to downloadable content");
             }
         } catch (final Exception e) {
@@ -620,7 +623,14 @@ public class AllDebridCom extends PluginForHost {
                 throw e;
             }
         }
-        dl.startDownload();
+        try {
+            dl.startDownload();
+        } catch (PluginException e) {
+            if (StringUtils.containsIgnoreCase(e.getMessage(), "Server: Too Many Requests")) {
+                setRateLimit(link, account, url);
+            }
+            throw e;
+        }
     }
 
     private static void setAuthHeader(final Browser br, final String auth) {
@@ -643,6 +653,8 @@ public class AllDebridCom extends PluginForHost {
             dllink = generteFreshDirecturl(link, account);
         }
         dllink = updateProtocolInDirecturl(dllink);
+        final URL url = new URL(dllink);
+        Browser.setRequestIntervalLimitGlobal(url.getHost(), 250);
         final boolean useVerifiedFileSize;
         /* "paws" handling = old handling to disable setting verified filesize via API. */
         final boolean paws = link.getBooleanProperty(pawsProperty, false);
@@ -652,10 +664,11 @@ public class AllDebridCom extends PluginForHost {
         } else if (link.getVerifiedFileSize() > 0) {
             final Browser brc = br.cloneBrowser();
             brc.setFollowRedirects(true);
-            final URLConnectionAdapter check = br.openGetConnection(dllink);
+            final URLConnectionAdapter check = brc.openGetConnection(dllink);
             try {
                 if (!looksLikeDownloadableContent(check)) {
                     brc.followConnection(true);
+                    checkRateLimit(brc, check, account, link);
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Final downloadurl did not lead to downloadable content");
                 } else if (check.getCompleteContentLength() < 0) {
                     logger.info("don't use verified filesize because complete content length isn't available:" + check.getCompleteContentLength() + "==" + link.getVerifiedFileSize());
@@ -706,7 +719,7 @@ public class AllDebridCom extends PluginForHost {
                 return host;
             }
         };
-        final int chunks = getMaxChunks(account, link);
+        final int chunks = getMaxChunks(account, link, url);
         logger.info("Max allowed chunks: " + chunks);
         dl = new jd.plugins.BrowserAdapter().openDownload(br, downloadLinkDownloadable, br.createGetRequest(dllink), true, chunks);
         if (!looksLikeDownloadableContent(dl.getConnection())) {
@@ -728,20 +741,20 @@ public class AllDebridCom extends PluginForHost {
             dl.startDownload();
         } catch (PluginException e) {
             if (StringUtils.containsIgnoreCase(e.getMessage(), "Server: Too Many Requests")) {
-                setRateLimit(link, account);
+                setRateLimit(link, account, url);
             }
             throw e;
         }
     }
 
-    private void setRateLimit(final DownloadLink link, final Account account) {
+    private void setRateLimit(final DownloadLink link, final Account account, final URL downloadURL) {
         synchronized (RATE_LIMITED) {
             HashSet<String> set = RATE_LIMITED.get(account);
             if (set == null) {
                 set = new HashSet<String>();
                 RATE_LIMITED.put(account, set);
             }
-            set.add(link.getHost());
+            set.add(downloadURL.getHost());
         }
     }
 
@@ -988,10 +1001,9 @@ public class AllDebridCom extends PluginForHost {
         }
     }
 
-    private int getMaxChunks(final Account account, final DownloadLink link) {
-        /* 2020-04-12: Chunks limited to 16 RE: admin */
-        /* 2024-05-17: reports from users/tickets, limited to 1, admin/support blame JDownloader for issue */
-        final int defaultMaxChunks = 1;
+    private int getMaxChunks(final Account account, final DownloadLink link, final URL downloadURL) {
+        /* 2024-05-17: Chunks limited to 16 RE: admin, limit is 32/IP/Server */
+        final int defaultMaxChunks = 16;
         int chunks = 1;
         if (link.hasProperty(PROPERTY_maxchunks)) {
             chunks = link.getIntegerProperty(PROPERTY_maxchunks, defaultMaxChunks);
@@ -1007,7 +1019,7 @@ public class AllDebridCom extends PluginForHost {
         if (chunks != 1) {
             synchronized (RATE_LIMITED) {
                 final HashSet<String> set = RATE_LIMITED.get(account);
-                if (set != null && set.contains(link.getHost())) {
+                if (set != null && set.contains(downloadURL.getHost())) {
                     chunks = 1;
                 }
             }
@@ -1020,7 +1032,7 @@ public class AllDebridCom extends PluginForHost {
     private void checkRateLimit(Browser br, URLConnectionAdapter con, final Account account, final DownloadLink link) throws PluginException {
         if (br.containsHTML("rate limiting, please retry") || con.getResponseCode() == 429) {
             Browser.setRequestIntervalLimitGlobal(br.getHost(), 2000);
-            setRateLimit(link, account);
+            setRateLimit(link, account, con.getURL());
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Too many requests:" + br.getHost());
         }
     }

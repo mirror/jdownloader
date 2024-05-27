@@ -632,6 +632,11 @@ public class DownloadLinkDownloadable implements Downloadable {
         return name;
     }
 
+    protected boolean isAllowFilenameFromURL(URLConnectionAdapter connection) {
+        final DownloadInterface dl = getDownloadInterface();
+        return dl != null && dl.allowFilenameFromURL;
+    }
+
     @Override
     public void updateFinalFileName() {
         if (getFinalFileName() == null) {
@@ -647,7 +652,7 @@ public class DownloadLinkDownloadable implements Downloadable {
                 }
                 logger.info("FinalFileName: set to '" + name + "' from connection:" + dispositonHeader + "|Content-Type:" + connection.getContentType() + "|fix:" + dl.fixWrongContentDispositionHeader);
                 setFinalFileName(name);
-            } else if (StringUtils.isNotEmpty(name = getFileNameFromURL(connection))) {
+            } else if (isAllowFilenameFromURL(connection) && StringUtils.isNotEmpty(name = getFileNameFromURL(connection))) {
                 if (dl.fixWrongContentDispositionHeader) {
                     name = decodeURIComponent(name, null);
                 }

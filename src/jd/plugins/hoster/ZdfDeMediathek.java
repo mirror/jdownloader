@@ -107,7 +107,8 @@ public class ZdfDeMediathek extends PluginForHost {
             /* This should never happen! */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        link.setFinalFileName(link.getStringProperty("directName"));
+        // Workaround to prevent finalFileName(set by Decrypter) to be lost on download for non HLS files
+        link.setFinalFileName(link.getStringProperty("directName", link.getName()));
         if (!isDownload) {
             if (StringUtils.containsIgnoreCase(dllink, "m3u8")) {
                 checkFFProbe(link, "Download a HLS Stream");
