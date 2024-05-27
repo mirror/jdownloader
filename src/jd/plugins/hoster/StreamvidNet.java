@@ -129,6 +129,8 @@ public class StreamvidNet extends XFileSharingProBasic {
         /* 2023-04-27 */
         if (br.containsHTML("class=\"not-found-text\"")) {
             return true;
+        } else if (br.getURL().endsWith("/404.html")) {
+            return true;
         } else {
             return super.isOffline(link, br);
         }

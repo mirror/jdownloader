@@ -136,7 +136,10 @@ public class HidriveCom extends PluginForHost {
                 }
                 brAPI.postPage(HidriveComCrawler.API_BASE + "/sharelink/info", query);
                 final Map<String, Object> entries = restoreFromString(brAPI.toString(), TypeRef.MAP);
-                if (brAPI.getHttpConnection().getResponseCode() == 404 || brAPI.getHttpConnection().getResponseCode() == 410) {
+                if (brAPI.getHttpConnection().getResponseCode() == 403) {
+                    /* {"msg":"Forbidden: sharelink permission mismatch","code":"403"} */
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                } else if (brAPI.getHttpConnection().getResponseCode() == 404 || brAPI.getHttpConnection().getResponseCode() == 410) {
                     /* {"msg":"Not Found: Invalid share id 'XXXXYYYY'","code":"404"} */
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 } else if (brAPI.getHttpConnection().getResponseCode() == 401) {

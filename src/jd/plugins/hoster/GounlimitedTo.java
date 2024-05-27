@@ -165,6 +165,15 @@ public class GounlimitedTo extends XFileSharingProBasic {
         }
     }
 
+    @Override
+    protected void checkErrors(final Browser br, final String html, final DownloadLink link, final Account account, final boolean checkAll) throws NumberFormatException, PluginException {
+        super.checkErrors(br, html, link, account, checkAll);
+        if (br.containsHTML("No such file=")) {
+            /* 2024-05-27: Special offline: Broken download of original file [looks like offline] */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Server error 'No such file'");
+        }
+    }
+
     /**
      * 2020-08-10: Special: Some offline files are not displayed as offline. Instead, final downloadurl leads to error 404 and browser shows
      * "404 this video was removed" animation on play button click.
@@ -230,5 +239,14 @@ public class GounlimitedTo extends XFileSharingProBasic {
             }
         }
         return status;
+    }
+
+    @Override
+    protected String getDllinkViaOfficialVideoDownload(final Browser br, final DownloadLink link, final Account account, final boolean returnFilesize) throws Exception {
+        String result = super.getDllinkViaOfficialVideoDownload(br, link, account, returnFilesize);
+        if (result == null) {
+            this.checkErrors(br, br.getRequest().getHtmlCode(), link, account, false);
+        }
+        return result;
     }
 }

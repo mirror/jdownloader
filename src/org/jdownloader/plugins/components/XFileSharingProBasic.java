@@ -5659,9 +5659,14 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
                 try {
                     final Browser brc = br.cloneBrowser();
                     getPage(brc, this.getAPIBase() + "/file/direct_link?key=" + apikey + "&file_code=");
-                    // should result in {"status":200,"msg":"uploading"...}
+                    /**
+                     * Example positive responses: 2024-05-27: darkibox.com: {"status":200,"msg":"uploading"...} </br>
+                     * 2024-05-27: send.cm: {"msg":"no file","server_time":"2024-05-27 00:00:00","status":404} </br>
+                     */
                     final Map<String, Object> result = this.checkErrorsAPI(brc, null, account);
-                    if ("uploading".equals(result.get("msg")) || "200".equals(StringUtils.valueOfOrNull(result.get("status")))) {
+                    final String msg = (String) result.get("msg");
+                    if (StringUtils.equalsIgnoreCase(msg, "uploading") && "200".equals(StringUtils.valueOfOrNull(result.get("status")))) {
+                        /* 2024-05-27: */
                         apiDownloadsPossible = true;
                     }
                 } catch (final PluginException ple) {

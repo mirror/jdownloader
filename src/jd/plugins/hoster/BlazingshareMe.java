@@ -1,5 +1,5 @@
 //jDownloader - Downloadmanager
-//Copyright (C) 2013  JD-Team support@jdownloader.org
+//Copyright (C) 2016  JD-Team support@jdownloader.org
 //
 //This program is free software: you can redistribute it and/or modify
 //it under the terms of the GNU General Public License as published by
@@ -18,35 +18,33 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.jdownloader.plugins.components.XFileSharingProBasic;
+import org.jdownloader.plugins.components.YetiShareCore;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
-import jd.parser.html.Form;
-import jd.parser.html.InputField;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class CentfileCom extends XFileSharingProBasic {
-    public CentfileCom(final PluginWrapper wrapper) {
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
+public class BlazingshareMe extends YetiShareCore {
+    public BlazingshareMe(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium(super.getPurchasePremiumURL());
+        this.enablePremium(getPurchasePremiumURL());
     }
 
     /**
-     * DEV NOTES XfileSharingProBasic Version SEE SUPER-CLASS<br />
+     * DEV NOTES YetiShare<br />
+     ****************************
      * mods: See overridden functions<br />
-     * limit-info: 2021-07-23: No limits at all <br />
-     * captchatype-info: 2021-07-23: reCaptchaV2<br />
-     * other:<br />
+     * limit-info:<br />
+     * captchatype-info: null solvemedia reCaptchaV2, hcaptcha<br />
+     * other: <br />
      */
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "centfile.com" });
+        ret.add(new String[] { "blazingshare.me" });
         return ret;
     }
 
@@ -60,24 +58,23 @@ public class CentfileCom extends XFileSharingProBasic {
     }
 
     public static String[] getAnnotationUrls() {
-        return XFileSharingProBasic.buildAnnotationUrls(getPluginDomains());
+        return YetiShareCore.buildAnnotationUrls(getPluginDomains());
     }
 
     @Override
     public boolean isResumeable(final DownloadLink link, final Account account) {
         if (account != null && account.getType() == AccountType.FREE) {
             /* Free Account */
-            return true;
+            return false;
         } else if (account != null && account.getType() == AccountType.PREMIUM) {
             /* Premium account */
             return true;
         } else {
             /* Free(anonymous) and unknown account type */
-            return true;
+            return false;
         }
     }
 
-    @Override
     public int getMaxChunks(final Account account) {
         if (account != null && account.getType() == AccountType.FREE) {
             /* Free Account */
@@ -92,46 +89,16 @@ public class CentfileCom extends XFileSharingProBasic {
     }
 
     @Override
-    public int getMaxSimultaneousFreeAnonymousDownloads() {
-        return -1;
+    public int getMaxSimultanFreeDownloadNum() {
+        return 1;
     }
 
-    @Override
     public int getMaxSimultaneousFreeAccountDownloads() {
-        return -1;
+        return 1;
     }
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
-    }
-
-    @Override
-    public Form findFormDownload1Free(final Browser br) throws Exception {
-        /* 2021-07-23: Form contains one more "method_free" field with value "fast" which causes error 500 if sent like that! */
-        final Form download1 = super.findFormDownload1Free(br);
-        if (download1 != null) {
-            int countMethodFree = 0;
-            String methodFreeRealValue = null; // typically "Free+Download+%3E%3E"
-            for (final InputField field : download1.getInputFields()) {
-                if (field.getKey().equals("method_free")) {
-                    if (!field.getValue().equals("fast")) {
-                        methodFreeRealValue = field.getValue();
-                    }
-                    countMethodFree += 1;
-                }
-            }
-            if (countMethodFree > 1) {
-                if (methodFreeRealValue != null) {
-                    for (int i = 0; i < countMethodFree; i++) {
-                        download1.remove("method_free");
-                    }
-                    download1.put("method_free", methodFreeRealValue);
-                } else {
-                    logger.warning("Possibly broken download1 Form");
-                }
-            }
-        }
-        return download1;
     }
 }

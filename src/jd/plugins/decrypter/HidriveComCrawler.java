@@ -19,7 +19,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.URLEncode;
@@ -76,7 +75,7 @@ public class HidriveComCrawler extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         /* {"viewmode":"c","is_encrypted":false,"writable":false,"has_password":false,"readable":true} */
-        final Map<String, Object> folderInfo = restoreFromString(br.toString(), TypeRef.MAP);
+        final Map<String, Object> folderInfo = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         final UrlQuery folderQuery = new UrlQuery();
         folderQuery.add("id", baseFolderID);
         String passCode = param.getDecrypterPassword();
@@ -93,7 +92,7 @@ public class HidriveComCrawler extends PluginForDecrypt {
             throw new DecrypterException(DecrypterException.PASSWORD);
         }
         /* {"expires_in":14400,"access_token":"XXXXYYYY","root_name":"Galerie-Ansicht","token_type":"Bearer"} */
-        final Map<String, Object> token = restoreFromString(br.toString(), TypeRef.MAP);
+        final Map<String, Object> token = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         final String access_token = token.get("access_token").toString();
         final long access_token_valid_until = System.currentTimeMillis() + ((Number) token.get("expires_in")).longValue() * 1000;
         if (StringUtils.isEmpty(access_token)) {
@@ -114,7 +113,7 @@ public class HidriveComCrawler extends PluginForDecrypt {
         folderOverviewQuery.add("limit", Encoding.urlEncode("0,5000"));
         folderOverviewQuery.add("sort", "none");
         br.getPage("/api/dir?" + folderOverviewQuery.toString());
-        final Map<String, Object> folderOverview = restoreFromString(br.toString(), TypeRef.MAP);
+        final Map<String, Object> folderOverview = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         final List<Map<String, Object>> ressourcelist = (List<Map<String, Object>>) folderOverview.get("members");
         String subfolderPath = this.getAdoptedCloudFolderStructure();
         if (subfolderPath == null) {

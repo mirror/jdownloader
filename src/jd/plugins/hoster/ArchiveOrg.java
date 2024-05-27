@@ -104,7 +104,7 @@ public class ArchiveOrg extends PluginForHost {
 
     public static final String                            PROPERTY_BOOK_ID                                = "book_id";
     public static final String                            PROPERTY_BOOK_SUB_PREFIX                        = "book_sub_prefix";
-    /* Book page by number by archive.org. Can satart at 0 or 1. Do not use as a real page index! */
+    /* Book page by number by archive.org. Can start at 0 or 1. Do not use as a real page index! */
     public static final String                            PROPERTY_BOOK_PAGE                              = "book_page";
     /* Real page index */
     public static final String                            PROPERTY_BOOK_PAGE_INTERNAL_INDEX               = "book_page_internal_index";
@@ -590,66 +590,66 @@ public class ArchiveOrg extends PluginForHost {
 
     public void login(final Account account, final boolean force) throws Exception {
         synchronized (account) {
-            try {
-                br.setFollowRedirects(true);
-                br.setCookiesExclusive(true);
-                /* 2021-08-09: Added this as alternative method e.g. for users that have registered on archive.org via Google login. */
-                final Cookies userCookies = account.loadUserCookies();
-                if (userCookies != null) {
-                    if (!force) {
-                        /* Do not check cookies */
-                        br.setCookies(account.getHoster(), userCookies);
-                        return;
-                    } else if (this.checkCookies(this.br, account, userCookies)) {
-                        /*
-                         * User can entry anything into username field when using cookie login but we want unique strings --> Try to find
-                         * "real username" in HTML code.
-                         */
-                        final String realUsername = br.getRegex("username=\"([^\"]+)\"").getMatch(0);
-                        if (realUsername == null) {
-                            logger.warning("Failed to find \"real\" username");
-                        } else if (!StringUtils.equals(realUsername, account.getUser())) {
+            br.setFollowRedirects(true);
+            br.setCookiesExclusive(true);
+            /* 2021-08-09: Added this as alternative method e.g. for users that have registered on archive.org via Google login. */
+            final Cookies userCookies = account.loadUserCookies();
+            if (userCookies != null) {
+                if (!force) {
+                    /* Do not check cookies */
+                    br.setCookies(account.getHoster(), userCookies);
+                    return;
+                } else if (this.checkCookies(this.br, account, userCookies)) {
+                    /*
+                     * User can entry anything into username field when using cookie login but we want unique strings --> Try to find
+                     * "real username" in HTML code.
+                     */
+                    String realUsername = br.getRegex("username=\"([^\"]+)\"").getMatch(0);
+                    if (realUsername == null) {
+                        logger.warning("Failed to find \"real\" username");
+                    } else {
+                        realUsername = Encoding.htmlDecode(realUsername).trim();
+                        if (!StringUtils.equals(realUsername, account.getUser())) {
                             account.setUser(realUsername);
                         }
-                        return;
+                    }
+                    return;
+                } else {
+                    if (account.hasEverBeenValid()) {
+                        throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
                     } else {
-                        if (account.hasEverBeenValid()) {
-                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
-                        } else {
-                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
-                        }
+                        throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
                     }
                 }
-                final Cookies cookies = account.loadCookies("");
-                if (cookies != null) {
-                    logger.info("Attempting cookie login");
-                    br.setCookies(cookies);
-                    if (!force) {
-                        /* Do not check cookies */
-                        return;
-                    } else {
-                        if (this.checkCookies(this.br, account, cookies)) {
-                            account.saveCookies(br.getCookies(br.getHost()), "");
-                            return;
-                        }
-                    }
-                }
-                logger.info("Performing full login");
-                if (!account.getUser().matches(".+@.+\\..+")) {
-                    throw new AccountInvalidException("Please enter your e-mail address in the username field!");
-                }
-                br.getPage("https://" + this.getHost() + "/account/login");
-                br.postPageRaw(br.getURL(), "remember=true&referer=https%3A%2F%2Farchive.org%2FCREATE%2F&login=true&submit_by_js=true&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
-                if (!isLoggedIN(br)) {
-                    throw new AccountInvalidException();
-                }
-                account.saveCookies(br.getCookies(br.getHost()), "");
-            } catch (final PluginException ignore) {
-                if (ignore.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
-                    account.clearCookies("");
-                }
-                throw ignore;
             }
+            final Cookies cookies = account.loadCookies("");
+            if (cookies != null) {
+                logger.info("Attempting cookie login");
+                br.setCookies(cookies);
+                if (!force) {
+                    /* Do not check cookies */
+                    return;
+                } else {
+                    if (this.checkCookies(this.br, account, cookies)) {
+                        account.saveCookies(br.getCookies(br.getHost()), "");
+                        return;
+                    } else {
+                        /* Delete invalid cookies */
+                        account.clearCookies("");
+                        br.clearCookies(null);
+                    }
+                }
+            }
+            logger.info("Performing full login");
+            if (!account.getUser().matches(".+@.+\\..+")) {
+                throw new AccountInvalidException("Please enter your e-mail address in the username field!");
+            }
+            br.getPage("https://" + this.getHost() + "/account/login");
+            br.postPageRaw(br.getURL(), "remember=true&referer=https%3A%2F%2Farchive.org%2FCREATE%2F&login=true&submit_by_js=true&username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()));
+            if (!isLoggedIN(br)) {
+                throw new AccountInvalidException();
+            }
+            account.saveCookies(br.getCookies(br.getHost()), "");
         }
     }
 

@@ -350,6 +350,7 @@ public class KemonoPartyCrawler extends PluginForDecrypt {
         final Map<String, Object> filemap = (Map<String, Object>) postmap.get("file");
         if (!filemap.isEmpty()) {
             final DownloadLink media = buildFileDownloadLinkAPI(dupes, useAdvancedDupecheck, filemap, index);
+            /* null = item is a duplicate */
             if (media != null) {
                 kemonoResults.add(media);
                 index++;
@@ -359,6 +360,7 @@ public class KemonoPartyCrawler extends PluginForDecrypt {
         final List<Map<String, Object>> attachments = (List<Map<String, Object>>) postmap.get("attachments");
         for (final Map<String, Object> attachment : attachments) {
             final DownloadLink media = buildFileDownloadLinkAPI(dupes, useAdvancedDupecheck, attachment, index);
+            /* null = item is a duplicate */
             if (media != null) {
                 kemonoResults.add(media);
                 index++;
