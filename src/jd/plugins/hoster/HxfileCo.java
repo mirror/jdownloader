@@ -21,6 +21,7 @@ import java.util.List;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
@@ -103,5 +104,15 @@ public class HxfileCo extends XFileSharingProBasic {
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
+    }
+
+    @Override
+    protected String getDllink(final DownloadLink link, final Account account, final Browser br, String src) {
+        final String dllink = br.getRegex("class=\"btn btn-dow\" href=\"(https?[^\"]+)").getMatch(0);
+        if (dllink != null) {
+            return dllink;
+        } else {
+            return super.getDllink(link, account, br, src);
+        }
     }
 }

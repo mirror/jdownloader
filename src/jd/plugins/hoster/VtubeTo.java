@@ -163,4 +163,15 @@ public class VtubeTo extends XFileSharingProBasic {
         }
         return status;
     }
+
+    @Override
+    protected boolean isOffline(final DownloadLink link, final Browser br) {
+        if (br.containsHTML(">\\s*File Not Found|The file expired")) {
+            return true;
+        } else if (br.containsHTML("/assets/bge2\\.jpg")) {
+            return true;
+        } else {
+            return super.isOffline(link, br);
+        }
+    }
 }
