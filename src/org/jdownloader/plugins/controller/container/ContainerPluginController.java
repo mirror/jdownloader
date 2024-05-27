@@ -70,6 +70,11 @@ public class ContainerPluginController {
         } catch (final Throwable e) {
             org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
         }
+        try {
+            plugins.add(new org.jdownloader.container.InternetShortcut());
+        } catch (final Throwable e) {
+            org.appwork.utils.logging2.extmanager.LoggerFactory.getDefaultLogger().log(e);
+        }
         if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
             try {
                 plugins.add(new org.jdownloader.container.SFDL());

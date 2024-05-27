@@ -24,14 +24,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
-import jd.controlling.ClipboardMonitoring.ClipboardChangeDetector.CHANGE_FLAG;
-import jd.controlling.linkcollector.LinkCollectingJob;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcollector.LinkOrigin;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledLinkModifier;
-import jd.parser.html.HTMLParser;
-
 import org.appwork.utils.IO;
 import org.appwork.utils.IO.BOM;
 import org.appwork.utils.Regex;
@@ -43,6 +35,14 @@ import org.jdownloader.controlling.PasswordUtils;
 import org.jdownloader.gui.views.components.packagetable.dragdrop.PackageControllerTableTransferable;
 import org.jdownloader.logging.LogController;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
+
+import jd.controlling.ClipboardMonitoring.ClipboardChangeDetector.CHANGE_FLAG;
+import jd.controlling.linkcollector.LinkCollectingJob;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinkOrigin;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledLinkModifier;
+import jd.parser.html.HTMLParser;
 
 public class ClipboardMonitoring {
     public static class HTMLFragment {
@@ -250,9 +250,9 @@ public class ClipboardMonitoring {
         }
     }
 
-    private static final ClipboardMonitoring                                                 INSTANCE            = new ClipboardMonitoring();
-    private static final DataFlavor                                                          URLFLAVOR;
-    private static final DataFlavor                                                          URILISTFLAVOR;
+    private static final ClipboardMonitoring INSTANCE = new ClipboardMonitoring();
+    private static final DataFlavor          URLFLAVOR;
+    private static final DataFlavor          URILISTFLAVOR;
     static {
         DataFlavor ret = null;
         try {
@@ -1016,26 +1016,27 @@ public class ClipboardMonitoring {
                     }
                     final String next = izer.nextToken();
                     if (StringUtils.isNotEmpty(next)) {
-                        if (next.matches("(?i)^(https?|file|ftp):/")) {
+                        if (next.matches("(?i)^(https?|ftp):/.+")) {
+                            sb.append(next);
+                        } else if (next.matches("(?i)^file:/.+")) {
                             // file:/ -> not authority -> all fine
                             // file://xy/ -> xy will be authority -> java.lang.IllegalArgumentException: URI has an authority component
                             // file:/// -> empty authority -> all fine
+                            // FIXME: correct URL-URI handling
                             sb.append(next.replaceFirst("file:///", "file:/"));
                         } else if (next.startsWith("/")) {
                             // macOS has no file protocol prefix
                             final File probe = new File(next);
                             if (probe.isAbsolute()) {
+                                // FIXME: correct URL-URI handling
                                 sb.append(probe.toURI().toString());
                             }
                         }
                     }
                 }
             }
-            if (sb.length() > 0) {
-                return sb.toString();
-            }
         }
-        if (isDataFlavorSupported(transferable, dataFlavors, DataFlavor.javaFileListFlavor)) {
+        if (sb.length() == 0 && isDataFlavorSupported(transferable, dataFlavors, DataFlavor.javaFileListFlavor)) {
             final Object ret = getTransferData(transferable, ClipboardMonitoring.getINSTANCE().clipboard, DataFlavor.javaFileListFlavor);
             if (ret != null) {
                 final List<File> list = (List<File>) ret;
@@ -1046,14 +1047,16 @@ public class ClipboardMonitoring {
                     if (sb.length() > 0) {
                         sb.append("\r\n");
                     }
+                    // FIXME: correct URL-URI handling
                     sb.append(f.toURI().toString());
                 }
             }
         }
         if (sb.length() == 0) {
             return null;
+        } else {
+            return sb.toString();
         }
-        return sb.toString();
     }
 
     /**
