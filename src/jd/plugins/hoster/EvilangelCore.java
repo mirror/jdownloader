@@ -694,133 +694,130 @@ public abstract class EvilangelCore extends PluginForHost {
 
     public void login(final Account account, final boolean verifyCookies) throws Exception {
         synchronized (account) {
-            try {
-                final String host = this.getHost();
-                final Cookies cookies = account.loadCookies("");
-                final Cookies userCookies = account.loadUserCookies();
-                if (allowCookieLoginOnly() && userCookies == null) {
-                    showCookieLoginInfo();
-                    throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_required());
-                }
-                this.prepBrowser(br);
-                if (userCookies != null) {
-                    logger.info("Attempting user cookie login");
-                    br.setCookies(userCookies);
-                    if (!verifyCookies) {
-                        /* Do not verify cookies */
-                        return;
-                    }
-                    if (verifyCookies(account, userCookies)) {
-                        /* Cookie login successful */
-                        logger.info("User cookie login successful");
-                        return;
-                    } else {
-                        if (account.hasEverBeenValid()) {
-                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
-                        } else {
-                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
-                        }
-                    }
-                }
-                if (cookies != null) {
-                    br.setCookies(host, cookies);
-                    if (!verifyCookies) {
-                        /* Do not verify cookies */
-                        return;
-                    }
-                    if (verifyCookies(account, cookies)) {
-                        /* Cookie login successful */
-                        logger.info("Cookie login successful");
-                        /* Update cookies */
-                        account.saveCookies(br.getCookies(host), "");
-                        return;
-                    } else {
-                        logger.info("Cookie login failed");
-                        br.clearAll();
-                    }
-                }
-                logger.info("Performing full login");
-                br.setFollowRedirects(true);
-                br.getPage(getNamespaceLogin());
-                if (br.containsHTML("(?i)>\\s*We are experiencing some problems\\!<")) {
-                    throw new AccountInvalidException("Your IP is banned. Please re-connect to get a new IP to be able to log-in!");
-                }
-                // final String realLoginURL = br.getURL();
-                final Form login = br.getFormbyProperty("id", "loginForm");
-                if (login == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                br.setCookie(br.getHost(), "origin", "promo");
-                br.setCookie(br.getHost(), "enterSite", "true");
-                br.setCookie(br.getHost(), "activeMemberValidator", "1");
-                final boolean fillTimeFalues = true;
-                if (fillTimeFalues) {
-                    final Date d = new Date();
-                    SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd");
-                    final String date = sd.format(d);
-                    sd = new SimpleDateFormat("k:mm");
-                    final String time = sd.format(d);
-                    final String timedatestring = date + " " + time;
-                    br.setCookie(br.getHost(), "mDateTime", Encoding.urlEncode(timedatestring));
-                    br.setCookie(br.getHost(), "mOffset", "2");
-                    br.setCookie(br.getHost(), "timestamp", Long.toString(System.currentTimeMillis()));
-                    /* 2021-09-01: Some tests for adulttime.com */
-                    br.setCookie(br.getHost(), "loginLander", "/en");
-                    br.setCookie(br.getHost(), "_hjIncludedInSessionSample", "0");
-                } else {
-                }
-                // login.setAction("/en/login");
-                login.put("username", Encoding.urlEncode(account.getUser()));
-                login.put("password", Encoding.urlEncode(account.getPass()));
-                if (login.containsHTML("g-recaptcha")) {
-                    // recaptchav2
-                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br) {
-                        @Override
-                        public String getSiteKey() {
-                            return getSiteKey(login.getHtmlCode());
-                        }
-                    }.getToken();
-                    login.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-                }
-                login.remove("submit");
-                /**
-                 * 2021-09-01: Form may contain "rememberme" two times with value "0" AND "1"! Same via browser! </br>
-                 * Only add "rememberme": "1" if that is not already present in our form.
-                 */
-                final String remembermeCookieKey = "rememberme";
-                boolean containsRemembermeFieldWithValue1 = false;
-                for (final InputField ifield : login.getInputFields()) {
-                    if (StringUtils.equals(ifield.getKey(), remembermeCookieKey) && StringUtils.equals(ifield.getValue(), "1")) {
-                        containsRemembermeFieldWithValue1 = true;
-                        break;
-                    }
-                }
-                if (!containsRemembermeFieldWithValue1) {
-                    login.put(remembermeCookieKey, "1");
-                }
-                br.submitForm(login);
-                if (br.getURL().contains("/compliance/terms")) {
-                    /* 2023-06-28: dfxtra.com */
-                    logger.warning("!DEVELOPER! This step hasn't been implemented yet! Login will most likely fail now!");
-                    final String url = br.getRegex("(/api/compliance/terms/acknowledgement)").getMatch(0);
-                    final String uuid = br.getRegex("'uuid'\\s*:\\s*'([^<>\"\\']+)").getMatch(0);
-                    // br.getPage(realLoginURL);
-                }
-                /* TODO: 2021-09-01: Add support for 2FA login (security code gets sent via mail) */
-                if (br.containsHTML("(?i)>\\s*Your account is deactivated for abuse")) {
-                    throw new AccountInvalidException("Your account is deactivated for abuse. Please re-activate it to use it in JDownloader.");
-                } else if (br.getURL().contains("/reactivate")) {
-                    /* TODO: Expired free account(?) */
-                    throw new AccountInvalidException("Premium subscription expired");
-                }
-                if (!isLoggedIn(br)) {
-                    throw new AccountInvalidException();
-                }
-                account.saveCookies(br.getCookies(host), "");
-            } catch (final PluginException e) {
-                account.clearCookies("");
-                throw e;
+            final String host = this.getHost();
+            final Cookies cookies = account.loadCookies("");
+            final Cookies userCookies = account.loadUserCookies();
+            if (allowCookieLoginOnly() && userCookies == null) {
+                showCookieLoginInfo();
+                throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_required());
             }
+            this.prepBrowser(br);
+            if (userCookies != null) {
+                logger.info("Attempting user cookie login");
+                br.setCookies(userCookies);
+                if (!verifyCookies) {
+                    /* Do not verify cookies */
+                    return;
+                }
+                if (verifyCookies(account, userCookies)) {
+                    /* Cookie login successful */
+                    logger.info("User cookie login successful");
+                    return;
+                } else {
+                    if (account.hasEverBeenValid()) {
+                        throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
+                    } else {
+                        throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
+                    }
+                }
+            }
+            if (cookies != null) {
+                br.setCookies(host, cookies);
+                if (!verifyCookies) {
+                    /* Do not verify cookies */
+                    return;
+                }
+                if (verifyCookies(account, cookies)) {
+                    /* Cookie login successful */
+                    logger.info("Cookie login successful");
+                    /* Update cookies */
+                    account.saveCookies(br.getCookies(host), "");
+                    return;
+                } else {
+                    logger.info("Cookie login failed");
+                    br.clearCookies(null);
+                    account.clearCookies("");
+                }
+            }
+            logger.info("Performing full login");
+            br.setFollowRedirects(true);
+            br.getPage(getNamespaceLogin());
+            if (br.containsHTML("(?i)>\\s*We are experiencing some problems\\!<")) {
+                throw new AccountInvalidException("Your IP is banned. Please re-connect to get a new IP to be able to log-in!");
+            }
+            // final String realLoginURL = br.getURL();
+            final Form login = br.getFormbyProperty("id", "loginForm");
+            if (login == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            br.setCookie(br.getHost(), "origin", "promo");
+            br.setCookie(br.getHost(), "enterSite", "true");
+            br.setCookie(br.getHost(), "activeMemberValidator", "1");
+            final boolean fillTimeFalues = true;
+            if (fillTimeFalues) {
+                final Date d = new Date();
+                SimpleDateFormat sd = new SimpleDateFormat("yyyy-MM-dd");
+                final String date = sd.format(d);
+                sd = new SimpleDateFormat("k:mm");
+                final String time = sd.format(d);
+                final String timedatestring = date + " " + time;
+                br.setCookie(br.getHost(), "mDateTime", Encoding.urlEncode(timedatestring));
+                br.setCookie(br.getHost(), "mOffset", "2");
+                br.setCookie(br.getHost(), "timestamp", Long.toString(System.currentTimeMillis()));
+                /* 2021-09-01: Some tests for adulttime.com */
+                br.setCookie(br.getHost(), "loginLander", "/en");
+                br.setCookie(br.getHost(), "_hjIncludedInSessionSample", "0");
+            } else {
+                // do nothing
+            }
+            // login.setAction("/en/login");
+            login.put("username", Encoding.urlEncode(account.getUser()));
+            login.put("password", Encoding.urlEncode(account.getPass()));
+            if (login.containsHTML("g-recaptcha")) {
+                // recaptchav2
+                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br) {
+                    @Override
+                    public String getSiteKey() {
+                        return getSiteKey(login.getHtmlCode());
+                    }
+                }.getToken();
+                login.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+            }
+            login.remove("submit");
+            /**
+             * 2021-09-01: Form may contain "rememberme" two times with value "0" AND "1"! Same via browser! </br>
+             * Only add "rememberme": "1" if that is not already present in our form.
+             */
+            final String remembermeCookieKey = "rememberme";
+            boolean containsRemembermeFieldWithValue1 = false;
+            for (final InputField ifield : login.getInputFields()) {
+                if (StringUtils.equals(ifield.getKey(), remembermeCookieKey) && StringUtils.equals(ifield.getValue(), "1")) {
+                    containsRemembermeFieldWithValue1 = true;
+                    break;
+                }
+            }
+            if (!containsRemembermeFieldWithValue1) {
+                login.put(remembermeCookieKey, "1");
+            }
+            br.submitForm(login);
+            if (br.getURL().contains("/compliance/terms")) {
+                /* 2023-06-28: dfxtra.com */
+                logger.warning("!DEVELOPER! This step hasn't been implemented yet! Login will most likely fail now!");
+                final String url = br.getRegex("(/api/compliance/terms/acknowledgement)").getMatch(0);
+                final String uuid = br.getRegex("'uuid'\\s*:\\s*'([^<>\"\\']+)").getMatch(0);
+                // br.getPage(realLoginURL);
+            }
+            /* TODO: 2021-09-01: Add support for 2FA login (security code gets sent via mail) */
+            if (br.containsHTML("(?i)>\\s*Your account is deactivated for abuse")) {
+                throw new AccountInvalidException("Your account is deactivated for abuse. Please re-activate it to use it in JDownloader.");
+            } else if (br.getURL().contains("/reactivate")) {
+                /* TODO: Expired free account(?) */
+                throw new AccountInvalidException("Premium subscription expired");
+            }
+            if (!isLoggedIn(br)) {
+                throw new AccountInvalidException();
+            }
+            account.saveCookies(br.getCookies(host), "");
         }
     }
 

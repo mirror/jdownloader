@@ -15,6 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
@@ -23,6 +24,8 @@ import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.encoding.URLEncode;
 import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -46,6 +49,16 @@ public class HidriveCom extends PluginForHost {
     }
 
     @Override
+    public FEATURE[] getFeatures() {
+        return new FEATURE[] { LazyPlugin.FEATURE.FAVICON };
+    }
+
+    @Override
+    public Object getFavIcon(String host) throws IOException {
+        return "https://my.hidrive.com/v138/images/static/favicon.ico";
+    }
+
+    @Override
     public String getAGBLink() {
         return "https://hidrive.com/";
     }
@@ -53,7 +66,6 @@ public class HidriveCom extends PluginForHost {
     /* Connection stuff */
     private static final boolean           FREE_RESUME                       = false;
     private static final int               FREE_MAXCHUNKS                    = 1;
-    private static final int               FREE_MAXDOWNLOADS                 = 20;
     public static final String             PROPERTY_ACCESS_TOKEN             = "PROPERTY_ACCESS_TOKEN";
     public static final String             PROPERTY_ACCESS_TOKEN_VALID_UNTIL = "PROPERTY_ACCESS_TOKEN_VALID_UNTIL";
     public static final String             PROPERTY_DOWNLOAD_CODE            = "PROPERTY_DOWNLOAD_CODE";
@@ -102,7 +114,11 @@ public class HidriveCom extends PluginForHost {
                 con = br.openHeadConnection(getDirectDownloadurl(link));
                 if (this.looksLikeDownloadableContent(con)) {
                     if (con.getCompleteContentLength() > 0) {
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                        if (con.isContentDecoded()) {
+                            link.setDownloadSize(con.getCompleteContentLength());
+                        } else {
+                            link.setVerifiedFileSize(con.getCompleteContentLength());
+                        }
                     }
                     link.setFinalFileName(Plugin.getFileNameFromDispositionHeader(con));
                 } else {
@@ -182,7 +198,11 @@ public class HidriveCom extends PluginForHost {
                     } else if (this.looksLikeDownloadableContent(con)) {
                         link.setPasswordProtected(false);
                         if (con.getCompleteContentLength() > 0) {
-                            link.setVerifiedFileSize(con.getCompleteContentLength());
+                            if (con.isContentDecoded()) {
+                                link.setDownloadSize(con.getCompleteContentLength());
+                            } else {
+                                link.setVerifiedFileSize(con.getCompleteContentLength());
+                            }
                         }
                         link.setFinalFileName(Plugin.getFileNameFromDispositionHeader(con));
                     } else {
@@ -290,7 +310,7 @@ public class HidriveCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return FREE_MAXDOWNLOADS;
+        return Integer.MAX_VALUE;
     }
 
     @Override

@@ -20,18 +20,19 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.Regex;
+import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class HshopEristaMe extends PluginForHost {
@@ -69,17 +70,15 @@ public class HshopEristaMe extends PluginForHost {
         return ret.toArray(new String[0]);
     }
 
-    /* Connection stuff */
-    private static final boolean FREE_RESUME       = false;
-    private static final int     FREE_MAXCHUNKS    = 1;
-    private static final int     FREE_MAXDOWNLOADS = 20;
+    @Override
+    public boolean isResumeable(final DownloadLink link, final Account account) {
+        return false;
+    }
 
-    // private static final boolean ACCOUNT_FREE_RESUME = true;
-    // private static final int ACCOUNT_FREE_MAXCHUNKS = 0;
-    // private static final int ACCOUNT_FREE_MAXDOWNLOADS = 20;
-    // private static final boolean ACCOUNT_PREMIUM_RESUME = true;
-    // private static final int ACCOUNT_PREMIUM_MAXCHUNKS = 0;
-    // private static final int ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
+    public int getMaxChunks(final DownloadLink link, final Account account) {
+        return 1;
+    }
+
     @Override
     public String getLinkID(final DownloadLink link) {
         final String fid = getFID(link);
@@ -96,14 +95,16 @@ public class HshopEristaMe extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        final String fid = this.getFID(link);
+        final String extDefault = ".cia";
         if (!link.isNameSet()) {
             /* Fallback */
-            link.setName(this.getFID(link));
+            link.setName(fid + extDefault);
         }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getPluginPatternMatcher());
-        if (br.containsHTML("(?i)<h3[^>]*>\\s*Failed loading Title\\s*<")) {
+        if (br.containsHTML(">\\s*Failed loading Title")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String size = br.getRegex("<p>\\s*Size\\s*:\\s*<span[^>]*>\\s*([0-9\\.TGMKBi ]+)").getMatch(0);
@@ -112,14 +113,13 @@ public class HshopEristaMe extends PluginForHost {
         }
         final String titleID = br.getRegex("<p>\\s*Title\\s*ID\\s*:\\s*<span[^>]*>\\s*(.*?)\\s*<").getMatch(0);
         final String titleName = br.getRegex("<div\\s*class\\s*=\\s*\"title-name\"\\s*>\\s*<h2[^>]*>\\s*(.*?)\\s*<").getMatch(0);
-        if (StringUtils.isEmpty(titleName)) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (StringUtils.isEmpty(titleName)) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        String filename = titleID + " " + titleName;
-        if (filename != null) {
-            link.setName(filename + ".cia");
+        if (titleName != null) {
+            String filename = titleID + " " + titleName;
+            if (filename != null) {
+                link.setName(filename + extDefault);
+            }
+        } else {
+            logger.warning("Failed to determine filename");
         }
         return AvailableStatus.TRUE;
     }
@@ -127,14 +127,14 @@ public class HshopEristaMe extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link);
-        doFree(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+        doFree(link, this.isResumeable(link, null), this.getMaxChunks(link, null), "free_directlink");
     }
 
     private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         if (!attemptStoredDownloadurlDownload(link, directlinkproperty, resumable, maxchunks)) {
             this.requestFileInformation(link);
             final String fid = this.getFID(link);
-            final String dllink = br.getRegex("href\\s*=\\s*\"(https?://download\\d+.erista.me/content/" + Pattern.quote(fid) + "\\?token=[a-f0-9]+)\"\\s*>\\s*Direct Download").getMatch(0);
+            final String dllink = br.getRegex("href\\s*=\\s*\"(https?://download\\d+\\.erista\\.me/content/" + Pattern.quote(fid) + "\\?token=[a-f0-9]+)\"\\s*>\\s*Direct Download").getMatch(0);
             if (dllink == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
@@ -149,7 +149,7 @@ public class HshopEristaMe extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
-            link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
+            link.setProperty(directlinkproperty, dl.getConnection().getURL().toExternalForm());
         }
         dl.startDownload();
     }
@@ -185,7 +185,7 @@ public class HshopEristaMe extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return FREE_MAXDOWNLOADS;
+        return Integer.MAX_VALUE;
     }
 
     @Override

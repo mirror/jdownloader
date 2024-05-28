@@ -19,7 +19,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
-import java.util.Random;
+import java.util.regex.Pattern;
 
 import org.appwork.utils.StringUtils;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
@@ -27,6 +27,7 @@ import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -51,6 +52,12 @@ public class DlPrteCom extends antiDDoSForDecrypt {
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
         ret.add(new String[] { "dl-protect.net", "dl-protect.info", "dl-protect.link" });
         return ret;
+    }
+
+    protected List<String> getDeadDomains() {
+        final ArrayList<String> deadDomains = new ArrayList<String>();
+        deadDomains.add("dl-protect.info"); // 2024-05-28
+        return deadDomains;
     }
 
     public static String[] getAnnotationNames() {
@@ -152,14 +159,27 @@ public class DlPrteCom extends antiDDoSForDecrypt {
         }
     }
 
+    protected String getContentURL(final CryptedLink param) {
+        final List<String> deadDomains = this.getDeadDomains();
+        if (deadDomains != null) {
+            /* Change domain in added URL if we know that the domain inside added URL is dead. */
+            final String domain = Browser.getHost(param.getCryptedUrl(), false);
+            if (deadDomains.contains(domain)) {
+                return param.getCryptedUrl().replaceFirst(Pattern.quote(domain) + "/", this.getHost() + "/");
+            }
+        }
+        return param.getCryptedUrl();
+    }
+
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        String go = new Regex(param.getCryptedUrl(), "go\\.php\\?url=(aHR.+)").getMatch(0);
+        final String contenturl = getContentURL(param);
+        String go = new Regex(contenturl, "go\\.php\\?url=(aHR.+)").getMatch(0);
         if (go != null) {
             final DownloadLink dl = createDownloadlink(go);
             ret.add(dl);
         }
-        final String encoded = new Regex(param.getCryptedUrl(), "/([^/]+)$").getMatch(0);
+        final String encoded = new Regex(contenturl, "/([^/]+)$").getMatch(0);
         final String decoded = decode(encoded);
         if (StringUtils.isNotEmpty(decoded) && StringUtils.startsWithCaseInsensitive(decoded, "http")) {
             final DownloadLink dl = createDownloadlink(decoded);
@@ -167,7 +187,7 @@ public class DlPrteCom extends antiDDoSForDecrypt {
             return ret;
         }
         br.setFollowRedirects(true);
-        getPage(param.getCryptedUrl());
+        getPage(contenturl);
         /* Error handling */
         if (br.getHttpConnection() == null || br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("Page Not Found")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -250,16 +270,6 @@ public class DlPrteCom extends antiDDoSForDecrypt {
         }
         ret.add(createDownloadlink(link));
         return ret;
-    }
-
-    private String getSoup() {
-        final Random r = new Random();
-        final String soup = "azertyupqsdfghjkmwxcvbn23456789AZERTYUPQSDFGHJKMWXCVBN_-#@";
-        String v = "";
-        for (int i = 0; i < 31; i++) {
-            v = v + soup.charAt(r.nextInt(soup.length()));
-        }
-        return v;
     }
 
     @Override

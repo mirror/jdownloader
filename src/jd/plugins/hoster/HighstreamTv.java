@@ -51,6 +51,13 @@ public class HighstreamTv extends XFileSharingProBasic {
         return ret;
     }
 
+    @Override
+    protected List<String> getDeadDomains() {
+        final ArrayList<String> deadDomains = new ArrayList<String>();
+        deadDomains.add("clipwatching.com"); // 2024-05-28
+        return deadDomains;
+    }
+
     public static String[] getAnnotationNames() {
         return buildAnnotationNames(getPluginDomains());
     }
@@ -122,6 +129,15 @@ public class HighstreamTv extends XFileSharingProBasic {
     protected boolean isVideohoster_enforce_video_filename() {
         /* 2019-08-13: Special */
         return true;
+    }
+
+    @Override
+    protected boolean isOffline(final DownloadLink link, final Browser br) {
+        if (br.containsHTML(">\\s*File is no longer available")) {
+            return true;
+        } else {
+            return super.isOffline(link, br);
+        }
     }
 
     @Override

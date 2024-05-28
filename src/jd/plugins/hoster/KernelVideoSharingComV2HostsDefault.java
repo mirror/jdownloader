@@ -148,12 +148,15 @@ public class KernelVideoSharingComV2HostsDefault extends KernelVideoSharingComV2
         ret.add(new String[] { "gotgayporn.com", "bonertube.com" });
         ret.add(new String[] { "ah-me.com" });
         ret.add(new String[] { "pornve.com" });
+        ret.add(new String[] { "thegay.com" });
+        ret.add(new String[] { "mrgay.com" });
+        ret.add(new String[] { "gayboystube.com" });
         return ret;
     }
 
     @Override
     protected boolean useAPI() {
-        return "upornia.com".equals(getHost()) || "tubepornclassic.com".equals(getHost()) || super.useAPI();
+        return "upornia.com".equals(getHost()) || "tubepornclassic.com".equals(getHost()) || "thegay.com".equals(getHost()) || "mrgay.com".equals(getHost()) || super.useAPI();
     }
 
     public static String[] getAnnotationNames() {

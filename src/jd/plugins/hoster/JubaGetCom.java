@@ -237,51 +237,47 @@ public class JubaGetCom extends PluginForHost {
         synchronized (account) {
             br.setCookiesExclusive(true);
             prepBRWebsite(this.br);
-            try {
-                final Cookies cookies = account.loadCookies("");
-                if (cookies != null) {
-                    this.br.setCookies(this.getHost(), cookies);
-                    if (!force) {
-                        return;
-                    }
-                    br.getPage(loginCheckURL);
-                    if (this.isLoggedIN(br)) {
-                        account.saveCookies(this.br.getCookies(br.getHost()), "");
-                        return;
-                    }
-                    br.clearCookies(br.getHost());
+            final Cookies cookies = account.loadCookies("");
+            if (cookies != null) {
+                this.br.setCookies(this.getHost(), cookies);
+                if (!force) {
+                    return;
                 }
-                br.getPage("https://" + this.getHost() + "/locale/en");
-                br.getPage("/login");
-                final Form loginform = br.getFormbyActionRegex(".*/login.*");
-                if (loginform == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                br.getPage(loginCheckURL);
+                if (this.isLoggedIN(br)) {
+                    account.saveCookies(this.br.getCookies(br.getHost()), "");
+                    return;
                 }
-                loginform.put("email", Encoding.urlEncode(account.getUser()));
-                loginform.put("password", Encoding.urlEncode(account.getPass()));
-                loginform.put("remember", "on"); // make sure that cookies last long
-                loginform.put("g-recaptcha-response", Encoding.urlEncode(new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken()));
-                br.submitForm(loginform);
-                final String errorMsg = br.getRegex("div class=\"alert alert-danger\">\\s*<ul>\\s*<li>([^<]+)</li>").getMatch(0);
-                /*
-                 * 2022-08-10: Sometimes even after successful login website will redirect us to /generator and display error 500 this we'll
-                 * try this small workaround.
-                 */
-                if (!this.isLoggedIN(br)) {
-                    br.getPage("/");
-                }
-                if (!this.isLoggedIN(br)) {
-                    if (errorMsg != null) {
-                        throw new AccountInvalidException(errorMsg);
-                    } else {
-                        throw new AccountInvalidException();
-                    }
-                }
-                account.saveCookies(this.br.getCookies(br.getHost()), "");
-            } catch (final PluginException e) {
                 account.clearCookies("");
-                throw e;
+                br.clearCookies(br.getHost());
             }
+            br.getPage("https://" + this.getHost() + "/locale/en");
+            br.getPage("/login");
+            final Form loginform = br.getFormbyActionRegex(".*/login.*");
+            if (loginform == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            loginform.put("email", Encoding.urlEncode(account.getUser()));
+            loginform.put("password", Encoding.urlEncode(account.getPass()));
+            loginform.put("remember", "on"); // make sure that cookies last long
+            loginform.put("g-recaptcha-response", Encoding.urlEncode(new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken()));
+            br.submitForm(loginform);
+            final String errorMsg = br.getRegex("div class=\"alert alert-danger\">\\s*<ul>\\s*<li>([^<]+)</li>").getMatch(0);
+            /*
+             * 2022-08-10: Sometimes even after successful login website will redirect us to /generator and display error 500 this we'll try
+             * this small workaround.
+             */
+            if (!this.isLoggedIN(br)) {
+                br.getPage("/");
+            }
+            if (!this.isLoggedIN(br)) {
+                if (errorMsg != null) {
+                    throw new AccountInvalidException(Encoding.htmlDecode(errorMsg));
+                } else {
+                    throw new AccountInvalidException();
+                }
+            }
+            account.saveCookies(this.br.getCookies(br.getHost()), "");
         }
     }
 
