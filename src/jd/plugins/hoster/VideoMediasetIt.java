@@ -20,7 +20,6 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
-import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 
 import jd.PluginWrapper;
@@ -36,7 +35,7 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "video.mediaset.it", "wittytv.it" }, urls = { "https?://(?:www\\.)?video\\.mediaset\\.it/(video/.*?\\.html|player/playerIFrame\\.shtml\\?id=\\d+)", "https?://(?:www\\.)?wittytv\\.it/[^/]+/([^/]+/)?.+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "video.mediaset.it" }, urls = { "https?://(?:www\\.)?video\\.mediaset\\.it/(video/.*?\\.html|player/playerIFrame\\.shtml\\?id=\\d+)" })
 public class VideoMediasetIt extends PluginForHost {
     public VideoMediasetIt(PluginWrapper wrapper) {
         super(wrapper);
@@ -49,9 +48,8 @@ public class VideoMediasetIt extends PluginForHost {
         return "http://www.licensing.mediaset.it/";
     }
 
-    private static final String  TYPE_VIDEO_MEDIASET_EMBED  = "https?://(?:www\\.)?video\\.mediaset\\.it/player/playerIFrame\\.shtml\\?id=\\d+";
-    private static final String  TYPE_VIDEO_MEDIASET_NORMAL = "https?://(?:www\\.)?video\\.mediaset\\.it/video/.+";
-    private static final String  TYPE_VIDEO_WITTYTV         = "https?://(?:www\\.)?wittytv\\.it/.+";
+    private static final String  TYPE_VIDEO_MEDIASET_EMBED  = "(?i)https?://(?:www\\.)?video\\.mediaset\\.it/player/playerIFrame\\.shtml\\?id=\\d+";
+    private static final String  TYPE_VIDEO_MEDIASET_NORMAL = "(?i)https?://(?:www\\.)?video\\.mediaset\\.it/video/.+";
     private static final String  HTML_MS_SILVERLIGHT        = "silverlight/playerSilverlight\\.js\"";
     private static final boolean use_player_json            = true;
     private boolean              dlImpossible               = false;
@@ -65,19 +63,9 @@ public class VideoMediasetIt extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setReadTimeout(3 * 60 * 1000);
-        String streamID = null;
-        if (link.getDownloadURL().matches(TYPE_VIDEO_WITTYTV)) {
-            /* 2021-06-04: Old handling: First API request may still work but final downloadurl will not... */
-            streamID = new Regex(link.getDownloadURL(), "/[^/]+/(?:[^/]+/)(\\d+)/?$").getMatch(0);
-            if (StringUtils.isEmpty(streamID)) {
-                br.getPage(link.getDownloadURL());
-                streamID = br.getRegex("PlayerIFrame\\.shtml\\?id=(\\d+)").getMatch(0);
-            }
-        } else {
-            streamID = new Regex(link.getDownloadURL(), "video\\.mediaset\\.it/video/[^<>/\"]*?/[^<>/\"]*?/(\\d+)/").getMatch(0);
-            if (streamID == null) {
-                streamID = new Regex(link.getDownloadURL(), "(\\d+)\\.html$").getMatch(0);
-            }
+        String streamID = new Regex(link.getDownloadURL(), "video\\.mediaset\\.it/video/[^<>/\"]*?/[^<>/\"]*?/(\\d+)/").getMatch(0);
+        if (streamID == null) {
+            streamID = new Regex(link.getDownloadURL(), "(\\d+)\\.html$").getMatch(0);
         }
         if (streamID == null) {
             /* Whatever the user added it is probably not a video! */
@@ -174,11 +162,11 @@ public class VideoMediasetIt extends PluginForHost {
         URLConnectionAdapter con = null;
         try {
             con = br2.openGetConnection(dllink);
-            if (!con.getContentType().contains("html")) {
+            if (this.looksLikeDownloadableContent(con)) {
                 if (con.getLongContentLength() < 200) {
                     dlImpossible = true;
                 } else {
-                    link.setDownloadSize(con.getLongContentLength());
+                    link.setDownloadSize(con.getCompleteContentLength());
                 }
             } else {
                 dlImpossible = true;
@@ -203,7 +191,7 @@ public class VideoMediasetIt extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error, try again later", 10 * 60 * 1000l);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
-        if (dl.getConnection().getContentType().contains("html")) {
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -230,7 +218,7 @@ public class VideoMediasetIt extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return Integer.MAX_VALUE;
     }
 
     @Override
