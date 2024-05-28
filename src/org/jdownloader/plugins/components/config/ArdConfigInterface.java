@@ -3,7 +3,6 @@ package org.jdownloader.plugins.components.config;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DefaultEnumValue;
-import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.appwork.storage.config.annotations.LabelInterface;
 import org.jdownloader.plugins.config.Order;
 import org.jdownloader.plugins.config.PluginConfigInterface;
@@ -82,7 +81,6 @@ public interface ArdConfigInterface extends PluginConfigInterface {
     @AboutConfig
     @DefaultEnumValue("WEBVTT")
     @Order(11)
-    @DescriptionForConfigEntry(text_PreferredSubtitleType)
     SubtitleType getPreferredSubtitleType();
 
     void setPreferredSubtitleType(final SubtitleType type);
