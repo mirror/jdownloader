@@ -319,7 +319,7 @@ public abstract class MightyScriptAdLinkFly extends antiDDoSForDecrypt {
             br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
             br.getHeaders().put("Content-Type", "application/x-www-form-urlencoded; charset=UTF-8");
             br.getHeaders().put("Origin", "https://" + br.getHost());
-            if (br.containsHTML(org.appwork.utils.Regex.escape("name:'gc_token', value:e}).appendTo('#go-link')")) && recaptchaV2Response != null) {
+            if (br.containsHTML(Pattern.quote("name:'gc_token', value:e}).appendTo('#go-link')")) && recaptchaV2Response != null) {
                 /* 2021-08-06: Special: tny.so (and maybe others too) */
                 f2.put("gc_token", Encoding.urlEncode(recaptchaV2Response));
             }

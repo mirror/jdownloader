@@ -35,8 +35,8 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class PsaWf extends PluginForDecrypt {
-    public PsaWf(PluginWrapper wrapper) {
+public class BtcutIo extends PluginForDecrypt {
+    public BtcutIo(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -50,7 +50,7 @@ public class PsaWf extends PluginForDecrypt {
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "psa.wf" });
+        ret.add(new String[] { "btcut.io", "psa.btcut.io" });
         return ret;
     }
 
@@ -70,12 +70,13 @@ public class PsaWf extends PluginForDecrypt {
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/[a-z0-9]{32}/.+");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/[A-Za-z0-9]+");
         }
         return ret.toArray(new String[0]);
     }
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        /* 2024-05-29: Copy & paste from PsaWf though this website does not work 100% identical! */
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         /* Without this Cloudflare will kick in. */
         br.getHeaders().put("Referer", "https://" + getHost() + "/");
@@ -83,8 +84,6 @@ public class PsaWf extends PluginForDecrypt {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final Form redirectform = br.getFormbyProperty("name", "redirect");
-        br.submitForm(redirectform);
         final String additionalParam = br.getRegex("var url8j = \"(https?://[^\"]+)\";").getMatch(0);
         /* https://www.google.es/url... */
         String googleLink = br.getRegex("<meta http-equiv=\"refresh\" content=\"\\d+;url=(https?://[^\"]+)").getMatch(0);
@@ -95,9 +94,11 @@ public class PsaWf extends PluginForDecrypt {
         /* Goes to tiktokcounter.net */
         final String jsredirect = br.getRegex("var redirectUrl='(https?://[^\"\\']+)").getMatch(0);
         br.getPage(jsredirect);
-        /* TODO: This next step shouldn't be needed */
-        final String path = br._getURL().getPath();
-        br.getPage(path + "?url8j=" + Encoding.urlEncode(additionalParam));
+        if (additionalParam != null) {
+            /* TODO: This next step shouldn't be needed */
+            final String path = br._getURL().getPath();
+            br.getPage(path + "?url8j=" + Encoding.urlEncode(additionalParam));
+        }
         /* Redirect to the next fake blog page */
         final String nextRedirect = br.getRegex("window\\.location\\.href = \"(https?://[^\"]+)\"").getMatch(0);
         if (nextRedirect == null) {

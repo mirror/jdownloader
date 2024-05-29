@@ -138,21 +138,6 @@ public class OneFichierCom extends PluginForHost {
     @Override
     public void init() {
         setRequestIntervalLimits();
-        final OneFichierConfigInterface cfg = PluginJsonConfig.get(OneFichierConfigInterface.class);
-        /*
-         * 2024-02-06: Ugly workaround as someone is not releasing CORE-updates and I do not want to move NitroflareConfig.class into this
-         * class. Context: https://board.jdownloader.org/showthread.php?t=95064
-         */
-        // TODO: Remove this workaround after 2024-05
-        final String propertyForSpecialAPIModeSettingResetWorkaround202402 = "api_setting_reset_workaround_2024_02_06";
-        if (!cfg.isUsePremiumAPIEnabled() && !this.getPluginConfig().hasProperty(propertyForSpecialAPIModeSettingResetWorkaround202402)) {
-            cfg.setUsePremiumAPIEnabled(true);
-        }
-        /*
-         * Do this only once for each JD installation. If this was executed while the user already had the API setting enabled, do not touch
-         * it afterwards and assume the user knows what he is doing.
-         */
-        this.getPluginConfig().setProperty(propertyForSpecialAPIModeSettingResetWorkaround202402, true);
     }
 
     public static void setRequestIntervalLimits() {

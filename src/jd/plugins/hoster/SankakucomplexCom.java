@@ -118,6 +118,11 @@ public class SankakucomplexCom extends PluginForHost {
     }
 
     @Override
+    public boolean isResumeable(final DownloadLink link, final Account account) {
+        return true;
+    }
+
+    @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         final Account account = AccountController.getInstance().getValidAccount(this.getHost());
         final AvailableStatus status = requestFileInformation(link, null);
@@ -193,7 +198,7 @@ public class SankakucomplexCom extends PluginForHost {
         }
         if (dllink != null) {
             link.setProperty(PROPERTY_DIRECTURL, dllink);
-            if (filesizeBytesStr == null && !isDownload && previouslyStoredDirecturl == null) {
+            if (filesizeBytesStr == null && previouslyStoredDirecturl == null && !isDownload) {
                 final Browser br2 = br.cloneBrowser();
                 URLConnectionAdapter con = null;
                 try {
@@ -251,21 +256,18 @@ public class SankakucomplexCom extends PluginForHost {
     }
 
     public static void parseFileInfoAndSetFilenameAPI(final DownloadLink link, final Map<String, Object> item) {
-        /* TODO: Find out when original file is actually downloadable and only set verifiedFilesize and md5 hash then. */
-        final boolean trustFileInfo = false;
         final Map<String, Object> author = (Map<String, Object>) item.get("author");
         link.setProperty(PROPERTY_UPLOADER, author.get("name"));
-        /* 2022-12-20: We can't trust filesize of non-active items e.g. fileID: 28977868 -> Status "pending" */
-        final boolean isActive = StringUtils.equalsIgnoreCase(item.get("status").toString(), "active");
+        // final boolean isActive = StringUtils.equalsIgnoreCase(item.get("status").toString(), "active");
         final String mimeType = item.get("file_type").toString();
         final String ext = getExtensionFromMimeTypeStatic(mimeType);
         final Number file_size = (Number) item.get("file_size");
         if (file_size != null) {
-            if (isActive && trustFileInfo) {
-                link.setVerifiedFileSize(file_size.longValue());
-            } else {
-                link.setDownloadSize(file_size.longValue());
-            }
+            /*
+             * Do not set verifiedFileSize since we don't know if we will download the original file in the end or a lower quality version.
+             */
+            // link.setVerifiedFileSize(file_size.longValue());
+            link.setDownloadSize(file_size.longValue());
         }
         if ((Boolean) item.get("is_premium")) {
             // throw new AccountRequiredException();
@@ -295,8 +297,11 @@ public class SankakucomplexCom extends PluginForHost {
         }
         /* 2022-12-20: We can't trust this hash for all items. */
         final String md5hash = (String) item.get("md5");
-        if (!StringUtils.isEmpty(md5hash) && isActive && trustFileInfo) {
-            link.setMD5Hash(md5hash);
+        if (!StringUtils.isEmpty(md5hash)) {
+            /*
+             * Do not set md5 hash since we don't know if we will download the original file in the end or a lower quality version.
+             */
+            // link.setMD5Hash(md5hash);
         }
         link.setProperty(PROPERTY_DIRECTURL, item.get("file_url"));
         link.setProperty(PROPERTY_SOURCE, item.get("source"));
@@ -328,8 +333,7 @@ public class SankakucomplexCom extends PluginForHost {
                 }
             }
         }
-        /* Disable chunks as we only download small files */
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, isResumeable(link, account), 0);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             br.followConnection(true);
             /* Force generation of new directurl next time */
@@ -344,9 +348,9 @@ public class SankakucomplexCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Broken file or expired directurl", 30 * 1000l);
             }
         }
+        /* Add a download slot */
+        controlMaxFreeDownloads(account, link, +1);
         try {
-            /* Add a download slot */
-            controlMaxFreeDownloads(account, link, +1);
             /* Start download */
             dl.startDownload();
         } finally {
@@ -355,8 +359,8 @@ public class SankakucomplexCom extends PluginForHost {
         }
     }
 
-    private String checkDirectLink(final DownloadLink link, final String property) {
-        String dllink = link.getStringProperty(property);
+    private String checkDirectLink(final DownloadLink link, final String directlinkproperty) {
+        String dllink = link.getStringProperty(directlinkproperty);
         if (dllink != null) {
             boolean valid = false;
             try {
@@ -376,7 +380,7 @@ public class SankakucomplexCom extends PluginForHost {
                 logger.log(e);
             } finally {
                 if (!valid) {
-                    link.setProperty(property, Property.NULL);
+                    link.setProperty(directlinkproperty, Property.NULL);
                 }
             }
         }
