@@ -107,16 +107,11 @@ public class UfileIo extends antiDDoSForHost {
     }
 
     /* Connection stuff */
-    private static final boolean           FREE_RESUME                  = true;
-    private static final int               FREE_MAXCHUNKS               = 1;
-    private static final int               FREE_MAXDOWNLOADS            = 20;
-    private static final boolean           ACCOUNT_FREE_RESUME          = true;
-    private static final int               ACCOUNT_FREE_MAXCHUNKS       = 1;
-    private static final int               ACCOUNT_FREE_MAXDOWNLOADS    = 20;
-    private static final boolean           ACCOUNT_PREMIUM_RESUME       = true;
-    private static final int               ACCOUNT_PREMIUM_MAXCHUNKS    = 0;
-    private static final int               ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-    protected WeakHashMap<Request, String> correctedBrowserRequestMap   = new WeakHashMap<Request, String>();
+    private static final boolean           FREE_RESUME                = true;
+    private static final int               FREE_MAXCHUNKS             = 1;
+    private static final boolean           ACCOUNT_FREE_RESUME        = true;
+    private static final int               ACCOUNT_FREE_MAXCHUNKS     = 1;
+    protected WeakHashMap<Request, String> correctedBrowserRequestMap = new WeakHashMap<Request, String>();
 
     /** Traits used to cleanup html of our basic browser object and put it into correctedBR. */
     public ArrayList<String> getCleanupHTMLRegexes() {
@@ -249,7 +244,7 @@ public class UfileIo extends antiDDoSForHost {
             if (!br.toString().startsWith("\"http")) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            dllink = PluginJSonUtils.unescape(br.toString().replace("\"", ""));
+            dllink = PluginJSonUtils.unescape(br.getRequest().getHtmlCode().replace("\"", ""));
             if (StringUtils.isEmpty(dllink)) {
                 logger.warning("Failed to find final downloadurl");
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -298,7 +293,7 @@ public class UfileIo extends antiDDoSForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return FREE_MAXDOWNLOADS;
+        return Integer.MAX_VALUE;
     }
 
     private void login(final Account account, final boolean force) throws Exception {
@@ -378,7 +373,7 @@ public class UfileIo extends antiDDoSForHost {
         if (br.containsHTML("class=\"label\">Free Account|>\\s*As a free user, you have \\d+")) {
             account.setType(AccountType.FREE);
             /* free accounts can still have captcha */
-            account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
+            account.setMaxSimultanDownloads(this.getMaxSimultanFreeDownloadNum());
             account.setConcurrentUsePossible(false);
             ai.setStatus("Registered (free) user");
         } else {
@@ -398,7 +393,7 @@ public class UfileIo extends antiDDoSForHost {
             // ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "dd MMMM yyyy", Locale.ENGLISH));
             // }
             account.setType(AccountType.PREMIUM);
-            account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+            account.setMaxSimultanDownloads(this.getMaxSimultanPremiumDownloadNum());
             account.setConcurrentUsePossible(true);
             ai.setStatus("Premium account");
             this.getPage("/dashboard/settings/billing");
@@ -441,7 +436,7 @@ public class UfileIo extends antiDDoSForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return ACCOUNT_PREMIUM_MAXDOWNLOADS;
+        return Integer.MAX_VALUE;
     }
 
     @Override

@@ -81,12 +81,14 @@ public class CivitaiComCrawler extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String contenturl = param.getCryptedUrl();
-        final Regex urlregex = new Regex(param.getCryptedUrl(), "(?i)/posts/(\\d+)");
+        final Regex urlregex = new Regex(param.getCryptedUrl(), "(?i)/(posts|models)/(\\d+)");
         final UrlQuery query = UrlQuery.parse(contenturl);
         final String modelVersionId = query.get("modelVersionId");
-        final String postID = urlregex.getMatch(0);
+        final String itemType = urlregex.getMatch(0);
+        final String itemID = urlregex.getMatch(1);
         /* Using API: https://github.com/civitai/civitai/wiki/REST-API-Reference */
         final String apiBase = "https://civitai.com/api/v1";
+        final List<Map<String, Object>> modelVersions = new ArrayList<Map<String, Object>>();
         if (modelVersionId != null) {
             /* https://github.com/civitai/civitai/wiki/REST-API-Reference#get-apiv1models-versionsmodelversionid */
             br.getPage(apiBase + "/model-versions/" + modelVersionId);
@@ -94,6 +96,54 @@ public class CivitaiComCrawler extends PluginForDecrypt {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+            modelVersions.add(entries);
+        } else if (itemType.equals("models")) {
+            /* Crawl all versions of a model */
+            /* https://github.com/civitai/civitai/wiki/REST-API-Reference#get-apiv1modelsmodelid */
+            br.getPage(apiBase + "/models/" + itemID);
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+            final List<Map<String, Object>> _modelVersions_ = (List<Map<String, Object>>) entries.get("modelVersions");
+            modelVersions.addAll(_modelVersions_);
+        } else if (itemType.equals("posts")) {
+            /* Handles such links: https://civitai.com/posts/1234567 */
+            /* https://github.com/civitai/civitai/wiki/REST-API-Reference#get-apiv1images */
+            br.getPage(apiBase + "/images?postId=" + itemID);
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+            final List<Map<String, Object>> images = (List<Map<String, Object>>) entries.get("items");
+            if (images == null || images.isEmpty()) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName(itemID);
+            fp.setPackageKey("civitai://post/" + itemID);
+            for (final Map<String, Object> image : images) {
+                final String imageurl = image.get("url").toString();
+                final String tempName = Plugin.getFileNameFromURL(imageurl);
+                final DownloadLink link = this.createDownloadlink(br.getURL("/images/" + image.get("id")).toExternalForm());
+                link._setFilePackage(fp);
+                if (tempName != null) {
+                    link.setName(tempName);
+                }
+                link.setAvailable(true);
+                ret.add(link);
+            }
+        } else {
+            /* Unsupported link */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        /* Process collected ModelVersions */
+        for (final Map<String, Object> entries : modelVersions) {
+            final ArrayList<DownloadLink> thisRet = new ArrayList<DownloadLink>();
+            final String modelName = entries.get("name").toString();
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName(modelName);
+            fp.setPackageKey("civitai://model/modelVersion/" + modelVersionId);
             final List<Map<String, Object>> files = (List<Map<String, Object>>) entries.get("files");
             for (final Map<String, Object> file : files) {
                 final Map<String, Object> hashes = (Map<String, Object>) file.get("hashes");
@@ -109,48 +159,18 @@ public class CivitaiComCrawler extends PluginForDecrypt {
                 // if (crc32 != null) {
                 // link.setHashInfo(HashInfo.newInstanceSafe(crc32, HashInfo.TYPE.CRC32C));
                 // }
-                ret.add(link);
+                thisRet.add(link);
             }
             final List<Map<String, Object>> images = (List<Map<String, Object>>) entries.get("images");
             for (final Map<String, Object> image : images) {
                 final DownloadLink link = this.createDownloadlink(DirectHTTP.createURLForThisPlugin(image.get("url").toString()));
                 link.setAvailable(true);
-                ret.add(link);
+                thisRet.add(link);
             }
-            final String modelName = entries.get("name").toString();
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName(modelName);
-            fp.setPackageKey("civitai://model/modelVersion/" + modelVersionId);
-            fp.addLinks(ret);
-        } else if (postID != null) {
-            /* Handles such links: https://civitai.com/posts/1234567 */
-            /* https://github.com/civitai/civitai/wiki/REST-API-Reference#get-apiv1images */
-            br.getPage(apiBase + "/images?postId=" + postID);
-            if (br.getHttpConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            for (final DownloadLink result : thisRet) {
+                result._setFilePackage(fp);
+                ret.add(result);
             }
-            final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
-            final List<Map<String, Object>> images = (List<Map<String, Object>>) entries.get("items");
-            if (images == null || images.isEmpty()) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            final FilePackage fp = FilePackage.getInstance();
-            fp.setName(postID);
-            fp.setPackageKey("civitai://post/" + postID);
-            for (final Map<String, Object> image : images) {
-                final String imageurl = image.get("url").toString();
-                final String tempName = Plugin.getFileNameFromURL(imageurl);
-                final DownloadLink link = this.createDownloadlink(br.getURL("/images/" + image.get("id")).toExternalForm());
-                link._setFilePackage(fp);
-                if (tempName != null) {
-                    link.setName(tempName);
-                }
-                link.setAvailable(true);
-                ret.add(link);
-            }
-        } else {
-            /* Unsupported link */
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         // if(ret.isEmpty()) {
         // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

@@ -22,6 +22,7 @@ import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
@@ -110,6 +111,46 @@ public class DatanodesTo extends XFileSharingProBasic {
     }
 
     @Override
+    public Form findFormDownload1Free(final Browser br) throws Exception {
+        final Form ret = br == null ? null : br.getFormbyProperty("id", "downloadForm");
+        if (ret != null) {
+            return ret;
+        } else {
+            return super.findFormDownload1Free(br);
+        }
+    }
+
+    @Override
+    protected Form findFormDownload2Free(final Browser br) {
+        Form form = super.findFormDownload2Free(br);
+        if (form == null) {
+            /* Special: Form gets added via JS. Assume that if we find the pre download wait, we can return the static form. */
+            final String waitStr = regexWaittime(br);
+            if (waitStr != null) {
+                final String fuid = this.getFUIDFromURL(this.getDownloadLink());
+                form = new Form();
+                form.put("op", "download2");
+                form.put("id", fuid);
+                form.put("rand", "");
+                form.put("referer", Encoding.urlEncode(br.getURL()));
+                form.put("method_free", "Free Download >>");
+                form.put("method_premium", "");
+            }
+        }
+        return form;
+    }
+
+    @Override
+    protected String regexWaittime(final Browser br) {
+        final String waitSecondsStr = br.getRegex("countdown=\"(\\d+)\"").getMatch(0);
+        if (waitSecondsStr != null) {
+            return waitSecondsStr;
+        } else {
+            return super.regexWaittime(br);
+        }
+    }
+
+    @Override
     protected void checkErrors(final Browser br, final String html, final DownloadLink link, final Account account, final boolean checkAll) throws NumberFormatException, PluginException {
         if (br.containsHTML("(?i)>\\s*Not allowed from domain you")) {
             /* 2023-02-21 */
@@ -130,13 +171,15 @@ public class DatanodesTo extends XFileSharingProBasic {
 
     @Override
     public boolean isPremiumOnly(final Browser br) {
-        Form freeform = null;
+        Form download1 = null;
+        Form download2 = null;
         try {
-            freeform = this.findFormDownload1Free(br);
+            download1 = this.findFormDownload1Free(br);
+            download2 = this.findFormDownload2Free(br);
         } catch (final Exception ignore) {
             ignore.printStackTrace();
         }
-        if (br.containsHTML("/premium") && freeform == null) {
+        if (br.containsHTML("/premium") && (download1 == null && download2 == null)) {
             return true;
         } else {
             return super.isPremiumOnly(br);

@@ -16,6 +16,10 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
@@ -27,20 +31,48 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "localhostr.com" }, urls = { "https?://(?:www\\.)?(?:localhostr\\.com|lh\\.rs|hostr\\.co)/([A-Za-z0-9]+)" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class LocalHostrCom extends PluginForHost {
     public LocalHostrCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
-    public String getAGBLink() {
-        return "http://localhostr.com/terms/";
+    public String rewriteHost(final String host) {
+        /* 2024-06-04: Main domain was changed from localhostr.com to hostr.co */
+        return this.rewriteHost(getPluginDomains(), host);
     }
 
-    private static final String INVALIDLINKS = "https?://hostr\\.co/(apps|pricing|privacy|signin|signup|terms)";
+    @Override
+    public String getAGBLink() {
+        return "https://" + getHost() + "/terms/";
+    }
+
+    private static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "hostr.co", "localhostr.com" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : getPluginDomains()) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/([A-Za-z0-9]+)");
+        }
+        return ret.toArray(new String[0]);
+    }
+
+    private static final String INVALIDLINKS = "(?i)https?://[^/]+/(apps|pricing|privacy|signin|signup|terms)";
 
     public void correctDownloadLink(final DownloadLink link) {
         link.setUrlDownload("https://hostr.co/" + new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0));
@@ -92,9 +124,11 @@ public class LocalHostrCom extends PluginForHost {
         if (filename == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        link.setName(Encoding.htmlDecode(filename.trim()));
+        link.setName(Encoding.htmlDecode(filename).trim());
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
+        } else {
+            logger.warning("Failed to find filesize");
         }
         return AvailableStatus.TRUE;
     }
@@ -120,7 +154,7 @@ public class LocalHostrCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return Integer.MAX_VALUE;
     }
 
     @Override

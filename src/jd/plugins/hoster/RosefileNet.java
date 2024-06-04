@@ -97,12 +97,8 @@ public class RosefileNet extends PluginForHost {
         return 1;
     }
 
-    /* Connection stuff */
-    private static final int FREE_MAXDOWNLOADS                = 1;
-    private static final int ACCOUNT_FREE_MAXDOWNLOADS        = 1;
-    private static final int ACCOUNT_PREMIUM_MAXDOWNLOADS     = Integer.MAX_VALUE;
-    private final String     PROPERTY_RECAPTCHA_KEY           = "recaptcha_key";
-    private final String     PROPERTY_RECAPTCHA_KEY_TIMESTAMP = "recaptcha_key_timestamp";
+    private final String PROPERTY_RECAPTCHA_KEY           = "recaptcha_key";
+    private final String PROPERTY_RECAPTCHA_KEY_TIMESTAMP = "recaptcha_key_timestamp";
 
     @Override
     public String getLinkID(final DownloadLink link) {
@@ -204,9 +200,15 @@ public class RosefileNet extends PluginForHost {
             ajax.getHeaders().put("Origin", "https://" + br.getHost());
             final boolean looksLikePremiumADownloadWithoutWait = br.containsHTML("load_down");
             if (account != null && looksLikePremiumADownloadWithoutWait) {
+                final String hash = br.getRegex("let hash = \"([^\"]+)\"").getMatch(0);
                 final UrlQuery query = new UrlQuery();
                 query.add("action", "check_recaptcha");
                 query.add("file_id", internalFileID);
+                if (hash != null) {
+                    query.add("hash", Encoding.urlEncode(hash));
+                } else {
+                    logger.warning("Failed to find possibly needed parameter 'hash'");
+                }
                 ajax.postPage("/ajax.php", query);
             } else {
                 /** 2021-04-12: Waittime and captcha (required for anonymous downloads in browser) is skippable! */
@@ -466,16 +468,16 @@ public class RosefileNet extends PluginForHost {
         final String premiumExpire = br.getRegex("(?i)<td>\\s*Account type\\s*</td>\\s*<td>\\s*<b class=\"text-danger\">\\s*Premium\\s*<small>\\((\\d{4}-\\d{2}-\\d{2})\\)</small>").getMatch(0);
         if (isPremiumLifetimeAccount) {
             account.setType(AccountType.LIFETIME);
-            account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+            account.setMaxSimultanDownloads(getMaxSimultanPremiumDownloadNum());
             account.setConcurrentUsePossible(true);
         } else if (premiumExpire != null) {
             ai.setValidUntil(TimeFormatter.getMilliSeconds(premiumExpire, "yyyy-MM-dd", Locale.ENGLISH), br);
             account.setType(AccountType.PREMIUM);
-            account.setMaxSimultanDownloads(ACCOUNT_PREMIUM_MAXDOWNLOADS);
+            account.setMaxSimultanDownloads(getMaxSimultanPremiumDownloadNum());
             account.setConcurrentUsePossible(true);
         } else {
             account.setType(AccountType.FREE);
-            account.setMaxSimultanDownloads(ACCOUNT_FREE_MAXDOWNLOADS);
+            account.setMaxSimultanDownloads(getMaxSimultanFreeDownloadNum());
         }
         return ai;
     }
@@ -487,7 +489,7 @@ public class RosefileNet extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return ACCOUNT_PREMIUM_MAXDOWNLOADS;
+        return Integer.MAX_VALUE;
     }
 
     @Override
@@ -497,7 +499,7 @@ public class RosefileNet extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return FREE_MAXDOWNLOADS;
+        return 1;
     }
 
     @Override

@@ -314,22 +314,21 @@ public class FikperCom extends PluginForHost {
                 final Map<String, Object> entries = requestFileInformation(link, account);
                 if (link.isPasswordProtected()) {
                     throw new PluginException(LinkStatus.ERROR_FATAL, "Password protected items are not yet supported");
-                }
-                final long fileSize = link.getVerifiedFileSize();
-                if (fileSize >= SIZEUNIT.GB.to(SIZEUNIT.B, 2)) {
+                } else if (link.getVerifiedFileSize() >= SIZEUNIT.GB.to(SIZEUNIT.B, 2)) {
                     throw new AccountRequiredException("You can download files up to 2GB in free mode");
                 }
                 this.checkErrorsAPI(br, link, account, entries);
-                final String remainingDelay = StringUtils.valueOfOrNull(entries.get("remainingDelay"));
-                if (remainingDelay != null) {
+                final String remainingDelaySecondsStr = StringUtils.valueOfOrNull(entries.get("remainingDelay"));
+                if (remainingDelaySecondsStr != null) {
                     /* Downloadlimit has been reached */
-                    final int limitWaitSeconds = Integer.parseInt(remainingDelay);
+                    final int limitWaitSeconds = Integer.parseInt(remainingDelaySecondsStr);
                     throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, limitWaitSeconds * 1000l);
                 }
                 final long timeBefore = Time.systemIndependentCurrentJVMTimeMillis();
                 final int waitBeforeDownloadMillis = ((Number) entries.get("delayTime")).intValue();
+                /* 2024-06-04: They're using reCaptchaV2 now */
                 final boolean skipPreDownloadWaittime = true; // 2022-11-14: Wait time is skippable
-                final boolean useHcaptcha = true;
+                final boolean useHcaptcha = false;
                 /* 2024-05-03: Solvemedia captcha is broken serverside so fikper.com switched back to hCaptcha. */
                 final boolean useSolvemediaCaptcha = false;
                 final Map<String, Object> postdata = new HashMap<String, Object>();
@@ -361,11 +360,13 @@ public class FikperCom extends PluginForHost {
                 } else {
                     /* Old handling */
                     final String recaptchaV2Response = getRecaptchaHelper(br).getToken();
-                    postdata.put("recaptcha", recaptchaV2Response);
+                    postdata.put("captchaType", "recaptcha2");
+                    postdata.put("captchaValue", recaptchaV2Response);
                 }
                 final long passedTimeDuringCaptcha = Time.systemIndependentCurrentJVMTimeMillis() - timeBefore;
                 postdata.put("fileHashName", this.getFID(link));
                 postdata.put("downloadToken", entries.get("downloadToken").toString());
+                postdata.put("referrer", "");
                 final long waitBeforeDownloadMillisLeft = waitBeforeDownloadMillis - passedTimeDuringCaptcha;
                 if (waitBeforeDownloadMillisLeft > 0 && !skipPreDownloadWaittime) {
                     this.sleep(waitBeforeDownloadMillisLeft, link);

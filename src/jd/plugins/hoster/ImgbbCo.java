@@ -101,9 +101,6 @@ public class ImgbbCo extends PluginForHost {
         br.getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (!br.containsHTML(Pattern.quote(fid))) {
-            /* E.g. https://imgbb.com/login or https://imgbb.com/upload */
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("download=\"([^\"]+)\"").getMatch(0);
         final Regex finfo = br.getRegex("class=\"btn btn-download default\"[^>]*title=\"\\d+ x \\d+ - ([A-Za-z]+) (\\d+[^\"]+)\"");
@@ -118,6 +115,10 @@ public class ImgbbCo extends PluginForHost {
         }
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
+        if (filename == null && filesize == null && !br.containsHTML(Pattern.quote(fid))) {
+            /* E.g. https://imgbb.com/login or https://imgbb.com/upload */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         return AvailableStatus.TRUE;
     }

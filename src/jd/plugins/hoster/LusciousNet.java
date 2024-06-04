@@ -16,6 +16,8 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.appwork.utils.StringUtils;
 
@@ -31,14 +33,12 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "luscious.net" }, urls = { "https?://(?:[a-z0-9\\-]+\\.)?luscious\\.net/(?!albums/).*/id/(\\d+)/?" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class LusciousNet extends PluginForHost {
     public LusciousNet(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    /* Extension which will be used if no correct extension is found */
-    private static final String  default_extension = ".jpg";
     /* Connection stuff */
     private static final boolean free_resume       = false;
     private static final int     free_maxchunks    = 1;
@@ -48,11 +48,6 @@ public class LusciousNet extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "https://luscious.net/terms/";
-    }
-
-    @Override
-    public void correctDownloadLink(final DownloadLink link) throws Exception {
-        link.setPluginPatternMatcher("https://luscious.net/pictures/id/" + this.getFID(link) + "/");
     }
 
     @Override
@@ -66,7 +61,35 @@ public class LusciousNet extends PluginForHost {
     }
 
     private String getFID(final DownloadLink link) {
-        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
+        String fid = new Regex(link.getPluginPatternMatcher(), "/videos/([A-Za-z0-9\\-_]+)").getMatch(0);
+        if (fid == null) {
+            fid = new Regex(link.getPluginPatternMatcher(), "/id/(\\d+)").getMatch(0);
+        }
+        return fid;
+    }
+
+    private static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "luscious.net" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : getPluginDomains()) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(videos/[A-Za-z0-9\\-_]+|(?!albums/).*/id/(\\d+)/?)");
+        }
+        return ret.toArray(new String[0]);
     }
 
     @Override
@@ -78,39 +101,69 @@ public class LusciousNet extends PluginForHost {
         dllink = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
+        final String default_extension = ".mp4";
+        final String fid = this.getFID(link);
         this.dllink = checkDirectLink(link, "directlink");
         if (this.dllink != null) {
             /* Check has been done before -> Done! */
             return AvailableStatus.TRUE;
         }
         br.getPage(link.getPluginPatternMatcher());
-        if (br.getHttpConnection().getResponseCode() == 404 || !this.br.getURL().contains(this.getFID(link))) {
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (!this.br.getURL().contains(this.getFID(link))) {
+            /* E.g. redirect to mainpage */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = new Regex(br.getURL(), "/id/(.+)").getMatch(0);
-        dllink = br.getRegex("<picture><source[^>]*srcSet=\"(https?://[^\"]+)\"").getMatch(0);
-        if (filename != null) {
-            filename = Encoding.htmlDecode(filename);
-            filename = filename.trim();
+        String title = fid.replace("-", " ").trim();
+        final String[] videourls = br.getRegex("<source[^>]*src=\"(https?://[^\"]+)\"").getColumn(0);
+        if (videourls != null && videourls.length > 0) {
+            /* Find best quality videourl */
+            int heightMax = 0;
+            for (final String videourl : videourls) {
+                if (dllink == null) {
+                    dllink = videourl;
+                }
+                final String videoHeightStr = new Regex(videourl, "(\\d+)\\.mp4$").getMatch(0);
+                if (videoHeightStr != null) {
+                    final int videoHeight = Integer.parseInt(videoHeightStr);
+                    if (videoHeight > heightMax) {
+                        heightMax = videoHeight;
+                        dllink = videourl;
+                    }
+                }
+            }
+        }
+        if (dllink == null) {
+            /* Old handling: Single image download */
+            dllink = br.getRegex("<picture><source[^>]*srcSet=\"(https?://[^\"]+)\"").getMatch(0);
+        }
+        if (title != null) {
+            title = Encoding.htmlDecode(title);
+            title = title.trim();
             final String ext;
             if (!StringUtils.isEmpty(dllink)) {
                 ext = getFileNameExtensionFromString(dllink, default_extension);
             } else {
                 ext = default_extension;
             }
-            if (!filename.endsWith(ext)) {
-                filename += ext;
+            if (!title.endsWith(ext)) {
+                title += ext;
             }
         }
         if (!StringUtils.isEmpty(dllink) && !isDownload) {
             dllink = Encoding.htmlDecode(dllink);
-            link.setFinalFileName(filename);
+            link.setFinalFileName(title);
             URLConnectionAdapter con = null;
             try {
                 con = br.openHeadConnection(dllink);
                 if (this.looksLikeDownloadableContent(con)) {
                     if (con.getCompleteContentLength() > 0) {
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                        if (con.isContentDecoded()) {
+                            link.setDownloadSize(con.getCompleteContentLength());
+                        } else {
+                            link.setVerifiedFileSize(con.getCompleteContentLength());
+                        }
                     }
                     link.setProperty("directlink", dllink);
                 }
@@ -122,7 +175,7 @@ public class LusciousNet extends PluginForHost {
             }
         } else {
             /* We cannot be sure whether we have the correct extension or not! */
-            link.setName(filename);
+            link.setName(title);
         }
         return AvailableStatus.TRUE;
     }
