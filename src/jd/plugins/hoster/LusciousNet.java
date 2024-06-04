@@ -115,7 +115,15 @@ public class LusciousNet extends PluginForHost {
             /* E.g. redirect to mainpage */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String title = fid.replace("-", " ").trim();
+        String title = null;
+        final boolean obtainTitleFromURL = true;
+        if (obtainTitleFromURL) {
+            /* Remove contentID */
+            title = fid.replaceFirst("_\\d+$", "");
+            title = title.replace("-", " ");
+            title = title.replace("_", " ");
+            title = title.trim();
+        }
         final String[] videourls = br.getRegex("<source[^>]*src=\"(https?://[^\"]+)\"").getColumn(0);
         if (videourls != null && videourls.length > 0) {
             /* Find best quality videourl */

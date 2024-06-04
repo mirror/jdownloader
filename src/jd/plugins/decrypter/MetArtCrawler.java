@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
@@ -69,8 +68,8 @@ public class MetArtCrawler extends PluginForDecrypt {
         return ret.toArray(new String[0]);
     }
 
-    private static final String TYPE_GALLERY = "https://[^/]+/model/([^/]+)/gallery/(\\d+)/([^/]+)";
-    private static final String TYPE_MOVIE   = "https://[^/]+/model/([^/]+)/movie/(\\d+)/([^/]+)";
+    private static final String TYPE_GALLERY = "(?i)https://[^/]+/model/([^/]+)/gallery/(\\d+)/([^/]+)";
+    private static final String TYPE_MOVIE   = "(?i)https://[^/]+/model/([^/]+)/movie/(\\d+)/([^/]+)";
 
     @Override
     public int getMaxConcurrentProcessingInstances() {

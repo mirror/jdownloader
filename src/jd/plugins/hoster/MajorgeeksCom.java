@@ -76,7 +76,7 @@ public class MajorgeeksCom extends PluginForHost {
     private final int     FREE_MAXDOWNLOADS = -1;
     /* 2022-11-25: Those links are now handled by a crawler plugin */
     @Deprecated
-    private final String  PATTERN_LEGACY    = "https?://[^/]+/files/details/.+";
+    private final String  PATTERN_LEGACY    = "(?i)https?://[^/]+/files/details/.+";
 
     @Override
     public String getLinkID(final DownloadLink link) {
@@ -93,7 +93,7 @@ public class MajorgeeksCom extends PluginForHost {
             return null;
         }
         final Regex urlinfo = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks());
-        if (urlinfo.matches()) {
+        if (urlinfo.patternFind()) {
             return urlinfo.getMatch(0) + "_" + urlinfo.getMatch(1);
         } else {
             /* For PATTERN_LEGACY */
@@ -172,6 +172,9 @@ public class MajorgeeksCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             } else if (downloadFromExternalSite) {
                 throw new PluginException(LinkStatus.ERROR_FATAL, "Downloading from external sources is impossible");
+            } else if (!br.getHost().contains(this.getHost())) {
+                /* E.g. redirect to Google Playstore */
+                throw new PluginException(LinkStatus.ERROR_FATAL, "Downloading from external source " + br.getHost() + " is not possible");
             } else {
                 /* 2020-01-29: Some downloads are just broken */
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown download failure");

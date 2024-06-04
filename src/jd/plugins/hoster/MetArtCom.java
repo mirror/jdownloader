@@ -64,6 +64,7 @@ public class MetArtCom extends PluginForHost {
         ret.add(new String[] { "stunning18.com" });
         ret.add(new String[] { "thelifeerotic.com" });
         ret.add(new String[] { "vivthomas.com" });
+        ret.add(new String[] { "straplez.com" });
         return ret;
     }
 

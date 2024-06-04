@@ -28,6 +28,7 @@ import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
@@ -115,9 +116,10 @@ public class BandCampComDecrypter extends PluginForDecrypt {
 
     @SuppressWarnings("deprecation")
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        final Regex show = new Regex(param.getCryptedUrl(), TYPE_SHOW);
-        if (show.patternFind()) {
-            return crawlShow(show.getMatch(0));
+        final UrlQuery query = UrlQuery.parse(param.getCryptedUrl());
+        final String showID = query.get("show");
+        if (showID != null) {
+            return crawlShow(showID);
         } else {
             return crawlAlbumOrTrack(param.getCryptedUrl());
         }
@@ -223,7 +225,7 @@ public class BandCampComDecrypter extends PluginForDecrypt {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             contentURL = originalURL;
-            br.clearCookies(br.getHost());
+            br.clearCookies(null);
         }
         br.getPage(contentURL);
         if (br.containsHTML(">\\s*Sorry\\s*,\\s*that something isn('|’)t here|trackinfo\\s*:\\s*\\[\\],") || this.br.getHttpConnection().getResponseCode() == 404) {
