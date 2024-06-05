@@ -22,6 +22,8 @@ import java.util.Map;
 
 import org.appwork.storage.TypeRef;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -47,6 +49,11 @@ public class ManyvidsCom extends PluginForHost {
     public ManyvidsCom(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://www.manyvids.com/Create-Free-Account/");
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX, LazyPlugin.FEATURE.COOKIE_LOGIN_ONLY };
     }
 
     @Override
@@ -125,9 +132,14 @@ public class ManyvidsCom extends PluginForHost {
         synchronized (account) {
             br.setCookiesExclusive(true);
             final Cookies cookies = account.loadCookies("");
-            if (cookies != null) {
+            final Cookies userCookies = account.loadUserCookies();
+            if (cookies != null || userCookies != null) {
                 logger.info("Attempting cookie login");
-                br.setCookies(this.getHost(), cookies);
+                if (userCookies != null) {
+                    br.setCookies(userCookies);
+                } else {
+                    br.setCookies(cookies);
+                }
                 if (!force) {
                     /* Don't validate cookies */
                     return false;
@@ -135,21 +147,34 @@ public class ManyvidsCom extends PluginForHost {
                 if (checkLogin(br)) {
                     logger.info("Cookie login successful");
                     /* Refresh cookie timestamp */
-                    account.saveCookies(br.getCookies(br.getHost()), "");
+                    if (userCookies == null) {
+                        account.saveCookies(br.getCookies(br.getHost()), "");
+                    }
                     return true;
                 } else {
                     logger.info("Cookie login failed");
+                    if (userCookies != null) {
+                        /* Dead end */
+                        if (account.hasEverBeenValid()) {
+                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
+                        } else {
+                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
+                        }
+                    }
                     br.clearCookies(null);
                     account.clearCookies("");
                 }
             }
             logger.info("Performing full login");
+            /**
+             * 2024-06-05: This doesn't work anymore as they've implemented a light bot check for this login page. </br>
+             * I didn't bother implementing it so instead I've added mandatory cookie login.
+             */
             br.getPage("https://www." + this.getHost() + "/Login/");
             final String rcKey = br.getRegex("enterprise\\.js\\?render=([^\"]+)").getMatch(0);
             if (rcKey == null) {
                 logger.warning("Failed to find reCaptcha sitekey");
             }
-            final String mvtoken = br.getRegex("data-mvtoken=\"([^\"]+)").getMatch(0); // 2024-04-18: Not needed anymore
             Form loginform = br.getFormbyProperty("id", "loginAccountSubmitForm");
             if (loginform == null) {
                 for (final Form form : br.getForms()) {
@@ -164,9 +189,6 @@ public class ManyvidsCom extends PluginForHost {
             }
             loginform.setMethod(MethodType.POST);
             loginform.setAction("/includes/login-access-user.php");
-            if (mvtoken != null) {
-                loginform.put("mvtoken", Encoding.urlEncode(mvtoken));
-            }
             /*
              * Important: Form contains "userName" field (camelcase). If we do not remove it before putting in the username, it will be put
              * into the existing camelcase field which will make the form-request fail (returns blank page)!

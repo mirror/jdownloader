@@ -47,13 +47,17 @@ public class ImxToGallery extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final String parameter = param.getCryptedUrl();
-        br.getPage(parameter);
+        final String contenturl = param.getCryptedUrl().replaceFirst("(?i)^http://", "https://");
+        br.setFollowRedirects(true);
+        br.getPage(contenturl);
+        final String galleryID = new Regex(contenturl, this.getSupportedLinks()).getMatch(0);
+        final String galleryFilesizeStr = br.getRegex("(?i)Size\\s*<span [^>]*>([^<]+)</span>").getMatch(0);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (!br.getURL().contains(galleryID) && galleryFilesizeStr == null) {
+            /* E.g. redirect to mainpage */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String galleryID = new Regex(parameter, this.getSupportedLinks()).getMatch(0);
-        final String galleryFilesizeStr = br.getRegex("(?i)Size\\s*<span [^>]*>([^<]+)</span>").getMatch(0);
         long galleryFilesize = -1;
         if (galleryFilesizeStr != null) {
             galleryFilesize = SizeFormatter.getSize(galleryFilesizeStr);
@@ -75,7 +79,7 @@ public class ImxToGallery extends PluginForDecrypt {
             }
         }
         for (final String imageID : imageIDs) {
-            final DownloadLink dl = createDownloadlink("https://imx.to/i/" + imageID);
+            final DownloadLink dl = createDownloadlink("https://" + getHost() + "/i/" + imageID);
             dl._setFilePackage(fp);
             dl.setName(imageID + ".jpg");
             if (imageIDs.length == 1 && galleryFilesize != -1) {

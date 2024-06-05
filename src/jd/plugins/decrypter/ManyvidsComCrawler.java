@@ -31,11 +31,12 @@ import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
-import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
+import jd.plugins.DecrypterRetryException;
+import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
@@ -115,87 +116,59 @@ public class ManyvidsComCrawler extends PluginForDecrypt {
                 /* E.g. redirect to mainpage */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            String mvtoken = br.getRegex("data-mvtoken=\"([^\"]+)").getMatch(0);
-            if (mvtoken == null) {
-                /* 2024-02-08: Workaround since mvtoken seems to be missing at the place it was before. */
-                final Browser brc = br.cloneBrowser();
-                brc.getPage("/Login");
-                mvtoken = brc.getRegex("data-mvtoken=\"([^\"]+)").getMatch(0);
-            }
-            /* Obtain first-page-json from html source */
-            final String jsonEntityEncoded = br.getRegex("data-store-videos=\"([^\"]+)").getMatch(0);
-            if (jsonEntityEncoded == null && mvtoken == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
             final Browser brc = br.cloneBrowser();
             brc.getHeaders().put("Accept", "application/json, text/plain, */*");
             brc.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-            // brc.getHeaders().put("X-Xsrf-Token", "NOT_NEEDED");
-            final int maxItemsPerPage = 30;
-            final UrlQuery query = new UrlQuery();
-            query.add("category", "all");
-            query.add("sort", "0");
-            query.add("limit", Integer.toString(maxItemsPerPage));
-            if (mvtoken != null) {
-                query.add("mvtoken", Encoding.urlEncode(mvtoken));
-            }
+            int page = 1;
             int offset = 0;
             final HashSet<String> dupes = new HashSet<String>();
             final FilePackage fp = FilePackage.getInstance();
             if (urlSlug != null) {
-                fp.setName(urlSlug);
+                fp.setName(urlSlug.replace("-", " ").trim());
             } else {
                 /* Fallback */
                 fp.setName(contentID);
             }
             fp.setPackageKey(manyvidsKeyPrefix + contentType + "/" + contentID);
-            Map<String, Object> result;
-            if (jsonEntityEncoded != null) {
-                /* Items of first page are present as json in html -> Use them */
-                result = restoreFromString(Encoding.htmlOnlyDecode(jsonEntityEncoded), TypeRef.MAP);
-            } else {
-                /* Items of first page are not present in html -> Ajax request needed to find them */
-                result = null;
-            }
             do {
-                if (result == null) {
-                    query.addAndReplace("offset", Integer.toString(offset));
-                    brc.getPage("https://www." + this.getHost() + "/api/model/" + contentID + "/videos?" + query.toString());
-                    final Map<String, Object> entries = restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.MAP);
-                    result = (Map<String, Object>) entries.get("result");
+                brc.getPage("/bff/store/videos/" + contentID + "/?page=" + page);
+                final Map<String, Object> entries = restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.MAP);
+                final Map<String, Object> pagination = (Map<String, Object>) entries.get("pagination");
+                final int totalNumberofItems = ((Number) pagination.get("total")).intValue();
+                final Number nextPage = (Number) pagination.get("nextPage");
+                if (totalNumberofItems == 0) {
+                    throw new DecrypterRetryException(RetryReason.EMPTY_PROFILE);
                 }
-                final Map<String, Object> content = (Map<String, Object>) result.get("content");
-                final List<Map<String, Object>> items = (List<Map<String, Object>>) content.get("items");
+                final List<Map<String, Object>> items = (List<Map<String, Object>>) entries.get("data");
                 int numberofNewItems = 0;
                 for (final Map<String, Object> item : items) {
                     final Map<String, Object> preview = (Map<String, Object>) item.get("preview");
-                    final String path = preview.get("path").toString();
+                    final String path = preview.get("url").toString();
                     if (!dupes.add(path)) {
                         continue;
                     }
                     numberofNewItems++;
                     final String fullVideoURL = br.getURL(path).toExternalForm();
-                    final DownloadLink video = this.createDownloadlink(fullVideoURL);
+                    final DownloadLink video = this.createDownloadlink(DirectHTTP.createURLForThisPlugin(fullVideoURL));
+                    video.setAvailable(true);
+                    video._setFilePackage(fp);
                     ret.add(video);
+                    distribute(video);
                 }
-                logger.info("Crawled offset " + offset + " | Number of new items on this page: " + numberofNewItems + " | Total: " + ret.size());
+                logger.info("Crawled page: " + page + "/" + pagination.get("totalPages") + " | Offset: " + offset + " |  Number of new items on this page: " + numberofNewItems + " | Total found so far: " + ret.size() + "/" + totalNumberofItems);
                 if (this.isAbort()) {
                     logger.info("Stopping because: Aborted by user");
                     break;
                 } else if (numberofNewItems == 0) {
                     logger.info("Stopping because: Failed to find any new items on current page");
                     break;
-                } else if (numberofNewItems < maxItemsPerPage) {
-                    logger.info("Stopping because: Number of new items is smaller than " + maxItemsPerPage + " --> Reached end?");
-                    break;
-                } else if (mvtoken == null) {
-                    /* This should never happen */
-                    logger.info("Stopping because: Cannot execute pagination because 'mvtoken' is missing");
+                } else if (nextPage == null || nextPage.intValue() <= page) {
+                    logger.info("Stopping because: Reached end");
                     break;
                 } else {
                     /* Continue to next page */
-                    offset += maxItemsPerPage;
-                    result = null;
+                    offset += numberofNewItems;
+                    page++;
                 }
             } while (true);
         } else {

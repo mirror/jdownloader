@@ -72,7 +72,7 @@ public class ModelKarteiDe extends PluginForHost {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/fotos/foto/(\\d+)/");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:fotos/foto|videos/video)/(\\d+)/");
         }
         return ret.toArray(new String[0]);
     }
@@ -103,7 +103,12 @@ public class ModelKarteiDe extends PluginForHost {
 
     private AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
         dllink = null;
-        final String extDefault = ".jpg";
+        final String extDefault;
+        if (StringUtils.containsIgnoreCase(link.getPluginPatternMatcher(), "video")) {
+            extDefault = ".mp4";
+        } else {
+            extDefault = ".jpg";
+        }
         final String contentID = this.getFID(link);
         if (!link.isNameSet()) {
             link.setName(contentID + extDefault);
@@ -114,9 +119,32 @@ public class ModelKarteiDe extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String title = br.getRegex("class=\"p-title\">\\s*<a href=\"[^\"]+\"[^<]*title=\"([^\"]+)\"").getMatch(0);
-        dllink = br.getRegex("id=\"gofullscreen\"[^<]*src=\"([^\"]+)").getMatch(0);
+        if (title == null) {
+            // video
+            title = br.getRegex("class=\"col c-3-2 vidHeader\"[^>]*>\\s*<h1>([^<]+)</h1>").getMatch(0);
+        }
         if (title != null) {
             title = Encoding.htmlOnlyDecode(title).trim();
+        } else {
+            logger.warning("Failed to find title");
+        }
+        final String dateStr = br.getRegex("(\\d{8})/\">\\s*<span[^>]*class=\"date\"").getMatch(0);
+        String dateFormatted = null;
+        if (dateStr != null) {
+            dateFormatted = dateStr.substring(0, 4) + "_" + dateStr.substring(4, 6) + "_" + dateStr.substring(6, 8);
+        } else {
+            logger.warning("Failed to find date");
+        }
+        dllink = br.getRegex("id=\"gofullscreen\"[^<]*src=\"([^\"]+)").getMatch(0); // photo
+        if (dllink == null) {
+            dllink = br.getRegex("type=\"video/mp4\"[^>]*src=\"(https?://[^\"]+)").getMatch(0); // video
+            // if (dllink == null) {
+            // dllink = br.getRegex("type=\"video/webm\"[^>]*src=\"(https?://[^\"]+)").getMatch(0); // video
+            // }
+        }
+        if (dateFormatted != null && title != null) {
+            link.setFinalFileName(dateFormatted + "_" + contentID + "_" + title + extDefault);
+        } else if (title != null) {
             link.setFinalFileName(contentID + "_" + title + extDefault);
         } else {
             link.setFinalFileName(contentID + extDefault);
