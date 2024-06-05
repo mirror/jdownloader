@@ -156,12 +156,19 @@ public class SubsourceNet extends PluginForHost {
         final URLConnectionAdapter con = br.openRequestConnection(req);
         try {
             final String ratelimitRemainingStr = con.getRequest().getResponseHeader("x-ratelimit-remaining");
-            final String retryInSeconds = con.getRequest().getResponseHeader(HTTPConstants.HEADER_RESPONSE_RETRY_AFTER);
-            logger.info("API Limits: Remaining: " + ratelimitRemainingStr + " | Reset in seconds: " + retryInSeconds);
+            final String retryInSecondsStr = con.getRequest().getResponseHeader(HTTPConstants.HEADER_RESPONSE_RETRY_AFTER);
+            logger.info("API Limits: Remaining: " + ratelimitRemainingStr + " | Reset in seconds: " + retryInSecondsStr);
             if (con.getResponseCode() == 429) {
                 br.followConnection(true);
-                logger.info("Waiting seconds to resolve rate-limit: " + retryInSeconds);
-                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Rate-Limit reached", Integer.parseInt(retryInSeconds) * 1001l);
+                logger.info("Waiting seconds to resolve rate-limit: " + retryInSecondsStr);
+                final int retryInSeconds;
+                if (retryInSecondsStr != null && retryInSecondsStr.matches("\\d+")) {
+                    retryInSeconds = Integer.parseInt(retryInSecondsStr);
+                } else {
+                    /* Fallback */
+                    retryInSeconds = 30;
+                }
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Rate-Limit reached", retryInSeconds * 1001l);
             } else {
                 br.followConnection();
             }
