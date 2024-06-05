@@ -141,12 +141,16 @@ public class SubsourceNet extends PluginForHost {
         }
         final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         final Map<String, Object> sub = (Map<String, Object>) entries.get("sub");
+        final String comment = (String) sub.get("commentary");
         link.setFinalFileName(sub.get("fileName").toString());
         /* 0 = unknown filesize */
         final long filesize = ((Number) sub.get("size")).longValue();
         // link.setDownloadSize(((Number) sub.get("size")).longValue());
         if (filesize > 0) {
             link.setVerifiedFileSize(filesize);
+        }
+        if (!StringUtils.isEmpty(comment) && StringUtils.isEmpty(link.getComment())) {
+            link.setComment(comment);
         }
         dllink = br.getURL("/api/downloadSub/" + sub.get("downloadToken").toString()).toExternalForm();
         return AvailableStatus.TRUE;

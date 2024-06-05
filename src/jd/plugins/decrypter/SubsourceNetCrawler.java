@@ -23,6 +23,7 @@ import java.util.Map;
 
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -110,6 +111,7 @@ public class SubsourceNetCrawler extends PluginForDecrypt {
                 continue;
             }
             final String url = sub.get("fullLink").toString();
+            final String comment = (String) sub.get("commentary");
             final String fullLink;
             if (url.startsWith("/")) {
                 fullLink = "https://" + getHost() + url;
@@ -119,6 +121,9 @@ public class SubsourceNetCrawler extends PluginForDecrypt {
             final DownloadLink link = this.createDownloadlink(fullLink);
             link.setName(sub.get("lang") + "_" + sub.get("releaseName") + sub.get("linkName") + "-" + subID + ".zip");
             link.setAvailable(true);
+            if (!StringUtils.isEmpty(comment)) {
+                link.setComment(comment);
+            }
             link._setFilePackage(fp);
             ret.add(link);
         }
