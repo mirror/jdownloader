@@ -45,7 +45,7 @@ public class VimmNet extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "https://vimm.net/?p=privacy";
+        return "https://" + getHost() + "/?p=privacy";
     }
 
     private static List<String[]> getPluginDomains() {
@@ -165,7 +165,10 @@ public class VimmNet extends PluginForHost {
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlform, isResumeable(link, null), maxChunks);
         } else {
-            String url = br.getRegex("(download\\d+\\.vimm\\.net/download/)").getMatch(0);
+            final String url = br.getRegex("\"([^\"]*download\\d+\\.vimm\\.net/[^\"]*)\"").getMatch(0);
+            if (url == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             String mediaID = link.getStringProperty(PROPERTY_MEDIA_ID);
             if (mediaID == null) {
                 /*
@@ -173,10 +176,10 @@ public class VimmNet extends PluginForHost {
                  */
                 mediaID = br.getRegex("name=\"mediaId\" value=\"(\\d+)").getMatch(0);
             }
-            if (url == null || mediaID == null) {
+            if (mediaID == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            String directurl = "https://" + url + "?mediaId=" + mediaID;
+            String directurl = br.getURL(url).toExternalForm() + "?mediaId=" + mediaID;
             final int format_id = link.getIntegerProperty(PROPERTY_FORMAT_ID, 0);
             if (format_id != 0) {
                 /* Download 2nd/alternative version */

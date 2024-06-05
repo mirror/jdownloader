@@ -843,7 +843,7 @@ public class RedditComCrawler extends PluginForDecrypt {
                 } catch (final Throwable e) {
                 }
             }
-        } while (!this.isAbort() && attempt <= 4);
+        } while (!this.isAbort() && attempt <= maxAttemptsNumber);
         if (rateLimitActive) {
             throw new DecrypterRetryException(RetryReason.HOST_RATE_LIMIT);
         }

@@ -82,7 +82,10 @@ public class VimmNetCrawler extends PluginForDecrypt {
         }
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final List<Map<String, Object>> resourcelist = (List<Map<String, Object>>) restoreFromString(jsonarrayStr, TypeRef.OBJECT);
-        final String downloadformatsText = br.getRegex("<select[^<]*id=\"download_format\"[^<]*>(.*?)</select>").getMatch(0);
+        final String downloadformatsText = br.getRegex("<select[^<]*id=\"dl_format\"[^<]*>(.*?)</select>").getMatch(0);
+        if (downloadformatsText == null) {
+            logger.info("Looks like there are no alternative formats available for this item");
+        }
         final String[][] downloadformatsOptions = downloadformatsText != null ? new Regex(downloadformatsText, "<option[^<]*value=\"(\\d+)\"[^>]*>([^<]+)</option>").getMatches() : null;
         for (final Map<String, Object> resource : resourcelist) {
             final String mediaID = resource.get("ID").toString();
@@ -116,6 +119,7 @@ public class VimmNetCrawler extends PluginForDecrypt {
             }
             ret.add(link);
         }
+        /* Set some additional properties which we want to have on all of our results. */
         for (final DownloadLink result : ret) {
             result.setAvailable(true);
             VimmNet.setFilename(result);
@@ -124,7 +128,7 @@ public class VimmNetCrawler extends PluginForDecrypt {
         String title = br.getRegex("<title>([^<]+)</title>").getMatch(0);
         final FilePackage fp = FilePackage.getInstance();
         if (title != null) {
-            title = Encoding.htmlDecode(title).trim();
+            title = Encoding.htmlOnlyDecode(title).trim();
             title = title.replaceFirst("(?i)^Download\\s*", "");
             fp.setName(title);
         } else if (lastFilename != null) {
@@ -134,6 +138,7 @@ public class VimmNetCrawler extends PluginForDecrypt {
             /* Fallback 2 */
             fp.setName(contentid);
         }
+        /* We want all results to go into this package. */
         fp.addLinks(ret);
         return ret;
     }

@@ -449,12 +449,12 @@ public class DoodstreamCom extends XFileSharingProBasic {
         if (!link.isNameSet()) {
             setWeakFilename(link, br);
         }
-        this.br.setFollowRedirects(true);
+        br.setFollowRedirects(true);
         final String contentURL = getContentURL(link);
         getPage(contentURL);
         /* Allow redirects to other content-IDs but files should be offline if there is e.g. a redirect to an unsupported URL format. */
         final String correctedhtml = getCorrectBR(br);
-        if (isOffline(link, this.br) || !this.canHandle(this.br.getURL())) {
+        if (isOffline(link, br) || !this.canHandle(br.getURL())) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String cptr = br.getRegex("'(/cptr/.*?)'").getMatch(0);

@@ -21,12 +21,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.http.Request;
+import jd.http.URLConnectionAdapter;
+import jd.http.requests.PostRequest;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.DownloadLink;
@@ -108,7 +112,7 @@ public class SubsourceNet extends PluginForHost {
     private String dllink = null;
 
     @Override
-    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException, InterruptedException {
         dllink = null;
         final Regex urlinfo = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks());
         final String titleSlug = urlinfo.getMatch(0);
@@ -123,12 +127,15 @@ public class SubsourceNet extends PluginForHost {
         postdata.put("movie", titleSlug);
         postdata.put("lang", languageSlug);
         postdata.put("id", subtitleID);
-        // br.getHeaders().put("Accept", "application/json, text/plain, */*");
-        // br.getHeaders().put("Content-Type", "application/json");
-        br.getHeaders().put("Origin", "https://" + getHost());
-        br.getHeaders().put("Priority", "u=1, i");
-        br.getHeaders().put("Referer", "https://" + getHost() + "/");
-        br.postPageRaw("https://api.subsource.net/api/getSub", JSonStorage.serializeToJson(postdata));
+        // postRequest.getHeaders().put("Accept", "application/json, text/plain, */*");
+        // postRequest.getHeaders().put("Content-Type", "application/json");
+        final PostRequest post = new PostRequest("https://api.subsource.net/api/getSub");
+        post.getHeaders().put("Origin", "https://" + getHost());
+        post.getHeaders().put("Priority", "u=1, i");
+        post.getHeaders().put("Referer", "https://" + getHost() + "/");
+        post.setContentType("application/json");
+        post.setPostDataString(JSonStorage.serializeToJson(postdata));
+        getPage(br, post);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -143,6 +150,27 @@ public class SubsourceNet extends PluginForHost {
         }
         dllink = br.getURL("/api/downloadSub/" + sub.get("downloadToken").toString()).toExternalForm();
         return AvailableStatus.TRUE;
+    }
+
+    private void getPage(final Browser br, final Request req) throws IOException, InterruptedException, PluginException {
+        final URLConnectionAdapter con = br.openRequestConnection(req);
+        try {
+            final String ratelimitRemainingStr = con.getRequest().getResponseHeader("x-ratelimit-remaining");
+            final String retryInSeconds = con.getRequest().getResponseHeader(HTTPConstants.HEADER_RESPONSE_RETRY_AFTER);
+            logger.info("API Limits: Remaining: " + ratelimitRemainingStr + " | Reset in seconds: " + retryInSeconds);
+            if (con.getResponseCode() == 429) {
+                br.followConnection(true);
+                logger.info("Waiting seconds to resolve rate-limit: " + retryInSeconds);
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Rate-Limit reached", Integer.parseInt(retryInSeconds) * 1001l);
+            } else {
+                br.followConnection();
+            }
+        } finally {
+            try {
+                con.disconnect();
+            } catch (final Throwable e) {
+            }
+        }
     }
 
     @Override
@@ -177,7 +205,8 @@ public class SubsourceNet extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return Integer.MAX_VALUE;
+        /* Try to avoid running into rate-limit */
+        return 1;
     }
 
     @Override

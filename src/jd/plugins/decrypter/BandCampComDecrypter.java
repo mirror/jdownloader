@@ -17,6 +17,7 @@ package jd.plugins.decrypter;
 
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -94,7 +95,10 @@ public class BandCampComDecrypter extends PluginForDecrypt {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
             final String domainspart = buildHostsPatternPart(domains);
-            ret.add("https?://(([a-z0-9\\-]+\\.)?" + domainspart + "/(?:(?:album|track)/[a-z0-9\\-_]+|\\?show=\\d+)|(?!www\\.)?[a-z0-9\\-]+\\." + domainspart + "/?$)|https?://(?:www\\.)?" + domainspart + "/EmbeddedPlayer(?:\\.html)?[^\\?#]*/(?:album|track)=\\d+");
+            String regex = "https?://(([a-z0-9\\-]+\\.)?" + domainspart + "/(?:(?:album|track)/[a-z0-9\\-_]+|\\?show=\\d+)|(?!www\\.)?[a-z0-9\\-]+\\." + domainspart + "/?$)";
+            regex += "|https?://(?:www\\.)?" + domainspart + "/EmbeddedPlayer(?:\\.html)?[^\\?#]*/(?:album|track)=\\d+";
+            regex += "|https?://[\\w\\-]+\\." + domainspart + "(/music)?$";
+            ret.add(regex);
         }
         return ret.toArray(new String[0]);
     }
@@ -110,6 +114,7 @@ public class BandCampComDecrypter extends PluginForDecrypt {
         return 1;
     }
 
+    private final Pattern                  TYPE_PROFILE       = Pattern.compile("(?i)https?://([\\w\\-]+)\\.[^/]+(/music)?$");
     private final Pattern                  TYPE_EMBED         = Pattern.compile("(?i)https?://[^/]+/EmbeddedPlayer(?:\\.html)?.*?/(?:album|track)=\\d+.*");
     private final Pattern                  TYPE_SHOW          = Pattern.compile("(?i)https?://[^/]+/\\?show=(\\d+)");
     private static AtomicReference<String> videoSupportBroken = new AtomicReference<String>();
@@ -118,11 +123,61 @@ public class BandCampComDecrypter extends PluginForDecrypt {
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final UrlQuery query = UrlQuery.parse(param.getCryptedUrl());
         final String showID = query.get("show");
+        final String profileSlug;
         if (showID != null) {
             return crawlShow(showID);
+        } else if ((profileSlug = new Regex(param.getCryptedUrl(), TYPE_PROFILE).getMatch(0)) != null) {
+            return crawlProfile(profileSlug);
         } else {
             return crawlAlbumOrTrack(param.getCryptedUrl());
         }
+    }
+
+    /** Crawls all albums of a profile */
+    public ArrayList<DownloadLink> crawlProfile(final String profileSlug) throws Exception {
+        br.getPage("https://" + profileSlug + ".bandcamp.com/music");
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        }
+        final String json = br.getRegex("data-client-items=\"([^\"]+)").getMatch(0);
+        if (json == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final HashSet<String> dupes = new HashSet<String>();
+        final List<Map<String, Object>> clientitems = (List<Map<String, Object>>) JSonStorage.restoreFromString(Encoding.htmlOnlyDecode(json), TypeRef.OBJECT);
+        for (final Map<String, Object> clientitem : clientitems) {
+            final String type = clientitem.get("type").toString();
+            if (!type.equals("album")) {
+                logger.info("Skipping non-album item: " + JSonStorage.serializeToJson(clientitem));
+                continue;
+            }
+            String page_url = clientitem.get("page_url").toString();
+            page_url = Encoding.htmlOnlyDecode(page_url);
+            if (!dupes.add(page_url)) {
+                /* Skip duplicates */
+                continue;
+            }
+            ret.add(this.createDownloadlink(page_url));
+        }
+        if (ret.isEmpty()) {
+            /* This shouldn't be needed! */
+            logger.warning("Performing last chance fallback");
+            final String[] albums = br.getRegex("(/album/[\\w\\-]+)").getColumn(0);
+            if (albums == null || albums.length == 0) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            for (final String albumurlRelative : albums) {
+                if (!dupes.add(albumurlRelative)) {
+                    /* Skip duplicates */
+                    continue;
+                }
+                final String albumurl = br.getURL(albumurlRelative).toExternalForm();
+                ret.add(this.createDownloadlink(albumurl));
+            }
+        }
+        logger.info("Found albums: " + ret.size());
+        return ret;
     }
 
     public ArrayList<DownloadLink> crawlShow(final String showID) throws Exception {
