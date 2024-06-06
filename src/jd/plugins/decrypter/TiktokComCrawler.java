@@ -217,7 +217,6 @@ public class TiktokComCrawler extends PluginForDecrypt {
         Object playCountO = null;
         Object commentCountO = null;
         String dateFormatted = null;
-        final boolean useWebsiteEmbed = true;
         /**
          * 2021-04-09: Avoid using the website-way as their bot protection may kick in right away! </br>
          * When using an account and potentially downloading private videos however, we can't use the embed way.
@@ -226,26 +225,29 @@ public class TiktokComCrawler extends PluginForDecrypt {
         boolean useWebsiteHandling = false;
         boolean offlineIfWebsiteHandlingFails = false;
         if (account != null) {
+            /* Enforce website handling in account mode */
             useWebsiteHandling = true;
-        } else if (useWebsiteEmbed) {
-            /* Old version: https://www.tiktok.com/embed/<videoID> */
-            // br.getPage(String.format("https://www.tiktok.com/embed/%s", fid));
-            /* Alternative URL: https://www.tiktok.com/node/embed/render/<videoID> */
-            /*
-             * 2021-04-09: Without accessing their website before (= fetches important cookies), we won't be able to use our final
-             * downloadurl!!
-             */
-            /* 2021-04-09: Both ways will work fine but the oembed one is faster and more elegant. */
-            if (account != null) {
-                br.getPage(url);
-            } else {
-                br.getPage("https://www." + this.getHost() + "/oembed?url=" + Encoding.urlEncode("https://www." + this.getHost() + "/video/" + contentID));
-            }
-            if (br.containsHTML("\"(?:status_msg|message)\"\\s*:\\s*\"Something went wrong\"")) {
-                logger.info("Item looks to be offline according to oembed status -> Try Website as fallback");
-                useWebsiteHandling = true;
-                offlineIfWebsiteHandlingFails = true;
-            } else {
+        } else {
+            embedHandling: if (!useWebsiteHandling) {
+                /* Old version: https://www.tiktok.com/embed/<videoID> */
+                // br.getPage(String.format("https://www.tiktok.com/embed/%s", fid));
+                /* Alternative URL: https://www.tiktok.com/node/embed/render/<videoID> */
+                /*
+                 * 2021-04-09: Without accessing their website before (= fetches important cookies), we won't be able to use our final
+                 * downloadurl!!
+                 */
+                /* 2021-04-09: Both ways will work fine but the oembed one is faster and more elegant. */
+                if (account != null) {
+                    br.getPage(url);
+                } else {
+                    br.getPage("https://www." + this.getHost() + "/oembed?url=" + Encoding.urlEncode("https://www." + this.getHost() + "/video/" + contentID));
+                }
+                if (br.containsHTML("\"(?:status_msg|message)\"\\s*:\\s*\"Something went wrong\"")) {
+                    logger.info("Item looks to be offline according to oembed status -> Try Website as fallback");
+                    useWebsiteHandling = true;
+                    offlineIfWebsiteHandlingFails = true;
+                    break embedHandling;
+                }
                 /* Required headers! */
                 final Browser brc = this.br.cloneBrowser();
                 brc.getHeaders().put("sec-fetch-dest", "iframe");
@@ -302,10 +304,6 @@ public class TiktokComCrawler extends PluginForDecrypt {
                 if (!StringUtils.isEmpty(createTime) && !"0".equals(createTime)) {
                     dateFormatted = TiktokCom.convertDateFormat(createTime);
                 }
-                if (videoDllink == null) {
-                    /* Fallback */
-                    videoDllink = TiktokCom.generateDownloadurlOld(br, contentID);
-                }
                 if (cfg.isVideoCrawlerCrawlAudioSeparately() && musicInfos != null) {
                     final List<String> audioURLs = (List<String>) musicInfos.get("playUrl");
                     final String audioDirecturl = audioURLs != null && audioURLs.size() > 0 ? StringUtils.nullOrNonEmpty(audioURLs.get(0)) : null;
@@ -322,26 +320,17 @@ public class TiktokComCrawler extends PluginForDecrypt {
                 video.setProperty(TiktokCom.PROPERTY_TYPE, TiktokCom.TYPE_VIDEO);
                 ret.add(video);
             }
-        } else {
-            /* Rev. 40928 and earlier */
-            /* Super old handling */
-            videoDllink = TiktokCom.generateDownloadurlOld(br, contentID);
         }
         if (useWebsiteHandling) {
             try {
                 br.getPage(url);
                 checkErrorsWebsite(br);
-                String videoJson = br.getRegex("crossorigin=\"anonymous\">\\s*(.*?)\\s*</script>").getMatch(0);
-                if (videoJson == null) {
-                    videoJson = br.getRegex("<script\\s*id[^>]*>\\s*(\\{.*?)\\s*</script>").getMatch(0);
-                }
+                final String videoJson = br.getRegex("id=\"__UNIVERSAL_DATA_FOR_REHYDRATION__\" type=\"application/json\">(\\{.*?)</script>").getMatch(0);
                 final Map<String, Object> entries = restoreFromString(videoJson, TypeRef.MAP);
-                final Map<String, Object> itemModule = (Map<String, Object>) entries.get("ItemModule");
-                /* 2020-10-12: Hmm reliably checking for offline is complicated so let's try this instead ... */
-                if (itemModule == null || itemModule.isEmpty()) {
+                final Map<String, Object> aweme_detail = (Map<String, Object>) JavaScriptEngineFactory.walkJson(entries, "__DEFAULT_SCOPE__/webapp.video-detail/itemInfo/itemStruct");
+                if (aweme_detail == null || aweme_detail.isEmpty()) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                final Map<String, Object> aweme_detail = (Map<String, Object>) itemModule.entrySet().iterator().next().getValue();
                 final ArrayList<DownloadLink> resultsTmp = this.crawlProcessWebsiteMediaMapSingleTiktokItem(hostPlg, aweme_detail, null, true);
                 ret.addAll(resultsTmp);
             } catch (final Exception e) {
@@ -607,16 +596,17 @@ public class TiktokComCrawler extends PluginForDecrypt {
         } else {
             preferredImageFileExtension = ".webp";
         }
+        final Map<String, Object> authormap = (Map<String, Object>) media.get("author");
         final Map<String, Object> stats = (Map<String, Object>) media.get("stats");
         final Map<String, Object> streamInfo = (Map<String, Object>) media.get("video");
         final Map<String, Object> imagePost = (Map<String, Object>) media.get("imagePost");
         final Map<String, Object> music = (Map<String, Object>) media.get("music");
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final String author = media.get("author").toString();
+        final String username = authormap.get("nickname").toString();
         final String videoID = (String) media.get("id");
         final String createTimeStr = (String) media.get("createTime");
         final String description = (String) media.get("desc");
-        final String contentURL = getContentURL(author, videoID);
+        final String contentURL = getContentURL(username, videoID);
         final boolean crawlAudio;
         if (imagePost != null) {
             /* Image post */
@@ -658,7 +648,7 @@ public class TiktokComCrawler extends PluginForDecrypt {
             video.setProperty(TiktokCom.PROPERTY_TYPE, TiktokCom.TYPE_VIDEO);
             video.setProperty(TiktokCom.PROPERTY_ALLOW_HEAD_REQUEST, true);
             String videoDirecturl = (String) streamInfo.get("downloadAddr");
-            if (StringUtils.isEmpty(videoDirecturl)) {
+            if (StringUtils.isEmpty(videoDirecturl) || true) {
                 videoDirecturl = (String) streamInfo.get("playAddr");
             }
             if (StringUtils.isEmpty(videoDirecturl) && preloadInfo != null) {
@@ -688,7 +678,7 @@ public class TiktokComCrawler extends PluginForDecrypt {
         for (final DownloadLink result : ret) {
             result.setAvailable(true);
             TiktokCom.setDescriptionAndHashtags(result, description);
-            result.setProperty(TiktokCom.PROPERTY_USERNAME, author);
+            result.setProperty(TiktokCom.PROPERTY_USERNAME, username);
             result.setProperty(TiktokCom.PROPERTY_USER_ID, media.get("authorId"));
             result.setProperty(TiktokCom.PROPERTY_DATE, dateFormatted);
             TiktokCom.setLikeCount(result, (Number) stats.get("diggCount"));

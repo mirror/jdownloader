@@ -16,7 +16,6 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
-import java.net.URL;
 import java.text.DecimalFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -551,6 +550,9 @@ public class TiktokCom extends PluginForHost {
                 if (StringUtils.isEmpty(dllink)) {
                     dllink = (String) downloadInfo.get("playAddr");
                 }
+                if (StringUtils.isEmpty(dllink)) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
                 link.setProperty(PROPERTY_USERNAME, videoInfo.get("author"));
                 if (!StringUtils.isEmpty(createDateTimestampStr)) {
                     link.setProperty(PROPERTY_DATE, convertDateFormat(createDateTimestampStr));
@@ -573,15 +575,7 @@ public class TiktokCom extends PluginForHost {
                     setCommentCount(link, (Number) commentCountO);
                 }
                 getAndSetDateFromWebsite(this, br, link);
-                if (dllink == null) {
-                    /* Fallback */
-                    if (!isDownload) {
-                        dllink = generateDownloadurlOld(br, fid);
-                    }
-                    link.setProperty(PROPERTY_ALLOW_HEAD_REQUEST, true);
-                } else {
-                    link.setProperty(PROPERTY_ALLOW_HEAD_REQUEST, false);
-                }
+                link.setProperty(PROPERTY_ALLOW_HEAD_REQUEST, false);
             } else if (useWebsiteEmbed) {
                 /* Old version: https://www.tiktok.com/embed/<videoID> */
                 // br.getPage(String.format("https://www.tiktok.com/embed/%s", fid));
@@ -675,15 +669,10 @@ public class TiktokCom extends PluginForHost {
                 if (!StringUtils.isEmpty(createDate) && !"0".equals(createDate)) {
                     link.setProperty(PROPERTY_DATE, convertDateFormat(createDate));
                 }
-                if (dllink == null && isDownload) {
-                    /* Fallback */
-                    dllink = generateDownloadurlOld(br, fid);
-                }
                 link.setProperty(PROPERTY_ALLOW_HEAD_REQUEST, true);
             } else {
-                /* Old deprecated handling of rev. 40928 and earlier */
-                dllink = generateDownloadurlOld(br, fid);
-                link.setProperty(PROPERTY_ALLOW_HEAD_REQUEST, true);
+                /* This should never happen */
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             setDescriptionAndHashtags(link, description);
             if (!StringUtils.isEmpty(dllink)) {
@@ -898,11 +887,6 @@ public class TiktokCom extends PluginForHost {
         } else {
             return false;
         }
-    }
-
-    public static String generateDownloadurlOld(final Browser br, final String contentID) throws IOException {
-        br.getPage("https://www.tiktok.com/node/video/playwm?id=" + contentID);
-        return new URL(br.toString()).toString();
     }
 
     /** Converts given date to format yyyy-MM-dd */
