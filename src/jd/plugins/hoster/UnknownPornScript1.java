@@ -181,6 +181,8 @@ public class UnknownPornScript1 extends PluginForHost {
         } else if (br.containsHTML("(?i)>\\s*We're sorry, the content titled")) {
             /* 2017-02-18 xtwisted.com */
             return true;
+        } else if (br.containsHTML("class=\"player\"[^>]*>\\s*Deleted\\s*</div>")) {
+            return true;
         } else {
             return false;
         }

@@ -17,24 +17,17 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-
-import org.appwork.storage.TypeRef;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
-import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
-import jd.plugins.AccountRequiredException;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
-import jd.plugins.hoster.DirectHTTP;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class SexComShortsCrawler extends PluginForDecrypt {
@@ -80,36 +73,19 @@ public class SexComShortsCrawler extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        /**
+         * 2024-06-06: This is now just a wrapper for older URLs. They get changed to newer URLs which are then handled by 'SexComCrawler'.
+         * </br>
+         * Example: https://shorts.sex.com/stellasedona/video/oceans-are-cool
+         */
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String relativeURL = new Regex(param.getCryptedUrl(), PATTERN_RELATIVE_SHORT).getMatch(0);
         if (relativeURL == null) {
             /* Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        br.getPage("https://shorts.sex.com/api/media/getMedia?relativeUrl=" + Encoding.urlEncode(relativeURL));
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
-        final Map<String, Object> media = (Map<String, Object>) entries.get("media");
-        if (Boolean.TRUE.equals(media.get("subscriptionRequired"))) {
-            throw new AccountRequiredException();
-        } else if (Boolean.TRUE.equals(media.get("mediaPurchaseRequired"))) {
-            throw new AccountRequiredException();
-        }
-        final List<Map<String, Object>> sources = (List<Map<String, Object>>) media.get("sources");
-        for (final Map<String, Object> source : sources) {
-            final String url = source.get("fullPath").toString();
-            final DownloadLink video = this.createDownloadlink(DirectHTTP.createURLForThisPlugin(url));
-            /* Referer header is important for downloading! */
-            video.setReferrerUrl(param.getCryptedUrl());
-            video.setAvailable(true);
-            ret.add(video);
-        }
-        final FilePackage fp = FilePackage.getInstance();
-        fp.setName(relativeURL);
-        fp.setPackageKey("sex_com_shorts://" + relativeURL);
-        fp.addLinks(ret);
+        final String newurl = "https://www.sex.com/en/shorts/" + relativeURL;
+        ret.add(this.createDownloadlink(newurl));
         return ret;
     }
 }

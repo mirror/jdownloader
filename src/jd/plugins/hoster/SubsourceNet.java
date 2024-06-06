@@ -172,7 +172,7 @@ public class SubsourceNet extends PluginForHost {
                     /* Fallback */
                     retryInSeconds = 30;
                 }
-                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Rate-Limit reached", retryInSeconds * 1001l);
+                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Rate-Limit reached", retryInSeconds * 1000l);
             } else {
                 br.followConnection();
             }
@@ -203,7 +203,7 @@ public class SubsourceNet extends PluginForHost {
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 5 * 60 * 1000l);
             } else {
-                throw new PluginException(LinkStatus.ERROR_FATAL, "Broken subtitle?");
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Broken subtitle?");
             }
         }
         dl.startDownload();

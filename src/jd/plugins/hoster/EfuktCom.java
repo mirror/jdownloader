@@ -181,7 +181,7 @@ public class EfuktCom extends PluginForHost {
         }
         /* 2022-12-19: Looks like etag can vary so we'll double-check for Content-Length header. */
         final String etag = con.getRequest().getResponseHeader("etag");
-        if (StringUtils.equalsIgnoreCase(etag, "\"637be5da-11d2b\"") || StringUtils.equalsIgnoreCase(etag, "\"63a05f27-11d2b\"")) {
+        if (StringUtils.equalsIgnoreCase(etag, "\"637be5da-11d2b\"") || StringUtils.equalsIgnoreCase(etag, "\"63a05f27-11d2b\"") || StringUtils.equalsIgnoreCase(etag, "\"5a56b09d-1485eb\"")) {
             con.disconnect();
             /* Dummy video containing text "Video removed" */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
