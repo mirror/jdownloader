@@ -472,6 +472,7 @@ public class OkRu extends PluginForHost {
     }
 
     private String getUserPreferredqualityStr(DownloadLink link) {
+        // TODO: return previous selected/used value from DownloadLink
         final Quality quality = PluginJsonConfig.get(OkRuConfig.class).getPreferredQuality();
         switch (quality) {
         /* 2021-05-27: Seems like mobile is lower than "lowest". */
@@ -494,6 +495,7 @@ public class OkRu extends PluginForHost {
     }
 
     private int getUserPreferredqualityHeightInt(DownloadLink link) {
+        // TODO: return previous selected/used value from DownloadLink
         final Quality quality = PluginJsonConfig.get(OkRuConfig.class).getPreferredQuality();
         switch (quality) {
         case Q144:
