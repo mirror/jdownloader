@@ -45,6 +45,7 @@ import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -209,7 +210,12 @@ public class TiktokComCrawler extends PluginForDecrypt {
         if (contentID == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final boolean allowCrawlEmbedFirst = true;
+        final boolean allowCrawlEmbedFirst;
+        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            allowCrawlEmbedFirst = false;
+        } else {
+            allowCrawlEmbedFirst = true;
+        }
         if (account == null && allowCrawlEmbedFirst) {
             /* Enforce website handling in account mode */
             try {
@@ -684,6 +690,7 @@ public class TiktokComCrawler extends PluginForDecrypt {
             audio.setProperty(TiktokCom.PROPERTY_TYPE, TiktokCom.TYPE_AUDIO);
             ret.add(audio);
         }
+        final Cookies cookies = br.getCookies(br.getHost());
         final String dateFormatted = formatDate(Long.parseLong(createTimeStr));
         for (final DownloadLink result : ret) {
             result.setAvailable(true);
@@ -691,6 +698,9 @@ public class TiktokComCrawler extends PluginForDecrypt {
             result.setProperty(TiktokCom.PROPERTY_USERNAME, username);
             result.setProperty(TiktokCom.PROPERTY_USER_ID, media.get("authorId"));
             result.setProperty(TiktokCom.PROPERTY_DATE, dateFormatted);
+            if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                result.setProperty(TiktokCom.PROPERTY_COOKIES, cookies);
+            }
             TiktokCom.setLikeCount(result, (Number) stats.get("diggCount"));
             TiktokCom.setPlayCount(result, (Number) stats.get("playCount"));
             TiktokCom.setShareCount(result, (Number) stats.get("shareCount"));

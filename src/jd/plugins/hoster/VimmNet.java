@@ -18,10 +18,12 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import org.appwork.utils.StringUtils;
 
 import jd.PluginWrapper;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
@@ -40,7 +42,6 @@ import jd.plugins.decrypter.VimmNetCrawler;
 public class VimmNet extends PluginForHost {
     public VimmNet(PluginWrapper wrapper) {
         super(wrapper);
-        // this.enablePremium("");
     }
 
     @Override
@@ -165,27 +166,39 @@ public class VimmNet extends PluginForHost {
             }
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlform, isResumeable(link, null), maxChunks);
         } else {
-            final String url = br.getRegex("\"([^\"]*download\\d+\\.vimm\\.net/[^\"]*)\"").getMatch(0);
-            if (url == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            try {
+                final String url = br.getRegex("\"([^\"]*download\\d+\\." + Pattern.quote(br.getHost(false)) + "/[^\"]*)\"").getMatch(0);
+                if (url == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                String mediaID = link.getStringProperty(PROPERTY_MEDIA_ID);
+                if (mediaID == null) {
+                    /*
+                     * Older items until including revision 48248 where target-mediaID was not pre-given in crawler as crawler didn't exist
+                     * yet.
+                     */
+                    mediaID = br.getRegex("name=\"mediaId\" value=\"(\\d+)").getMatch(0);
+                }
+                if (mediaID == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                String directurl = br.getURL(url).toExternalForm() + "?mediaId=" + mediaID;
+                final int format_id = link.getIntegerProperty(PROPERTY_FORMAT_ID, 0);
+                if (format_id != 0) {
+                    /* Download 2nd/alternative version */
+                    directurl += "&alt=1";
+                }
+                dl = jd.plugins.BrowserAdapter.openDownload(br, link, directurl, isResumeable(link, null), maxChunks);
+            } catch (final PluginException ple) {
+                String downloadUnavailableReason = br.getRegex("</div>([^<]+)</td>\\s*</tr>\\s*</table>").getMatch(0);
+                if (downloadUnavailableReason != null) {
+                    /* Item is not downloadable. */
+                    downloadUnavailableReason = Encoding.htmlOnlyDecode(downloadUnavailableReason).trim();
+                    throw new PluginException(LinkStatus.ERROR_FATAL, downloadUnavailableReason);
+                } else {
+                    throw ple;
+                }
             }
-            String mediaID = link.getStringProperty(PROPERTY_MEDIA_ID);
-            if (mediaID == null) {
-                /*
-                 * Older items until including revision 48248 where target-mediaID was not pre-given in crawler as crawler didn't exist yet.
-                 */
-                mediaID = br.getRegex("name=\"mediaId\" value=\"(\\d+)").getMatch(0);
-            }
-            if (mediaID == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            String directurl = br.getURL(url).toExternalForm() + "?mediaId=" + mediaID;
-            final int format_id = link.getIntegerProperty(PROPERTY_FORMAT_ID, 0);
-            if (format_id != 0) {
-                /* Download 2nd/alternative version */
-                directurl += "&alt=1";
-            }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, directurl, isResumeable(link, null), maxChunks);
         }
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             br.followConnection(true);

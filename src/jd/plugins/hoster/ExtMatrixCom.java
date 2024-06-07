@@ -77,7 +77,7 @@ public class ExtMatrixCom extends FlexShareCore {
     }
 
     private String getContentURL(final DownloadLink link) {
-        return link.getPluginPatternMatcher().replace("http://", "https://").replaceFirst("/get/", "/files/");
+        return link.getPluginPatternMatcher().replaceFirst("(?i)http://", "https://").replaceFirst("(?i)/get/", "/files/");
     }
 
     @Override

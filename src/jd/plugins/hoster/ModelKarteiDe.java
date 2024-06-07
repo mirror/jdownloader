@@ -49,7 +49,7 @@ public class ModelKarteiDe extends PluginForHost {
     }
 
     public int getMaxChunks(final DownloadLink link, final Account account) {
-        /* 2024-06-04: Set to one as we are only downloading small files. */
+        /* 2024-06-04: Set to 1 as we are only downloading small files. */
         return 1;
     }
 
@@ -103,7 +103,7 @@ public class ModelKarteiDe extends PluginForHost {
 
     private AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
         dllink = null;
-        final String extDefault;
+        String extDefault;
         if (StringUtils.containsIgnoreCase(link.getPluginPatternMatcher(), "video")) {
             extDefault = ".mp4";
         } else {
@@ -111,6 +111,7 @@ public class ModelKarteiDe extends PluginForHost {
         }
         final String contentID = this.getFID(link);
         if (!link.isNameSet()) {
+            /* Set weak filename */
             link.setName(contentID + extDefault);
         }
         this.setBrowserExclusive();
@@ -118,7 +119,7 @@ public class ModelKarteiDe extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String title = br.getRegex("class=\"p-title\">\\s*<a href=\"[^\"]+\"[^<]*title=\"([^\"]+)\"").getMatch(0);
+        String title = br.getRegex("class=\"p-title\">\\s*<a href=\"[^\"]+\"[^<]*title=\"([^\"]+)\"").getMatch(0); // photo
         if (title == null) {
             // video
             title = br.getRegex("class=\"col c-3-2 vidHeader\"[^>]*>\\s*<h1>([^<]+)</h1>").getMatch(0);
@@ -137,10 +138,11 @@ public class ModelKarteiDe extends PluginForHost {
         }
         dllink = br.getRegex("id=\"gofullscreen\"[^<]*src=\"([^\"]+)").getMatch(0); // photo
         if (dllink == null) {
-            dllink = br.getRegex("type=\"video/mp4\"[^>]*src=\"(https?://[^\"]+)").getMatch(0); // video
-            // if (dllink == null) {
-            // dllink = br.getRegex("type=\"video/webm\"[^>]*src=\"(https?://[^\"]+)").getMatch(0); // video
-            // }
+            dllink = br.getRegex("type=\"video/mp4\"[^>]*src=\"(https?://[^\"]+)").getMatch(0); // video MP4
+            if (dllink == null) {
+                dllink = br.getRegex("type=\"video/webm\"[^>]*src=\"(https?://[^\"]+)").getMatch(0); // video WEBM
+                extDefault = ".webm";
+            }
         }
         if (dateFormatted != null && title != null) {
             link.setFinalFileName(dateFormatted + "_" + contentID + "_" + title + extDefault);
@@ -153,17 +155,18 @@ public class ModelKarteiDe extends PluginForHost {
             /* Download */
             if (br.containsHTML("assets/images/no\\.jpg")) {
                 /* Account needed to view this image */
-                throw new AccountRequiredException();
+                throw new AccountRequiredException("Account needed to download this image");
             } else if (br.containsHTML(">\\s*Deine Nutzerrechte reichen leider nicht aus um das Video zu sehen")) {
                 /* Account needed to view this video */
-                throw new AccountRequiredException();
+                throw new AccountRequiredException("Account needed to download this video");
             }
         } else {
-            /* Linkcheck */
+            /* Linkcheck - find filesize if possible */
             if (!StringUtils.isEmpty(dllink)) {
+                /* Find filesize */
                 URLConnectionAdapter con = null;
                 try {
-                    con = br.openHeadConnection(this.dllink);
+                    con = br.openHeadConnection(dllink);
                     handleConnectionErrors(br, con);
                     if (con.getCompleteContentLength() > 0) {
                         if (con.isContentDecoded()) {
