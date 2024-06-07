@@ -16,13 +16,16 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
+
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
-import jd.http.Browser.BrowserException;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
@@ -32,47 +35,80 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "mixupload.org" }, urls = { "https?://(www\\.)?mixupload\\.(org|com)/((es|de)/)?track/[^<>\"/]+" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class MixUploadOrg extends PluginForHost {
     public MixUploadOrg(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     @Override
-    public String getAGBLink() {
-        return "http://mixupload.com/about/agreement";
-    }
-
-    public void correctDownloadLink(final DownloadLink link) {
-        final String trackid = link.getDownloadURL().substring(link.getDownloadURL().lastIndexOf("/") + 1);
-        link.setUrlDownload("http://mixupload.com/track/" + trackid);
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.AUDIO_STREAMING, LazyPlugin.FEATURE.VIDEO_STREAMING };
     }
 
     @Override
-    public String rewriteHost(String host) {
-        if ("mixupload.org".equals(getHost())) {
-            if (host == null || "mixupload.org".equals(host)) {
-                return "mixupload.com";
-            }
-        }
-        return super.rewriteHost(host);
+    public String getAGBLink() {
+        return "http://" + getHost() + "/about/agreement";
     }
 
-    private String DLLINK = null;
+    private static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "mixupload.org", "mixupload.com" });
+        return ret;
+    }
+
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : getPluginDomains()) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/([a-z]{2}/)?track/([\\w\\-]+)-(\\d+)");
+        }
+        return ret.toArray(new String[0]);
+    }
+
+    @Override
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(2);
+    }
+
+    private String dllink = null;
 
     /**
      * TODO: Add account support & show filesizes based on accounts e.g. show full size (available via '/player/getTrackInfo/') for premium
      * users and stream size for free users.
      */
-    @SuppressWarnings("deprecation")
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        final String extDefault = ".mp3";
+        if (!link.isNameSet()) {
+            final String titleSlug = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(1);
+            link.setName(titleSlug.replace("-", " ").trim() + extDefault);
+        }
+        dllink = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        String trackID = link.getStringProperty("trackid", null);
+        String trackID = link.getStringProperty("trackid");
         if (trackID == null) {
             br.setAllowedResponseCodes(new int[] { 451 });
-            br.getPage(link.getDownloadURL());
+            br.getPage(link.getPluginPatternMatcher());
             if (br.getHttpConnection().getResponseCode() == 451) {
                 /* 2020-11-23: HTTP/1.1 451 Unavailable For Legal Reasons */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -94,8 +130,8 @@ public class MixUploadOrg extends PluginForHost {
             }
             link.setProperty("trackid", trackID);
         }
-        br.getPage("http://mixupload.org/player/getTrackInfo/" + trackID);
-        if ("[]".equals(br.toString().trim())) {
+        br.getPage("http://" + getHost() + "/player/getTrackInfo/" + trackID);
+        if ("[]".equals(br.getRequest().getHtmlCode().trim())) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final String filename = getJson("artist") + " - " + getJson("title");
@@ -103,7 +139,7 @@ public class MixUploadOrg extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         Account premiumAcc = null;
-        List<Account> accs = AccountController.getInstance().getValidAccounts("mixupload.org");
+        List<Account> accs = AccountController.getInstance().getValidAccounts(getHost());
         if (accs != null && accs.size() > 0) {
             for (Account acc : accs) {
                 if (acc.isEnabled() && AccountType.PREMIUM.equals(acc.getType())) {
@@ -111,27 +147,26 @@ public class MixUploadOrg extends PluginForHost {
                 }
             }
         }
-        String filesize = null;
         if (premiumAcc != null) {
             /* Premium users can download the high quality track --> Filesize is given via 'API' */
-            DLLINK = "http://mixupload.org/download/" + trackID;
-            filesize = getJson("sizebyte");
-            if (filesize == null) {
+            dllink = "http://" + getHost() + "/download/" + trackID;
+            final String filesizeBytesStr = getJson("sizebyte");
+            if (filesizeBytesStr == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
+            link.setDownloadSize(Long.parseLong(filesizeBytesStr));
         } else {
-            DLLINK = "http://mixupload.org/player/play/" + trackID + "/0/track.mp3";
+            dllink = "http://" + getHost() + "/player/play/" + trackID + "/0/track.mp3";
             URLConnectionAdapter con = null;
             try {
-                try {
-                    con = br.openGetConnection(DLLINK);
-                } catch (final BrowserException e) {
+                con = br.openGetConnection(dllink);
+                if (!this.looksLikeDownloadableContent(con)) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                if (!con.getContentType().contains("html")) {
-                    filesize = Long.toString(con.getLongContentLength());
+                if (con.isContentDecoded()) {
+                    link.setDownloadSize(con.getCompleteContentLength());
                 } else {
-                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
                 }
             } finally {
                 try {
@@ -140,16 +175,15 @@ public class MixUploadOrg extends PluginForHost {
                 }
             }
         }
-        link.setFinalFileName(Encoding.htmlDecode(filename.trim()) + ".mp3");
-        link.setDownloadSize(Long.parseLong(filesize));
+        link.setFinalFileName(Encoding.htmlDecode(filename).trim() + extDefault);
         return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(final DownloadLink downloadLink) throws Exception, PluginException {
         requestFileInformation(downloadLink);
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, DLLINK, true, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
+        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
@@ -170,7 +204,7 @@ public class MixUploadOrg extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return Integer.MAX_VALUE;
     }
 
     @Override

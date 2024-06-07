@@ -19,6 +19,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
@@ -29,9 +32,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class MegafileCc extends PluginForHost {
@@ -47,8 +47,14 @@ public class MegafileCc extends PluginForHost {
     private static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "megafile.cc" });
+        ret.add(new String[] { "megafiles.io", "megafile.cc" });
         return ret;
+    }
+
+    @Override
+    public String rewriteHost(final String host) {
+        /* 2024-06-07: Main domain has changed from megafile.cc to megafiles.io */
+        return this.rewriteHost(getPluginDomains(), host);
     }
 
     public static String[] getAnnotationNames() {
@@ -97,22 +103,30 @@ public class MegafileCc extends PluginForHost {
         br.setAllowedResponseCodes(410);
         br.setFollowRedirects(true);
         br.getPage(link.getPluginPatternMatcher());
+        /* 2024-06-07: Filename can also be given for dead files e.g.: https://megafiles.io/d/Oxkr/projectran-ep7-v2 */
+        String filename = br.getRegex("<h2 class=\"text-center\"[^>]*>([^<>\"]+)</h2>").getMatch(0);
+        if (filename == null) {
+            /* 2024-06-07: For deleted files */
+            filename = br.getRegex("File:\\s*<span class=\"text-secondary\"[^>]*>([^<]+)</span>").getMatch(0);
+        }
+        String filesize = br.getRegex("Download\\s*\\((\\d+[^<>\"]+)\\)\\s*<").getMatch(0);
+        if (filename != null) {
+            filename = Encoding.htmlDecode(filename).trim();
+            link.setName(filename);
+        }
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.getHttpConnection().getResponseCode() == 410) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("<h2 class=\"text-center\"[^>]*>([^<>\"]+)</h2>").getMatch(0);
-        String filesize = br.getRegex("Download\\s*\\((\\d+[^<>\"]+)\\)\\s*<").getMatch(0);
-        if (StringUtils.isEmpty(filename)) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        if (filename != null) {
-            filename = Encoding.htmlDecode(filename).trim();
-            link.setName(filename);
+        if (filename == null) {
+            /* File looks to be online but we failed to find the filename. */
+            logger.warning("Failed to find filename");
         }
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
+        } else {
+            logger.warning("Failed to find filesize");
         }
         return AvailableStatus.TRUE;
     }

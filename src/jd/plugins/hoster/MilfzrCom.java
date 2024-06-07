@@ -54,7 +54,6 @@ public class MilfzrCom extends PluginForHost {
     /* Extension which will be used if no correct extension is found */
     private static final String default_extension  = ".mp4";
     /* Connection stuff */
-    private static final int    free_maxdownloads  = -1;
     private String              dllink             = null;
     private final String        PROPERTY_CONTENTID = "contentid";
     private final String        PATTERN_NORMAL     = "(?i)https?://(?:www\\.)?milfzr\\.com/([A-Za-z0-9\\-%]+)/?";
@@ -86,16 +85,16 @@ public class MilfzrCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        dllink = null;
         final String fid = this.getFID(link);
         final String urlSlug = new Regex(link.getPluginPatternMatcher(), PATTERN_NORMAL).getMatch(0);
         if (!link.isNameSet()) {
             if (urlSlug != null) {
-                link.setName(Encoding.htmlDecode(urlSlug).trim() + ".mp4");
+                link.setName(Encoding.htmlDecode(urlSlug).trim() + default_extension);
             } else {
-                link.setName(fid + ".mp4");
+                link.setName(fid + default_extension);
             }
         }
-        dllink = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getPluginPatternMatcher());
@@ -217,7 +216,11 @@ public class MilfzrCom extends PluginForHost {
                 con = br.openHeadConnection(dllink);
                 handleConnectionErrors(br, con);
                 if (con.getCompleteContentLength() > 0) {
-                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                    if (con.isContentDecoded()) {
+                        link.setDownloadSize(con.getCompleteContentLength());
+                    } else {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
                 }
             } finally {
                 try {
@@ -225,9 +228,6 @@ public class MilfzrCom extends PluginForHost {
                 } catch (final Throwable e) {
                 }
             }
-        } else {
-            /* We cannot be sure whether we have the correct extension or not! */
-            link.setName(title);
         }
         return AvailableStatus.TRUE;
     }
@@ -240,7 +240,7 @@ public class MilfzrCom extends PluginForHost {
             } else if (con.getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             } else {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Broken video?");
             }
         }
     }
@@ -258,7 +258,7 @@ public class MilfzrCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return free_maxdownloads;
+        return Integer.MAX_VALUE;
     }
 
     @Override

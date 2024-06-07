@@ -19,6 +19,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -33,11 +38,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class MegagamesCom extends PluginForHost {
@@ -75,21 +75,11 @@ public class MegagamesCom extends PluginForHost {
     }
 
     /* Connection stuff */
-    private static final boolean FREE_RESUME       = false;
-    private static final int     FREE_MAXCHUNKS    = 1;
-    private static final int     FREE_MAXDOWNLOADS = 1;
-    private static final String  TYPE_1            = "https?://[^/]+/(?:fixes|mods|trainers|videos)/([a-z0-9\\-]+)";
-    private static final String  TYPE_2            = "https?://[^/]+/download/(\\d+)/(\\d+)";
+    private static final boolean FREE_RESUME    = false;
+    private static final int     FREE_MAXCHUNKS = 1;
+    private static final String  TYPE_1         = "https?://[^/]+/(?:fixes|mods|trainers|videos)/([a-z0-9\\-]+)";
+    private static final String  TYPE_2         = "https?://[^/]+/download/(\\d+)/(\\d+)";
 
-    // private static final boolean ACCOUNT_FREE_RESUME = true;
-    // private static final int ACCOUNT_FREE_MAXCHUNKS = 0;
-    // private static final int ACCOUNT_FREE_MAXDOWNLOADS = 20;
-    // private static final boolean ACCOUNT_PREMIUM_RESUME = true;
-    // private static final int ACCOUNT_PREMIUM_MAXCHUNKS = 0;
-    // private static final int ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
-    //
-    // /* don't touch the following! */
-    // private static AtomicInteger maxPrem = new AtomicInteger(1);
     @Override
     public String getLinkID(final DownloadLink link) {
         final String fid = getFID(link);
@@ -146,47 +136,60 @@ public class MegagamesCom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        requestFileInformation(link);
         doFree(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
     private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         String dllink = checkDirectLink(link, directlinkproperty);
-        if (dllink == null) {
+        if (dllink != null) {
+            /* Re-use last stored directurl */
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
+        } else {
+            requestFileInformation(link);
             if (link.getPluginPatternMatcher().matches(TYPE_1)) {
-                final String continue_url = br.getRegex("(/download/[^<>\"\\']+)").getMatch(0);
+                String continue_url = br.getRegex("(/?(download|get)/[^<>\"\\']+)").getMatch(0);
                 if (continue_url == null) {
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
-                br.getPage(continue_url);
+                /* Fix URL so browser will build correct absolute URL. */
+                if (!continue_url.startsWith("/") && !continue_url.startsWith("http")) {
+                    continue_url = "/" + continue_url;
+                }
+                dl = jd.plugins.BrowserAdapter.openDownload(br, link, continue_url, resumable, maxchunks);
+                if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+                    br.followConnection();
+                    dl = null;
+                }
             }
-            final Form dlform = br.getFormbyProperty("id", "megagames-download-form");
-            if (dlform == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            if (dlform.containsHTML("recaptcha")) {
-                /* 2020-07-14: New */
-                final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-                dlform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-            }
-            br.submitForm(dlform);
-            /* 2020-07-08: Form redirects to this URL */
-            // br.getPage(continue_url.replace("/download/", "/t-dl/"));
-            String host = br.getRegex("from=\"([^<>\"\\']+)\"").getMatch(0);
-            String req = br.getRegex("req=\"([^<>\"\\']+)\"").getMatch(0);
-            if (host == null || req == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-            if (!Encoding.isUrlCoded(req)) {
-                req = URLEncode.encodeURIComponent(req);
-            }
-            dllink = Encoding.Base64Decode(host) + req;
-            if (StringUtils.isEmpty(dllink)) {
-                logger.warning("Failed to find final downloadurl");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (dl == null) {
+                final Form dlform = br.getFormbyProperty("id", "megagames-download-form");
+                if (dlform == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                if (dlform.containsHTML("recaptcha")) {
+                    /* 2020-07-14: New */
+                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                    dlform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                }
+                br.submitForm(dlform);
+                /* 2020-07-08: Form redirects to this URL */
+                // br.getPage(continue_url.replace("/download/", "/t-dl/"));
+                String host = br.getRegex("from=\"([^<>\"\\']+)\"").getMatch(0);
+                String req = br.getRegex("req=\"([^<>\"\\']+)\"").getMatch(0);
+                if (host == null || req == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                if (!Encoding.isUrlCoded(req)) {
+                    req = URLEncode.encodeURIComponent(req);
+                }
+                dllink = Encoding.Base64Decode(host) + req;
+                if (StringUtils.isEmpty(dllink)) {
+                    logger.warning("Failed to find final downloadurl");
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
             }
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             br.followConnection(true);
             if (dl.getConnection().getResponseCode() == 403) {
@@ -246,7 +249,7 @@ public class MegagamesCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return FREE_MAXDOWNLOADS;
+        return 1;
     }
 
     @Override
