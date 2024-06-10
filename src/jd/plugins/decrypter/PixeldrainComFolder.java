@@ -135,12 +135,12 @@ public class PixeldrainComFolder extends PluginForDecrypt {
              */
             final String urlWithoutParams = URLHelper.getUrlWithoutParams(param.getCryptedUrl());
             final Regex urlWithoutParamsRegex = new Regex(urlWithoutParams, PATTERN_FOLDER);
-            final String relevantUrlpart = urlWithoutParamsRegex.getMatch(0);
-            if (relevantUrlpart == null) {
+            final String folderPath = urlWithoutParamsRegex.getMatch(0);
+            if (folderPath == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             /* Append "?stat" so even if we got a direct-URL we will get a json response and not a file. */
-            br.getPage(PixeldrainCom.API_BASE + "/filesystem/" + relevantUrlpart + "?stat");
+            br.getPage(PixeldrainCom.API_BASE + "/filesystem/" + folderPath + "?stat");
             if (br.getHttpConnection().getResponseCode() == 404) {
                 /* E.g. {"success":false,"value":"not_found","message":"The entity you requested could not be found"} */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -159,22 +159,21 @@ public class PixeldrainComFolder extends PluginForDecrypt {
                 lookForSingleFile = false;
             }
             if (fileitems.isEmpty()) {
-                throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER, "EMPTY_FOLDER_" + relevantUrlpart, "This folder exists but is empty.", null);
+                throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER, "EMPTY_FOLDER_" + folderPath, "This folder exists but is empty.", null);
             }
-            final String rootFolderID = urlWithoutParamsRegex.getMatch(1);
+            final String folderID = urlWithoutParamsRegex.getMatch(1);
             final String thisUrlPath = urlWithoutParamsRegex.getMatch(2);
             String rootFolderName = null;
-            if (pathlist != null && pathlist.size() > 0) {
-                /* Find root folder name */
-                for (final Map<String, Object> pathitem : pathlist) {
-                    final String type = pathitem.get("type").toString();
-                    final String path = pathitem.get("path").toString();
-                    if (type.equalsIgnoreCase("dir") && path.equals("/" + rootFolderID)) {
-                        rootFolderName = pathitem.get("name").toString();
-                        break;
-                    }
+            /* Find root folder name */
+            for (final Map<String, Object> pathitem : pathlist) {
+                final String type = pathitem.get("type").toString();
+                final String path = pathitem.get("path").toString();
+                if (type.equalsIgnoreCase("dir") && path.equals("/" + folderID)) {
+                    rootFolderName = pathitem.get("name").toString();
+                    break;
                 }
             }
+            logger.info("FolderID: " + folderID + " | Numberof children: " + children.size() + " | Root folder name: " + rootFolderName);
             final Map<String, FilePackage> fpmap = new HashMap<String, FilePackage>();
             for (final Map<String, Object> fileitem : fileitems) {
                 final String pathUnchanged = fileitem.get("path").toString();
@@ -186,30 +185,36 @@ public class PixeldrainComFolder extends PluginForDecrypt {
                     String pathToThisFile = pathUnchanged.substring(0, pathUnchanged.lastIndexOf("/"));
                     if (rootFolderName != null) {
                         /* If available, we want to use the real root folder name as root folder name and not the root folder ID. */
-                        pathToThisFile = pathToThisFile.replaceFirst("/" + rootFolderID, "/" + rootFolderName);
+                        pathToThisFile = pathToThisFile.replaceFirst("/" + folderID, rootFolderName);
                     }
                     FilePackage fp = fpmap.get(pathToThisFile);
-                    if (fp == null) {
+                    if (fp == null && !StringUtils.isEmpty(pathToThisFile)) {
                         fp = FilePackage.getInstance();
                         fp.setName(pathToThisFile);
                         fpmap.put(pathToThisFile, fp);
                     }
                     /* Generate direct-downloadable URL. */
                     String fileurl = pathUnchanged;
-                    if (fileurl.startsWith("/") && !fileurl.startsWith("/api/filesystem")) {
+                    if (fileurl.startsWith("/")) {
                         fileurl = "/api/filesystem" + fileurl;
                     }
-                    fileurl = br.getURL(fileurl).toExternalForm();
+                    fileurl = br.getURL(fileurl).toExternalForm() + "?attach";
                     dl = this.createDownloadlink(DirectHTTP.createURLForThisPlugin(fileurl));
+                    dl.setFinalFileName(fileitem.get("name").toString());
                     dl.setDownloadSize(((Number) fileitem.get("file_size")).longValue());
                     dl.setSha256Hash(fileitem.get("sha256_sum").toString());
-                    dl.setRelativeDownloadFolderPath(pathToThisFile);
+                    if (!StringUtils.isEmpty(pathToThisFile)) {
+                        dl.setRelativeDownloadFolderPath(pathToThisFile);
+                    }
+                    /* We know that this file is online so we can set the AvailableStatus right away. */
                     dl.setAvailable(true);
-                    dl._setFilePackage(fp);
+                    if (fp != null) {
+                        dl._setFilePackage(fp);
+                    }
                 } else {
                     /* Subfolder - will go back into this crawler for processing. */
                     String folderurl = pathUnchanged;
-                    if (!folderurl.startsWith("http") && !folderurl.startsWith("/d/") && folderurl.startsWith("/")) {
+                    if (folderurl.startsWith("/")) {
                         folderurl = "/d" + folderurl;
                     }
                     folderurl = br.getURL(folderurl).toExternalForm();

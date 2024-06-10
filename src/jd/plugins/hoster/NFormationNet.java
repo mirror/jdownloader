@@ -53,6 +53,7 @@ public class NFormationNet extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        /* Filename is inside URL so 'weak filename' will be auto set by upper handling - no need to do this here. */
         // if (!link.isNameSet()) {
         // /* Set weak-filename */
         // link.setName(this.getFID(link) + ".nfo");

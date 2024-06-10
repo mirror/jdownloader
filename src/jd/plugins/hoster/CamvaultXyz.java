@@ -48,6 +48,7 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.CamvaultXyzCrawler;
+import jd.plugins.decrypter.CtDiskComFolder;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class CamvaultXyz extends PluginForHost {
@@ -75,7 +76,7 @@ public class CamvaultXyz extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "https://www.camvault.xyz/document/terms";
+        return "https://www." + getHost() + "/document/terms";
     }
 
     public static List<String[]> getPluginDomains() {
@@ -190,6 +191,16 @@ public class CamvaultXyz extends PluginForHost {
         return Integer.MAX_VALUE;
     }
 
+    /* Sets cookies on all known domains. */
+    private void setCookies(final Browser br, final Cookies cookies) {
+        br.setCookies(cookies);
+        for (final String[] domains : CtDiskComFolder.getPluginDomains()) {
+            for (final String domain : domains) {
+                br.setCookies(domain, cookies);
+            }
+        }
+    }
+
     public boolean login(final Account account, final String checkloginURL, final boolean force) throws Exception {
         if (account == null || checkloginURL == null) {
             throw new IllegalArgumentException();
@@ -201,9 +212,9 @@ public class CamvaultXyz extends PluginForHost {
             if (cookies != null || userCookies != null) {
                 logger.info("Attempting cookie login");
                 if (userCookies != null) {
-                    br.setCookies(this.getHost(), userCookies);
+                    setCookies(br, userCookies);
                 } else {
-                    br.setCookies(this.getHost(), cookies);
+                    setCookies(br, cookies);
                 }
                 if (!force) {
                     /* Don't validate cookies */
@@ -273,7 +284,9 @@ public class CamvaultXyz extends PluginForHost {
             } else if (!isLoggedin(br)) {
                 throw new AccountInvalidException();
             }
-            account.saveCookies(br.getCookies(br.getHost()), "");
+            final Cookies freshCookies = br.getCookies(br.getHost());
+            account.saveCookies(freshCookies, "");
+            setCookies(br, freshCookies);
             return true;
         }
     }
