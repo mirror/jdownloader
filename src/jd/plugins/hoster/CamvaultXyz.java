@@ -48,7 +48,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.CamvaultXyzCrawler;
-import jd.plugins.decrypter.CtDiskComFolder;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class CamvaultXyz extends PluginForHost {
@@ -194,7 +193,7 @@ public class CamvaultXyz extends PluginForHost {
     /* Sets cookies on all known domains. */
     private void setCookies(final Browser br, final Cookies cookies) {
         br.setCookies(cookies);
-        for (final String[] domains : CtDiskComFolder.getPluginDomains()) {
+        for (final String[] domains : getPluginDomains()) {
             for (final String domain : domains) {
                 br.setCookies(domain, cookies);
             }
