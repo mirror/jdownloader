@@ -34,11 +34,24 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.decrypter.CtDiskComFolder;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class ModelKarteiDe extends PluginForHost {
     public ModelKarteiDe(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.setFollowRedirects(true);
+        for (final String[] domains : CtDiskComFolder.getPluginDomains()) {
+            for (final String domain : domains) {
+                br.setCookie(domain, "mk4_language", "2"); // English
+            }
+        }
+        return br;
     }
 
     private String dllink = null;

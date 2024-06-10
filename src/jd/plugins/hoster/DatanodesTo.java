@@ -18,6 +18,8 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jdownloader.captcha.v2.CaptchaHosterHelperInterface;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
@@ -128,10 +130,11 @@ public class DatanodesTo extends XFileSharingProBasic {
             final String waitStr = regexWaittime(br);
             if (waitStr != null) {
                 final String fuid = this.getFUIDFromURL(this.getDownloadLink());
+                final String randStr = br.getRegex("rand=\"([^\"]+)\"").getMatch(0);
                 form = new Form();
                 form.put("op", "download2");
                 form.put("id", fuid);
-                form.put("rand", "");
+                form.put("rand", randStr != null ? Encoding.urlEncode(randStr) : "");
                 form.put("referer", Encoding.urlEncode(br.getURL()));
                 form.put("method_free", "Free Download >>");
                 form.put("method_premium", "");
@@ -167,6 +170,21 @@ public class DatanodesTo extends XFileSharingProBasic {
             prepBr.getHeaders().put("Referer", "https://datanodes.to/users");
         }
         return prepBr;
+    }
+
+    @Override
+    public void handleCaptcha(final DownloadLink link, Browser br, final Form captchaForm) throws Exception {
+        if (captchaForm != null && br.containsHTML("g-recaptcha-response")) {
+            final CaptchaHelperHostPluginRecaptchaV2 rc2 = getCaptchaHelperHostPluginRecaptchaV2(this, br);
+            logger.info("Detected captcha method \"RecaptchaV2\" type '" + rc2.getType() + "' for this host");
+            final CaptchaHosterHelperInterface captchaHelper = rc2;
+            this.waitBeforeInteractiveCaptcha(link, rc2.getSolutionTimeout());
+            final String captchaResponse = captchaHelper.getToken();
+            captchaForm.put("g-recaptcha-response", Encoding.urlEncode(captchaResponse));
+            link.setProperty(PROPERTY_captcha_required, Boolean.TRUE);
+        } else {
+            super.handleCaptcha(link, br, captchaForm);
+        }
     }
 
     @Override

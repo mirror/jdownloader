@@ -55,6 +55,7 @@ import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.AccountInvalidException;
+import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -124,6 +125,8 @@ public class SoundcloudCom extends PluginForHost {
     public static final String   PROPERTY_ACCOUNT_created_at                                           = "created_at";
     public static final String   PROPERTY_ACCOUNT_username                                             = "username";
     public static final String   PROPERTY_ACCOUNT_permalink                                            = "permalink";
+    /* 2024-06-10: Account is needed for official downloads. */
+    public static final boolean  ACCOUNT_NEEDED_FOR_OFFICIAL_DOWNLOADS                                 = true;
     /* API base URLs */
     public static final String   API_BASEv2                                                            = "https://api-v2.soundcloud.com";
     /* 2020-12-15: Website/API login is broken thus only cookie login is possible */
@@ -248,8 +251,6 @@ public class SoundcloudCom extends PluginForHost {
             /* This should never happen */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        boolean isOnlyOreviewDownloadable = false;
-        boolean isOfficiallyDownloadable = false;
         /* 2021-06-30: New */
         final UrlQuery query = new UrlQuery();
         final String secret_token = link.getStringProperty(PROPERTY_secret_token);
@@ -272,7 +273,7 @@ public class SoundcloudCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_RETRY);
         }
         final Map<String, Object> response = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
-        final AvailableStatus status = checkStatusJson(this, link, response);
+        final AvailableStatus status = checkStatusJson(this, link, account, response);
         if (status.equals(AvailableStatus.FALSE)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -287,31 +288,44 @@ public class SoundcloudCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FATAL, "This content is GEO-blocked");
         }
         if (isDownload) {
+            boolean isOnlyPreviewDownloadable = false;
+            final boolean looksLikeOfficiallyDownloadable = looksLikeOfficiallyDownloadable(response);
             if (songPolicy != null && songPolicy.equalsIgnoreCase("SNIP")) {
                 /**
                  * Typically previews will also have a duration value of only "30000" --> 30 seconds </br>
                  * When logged in with a Soundcloud premium account, songs for which before only previews were available may change to
                  * "POLICY":"MONETIZE" --> Can be fully streamed by the user.
                  */
-                isOnlyOreviewDownloadable = true;
-            }
-            dllink = getDirectlink(this, link, this.br, response);
-            if (!dllink.contains("/playlist.m3u8")) {
-                /* Only check filesize of http URLs */
-                if (!checkDirectLink(link, this.dllink)) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server issue", 10 * 60 * 1000l);
-                }
+                isOnlyPreviewDownloadable = true;
             }
             final AudioQualitySelectionMode mode = getAudioQualitySelectionMode();
-            if ((isOnlyOreviewDownloadable && !this.getPluginConfig().getBooleanProperty(ALLOW_PREVIEW_DOWNLOAD, defaultALLOW_PREVIEW_DOWNLOAD)) || (isOnlyOreviewDownloadable && dllink == null)) {
+            if (mode == AudioQualitySelectionMode.ONLY_OFFICIAL_DOWNLOADS && !looksLikeOfficiallyDownloadable) {
+                /* User only wants to download only officially downloadable items but this one is not officially downloadable. */
+                throw new PluginException(LinkStatus.ERROR_FATAL, getPhrase("ERROR_NOT_OFFICIALLY_DOWNLOADABLE"));
+            } else if (mode == AudioQualitySelectionMode.ONLY_OFFICIAL_DOWNLOADS && ACCOUNT_NEEDED_FOR_OFFICIAL_DOWNLOADS && looksLikeOfficiallyDownloadable && account == null) {
                 /*
-                 * Song is a pay-only song plus user does not want to download the (30 second) preview [and/or no downloadlink is
+                 * User only wants to download only officially downloadable items and this item is officially downloadable but an account is
+                 * required to perform official downloads.
+                 */
+                throw new AccountRequiredException("Account needed to download officially downloadable items");
+            }
+            dllink = getDirectlink(this, link, account, this.br, response);
+            if (!dllink.contains("/playlist.m3u8")) {
+                /* Only check filesize of progressive download-URLs. */
+                if (!checkDirectLink(link, this.dllink)) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server issue or broken audio file");
+                }
+            }
+            if (isOnlyPreviewDownloadable && (this.getPluginConfig().getBooleanProperty(ALLOW_PREVIEW_DOWNLOAD, defaultALLOW_PREVIEW_DOWNLOAD) == false || dllink == null)) {
+                /*
+                 * Song is a pay-only song plus user does not want to download the (30 second) preview [and/or no final downloadlink is
                  * available].
                  */
                 throw new PluginException(LinkStatus.ERROR_FATAL, getPhrase("ERROR_PREVIEW_DOWNLOAD_DISABLED"));
-            } else if (!isOfficiallyDownloadable && mode == AudioQualitySelectionMode.ONLY_OFFICIAL_DOWNLOADS) {
-                throw new PluginException(LinkStatus.ERROR_FATAL, getPhrase("ERROR_NOT_OFFICIALLY_DOWNLOADABLE"));
             }
+            // if (!looksLikeOfficiallyDownloadable && mode == AudioQualitySelectionMode.ONLY_OFFICIAL_DOWNLOADS) {
+            // throw new PluginException(LinkStatus.ERROR_FATAL, getPhrase("ERROR_NOT_OFFICIALLY_DOWNLOADABLE"));
+            // }
         }
         return AvailableStatus.TRUE;
     }
@@ -371,7 +385,7 @@ public class SoundcloudCom extends PluginForHost {
         }
     }
 
-    public static AvailableStatus checkStatusJson(Plugin plugin, final DownloadLink link, final Map<String, Object> track) throws Exception {
+    public static AvailableStatus checkStatusJson(final Plugin plugin, final DownloadLink link, final Account account, final Map<String, Object> track) throws Exception {
         if (track == null) {
             return AvailableStatus.FALSE;
         }
@@ -401,10 +415,10 @@ public class SoundcloudCom extends PluginForHost {
             link.setProperty(PROPERTY_duration_seconds, duration.intValue());
         }
         final String url = (String) track.get("download_url");
-        final boolean isDownloadable = isREALYDownloadable(track);
+        final boolean looksLikeOfficiallyDownloadable = looksLikeOfficiallyDownloadable(track);
         /* Do this so PROPERTY_chosen_quality will get set for correct filesize calculation. */
-        getDirectlink(plugin, link, null, track);
-        if (isDownloadable && userPrefersOfficialDownload()) {
+        getDirectlink(plugin, link, account, null, track);
+        if (looksLikeOfficiallyDownloadable && userPrefersOfficialDownload()) {
             /* File is officially downloadable */
             /**
              * Only set calculated filesize if wanted by user. </br>
@@ -467,7 +481,7 @@ public class SoundcloudCom extends PluginForHost {
     public static final String TYPE_API_DOWNLOAD = "(?i)https?://api\\.soundcloud\\.com/tracks/\\d+/download";
     public static final String TYPE_API_TOKEN    = "(?i)https?://api\\.soundcloud\\.com/tracks/\\d+/stream\\?secret_token=[A-Za-z0-9\\-_]+";
 
-    public static boolean isREALYDownloadable(final Map<String, Object> track) {
+    public static boolean looksLikeOfficiallyDownloadable(final Map<String, Object> track) {
         final boolean downloadable = ((Boolean) track.get("downloadable")).booleanValue();
         final Object has_downloads_left_o = track.get("has_downloads_left");
         final boolean is_definitly_downloadable;
@@ -481,9 +495,9 @@ public class SoundcloudCom extends PluginForHost {
         return is_definitly_downloadable;
     }
 
-    public static String getDirectlink(final Plugin plugin, final DownloadLink link, final Browser browser, final Map<String, Object> json) throws InterruptedException {
+    public static String getDirectlink(final Plugin plugin, final DownloadLink link, final Account account, final Browser br, final Map<String, Object> json) throws InterruptedException {
         try {
-            final boolean isDownloadable = isREALYDownloadable(json);
+            final boolean looksLikeOfficiallyDownloadable = looksLikeOfficiallyDownloadable(json);
             String track_id = link.getStringProperty(SoundcloudCom.PROPERTY_track_id);
             if (track_id == null) {
                 /* Fallback: Get that information from our current json. */
@@ -497,81 +511,94 @@ public class SoundcloudCom extends PluginForHost {
             if (!StringUtils.isEmpty(secret_token)) {
                 basicQuery.append("secret_token", secret_token, true);
             }
-            if (isDownloadable && userPrefersOfficialDownload()) {
+            if (looksLikeOfficiallyDownloadable && userPrefersOfficialDownload() && (account != null || ACCOUNT_NEEDED_FOR_OFFICIAL_DOWNLOADS == false)) {
+                /* Official download via official download button */
                 /* Track is officially downloadable (download version = highest quality) */
-                if (browser == null) {
-                    /* No browser given --> We can't generate final downloadurls! */
+                if (br == null) {
+                    /* No browser given --> We can't perform http requests -> We can't generate final downloadurls! */
                     return null;
-                } else {
-                    /* Do not use this anymore --> It will return the same we're doing here but as a v1 request URL! */
-                    // finallink = toString(json.get("download_url"));
-                    browser.getPage(SoundcloudCom.API_BASEv2 + "/tracks/" + track_id + "/download?" + basicQuery.toString());
-                    return PluginJSonUtils.getJson(browser, "redirectUri");
                 }
+                /* Do not use this anymore --> It will return the same we're doing here but as a v1 request URL! */
+                // finallink = toString(json.get("download_url"));
+                br.getPage(SoundcloudCom.API_BASEv2 + "/tracks/" + track_id + "/download?" + basicQuery.toString());
+                if (br.getHttpConnection().getResponseCode() == 401) {
+                    /*
+                     * This should never happen. It may happen if official download is attempted while we're not logged in [ahh that also
+                     * should never happen!].
+                     */
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "Official download failed: Permission missing?");
+                }
+                final Map<String, Object> entries = plugin.restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+                return entries.get("redirectUri").toString();
             } else {
+                /* Stream download */
                 final Map<String, Object> media = (Map<String, Object>) json.get("media");
-                if (media != null && media.containsKey("transcodings")) {
-                    final List<Map<String, Object>> transcodings = (List<Map<String, Object>>) media.get("transcodings");
-                    Map<String, Object> transcodingHQ = null;
-                    Map<String, Object> transcodingSQ = null;
-                    for (final Map<String, Object> transcoding : transcodings) {
-                        /* Skip still we don't need or can't handle. */
-                        final String preset = transcoding.get("preset").toString();
-                        final String quality = transcoding.get("quality").toString();
-                        final Map<String, Object> format = (Map<String, Object>) transcoding.get("format");
-                        final String protocol = format.get("protocol").toString();
-                        final String mime_type = format.get("mime_type").toString();
-                        /* Skip opus */
-                        if (preset.contains("opus") || mime_type.contains("audio/ogg")) {
-                            /* Skip because: Is never really available/working?! */
-                            continue;
-                        } else if (quality.equals(PROPERTY_QUALITY_sq) && protocol.equals("progressive")) {
-                            /* Skip because: Available but doesn't work */
-                            continue;
-                        }
-                        if (quality.equals(PROPERTY_QUALITY_hq)) {
-                            transcodingHQ = transcoding;
-                        } else {
-                            transcodingSQ = transcoding;
-                        }
+                if (media == null) {
+                    return null;
+                }
+                final List<Map<String, Object>> transcodings = (List<Map<String, Object>>) media.get("transcodings");
+                if (transcodings == null) {
+                    return null;
+                }
+                Map<String, Object> transcodingHQ = null;
+                Map<String, Object> transcodingSQ = null;
+                for (final Map<String, Object> transcoding : transcodings) {
+                    /* Skip still we don't need or can't handle. */
+                    final String preset = transcoding.get("preset").toString();
+                    final String quality = transcoding.get("quality").toString();
+                    final Map<String, Object> format = (Map<String, Object>) transcoding.get("format");
+                    final String protocol = format.get("protocol").toString();
+                    final String mime_type = format.get("mime_type").toString();
+                    /* Skip opus */
+                    if (preset.contains("opus") || mime_type.contains("audio/ogg")) {
+                        /* Skip because: Is never really available/working?! */
+                        continue;
+                    } else if (quality.equals(PROPERTY_QUALITY_sq) && protocol.equals("progressive")) {
+                        /* Skip because: Available but doesn't work */
+                        continue;
                     }
-                    final Map<String, Object> chosenTranscoding;
-                    if (transcodingHQ != null) {
-                        /* E.g. pro/premium users */
-                        chosenTranscoding = transcodingHQ;
-                        link.setProperty(PROPERTY_chosen_quality, PROPERTY_QUALITY_hq);
+                    if (quality.equals(PROPERTY_QUALITY_hq)) {
+                        transcodingHQ = transcoding;
                     } else {
-                        /* Free account / no account */
-                        chosenTranscoding = transcodingSQ;
-                        link.setProperty(PROPERTY_chosen_quality, PROPERTY_QUALITY_sq);
+                        transcodingSQ = transcoding;
                     }
-                    String streamUrl = (String) chosenTranscoding.get("url");
-                    if (!StringUtils.isEmpty(streamUrl)) {
-                        /* Extra HTTP request required to find final downloadurl. */
-                        final Map<String, Object> format = (Map<String, Object>) chosenTranscoding.get("format");
-                        final String mime_type = (String) format.get("mime_type");
-                        final String extension = Plugin.getExtensionFromMimeTypeStatic(mime_type);
-                        if (extension != null) {
-                            link.setProperty(PROPERTY_filetype, extension);
-                        }
-                        if (browser == null) {
-                            /*
-                             * E.g. during crawling we only want to find the quality we will download later but we do not yet need to
-                             * generate the final downloadURL.
-                             */
-                            return null;
-                        } else {
-                            plugin.getLogger().info("Chosen audio preset: " + chosenTranscoding.get("preset"));
-                            final Browser br2 = browser.cloneBrowser();
-                            final UrlQuery query = UrlQuery.parse(streamUrl);
-                            query.add("client_id", getClientId(null));
-                            streamUrl = URLHelper.parseLocation(new URL(streamUrl), "?" + query.toString()).toString();
-                            br2.getPage(streamUrl);
-                            final Map<String, Object> urlMap = JSonStorage.restoreFromString(br2.toString(), TypeRef.MAP);
-                            final String finallink = (String) urlMap.get("url");
-                            if (!StringUtils.isEmpty(finallink)) {
-                                return finallink;
-                            }
+                }
+                final Map<String, Object> chosenTranscoding;
+                if (transcodingHQ != null) {
+                    /* E.g. pro/premium users */
+                    chosenTranscoding = transcodingHQ;
+                    link.setProperty(PROPERTY_chosen_quality, PROPERTY_QUALITY_hq);
+                } else {
+                    /* Free account / no account */
+                    chosenTranscoding = transcodingSQ;
+                    link.setProperty(PROPERTY_chosen_quality, PROPERTY_QUALITY_sq);
+                }
+                String streamUrl = (String) chosenTranscoding.get("url");
+                if (!StringUtils.isEmpty(streamUrl)) {
+                    /* Extra HTTP request required to find final downloadurl. */
+                    final Map<String, Object> format = (Map<String, Object>) chosenTranscoding.get("format");
+                    final String mime_type = (String) format.get("mime_type");
+                    final String extension = Plugin.getExtensionFromMimeTypeStatic(mime_type);
+                    if (extension != null) {
+                        link.setProperty(PROPERTY_filetype, extension);
+                    }
+                    if (br == null) {
+                        /*
+                         * E.g. during crawling we only want to find the quality we will download later but we do not yet need to generate
+                         * the final downloadURL.
+                         */
+                        return null;
+                    } else {
+                        plugin.getLogger().info("Chosen audio preset: " + chosenTranscoding.get("preset"));
+                        final Browser br2 = br.cloneBrowser();
+                        final UrlQuery query = UrlQuery.parse(streamUrl);
+                        query.add("client_id", getClientId(null));
+                        streamUrl = URLHelper.parseLocation(new URL(streamUrl), "?" + query.toString()).toString();
+                        br2.getPage(streamUrl);
+                        final Map<String, Object> urlMap = JSonStorage.restoreFromString(br2.getRequest().getHtmlCode(), TypeRef.MAP);
+                        final String finallink = (String) urlMap.get("url");
+                        if (!StringUtils.isEmpty(finallink)) {
+                            return finallink;
                         }
                     }
                 }
@@ -579,9 +606,7 @@ public class SoundcloudCom extends PluginForHost {
         } catch (final InterruptedException e) {
             throw e;
         } catch (final Throwable e) {
-            if (plugin != null) {
-                plugin.getLogger().log(e);
-            }
+            plugin.getLogger().log(e);
         }
         return null;
     }

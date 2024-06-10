@@ -816,7 +816,7 @@ public class SoundCloudComDecrypter extends PluginForDecrypt {
 
     private void parseFileInfo(final DownloadLink dl, final Map<String, Object> data) throws Exception {
         if (data != null) {
-            final AvailableStatus status = SoundcloudCom.checkStatusJson(this, dl, data);
+            final AvailableStatus status = SoundcloudCom.checkStatusJson(this, dl, null, data);
             dl.setAvailableStatus(status);
         }
     }
