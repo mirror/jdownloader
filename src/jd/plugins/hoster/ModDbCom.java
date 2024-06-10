@@ -60,7 +60,7 @@ public class ModDbCom extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
-        br.setFollowRedirects(false);
+        br.setFollowRedirects(true);
         br.getPage(link.getDownloadURL());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -245,17 +245,8 @@ public class ModDbCom extends PluginForHost {
         int configuredServer = getConfiguredServer();
         // Get pages with the mirrors
         String singlemirrorpage = getSinglemirrorpage(br);
-        String dllink = findLink(configuredServer, singlemirrorpage);
+        final String dllink = findLink(configuredServer, singlemirrorpage);
         if (dllink == null) {
-            logger.info("no final downloadlink (dllink) has been found, the plugin must be defect!");
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dllink = "https://www.moddb.com" + dllink;
-        br.setFollowRedirects(false);
-        br.getPage(dllink);
-        dllink = br.getRedirectLocation();
-        if (dllink == null) {
-            logger.info("There is a problem with getting the dllink by br.getredirectlocation");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);

@@ -21,9 +21,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.storage.JSonMapperException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.Exceptions;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.parser.UrlQuery;
@@ -31,6 +33,8 @@ import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.http.Request;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -44,47 +48,32 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "rapidb.it" }, urls = { "" })
-public class RapidbIt extends PluginForHost {
-    private final String                 API_BASE                    = "https://rapidb.it/api";
-    private static MultiHosterManagement mhm                         = new MultiHosterManagement("rapidb.it");
+@HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "torbox.app" }, urls = { "" })
+public class TorboxApp extends PluginForHost {
+    /* API docs: https://api-docs.torbox.app/ */
+    private final String                 API_BASE                    = "https://api.torbox.app/v1/api";
+    private static MultiHosterManagement mhm                         = new MultiHosterManagement("torbox.app");
     private final boolean                resume                      = true;
     private final int                    maxchunks                   = 0;
     private final String                 PROPERTY_ACCOUNT_TOKEN      = "login_token";
     private final String                 PROPERTY_SERVERSIDE_FILE_ID = "file_id";
 
-    /**
-     * 2022-07-19: While their API docs state all possible errormessages, their API does not return any errormessage - only error-codes.
-     * </br>
-     * This is where this static mapping comes into play.
-     */
-    private Map<Integer, String> getErrorCodeMap() {
-        final Map<Integer, String> ret = new HashMap<Integer, String>();
-        ret.put(101, "Unknown PHP error");
-        ret.put(102, "The selected controller does not exist");
-        ret.put(103, "The selected controller exists but its source file was not found");
-        ret.put(104, "Requested path/method does not exist");
-        ret.put(105, "Your IP was banned due too high number of failed login attempts");
-        ret.put(106, "You are logged off (access token is not valid or expired)");
-        ret.put(107, "Owned permissions (scope) does not allow access to the controller/action");
-        ret.put(108, "Input data contains invalid characters (only UTF-8)");
-        return ret;
-    }
-
     @SuppressWarnings("deprecation")
-    public RapidbIt(PluginWrapper wrapper) {
+    public TorboxApp(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("https://" + this.getHost() + "/pl/buy/level");
+        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            this.enablePremium("https://" + this.getHost() + "/pricing");
+        }
     }
 
     @Override
     public LazyPlugin.FEATURE[] getFeatures() {
-        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.MULTIHOST, LazyPlugin.FEATURE.USERNAME_IS_EMAIL };
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.MULTIHOST, LazyPlugin.FEATURE.API_KEY_LOGIN };
     }
 
     @Override
     public String getAGBLink() {
-        return "https://" + this.getHost() + "/pl/page/tos";
+        return "https://" + this.getHost() + "/terms";
     }
 
     private Browser prepBR(final Browser br) {
@@ -248,15 +237,16 @@ public class RapidbIt extends PluginForHost {
         /* Bought traffic + (daily_free_traffic_mb - daily_used_traffic_bytes) */
         ai.setTrafficLeft(pointsBytes + (((Number) level.get("points_free_mb")).longValue() * 1000 * 1000) - ((Number) user.get("points_free_used")).longValue());
         ai.setTrafficMax(pointsBytes);
+        final Request req = br.createGetRequest(API_BASE + "/webdl/hosters");
+        final Map<String, Object> hostinfo = (Map<String, Object>) this.callAPI(req, account, null);
+        final List<Map<String, Object>> hosterlist = (List<Map<String, Object>>) hostinfo.get("data");
         final ArrayList<String> supportedHosts = new ArrayList<String>();
-        final List<Map<String, Object>> filehostings = (List<Map<String, Object>>) apiconfig.get("filehostings");
-        for (final Map<String, Object> filehosting : filehostings) {
-            final List<String> domains = (List<String>) filehosting.get("domains");
-            final String name = filehosting.get("name").toString();
-            if (((Number) filehosting.get("status")).intValue() == 1) {
-                supportedHosts.addAll(domains);
+        for (final Map<String, Object> hosterlistitem : hosterlist) {
+            final String domain = hosterlistitem.get("domain").toString();
+            if ((Boolean) hosterlistitem.get("status")) {
+                supportedHosts.add(domain);
             } else {
-                logger.info("Skipping currently unsupported/offline host: " + name);
+                logger.info("Skipping currently unsupported/offline host: " + domain);
             }
         }
         ai.setMultiHostSupport(this, supportedHosts);
@@ -264,59 +254,57 @@ public class RapidbIt extends PluginForHost {
         return ai;
     }
 
-    private void login(final Account account, final boolean validateLogins) throws IOException, PluginException, InterruptedException {
+    private Map<String, Object> login(final Account account, final boolean validateLogins) throws IOException, PluginException, InterruptedException {
         synchronized (account) {
             prepBR(this.br);
             if (account.hasProperty(PROPERTY_ACCOUNT_TOKEN)) {
                 logger.info("Trying to login via token");
-                br.getHeaders().put("Auth", account.getStringProperty(PROPERTY_ACCOUNT_TOKEN));
                 if (!validateLogins) {
                     /* Do not verify logins */
-                    return;
+                    return null;
                 } else {
                     logger.info("Validating login token...");
-                    br.getPage(API_BASE + "/users/me");
+                    final Request loginreq = br.createGetRequest(API_BASE + "/user/me");
+                    this.callAPI(loginreq, account, null);
                     try {
                         checkErrors(account, null);
                         logger.info("Token login successful");
-                        return;
+                        return null;
                     } catch (final PluginException e) {
                         logger.exception("Token login failed", e);
-                        account.removeProperty(PROPERTY_ACCOUNT_TOKEN);
                     }
                 }
             }
             logger.info("Performing full login");
-            final Map<String, Object> postdata = new HashMap<String, Object>();
-            postdata.put("email", account.getUser());
-            postdata.put("password", account.getPass());
-            postdata.put("googleauth", null);
-            postdata.put("never_expires", true);
-            br.postPageRaw(API_BASE + "/users/login", JSonStorage.serializeToJson(postdata));
-            final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
-            final String token = (String) entries.get("access_token");
-            if (StringUtils.isEmpty(token)) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
-            br.getHeaders().put("Auth", token);
-            account.setProperty(PROPERTY_ACCOUNT_TOKEN, token);
+            final Request loginreq = br.createGetRequest(API_BASE + "/user/me");
+            this.callAPI(loginreq, account, null);
+            return null;
         }
     }
 
-    private void checkErrors(final Account account, final DownloadLink link) throws PluginException, InterruptedException {
+    private Object callAPI(final Request req, final Account account, final DownloadLink link) throws IOException, PluginException, InterruptedException {
+        req.getHeaders().put(HTTPConstants.HEADER_REQUEST_AUTHORIZATION, "Bearer " + Encoding.Base64Decode(account.getUser()));
+        br.getPage(req);
+        return checkErrors(account, link);
+    }
+
+    private Object checkErrors(final Account account, final DownloadLink link) throws PluginException, InterruptedException {
         try {
             final Object jsonO = restoreFromString(br.toString(), TypeRef.OBJECT);
             if (jsonO == null || !(jsonO instanceof Map)) {
-                return;
+                return jsonO;
             }
             handleErrorMap(account, link, (Map<String, Object>) jsonO);
+            return jsonO;
         } catch (final JSonMapperException jme) {
-            if (this.getDownloadLink() != null) {
-                mhm.handleErrorGeneric(account, this.getDownloadLink(), "Bad API answer", 50, 5 * 60 * 1000l);
+            final String errortext = "Bad API response";
+            if (link != null) {
+                mhm.handleErrorGeneric(account, this.getDownloadLink(), errortext, 50, 5 * 60 * 1000l);
             } else {
-                throw Exceptions.addSuppressed(new AccountUnavailableException("Bad API answer", 1 * 60 * 1000l), jme);
+                throw Exceptions.addSuppressed(new AccountUnavailableException(errortext, 1 * 60 * 1000l), jme);
             }
         }
+        return null;
     }
 
     private void handleErrorMap(final Account account, final DownloadLink link, final Map<String, Object> entries) throws PluginException, InterruptedException {
@@ -330,7 +318,8 @@ public class RapidbIt extends PluginForHost {
             /* No error */
             return;
         }
-        final Map<Integer, String> errorCodeMapping = getErrorCodeMap();
+        // TODO: Add functionality
+        final Map<Integer, String> errorCodeMapping = null;
         if (errorCodeMapping.containsKey(errorcode)) {
             /* Known errorcode */
             final String errorMsg = errorCodeMapping.get(errorcode);
@@ -355,15 +344,35 @@ public class RapidbIt extends PluginForHost {
         }
     }
 
+    private static String correctPassword(final String pw) {
+        if (pw != null) {
+            return pw.trim().replace("-", "");
+        } else {
+            return null;
+        }
+    }
+
+    @Override
+    protected String getAPILoginHelpURL() {
+        return "https://" + getHost() + "/settings";
+    }
+
+    @Override
+    protected boolean looksLikeValidAPIKey(final String str) {
+        if (str == null) {
+            return false;
+        } else if (str.matches("[a-f0-9\\-]{32,36}")) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     @Override
     public void reset() {
     }
 
     @Override
     public void resetDownloadlink(final DownloadLink link) {
-        if (link != null) {
-            /* This will allow our plugin to start a new serverside "job" on next try. */
-            this.setMultihosterFileID(link, null);
-        }
     }
 }

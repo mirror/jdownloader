@@ -187,7 +187,7 @@ public class CamvaultXyz extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return Integer.MAX_VALUE;
     }
 
     public boolean login(final Account account, final String checkloginURL, final boolean force) throws Exception {
@@ -411,7 +411,7 @@ public class CamvaultXyz extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
+        return Integer.MAX_VALUE;
     }
 
     @Override

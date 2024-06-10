@@ -16,17 +16,22 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
+import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.utils.JDUtilities;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "moddb.com" }, urls = { "https?://(www\\.)?moddb\\.com/(games|mods|engines|groups)/.*?/(addons|downloads)/[0-9a-z-]+" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class ModDbComDecrypter extends PluginForDecrypt {
     public ModDbComDecrypter(PluginWrapper wrapper) {
         super(wrapper);
@@ -35,48 +40,106 @@ public class ModDbComDecrypter extends PluginForDecrypt {
     private volatile boolean loaded = false;
     private static Object    LOCK   = new Object();
 
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
-        br.setFollowRedirects(true);
-        br.getPage(parameter);
-        if (loaded == false) {
-            synchronized (LOCK) {
-                if (loaded == false) {
-                    /*
-                     * we only have to load this once, to make sure its loaded
-                     */
-                    JDUtilities.getPluginForHost("moddb.com");
-                }
-                loaded = true;
-            }
-        }
-        // Get pages with the mirrors
-        jd.plugins.hoster.ModDbCom.getSinglemirrorpage(br);
-        final String gameFrontmirror = br.getRegex("Mirror provided by Gamefront.*?<a href=\"(.*?)\"").getMatch(0);
-        if (gameFrontmirror != null) {
-            final Browser br2 = br.cloneBrowser();
-            br2.setFollowRedirects(true);
-            br2.getPage(gameFrontmirror.trim());
-            String finalLink = br2.getURL();
-            if (!finalLink.contains("gamefront.com/")) {
-                logger.warning("Decrypter broken for link: " + parameter);
-                return null;
-            }
-            // Fix invalid links
-            finalLink = finalLink.replace("/files/files/", "/files/");
-            decryptedLinks.add(createDownloadlink(finalLink));
-        } else {
-            decryptedLinks.add(createDownloadlink(parameter.replace("moddb.com/", "moddbdecrypted.com/")));
-            return decryptedLinks;
-        }
-        if (br.containsHTML("(Mirror provided by Mod DB|Mirror provided by FDCCDN)")) {
-            decryptedLinks.add(createDownloadlink(parameter.replace("moddb.com/", "moddbdecrypted.com/")));
-        }
-        return decryptedLinks;
+    public static List<String[]> getPluginDomains() {
+        final List<String[]> ret = new ArrayList<String[]>();
+        // each entry in List<String[]> will result in one PluginForDecrypt, Plugin.getHost() will return String[0]->main domain
+        ret.add(new String[] { "moddb.com" });
+        return ret;
     }
 
-    /* NO OVERRIDE!! */
+    public static String[] getAnnotationNames() {
+        return buildAnnotationNames(getPluginDomains());
+    }
+
+    @Override
+    public String[] siteSupportedNames() {
+        return buildSupportedNames(getPluginDomains());
+    }
+
+    public static String[] getAnnotationUrls() {
+        return buildAnnotationUrls(getPluginDomains());
+    }
+
+    public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
+        final List<String> ret = new ArrayList<String>();
+        for (final String[] domains : pluginDomains) {
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(games|mods|engines|groups)/([\\w+\\-]+)(/(addons|downloads)(/page/\\d+|/[\\w\\-]+)?)?");
+        }
+        return ret.toArray(new String[0]);
+    }
+
+    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
+        ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final Regex urlinfo = new Regex(param.getCryptedUrl(), this.getSupportedLinks());
+        final String titleSlug = urlinfo.getMatch(1);
+        String contenturl = param.getCryptedUrl();
+        br.setFollowRedirects(true);
+        if (contenturl.matches("(?i).+/(addons|downloads)/(?!page)[\\w\\-]+$")) {
+            /* Single file */
+            br.getPage(contenturl);
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            if (loaded == false) {
+                synchronized (LOCK) {
+                    if (loaded == false) {
+                        /*
+                         * we only have to load this once, to make sure its loaded
+                         */
+                        JDUtilities.getPluginForHost("moddb.com");
+                    }
+                    loaded = true;
+                }
+            }
+            // Get pages with the mirrors
+            jd.plugins.hoster.ModDbCom.getSinglemirrorpage(br);
+            final String gameFrontmirror = br.getRegex("Mirror provided by Gamefront.*?<a href=\"(.*?)\"").getMatch(0);
+            if (gameFrontmirror != null) {
+                final Browser br2 = br.cloneBrowser();
+                br2.setFollowRedirects(true);
+                br2.getPage(gameFrontmirror.trim());
+                String finalLink = br2.getURL();
+                if (!finalLink.contains("gamefront.com/")) {
+                    logger.warning("Decrypter broken for link: " + contenturl);
+                    return null;
+                }
+                // Fix invalid links
+                finalLink = finalLink.replace("/files/files/", "/files/");
+                ret.add(createDownloadlink(finalLink));
+            } else {
+                ret.add(createDownloadlink(contenturl.replace("moddb.com/", "moddbdecrypted.com/")));
+                return ret;
+            }
+            if (br.containsHTML("(Mirror provided by Mod DB|Mirror provided by FDCCDN)")) {
+                ret.add(createDownloadlink(contenturl.replace("moddb.com/", "moddbdecrypted.com/")));
+            }
+        } else {
+            /* Multiple items */
+            if (!contenturl.contains("/addons") && !contenturl.contains("/downloads")) {
+                /* Corrent URL added by user */
+                contenturl += "/downloads";
+            }
+            br.getPage(contenturl);
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            final String[] downloadlinks = br.getRegex("(/mods/" + titleSlug + "/(addons|downloads)/[\\w\\-]+)").getColumn(0);
+            if (downloadlinks == null || downloadlinks.length == 0) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName(titleSlug.replace("-", " ").trim());
+            for (final String downloadlink : downloadlinks) {
+                final String fullurl = br.getURL(downloadlink).toExternalForm();
+                final DownloadLink link = this.createDownloadlink(fullurl);
+                link._setFilePackage(fp);
+                ret.add(link);
+            }
+        }
+        return ret;
+    }
+
+    @Override
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }

@@ -15,6 +15,11 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -34,9 +39,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "naughtymachinima.com" }, urls = { "https?://(?:www\\.)?naughtymachinima\\.com/video/(\\d+)(/([a-z0-9\\-_]+))?" })
 public class NaughtymachinimaCom extends PluginForHost {
     public NaughtymachinimaCom(PluginWrapper wrapper) {
@@ -54,16 +56,14 @@ public class NaughtymachinimaCom extends PluginForHost {
     // protocol: no https
     // other:
     /* Connection stuff */
-    private static final boolean free_resume       = true;
-    private static final int     free_maxchunks    = 0;
-    private static final int     free_maxdownloads = -1;
-    private String               dllink            = null;
-    private boolean              server_issues     = false;
-    private boolean              privatecontent    = false;
+    private static final boolean free_resume    = true;
+    private static final int     free_maxchunks = 0;
+    private String               dllink         = null;
+    private boolean              privatecontent = false;
 
     @Override
     public String getAGBLink() {
-        return "http://www.naughtymachinima.com/static/terms";
+        return "https://www.naughtymachinima.com/static/terms";
     }
 
     @Override
@@ -92,8 +92,9 @@ public class NaughtymachinimaCom extends PluginForHost {
     }
 
     public AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
+        dllink = null;
+        privatecontent = false;
         correctDownloadLink(link);
-        server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         if (account != null) {
@@ -103,7 +104,7 @@ public class NaughtymachinimaCom extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404 || !br.getURL().contains("/" + getFID(link))) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        privatecontent = this.br.containsHTML("(?i)>\\s*This is a private video");
+        privatecontent = br.containsHTML("(?i)>\\s*This is a private video");
         final String urlName = new Regex(this.br.getURL(), this.getSupportedLinks()).getMatch(2);
         String filename;
         if (urlName != null) {
@@ -146,10 +147,11 @@ public class NaughtymachinimaCom extends PluginForHost {
                 br2.setFollowRedirects(true);
                 final URLConnectionAdapter con = br2.openHeadConnection(dllink);
                 try {
-                    if (this.looksLikeDownloadableContent(con)) {
+                    handleConnectionErrors(br2, con);
+                    if (con.isContentDecoded()) {
                         link.setDownloadSize(con.getCompleteContentLength());
                     } else {
-                        server_issues = true;
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
                     }
                 } finally {
                     try {
@@ -165,6 +167,19 @@ public class NaughtymachinimaCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    private void handleConnectionErrors(final Browser br, final URLConnectionAdapter con) throws PluginException, IOException {
+        if (!this.looksLikeDownloadableContent(con)) {
+            br.followConnection(true);
+            if (con.getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+            } else if (con.getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Video broken?");
+            }
+        }
+    }
+
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         handleDownload(link, null);
@@ -178,22 +193,11 @@ public class NaughtymachinimaCom extends PluginForHost {
             } else {
                 throw new AccountRequiredException();
             }
-        } else if (server_issues) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
         } else if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, free_resume, free_maxchunks);
-        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
-            br.followConnection(true);
-            if (dl.getConnection().getResponseCode() == 403) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-            }
-        }
+        handleConnectionErrors(br, dl.getConnection());
         dl.startDownload();
     }
 
@@ -206,15 +210,15 @@ public class NaughtymachinimaCom extends PluginForHost {
                 if (cookies != null) {
                     logger.info("Attempting cookie login");
                     this.br.setCookies(this.getHost(), cookies);
-                    if (!force && System.currentTimeMillis() - account.getCookiesTimeStamp("") < 5 * 60 * 1000l) {
-                        logger.info("Cookies are still fresh --> Trust cookies without login");
+                    if (!force) {
+                        /* Do not validate cookies */
                         return false;
                     }
                     br.getPage("https://" + this.getHost() + "/");
                     if (this.isLoggedin(this.br)) {
                         logger.info("Cookie login successful");
                         /* Refresh cookie timestamp */
-                        account.saveCookies(this.br.getCookies(this.getHost()), "");
+                        account.saveCookies(br.getCookies(this.getHost()), "");
                         return true;
                     } else {
                         logger.info("Cookie login failed");
@@ -268,7 +272,7 @@ public class NaughtymachinimaCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
+        return Integer.MAX_VALUE;
     }
 
     @Override
@@ -278,7 +282,7 @@ public class NaughtymachinimaCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return free_maxdownloads;
+        return Integer.MAX_VALUE;
     }
 
     @Override

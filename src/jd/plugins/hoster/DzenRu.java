@@ -41,7 +41,6 @@ import jd.plugins.PluginForHost;
 public class DzenRu extends PluginForHost {
     public DzenRu(PluginWrapper wrapper) {
         super(wrapper);
-        // this.enablePremium("");
     }
 
     private final String PROPERTY_HLS_MASTER = "hls_master";
@@ -97,10 +96,11 @@ public class DzenRu extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         link.removeProperty(PROPERTY_HLS_MASTER);
+        final String extDefault = ".mp4";
         final String videoid = this.getFID(link);
         if (!link.isNameSet()) {
             /* Fallback */
-            link.setName(videoid + ".mp4");
+            link.setName(videoid + extDefault);
         }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -115,11 +115,24 @@ public class DzenRu extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String[] jsons = br.getRegex("(\\{\"data\".*?)\\)\\}\\(\\);</script>").getColumn(0);
+        String[] jsons = br.getRegex("(\\{\"data\".*?)\\)\\)\\}\\(\\);</script>").getColumn(0);
+        if (jsons == null || jsons.length == 0) {
+            /* Old regex */
+            jsons = br.getRegex("(\\{\"data\".*?)\\)\\}\\(\\);</script>").getColumn(0);
+        }
         Map<String, Object> videomap = null;
         Map<String, Object> videoinfomap = null;
+        int jsonindex = -1;
         for (final String json : jsons) {
-            final Object entries = restoreFromString(json, TypeRef.OBJECT);
+            jsonindex++;
+            Object entries = null;
+            try {
+                entries = restoreFromString(json, TypeRef.OBJECT);
+            } catch (final Throwable e) {
+                /* 2024-06-10: This is the dontcare way^^ */
+                logger.info("Skipping invalid json | index: " + jsonindex + " | json: " + json);
+                continue;
+            }
             videomap = (Map<String, Object>) findVideoMapRecursive(entries, videoid);
             videoinfomap = (Map<String, Object>) findVideoInformationMapRecursive(entries, videoid);
             if (videomap != null && videoinfomap != null) {
@@ -177,9 +190,9 @@ public class DzenRu extends PluginForHost {
             link.setComment(description);
         }
         if (!StringUtils.isEmpty(dateFormatted) && !StringUtils.isEmpty(title)) {
-            link.setFinalFileName(dateFormatted + "_" + title + ".mp4");
+            link.setFinalFileName(dateFormatted + "_" + title + extDefault);
         } else if (!StringUtils.isEmpty(title)) {
-            link.setFinalFileName(title + ".mp4");
+            link.setFinalFileName(title + extDefault);
         }
         /**
          * Very cheap way of calculating rough filesize using bandwidth of 1080p version and duration of the video. </br>

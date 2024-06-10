@@ -194,7 +194,7 @@ public class VimmNet extends PluginForHost {
                 if (downloadUnavailableReason != null) {
                     /* Item is not downloadable. */
                     downloadUnavailableReason = Encoding.htmlOnlyDecode(downloadUnavailableReason).trim();
-                    throw new PluginException(LinkStatus.ERROR_FATAL, downloadUnavailableReason);
+                    throw new PluginException(LinkStatus.ERROR_FATAL, downloadUnavailableReason, ple);
                 } else {
                     throw ple;
                 }

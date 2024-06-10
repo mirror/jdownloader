@@ -16,8 +16,13 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.URLHelper;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -33,10 +38,8 @@ import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
+import jd.plugins.hoster.DirectHTTP;
 import jd.plugins.hoster.PixeldrainCom;
-
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 @PluginDependencies(dependencies = { PixeldrainCom.class })
@@ -62,68 +65,168 @@ public class PixeldrainComFolder extends PluginForDecrypt {
         return buildAnnotationUrls(getPluginDomains());
     }
 
+    private static final String PATTERN_LIST   = "/l/([A-Za-z0-9]+)((?:\\?embed)?#item=(\\d+))?";
+    private static final String PATTERN_FOLDER = "/d/(([A-Za-z0-9]+)(/.*)?)";
+
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/l/([A-Za-z0-9]+)((?:\\?embed)?#item=(\\d+))?");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "(" + PATTERN_FOLDER + "|" + PATTERN_LIST + ")");
         }
         return ret.toArray(new String[0]);
     }
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final Regex urlinfo = new Regex(param.getCryptedUrl(), this.getSupportedLinks());
-        final String folderID = urlinfo.getMatch(0);
-        if (folderID == null) {
-            /* Developer mistake */
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
+        final Regex listregex = new Regex(param.getCryptedUrl(), PATTERN_LIST);
+        final Regex folderregex = new Regex(param.getCryptedUrl(), PATTERN_FOLDER);
         final PluginForHost hosterplugin = this.getNewPluginForHostInstance(this.getHost());
         /* Use same browser settings/headers as hosterplugin. */
         this.br = hosterplugin.createNewBrowserInstance();
-        br.getPage(PixeldrainCom.API_BASE + "/list/" + folderID);
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            /* 2020-10-01: E.g. {"success":false,"value":"not_found","message":"The entity you requested could not be found"} */
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        final Map<String, Object> folder = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
-        final String folderName = (String) folder.get("title");
-        final List<Map<String, Object>> files = (List<Map<String, Object>>) folder.get("files");
-        if (files.isEmpty()) {
-            throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER, "EMPTY_FOLDER_l_" + folderID, "This folder exists but is empty.", null);
-        }
-        final Number targetIndex;
-        final String targetIndexStr = urlinfo.getMatch(2);
-        if (targetIndexStr != null) {
-            targetIndex = Integer.parseInt(targetIndexStr);
-        } else {
-            targetIndex = null;
-        }
-        int index = 0;
-        for (final Map<String, Object> file : files) {
-            final DownloadLink dl = this.createDownloadlink(generateFileURL(file.get("id").toString()));
-            dl.setContentUrl(generateContentURL(folderID, index));
-            dl.setContainerUrl(param.getCryptedUrl());
-            PixeldrainCom.setDownloadLinkInfo(this, dl, null, file);
-            if (targetIndex != null && index == targetIndex.intValue()) {
-                /* User wants only one item within that folder */
-                logger.info("Found target-file at index: " + index + " | " + dl.getFinalFileName() + " | Returning only this file!");
-                ret.clear();
-                ret.add(dl);
-                break;
-            } else {
-                ret.add(dl);
-                index += 1;
+        if (listregex.patternFind()) {
+            final String listID = listregex.getMatch(0);
+            br.getPage(PixeldrainCom.API_BASE + "/list/" + listID);
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                /* 2020-10-01: E.g. {"success":false,"value":"not_found","message":"The entity you requested could not be found"} */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-        }
-        final FilePackage fp = FilePackage.getInstance();
-        if (!StringUtils.isEmpty(folderName)) {
-            fp.setName(folderName);
+            final Map<String, Object> folder = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+            final String folderName = (String) folder.get("title");
+            final List<Map<String, Object>> files = (List<Map<String, Object>>) folder.get("files");
+            if (files.isEmpty()) {
+                throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER, "EMPTY_LIST_l_" + listID, "This list exists but is empty.", null);
+            }
+            final Number targetIndex;
+            final String targetIndexStr = listregex.getMatch(2);
+            if (targetIndexStr != null) {
+                targetIndex = Integer.parseInt(targetIndexStr);
+            } else {
+                targetIndex = null;
+            }
+            int index = 0;
+            for (final Map<String, Object> file : files) {
+                final DownloadLink dl = this.createDownloadlink(generateFileURL(file.get("id").toString()));
+                dl.setContentUrl(generateContentURL(listID, index));
+                dl.setContainerUrl(param.getCryptedUrl());
+                PixeldrainCom.setDownloadLinkInfo(this, dl, null, file);
+                if (targetIndex != null && index == targetIndex.intValue()) {
+                    /* User wants only one item within that folder */
+                    logger.info("Found target-file at index: " + index + " | " + dl.getFinalFileName() + " | Returning only this file!");
+                    ret.clear();
+                    ret.add(dl);
+                    break;
+                } else {
+                    ret.add(dl);
+                    index += 1;
+                }
+            }
+            final FilePackage fp = FilePackage.getInstance();
+            if (!StringUtils.isEmpty(folderName)) {
+                fp.setName(folderName);
+            } else {
+                /* Fallback */
+                fp.setName(listID);
+            }
+            fp.addLinks(ret);
+        } else if (folderregex.patternFind()) {
+            /**
+             * 2024-06-10: This is new. It's not yet documented in their API docs. </br>
+             * User docs: https://pixeldrain.com/filesystem
+             */
+            final String urlWithoutParams = URLHelper.getUrlWithoutParams(param.getCryptedUrl());
+            final Regex urlWithoutParamsRegex = new Regex(urlWithoutParams, PATTERN_FOLDER);
+            final String relevantUrlpart = urlWithoutParamsRegex.getMatch(0);
+            if (relevantUrlpart == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            /* Append "?stat" so even if we got a direct-URL we will get a json response and not a file. */
+            br.getPage(PixeldrainCom.API_BASE + "/filesystem/" + relevantUrlpart + "?stat");
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                /* E.g. {"success":false,"value":"not_found","message":"The entity you requested could not be found"} */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            final Map<String, Object> folder = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+            final List<Map<String, Object>> children = (List<Map<String, Object>>) folder.get("children");
+            final List<Map<String, Object>> pathlist = (List<Map<String, Object>>) folder.get("path");
+            final List<Map<String, Object>> fileitems;
+            final boolean lookForSingleFile;
+            if (children != null && children.isEmpty() && pathlist != null && pathlist.size() > 0) {
+                /* Given URL goes to a single file so there are no children - the item itself is "the next upper item". */
+                fileitems = pathlist;
+                lookForSingleFile = true;
+            } else {
+                fileitems = children;
+                lookForSingleFile = false;
+            }
+            if (fileitems.isEmpty()) {
+                throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER, "EMPTY_FOLDER_" + relevantUrlpart, "This folder exists but is empty.", null);
+            }
+            final String rootFolderID = urlWithoutParamsRegex.getMatch(1);
+            final String thisUrlPath = urlWithoutParamsRegex.getMatch(2);
+            String rootFolderName = null;
+            if (pathlist != null && pathlist.size() > 0) {
+                /* Find root folder name */
+                for (final Map<String, Object> pathitem : pathlist) {
+                    final String type = pathitem.get("type").toString();
+                    final String path = pathitem.get("path").toString();
+                    if (type.equalsIgnoreCase("dir") && path.equals("/" + rootFolderID)) {
+                        rootFolderName = pathitem.get("name").toString();
+                        break;
+                    }
+                }
+            }
+            final Map<String, FilePackage> fpmap = new HashMap<String, FilePackage>();
+            for (final Map<String, Object> fileitem : fileitems) {
+                final String pathUnchanged = fileitem.get("path").toString();
+                final DownloadLink dl;
+                final boolean isFile = fileitem.get("type").toString().equalsIgnoreCase("file");
+                if (isFile) {
+                    /* File */
+                    /* Get path to folder without filename. */
+                    String pathToThisFile = pathUnchanged.substring(0, pathUnchanged.lastIndexOf("/"));
+                    if (rootFolderName != null) {
+                        /* If available, we want to use the real root folder name as root folder name and not the root folder ID. */
+                        pathToThisFile = pathToThisFile.replaceFirst("/" + rootFolderID, "/" + rootFolderName);
+                    }
+                    FilePackage fp = fpmap.get(pathToThisFile);
+                    if (fp == null) {
+                        fp = FilePackage.getInstance();
+                        fp.setName(pathToThisFile);
+                        fpmap.put(pathToThisFile, fp);
+                    }
+                    /* Generate direct-downloadable URL. */
+                    String fileurl = pathUnchanged;
+                    if (fileurl.startsWith("/") && !fileurl.startsWith("/api/filesystem")) {
+                        fileurl = "/api/filesystem" + fileurl;
+                    }
+                    fileurl = br.getURL(fileurl).toExternalForm();
+                    dl = this.createDownloadlink(DirectHTTP.createURLForThisPlugin(fileurl));
+                    dl.setDownloadSize(((Number) fileitem.get("file_size")).longValue());
+                    dl.setSha256Hash(fileitem.get("sha256_sum").toString());
+                    dl.setRelativeDownloadFolderPath(pathToThisFile);
+                    dl.setAvailable(true);
+                    dl._setFilePackage(fp);
+                } else {
+                    /* Subfolder - will go back into this crawler for processing. */
+                    String folderurl = pathUnchanged;
+                    if (!folderurl.startsWith("http") && !folderurl.startsWith("/d/") && folderurl.startsWith("/")) {
+                        folderurl = "/d" + folderurl;
+                    }
+                    folderurl = br.getURL(folderurl).toExternalForm();
+                    dl = this.createDownloadlink(folderurl);
+                }
+                ret.add(dl);
+                if (lookForSingleFile && isFile && thisUrlPath != null && pathUnchanged.endsWith(thisUrlPath)) {
+                    /* We want to have a specific single file of this folder. */
+                    ret.clear();
+                    ret.add(dl);
+                    break;
+                }
+            }
         } else {
-            /* Fallback */
-            fp.setName(folderID);
+            /* Developer mistake */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        fp.addLinks(ret);
         return ret;
     }
 
