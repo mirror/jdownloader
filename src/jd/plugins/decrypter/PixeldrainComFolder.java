@@ -150,7 +150,7 @@ public class PixeldrainComFolder extends PluginForDecrypt {
             final List<Map<String, Object>> pathlist = (List<Map<String, Object>>) folder.get("path");
             final List<Map<String, Object>> fileitems;
             final boolean lookForSingleFile;
-            if (children != null && children.isEmpty() && pathlist != null && pathlist.size() > 0) {
+            if (children.isEmpty() && pathlist.size() > 0) {
                 /* Given URL goes to a single file so there are no children - the item itself is "the next upper item". */
                 fileitems = pathlist;
                 lookForSingleFile = true;
@@ -175,6 +175,7 @@ public class PixeldrainComFolder extends PluginForDecrypt {
             }
             logger.info("FolderID: " + folderID + " | Numberof children: " + children.size() + " | Root folder name: " + rootFolderName);
             final Map<String, FilePackage> fpmap = new HashMap<String, FilePackage>();
+            int numberofSkippedFolders = 0;
             for (final Map<String, Object> fileitem : fileitems) {
                 final String pathUnchanged = fileitem.get("path").toString();
                 final DownloadLink dl;
@@ -211,6 +212,12 @@ public class PixeldrainComFolder extends PluginForDecrypt {
                     if (fp != null) {
                         dl._setFilePackage(fp);
                     }
+                    if (lookForSingleFile && thisUrlPath != null && pathUnchanged.endsWith(thisUrlPath)) {
+                        /* We want to have a specific single file of this folder. */
+                        ret.clear();
+                        ret.add(dl);
+                        break;
+                    }
                 } else {
                     /* Subfolder - will go back into this crawler for processing. */
                     String folderurl = pathUnchanged;
@@ -219,14 +226,16 @@ public class PixeldrainComFolder extends PluginForDecrypt {
                     }
                     folderurl = br.getURL(folderurl).toExternalForm();
                     dl = this.createDownloadlink(folderurl);
+                    if (lookForSingleFile) {
+                        numberofSkippedFolders += 1;
+                        continue;
+                    }
                 }
                 ret.add(dl);
-                if (lookForSingleFile && isFile && thisUrlPath != null && pathUnchanged.endsWith(thisUrlPath)) {
-                    /* We want to have a specific single file of this folder. */
-                    ret.clear();
-                    ret.add(dl);
-                    break;
-                }
+            }
+            if (lookForSingleFile && ret.isEmpty()) {
+                /* Single desired file was not found */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
         } else {
             /* Developer mistake */

@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import org.appwork.net.protocol.http.HTTPConstants;
@@ -28,13 +29,14 @@ import org.appwork.storage.TypeRef;
 import org.appwork.utils.DebugMode;
 import org.appwork.utils.Exceptions;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Request;
-import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -55,7 +57,6 @@ public class TorboxApp extends PluginForHost {
     private static MultiHosterManagement mhm                         = new MultiHosterManagement("torbox.app");
     private final boolean                resume                      = true;
     private final int                    maxchunks                   = 0;
-    private final String                 PROPERTY_ACCOUNT_TOKEN      = "login_token";
     private final String                 PROPERTY_SERVERSIDE_FILE_ID = "file_id";
 
     @SuppressWarnings("deprecation")
@@ -67,6 +68,14 @@ public class TorboxApp extends PluginForHost {
     }
 
     @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.setFollowRedirects(true);
+        br.getHeaders().put("User-Agent", "JDownloader");
+        return br;
+    }
+
+    @Override
     public LazyPlugin.FEATURE[] getFeatures() {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.MULTIHOST, LazyPlugin.FEATURE.API_KEY_LOGIN };
     }
@@ -74,13 +83,6 @@ public class TorboxApp extends PluginForHost {
     @Override
     public String getAGBLink() {
         return "https://" + this.getHost() + "/terms";
-    }
-
-    private Browser prepBR(final Browser br) {
-        br.setCookiesExclusive(true);
-        br.setFollowRedirects(true);
-        br.getHeaders().put("User-Agent", "JDownloader");
-        return br;
     }
 
     @Override
@@ -214,29 +216,22 @@ public class TorboxApp extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        login(account, true);
-        final Map<String, Object> user = restoreFromString(br.toString(), TypeRef.MAP);
-        br.getPage(API_BASE + "/system/config");
-        final Map<String, Object> apiconfig = restoreFromString(br.toString(), TypeRef.MAP);
-        ai.setCreateTime(((Number) user.get("created")).longValue());
-        final int level_id = ((Number) user.get("level_id")).intValue();
-        final List<Map<String, Object>> levels = (List<Map<String, Object>>) apiconfig.get("levels");
-        /* Information about users' current package. */
-        final Map<String, Object> level = levels.get(level_id - 1);
-        if (level_id == 0) {
-            /* Free */
-            account.setType(AccountType.FREE);
-        } else {
-            /* Bronze, Silver, Gold, Platinum */
-            account.setType(AccountType.PREMIUM);
+        final Map<String, Object> user = login(account, true);
+        final String created_at = user.get("created_at").toString();
+        final String premium_expires_at = (String) user.get("premium_expires_at");
+        long premiumExpireTimestamp = -1;
+        if (premium_expires_at != null) {
+            premiumExpireTimestamp = TimeFormatter.getMilliSeconds(premium_expires_at, "yyyy-MM-dd'T'HH:mm:ss.SSSX", Locale.ENGLISH);
         }
-        ai.setStatus(level.get("name").toString());
-        account.setMaxSimultanDownloads(((Number) level.get("max_sim_downloads")).intValue());
-        /* Traffic the user bought in this package */
-        final long pointsBytes = ((Number) user.get("points")).longValue();
-        /* Bought traffic + (daily_free_traffic_mb - daily_used_traffic_bytes) */
-        ai.setTrafficLeft(pointsBytes + (((Number) level.get("points_free_mb")).longValue() * 1000 * 1000) - ((Number) user.get("points_free_used")).longValue());
-        ai.setTrafficMax(pointsBytes);
+        final Boolean is_subscribed = (Boolean) user.get("is_subscribed");
+        ai.setCreateTime(TimeFormatter.getMilliSeconds(created_at, "yyyy-MM-dd'T'HH:mm:ss.SSSSX", Locale.ENGLISH));
+        ai.setValidUntil(TimeFormatter.getMilliSeconds(premium_expires_at, "yyyy-MM-dd'T'HH:mm:ss.SSSX", Locale.ENGLISH));
+        if (premiumExpireTimestamp > System.currentTimeMillis()) {
+            account.setType(AccountType.PREMIUM);
+        } else {
+            account.setType(AccountType.FREE);
+        }
+        ai.setStatus(account.getType().getLabel() + " | Subscribed: " + is_subscribed + " | Dl so far: " + SizeFormatter.formatBytes(((Number) user.get("total_bytes_downloaded")).longValue()));
         final Request req = br.createGetRequest(API_BASE + "/webdl/hosters");
         final Map<String, Object> hostinfo = (Map<String, Object>) this.callAPI(req, account, null);
         final List<Map<String, Object>> hosterlist = (List<Map<String, Object>>) hostinfo.get("data");
@@ -256,34 +251,14 @@ public class TorboxApp extends PluginForHost {
 
     private Map<String, Object> login(final Account account, final boolean validateLogins) throws IOException, PluginException, InterruptedException {
         synchronized (account) {
-            prepBR(this.br);
-            if (account.hasProperty(PROPERTY_ACCOUNT_TOKEN)) {
-                logger.info("Trying to login via token");
-                if (!validateLogins) {
-                    /* Do not verify logins */
-                    return null;
-                } else {
-                    logger.info("Validating login token...");
-                    final Request loginreq = br.createGetRequest(API_BASE + "/user/me");
-                    this.callAPI(loginreq, account, null);
-                    try {
-                        checkErrors(account, null);
-                        logger.info("Token login successful");
-                        return null;
-                    } catch (final PluginException e) {
-                        logger.exception("Token login failed", e);
-                    }
-                }
-            }
-            logger.info("Performing full login");
             final Request loginreq = br.createGetRequest(API_BASE + "/user/me");
-            this.callAPI(loginreq, account, null);
-            return null;
+            final Map<String, Object> resp = (Map<String, Object>) this.callAPI(loginreq, account, null);
+            return (Map<String, Object>) resp.get("data");
         }
     }
 
     private Object callAPI(final Request req, final Account account, final DownloadLink link) throws IOException, PluginException, InterruptedException {
-        req.getHeaders().put(HTTPConstants.HEADER_REQUEST_AUTHORIZATION, "Bearer " + Encoding.Base64Decode(account.getUser()));
+        req.getHeaders().put(HTTPConstants.HEADER_REQUEST_AUTHORIZATION, "Bearer " + account.getPass());
         br.getPage(req);
         return checkErrors(account, link);
     }
@@ -308,6 +283,7 @@ public class TorboxApp extends PluginForHost {
     }
 
     private void handleErrorMap(final Account account, final DownloadLink link, final Map<String, Object> entries) throws PluginException, InterruptedException {
+        // TODO: Add functionality
         final Object errorO = entries.get("error");
         if (errorO == null) {
             /* No error */
@@ -318,7 +294,6 @@ public class TorboxApp extends PluginForHost {
             /* No error */
             return;
         }
-        // TODO: Add functionality
         final Map<Integer, String> errorCodeMapping = null;
         if (errorCodeMapping.containsKey(errorcode)) {
             /* Known errorcode */

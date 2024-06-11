@@ -55,20 +55,12 @@ public class NaughtymachinimaCom extends PluginForHost {
     // Tags: porn plugin
     // protocol: no https
     // other:
-    /* Connection stuff */
-    private static final boolean free_resume    = true;
-    private static final int     free_maxchunks = 0;
-    private String               dllink         = null;
-    private boolean              privatecontent = false;
+    private String  dllink         = null;
+    private boolean privatecontent = false;
 
     @Override
     public String getAGBLink() {
         return "https://www.naughtymachinima.com/static/terms";
-    }
-
-    @Override
-    public void correctDownloadLink(DownloadLink link) throws Exception {
-        link.setPluginPatternMatcher(link.getPluginPatternMatcher().replace("http://", "https://"));
     }
 
     @Override
@@ -86,6 +78,15 @@ public class NaughtymachinimaCom extends PluginForHost {
     }
 
     @Override
+    public boolean isResumeable(final DownloadLink link, final Account account) {
+        return true;
+    }
+
+    public int getMaxChunks(final DownloadLink link, final Account account) {
+        return 1;
+    }
+
+    @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         final Account account = AccountController.getInstance().getValidAccount(this.getHost());
         return requestFileInformation(link, account, false);
@@ -100,7 +101,7 @@ public class NaughtymachinimaCom extends PluginForHost {
         if (account != null) {
             this.login(account, false);
         }
-        br.getPage(link.getPluginPatternMatcher());
+        br.getPage(link.getPluginPatternMatcher().replaceFirst("^(?i)http://", "https://"));
         if (br.getHttpConnection().getResponseCode() == 404 || !br.getURL().contains("/" + getFID(link))) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -196,56 +197,51 @@ public class NaughtymachinimaCom extends PluginForHost {
         } else if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, free_resume, free_maxchunks);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, this.isResumeable(link, account), this.getMaxChunks(link, account));
         handleConnectionErrors(br, dl.getConnection());
         dl.startDownload();
     }
 
     private boolean login(final Account account, final boolean force) throws Exception {
         synchronized (account) {
-            try {
-                br.setFollowRedirects(true);
-                br.setCookiesExclusive(true);
-                final Cookies cookies = account.loadCookies("");
-                if (cookies != null) {
-                    logger.info("Attempting cookie login");
-                    this.br.setCookies(this.getHost(), cookies);
-                    if (!force) {
-                        /* Do not validate cookies */
-                        return false;
-                    }
-                    br.getPage("https://" + this.getHost() + "/");
-                    if (this.isLoggedin(this.br)) {
-                        logger.info("Cookie login successful");
-                        /* Refresh cookie timestamp */
-                        account.saveCookies(br.getCookies(this.getHost()), "");
-                        return true;
-                    } else {
-                        logger.info("Cookie login failed");
-                    }
+            br.setFollowRedirects(true);
+            br.setCookiesExclusive(true);
+            final Cookies cookies = account.loadCookies("");
+            if (cookies != null) {
+                logger.info("Attempting cookie login");
+                this.br.setCookies(this.getHost(), cookies);
+                if (!force) {
+                    /* Do not validate cookies */
+                    return false;
                 }
-                logger.info("Performing full login");
-                br.getPage("https://" + this.getHost() + "/login");
-                final Form loginform = br.getFormbyProperty("name", "login_form");
-                if (loginform == null) {
-                    logger.warning("Failed to find loginform");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                loginform.put("username", Encoding.urlEncode(account.getUser()));
-                loginform.put("password", Encoding.urlEncode(account.getPass()));
-                loginform.put("login_remember", "on");
-                br.submitForm(loginform);
-                if (!isLoggedin(this.br)) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-                account.saveCookies(this.br.getCookies(this.getHost()), "");
-                return true;
-            } catch (final PluginException e) {
-                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                br.getPage("https://" + this.getHost() + "/");
+                if (this.isLoggedin(this.br)) {
+                    logger.info("Cookie login successful");
+                    /* Refresh cookie timestamp */
+                    account.saveCookies(br.getCookies(this.getHost()), "");
+                    return true;
+                } else {
+                    logger.info("Cookie login failed");
+                    br.clearCookies(null);
                     account.clearCookies("");
                 }
-                throw e;
             }
+            logger.info("Performing full login");
+            br.getPage("https://" + this.getHost() + "/login");
+            final Form loginform = br.getFormbyProperty("name", "login_form");
+            if (loginform == null) {
+                logger.warning("Failed to find loginform");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            loginform.put("username", Encoding.urlEncode(account.getUser()));
+            loginform.put("password", Encoding.urlEncode(account.getPass()));
+            loginform.put("login_remember", "on");
+            br.submitForm(loginform);
+            if (!isLoggedin(this.br)) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+            account.saveCookies(this.br.getCookies(this.getHost()), "");
+            return true;
         }
     }
 

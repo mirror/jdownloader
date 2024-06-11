@@ -20,7 +20,7 @@ public interface IwaraTvConfig extends PluginConfigInterface {
     final String                                  text_FindFilesizeDuringAvailablecheck                 = "Find filesize during linkcheck?\r\nWarning: Can slow down linkcheck!";
     final String                                  text_ProfileCrawlerSkipExternalURLs                   = "Profile/Playlist crawler: Skip externally hosted videos e.g. youtube.com URLs?";
     final String                                  text_ScanForDownloadableLinksInContentDescription     = "Scan for URLs in content description?";
-    final String                                  text_RegexWhitelistForCrawledUrlsInContentDescription = "RegEx whitelist for crawled URLs from content description e.g. '(?i).*(site\\.tld|site2\\.tld).*' [Empty = Allow all URLs]";
+    final String                                  text_RegexWhitelistForCrawledUrlsInContentDescription = "RegEx whitelist for crawled URLs from content description e.g. 'https?://(mega\\.nz|gofile\\.io)/.*' [Empty = Allow all URLs]";
 
     public static class TRANSLATION {
         public String getProfileCrawlerEnableFastLinkcheck_label() {

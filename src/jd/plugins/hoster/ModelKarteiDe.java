@@ -169,7 +169,7 @@ public class ModelKarteiDe extends PluginForHost {
             if (br.containsHTML("assets/images/no\\.jpg")) {
                 /* Account needed to view this image */
                 throw new AccountRequiredException("Account needed to download this image");
-            } else if (br.containsHTML(">\\s*Deine Nutzerrechte reichen leider nicht aus um das Video zu sehen")) {
+            } else if (br.containsHTML(">\\s*(Your are not authorized to see the video|Deine Nutzerrechte reichen leider nicht aus um das Video zu sehen)")) {
                 /* Account needed to view this video */
                 throw new AccountRequiredException("Account needed to download this video");
             }

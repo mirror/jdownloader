@@ -16,11 +16,11 @@
 package jd.plugins.decrypter;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
-import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
@@ -70,12 +70,22 @@ public class ModDbComDecrypter extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final Regex urlinfo = new Regex(param.getCryptedUrl(), this.getSupportedLinks());
-        final String titleSlug = urlinfo.getMatch(1);
         String contenturl = param.getCryptedUrl();
+        final Regex urlinforegex = new Regex(contenturl, this.getSupportedLinks());
+        final HashSet<String> invalidfileitems = new HashSet<String>();
+        invalidfileitems.add("add");
+        invalidfileitems.add("feed");
+        invalidfileitems.add("page");
+        final String singlefileitemregexStr = "(?i).+/(addons|downloads)/([\\w\\-]+)$";
+        final Regex singleitemregex = new Regex(contenturl, singlefileitemregexStr);
+        final String titleSlug = urlinforegex.getMatch(1);
         br.setFollowRedirects(true);
-        if (contenturl.matches("(?i).+/(addons|downloads)/(?!page)[\\w\\-]+$")) {
+        if (singleitemregex.patternFind()) {
             /* Single file */
+            final String singlefileitemSlug = singleitemregex.getMatch(1);
+            if (invalidfileitems.contains(singlefileitemSlug)) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
             br.getPage(contenturl);
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -86,50 +96,41 @@ public class ModDbComDecrypter extends PluginForDecrypt {
                         /*
                          * we only have to load this once, to make sure its loaded
                          */
-                        JDUtilities.getPluginForHost("moddb.com");
+                        JDUtilities.getPluginForHost(this.getHost());
                     }
                     loaded = true;
                 }
             }
             // Get pages with the mirrors
             jd.plugins.hoster.ModDbCom.getSinglemirrorpage(br);
-            final String gameFrontmirror = br.getRegex("Mirror provided by Gamefront.*?<a href=\"(.*?)\"").getMatch(0);
-            if (gameFrontmirror != null) {
-                final Browser br2 = br.cloneBrowser();
-                br2.setFollowRedirects(true);
-                br2.getPage(gameFrontmirror.trim());
-                String finalLink = br2.getURL();
-                if (!finalLink.contains("gamefront.com/")) {
-                    logger.warning("Decrypter broken for link: " + contenturl);
-                    return null;
-                }
-                // Fix invalid links
-                finalLink = finalLink.replace("/files/files/", "/files/");
-                ret.add(createDownloadlink(finalLink));
-            } else {
-                ret.add(createDownloadlink(contenturl.replace("moddb.com/", "moddbdecrypted.com/")));
-                return ret;
-            }
-            if (br.containsHTML("(Mirror provided by Mod DB|Mirror provided by FDCCDN)")) {
-                ret.add(createDownloadlink(contenturl.replace("moddb.com/", "moddbdecrypted.com/")));
-            }
+            ret.add(createDownloadlink(contenturl.replace("moddb.com/", "moddbdecrypted.com/")));
+            return ret;
         } else {
             /* Multiple items */
             if (!contenturl.contains("/addons") && !contenturl.contains("/downloads")) {
-                /* Corrent URL added by user */
+                /* Correct URL added by user */
                 contenturl += "/downloads";
             }
             br.getPage(contenturl);
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            final String[] downloadlinks = br.getRegex("(/mods/" + titleSlug + "/(addons|downloads)/[\\w\\-]+)").getColumn(0);
+            final String[] downloadlinks = br.getRegex("(/[\\w\\-]+/" + titleSlug + "/(addons|downloads)/(?!feed|page)[\\w\\-]+)").getColumn(0);
             if (downloadlinks == null || downloadlinks.length == 0) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(titleSlug.replace("-", " ").trim());
+            fp.setPackageKey("moddb://slug/" + titleSlug);
             for (final String downloadlink : downloadlinks) {
+                final Regex thisSingleitemregex = new Regex(downloadlink, singlefileitemregexStr);
+                final String thisTitleSlug = thisSingleitemregex.getMatch(1);
+                /* Skip invalid results here already in order to prevent getting ugly offline-items later on. */
+                if (invalidfileitems.contains(thisTitleSlug)) {
+                    /* Skip invalid items */
+                    logger.info("Skipping invalid URL: " + downloadlink);
+                    continue;
+                }
                 final String fullurl = br.getURL(downloadlink).toExternalForm();
                 final DownloadLink link = this.createDownloadlink(fullurl);
                 link._setFilePackage(fp);

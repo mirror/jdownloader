@@ -58,10 +58,10 @@ public class ModDbCom extends PluginForHost {
     }
 
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
+    public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(link.getDownloadURL());
+        br.getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML("An error has occured") || br.containsHTML("The download requested could not be found")) {
@@ -199,7 +199,7 @@ public class ModDbCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "http://www.moddb.com/terms-of-use";
+        return "https://www." + getHost() + "/terms-of-use";
     }
 
     private int getConfiguredServer() {
@@ -242,7 +242,7 @@ public class ModDbCom extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
-        int configuredServer = getConfiguredServer();
+        final int configuredServer = getConfiguredServer();
         // Get pages with the mirrors
         String singlemirrorpage = getSinglemirrorpage(br);
         final String dllink = findLink(configuredServer, singlemirrorpage);
