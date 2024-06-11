@@ -17,26 +17,30 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.storage.JSonMapperException;
-import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
 import org.appwork.utils.Exceptions;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.notify.BasicNotify;
+import org.jdownloader.gui.notify.BubbleNotify;
+import org.jdownloader.gui.notify.BubbleNotify.AbstractNotifyWindowFactory;
+import org.jdownloader.gui.notify.gui.AbstractNotifyWindow;
+import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Request;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -52,19 +56,16 @@ import jd.plugins.components.MultiHosterManagement;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "torbox.app" }, urls = { "" })
 public class TorboxApp extends PluginForHost {
-    /* API docs: https://api-docs.torbox.app/ */
-    private final String                 API_BASE                    = "https://api.torbox.app/v1/api";
-    private static MultiHosterManagement mhm                         = new MultiHosterManagement("torbox.app");
-    private final boolean                resume                      = true;
-    private final int                    maxchunks                   = 0;
-    private final String                 PROPERTY_SERVERSIDE_FILE_ID = "file_id";
+    private final String                 API_BASE                                                 = "https://api.torbox.app/v1/api";
+    private static MultiHosterManagement mhm                                                      = new MultiHosterManagement("torbox.app");
+    private final String                 PROPERTY_SERVERSIDE_FILE_ID                              = "file_id";
+    private final String                 PROPERTY_SERVERSIDE_HASH                                 = "hash";
+    private final String                 PROPERTY_ACCOUNT_NOTIFICATIONS_DISPLAYED_UNTIL_TIMESTAMP = "notifications_displayed_until_timestamp";
 
     @SuppressWarnings("deprecation")
     public TorboxApp(PluginWrapper wrapper) {
         super(wrapper);
-        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-            this.enablePremium("https://" + this.getHost() + "/pricing");
-        }
+        this.enablePremium("https://" + this.getHost() + "/pricing");
     }
 
     @Override
@@ -88,6 +89,15 @@ public class TorboxApp extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         return AvailableStatus.UNCHECKABLE;
+    }
+
+    @Override
+    public boolean isResumeable(final DownloadLink link, final Account account) {
+        return true;
+    }
+
+    public int getMaxChunks(final DownloadLink link, final Account account) {
+        return 0;
     }
 
     @Override
@@ -118,123 +128,130 @@ public class TorboxApp extends PluginForHost {
         return link.getStringProperty(getPropertyKey(PROPERTY_SERVERSIDE_FILE_ID));
     }
 
+    private String getMultihosterHash(final DownloadLink link) {
+        return link.getStringProperty(getPropertyKey(PROPERTY_SERVERSIDE_HASH));
+    }
+
     private void setMultihosterFileID(final DownloadLink link, final String file_id) {
         link.setProperty(getPropertyKey(PROPERTY_SERVERSIDE_FILE_ID), file_id);
     }
 
+    private void setMultihosterHash(final DownloadLink link, final String hash) {
+        link.setProperty(getPropertyKey(PROPERTY_SERVERSIDE_HASH), hash);
+    }
+
     @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
-        mhm.runCheck(account, link);
-        this.login(account, false);
-        if (!attemptStoredDownloadurlDownload(link)) {
-            String file_id = getMultihosterFileID(link);
-            if (file_id == null) {
+        final String directlinkproperty = this.getPropertyKey("directlink");
+        final String storedDirecturl = link.getStringProperty(directlinkproperty);
+        final String dllink;
+        if (storedDirecturl != null) {
+            logger.info("Trying to re-use stored directurl: " + storedDirecturl);
+            dllink = storedDirecturl;
+        } else {
+            mhm.runCheck(account, link);
+            this.login(account, false);
+            final String stored_file_id = getMultihosterFileID(link);
+            String file_id = null;
+            String hash = getMultihosterHash(link);
+            /* TODO: Detect old fileIDs and/or only re-use them for X time or never re-use them. */
+            boolean isNewFileID = false;
+            final boolean allowReUseStoredFileID = true;
+            if (stored_file_id != null && allowReUseStoredFileID) {
+                logger.info("Re-using stored internal fileID: " + stored_file_id);
+                file_id = stored_file_id;
+            } else {
                 logger.info("Creating internal file_id");
-                final Map<String, Object> postdata = new HashMap<String, Object>();
-                postdata.put("url", link.getDefaultPlugin().buildExternalDownloadURL(link, this));
-                /*
-                 * This timestamp is later used to notify the user that everything requested within a specified timespan has been
-                 * downloaded.
-                 */
-                postdata.put("group_id", System.currentTimeMillis() / 1000);
-                postdata.put("notif_db", false);
-                postdata.put("notif_email", false);
-                br.postPageRaw(API_BASE + "/services/downloadfile", JSonStorage.serializeToJson(postdata));
-                this.checkErrors(account, link);
-                final Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
-                handleErrorMap(account, link, entries);
-                file_id = entries.get("file_id").toString();
+                final Request req_createwebdownload = br.createPostRequest(API_BASE + "/webdl/createwebdownload", "link=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)));
+                final Map<String, Object> entries = (Map<String, Object>) this.callAPI(req_createwebdownload, account, link);
+                // hash, auth_id
+                file_id = entries.get("webdownload_id").toString();
+                hash = entries.get("hash").toString();
                 /* Save this ID to re-use on next try. */
                 this.setMultihosterFileID(link, file_id);
+                this.setMultihosterHash(link, hash);
+                if (StringUtils.equals(file_id, stored_file_id)) {
+                    logger.info("createwebdownload has returned same internal fileID which we already know: " + stored_file_id);
+                } else {
+                    isNewFileID = true;
+                }
             }
-            logger.info("Trying to init download for internal file_id: " + file_id);
-            final UrlQuery query = new UrlQuery();
-            query.add("id", file_id);
-            query.add("sort", "id");
-            query.add("order", "asc");
-            query.add("offset", "0");
-            query.add("limit", "1");
             /*
-             * This will return a list of files based on our criteria --> This list should only contain one result which is the file we
-             * want.
+             * 2024-06-11: Looks like this doesn't work or it needs some time until cached items get listed as cached so at this moment
+             * let's not do this and try downloading straight away.
              */
-            br.getPage(API_BASE + "/files?" + query.toString());
-            final Map<String, Object> dlresponse = restoreFromString(br.toString(), TypeRef.MAP);
-            handleErrorMap(account, link, dlresponse);
-            final List<Map<String, Object>> files = (List<Map<String, Object>>) dlresponse.get("result");
-            if (files.isEmpty()) {
-                /* We're too fast or server too slow: Expected file is not yet on serverside queue list. */
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverside download in progress (serverside file_id " + file_id + " is not yet on queue list)", 5 * 1000l);
+            final boolean doCachecheck = false;
+            if (doCachecheck) {
+                logger.info("Checking downloadability of internal file_id: " + file_id + " | hash: " + hash);
+                final UrlQuery query_checkcached = new UrlQuery();
+                query_checkcached.add("hash", hash);
+                query_checkcached.add("format", "list");
+                final Request req_checkcached = br.createGetRequest(API_BASE + "/webdl/checkcached?" + query_checkcached.toString());
+                final Map<String, Object> resp_checkcached = (Map<String, Object>) this.callAPI(req_checkcached, account, link);
+                final Map<String, Object> cachemap = (Map<String, Object>) resp_checkcached.get(hash);
+                if (cachemap == null) {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverside download is not yet ready", 30 * 1000);
+                }
             }
-            final Map<String, Object> file = files.get(0);
-            final String dllink = (String) file.get("download_url");
-            if (StringUtils.isEmpty(dllink)) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverside download in progress " + file.get("download_percent") + "%", 10 * 1000l);
-            }
-            link.setProperty(this.getPropertyKey("directlink"), dllink);
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resume, maxchunks);
+            logger.info("Trying to init download for internal file_id: " + file_id + " | hash: " + hash);
+            final UrlQuery query_requestdl = new UrlQuery();
+            query_requestdl.add("token", this.getApikey(account));
+            query_requestdl.add("web_id", file_id);
+            query_requestdl.add("zip", "false");
+            final Request req_requestdl = br.createGetRequest(API_BASE + "/webdl/requestdl?" + query_requestdl.toString());
+            dllink = this.callAPI(req_requestdl, account, link).toString();
+            /* Store directurl so we can re-use it next time. */
+            link.setProperty(directlinkproperty, dllink);
+        }
+        try {
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, this.isResumeable(link, account), this.getMaxChunks(link, account));
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 br.followConnection(true);
-                mhm.handleErrorGeneric(account, link, "unknown_dl_error", 10, 5 * 60 * 1000l);
+                mhm.handleErrorGeneric(account, link, "Final downloadlink did not lead to file content", 50, 5 * 60 * 1000l);
+            }
+        } catch (final Exception e) {
+            if (storedDirecturl != null) {
+                link.removeProperty(directlinkproperty);
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Stored directurl expired", e);
+            } else {
+                throw e;
             }
         }
         this.dl.startDownload();
-    }
-
-    private boolean attemptStoredDownloadurlDownload(final DownloadLink link) throws Exception {
-        final String directurlproperty = this.getPropertyKey("directlink");
-        final String url = link.getStringProperty(directurlproperty);
-        if (StringUtils.isEmpty(url)) {
-            return false;
-        }
-        boolean valid = false;
-        try {
-            final Browser brc = br.cloneBrowser();
-            dl = new jd.plugins.BrowserAdapter().openDownload(brc, link, url, resume, maxchunks);
-            if (this.looksLikeDownloadableContent(dl.getConnection())) {
-                valid = true;
-                return true;
-            } else {
-                link.removeProperty(directurlproperty);
-                brc.followConnection(true);
-                throw new IOException();
-            }
-        } catch (final Throwable e) {
-            logger.log(e);
-            return false;
-        } finally {
-            if (!valid) {
-                try {
-                    dl.getConnection().disconnect();
-                } catch (Throwable ignore) {
-                }
-                dl = null;
-            }
-        }
     }
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         final Map<String, Object> user = login(account, true);
+        /**
+         * In GUI, used only needs to enter API key so we'll set the username for him here. </br>
+         * This is also important to be able to keep the user from adding the same account multiple times.
+         */
+        account.setUser(user.get("email").toString());
         final String created_at = user.get("created_at").toString();
         final String premium_expires_at = (String) user.get("premium_expires_at");
         long premiumExpireTimestamp = -1;
         if (premium_expires_at != null) {
             premiumExpireTimestamp = TimeFormatter.getMilliSeconds(premium_expires_at, "yyyy-MM-dd'T'HH:mm:ss.SSSX", Locale.ENGLISH);
         }
-        final Boolean is_subscribed = (Boolean) user.get("is_subscribed");
         ai.setCreateTime(TimeFormatter.getMilliSeconds(created_at, "yyyy-MM-dd'T'HH:mm:ss.SSSSX", Locale.ENGLISH));
-        ai.setValidUntil(TimeFormatter.getMilliSeconds(premium_expires_at, "yyyy-MM-dd'T'HH:mm:ss.SSSX", Locale.ENGLISH));
         if (premiumExpireTimestamp > System.currentTimeMillis()) {
             account.setType(AccountType.PREMIUM);
+            ai.setValidUntil(premiumExpireTimestamp, br);
         } else {
             account.setType(AccountType.FREE);
         }
-        ai.setStatus(account.getType().getLabel() + " | Subscribed: " + is_subscribed + " | Dl so far: " + SizeFormatter.formatBytes(((Number) user.get("total_bytes_downloaded")).longValue()));
-        final Request req = br.createGetRequest(API_BASE + "/webdl/hosters");
-        final Map<String, Object> hostinfo = (Map<String, Object>) this.callAPI(req, account, null);
-        final List<Map<String, Object>> hosterlist = (List<Map<String, Object>>) hostinfo.get("data");
+        final String subscribedStr;
+        if ((Boolean) user.get("is_subscribed")) {
+            subscribedStr = "Yes";
+        } else {
+            subscribedStr = "No";
+        }
+        ai.setStatus("[!BETA PLUGIN!] " + account.getType().getLabel() + " | Subscribed: " + subscribedStr + " | Dl so far: " + SizeFormatter.formatBytes(((Number) user.get("total_bytes_downloaded")).longValue()));
+        /* Obtain list of supported hosts */
+        final Request req_hosters = br.createGetRequest(API_BASE + "/webdl/hosters");
+        final List<Map<String, Object>> hosterlist = (List<Map<String, Object>>) this.callAPI(req_hosters, account, null);
         final ArrayList<String> supportedHosts = new ArrayList<String>();
         for (final Map<String, Object> hosterlistitem : hosterlist) {
             final String domain = hosterlistitem.get("domain").toString();
@@ -246,21 +263,69 @@ public class TorboxApp extends PluginForHost {
         }
         ai.setMultiHostSupport(this, supportedHosts);
         account.setConcurrentUsePossible(true);
+        final boolean enableNotifications = true;
+        if (enableNotifications) {
+            try {
+                final long timestampNotificationsDisplayed = account.getLongProperty(PROPERTY_ACCOUNT_NOTIFICATIONS_DISPLAYED_UNTIL_TIMESTAMP, 0);
+                final Request req_notifications = br.createGetRequest(API_BASE + "/notifications/mynotifications");
+                final List<Map<String, Object>> notifications = (List<Map<String, Object>>) this.callAPI(req_notifications, account, null);
+                int counterDisplayed = 0;
+                for (final Map<String, Object> notification : notifications) {
+                    final long notification_created_at = TimeFormatter.getMilliSeconds(notification.get("created_at").toString(), "yyyy-MM-dd'T'HH:mm:ss.SSSX", Locale.ENGLISH);
+                    if (notification_created_at < timestampNotificationsDisplayed) {
+                        /* Assume that this notification has already been displayed in the past. */
+                        continue;
+                    }
+                    logger.info("Displaying notification with ID: " + notification.get("id"));
+                    displayBubblenotifyMessage(notification.get("title").toString(), notification.get("message").toString());
+                    if (timestampNotificationsDisplayed == 0 && counterDisplayed >= 5) {
+                        logger.info("First time we are displaying notifications for this account. Let's not bombard the user with all past notifications he has.");
+                        break;
+                    }
+                }
+                logger.info("Total number of notifications: " + notifications.size() + " | Displayed this run: " + counterDisplayed);
+            } catch (final Exception e) {
+                logger.log(e);
+                logger.warning("Exception happened in notification handling");
+            } finally {
+                /* Save this timestamp so we are able to know to which time we've already displayed notifications. */
+                account.setProperty(PROPERTY_ACCOUNT_NOTIFICATIONS_DISPLAYED_UNTIL_TIMESTAMP, System.currentTimeMillis());
+            }
+        }
         return ai;
     }
 
     private Map<String, Object> login(final Account account, final boolean validateLogins) throws IOException, PluginException, InterruptedException {
         synchronized (account) {
+            setLoginHeaders(br, account);
+            if (!validateLogins) {
+                /* Do not validate logins */
+                return null;
+            }
             final Request loginreq = br.createGetRequest(API_BASE + "/user/me");
             final Map<String, Object> resp = (Map<String, Object>) this.callAPI(loginreq, account, null);
-            return (Map<String, Object>) resp.get("data");
+            return resp;
         }
     }
 
+    private void setLoginHeaders(final Object obj, final Account account) {
+        if (obj instanceof Request) {
+            ((Request) obj).getHeaders().put(HTTPConstants.HEADER_REQUEST_AUTHORIZATION, "Bearer " + getApikey(account));
+        } else {
+            ((Browser) obj).getHeaders().put(HTTPConstants.HEADER_REQUEST_AUTHORIZATION, "Bearer " + getApikey(account));
+        }
+    }
+
+    /* API docs: https://api-docs.torbox.app/ */
     private Object callAPI(final Request req, final Account account, final DownloadLink link) throws IOException, PluginException, InterruptedException {
-        req.getHeaders().put(HTTPConstants.HEADER_REQUEST_AUTHORIZATION, "Bearer " + account.getPass());
+        // setLoginHeaders(req, account);
+        req.getHeaders().put(HTTPConstants.HEADER_REQUEST_AUTHORIZATION, "Bearer " + getApikey(account));
         br.getPage(req);
         return checkErrors(account, link);
+    }
+
+    private String getApikey(final Account account) {
+        return correctPassword(account.getPass());
     }
 
     private Object checkErrors(final Account account, final DownloadLink link) throws PluginException, InterruptedException {
@@ -270,6 +335,10 @@ public class TorboxApp extends PluginForHost {
                 return jsonO;
             }
             handleErrorMap(account, link, (Map<String, Object>) jsonO);
+            if (jsonO instanceof Map) {
+                final Map<String, Object> thismap = (Map<String, Object>) jsonO;
+                return thismap.get("data");
+            }
             return jsonO;
         } catch (final JSonMapperException jme) {
             final String errortext = "Bad API response";
@@ -283,39 +352,17 @@ public class TorboxApp extends PluginForHost {
     }
 
     private void handleErrorMap(final Account account, final DownloadLink link, final Map<String, Object> entries) throws PluginException, InterruptedException {
-        // TODO: Add functionality
-        final Object errorO = entries.get("error");
-        if (errorO == null) {
+        final Boolean successO = (Boolean) entries.get("success");
+        if (Boolean.TRUE.equals(successO)) {
             /* No error */
             return;
         }
-        final int errorcode = ((Number) errorO).intValue();
-        if (errorcode == 0) {
-            /* No error */
-            return;
-        }
-        final Map<Integer, String> errorCodeMapping = null;
-        if (errorCodeMapping.containsKey(errorcode)) {
-            /* Known errorcode */
-            final String errorMsg = errorCodeMapping.get(errorcode);
-            if (errorcode == 105) {
-                /* IP is temporarily banned */
-                throw new AccountUnavailableException(errorMsg, 5 * 60 * 1000l);
-            } else if (errorcode == 106) {
-                /* Invalid logins */
-                throw new AccountInvalidException(errorMsg);
-            } else if (link != null) {
-                mhm.handleErrorGeneric(account, link, "Error " + errorcode, 50, 1 * 60 * 1000l);
-            } else {
-                throw new AccountUnavailableException(errorMsg, 3 * 60 * 1000l);
-            }
+        final String errormsg = entries.get("detail").toString();
+        if (link != null) {
+            /* E.g. {"success":false,"detail":"Failed to request web download. Please try again later.","data":null} */
+            mhm.handleErrorGeneric(account, link, errormsg, 50, 1 * 60 * 1000l);
         } else {
-            /* Unknown errorcode */
-            if (link != null) {
-                mhm.handleErrorGeneric(account, link, "Error " + errorcode, 50, 1 * 60 * 1000l);
-            } else {
-                throw new AccountInvalidException("Error " + errorcode);
-            }
+            throw new AccountInvalidException(errormsg);
         }
     }
 
@@ -336,11 +383,20 @@ public class TorboxApp extends PluginForHost {
     protected boolean looksLikeValidAPIKey(final String str) {
         if (str == null) {
             return false;
-        } else if (str.matches("[a-f0-9\\-]{32,36}")) {
+        } else if (correctPassword(str).matches("[a-f0-9]{32}")) {
             return true;
         } else {
             return false;
         }
+    }
+
+    private void displayBubblenotifyMessage(final String title, final String msg) {
+        BubbleNotify.getInstance().show(new AbstractNotifyWindowFactory() {
+            @Override
+            public AbstractNotifyWindow<?> buildAbstractNotifyWindow() {
+                return new BasicNotify("TorBox: " + title, msg, new AbstractIcon(IconKey.ICON_INFO, 32));
+            }
+        });
     }
 
     @Override

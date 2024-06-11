@@ -1147,6 +1147,7 @@ public abstract class Plugin implements ActionListener {
     }
 
     protected void displayBubbleNotification(final String title, final String text) {
+        // TODO: 2024-06-11: Change default icon to favicon of host
         displayBubbleNotification(title, text, new AbstractIcon(IconKey.ICON_INFO, 32));
     }
 

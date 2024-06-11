@@ -227,12 +227,14 @@ public class PixeldrainComFolder extends PluginForDecrypt {
                     folderurl = br.getURL(folderurl).toExternalForm();
                     dl = this.createDownloadlink(folderurl);
                     if (lookForSingleFile) {
+                        /* We want to have a specific single file -> Skip folders */
                         numberofSkippedFolders += 1;
                         continue;
                     }
                 }
                 ret.add(dl);
             }
+            logger.info("Results: " + ret.size() + " | Skipped folders: " + numberofSkippedFolders);
             if (lookForSingleFile && ret.isEmpty()) {
                 /* Single desired file was not found */
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
