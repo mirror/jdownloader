@@ -117,7 +117,7 @@ public class RecurbateComProfile extends PluginForDecrypt {
                     RecurbateCom.setDate(dlvideo, dateStr);
                 }
                 dlvideo.setProperty(RecurbateCom.PROPERTY_USER, username);
-                hosterplugin.setFilename(dlvideo);
+                hosterplugin.setFilename(dlvideo, true);
                 dlvideo.setAvailable(true);
                 dlvideo._setFilePackage(fp);
                 ret.add(dlvideo);

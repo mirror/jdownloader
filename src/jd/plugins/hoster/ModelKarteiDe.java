@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.utils.StringUtils;
 
 import jd.PluginWrapper;
@@ -32,9 +33,9 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-import jd.plugins.decrypter.CtDiskComFolder;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class ModelKarteiDe extends PluginForHost {
@@ -46,7 +47,7 @@ public class ModelKarteiDe extends PluginForHost {
     public Browser createNewBrowserInstance() {
         final Browser br = super.createNewBrowserInstance();
         br.setFollowRedirects(true);
-        for (final String[] domains : CtDiskComFolder.getPluginDomains()) {
+        for (final String[] domains : getPluginDomains()) {
             for (final String domain : domains) {
                 br.setCookie(domain, "mk4_language", "2"); // English
             }
@@ -116,7 +117,7 @@ public class ModelKarteiDe extends PluginForHost {
 
     private AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
         dllink = null;
-        String extDefault;
+        final String extDefault;
         if (StringUtils.containsIgnoreCase(link.getPluginPatternMatcher(), "video")) {
             extDefault = ".mp4";
         } else {
@@ -128,8 +129,18 @@ public class ModelKarteiDe extends PluginForHost {
             link.setName(contentID + extDefault);
         }
         this.setBrowserExclusive();
-        br.getPage(link.getPluginPatternMatcher());
+        /* Ensure English language */
+        br.getHeaders().put(HTTPConstants.HEADER_REQUEST_REFERER, link.getPluginPatternMatcher());
+        br.getPage("https://www." + getHost() + "/l.php?l=en");
+        if (!br.getURL().contains(contentID)) {
+            logger.warning("Expected redirect from language switcher to final URL did not happen");
+            br.getPage(link.getPluginPatternMatcher());
+        }
         if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML(">\\s*The video does not exist")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML(">\\s*The video is not active")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String title = br.getRegex("class=\"p-title\">\\s*<a href=\"[^\"]+\"[^<]*title=\"([^\"]+)\"").getMatch(0); // photo
@@ -154,15 +165,25 @@ public class ModelKarteiDe extends PluginForHost {
             dllink = br.getRegex("type=\"video/mp4\"[^>]*src=\"(https?://[^\"]+)").getMatch(0); // video MP4
             if (dllink == null) {
                 dllink = br.getRegex("type=\"video/webm\"[^>]*src=\"(https?://[^\"]+)").getMatch(0); // video WEBM
-                extDefault = ".webm";
+                if (dllink == null) {
+                    /* Super old flash player .flv videos */
+                    dllink = br.getRegex("\"(https?://[^/]+/[^\"]+\\.flv)\"").getMatch(0); // video FLV
+                }
+            }
+        }
+        String ext = extDefault;
+        if (dllink != null) {
+            final String extFromURL = Plugin.getFileNameExtensionFromURL(dllink);
+            if (extFromURL != null) {
+                ext = extFromURL;
             }
         }
         if (dateFormatted != null && title != null) {
-            link.setFinalFileName(dateFormatted + "_" + contentID + "_" + title + extDefault);
+            link.setFinalFileName(dateFormatted + "_" + contentID + "_" + title + ext);
         } else if (title != null) {
-            link.setFinalFileName(contentID + "_" + title + extDefault);
+            link.setFinalFileName(contentID + "_" + title + ext);
         } else {
-            link.setFinalFileName(contentID + extDefault);
+            link.setFinalFileName(contentID + ext);
         }
         if (isDownload) {
             /* Download */

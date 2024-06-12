@@ -114,7 +114,7 @@ public class RecurbateCom extends PluginForHost {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:play\\.php\\?video=|video/)(\\d+)");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:play\\.php\\?video=|(?:[\\w\\-]+/)?video/)(\\d+)");
         }
         return ret.toArray(new String[0]);
     }
@@ -174,10 +174,9 @@ public class RecurbateCom extends PluginForHost {
     }
 
     public AvailableStatus requestFileInformation(final DownloadLink link, final Account account) throws Exception {
-        final String fid = getVideoID(link);
         if (!link.isNameSet()) {
             /* Set fallback filename e.g. for offline items. */
-            link.setName(fid + ".mp4");
+            setFilename(link, false);
         }
         final String contenturl = getContentURL(link);
         if (account != null) {
@@ -201,7 +200,7 @@ public class RecurbateCom extends PluginForHost {
             performer = Encoding.htmlDecode(performer).trim();
             link.setProperty(PROPERTY_USER, performer);
         }
-        setFilename(link);
+        setFilename(link, true);
         return AvailableStatus.TRUE;
     }
 
@@ -219,18 +218,29 @@ public class RecurbateCom extends PluginForHost {
         }
     }
 
-    public void setFilename(final DownloadLink link) {
+    public void setFilename(final DownloadLink link, final boolean setFinalFilename) {
         final String extDefault = ".mp4";
         final String videoid = this.getVideoID(link);
-        final String performer = link.getStringProperty(PROPERTY_USER);
+        String performer = link.getStringProperty(PROPERTY_USER);
+        final String performerFromURL = new Regex(link.getPluginPatternMatcher(), "(?i)/([\\w\\-]+)/video/\\d+$").getMatch(0);
+        if (performer == null) {
+            /* 2024-06-12: Performer/username can be in added URL from now on. */
+            performer = performerFromURL;
+        }
         final String dateStr = link.getStringProperty(PROPERTY_DATE);
+        final String filename;
         if (dateStr != null && performer != null) {
-            link.setFinalFileName(dateStr + "_" + performer + "_" + videoid + extDefault);
+            filename = dateStr + "_" + performer + "_" + videoid + extDefault;
         } else if (performer != null) {
-            link.setFinalFileName(performer + "_" + videoid + extDefault);
+            filename = performer + "_" + videoid + extDefault;
         } else {
             /* Fallback */
-            link.setFinalFileName(videoid + extDefault);
+            filename = videoid + extDefault;
+        }
+        if (setFinalFilename) {
+            link.setFinalFileName(filename);
+        } else {
+            link.setName(filename);
         }
     }
 
@@ -359,49 +369,66 @@ public class RecurbateCom extends PluginForHost {
 
     public boolean login(final Account account, final String checkURL, final boolean force) throws Exception {
         synchronized (account) {
-            try {
-                br.setCookiesExclusive(true);
-                final Cookies userCookies = account.loadUserCookies();
-                if (userCookies == null) {
-                    /**
-                     * 2021-09-28: They're using Cloudflare on their login page thus we only accept cookie login at this moment.</br>
-                     * Login page: https://recurbate.com/signin
-                     */
-                    /* Only display cookie login instructions on first login attempt */
-                    if (!account.hasEverBeenValid()) {
-                        showCookieLoginInfo();
-                    }
-                    throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_required());
+            br.setCookiesExclusive(true);
+            final Cookies userCookies = account.loadUserCookies();
+            if (userCookies == null) {
+                /**
+                 * 2021-09-28: They're using Cloudflare on their login page thus we only accept cookie login at this moment.</br>
+                 * Login page: https://recurbate.com/signin
+                 */
+                /* Only display cookie login instructions on first login attempt */
+                if (!account.hasEverBeenValid()) {
+                    showCookieLoginInfo();
                 }
-                logger.info("Attempting user cookie login");
-                /* Set cookies on all supported domains */
-                for (final String[] domains : getPluginDomains()) {
-                    for (final String domain : domains) {
-                        br.setCookies(domain, userCookies);
-                    }
+                throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_required());
+            }
+            logger.info("Attempting user cookie login");
+            /* Set cookies on all supported domains */
+            br.setCookies(userCookies);
+            for (final String[] domains : getPluginDomains()) {
+                for (final String domain : domains) {
+                    br.setCookies(domain, userCookies);
                 }
-                if (!force) {
-                    /* Do not validate cookies */
-                    return false;
-                }
-                br.getPage(checkURL);
-                checkForIPBlocked(br, null, account);
-                if (this.isLoggedin(br)) {
-                    logger.info("User cookie login successful");
-                    return true;
+            }
+            if (!force) {
+                /* Do not validate cookies */
+                return false;
+            }
+            if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                /* 2024-06-12: debug-test */
+                br.getHeaders().put("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7");
+                br.getHeaders().put("Accept-Encoding", "gzip, deflate, br, zstd");
+                br.getHeaders().put("Accept-Language", "de-DE,de;q=0.9,en;q=0.8,en-US;q=0.7");
+                br.getHeaders().put("Cache-Control", "max-age=0");
+                br.getHeaders().put("Priority", "u=0, i");
+                // br.getHeaders().put("Referer", "https://recu.me/username/video/12345678/play");
+                br.getHeaders().put("Sec-Ch-Ua", "\"Google Chrome\";v=\"125\", \"Chromium\";v=\"125\", \"Not.A/Brand\";v=\"24\"");
+                br.getHeaders().put("Sec-Ch-Ua-Arch", "\"x86\"");
+                br.getHeaders().put("Sec-Ch-Ua-Bitness", "\"64\"");
+                br.getHeaders().put("Sec-Ch-Ua-Full-Version", "\"125.0.6422.142\"");
+                br.getHeaders().put("Sec-Ch-Ua-Full-Version-List", "\"Google Chrome\";v=\"125.0.6422.142\", \"Chromium\";v=\"125.0.6422.142\", \"Not.A/Brand\";v=\"24.0.0.0\"");
+                br.getHeaders().put("Sec-Ch-Ua-Mobile", "?0");
+                br.getHeaders().put("Sec-Ch-Ua-Model", "\"\"");
+                br.getHeaders().put("Sec-Ch-Ua-Platform", "\"Windows\"");
+                br.getHeaders().put("Sec-Ch-Ua-Platform-Version", "\"10.0.0\"");
+                br.getHeaders().put("Sec-Fetch-Dest", "document");
+                br.getHeaders().put("Sec-Fetch-Mode", "navigate");
+                br.getHeaders().put("Sec-Fetch-Site", "same-origin");
+                br.getHeaders().put("Sec-Fetch-User", "?1");
+                br.getHeaders().put("Upgrade-Insecure-Requests", "1");
+            }
+            br.getPage(checkURL);
+            checkForIPBlocked(br, null, account);
+            if (this.isLoggedin(br)) {
+                logger.info("User cookie login successful");
+                return true;
+            } else {
+                logger.info("Cookie login failed");
+                if (account.hasEverBeenValid()) {
+                    throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
                 } else {
-                    logger.info("Cookie login failed");
-                    if (account.hasEverBeenValid()) {
-                        throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
-                    } else {
-                        throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
-                    }
+                    throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
                 }
-            } catch (final PluginException e) {
-                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
-                    account.clearCookies("");
-                }
-                throw e;
             }
         }
     }
@@ -417,7 +444,7 @@ public class RecurbateCom extends PluginForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
-        login(account, "https://" + this.getHost() + "/account.php", true);
+        login(account, "https://" + this.getHost() + "/account", true);
         ai.setUnlimitedTraffic();
         String username = br.getRegex("(?i)Nickname\\s*</div>\\s*<div class=\"col-sm-8\">\\s*([^<>\"]+)").getMatch(0);
         if (username == null) {

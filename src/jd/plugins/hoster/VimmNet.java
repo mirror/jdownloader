@@ -23,7 +23,6 @@ import java.util.regex.Pattern;
 import org.appwork.utils.StringUtils;
 
 import jd.PluginWrapper;
-import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
 import jd.plugins.Account;
@@ -190,10 +189,9 @@ public class VimmNet extends PluginForHost {
                 }
                 dl = jd.plugins.BrowserAdapter.openDownload(br, link, directurl, isResumeable(link, null), maxChunks);
             } catch (final PluginException ple) {
-                String downloadUnavailableReason = br.getRegex("</div>([^<]+)</td>\\s*</tr>\\s*</table>").getMatch(0);
+                final String downloadUnavailableReason = VimmNetCrawler.findDownloadUnavailableText(br);
                 if (downloadUnavailableReason != null) {
                     /* Item is not downloadable. */
-                    downloadUnavailableReason = Encoding.htmlOnlyDecode(downloadUnavailableReason).trim();
                     throw new PluginException(LinkStatus.ERROR_FATAL, downloadUnavailableReason, ple);
                 } else {
                     throw ple;
