@@ -39,7 +39,6 @@ import jd.plugins.PluginForHost;
 public class FastuploadIo extends PluginForHost {
     public FastuploadIo(PluginWrapper wrapper) {
         super(wrapper);
-        // this.enablePremium("");
     }
 
     @Override
@@ -79,16 +78,9 @@ public class FastuploadIo extends PluginForHost {
     }
 
     /* Connection stuff */
-    private final boolean FREE_RESUME       = true;
-    private final int     FREE_MAXCHUNKS    = 0;
-    private final int     FREE_MAXDOWNLOADS = -1;
+    private final boolean FREE_RESUME    = true;
+    private final int     FREE_MAXCHUNKS = 0;
 
-    // private final boolean ACCOUNT_FREE_RESUME = true;
-    // private final int ACCOUNT_FREE_MAXCHUNKS = 0;
-    // private final int ACCOUNT_FREE_MAXDOWNLOADS = -1;
-    // private final boolean ACCOUNT_PREMIUM_RESUME = true;
-    // private final int ACCOUNT_PREMIUM_MAXCHUNKS = 0;
-    // private final int ACCOUNT_PREMIUM_MAXDOWNLOADS = -1;
     @Override
     public String getLinkID(final DownloadLink link) {
         final String fid = getFID(link);
@@ -120,9 +112,13 @@ public class FastuploadIo extends PluginForHost {
         if (filename != null) {
             filename = Encoding.htmlDecode(filename).trim();
             link.setName(filename);
+        } else {
+            logger.warning("Failed to find filename");
         }
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
+        } else {
+            logger.warning("Failed to find filesize");
         }
         return AvailableStatus.TRUE;
     }
@@ -190,7 +186,7 @@ public class FastuploadIo extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return FREE_MAXDOWNLOADS;
+        return Integer.MAX_VALUE;
     }
 
     @Override

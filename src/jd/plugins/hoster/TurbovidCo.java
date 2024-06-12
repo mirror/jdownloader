@@ -27,32 +27,24 @@ import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class UpvidBiz extends XFileSharingProBasic {
-    public UpvidBiz(final PluginWrapper wrapper) {
+public class TurbovidCo extends XFileSharingProBasic {
+    public TurbovidCo(final PluginWrapper wrapper) {
         super(wrapper);
-        /* 2021-05-05: Disabled because of XFS incompatibilities and because account support hasn't been requested yet. */
-        // this.enablePremium(super.getPurchasePremiumURL());
+        this.enablePremium(super.getPurchasePremiumURL());
     }
 
     /**
      * DEV NOTES XfileSharingProBasic Version SEE SUPER-CLASS<br />
      * mods: See overridden functions<br />
      * limit-info:<br />
-     * captchatype-info: null <br />
+     * captchatype-info: null 4dignum solvemedia reCaptchaV2, hcaptcha<br />
      * other:<br />
      */
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
-        ret.add(new String[] { "opvid.org", "opvid.online", "opvid.co", "upvid.cloud", "upvid.biz", "upvid.co" });
+        ret.add(new String[] { "turbovid.co" });
         return ret;
-    }
-
-    @Override
-    public String rewriteHost(final String host) {
-        /* 2022-09-09: Main domain has changed from upvid.biz to upvid.cloud */
-        /* 2023-05-23: Main domain has changed from upvid.cloud to opvid.org */
-        return this.rewriteHost(getPluginDomains(), host);
     }
 
     public static String[] getAnnotationNames() {
@@ -111,14 +103,5 @@ public class UpvidBiz extends XFileSharingProBasic {
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
         return -1;
-    }
-
-    @Override
-    protected boolean supports_availablecheck_alt() {
-        /**
-         * 2022-09-09: Disabled because website is using a strange redirect handling for another domain and altAvailablecheck is not really
-         * needed for this host as they're using the version which does not return the filesize.
-         */
-        return false;
     }
 }

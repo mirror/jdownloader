@@ -821,18 +821,14 @@ public class AllDebridCom extends PluginForHost {
                 /* Error or serverside download not finished in given time. */
                 logger.info("Delayed handling failure");
                 handleErrors(account, link);
-                mhm.handleErrorGeneric(account, link, "Serverside download failure", 50, 5 * 60 * 1000l);
+                mhm.handleErrorGeneric(account, link, "Serverside download failure in 'delayed' handling", 50, 5 * 60 * 1000l);
             } else {
                 logger.info("Delayed handling success");
             }
         }
         link.setProperty(PROPERTY_maxchunks, data.get("max_chunks"));
         link.setProperty(getDirectLinkProperty(link, account) + "_paws", data.get("paws"));
-        final String dllink = (String) data.get("link");
-        if (StringUtils.isEmpty(dllink) || !dllink.matches("https?://.+")) {
-            /* This should never happen */
-            mhm.handleErrorGeneric(account, link, "Failed to find final downloadurl", 50, 1 * 60 * 1000l);
-        }
+        final String dllink = data.get("link").toString();
         link.setProperty(getDirectLinkProperty(link, account), dllink);
         return dllink;
     }

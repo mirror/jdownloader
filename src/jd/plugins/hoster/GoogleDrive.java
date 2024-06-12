@@ -1197,21 +1197,25 @@ public class GoogleDrive extends PluginForHost {
             }
             /* Save the quality we've decided to download in case user stops- and resumes download later. */
             link.setProperty(PROPERTY_USED_QUALITY, chosenQuality);
-            final String filename = link.getName();
-            if (filename != null) {
-                /* Update file-extension in filename to .mp4 and add quality identifier to filename if chosen by user. */
-                String filenameNew = correctOrApplyFileNameExtension(filename, ".mp4");
-                if (PluginJsonConfig.get(GoogleConfig.class).isAddStreamQualityIdentifierToFilename()) {
-                    final String newFilenameEnding = "_" + chosenQuality + "p.mp4";
-                    if (!filenameNew.toLowerCase(Locale.ENGLISH).endsWith(newFilenameEnding)) {
-                        filenameNew = filenameNew.replaceFirst("(?i)\\.mp4$", newFilenameEnding);
-                    }
-                }
-                if (!filenameNew.equals(filename)) {
-                    logger.info("Setting new filename for stream download | Old: " + filename + " | New: " + filenameNew);
-                    link.setFinalFileName(filenameNew);
+            String filename = link.getName();
+            if (StringUtils.isEmpty(filename)) {
+                /* This fallback should never be needed! */
+                filename = "video";
+            }
+            /* Update file-extension in filename to .mp4 and add quality identifier to filename if chosen by user. */
+            final String videoExt = ".mp4";
+            String filenameNew = correctOrApplyFileNameExtension(filename, videoExt);
+            if (PluginJsonConfig.get(GoogleConfig.class).isAddStreamQualityIdentifierToFilename()) {
+                final String newFilenameEnding = "_" + chosenQuality + "p" + videoExt;
+                if (!filenameNew.toLowerCase(Locale.ENGLISH).endsWith(newFilenameEnding)) {
+                    filenameNew = filenameNew.replaceFirst("(?i)\\.mp4$", newFilenameEnding);
                 }
             }
+            if (!filenameNew.equals(filename)) {
+                logger.info("Setting new filename for stream download | Old: " + filename + " | New: " + filenameNew);
+                link.setFinalFileName(filenameNew);
+            }
+            /* Stream handling was successful so we can select the 'failed timestamp'. */
             link.removeProperty(PROPERTY_TIMESTAMP_STREAM_DOWNLOAD_FAILED);
             return chosenQualityDownloadlink;
         } catch (final PluginException pe) {
@@ -1234,7 +1238,7 @@ public class GoogleDrive extends PluginForHost {
      */
     private static boolean looksLikeVideoFile(final String filename) {
         /*
-         * 2020-11-30: .ogg is also supported but audio streams seem to be the original files --> Do not allow streaming download for .ogg
+         * 2020-11-30: .ogg is also supported but audio streams seem to be the original files --> Do not allow stream download for .ogg
          * files.
          */
         if (filename == null) {

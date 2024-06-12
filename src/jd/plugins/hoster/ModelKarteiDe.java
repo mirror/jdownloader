@@ -16,11 +16,14 @@
 package jd.plugins.hoster;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -41,6 +44,7 @@ import jd.plugins.PluginForHost;
 public class ModelKarteiDe extends PluginForHost {
     public ModelKarteiDe(PluginWrapper wrapper) {
         super(wrapper);
+        // this.enablePremium("https://www." + getHost() + "/vip/");
     }
 
     @Override
@@ -63,8 +67,12 @@ public class ModelKarteiDe extends PluginForHost {
     }
 
     public int getMaxChunks(final DownloadLink link, final Account account) {
-        /* 2024-06-04: Set to 1 as we are only downloading small files. */
-        return 1;
+        if (isVideo(link)) {
+            return -5;
+        } else {
+            /* 2024-06-04: Set to 1 as we are only downloading small files. */
+            return 1;
+        }
     }
 
     public static List<String[]> getPluginDomains() {
@@ -110,6 +118,14 @@ public class ModelKarteiDe extends PluginForHost {
         return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
+    private boolean isVideo(final DownloadLink link) {
+        if (StringUtils.containsIgnoreCase(link.getPluginPatternMatcher(), "/video/")) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         return requestFileInformation(link, false);
@@ -118,7 +134,8 @@ public class ModelKarteiDe extends PluginForHost {
     private AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
         dllink = null;
         final String extDefault;
-        if (StringUtils.containsIgnoreCase(link.getPluginPatternMatcher(), "video")) {
+        if (isVideo(link)) {
+            /* Can be flv, webm, mp4 but mostly mp4 */
             extDefault = ".mp4";
         } else {
             extDefault = ".jpg";
@@ -131,7 +148,9 @@ public class ModelKarteiDe extends PluginForHost {
         this.setBrowserExclusive();
         /* Ensure English language */
         br.getHeaders().put(HTTPConstants.HEADER_REQUEST_REFERER, link.getPluginPatternMatcher());
-        /* This should redirect us to our target-URL. */
+        /**
+         * Setting only the English language cookie wasn't enough so this should redirect us to our target-URL and enforce English language.
+         */
         br.getPage("https://www." + getHost() + "/l.php?l=en");
         /* Double-check: If we're not on our target-URL, navigate to it. */
         if (!br.getURL().contains(contentID)) {
@@ -180,30 +199,20 @@ public class ModelKarteiDe extends PluginForHost {
                 ext = extFromURL;
             }
         }
-        if (dateFormatted != null && title != null) {
-            link.setFinalFileName(dateFormatted + "_" + contentID + "_" + title + ext);
-        } else if (title != null) {
-            link.setFinalFileName(contentID + "_" + title + ext);
-        } else {
-            link.setFinalFileName(contentID + ext);
-        }
-        if (isDownload) {
-            /* Download */
-            if (br.containsHTML("assets/images/no\\.jpg")) {
-                /* Account needed to view this image */
-                throw new AccountRequiredException("Account needed to download this image");
-            } else if (br.containsHTML(">\\s*(Your are not authorized to see the video|Deine Nutzerrechte reichen leider nicht aus um das Video zu sehen)")) {
-                /* Account needed to view this video */
-                throw new AccountRequiredException("Account needed to download this video");
-            }
-        } else {
-            /* Linkcheck - find filesize if possible */
-            if (!StringUtils.isEmpty(dllink)) {
+        try {
+            if (!StringUtils.isEmpty(dllink) && (isDownload == false || dateFormatted == null)) {
                 /* Find filesize */
                 URLConnectionAdapter con = null;
                 try {
                     con = br.openHeadConnection(dllink);
                     handleConnectionErrors(br, con);
+                    /* Try to find date if we were unable to find it so far. */
+                    if (dateFormatted == null) {
+                        final Date lastModifiedDate = TimeFormatter.parseDateString(con.getHeaderField(HTTPConstants.HEADER_RESPONSE_LAST_MODFIED));
+                        if (lastModifiedDate != null) {
+                            dateFormatted = new SimpleDateFormat("yyyy-MM-dd").format(lastModifiedDate);
+                        }
+                    }
                     if (con.getCompleteContentLength() > 0) {
                         if (con.isContentDecoded()) {
                             link.setDownloadSize(con.getCompleteContentLength());
@@ -218,6 +227,17 @@ public class ModelKarteiDe extends PluginForHost {
                     }
                 }
             }
+        } finally {
+            /* Always set filename, even if exception has happened */
+            if (dateFormatted != null && title != null) {
+                link.setFinalFileName(dateFormatted + "_" + contentID + "_" + title + ext);
+            } else if (title != null) {
+                link.setFinalFileName(contentID + "_" + title + ext);
+            } else if (dateFormatted != null) {
+                link.setFinalFileName(dateFormatted + "_" + contentID + ext);
+            } else {
+                link.setFinalFileName(contentID + ext);
+            }
         }
         return AvailableStatus.TRUE;
     }
@@ -225,7 +245,13 @@ public class ModelKarteiDe extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link, true);
-        if (StringUtils.isEmpty(dllink)) {
+        if (br.containsHTML("assets/images/no\\.jpg")) {
+            /* Account needed to view this image */
+            throw new AccountRequiredException("Account needed to download this image");
+        } else if (br.containsHTML(">\\s*(Your are not authorized to see the video|Deine Nutzerrechte reichen leider nicht aus um das Video zu sehen)")) {
+            /* Account needed to view this video */
+            throw new AccountRequiredException("Account needed to download this video");
+        } else if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(this.br, link, dllink, this.isResumeable(link, null), this.getMaxChunks(link, null));
