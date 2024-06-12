@@ -607,10 +607,7 @@ public abstract class PluginForDecrypt extends Plugin {
         case RETRY:
             throw new PluginException(LinkStatus.ERROR_RETRY);
         case ASK:
-            DomainInfo domainInfo = link.getDomainInfo();
-            if (domainInfo == null) {
-                domainInfo = DomainInfo.getInstance(Browser.getHost(link.getURL()));
-            }
+            final DomainInfo domainInfo = getDomainInfo(link);
             if (UIOManager.I().showConfirmDialog(0, _GUI.T.gui_captchaWindow_askForInput(domainInfo.getTld()), _GUI.T.StatusBarImpl_skippedCrawlersMarker_desc(1), new AbstractIcon(IconKey.ICON_QUESTION, 32), _GUI.T.CaptchaDialog_layoutDialogContent_refresh(), _GUI.T.AbstractCaptchaDialog_AbstractCaptchaDialog_cancel())) {
                 throw new PluginException(LinkStatus.ERROR_RETRY);
             }
@@ -622,6 +619,20 @@ public abstract class PluginForDecrypt extends Plugin {
         default:
             break;
         }
+    }
+
+    protected DomainInfo getDomainInfo(final CrawledLink link) {
+        DomainInfo ret = link.getDomainInfo();
+        if (ret == null) {
+            ret = DomainInfo.getInstance(Browser.getHost(link.getURL()));
+        }
+        return ret;
+    }
+
+    @Override
+    protected void displayBubbleNotification(final String title, final String text) {
+        final CrawledLink link = getCurrentLink();
+        displayBubbleNotification(title, text, link != null ? getDomainInfo(link).getIcon(32) : null);
     }
 
     protected String getCaptchaCode(final Browser br, final String method, final String captchaAddress, final CryptedLink param) throws Exception {

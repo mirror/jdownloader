@@ -2272,6 +2272,12 @@ public abstract class PluginForHost extends Plugin {
     }
 
     @Override
+    protected void displayBubbleNotification(final String title, final String text) {
+        final DownloadLink link = getDownloadLink();
+        displayBubbleNotification(title, text, link != null ? link.getDomainInfo().getIcon(32) : null);
+    }
+
+    @Override
     public String getCrawlerLoggerID(CrawledLink link) {
         return getHost() + "_" + getLazyP().getClassName();
     }
