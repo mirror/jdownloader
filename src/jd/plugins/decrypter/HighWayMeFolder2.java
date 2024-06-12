@@ -19,16 +19,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.notify.BasicNotify;
-import org.jdownloader.gui.notify.BubbleNotify;
-import org.jdownloader.gui.notify.BubbleNotify.AbstractNotifyWindowFactory;
-import org.jdownloader.gui.notify.gui.AbstractNotifyWindow;
-import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -42,6 +32,10 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.HighWayCore;
 import jd.plugins.hoster.HighWayMe2;
+
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class HighWayMeFolder2 extends PluginForDecrypt {
@@ -88,7 +82,7 @@ public class HighWayMeFolder2 extends PluginForDecrypt {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final Account account = AccountController.getInstance().getValidAccount(this.getHost());
         if (account == null) {
-            displayBubblenotifyMessage("Account benötigt", "Account benötigt, um Torrent und Usenet Dateien aus dem eigenen High-Way Account einfügen zu können.");
+            displayBubbleNotification("Account benötigt", "Account benötigt, um Torrent und Usenet Dateien aus dem eigenen High-Way Account einfügen zu können.");
             throw new AccountRequiredException();
         }
         final HighWayMe2 hosterplugin = (HighWayMe2) this.getNewPluginForHostInstance(this.getHost());
@@ -210,20 +204,11 @@ public class HighWayMeFolder2 extends PluginForDecrypt {
             if (textSkippedElements.length() > 0) {
                 text += "\r\n" + textSkippedElements;
             }
-            displayBubblenotifyMessage("Nichts gefunden", text);
+            displayBubbleNotification("Nichts gefunden", text);
         } else if (numberofSkippedItems > 0) {
-            displayBubblenotifyMessage("Einige unfertige Elemente wurden übersprungen", "Übersprungene Elemente:\r\n" + textSkippedElements);
+            displayBubbleNotification("Einige unfertige Elemente wurden übersprungen", "Übersprungene Elemente:\r\n" + textSkippedElements);
         }
         return ret;
-    }
-
-    private void displayBubblenotifyMessage(final String title, final String msg) {
-        BubbleNotify.getInstance().show(new AbstractNotifyWindowFactory() {
-            @Override
-            public AbstractNotifyWindow<?> buildAbstractNotifyWindow() {
-                return new BasicNotify("High-Way: " + title, msg, new AbstractIcon(IconKey.ICON_INFO, 32));
-            }
-        });
     }
 
     @Override

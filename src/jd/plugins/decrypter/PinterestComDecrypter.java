@@ -26,19 +26,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.notify.BasicNotify;
-import org.jdownloader.gui.notify.BubbleNotify;
-import org.jdownloader.gui.notify.BubbleNotify.AbstractNotifyWindowFactory;
-import org.jdownloader.gui.notify.gui.AbstractNotifyWindow;
-import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -59,6 +46,13 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.hoster.PinterestCom;
 import jd.utils.JDUtilities;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 @PluginDependencies(dependencies = { PinterestCom.class })
@@ -133,8 +127,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
     private String currentBoardPath = null;
 
     /**
-     * One function which can handle _any_ type of supported pinterest link (except for single PIN links). </br>
-     * WORK IN PROGRESS
+     * One function which can handle _any_ type of supported pinterest link (except for single PIN links). </br> WORK IN PROGRESS
      */
     private ArrayList<DownloadLink> crawlAllOtherItems(final String contenturl) throws Exception {
         /* Login whenever possible to be able to crawl private pinterest boards. */
@@ -174,7 +167,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
             if (boardSectionCount > 0) {
                 logger.info("Crawling all sections of board" + boardName + " | " + boardSectionCount);
                 final boolean useAsyncHandling = false;
-                this.displayBubblenotifyMessage("Board " + boardName + " | sections", "Crawling all " + boardSectionCount + " sections of board " + boardName);
+                this.displayBubbleNotification("Board " + boardName + " | sections", "Crawling all " + boardSectionCount + " sections of board " + boardName);
                 if (useAsyncHandling) {
                     /* This will return a DownloadLink object for each section so that it can be crawled separately. */
                     expectedNumberofItems += boardSectionCount;
@@ -204,7 +197,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
             if (sectionlessBoardPinCount > 0) {
                 /* Crawl all loose/sectionless PINs */
                 logger.info("Crawling all sectionless PINs of board" + boardName + " --> Number of sectionless items: " + sectionlessBoardPinCount);
-                this.displayBubblenotifyMessage("Board " + boardName + " | Sectionless PINs", "Crawling " + sectionlessBoardPinCount + " sectionless PINs of board " + boardName);
+                this.displayBubbleNotification("Board " + boardName + " | Sectionless PINs", "Crawling " + sectionlessBoardPinCount + " sectionless PINs of board " + boardName);
                 expectedNumberofItems += sectionlessBoardPinCount;
                 final int maxItemsPerPage = 15;
                 final Map<String, Object> postDataOptions = new HashMap<String, Object>();
@@ -261,7 +254,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
                 final int userBoardCount = ((Integer) usermap.get("board_count")).intValue();
                 if (userPinCount > 0) {
                     logger.info("Crawling all loose PINs: " + userPinCount);
-                    this.displayBubblenotifyMessage("Profile " + username, "Crawling all " + userPinCount + " loose PINs of profile " + username);
+                    this.displayBubbleNotification("Profile " + username, "Crawling all " + userPinCount + " loose PINs of profile " + username);
                     expectedNumberofItems += userPinCount;
                     final Map<String, Object> postDataOptions = new HashMap<String, Object>();
                     postDataOptions.put("add_vase", true);
@@ -286,7 +279,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
                 final boolean allowCrawlAllBoardsOfUser = false;
                 if (userBoardCount > 0 && allowCrawlAllBoardsOfUser) {
                     logger.info("Crawling all boards: " + userBoardCount);
-                    this.displayBubblenotifyMessage("Profile " + username, "Crawling all " + userBoardCount + " boards of profile " + username);
+                    this.displayBubbleNotification("Profile " + username, "Crawling all " + userBoardCount + " boards of profile " + username);
                     final Map<String, Object> resourcesBoardsFeedResource = (Map<String, Object>) JavaScriptEngineFactory.walkJson(resources, "BoardsFeedResource/{0}");
                     expectedNumberofItems += userBoardCount;
                     final Map<String, Object> postDataOptions = new HashMap<String, Object>();
@@ -306,7 +299,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
                  */
                 final String username = urluser.getMatch(0);
                 logger.info("Crawling all loose PINs of user: " + username);
-                this.displayBubblenotifyMessage("Profile " + username, "Crawling all loose PINs of profile " + username);
+                this.displayBubbleNotification("Profile " + username, "Crawling all loose PINs of profile " + username);
                 final Map<String, Object> postDataOptions = new HashMap<String, Object>();
                 postDataOptions.put("add_vase", true);
                 postDataOptions.put("field_set_key", "mobile_grid_item");
@@ -344,8 +337,8 @@ public class PinterestComDecrypter extends PluginForDecrypt {
         final Map<String, Object> postDataOptions = (Map<String, Object>) postData.get("options");
         final String boardID = (String) postDataOptions.get("board_id");
         /**
-         * A page size is not always given. It is controlled serverside via the "bookmark" parameter. </br>
-         * Any page can have any number of items.
+         * A page size is not always given. It is controlled serverside via the "bookmark" parameter. </br> Any page can have any number of
+         * items.
          */
         final Number page_sizeO = (Number) postDataOptions.get("page_size");
         final int maxItemsPerPage = page_sizeO != null ? page_sizeO.intValue() : -1;
@@ -400,7 +393,7 @@ public class PinterestComDecrypter extends PluginForDecrypt {
             if (pagesWithPossiblyMissingItems.size() > 0) {
                 msg += "\nPages where those items should be located: " + pagesWithPossiblyMissingItems.toString();
             }
-            this.displayBubblenotifyMessage("Missing PINs in package " + fp.getName(), msg);
+            this.displayBubbleNotification("Missing PINs in package " + fp.getName(), msg);
         }
         return ret;
     }
@@ -416,8 +409,8 @@ public class PinterestComDecrypter extends PluginForDecrypt {
         if (enable_crawl_alternative_URL) {
             /* The more complicated way (if wished by user). */
             /**
-             * 2021-03-02: PINs may redirect to other PINs in very rare cases -> Handle that </br>
-             * If that wasn't the case, we could rely on API-only!
+             * 2021-03-02: PINs may redirect to other PINs in very rare cases -> Handle that </br> If that wasn't the case, we could rely on
+             * API-only!
              */
             br.getPage(contenturl);
             String redirect = br.getRegex("window\\.location\\s*=\\s*\"([^\"]+)\"").getMatch(0);
@@ -784,19 +777,10 @@ public class PinterestComDecrypter extends PluginForDecrypt {
         br.setLoadLimit(br.getLoadLimit() * 4);
     }
 
-    private void displayBubblenotifyMessage(final String title, final String msg) {
-        BubbleNotify.getInstance().show(new AbstractNotifyWindowFactory() {
-            @Override
-            public AbstractNotifyWindow<?> buildAbstractNotifyWindow() {
-                return new BasicNotify("Pinterest: " + title, msg, new AbstractIcon(IconKey.ICON_INFO, 32));
-            }
-        });
-    }
-
     /**
      * @return: true: target section was found and only this will be crawler false: failed to find target section - in this case we should
-     *          crawl everything we find </br>
-     *          This can crawl A LOT of stuff! E.g. a board contains 1000 sections, each section contains 1000 PINs...
+     *          crawl everything we find </br> This can crawl A LOT of stuff! E.g. a board contains 1000 sections, each section contains
+     *          1000 PINs...
      */
     @Deprecated
     private ArrayList<DownloadLink> crawlSections(final String username, final String boardID, final String boardName, final Browser ajax, final String contenturl) throws Exception {

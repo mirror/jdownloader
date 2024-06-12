@@ -21,22 +21,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.storage.JSonMapperException;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Exceptions;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.notify.BasicNotify;
-import org.jdownloader.gui.notify.BubbleNotify;
-import org.jdownloader.gui.notify.BubbleNotify.AbstractNotifyWindowFactory;
-import org.jdownloader.gui.notify.gui.AbstractNotifyWindow;
-import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Request;
@@ -53,6 +37,16 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
+
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.storage.JSonMapperException;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Exceptions;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "torbox.app" }, urls = { "" })
 public class TorboxApp extends PluginForHost {
@@ -98,8 +92,8 @@ public class TorboxApp extends PluginForHost {
 
     public int getMaxChunks(final DownloadLink link, final Account account) {
         /**
-         * 2024-06-12: Max 16 total connections according to admin. </br>
-         * We'll be doing it this way right know, knowing that the user can easily try to exceed that limit with JDownloader.
+         * 2024-06-12: Max 16 total connections according to admin. </br> We'll be doing it this way right know, knowing that the user can
+         * easily try to exceed that limit with JDownloader.
          */
         return -16;
     }
@@ -229,8 +223,8 @@ public class TorboxApp extends PluginForHost {
         final AccountInfo ai = new AccountInfo();
         final Map<String, Object> user = login(account, true);
         /**
-         * In GUI, used only needs to enter API key so we'll set the username for him here. </br>
-         * This is also important to be able to keep the user from adding the same account multiple times.
+         * In GUI, used only needs to enter API key so we'll set the username for him here. </br> This is also important to be able to keep
+         * the user from adding the same account multiple times.
          */
         account.setUser(user.get("email").toString());
         final int planID = ((Number) user.get("plan")).intValue();
@@ -289,7 +283,7 @@ public class TorboxApp extends PluginForHost {
                         continue;
                     }
                     logger.info("Displaying notification with ID: " + notification.get("id"));
-                    displayBubblenotifyMessage(notification.get("title").toString(), notification.get("message").toString());
+                    displayBubbleNotification(notification.get("title").toString(), notification.get("message").toString());
                     if (timestampNotificationsDisplayed == 0 && counterDisplayed >= 5) {
                         logger.info("First time we are displaying notifications for this account. Let's not spam the user with all past notifications he has.");
                         break;
@@ -400,15 +394,6 @@ public class TorboxApp extends PluginForHost {
         } else {
             return false;
         }
-    }
-
-    private void displayBubblenotifyMessage(final String title, final String msg) {
-        BubbleNotify.getInstance().show(new AbstractNotifyWindowFactory() {
-            @Override
-            public AbstractNotifyWindow<?> buildAbstractNotifyWindow() {
-                return new BasicNotify("TorBox: " + title, msg, new AbstractIcon(IconKey.ICON_INFO, 32));
-            }
-        });
     }
 
     @Override

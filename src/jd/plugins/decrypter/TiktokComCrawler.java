@@ -50,12 +50,6 @@ import org.appwork.storage.TypeRef;
 import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.notify.BasicNotify;
-import org.jdownloader.gui.notify.BubbleNotify;
-import org.jdownloader.gui.notify.BubbleNotify.AbstractNotifyWindowFactory;
-import org.jdownloader.gui.notify.gui.AbstractNotifyWindow;
-import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.plugins.components.config.TiktokConfig;
 import org.jdownloader.plugins.components.config.TiktokConfig.ImageFormat;
 import org.jdownloader.plugins.components.config.TiktokConfig.MediaCrawlMode;
@@ -412,7 +406,7 @@ public class TiktokComCrawler extends PluginForDecrypt {
             throw new PluginException(LinkStatus.ERROR_IP_BLOCKED, "Captcha-blocked");
         } else if (TiktokCom.isBotProtectionActive(br)) {
             final String blockedText = "Premature stop: Blocked by anti bot protection / captcha";
-            this.displayBubblenotifyMessage(blockedText, blockedText);
+            this.displayBubbleNotification(blockedText, blockedText);
             throw new DecrypterRetryException(RetryReason.CAPTCHA, blockedText, blockedText, null);
         }
     }
@@ -563,7 +557,7 @@ public class TiktokComCrawler extends PluginForDecrypt {
             }
             if ((Boolean) userPost.get("hasMore") && cfg.isAddDummyURLProfileCrawlerWebsiteModeMissingPagination()) {
                 final String detailedErrorExplanation = "This crawler plugin cannot handle pagination in website mode thus it is currently impossible to crawl more than " + medias.size() + " items of this particular profile.\r\nCheck this forum thread for more info: https://board.jdownloader.org/showthread.php?t=79982";
-                this.displayBubblenotifyMessage("Premature stop", detailedErrorExplanation);
+                this.displayBubbleNotification("Premature stop", detailedErrorExplanation);
                 final DownloadLink dummy = createLinkCrawlerRetry(getCurrentLink(), new DecrypterRetryException(RetryReason.FILE_NOT_FOUND));
                 dummy.setFinalFileName("CANNOT_CRAWL_MORE_THAN_" + medias.size() + "_ITEMS_OF_PROFILE_" + usernameSlug + "_IN_WEBSITE_PROFILE_CRAWL_MODE");
                 dummy.setComment(detailedErrorExplanation);
@@ -589,7 +583,7 @@ public class TiktokComCrawler extends PluginForDecrypt {
                 ret.add(dl);
                 if (ret.size() == cfg.getProfileCrawlerMaxItemsLimit()) {
                     logger.info("Stopping because: Reached user defined max items limit: " + cfg.getProfileCrawlerMaxItemsLimit());
-                    this.displayBubblenotifyMessage("Stopping because: Reached user defined max items limit: " + cfg.getProfileCrawlerMaxItemsLimit(), "Stopping because: Reached user defined max items limit: " + cfg.getProfileCrawlerMaxItemsLimit());
+                    this.displayBubbleNotification("Stopping because: Reached user defined max items limit: " + cfg.getProfileCrawlerMaxItemsLimit(), "Stopping because: Reached user defined max items limit: " + cfg.getProfileCrawlerMaxItemsLimit());
                     return ret;
                 }
             }
@@ -807,7 +801,7 @@ public class TiktokComCrawler extends PluginForDecrypt {
                 numberofProcessedItems++;
                 if (numberofProcessedItems == cfg.getProfileCrawlerMaxItemsLimit()) {
                     logger.info("Stopping because: Reached user defined max items limit: " + cfg.getProfileCrawlerMaxItemsLimit());
-                    this.displayBubblenotifyMessage("Stopping because: Reached user defined max items limit: " + cfg.getProfileCrawlerMaxItemsLimit(), "Stopping because: Reached user defined max items limit: " + cfg.getProfileCrawlerMaxItemsLimit());
+                    this.displayBubbleNotification("Stopping because: Reached user defined max items limit: " + cfg.getProfileCrawlerMaxItemsLimit(), "Stopping because: Reached user defined max items limit: " + cfg.getProfileCrawlerMaxItemsLimit());
                     return ret;
                 }
             }
@@ -1223,12 +1217,4 @@ public class TiktokComCrawler extends PluginForDecrypt {
         return TiktokCom.prepBRAPI(br);
     }
 
-    private void displayBubblenotifyMessage(final String title, final String msg) {
-        BubbleNotify.getInstance().show(new AbstractNotifyWindowFactory() {
-            @Override
-            public AbstractNotifyWindow<?> buildAbstractNotifyWindow() {
-                return new BasicNotify("Tiktok: " + title, msg, new AbstractIcon(IconKey.ICON_INFO, 32));
-            }
-        });
-    }
 }

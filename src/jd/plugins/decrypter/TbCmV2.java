@@ -70,12 +70,6 @@ import org.appwork.utils.parser.UrlQuery;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
 import org.appwork.utils.swing.dialog.DialogCanceledException;
 import org.appwork.utils.swing.dialog.DialogClosedException;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.notify.BasicNotify;
-import org.jdownloader.gui.notify.BubbleNotify;
-import org.jdownloader.gui.notify.BubbleNotify.AbstractNotifyWindowFactory;
-import org.jdownloader.gui.notify.gui.AbstractNotifyWindow;
-import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.plugins.components.google.GoogleHelper;
 import org.jdownloader.plugins.components.youtube.ClipDataCache;
 import org.jdownloader.plugins.components.youtube.Projection;
@@ -1355,7 +1349,7 @@ public class TbCmV2 extends PluginForDecrypt {
             } else if (errorOrWarningMessage != null) {
                 /* For example "Unavailable videos are hidden" */
                 logger.info("Found warning message for playlist/channel: " + errorOrWarningMessage);
-                this.displayBubblenotifyMessage(humanReadableTitle + " | Warning", errorOrWarningMessage);
+                this.displayBubbleNotification(humanReadableTitle + " | Warning", errorOrWarningMessage);
             }
             /* Find extra information about playlist */
             final Map<String, Object> playlistHeaderRenderer = (Map<String, Object>) JavaScriptEngineFactory.walkJson(rootMap, "header/playlistHeaderRenderer");
@@ -1589,7 +1583,7 @@ public class TbCmV2 extends PluginForDecrypt {
             bubblenotificationText += "\r\nPlaylists can contain the same item multiple times but JD can only add it once to linkgrabber.";
         }
         bubblenotificationText += "\r\nProcessing results. This will take a while.";
-        this.displayBubblenotifyMessage(humanReadableTitle + " items", bubblenotificationText);
+        this.displayBubbleNotification(humanReadableTitle + " items", bubblenotificationText);
         logger.info("parsePlaylist method returns: " + ret.size() + " VideoIDs | Number of possibly missing videos [due to duplicate/private/offline/GEO-block or bug in plugin]: " + missingVideos + " | Skipped duplicates: " + numberofSkippedDuplicates);
         return ret;
     }
@@ -1598,15 +1592,6 @@ public class TbCmV2 extends PluginForDecrypt {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-    }
-
-    private void displayBubblenotifyMessage(final String title, final String msg) {
-        BubbleNotify.getInstance().show(new AbstractNotifyWindowFactory() {
-            @Override
-            public AbstractNotifyWindow<?> buildAbstractNotifyWindow() {
-                return new BasicNotify("Youtube: " + title, msg, new AbstractIcon(IconKey.ICON_INFO, 32));
-            }
-        });
     }
 
     /**

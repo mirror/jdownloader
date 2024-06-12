@@ -25,22 +25,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.notify.BasicNotify;
-import org.jdownloader.gui.notify.BubbleNotify;
-import org.jdownloader.gui.notify.BubbleNotify.AbstractNotifyWindowFactory;
-import org.jdownloader.gui.notify.gui.AbstractNotifyWindow;
-import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.plugins.components.config.KemonoPartyConfig;
-import org.jdownloader.plugins.components.config.KemonoPartyConfig.TextCrawlMode;
-import org.jdownloader.plugins.components.config.KemonoPartyConfigCoomerParty;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -59,6 +43,16 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.DirectHTTP;
 import jd.plugins.hoster.KemonoParty;
+
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.config.KemonoPartyConfig;
+import org.jdownloader.plugins.components.config.KemonoPartyConfig.TextCrawlMode;
+import org.jdownloader.plugins.components.config.KemonoPartyConfigCoomerParty;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class KemonoPartyCrawler extends PluginForDecrypt {
@@ -635,7 +629,7 @@ public class KemonoPartyCrawler extends PluginForDecrypt {
                     final String title = "Rate-Limit reached";
                     String text = "Time until rate-limit reset: Unknown | Attempt " + (i + 1) + "/" + maxtries;
                     text += "\nTry again later or change your IP | Auto retry in " + retrySeconds + " seconds";
-                    this.displayBubblenotifyMessage(title, text);
+                    this.displayBubbleNotification(title, text);
                     this.sleep(retrySeconds * 1000, this.cl);
                     continue;
                 } else if (con.getResponseCode() == 200) {
@@ -653,15 +647,6 @@ public class KemonoPartyCrawler extends PluginForDecrypt {
         if (errorRateLimit) {
             throw new DecrypterRetryException(RetryReason.HOST_RATE_LIMIT);
         }
-    }
-
-    private void displayBubblenotifyMessage(final String title, final String msg) {
-        BubbleNotify.getInstance().show(new AbstractNotifyWindowFactory() {
-            @Override
-            public AbstractNotifyWindow<?> buildAbstractNotifyWindow() {
-                return new BasicNotify("Kemono: " + title, msg, new AbstractIcon(IconKey.ICON_INFO, 32));
-            }
-        });
     }
 
     @Override

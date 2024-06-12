@@ -52,10 +52,6 @@ import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.notify.BasicNotify;
-import org.jdownloader.gui.notify.BubbleNotify;
-import org.jdownloader.gui.notify.BubbleNotify.AbstractNotifyWindowFactory;
-import org.jdownloader.gui.notify.gui.AbstractNotifyWindow;
 import org.jdownloader.gui.views.downloads.columns.ETAColumn;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.plugins.ConditionalSkipReasonException;
@@ -490,12 +486,7 @@ public abstract class HighWayCore extends UseNet {
                 final Object infoMsgO = entries.get("info");
                 if (infoMsgO instanceof String) {
                     /* Low traffic warning message: Usually something like "Less than 10% traffic remaining" */
-                    BubbleNotify.getInstance().show(new AbstractNotifyWindowFactory() {
-                        @Override
-                        public AbstractNotifyWindow<?> buildAbstractNotifyWindow() {
-                            return new BasicNotify((String) infoMsgO, (String) infoMsgO, new AbstractIcon(IconKey.ICON_INFO, 32));
-                        }
-                    });
+                    displayBubbleNotification((String) infoMsgO, (String) infoMsgO);
                 }
                 entries = this.cacheDLChecker(entries, this.br, link, account);
                 String dllink = (String) entries.get("download");
