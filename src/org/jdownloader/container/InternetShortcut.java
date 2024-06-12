@@ -20,21 +20,26 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import org.appwork.utils.IO;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.plugins.ContainerStatus;
 import jd.plugins.PluginsC;
 
+import org.appwork.utils.IO;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+
 public class InternetShortcut extends PluginsC {
     public InternetShortcut() {
-        super("InternetShortcut", "file:/.+\\.url$", "$Revision: 13393 $");
+        super("InternetShortcut", "file:/.+\\.url$", "$Revision$");
     }
 
     public InternetShortcut newPluginInstance() {
         return new InternetShortcut();
+    }
+
+    @Override
+    protected boolean isDeleteContainer(CrawledLink link, File file) {
+        return false;
     }
 
     public ContainerStatus callDecryption(File lc) {
@@ -51,6 +56,8 @@ public class InternetShortcut extends PluginsC {
                         retLinks.add(new CrawledLink(url));
                         cls = retLinks;
                     }
+                } else {
+                    throw new IOException("No InternetShortcut:" + lc);
                 }
             } finally {
                 fis.close();

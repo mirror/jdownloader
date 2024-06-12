@@ -115,7 +115,7 @@ public class ZMagsCom extends PluginForHost {
         }
         /* Previously set name might not contain a file-extension --> Correct that if possible */
         final String title = link.getStringProperty(PROPERTY_TITLE);
-        final String ext = getExtensionFromMimeType(dl.getConnection().getContentType());
+        final String ext = getExtensionFromMimeType(dl.getConnection());
         if (title != null && ext != null) {
             link.setFinalFileName(applyFilenameExtension(title, "." + ext));
         }

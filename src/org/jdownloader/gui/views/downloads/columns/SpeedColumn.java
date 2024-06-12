@@ -161,11 +161,11 @@ public class SpeedColumn extends ExtTextColumn<AbstractNode> {
         if (warningEnabled.get() && value instanceof DownloadLink) {
             final DownloadLink dl = (DownloadLink) value;
             final SingleDownloadController dlc = dl.getDownloadLinkController();
-            Account acc = null;
+            final Account acc;
             if (dlc == null || (acc = dlc.getAccount()) != null) {
                 return false;
             }
-            final PluginForHost plugin = dl.getDefaultPlugin();
+            PluginForHost plugin = dl.getLivePlugin();
             if (plugin == null || !plugin.isSpeedLimited(dl, acc) | !plugin.isPremiumEnabled()) {
                 /* no account support yet for this plugin */
                 return false;

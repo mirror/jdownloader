@@ -29,7 +29,7 @@ import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 
 public class JD2AccountsImport extends PluginsC {
     public JD2AccountsImport() {
-        super("JD2 Accountdatabase Import", "file:/.+(org\\.jdownloader\\.settings\\.AccountSettings\\.accounts\\.ejs)$", "$Revision: 21176 $");
+        super("JD2 Accountdatabase Import", "file:/.+(org\\.jdownloader\\.settings\\.AccountSettings\\.accounts\\.ejs)$", "$Revision$");
     }
 
     public JD2AccountsImport newPluginInstance() {

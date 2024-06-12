@@ -21,13 +21,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.config.SankakucomplexComConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.controlling.AccountController;
@@ -49,6 +42,13 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.SankakucomplexComCrawler;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.config.SankakucomplexComConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sankakucomplex.com" }, urls = { "https?://(?:beta|chan|idol|www)\\.sankakucomplex\\.com/(?:[a-z]{2}/)?(?:post/show|posts)/([A-Za-z0-9]+)" })
 public class SankakucomplexCom extends PluginForHost {
@@ -251,16 +251,16 @@ public class SankakucomplexCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final Map<String, Object> item = (Map<String, Object>) ressourcelist.get(0);
-        parseFileInfoAndSetFilenameAPI(link, item);
+        parseFileInfoAndSetFilenameAPI(this, link, item);
         return AvailableStatus.TRUE;
     }
 
-    public static void parseFileInfoAndSetFilenameAPI(final DownloadLink link, final Map<String, Object> item) {
+    public static void parseFileInfoAndSetFilenameAPI(final Plugin plugin, final DownloadLink link, final Map<String, Object> item) {
         final Map<String, Object> author = (Map<String, Object>) item.get("author");
         link.setProperty(PROPERTY_UPLOADER, author.get("name"));
         // final boolean isActive = StringUtils.equalsIgnoreCase(item.get("status").toString(), "active");
         final String mimeType = item.get("file_type").toString();
-        final String ext = getExtensionFromMimeTypeStatic(mimeType);
+        final String ext = plugin.getExtensionFromMimeType(mimeType);
         final Number file_size = (Number) item.get("file_size");
         if (file_size != null) {
             /*

@@ -19,74 +19,21 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.lang.ref.WeakReference;
-import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Locale;
 import java.util.Random;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.swing.Icon;
-
-import org.appwork.exceptions.WTFException;
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.storage.JSonMapperException;
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.storage.simplejson.ParserException;
-import org.appwork.uio.CloseReason;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.Exceptions;
-import org.appwork.utils.Hash;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.logging2.LogInterface;
-import org.appwork.utils.logging2.extmanager.LoggerFactory;
-import org.appwork.utils.net.HTTPHeader;
-import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
-import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
-import org.appwork.utils.net.httpconnection.HTTPProxy;
-import org.jdownloader.auth.AuthenticationInfo.Type;
-import org.jdownloader.auth.Login;
-import org.jdownloader.captcha.v2.Challenge;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.RecaptchaV2Challenge;
-import org.jdownloader.captcha.v2.solverjob.SolverJob;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.gui.IconKey;
-import org.jdownloader.gui.dialog.AskForUserAndPasswordDialog;
-import org.jdownloader.gui.dialog.AskUsernameAndPasswordDialogInterface;
-import org.jdownloader.gui.notify.BasicNotify;
-import org.jdownloader.gui.notify.BubbleNotify;
-import org.jdownloader.gui.notify.BubbleNotify.AbstractNotifyWindowFactory;
-import org.jdownloader.gui.notify.gui.AbstractNotifyWindow;
-import org.jdownloader.images.AbstractIcon;
-import org.jdownloader.logging.LogController;
-import org.jdownloader.plugins.UserIOProgress;
-import org.jdownloader.plugins.config.AccountConfigInterface;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginHost;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.PluginClassLoader;
-import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
-import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
-import org.jdownloader.plugins.controller.crawler.CrawlerPluginController;
-import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
-import org.jdownloader.plugins.controller.host.LazyHostPlugin;
-import org.jdownloader.plugins.controller.host.PluginFinder;
-import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
-import org.jdownloader.translate._JDT;
 
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
@@ -112,6 +59,56 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.utils.JDUtilities;
+
+import org.appwork.exceptions.WTFException;
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.storage.JSonMapperException;
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.storage.simplejson.ParserException;
+import org.appwork.uio.CloseReason;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.Exceptions;
+import org.appwork.utils.Hash;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.logging2.LogInterface;
+import org.appwork.utils.logging2.extmanager.LoggerFactory;
+import org.appwork.utils.net.HTTPHeader;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
+import org.appwork.utils.net.httpconnection.HTTPProxy;
+import org.jdownloader.auth.AuthenticationInfo.Type;
+import org.jdownloader.auth.Login;
+import org.jdownloader.captcha.v2.Challenge;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.RecaptchaV2Challenge;
+import org.jdownloader.captcha.v2.solverjob.SolverJob;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter.CompiledFiletypeExtension;
+import org.jdownloader.gui.IconKey;
+import org.jdownloader.gui.dialog.AskForUserAndPasswordDialog;
+import org.jdownloader.gui.dialog.AskUsernameAndPasswordDialogInterface;
+import org.jdownloader.gui.notify.BasicNotify;
+import org.jdownloader.gui.notify.BubbleNotify;
+import org.jdownloader.gui.notify.BubbleNotify.AbstractNotifyWindowFactory;
+import org.jdownloader.gui.notify.gui.AbstractNotifyWindow;
+import org.jdownloader.images.AbstractIcon;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.UserIOProgress;
+import org.jdownloader.plugins.config.AccountConfigInterface;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginHost;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.plugins.controller.PluginClassLoader;
+import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
+import org.jdownloader.plugins.controller.UpdateRequiredClassNotFoundException;
+import org.jdownloader.plugins.controller.crawler.CrawlerPluginController;
+import org.jdownloader.plugins.controller.crawler.LazyCrawlerPlugin;
+import org.jdownloader.plugins.controller.host.LazyHostPlugin;
+import org.jdownloader.plugins.controller.host.PluginFinder;
+import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
+import org.jdownloader.translate._JDT;
 
 /**
  * Diese abstrakte Klasse steuert den Zugriff auf weitere Plugins. Alle Plugins müssen von dieser Klasse abgeleitet werden.
@@ -183,52 +180,26 @@ public abstract class Plugin implements ActionListener {
     }
 
     public String getExtensionFromMimeType(final String contentType) {
-        return getExtensionFromMimeTypeStatic(contentType);
+        final List<CompiledFiletypeExtension> fileTypeExtensions = CompiledFiletypeFilter.getByMimeType(contentType);
+        if (fileTypeExtensions.size() > 0) {
+            return fileTypeExtensions.get(0).getExtensionFromMimeType(contentType);
+        } else {
+            return null;
+        }
+    }
+
+    public String getExtensionFromMimeType(URLConnectionAdapter connection) {
+        return getExtensionFromMimeType(connection.getContentType());
     }
 
     /** Mimics e.g.: https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types */
+    @Deprecated
     public static String getExtensionFromMimeTypeStatic(final String contentType) {
-        final String mimeType = new Regex(contentType, "(\\w+/[\\w\\-]+)").getMatch(0);
-        if (StringUtils.isEmpty(mimeType)) {
-            return null;
+        final List<CompiledFiletypeExtension> fileTypeExtensions = CompiledFiletypeFilter.getByMimeType(contentType);
+        if (fileTypeExtensions.size() > 0) {
+            return fileTypeExtensions.get(0).getExtensionFromMimeType(contentType);
         } else {
-            final HashMap<String, String> map = new HashMap<String, String>();
-            map.put("application/x-7z-compressed", "7z");
-            map.put("application/vnd.openxmlformats-officedocument.wordprocessingml.document", "docx");
-            map.put("application/vnd.openxmlformats-officedocument.wordprocessingml.template", "dotx");
-            map.put("application/vnd.ms-word.document.macroEnabled.12", "docm");
-            map.put("application/vnd.ms-word.template.macroEnabled.12", "dotm");
-            map.put("image/gif", "gif");
-            map.put("image/jpg", "jpg");
-            map.put("image/jpeg", "jpg");
-            map.put("image/png", "png");
-            map.put("image/apng", "apng");
-            map.put("image/tiff", "tiff");
-            map.put("image/webp", "webp");
-            map.put("video/mp4", "mp4");
-            map.put("video/ogg", "ogg");
-            map.put("video/webm", "webm");
-            map.put("audio/mp3", "mp3");
-            map.put("audio/mpeg", "mp3");
-            /* m4a audio entries */
-            map.put("audio/x-m4a", "m4a");
-            map.put("audio/mp4", "m4a");
-            map.put("audio/ogg", "oga");
-            map.put("audio/opus", "opus");
-            map.put("audio/x-flac", "flac");
-            map.put("audio/wav", "wav");
-            map.put("text/css", "css");
-            map.put("text/javascript", "js");
-            map.put("text/xml", "xml");
-            map.put("text/html", "html");
-            map.put("text/plain", "txt");
-            map.put("application/x-xz", "xz");
-            map.put("application/gzip", "gz");
-            map.put("application/zip", "zip");
-            map.put("application/json", "json");
-            map.put("application/xml", "xml");
-            map.put("application/pdf", "pdf");
-            return map.get(mimeType.toLowerCase(Locale.ENGLISH));
+            return null;
         }
     }
 
@@ -277,14 +248,6 @@ public abstract class Plugin implements ActionListener {
     }
 
     public boolean isHandlingMultipleHosts() {
-        if (this instanceof PluginForHost) {
-            try {
-                final Method method = this.getClass().getMethod("getHost", new Class[] { DownloadLink.class, Account.class });
-                final boolean ret = method.getDeclaringClass() != PluginForHost.class;
-                return ret;
-            } catch (Throwable e) {
-            }
-        }
         return false;
     }
 
@@ -299,30 +262,36 @@ public abstract class Plugin implements ActionListener {
      * @return Datename des Downloads.
      */
     public static String extractFileNameFromURL(final String iFilename) {
-        String filename = iFilename;
-        if (StringUtils.isEmpty(filename)) {
+        String ret = iFilename;
+        if (StringUtils.isEmpty(ret)) {
             return null;
         }
-        final int query = filename.indexOf("?");
-        /*
-         * cut off get url parameters
-         */
-        if (query > 0) {
-            filename = filename.substring(0, query);
+        {
+            final int queryIndex = ret.indexOf("?");
+            /*
+             * cut off get url parameters
+             */
+            if (queryIndex > 0) {
+                ret = ret.substring(0, queryIndex);
+            }
         }
-        final int anchor = filename.indexOf("#");
-        /* cut off anchor */
-        if (anchor > 0) {
-            filename = filename.substring(0, anchor);
+        {
+            final int anchorIndex = ret.indexOf("#");
+            /* cut off anchor */
+            if (anchorIndex > 0) {
+                ret = ret.substring(0, anchorIndex);
+            }
         }
-        final int file = Math.max(filename.lastIndexOf("/"), filename.lastIndexOf("\\"));
-        /*
-         * use filename
-         */
-        filename = filename.substring(file + 1);
-        filename = URLEncode.decodeURIComponent(filename);
-        filename = Encoding.htmlOnlyDecode(filename);
-        return filename;
+        ret = URLEncode.decodeURIComponent(ret);
+        {
+            final int fileIndex = Math.max(ret.lastIndexOf("/"), ret.lastIndexOf("\\"));
+            /* cut off directory */
+            if (fileIndex > 0) {
+                ret = ret.substring(fileIndex + 1);
+            }
+        }
+        ret = Encoding.htmlOnlyDecode(ret);
+        return ret;
     }
 
     public static String getFileNameFromDispositionHeader(final URLConnectionAdapter urlConnection) {
@@ -471,9 +440,8 @@ public abstract class Plugin implements ActionListener {
     }
 
     /**
-     * Corrects extension of given filename. Adds extension if it is missing. Returns null if given filename is null. </br>
-     * Pass fileExtension with dot(s) to this! </br>
-     * Only replaces extensions with one dot e.g. ".mp4", NOT e.g. ".tar.gz".
+     * Corrects extension of given filename. Adds extension if it is missing. Returns null if given filename is null. </br> Pass
+     * fileExtension with dot(s) to this! </br> Only replaces extensions with one dot e.g. ".mp4", NOT e.g. ".tar.gz".
      *
      * @param filenameOrg
      *            Original filename
@@ -887,11 +855,18 @@ public abstract class Plugin implements ActionListener {
                 final PluginHost anno = cls.getAnnotation(PluginHost.class);
                 if (anno != null) {
                     if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-                        final org.jdownloader.plugins.config.Type pluginType = Plugin.this instanceof PluginForDecrypt ? org.jdownloader.plugins.config.Type.CRAWLER : org.jdownloader.plugins.config.Type.HOSTER;
+                        final org.jdownloader.plugins.config.Type pluginType;
+                        if (Plugin.this instanceof PluginForDecrypt) {
+                            pluginType = org.jdownloader.plugins.config.Type.CRAWLER;
+                        } else if (Plugin.this instanceof PluginForHost) {
+                            pluginType = org.jdownloader.plugins.config.Type.HOSTER;
+                        } else {
+                            pluginType = null;
+                        }
                         if (!StringUtils.equals(anno.host(), getHost())) {
                             LogController.CL(true).log(new Exception("Please check:" + cls + "|host missmatch:" + anno.host() + "!=" + getHost()));
                         }
-                        if (pluginType != anno.type()) {
+                        if (pluginType != null && pluginType != anno.type()) {
                             LogController.CL(true).log(new Exception("Please check:" + cls + "|type missmatch:" + anno.type() + "!=" + pluginType));
                         }
                     }
@@ -1152,10 +1127,9 @@ public abstract class Plugin implements ActionListener {
     }
 
     /**
-     * Displays a BubbleNotification. </br>
-     * Plugins which are expected to use this function should return LazyPlugin.FEATURE of type BUBBLE_NOTIFICATION. </br>
-     * Any plugin can try to display a BubbleNotification but upper handling may decide not to display it depending on user settings. </br>
-     * Examples of Plugins using this functionality: RedditComCrawler, TwitterComCrawler, HighWayCore
+     * Displays a BubbleNotification. </br> Plugins which are expected to use this function should return LazyPlugin.FEATURE of type
+     * BUBBLE_NOTIFICATION. </br> Any plugin can try to display a BubbleNotification but upper handling may decide not to display it
+     * depending on user settings. </br> Examples of Plugins using this functionality: RedditComCrawler, TwitterComCrawler, HighWayCore
      */
     protected void displayBubbleNotification(final String title, final String text, final Icon icon) {
         BubbleNotify.getInstance().show(new AbstractNotifyWindowFactory() {

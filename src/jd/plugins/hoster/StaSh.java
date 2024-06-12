@@ -178,13 +178,17 @@ public class StaSh extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 } else {
                     if (con.getCompleteContentLength() > 0) {
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                        if (con.isContentDecoded()) {
+                            link.setDownloadSize(con.getCompleteContentLength());
+                        } else {
+                            link.setVerifiedFileSize(con.getCompleteContentLength());
+                        }
                     }
                     if (isZip(link)) {
                         filename = getFileNameFromHeader(con);
                     }
                     if (ext == null) {
-                        ext = this.getExtensionFromMimeType(con.getContentType());
+                        ext = this.getExtensionFromMimeType(con);
                     }
                 }
             } finally {

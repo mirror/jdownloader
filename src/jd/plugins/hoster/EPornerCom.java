@@ -416,7 +416,7 @@ public class EPornerCom extends PluginForHost {
                 throw e;
             }
         }
-        final String ext = Plugin.getExtensionFromMimeTypeStatic(dl.getConnection().getContentType());
+        final String ext = getExtensionFromMimeType(dl.getConnection());
         if (ext != null && link.getName() != null) {
             link.setFinalFileName(this.correctOrApplyFileNameExtension(link.getName(), "." + ext));
         }

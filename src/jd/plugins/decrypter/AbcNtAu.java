@@ -21,10 +21,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.nutils.encoding.Encoding;
@@ -34,8 +30,11 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
-import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
+
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 /**
  *
@@ -70,7 +69,7 @@ public class AbcNtAu extends PluginForDecrypt {
                 final List<Map<String, Object>> renditions = (List<Map<String, Object>>) audiomap.get("renditions");
                 for (final Map<String, Object> rendition : renditions) {
                     final String mimetype = rendition.get("MIMEType").toString();
-                    String ext = Plugin.getExtensionFromMimeTypeStatic(mimetype);
+                    String ext = getExtensionFromMimeType(mimetype);
                     if (ext == null) {
                         ext = "mp3";
                     } else {

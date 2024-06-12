@@ -20,13 +20,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.config.ThreeQVideoConfig;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -41,6 +34,13 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.DirectHTTP;
+
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.config.ThreeQVideoConfig;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class ThreeQVideo extends PluginForDecrypt {
@@ -128,7 +128,7 @@ public class ThreeQVideo extends PluginForDecrypt {
             String ext = null;
             final String mimetype = (String) sourceProgressive.get("type");
             if (mimetype != null) {
-                ext = Plugin.getExtensionFromMimeTypeStatic(mimetype);
+                ext = getExtensionFromMimeType(mimetype);
             }
             if (ext != null) {
                 ext = "." + ext;

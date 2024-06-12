@@ -32,7 +32,7 @@ import org.jdownloader.images.AbstractIcon;
 
 public class JD2Import extends PluginsC {
     public JD2Import() {
-        super("JD2 Import", "file:/.+((downloadList|linkcollector)(\\d+)?(\\.zip|\\.zip\\.backup))$", "$Revision: 21176 $");
+        super("JD2 Import", "file:/.+((downloadList|linkcollector)(\\d+)?(\\.zip|\\.zip\\.backup))$", "$Revision$");
     }
 
     public JD2Import newPluginInstance() {

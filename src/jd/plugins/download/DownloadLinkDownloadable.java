@@ -613,7 +613,7 @@ public class DownloadLinkDownloadable implements Downloadable {
     protected String getExtensionFromMimeType(URLConnectionAdapter connection) {
         final PluginForHost plugin = getPlugin();
         if (plugin != null) {
-            return plugin.getExtensionFromMimeType(connection.getContentType());
+            return plugin.getExtensionFromMimeType(connection);
         } else {
             return null;
         }

@@ -542,7 +542,7 @@ public class DeviantArtCom extends PluginForHost {
                         link.setVerifiedFileSize(con.getCompleteContentLength());
                     }
                 }
-                final String mimeTypeExtTmp = getExtensionFromMimeType(con.getRequest().getResponseHeader("Content-Type"));
+                final String mimeTypeExtTmp = getExtensionFromMimeType(con);
                 if (mimeTypeExtTmp != null) {
                     extByMimeType = "." + mimeTypeExtTmp;
                 }

@@ -21,10 +21,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -35,9 +31,12 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class CivitaiCom extends PluginForHost {
@@ -138,7 +137,7 @@ public class CivitaiCom extends PluginForHost {
             filename = imageID;
         }
         final String mimeType = (String) imagemap.get("mimeType");
-        final String ext = Plugin.getExtensionFromMimeTypeStatic(mimeType);
+        final String ext = getExtensionFromMimeType(mimeType);
         if (ext != null) {
             link.setName(this.applyFilenameExtension(filename, "." + ext));
         } else {
@@ -149,8 +148,7 @@ public class CivitaiCom extends PluginForHost {
         }
         /**
          * 2024-03-11: Important: Do not open up the regex for original image too much or you run into risk of accidentally downloading the
-         * wrong image, see: </br>
-         * https://board.jdownloader.org/showthread.php?t=95419
+         * wrong image, see: </br> https://board.jdownloader.org/showthread.php?t=95419
          */
         final String directurlOriginal = br.getRegex("class=\"mantine-it6rft\" src=\"(https?://image\\.civitai\\.com/[^\"]+/original=true/[^\"]+)").getMatch(0);
         if (directurlOriginal != null) {
@@ -202,7 +200,7 @@ public class CivitaiCom extends PluginForHost {
             }
         }
         final String filename = link.getName();
-        final String ext = Plugin.getExtensionFromMimeTypeStatic(dl.getConnection().getContentType());
+        final String ext = getExtensionFromMimeType(dl.getConnection());
         if (ext != null && filename != null) {
             link.setFinalFileName(this.correctOrApplyFileNameExtension(filename, "." + ext));
         }

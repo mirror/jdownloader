@@ -19,13 +19,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.config.SankakucomplexComConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -39,6 +32,13 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.SankakucomplexCom;
+
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.config.SankakucomplexComConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class SankakucomplexComCrawler extends PluginForDecrypt {
@@ -146,7 +146,7 @@ public class SankakucomplexComCrawler extends PluginForDecrypt {
             }
             for (final Map<String, Object> post : data) {
                 final DownloadLink link = this.createDownloadlink("https://beta.sankakucomplex.com/" + languageFromURL + "/post/show/" + post.get("id") + "?tags=" + tagsUrlEncoded);
-                SankakucomplexCom.parseFileInfoAndSetFilenameAPI(link, post);
+                SankakucomplexCom.parseFileInfoAndSetFilenameAPI(this, link, post);
                 link._setFilePackage(fp);
                 ret.add(link);
                 distribute(link);
@@ -265,7 +265,7 @@ public class SankakucomplexComCrawler extends PluginForDecrypt {
             link.setProperty(SankakucomplexCom.PROPERTY_BOOK_TITLE, bookTitle);
             link.setProperty(SankakucomplexCom.PROPERTY_PAGE_NUMBER, page);
             link.setProperty(SankakucomplexCom.PROPERTY_PAGE_NUMBER_MAX, posts.size() - 1);
-            SankakucomplexCom.parseFileInfoAndSetFilenameAPI(link, post);
+            SankakucomplexCom.parseFileInfoAndSetFilenameAPI(this, link, post);
             ret.add(link);
             page++;
         }

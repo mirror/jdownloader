@@ -20,11 +20,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.config.Open3dlabComConfig;
-import org.jdownloader.plugins.components.config.Open3dlabComConfigSmutbaSe;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -37,6 +32,11 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.config.Open3dlabComConfig;
+import org.jdownloader.plugins.components.config.Open3dlabComConfigSmutbaSe;
+import org.jdownloader.plugins.config.PluginConfigInterface;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class Open3dlabCom extends PluginForHost {
@@ -171,7 +171,7 @@ public class Open3dlabCom extends PluginForHost {
     }
 
     protected boolean looksLikeDownloadableContent(final URLConnectionAdapter urlConnection, final String filename) {
-        final String mimeExt = getExtensionFromMimeType(urlConnection.getContentType());
+        final String mimeExt = getExtensionFromMimeType(urlConnection);
         if (mimeExt != null && filename != null && filename.toLowerCase(Locale.ENGLISH).endsWith("." + mimeExt)) {
             /* 2023-05-22: Small workaround: For .txt files they do not return a content-disposition header. */
             return true;

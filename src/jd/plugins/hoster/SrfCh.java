@@ -18,15 +18,6 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.downloader.hls.M3U8Playlist;
-import org.jdownloader.plugins.components.config.SrfChConfig;
-import org.jdownloader.plugins.components.config.SrfChConfig.QualitySelectionFallbackMode;
-import org.jdownloader.plugins.components.config.SrfChConfig.QualitySelectionMode;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-
 import jd.PluginWrapper;
 import jd.controlling.linkcrawler.LinkCrawlerDeepInspector;
 import jd.http.URLConnectionAdapter;
@@ -35,11 +26,19 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.SrfChCrawler;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.plugins.components.config.SrfChConfig;
+import org.jdownloader.plugins.components.config.SrfChConfig.QualitySelectionFallbackMode;
+import org.jdownloader.plugins.components.config.SrfChConfig.QualitySelectionMode;
+import org.jdownloader.plugins.config.PluginConfigInterface;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 @PluginDependencies(dependencies = { SrfChCrawler.class })
@@ -143,12 +142,16 @@ public class SrfCh extends PluginForHost {
                     con = br.openHeadConnection(downloadurl);
                     this.connectionErrorhandling(br.getHttpConnection());
                     if (con.getCompleteContentLength() > 0) {
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                        if (con.isContentDecoded()) {
+                            link.setDownloadSize(con.getCompleteContentLength());
+                        } else {
+                            link.setVerifiedFileSize(con.getCompleteContentLength());
+                        }
                     }
                     /* Audio URLs sometimes end with .jpg but redirect to .png files. */
                     final String finalFilename = link.getFinalFileName();
                     if (finalFilename != null) {
-                        final String extensionByMinetype = Plugin.getExtensionFromMimeTypeStatic(con.getContentType());
+                        final String extensionByMinetype = getExtensionFromMimeType(con);
                         if (extensionByMinetype != null) {
                             final String filenameWithCorrectedExtension = this.correctOrApplyFileNameExtension(finalFilename, "." + extensionByMinetype);
                             if (!filenameWithCorrectedExtension.equals(finalFilename)) {

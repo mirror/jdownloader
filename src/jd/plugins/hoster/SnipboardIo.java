@@ -101,7 +101,7 @@ public class SnipboardIo extends PluginForHost {
             con = brc.openHeadConnection(dllink);
             if (con.isOK() && con.getContentType().contains("image")) {
                 if (con.getContentType().contains("/")) {
-                    ext_header = getExtensionFromMimeType(con.getContentType());
+                    ext_header = getExtensionFromMimeType(con);
                     if (ext_header == null) {
                         ext_header = con.getContentType().split("/")[1];
                     }
@@ -109,7 +109,11 @@ public class SnipboardIo extends PluginForHost {
                     link.setFinalFileName(url_filename);
                 }
                 if (con.getCompleteContentLength() > 0) {
-                    link.setDownloadSize(con.getCompleteContentLength());
+                    if (con.isContentDecoded()) {
+                        link.setDownloadSize(con.getCompleteContentLength());
+                    } else {
+                        link.setDownloadSize(con.getCompleteContentLength());
+                    }
                 }
             } else {
                 if (con.getResponseCode() == 403 || con.getResponseCode() == 404 || con.getResponseCode() == 410) {
