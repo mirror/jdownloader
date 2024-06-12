@@ -25,6 +25,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.config.KemonoPartyConfig;
+import org.jdownloader.plugins.components.config.KemonoPartyConfig.TextCrawlMode;
+import org.jdownloader.plugins.components.config.KemonoPartyConfigCoomerParty;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -43,16 +53,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.DirectHTTP;
 import jd.plugins.hoster.KemonoParty;
-
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.config.KemonoPartyConfig;
-import org.jdownloader.plugins.components.config.KemonoPartyConfig.TextCrawlMode;
-import org.jdownloader.plugins.components.config.KemonoPartyConfigCoomerParty;
-import org.jdownloader.plugins.config.PluginJsonConfig;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class KemonoPartyCrawler extends PluginForDecrypt {
@@ -365,10 +365,10 @@ public class KemonoPartyCrawler extends PluginForDecrypt {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final FilePackage postFilePackage = getFilePackageForPostCrawler(portal, userID, postID, postTitle);
         final String postTextContent = (String) postmap.get("content");
+        final KemonoPartyConfig cfg = PluginJsonConfig.get(getConfigInterface());
         if (!StringUtils.isEmpty(postTextContent)) {
-            final KemonoPartyConfig cfg = PluginJsonConfig.get(getConfigInterface());
-            final TextCrawlMode mode = cfg.getTextCrawlMode();
             if (cfg.isCrawlHttpLinksFromPostContent()) {
+                /* Place number 1 where we can crawl external http links from */
                 final String[] urls = HTMLParser.getHttpLinks(postTextContent, br.getURL());
                 if (urls != null && urls.length > 0) {
                     for (final String url : urls) {
@@ -376,6 +376,7 @@ public class KemonoPartyCrawler extends PluginForDecrypt {
                     }
                 }
             }
+            final TextCrawlMode mode = cfg.getTextCrawlMode();
             if (mode == TextCrawlMode.ALWAYS || (mode == TextCrawlMode.ONLY_IF_NO_MEDIA_ITEMS_ARE_FOUND && kemonoResults.isEmpty())) {
                 ensureInitHosterplugin();
                 final DownloadLink textfile = new DownloadLink(this.hostPlugin, this.getHost(), posturl);
@@ -387,6 +388,14 @@ public class KemonoPartyCrawler extends PluginForDecrypt {
                     ignore.printStackTrace();
                 }
                 kemonoResults.add(textfile);
+            }
+        }
+        if (cfg.isCrawlHttpLinksFromPostContent()) {
+            /* Place number 2 where we can crawl external http links from */
+            final Map<String, Object> embedmap = (Map<String, Object>) postmap.get("embed");
+            if (embedmap != null && embedmap.size() > 0) {
+                final String url = embedmap.get("url").toString();
+                ret.add(this.createDownloadlink(url));
             }
         }
         for (final DownloadLink kemonoResult : kemonoResults) {

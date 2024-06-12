@@ -70,7 +70,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginProgress;
 import jd.plugins.components.MultiHosterManagement;
-import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.DownloadLinkDownloadable;
 import jd.plugins.download.HashInfo;
@@ -99,7 +98,7 @@ public class AllDebridCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "https://www.alldebrid.com/tos/";
+        return "https://www." + getHost() + "/tos/";
     }
 
     @Override
@@ -813,11 +812,10 @@ public class AllDebridCom extends PluginForHost {
             link.setFinalFileName(data.get("filename").toString());
             link.setVerifiedFileSize(((Number) data.get("filesize")).longValue());
         }
-        // TODO: Use json parser here
-        final String delayID = PluginJSonUtils.getJson(br, "delayed");
-        if (!StringUtils.isEmpty(delayID)) {
+        final Object delayID = data.get("delayed");
+        if (delayID != null) {
             /* See https://docs.alldebrid.com/v4/#delayed-links */
-            if (!cacheDLChecker(delayID)) {
+            if (!cacheDLChecker(delayID.toString())) {
                 /* Error or serverside download not finished in given time. */
                 logger.info("Delayed handling failure");
                 handleErrors(account, link);
