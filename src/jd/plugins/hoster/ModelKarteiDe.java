@@ -131,7 +131,9 @@ public class ModelKarteiDe extends PluginForHost {
         this.setBrowserExclusive();
         /* Ensure English language */
         br.getHeaders().put(HTTPConstants.HEADER_REQUEST_REFERER, link.getPluginPatternMatcher());
+        /* This should redirect us to our target-URL. */
         br.getPage("https://www." + getHost() + "/l.php?l=en");
+        /* Double-check: If we're not on our target-URL, navigate to it. */
         if (!br.getURL().contains(contentID)) {
             logger.warning("Expected redirect from language switcher to final URL did not happen");
             br.getPage(link.getPluginPatternMatcher());
