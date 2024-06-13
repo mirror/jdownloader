@@ -24,11 +24,18 @@ import java.util.regex.Pattern;
 
 import javax.swing.Icon;
 
+import jd.controlling.container.ContainerConfig;
+import jd.controlling.container.ContainerConfig.ContainerDeleteOption;
+import jd.controlling.linkcollector.LinkOriginDetails;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.nutils.Formatter;
+
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.uio.CloseReason;
 import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.Files;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
@@ -44,14 +51,11 @@ import org.jdownloader.gui.notify.gui.AbstractNotifyWindow;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.config.AccountConfigInterface;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginHost;
 import org.jdownloader.translate._JDT;
 import org.jdownloader.utils.JDFileUtils;
-
-import jd.controlling.container.ContainerConfig;
-import jd.controlling.container.ContainerConfig.ContainerDeleteOption;
-import jd.controlling.linkcollector.LinkOriginDetails;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.nutils.Formatter;
 
 /**
  * Dies ist die Oberklasse für alle Plugins, die Containerdateien nutzen können
@@ -263,6 +267,26 @@ public abstract class PluginsC {
         this.currentLink = currentLink;
     }
 
+    public Class<? extends PluginConfigInterface> getConfigInterface() {
+        for (final Class<?> cls : getClass().getClasses()) {
+            if (PluginConfigInterface.class.isAssignableFrom(cls) && !AccountConfigInterface.class.isAssignableFrom(cls)) {
+                final PluginHost anno = cls.getAnnotation(PluginHost.class);
+                if (anno != null) {
+                    if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+                        final org.jdownloader.plugins.config.Type pluginType = org.jdownloader.plugins.config.Type.CONTAINER;
+                        if (pluginType != null && pluginType != anno.type()) {
+                            LogController.CL(true).log(new Exception("Please check:" + cls + "|type missmatch:" + anno.type() + "!=" + pluginType));
+                        }
+                    }
+                    return (Class<? extends PluginConfigInterface>) cls;
+                } else {
+                    return (Class<? extends PluginConfigInterface>) cls;
+                }
+            }
+        }
+        return null;
+    }
+
     public ArrayList<CrawledLink> decryptContainer(final CrawledLink source) {
         if (source.getURL() == null) {
             return null;
@@ -309,8 +333,8 @@ public abstract class PluginsC {
     }
 
     /**
-     * Returns true if a user interaction in the form of a password-prompt can happen when processing this container. </br>
-     * Example: SFDL containers.
+     * Returns true if a user interaction in the form of a password-prompt can happen when processing this container. </br> Example: SFDL
+     * containers.
      */
     protected boolean canBePasswordProtected() {
         return false;
