@@ -13,7 +13,6 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import javax.xml.parsers.DocumentBuilder;
 
-import jd.controlling.container.ContainerConfig;
 import jd.controlling.linkcrawler.ArchiveInfo;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.parser.Regex;
@@ -32,6 +31,7 @@ import org.appwork.utils.XML;
 import org.appwork.utils.encoding.Base64;
 import org.jdownloader.gui.dialog.AskContainerPasswordDialog;
 import org.jdownloader.gui.dialog.AskContainerPasswordDialogInterface;
+import org.jdownloader.plugins.components.containers.ContainerConfig;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 

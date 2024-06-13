@@ -1,4 +1,4 @@
-package jd.controlling.container;
+package org.jdownloader.plugins.components.containers;
 
 import java.util.List;
 

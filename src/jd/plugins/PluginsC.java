@@ -24,8 +24,6 @@ import java.util.regex.Pattern;
 
 import javax.swing.Icon;
 
-import jd.controlling.container.ContainerConfig;
-import jd.controlling.container.ContainerConfig.ContainerDeleteOption;
 import jd.controlling.linkcollector.LinkOriginDetails;
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.nutils.Formatter;
@@ -51,6 +49,8 @@ import org.jdownloader.gui.notify.gui.AbstractNotifyWindow;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.images.AbstractIcon;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.components.containers.ContainerConfig;
+import org.jdownloader.plugins.components.containers.ContainerConfig.ContainerDeleteOption;
 import org.jdownloader.plugins.config.AccountConfigInterface;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginHost;
