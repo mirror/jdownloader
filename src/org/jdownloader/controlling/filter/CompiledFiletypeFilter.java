@@ -508,7 +508,12 @@ public class CompiledFiletypeFilter {
             }
         },
         S3M,
-        FourMP("4MP"),
+        FourMP("4MP") {
+            @Override
+            public String getExtensionFromMimeType(String mimeType) {
+                return matchesMimeType(mimeType) ? "4mp" : null;
+            }
+        },
         AIF,
         AIFF,
         AU,
@@ -590,7 +595,12 @@ public class CompiledFiletypeFilter {
     }
 
     public static enum VideoExtensions implements CompiledFiletypeExtension {
-        ThreeGP("3GP"),
+        ThreeGP("3GP") {
+            @Override
+            public String getExtensionFromMimeType(String mimeType) {
+                return matchesMimeType(mimeType) ? "3gp" : null;
+            }
+        },
         ASF,
         AVI,
         DIVX,
@@ -720,11 +730,21 @@ public class CompiledFiletypeFilter {
                 return pattern.matcher(mimeType).find();
             }
         },
-        SevenZIP("7ZIP"),
+        SevenZIP("7ZIP") {
+            @Override
+            public String getExtensionFromMimeType(String mimeType) {
+                return matchesMimeType(mimeType) ? "7zip" : null;
+            }
+        },
         R_NUM("[r-z]\\d{2}"),
         NUM("\\d{1,4}"),
         MultiZip("z\\d{1,4}"),
-        ACE("(ace|c\\d{2,4})"),
+        ACE("(ace|c\\d{2,4})") {
+            @Override
+            public String getExtensionFromMimeType(String mimeType) {
+                return matchesMimeType(mimeType) ? "ace" : null;
+            }
+        },
         TAR,
         GZ {
             private final Pattern pattern = Pattern.compile("(?i)application/gzip");
@@ -744,6 +764,11 @@ public class CompiledFiletypeFilter {
             @Override
             public boolean matchesMimeType(String mimeType) {
                 return pattern.matcher(mimeType).find();
+            }
+
+            @Override
+            public String getExtensionFromMimeType(String mimeType) {
+                return matchesMimeType(mimeType) ? "7z" : null;
             }
         },
         S7Z,
