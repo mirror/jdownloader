@@ -20,10 +20,6 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.appwork.storage.config.JsonConfig;
-import org.jdownloader.plugins.HashCheckPluginProgress;
-import org.jdownloader.settings.GeneralSettings;
-
 import jd.controlling.downloadcontroller.ManagedThrottledConnectionHandler;
 import jd.http.Browser;
 import jd.http.Request;
@@ -31,6 +27,10 @@ import jd.http.URLConnectionAdapter;
 import jd.plugins.PluginProgress;
 import jd.plugins.download.raf.FileBytesMap.FileBytesMapView;
 import jd.plugins.download.raf.HTTPDownloader;
+
+import org.appwork.storage.config.JsonConfig;
+import org.jdownloader.plugins.HashCheckPluginProgress;
+import org.jdownloader.settings.GeneralSettings;
 
 abstract public class DownloadInterface {
     @Deprecated
@@ -51,7 +51,7 @@ abstract public class DownloadInterface {
     }
 
     protected boolean fixWrongContentDispositionHeader = false;
-    protected boolean allowFilenameFromURL             = false;
+    protected boolean allowFilenameFromURL             = true;
     protected Request initialRequest                   = null;
 
     /** Htmldecode filename from header? */
