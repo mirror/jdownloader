@@ -3,7 +3,6 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 
 import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -16,25 +15,28 @@ import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
+import jd.plugins.PluginForDecrypt;
+import jd.plugins.components.PluginJSonUtils;
+import jd.plugins.hoster.DirectHTTP;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "emulatorgames.net" }, urls = { "https?://(?:www\\.)?emulatorgames\\.net/(?:(?:roms|download)/).+" })
-public class EmulatorgamesNet extends antiDDoSForDecrypt {
+public class EmulatorgamesNet extends PluginForDecrypt {
     public EmulatorgamesNet(PluginWrapper wrapper) {
         super(wrapper);
     }
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final String parameter = param.getCryptedUrl();
+        final String contenturl = param.getCryptedUrl();
         br.setFollowRedirects(true);
-        getPage(parameter);
+        br.getPage(contenturl);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         final Form dlform = br.getFormbyActionRegex(".*/download.*");
-        if (dlform == null && parameter.matches("(?i).*\\.net/roms/[^/]*/?$")) {
+        if (dlform == null && contenturl.matches("(?i).*\\.net/roms/[^/]*/?$")) {
             // ignore index site
-            return ret;
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String fpName = null;
         fpName = br.getRegex("([^<>]+)\\s+ROM\\s+-\\s+[^<]+\\s+-\\s+Emulator Games").getMatch(0);
@@ -43,7 +45,7 @@ public class EmulatorgamesNet extends antiDDoSForDecrypt {
             getLogger().warning("Could not retrieve ROM ID required for download steps!");
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        this.submitForm(dlform);
+        br.submitForm(dlform);
         // final PostRequest downloadPagePost = new PostRequest(br.getURL("/increment/"));
         // downloadPagePost.addVariable("get_type", "post");
         // downloadPagePost.addVariable("get_id", romID);
@@ -62,8 +64,8 @@ public class EmulatorgamesNet extends antiDDoSForDecrypt {
         if (directurl == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        directurl = directurl.replaceAll("\\\\", "");
-        ret.add(createDownloadlink(directurl));
+        directurl = PluginJSonUtils.unescape(directurl);
+        ret.add(createDownloadlink(DirectHTTP.createURLForThisPlugin(directurl)));
         if (StringUtils.isNotEmpty(fpName)) {
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(Encoding.htmlDecode(fpName).trim());

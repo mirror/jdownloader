@@ -162,7 +162,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
     private static final String               PROPERTY_PLUGIN_ALT_AVAILABLECHECK_LAST_FAILURE_TIMESTAMP         = "ALT_AVAILABLECHECK_LAST_FAILURE_TIMESTAMP";
     private static final String               PROPERTY_PLUGIN_ALT_AVAILABLECHECK_LAST_FAILURE_VERSION           = "ALT_AVAILABLECHECK_LAST_FAILURE_VERSION";
     private static final String               PROPERTY_PLUGIN_ALT_AVAILABLECHECK_LAST_WORKING                   = "ALT_AVAILABLECHECK_LAST_WORKING";
-    private static final String               PROPERTY_ACCOUNT_ALLOW_API_DOWNLOAD_ATTEMPT_IN_WEBSITE_MODE       = "allow_api_download_attempt_in_website_mode";
+    protected static final String             PROPERTY_ACCOUNT_ALLOW_API_DOWNLOAD_ATTEMPT_IN_WEBSITE_MODE       = "allow_api_download_attempt_in_website_mode";
     private String                            videoStreamDownloadurl                                            = null;
     private boolean                           hasCheckedEmbedHandling                                           = false;
 
@@ -4284,7 +4284,8 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
             logger.log(e);
         }
         final boolean apiSuccess = ai != null && trustAccountInfoAPI(br, account, ai);
-        if (apiSuccess && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+        final boolean devDebugTrustAPIInfo = false;
+        if (apiSuccess && devDebugTrustAPIInfo && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
             /* Trust API info */
             logger.info("Successfully found complete AccountInfo via API");
             /* API with trafficleft value is uncommon -> Make sure devs easily take note of this! */

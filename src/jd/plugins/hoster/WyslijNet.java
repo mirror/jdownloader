@@ -21,9 +21,11 @@ import java.util.List;
 import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
@@ -126,6 +128,16 @@ public class WyslijNet extends XFileSharingProBasic {
     }
 
     @Override
+    protected AccountInfo fetchAccountInfoAPI(final Browser br, final Account account) throws Exception {
+        try {
+            return super.fetchAccountInfoAPI(br, account);
+        } finally {
+            /* Small hack */
+            account.setProperty(PROPERTY_ACCOUNT_ALLOW_API_DOWNLOAD_ATTEMPT_IN_WEBSITE_MODE, false);
+        }
+    }
+
+    @Override
     protected boolean containsRecaptchaV2Class(String string) {
         /* 2024-04-23 */
         if (new Regex(string, "<input[^>]*name=\"g-recaptcha-response\"").patternFind()) {
@@ -143,5 +155,15 @@ public class WyslijNet extends XFileSharingProBasic {
             fileInfo[1] = betterFilesize;
         }
         return fileInfo;
+    }
+
+    @Override
+    protected String regExTrafficLeft(final Browser br) {
+        final String ret = br.getRegex(">\\s*Pozostały transfer\\s*</h6>\\s*<h2[^>]*>([^<]+)</h2>").getMatch(0);
+        if (ret != null) {
+            return ret;
+        } else {
+            return super.regExTrafficLeft(br);
+        }
     }
 }

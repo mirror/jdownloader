@@ -124,24 +124,29 @@ public class TorboxApp extends PluginForHost {
         final String directlinkproperty = this.getPropertyKey("directlink");
         String storedDirecturl = link.getStringProperty(directlinkproperty);
         final String dllink;
+        this.login(account, false);
         if (storedDirecturl != null) {
             logger.info("Trying to re-use stored directurl: " + storedDirecturl);
             dllink = storedDirecturl;
         } else {
             mhm.runCheck(account, link);
-            this.login(account, false);
             logger.info("Creating or finding internal file_id");
             final Request req_createwebdownload = br.createPostRequest(API_BASE + "/webdl/createwebdownload", "link=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)));
             final Map<String, Object> entries = (Map<String, Object>) this.callAPI(req_createwebdownload, account, link);
-            // hash, auth_id
+            /**
+             * These two strings can be used to identify the unique item/link we just added. </br>
+             * We could cache them but instead we will simply rely on the API to do this for us. </br>
+             * Once a download was started successfully we save- and re-use the direct-URL, that should be enough - we do not want to
+             * overcomplicate things.
+             */
             final String file_id = entries.get("webdownload_id").toString();
             final String hash = entries.get("hash").toString();
             /*
-             * 2024-06-11: Looks like this doesn't work or it needs some time until cached items get listed as cached so at this moment
-             * let's not do this and try downloading straight away.
+             * 2024-06-13: Disabled this handling.
              */
-            final boolean doCachecheck = true;
+            final boolean doCachecheck = false;
             if (doCachecheck) {
+                /* Optional step */
                 /* Items need to be cached before they can be downloaded -> Check cache status */
                 logger.info("Checking downloadability of internal file_id: " + file_id + " | hash: " + hash);
                 final UrlQuery query_checkcached = new UrlQuery();
