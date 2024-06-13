@@ -17,10 +17,10 @@ package jd.plugins.hoster;
 
 import java.util.Map;
 
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
@@ -40,7 +40,7 @@ public class OnfCa extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "https://www.nfb.ca/about/important-notices/";
+        return "https://www." + getHost() + "/about/important-notices/";
     }
 
     @Override
@@ -59,9 +59,10 @@ public class OnfCa extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        final String extDefault = ".mp4";
         if (!link.isNameSet()) {
             /* Set fallback name */
-            link.setName(this.getFID(link) + ".mp4");
+            link.setName(this.getFID(link) + extDefault);
         }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -69,10 +70,10 @@ public class OnfCa extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+        final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         String title = (String) entries.get("title");
         if (!StringUtils.isEmpty(title)) {
-            link.setFinalFileName(title + ".mp4");
+            link.setFinalFileName(title + extDefault);
         }
         final String description = (String) entries.get("video_description");
         if (!StringUtils.isEmpty(description) && link.getComment() == null) {
@@ -88,6 +89,8 @@ public class OnfCa extends PluginForHost {
         /* Double-check */
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("id=\"MESSAGE_GEOBLOCKED\"")) {
+            throw new PluginException(LinkStatus.ERROR_FATAL, "GEO-blocked");
         }
         final String hlsMaster = br.getRegex("source\\s*:\\s*'(https?://[^<>\"\\']+\\.m3u8)").getMatch(0);
         if (hlsMaster == null) {

@@ -25,7 +25,6 @@ import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.storage.JSonMapperException;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.Exceptions;
-import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.parser.UrlQuery;
@@ -52,8 +51,6 @@ import jd.plugins.components.MultiHosterManagement;
 public class TorboxApp extends PluginForHost {
     private final String                 API_BASE                                                 = "https://api.torbox.app/v1/api";
     private static MultiHosterManagement mhm                                                      = new MultiHosterManagement("torbox.app");
-    private final String                 PROPERTY_SERVERSIDE_FILE_ID                              = "file_id";
-    private final String                 PROPERTY_SERVERSIDE_HASH                                 = "hash";
     private final String                 PROPERTY_ACCOUNT_NOTIFICATIONS_DISPLAYED_UNTIL_TIMESTAMP = "notifications_displayed_until_timestamp";
 
     @SuppressWarnings("deprecation")
@@ -122,27 +119,10 @@ public class TorboxApp extends PluginForHost {
         return this.getHost() + "_" + property;
     }
 
-    private String getMultihosterFileID(final DownloadLink link) {
-        return link.getStringProperty(getPropertyKey(PROPERTY_SERVERSIDE_FILE_ID));
-    }
-
-    private String getMultihosterHash(final DownloadLink link) {
-        return link.getStringProperty(getPropertyKey(PROPERTY_SERVERSIDE_HASH));
-    }
-
-    private void setMultihosterFileID(final DownloadLink link, final String file_id) {
-        link.setProperty(getPropertyKey(PROPERTY_SERVERSIDE_FILE_ID), file_id);
-    }
-
-    private void setMultihosterHash(final DownloadLink link, final String hash) {
-        link.setProperty(getPropertyKey(PROPERTY_SERVERSIDE_HASH), hash);
-    }
-
     @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
         final String directlinkproperty = this.getPropertyKey("directlink");
         String storedDirecturl = link.getStringProperty(directlinkproperty);
-        storedDirecturl = null;
         final String dllink;
         if (storedDirecturl != null) {
             logger.info("Trying to re-use stored directurl: " + storedDirecturl);
@@ -150,31 +130,12 @@ public class TorboxApp extends PluginForHost {
         } else {
             mhm.runCheck(account, link);
             this.login(account, false);
-            final String stored_file_id = getMultihosterFileID(link);
-            String file_id = null;
-            String hash = getMultihosterHash(link);
-            /* TODO: Detect old fileIDs and/or only re-use them for X time or never re-use them. */
-            boolean isNewFileID = false;
-            final boolean allowReUseStoredFileID = true;
-            if (stored_file_id != null && allowReUseStoredFileID) {
-                logger.info("Re-using stored internal fileID: " + stored_file_id);
-                file_id = stored_file_id;
-            } else {
-                logger.info("Creating or finding internal file_id");
-                final Request req_createwebdownload = br.createPostRequest(API_BASE + "/webdl/createwebdownload", "link=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)));
-                final Map<String, Object> entries = (Map<String, Object>) this.callAPI(req_createwebdownload, account, link);
-                // hash, auth_id
-                file_id = entries.get("webdownload_id").toString();
-                hash = entries.get("hash").toString();
-                /* Save this ID to re-use on next try. */
-                this.setMultihosterFileID(link, file_id);
-                this.setMultihosterHash(link, hash);
-                if (StringUtils.equals(file_id, stored_file_id)) {
-                    logger.info("createwebdownload has returned same internal fileID which we already know: " + stored_file_id);
-                } else {
-                    isNewFileID = true;
-                }
-            }
+            logger.info("Creating or finding internal file_id");
+            final Request req_createwebdownload = br.createPostRequest(API_BASE + "/webdl/createwebdownload", "link=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)));
+            final Map<String, Object> entries = (Map<String, Object>) this.callAPI(req_createwebdownload, account, link);
+            // hash, auth_id
+            final String file_id = entries.get("webdownload_id").toString();
+            final String hash = entries.get("hash").toString();
             /*
              * 2024-06-11: Looks like this doesn't work or it needs some time until cached items get listed as cached so at this moment
              * let's not do this and try downloading straight away.

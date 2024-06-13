@@ -85,19 +85,21 @@ public class VimmNetCrawler extends PluginForDecrypt {
         if (jsonarrayStr == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final List<Map<String, Object>> resourcelist = (List<Map<String, Object>>) restoreFromString(jsonarrayStr, TypeRef.OBJECT);
         final String downloadformatsText = br.getRegex("<select[^<]*id=\"dl_format\"[^<]*>(.*?)</select>").getMatch(0);
         if (downloadformatsText == null) {
             logger.info("Looks like there are no alternative formats available for this item");
         }
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String[][] downloadformatsOptions = downloadformatsText != null ? new Regex(downloadformatsText, "<option[^<]*value=\"(\\d+)\"[^>]*>([^<]+)</option>").getMatches() : null;
         for (final Map<String, Object> resource : resourcelist) {
             final String mediaID = resource.get("ID").toString();
-            final String preSetFilename = resource.get("GoodTitle").toString();
+            String goodTitle = resource.get("GoodTitle").toString();
+            /* 2024-06-13: This is base64 encoded now */
+            goodTitle = Encoding.Base64Decode(goodTitle);
             final DownloadLink link = this.createDownloadlink(contenturl + "#?media_id=" + mediaID);
             link.setProperty(VimmNet.PROPERTY_MEDIA_ID, mediaID);
-            link.setProperty(VimmNet.PROPERTY_PRE_GIVEN_FILENAME, preSetFilename);
+            link.setProperty(VimmNet.PROPERTY_PRE_GIVEN_FILENAME, goodTitle);
             final String filesizeZippedStr = resource.get("Zipped").toString();
             final Object filesizeAltZippedStr = resource.get("AltZipped");
             if (filesizeZippedStr != null && filesizeZippedStr.matches("\\d+")) {
@@ -116,7 +118,7 @@ public class VimmNetCrawler extends PluginForDecrypt {
                 /* Add downloadlink for 2nd format */
                 final DownloadLink link2 = this.createDownloadlink(contenturl + "#?media_id=" + mediaID);
                 link2.setProperty(VimmNet.PROPERTY_MEDIA_ID, mediaID);
-                link2.setProperty(VimmNet.PROPERTY_PRE_GIVEN_FILENAME, preSetFilename);
+                link2.setProperty(VimmNet.PROPERTY_PRE_GIVEN_FILENAME, goodTitle);
                 link2.setProperty(VimmNet.PROPERTY_FORMAT_ID, downloadformatsOptions[1][0]);
                 link2.setProperty(VimmNet.PROPERTY_FORMAT, Encoding.htmlDecode(downloadformatsOptions[1][1]).trim());
                 link2.setDownloadSize(Long.parseLong(filesizeAltZippedStr.toString()) * 1024);
@@ -124,27 +126,34 @@ public class VimmNetCrawler extends PluginForDecrypt {
             }
             ret.add(link);
         }
+        final String lastFilename = ret.get(ret.size() - 1).getStringProperty(VimmNet.PROPERTY_PRE_GIVEN_FILENAME);
+        String title = br.getRegex("<title>([^<]+)</title>").getMatch(0);
+        final FilePackage fp;
+        if (ret.size() == 1) {
+            /* Only one result -> Let upper system auto determine a package name. */
+            fp = null;
+        } else {
+            fp = FilePackage.getInstance();
+            if (lastFilename != null) {
+                /* Fallback 1 */
+                fp.setName(lastFilename);
+            } else if (title != null) {
+                title = Encoding.htmlOnlyDecode(title).trim();
+                title = title.replaceFirst("(?i)^Download\\s*", "");
+                fp.setName(title);
+            } else {
+                /* Fallback 2 */
+                fp.setName(contentid);
+            }
+        }
         /* Set some additional properties which we want to have on all of our results. */
         for (final DownloadLink result : ret) {
             result.setAvailable(true);
-            VimmNet.setFilename(result);
+            VimmNet.setFilename(result, false);
+            if (fp != null) {
+                result._setFilePackage(fp);
+            }
         }
-        final String lastFilename = ret.get(ret.size() - 1).getStringProperty(VimmNet.PROPERTY_PRE_GIVEN_FILENAME);
-        String title = br.getRegex("<title>([^<]+)</title>").getMatch(0);
-        final FilePackage fp = FilePackage.getInstance();
-        if (title != null) {
-            title = Encoding.htmlOnlyDecode(title).trim();
-            title = title.replaceFirst("(?i)^Download\\s*", "");
-            fp.setName(title);
-        } else if (lastFilename != null) {
-            /* Fallback 1 */
-            fp.setName(lastFilename);
-        } else {
-            /* Fallback 2 */
-            fp.setName(contentid);
-        }
-        /* We want all results to go into this package. */
-        fp.addLinks(ret);
         return ret;
     }
 

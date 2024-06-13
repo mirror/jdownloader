@@ -65,7 +65,7 @@ public class PixeldrainComFolder extends PluginForDecrypt {
     }
 
     private static final String PATTERN_LIST   = "/l/([A-Za-z0-9]+)((?:\\?embed)?#item=(\\d+))?";
-    private static final String PATTERN_FOLDER = "/d/(([A-Za-z0-9]+)(/.*)?)";
+    private static final String PATTERN_FOLDER = "/d/(([A-Za-z0-9]{8})(/.*)?)";
 
     public static String[] buildAnnotationUrls(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
@@ -79,7 +79,7 @@ public class PixeldrainComFolder extends PluginForDecrypt {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final Regex listregex = new Regex(param.getCryptedUrl(), PATTERN_LIST);
         final Regex folderregex = new Regex(param.getCryptedUrl(), PATTERN_FOLDER);
-        final PluginForHost hosterplugin = this.getNewPluginForHostInstance(this.getHost());
+        final PluginForHost hosterplugin = this.getNewPluginForHostInstance(getHost());
         /* Use same browser settings/headers as hosterplugin. */
         this.br = hosterplugin.createNewBrowserInstance();
         if (listregex.patternFind()) {
@@ -160,7 +160,7 @@ public class PixeldrainComFolder extends PluginForDecrypt {
             if (fileitems.isEmpty()) {
                 throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER, "EMPTY_FOLDER_" + folderPath, "This folder exists but is empty.", null);
             }
-            final PluginForHost pixeldrainHosterplugin = this.getNewPluginForHostInstance(this.getHost());
+            final PluginForHost pixeldrainHosterplugin = this.getNewPluginForHostInstance(getHost());
             final String folderID = urlWithoutParamsRegex.getMatch(1);
             final String thisUrlPath = urlWithoutParamsRegex.getMatch(2);
             String rootFolderName = null;
@@ -250,10 +250,10 @@ public class PixeldrainComFolder extends PluginForDecrypt {
     }
 
     private String generateFileURL(final String fileID) {
-        return "https://" + this.getHost() + "/u/" + fileID;
+        return "https://" + getHost() + "/u/" + fileID;
     }
 
     private String generateContentURL(final String folderID, final int folderIndex) {
-        return "https://" + this.getHost() + "/l/" + folderID + "#item=" + folderIndex;
+        return "https://" + getHost() + "/l/" + folderID + "#item=" + folderIndex;
     }
 }

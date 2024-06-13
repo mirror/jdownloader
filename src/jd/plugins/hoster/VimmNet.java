@@ -24,7 +24,6 @@ import org.appwork.utils.StringUtils;
 
 import jd.PluginWrapper;
 import jd.parser.Regex;
-import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -116,7 +115,7 @@ public class VimmNet extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
-    public static void setFilename(final DownloadLink link) {
+    public static void setFilename(final DownloadLink link, final boolean isFinalName) {
         String preGivenFilename = link.getStringProperty(PROPERTY_PRE_GIVEN_FILENAME);
         if (StringUtils.isEmpty(preGivenFilename)) {
             /* This should never happen but can happen for older items which do not have this property. */
@@ -139,7 +138,11 @@ public class VimmNet extends PluginForHost {
         } else {
             filename = preGivenFilename;
         }
-        link.setFinalFileName(filename);
+        if (isFinalName) {
+            link.setFinalFileName(filename);
+        } else {
+            link.setName(filename);
+        }
     }
 
     @Override
@@ -149,53 +152,38 @@ public class VimmNet extends PluginForHost {
 
     private void handleDownload(final DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link);
-        final boolean useFormHandling = false;
         final int maxChunks = 1;
-        if (useFormHandling) {
-            /* Deprecated! */
-            Form dlform = null;
-            for (final Form form : br.getForms()) {
-                if (form.containsHTML("download_format")) {
-                    dlform = form;
-                    break;
-                }
-            }
-            if (dlform == null) {
+        /* 2024-06-13: This is always inside their html code (didn't bother adding more filters) */
+        final boolean looksLikeDownloadUnavailable = br.containsHTML(">\\s*Download unavailable");
+        try {
+            final String url = br.getRegex("\"([^\"]*download\\d+\\." + Pattern.quote(br.getHost(false)) + "/[^\"]*)\"").getMatch(0);
+            if (url == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlform, isResumeable(link, null), maxChunks);
-        } else {
-            try {
-                final String url = br.getRegex("\"([^\"]*download\\d+\\." + Pattern.quote(br.getHost(false)) + "/[^\"]*)\"").getMatch(0);
-                if (url == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                String mediaID = link.getStringProperty(PROPERTY_MEDIA_ID);
-                if (mediaID == null) {
-                    /*
-                     * Older items until including revision 48248 where target-mediaID was not pre-given in crawler as crawler didn't exist
-                     * yet.
-                     */
-                    mediaID = br.getRegex("name=\"mediaId\" value=\"(\\d+)").getMatch(0);
-                }
-                if (mediaID == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                String directurl = br.getURL(url).toExternalForm() + "?mediaId=" + mediaID;
-                final int format_id = link.getIntegerProperty(PROPERTY_FORMAT_ID, 0);
-                if (format_id != 0) {
-                    /* Download 2nd/alternative version */
-                    directurl += "&alt=1";
-                }
-                dl = jd.plugins.BrowserAdapter.openDownload(br, link, directurl, isResumeable(link, null), maxChunks);
-            } catch (final PluginException ple) {
-                final String downloadUnavailableReason = VimmNetCrawler.findDownloadUnavailableText(br);
-                if (downloadUnavailableReason != null) {
-                    /* Item is not downloadable. */
-                    throw new PluginException(LinkStatus.ERROR_FATAL, downloadUnavailableReason, ple);
-                } else {
-                    throw ple;
-                }
+            String mediaID = link.getStringProperty(PROPERTY_MEDIA_ID);
+            if (mediaID == null) {
+                /*
+                 * Older items until including revision 48248 where target-mediaID was not pre-given in crawler as crawler didn't exist yet.
+                 */
+                mediaID = br.getRegex("name=\"mediaId\" value=\"(\\d+)").getMatch(0);
+            }
+            if (mediaID == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            String directurl = br.getURL(url).toExternalForm() + "?mediaId=" + mediaID;
+            final int format_id = link.getIntegerProperty(PROPERTY_FORMAT_ID, 0);
+            if (format_id != 0) {
+                /* Download 2nd/alternative version */
+                directurl += "&alt=1";
+            }
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, directurl, isResumeable(link, null), maxChunks);
+        } catch (final PluginException ple) {
+            final String downloadUnavailableReason = VimmNetCrawler.findDownloadUnavailableText(br);
+            if (downloadUnavailableReason != null) {
+                /* Item is not downloadable. */
+                throw new PluginException(LinkStatus.ERROR_FATAL, downloadUnavailableReason, ple);
+            } else {
+                throw ple;
             }
         }
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
@@ -205,7 +193,11 @@ public class VimmNet extends PluginForHost {
             } else if (dl.getConnection().getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 5 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 5 * 60 * 1000l);
+                if (looksLikeDownloadUnavailable) {
+                    throw new PluginException(LinkStatus.ERROR_FATAL, "Download unavailable");
+                } else {
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 5 * 60 * 1000l);
+                }
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
