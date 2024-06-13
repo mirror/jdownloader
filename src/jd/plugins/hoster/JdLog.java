@@ -90,9 +90,9 @@ public class JdLog extends PluginForHost {
             @Override
             public Browser getContextBrowser() {
                 if (br == null) {
-                    return br.cloneBrowser();
-                } else {
                     return super.getContextBrowser();
+                } else {
+                    return br.cloneBrowser();
                 }
             }
 
