@@ -4,8 +4,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.regex.PatternSyntaxException;
 
 import org.appwork.storage.config.ValidationException;
 import org.appwork.storage.config.events.GenericConfigEventListener;
@@ -45,11 +45,11 @@ public class LinknameCleaner {
             /* not loaded yet */
         }
     }
-    public static final Pattern   pat13   = Pattern.compile("(part\\d+)", Pattern.CASE_INSENSITIVE);
-    public static final Pattern   pat17   = Pattern.compile("(.+)\\.\\d+\\.xtm($|\\.html?)");
-    public static final Pattern   pat18   = Pattern.compile("(.*)\\.isz($|\\.html?)", Pattern.CASE_INSENSITIVE);
-    public static final Pattern   pat19   = Pattern.compile("(.*)\\.i\\d{2}$", Pattern.CASE_INSENSITIVE);
-    public static final Pattern[] iszPats = new Pattern[] { pat18, pat19 };
+    public static final Pattern   pat13    = Pattern.compile("(part\\d+)", Pattern.CASE_INSENSITIVE);
+    public static final Pattern   pat17    = Pattern.compile("(.+)\\.\\d+\\.xtm($|\\.html?)");
+    public static final Pattern   pat18    = Pattern.compile("(.*)\\.isz($|\\.html?)", Pattern.CASE_INSENSITIVE);
+    public static final Pattern   pat19    = Pattern.compile("(.*)\\.i\\d{2}$", Pattern.CASE_INSENSITIVE);
+    public static final Pattern[] iszPats  = new Pattern[] { pat18, pat19 };
 
     public static enum EXTENSION_SETTINGS {
         KEEP,
@@ -57,8 +57,8 @@ public class LinknameCleaner {
         REMOVE_ALL
     }
 
-    private static volatile Map<Pattern, String> FILENAME_REPLACEMAP         = new HashMap<Pattern, String>();
-    private static volatile Map<Pattern, String> FILENAME_REPLACEMAP_DEFAULT = new HashMap<Pattern, String>();
+    private static volatile Map<Pattern, String> FILENAME_REPLACEMAP            = new HashMap<Pattern, String>();
+    private static volatile Map<Pattern, String> FILENAME_REPLACEMAP_DEFAULT    = new HashMap<Pattern, String>();
     static {
         final ObjectKeyHandler replaceMapKeyHandler = CFG_GENERAL.FILENAME_CHARACTER_REGEX_REPLACEMAP;
         replaceMapKeyHandler.getEventSender().addListener(new GenericConfigEventListener<Object>() {
@@ -94,15 +94,15 @@ public class LinknameCleaner {
 
     /** Converts given <String, String> Map to <Pattern, String> Map. */
     private static Map<Pattern, String> convertReplaceMap(final Map<String, String> replaceMap) {
-        if (replaceMap == null) {
+        if (replaceMap == null || replaceMap.size() == 0) {
             return null;
         }
         final Map<Pattern, String> ret = new HashMap<Pattern, String>();
         for (final Entry<String, String> entry : replaceMap.entrySet()) {
             if (StringUtils.isNotEmpty(entry.getKey()) && entry.getValue() != null) {
                 try {
-                    ret.put(Pattern.compile(entry.getKey()), entry.getValue());
-                } catch (final PatternSyntaxException e) {
+                    ret.put(Pattern.compile(entry.getKey()), Matcher.quoteReplacement(entry.getValue()));
+                } catch (final Exception e) {
                 }
             }
         }
@@ -112,7 +112,7 @@ public class LinknameCleaner {
     private static String replaceCharactersByMap(final String input, final Map<Pattern, String> forbiddenCharacterRegexReplaceMap) {
         if (input == null) {
             return null;
-        } else if (forbiddenCharacterRegexReplaceMap == null) {
+        } else if (forbiddenCharacterRegexReplaceMap == null || forbiddenCharacterRegexReplaceMap.size() == 0) {
             return input;
         }
         String newstr = input;
@@ -124,13 +124,13 @@ public class LinknameCleaner {
             if (replacement != null) {
                 try {
                     newstr = pattern.matcher(newstr).replaceAll(replacement);
-                } catch (final PatternSyntaxException e) {
+                } catch (final Exception e) {
                 }
             }
         }
         /**
-         * Users can put anything into that replace map. </br>
-         * Try to avoid the results of adding something like ".+" resulting in empty filenames.
+         * Users can put anything into that replace map. </br> Try to avoid the results of adding something like ".+" resulting in empty
+         * filenames.
          */
         if (!StringUtils.isEmpty(newstr)) {
             return newstr;
@@ -302,21 +302,6 @@ public class LinknameCleaner {
             return match;
         }
         return name;
-    }
-
-    public static int comparepackages(String a, String b) {
-        int c = 0;
-        String aa = a.toLowerCase();
-        String bb = b.toLowerCase();
-        for (int i = 0; i < Math.min(aa.length(), bb.length()); i++) {
-            if (aa.charAt(i) == bb.charAt(i)) {
-                c++;
-            }
-        }
-        if (Math.min(aa.length(), bb.length()) == 0) {
-            return 0;
-        }
-        return c * 100 / Math.max(aa.length(), bb.length());
     }
 
     private static String cutNameMatch(String name, Pattern pattern) {
