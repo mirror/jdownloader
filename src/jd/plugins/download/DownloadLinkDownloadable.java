@@ -644,26 +644,31 @@ public class DownloadLinkDownloadable implements Downloadable {
         final LogInterface logger = getLogger();
         final DownloadInterface dl = getDownloadInterface();
         final URLConnectionAdapter connection = getDownloadInterface().getConnection();
-        logger.info("FinalFileName is not set yet!");
+        // logger.info("FinalFileName is not set yet!");
         final DispositionHeader dispositonHeader = parseDispositionHeader(connection);
         String name = null;
-        if (finalFilename == null && dispositonHeader != null && StringUtils.isNotEmpty(name = dispositonHeader.getFilename())) {
-            /* Get filename from content-disposition header */
-            if (dl.fixWrongContentDispositionHeader && dispositonHeader.getEncoding() == null) {
-                name = decodeURIComponent(name, null);
+        if (dispositonHeader != null && StringUtils.isNotEmpty(name = dispositonHeader.getFilename())) {
+            /* Get filename from content-disposition header, do not modify it in any way */
+            if (finalFilename == null) {
+                if (dl.fixWrongContentDispositionHeader && dispositonHeader.getEncoding() == null) {
+                    name = decodeURIComponent(name, null);
+                }
+                logger.info("FinalFileName: set to '" + name + "' from connection:" + dispositonHeader + "|Content-Type:" + connection.getContentType() + "|fix:" + dl.fixWrongContentDispositionHeader);
+                setFinalFileName(name);
             }
-            logger.info("FinalFileName: set to '" + name + "' from connection:" + dispositonHeader + "|Content-Type:" + connection.getContentType() + "|fix:" + dl.fixWrongContentDispositionHeader);
-            setFinalFileName(name);
-        } else if (finalFilename == null && isAllowFilenameFromURL(connection) && StringUtils.isNotEmpty(name = getFileNameFromURL(connection))) {
+            return;
+        }
+        if (finalFilename == null && isAllowFilenameFromURL(connection) && StringUtils.isNotEmpty(name = getFileNameFromURL(connection))) {
             /* Get filename from URL */
             if (dl.fixWrongContentDispositionHeader) {
                 name = decodeURIComponent(name, null);
             }
             name = correctOrApplyFileNameExtension(name, connection);
-            logger.info("FinalFileName: set to '" + name + "' from url:" + connection.getURL().toString() + "|Content-Type:" + connection.getContentType() + "|fix:" + dl.fixWrongContentDispositionHeader);
+            logger.info("FinalFileName: set to '" + name + "' from url:" + connection.getURL().toExternalForm() + "|Content-Type:" + connection.getContentType() + "|fix:" + dl.fixWrongContentDispositionHeader);
             setFinalFileName(name);
-        } else if (StringUtils.isNotEmpty(name = getName())) {
-            /* Allow correction of extension even in 'final' filenames. */
+        } else if (StringUtils.isNotEmpty(getName())) {
+            /* Use pre given filename but correct extension if needed. */
+            name = getName();
             name = correctOrApplyFileNameExtension(name, connection);
             logger.info("FinalFileName: set to '" + name + "' from plugin");
             setFinalFileName(name);
