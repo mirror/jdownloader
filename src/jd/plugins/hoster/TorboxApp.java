@@ -342,7 +342,7 @@ public class TorboxApp extends PluginForHost {
             if (link != null) {
                 mhm.handleErrorGeneric(account, this.getDownloadLink(), errortext, 50, 5 * 60 * 1000l);
             } else {
-                throw Exceptions.addSuppressed(new AccountUnavailableException(errortext, 1 * 60 * 1000l), jme);
+                throw Exceptions.initCause(new AccountUnavailableException(errortext, 1 * 60 * 1000l), jme);
             }
         }
         return null;
