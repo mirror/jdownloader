@@ -32,6 +32,7 @@ import jd.http.Browser;
 import jd.http.CallbackAuthenticationFactory;
 import jd.http.DefaultAuthenticanFactory;
 import jd.http.Request;
+import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -39,6 +40,8 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+import jd.plugins.download.DownloadLinkDownloadable;
+import jd.plugins.download.Downloadable;
 import jd.utils.locale.JDL;
 
 import org.appwork.utils.StringUtils;
@@ -79,6 +82,25 @@ public class JdLog extends PluginForHost {
         final String uid = new Regex(link.getDownloadURL(), this.getSupportedLinks()).getMatch(0);
         link.setFinalFileName(uid + ".log");
         return AvailableStatus.TRUE;
+    }
+
+    @Override
+    public Downloadable newDownloadable(DownloadLink downloadLink, final Browser br) {
+        return new DownloadLinkDownloadable(downloadLink) {
+            @Override
+            public Browser getContextBrowser() {
+                if (br == null) {
+                    return br.cloneBrowser();
+                } else {
+                    return super.getContextBrowser();
+                }
+            }
+
+            @Override
+            protected String correctOrApplyFileNameExtension(String name, URLConnectionAdapter connection) {
+                return name;
+            }
+        };
     }
 
     @Override

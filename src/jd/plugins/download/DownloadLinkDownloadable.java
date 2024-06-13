@@ -693,7 +693,7 @@ public class DownloadLinkDownloadable implements Downloadable {
                 return;
             } else {
                 if (!StringUtils.equals(name, newFinalFilename)) {
-                    logger.info("updateFinalFileName: correct to '" + newFinalFilename + "' from '" + name + "'|Content-Type:" + connection.getContentType());
+                    logger.info("updateFinalFileName: correct from '" + name + "' to '" + newFinalFilename + "'|Content-Type:" + connection.getContentType());
                 }
                 setFinalFileName(newFinalFilename);
             }
