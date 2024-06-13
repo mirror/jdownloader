@@ -59,9 +59,9 @@ public interface ContainerConfig extends ConfigInterface {
     void setDeleteContainerFilesAfterAddingThemAction(ContainerDeleteOption action);
 
     @DefaultJsonObject("[]")
-    @DefaultOnNull
     @AboutConfig
     @DescriptionForConfigEntry("A list of passwords for automatic handling of .SFDL FTP containers.")
+    @DefaultOnNull
     List<String> getSFDLContainerPasswordList();
 
     void setSFDLContainerPasswordList(List<String> list);
