@@ -5,23 +5,13 @@ import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.regex.Pattern;
 
 import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import javax.xml.parsers.DocumentBuilder;
-
-import org.appwork.storage.config.JsonConfig;
-import org.appwork.uio.CloseReason;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.XML;
-import org.appwork.utils.encoding.Base64;
-import org.jdownloader.gui.dialog.AskContainerPasswordDialog;
-import org.jdownloader.gui.dialog.AskContainerPasswordDialogInterface;
-import org.w3c.dom.Document;
-import org.w3c.dom.NodeList;
 
 import jd.controlling.container.ContainerConfig;
 import jd.controlling.linkcrawler.ArchiveInfo;
@@ -33,6 +23,17 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
 import jd.plugins.PluginException;
 import jd.plugins.PluginsC;
+
+import org.appwork.storage.config.JsonConfig;
+import org.appwork.uio.CloseReason;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.XML;
+import org.appwork.utils.encoding.Base64;
+import org.jdownloader.gui.dialog.AskContainerPasswordDialog;
+import org.jdownloader.gui.dialog.AskContainerPasswordDialogInterface;
+import org.w3c.dom.Document;
+import org.w3c.dom.NodeList;
 
 public class SFDL extends PluginsC {
     /* Documentation: https://github.com/n0ix/SFDL.NET/wiki/How-it-Works-(SFDL-File-documentation) */
@@ -80,7 +81,7 @@ public class SFDL extends PluginsC {
             String validpassword = null;
             if (sdfl_Encrypted) {
                 logger.info("SFDL is password protected");
-                final List<String> pwlist = CFG.getSFDLContainerPasswordList();
+                final List<String> pwlist = getSFDLPasswordList();
                 if (passwordFromFilename != null) {
                     /* If password is given inside filename, try this one first. */
                     pwlist.remove(passwordFromFilename);
@@ -239,6 +240,38 @@ public class SFDL extends PluginsC {
         }
     }
 
+    /** Adds valid SFDL container password to list of container passwords. */
+    protected void addPassword(final String pw) {
+        if (StringUtils.isEmpty(pw)) {
+            return;
+        }
+        synchronized (PWLOCK) {
+            final List<String> ret = getSFDLPasswordList();
+            if (ret.indexOf(pw) == 0) {
+                /* already at first position */
+                return;
+            } else {
+                /* avoid duplicates */
+                ret.remove(pw);
+                /* Add valid password to first position */
+                ret.add(0, pw);
+                CFG.setSFDLContainerPasswordList(ret);
+            }
+        }
+    }
+
+    protected List<String> getSFDLPasswordList() {
+        synchronized (PWLOCK) {
+            List<String> ret = CFG.getSFDLContainerPasswordList();
+            if (ret == null || ret.size() == 0) {
+                ret = new CopyOnWriteArrayList<String>();
+            } else if (!(ret instanceof CopyOnWriteArrayList)) {
+                ret = new CopyOnWriteArrayList<String>(ret);
+            }
+            return ret;
+        }
+    }
+
     /** Asks user for container password. */
     public String getUserInputContainerPassword(final File file) throws PluginException {
         // TODO: Maybe throw exception on abort
@@ -248,21 +281,6 @@ public class SFDL extends PluginsC {
             return password;
         } else {
             return null;
-        }
-    }
-
-    /** Adds valid SFDL container password to list of container passwords. */
-    public void addPassword(final String pw) {
-        if (StringUtils.isEmpty(pw)) {
-            return;
-        }
-        synchronized (PWLOCK) {
-            final List<String> pwList = CFG.getSFDLContainerPasswordList();
-            /* avoid duplicates */
-            pwList.remove(pw);
-            /* Add valid password to first position */
-            pwList.add(0, pw);
-            CFG.setSFDLContainerPasswordList(pwList);
         }
     }
 
