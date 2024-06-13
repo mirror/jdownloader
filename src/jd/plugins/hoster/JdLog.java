@@ -22,6 +22,15 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.net.URLHelper;
+import org.jdownloader.auth.AuthenticationController;
+import org.jdownloader.auth.AuthenticationInfo;
+import org.jdownloader.auth.AuthenticationInfo.Type;
+import org.jdownloader.auth.Login;
+import org.jdownloader.jdserv.JDServUtils;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.controlling.downloadcontroller.DownloadSession;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
@@ -44,15 +53,6 @@ import jd.plugins.download.DownloadLinkDownloadable;
 import jd.plugins.download.Downloadable;
 import jd.utils.locale.JDL;
 
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.net.URLHelper;
-import org.jdownloader.auth.AuthenticationController;
-import org.jdownloader.auth.AuthenticationInfo;
-import org.jdownloader.auth.AuthenticationInfo.Type;
-import org.jdownloader.auth.Login;
-import org.jdownloader.jdserv.JDServUtils;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 /**
  * Alternative AppWork log downloader
  *
@@ -63,7 +63,7 @@ import org.jdownloader.plugins.controller.LazyPlugin;
 public class JdLog extends PluginForHost {
     @Override
     public String getAGBLink() {
-        return "";
+        return "https://jdownloader.org/impressum";
     }
 
     public JdLog(PluginWrapper wrapper) {
@@ -71,8 +71,13 @@ public class JdLog extends PluginForHost {
     }
 
     @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.INTERNAL };
+    }
+
+    @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return Integer.MAX_VALUE;
     }
 
     @SuppressWarnings("deprecation")
@@ -84,6 +89,7 @@ public class JdLog extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    /** Small hack to prevent file extension from being corrected from .log to .log.txt. */
     @Override
     public Downloadable newDownloadable(DownloadLink downloadLink, final Browser br) {
         return new DownloadLinkDownloadable(downloadLink) {
@@ -246,11 +252,6 @@ public class JdLog extends PluginForHost {
 
     @Override
     public void resetDownloadlink(DownloadLink link) {
-    }
-
-    @Override
-    public LazyPlugin.FEATURE[] getFeatures() {
-        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.INTERNAL };
     }
 
     @Override

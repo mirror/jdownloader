@@ -20,6 +20,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -30,9 +33,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class PdfdriveCom extends PluginForHost {
@@ -70,10 +70,9 @@ public class PdfdriveCom extends PluginForHost {
     }
 
     /* Connection stuff */
-    private static final boolean FREE_RESUME       = true;
+    private static final boolean FREE_RESUME    = true;
     /* 2020-12-01: More chunks possible but let's not stress their servers too much. */
-    private static final int     FREE_MAXCHUNKS    = 1;
-    private static final int     FREE_MAXDOWNLOADS = 20;
+    private static final int     FREE_MAXCHUNKS = 1;
 
     @Override
     public String getLinkID(final DownloadLink link) {
@@ -89,7 +88,7 @@ public class PdfdriveCom extends PluginForHost {
         return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(1);
     }
 
-    private String getNameURL(final String url) {
+    private String getTitleSlugFromURL(final String url) {
         return new Regex(url, this.getSupportedLinks()).getMatch(0);
     }
 
@@ -105,7 +104,7 @@ public class PdfdriveCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         /* Grab temp. name from URL - set final filename on downloadstart. */
-        String filename = getNameURL(link.getPluginPatternMatcher()).replace("-", " ");
+        String filename = getTitleSlugFromURL(link.getPluginPatternMatcher()).replace("-", " ").trim();
         if (!link.isNameSet()) {
             /* Fallback */
             link.setName(filename + ".pdf");
@@ -148,7 +147,7 @@ public class PdfdriveCom extends PluginForHost {
             dllink = br.getRegex("\"(/download\\.pdf[^\"]+ext=pdf[^\"]*)\"").getMatch(0);
             if (dllink == null) {
                 /* E.g. externally hosted */
-                dllink = br.getRegex("href=\"(https?://[^\"]+)\" target=\"_blank\"[^>]*>\\s*Go to PDF").getMatch(0);
+                dllink = br.getRegex("href=\"(https?://[^\"]+)\"[^>]*>\\s*Go to PDF").getMatch(0);
             }
             if (StringUtils.isEmpty(dllink)) {
                 logger.warning("Failed to find final downloadurl");
@@ -162,14 +161,14 @@ public class PdfdriveCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
             } else if (dl.getConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
-            } else if (br.toString().length() <= 100) {
+            } else if (br.getRequest().getHtmlCode().length() <= 100) {
                 /* Text errormessage e.g. 'Preview not available for this file, try downloading instead' --> Broken file/download */
-                throw new PluginException(LinkStatus.ERROR_FATAL, br.toString());
+                throw new PluginException(LinkStatus.ERROR_FATAL, br.getRequest().getHtmlCode());
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
+        link.setProperty(directlinkproperty, dl.getConnection().getURL().toExternalForm());
         dl.startDownload();
     }
 
@@ -183,7 +182,11 @@ public class PdfdriveCom extends PluginForHost {
                 con = br2.openHeadConnection(dllink);
                 if (this.looksLikeDownloadableContent(con)) {
                     if (con.getCompleteContentLength() > 0) {
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                        if (con.isContentDecoded()) {
+                            link.setDownloadSize(con.getCompleteContentLength());
+                        } else {
+                            link.setVerifiedFileSize(con.getCompleteContentLength());
+                        }
                     }
                     return dllink;
                 } else {
@@ -208,7 +211,7 @@ public class PdfdriveCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return FREE_MAXDOWNLOADS;
+        return Integer.MAX_VALUE;
     }
 
     @Override
