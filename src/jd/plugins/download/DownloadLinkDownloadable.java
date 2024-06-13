@@ -14,7 +14,6 @@ import java.util.zip.CRC32;
 import java.util.zip.CheckedInputStream;
 import java.util.zip.Checksum;
 
-import org.appwork.utils.DebugMode;
 import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
@@ -641,9 +640,6 @@ public class DownloadLinkDownloadable implements Downloadable {
 
     @Override
     public void updateFinalFileName() {
-        if (getFinalFileName() != null && DebugMode.TRUE_IN_IDE_ELSE_FALSE == false) {
-            return;
-        }
         final String finalFilename = getFinalFileName();
         final LogInterface logger = getLogger();
         final DownloadInterface dl = getDownloadInterface();
