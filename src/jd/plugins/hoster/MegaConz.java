@@ -388,7 +388,7 @@ public class MegaConz extends PluginForHost {
                                 handler.throwCloseExceptions();
                                 response = apiRequest(account, null, null, "us"/* logIn */, new Object[] { "user"/* email */, lowerCaseEmail }, new Object[] { "uh"/* emailHash */, uh }, new Object[] { "mfa"/* ping */, handler.getText() });
                             } catch (DialogNoAnswerException e2) {
-                                throw Exceptions.initCause(e, e2);
+                                throw Exceptions.addSuppressed(e, e2);
                             }
                         } else {
                             throw e;
