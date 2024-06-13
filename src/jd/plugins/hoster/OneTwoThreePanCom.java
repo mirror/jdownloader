@@ -32,6 +32,7 @@ import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
+import jd.plugins.Account;
 import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
@@ -47,7 +48,6 @@ import jd.plugins.decrypter.OneTwoThreePanComFolder;
 public class OneTwoThreePanCom extends PluginForHost {
     public OneTwoThreePanCom(PluginWrapper wrapper) {
         super(wrapper);
-        // this.enablePremium("");
     }
 
     @Override
@@ -83,22 +83,21 @@ public class OneTwoThreePanCom extends PluginForHost {
         return ret.toArray(new String[0]);
     }
 
-    /* Connection stuff */
-    private final boolean      FREE_RESUME             = true;
-    private final int          FREE_MAXCHUNKS          = 0;
-    private final int          FREE_MAXDOWNLOADS       = -1;
-    // private final boolean ACCOUNT_FREE_RESUME = true;
-    // private final int ACCOUNT_FREE_MAXCHUNKS = 0;
-    // private final int ACCOUNT_FREE_MAXDOWNLOADS = -1;
-    // private final boolean ACCOUNT_PREMIUM_RESUME = true;
-    // private final int ACCOUNT_PREMIUM_MAXCHUNKS = 0;
-    // private final int ACCOUNT_PREMIUM_MAXDOWNLOADS = -1;
     public static final String PROPERTY_FILENAME       = "webapifilename";
     public static final String PROPERTY_ETAG           = "etag";
     public static final String PROPERTY_S3KEYFLAG      = "s3keyflag";
     public static final String PROPERTY_SIZEBYTES      = "sizebytes";
     public static final String PROPERTY_PARENT_FILE_ID = "parent_file_id";
     public static final String PROPERTY_DIRECTURL      = "directurl";
+
+    @Override
+    public boolean isResumeable(final DownloadLink link, final Account account) {
+        return true;
+    }
+
+    public int getMaxChunks(final DownloadLink link, final Account account) {
+        return -2;
+    }
 
     @Override
     public String getLinkID(final DownloadLink link) {
@@ -200,7 +199,7 @@ public class OneTwoThreePanCom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        handleDownload(link, FREE_RESUME, FREE_MAXCHUNKS);
+        handleDownload(link, this.isResumeable(link, null), this.getMaxChunks(link, null));
     }
 
     public static void setEtag(final DownloadLink link, final String etag) {
@@ -268,7 +267,7 @@ public class OneTwoThreePanCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return FREE_MAXDOWNLOADS;
+        return Integer.MAX_VALUE;
     }
 
     @Override

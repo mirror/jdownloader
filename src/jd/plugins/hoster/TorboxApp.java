@@ -21,6 +21,16 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.storage.JSonMapperException;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Exceptions;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Request;
@@ -37,16 +47,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
-
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.storage.JSonMapperException;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Exceptions;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "torbox.app" }, urls = { "" })
 public class TorboxApp extends PluginForHost {
@@ -92,8 +92,8 @@ public class TorboxApp extends PluginForHost {
 
     public int getMaxChunks(final DownloadLink link, final Account account) {
         /**
-         * 2024-06-12: Max 16 total connections according to admin. </br> We'll be doing it this way right know, knowing that the user can
-         * easily try to exceed that limit with JDownloader.
+         * 2024-06-12: Max 16 total connections according to admin. </br>
+         * We'll be doing it this way right know, knowing that the user can easily try to exceed that limit with JDownloader.
          */
         return -16;
     }
@@ -141,7 +141,8 @@ public class TorboxApp extends PluginForHost {
     @Override
     public void handleMultiHost(final DownloadLink link, final Account account) throws Exception {
         final String directlinkproperty = this.getPropertyKey("directlink");
-        final String storedDirecturl = link.getStringProperty(directlinkproperty);
+        String storedDirecturl = link.getStringProperty(directlinkproperty);
+        storedDirecturl = null;
         final String dllink;
         if (storedDirecturl != null) {
             logger.info("Trying to re-use stored directurl: " + storedDirecturl);
@@ -159,7 +160,7 @@ public class TorboxApp extends PluginForHost {
                 logger.info("Re-using stored internal fileID: " + stored_file_id);
                 file_id = stored_file_id;
             } else {
-                logger.info("Creating internal file_id");
+                logger.info("Creating or finding internal file_id");
                 final Request req_createwebdownload = br.createPostRequest(API_BASE + "/webdl/createwebdownload", "link=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)));
                 final Map<String, Object> entries = (Map<String, Object>) this.callAPI(req_createwebdownload, account, link);
                 // hash, auth_id
@@ -178,15 +179,31 @@ public class TorboxApp extends PluginForHost {
              * 2024-06-11: Looks like this doesn't work or it needs some time until cached items get listed as cached so at this moment
              * let's not do this and try downloading straight away.
              */
-            final boolean doCachecheck = false;
+            final boolean doCachecheck = true;
             if (doCachecheck) {
+                /* Items need to be cached before they can be downloaded -> Check cache status */
                 logger.info("Checking downloadability of internal file_id: " + file_id + " | hash: " + hash);
                 final UrlQuery query_checkcached = new UrlQuery();
                 query_checkcached.add("hash", hash);
-                query_checkcached.add("format", "list");
+                query_checkcached.add("format", "object");
+                /* 2024-06-13: Use this for now to avoid problems with outdated response from this API call. */
+                query_checkcached.add("bypass_cache", "true");
                 final Request req_checkcached = br.createGetRequest(API_BASE + "/webdl/checkcached?" + query_checkcached.toString());
-                final Map<String, Object> resp_checkcached = (Map<String, Object>) this.callAPI(req_checkcached, account, link);
-                final Map<String, Object> cachemap = (Map<String, Object>) resp_checkcached.get(hash);
+                final Object resp_checkcached = this.callAPI(req_checkcached, account, link);
+                Map<String, Object> cachemap = null;
+                if (resp_checkcached instanceof Map) {
+                    cachemap = (Map<String, Object>) ((Map<String, Object>) resp_checkcached).get(hash);
+                } else {
+                    /* Assume we got a list -> Find cache-map */
+                    final List<Map<String, Object>> cacheitems = (List<Map<String, Object>>) resp_checkcached;
+                    for (final Map<String, Object> cacheitem : cacheitems) {
+                        final String thishash = cacheitem.get("hash").toString();
+                        if (thishash.equals(hash)) {
+                            cachemap = cacheitem;
+                            break;
+                        }
+                    }
+                }
                 if (cachemap == null) {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverside download is not yet ready", 30 * 1000);
                 }
@@ -222,9 +239,11 @@ public class TorboxApp extends PluginForHost {
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         final Map<String, Object> user = login(account, true);
+        /* Use shorter timeout than usually to make notification system work in a better way (see end of this function). */
+        account.setRefreshTimeout(5 * 60 * 1000l);
         /**
-         * In GUI, used only needs to enter API key so we'll set the username for him here. </br> This is also important to be able to keep
-         * the user from adding the same account multiple times.
+         * In GUI, used only needs to enter API key so we'll set the username for him here. </br>
+         * This is also important to be able to keep the user from adding the same account multiple times.
          */
         account.setUser(user.get("email").toString());
         final int planID = ((Number) user.get("plan")).intValue();
@@ -265,12 +284,14 @@ public class TorboxApp extends PluginForHost {
         }
         ai.setMultiHostSupport(this, supportedHosts);
         account.setConcurrentUsePossible(true);
+        /* Handle notifications */
         final boolean enableNotifications = true;
         if (enableNotifications) {
             long highestNotificationTimestamp = 0;
             try {
                 final long timestampNotificationsDisplayed = account.getLongProperty(PROPERTY_ACCOUNT_NOTIFICATIONS_DISPLAYED_UNTIL_TIMESTAMP, 0);
                 final Request req_notifications = br.createGetRequest(API_BASE + "/notifications/mynotifications");
+                /* Note: 2024-06-13: There is no serverside limit of number of notofications that can be returned here. */
                 final List<Map<String, Object>> notifications = (List<Map<String, Object>>) this.callAPI(req_notifications, account, null);
                 int counterDisplayed = 0;
                 for (final Map<String, Object> notification : notifications) {
@@ -291,6 +312,10 @@ public class TorboxApp extends PluginForHost {
                 }
                 logger.info("Total number of notifications: " + notifications.size() + " | Displayed this run: " + counterDisplayed);
             } catch (final Exception e) {
+                /*
+                 * Ignore exception as the important part [the account-check] was successful and we don't care about a failure at this
+                 * point.
+                 */
                 logger.log(e);
                 logger.warning("Exception happened in notification handling");
             } finally {

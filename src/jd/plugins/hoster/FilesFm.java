@@ -45,9 +45,8 @@ public class FilesFm extends PluginForHost {
     }
 
     /* Connection stuff */
-    private static final boolean FREE_RESUME       = true;
-    private static final int     FREE_MAXCHUNKS    = 1;
-    private static final int     FREE_MAXDOWNLOADS = 20;
+    private static final boolean FREE_RESUME    = true;
+    private static final int     FREE_MAXCHUNKS = 1;
 
     // private static final boolean ACCOUNT_FREE_RESUME = true;
     // private static final int ACCOUNT_FREE_MAXCHUNKS = 0;
@@ -102,6 +101,7 @@ public class FilesFm extends PluginForHost {
             if (con.getURL().toExternalForm().contains("/private")) {
                 // https://files.fm/thumb_show.php?i=wfslpuh&n=20140908_073035.jpg&refresh1
                 /* Maybe we have a picture without official "Download" button ... */
+                logger.info("Checking for picture content without official download button");
                 dllink = "https://files.fm/thumb_show.php" + linkpart + "&refresh1";
                 con = brc.openHeadConnection(dllink);
             }
@@ -123,7 +123,7 @@ public class FilesFm extends PluginForHost {
                  * the .torrent file so the user can manually download it using a Torrent client.
                  */
                 logger.info("File is only available via torrent");
-                dllink = String.format("https://files.fm/torrent/get_torrent.php?file_hash=%s", linkid);
+                dllink = String.format("https://%s/torrent/get_torrent.php?file_hash=%s", getHost(), linkid);
                 String filename = null;
                 try {
                     final String jsonFileInfo = br.getRegex("objMainShareParams = (\\{.*?\\});").getMatch(0);
@@ -158,7 +158,11 @@ public class FilesFm extends PluginForHost {
                 } else if (filename_url != null) {
                     link.setFinalFileName(filename_url);
                 }
-                link.setVerifiedFileSize(con.getCompleteContentLength());
+                if (con.isContentDecoded()) {
+                    link.setDownloadSize(con.getCompleteContentLength());
+                } else {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                }
             }
         } finally {
             try {
@@ -172,22 +176,21 @@ public class FilesFm extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link);
-        doFree(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+        doFree(link, FREE_RESUME, FREE_MAXCHUNKS);
     }
 
-    private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+    private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks) throws Exception, PluginException {
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        link.setProperty(directlinkproperty, dllink);
         dl.startDownload();
     }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return FREE_MAXDOWNLOADS;
+        return Integer.MAX_VALUE;
     }
 
     @Override

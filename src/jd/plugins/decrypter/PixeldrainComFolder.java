@@ -38,7 +38,6 @@ import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-import jd.plugins.hoster.DirectHTTP;
 import jd.plugins.hoster.PixeldrainCom;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
@@ -161,6 +160,7 @@ public class PixeldrainComFolder extends PluginForDecrypt {
             if (fileitems.isEmpty()) {
                 throw new DecrypterRetryException(RetryReason.EMPTY_FOLDER, "EMPTY_FOLDER_" + folderPath, "This folder exists but is empty.", null);
             }
+            final PluginForHost pixeldrainHosterplugin = this.getNewPluginForHostInstance(this.getHost());
             final String folderID = urlWithoutParamsRegex.getMatch(1);
             final String thisUrlPath = urlWithoutParamsRegex.getMatch(2);
             String rootFolderName = null;
@@ -199,8 +199,9 @@ public class PixeldrainComFolder extends PluginForDecrypt {
                     if (fileurl.startsWith("/")) {
                         fileurl = "/api/filesystem" + fileurl;
                     }
-                    fileurl = br.getURL(fileurl).toExternalForm() + "?attach";
-                    dl = this.createDownloadlink(DirectHTTP.createURLForThisPlugin(fileurl));
+                    // fileurl = br.getURL(fileurl).toExternalForm() + "?attach";
+                    fileurl = br.getURL(fileurl).toExternalForm();
+                    dl = this.createDownloadlink(fileurl);
                     dl.setFinalFileName(fileitem.get("name").toString());
                     dl.setDownloadSize(((Number) fileitem.get("file_size")).longValue());
                     dl.setSha256Hash(fileitem.get("sha256_sum").toString());
@@ -209,6 +210,8 @@ public class PixeldrainComFolder extends PluginForDecrypt {
                     }
                     /* We know that this file is online so we can set the AvailableStatus right away. */
                     dl.setAvailable(true);
+                    /* Make this item be handled by our pixeldrain hoster plugin. */
+                    dl.setDefaultPlugin(pixeldrainHosterplugin);
                     if (fp != null) {
                         dl._setFilePackage(fp);
                     }
