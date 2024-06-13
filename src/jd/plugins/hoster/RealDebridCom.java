@@ -192,7 +192,7 @@ public class RealDebridCom extends PluginForHost {
         try {
             return restoreFromString(json, type);
         } catch (final JSonMapperException e) {
-            throw Exceptions.initCause(new AccountUnavailableException("Bad API response", 5 * 60 * 1000l), e);
+            throw Exceptions.addSuppressed(new AccountUnavailableException("Bad API response", 5 * 60 * 1000l), e);
         }
     }
 

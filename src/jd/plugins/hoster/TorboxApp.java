@@ -21,15 +21,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.storage.JSonMapperException;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Exceptions;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Request;
@@ -46,6 +37,15 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.MultiHosterManagement;
+
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.storage.JSonMapperException;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Exceptions;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "torbox.app" }, urls = { "" })
 public class TorboxApp extends PluginForHost {
@@ -89,8 +89,8 @@ public class TorboxApp extends PluginForHost {
 
     public int getMaxChunks(final DownloadLink link, final Account account) {
         /**
-         * 2024-06-12: Max 16 total connections according to admin. </br>
-         * We'll be doing it this way right know, knowing that the user can easily try to exceed that limit with JDownloader.
+         * 2024-06-12: Max 16 total connections according to admin. </br> We'll be doing it this way right know, knowing that the user can
+         * easily try to exceed that limit with JDownloader.
          */
         return -16;
     }
@@ -134,10 +134,9 @@ public class TorboxApp extends PluginForHost {
             final Request req_createwebdownload = br.createPostRequest(API_BASE + "/webdl/createwebdownload", "link=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)));
             final Map<String, Object> entries = (Map<String, Object>) this.callAPI(req_createwebdownload, account, link);
             /**
-             * These two strings can be used to identify the unique item/link we just added. </br>
-             * We could cache them but instead we will simply rely on the API to do this for us. </br>
-             * Once a download was started successfully we save- and re-use the direct-URL, that should be enough - we do not want to
-             * overcomplicate things.
+             * These two strings can be used to identify the unique item/link we just added. </br> We could cache them but instead we will
+             * simply rely on the API to do this for us. </br> Once a download was started successfully we save- and re-use the direct-URL,
+             * that should be enough - we do not want to overcomplicate things.
              */
             final String file_id = entries.get("webdownload_id").toString();
             final String hash = entries.get("hash").toString();
@@ -208,8 +207,8 @@ public class TorboxApp extends PluginForHost {
         /* Use shorter timeout than usually to make notification system work in a better way (see end of this function). */
         account.setRefreshTimeout(5 * 60 * 1000l);
         /**
-         * In GUI, used only needs to enter API key so we'll set the username for him here. </br>
-         * This is also important to be able to keep the user from adding the same account multiple times.
+         * In GUI, used only needs to enter API key so we'll set the username for him here. </br> This is also important to be able to keep
+         * the user from adding the same account multiple times.
          */
         account.setUser(user.get("email").toString());
         final int planID = ((Number) user.get("plan")).intValue();
@@ -342,7 +341,7 @@ public class TorboxApp extends PluginForHost {
             if (link != null) {
                 mhm.handleErrorGeneric(account, this.getDownloadLink(), errortext, 50, 5 * 60 * 1000l);
             } else {
-                throw Exceptions.initCause(new AccountUnavailableException(errortext, 1 * 60 * 1000l), jme);
+                throw Exceptions.addSuppressed(new AccountUnavailableException(errortext, 1 * 60 * 1000l), jme);
             }
         }
         return null;

@@ -313,7 +313,7 @@ public class RapidbIt extends PluginForHost {
             if (this.getDownloadLink() != null) {
                 mhm.handleErrorGeneric(account, this.getDownloadLink(), "Bad API answer", 50, 5 * 60 * 1000l);
             } else {
-                throw Exceptions.initCause(new AccountUnavailableException("Bad API answer", 1 * 60 * 1000l), jme);
+                throw Exceptions.addSuppressed(new AccountUnavailableException("Bad API answer", 1 * 60 * 1000l), jme);
             }
         }
     }
