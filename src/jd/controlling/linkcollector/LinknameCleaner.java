@@ -8,6 +8,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.appwork.storage.config.ValidationException;
+import org.appwork.storage.config.annotations.AbstractValidator;
 import org.appwork.storage.config.events.GenericConfigEventListener;
 import org.appwork.storage.config.handler.KeyHandler;
 import org.appwork.storage.config.handler.ObjectKeyHandler;
@@ -90,6 +91,24 @@ public class LinknameCleaner {
         });
         PACKAGENAME_REPLACEMAP = convertReplaceMap((Map<String, String>) replaceMapKeyHandler.getValue());
         PACKAGENAME_REPLACEMAP_DEFAULT = convertReplaceMap((Map<String, String>) replaceMapKeyHandler.getDefaultValue());
+    }
+
+    public static class ReplaceMapValidator extends AbstractValidator<Map<String, String>> {
+        @Override
+        public void validate(KeyHandler<Map<String, String>> keyHandler, Map<String, String> value) throws ValidationException {
+            try {
+                for (final Entry<String, String> entry : value.entrySet()) {
+                    if (StringUtils.isNotEmpty(entry.getKey()) && entry.getValue() != null) {
+                        Pattern.compile(entry.getKey());
+                        Matcher.quoteReplacement(entry.getValue());
+                    }
+                }
+            } catch (ValidationException e) {
+                throw e;
+            } catch (Exception e) {
+                throw new ValidationException(e);
+            }
+        }
     }
 
     /** Converts given <String, String> Map to <Pattern, String> Map. */

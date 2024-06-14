@@ -1076,7 +1076,15 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                             final String downloadFolder;
                             if (dpi != null) {
                                 crawledPackageName = dpi.getName();
-                                downloadFolder = dpi.getDestinationFolder();
+                                String destinationFolder = dpi.getDestinationFolder();
+                                if (destinationFolder == null) {
+                                    // no download folder, check for custom default download folder
+                                    destinationFolder = dpi.getDestinationFolderRoot();
+                                } else if (!CrossSystem.isAbsolutePath(destinationFolder) && dpi.getDestinationFolderRoot() != null) {
+                                    // download folder is not absolute, combine with custom default download folder
+                                    destinationFolder = new File(dpi.getDestinationFolderRoot(), destinationFolder).getPath();
+                                }
+                                downloadFolder = destinationFolder;
                                 if (downloadFolder != null && ignoreSpecialPackages == false) {
                                     /** this regex cuts of trailing / and \ for equals check **/
                                     final String compareCustom = downloadFolder.replaceAll("(.+?)(/|\\\\)+$", "$1");

@@ -1,15 +1,22 @@
 package jd.controlling.linkcrawler;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class CrawledLinkModifiers implements CrawledLinkModifier {
-    private final List<CrawledLinkModifier> modifiers = new ArrayList<CrawledLinkModifier>();
+    private final List<CrawledLinkModifier> modifiers;
 
     public CrawledLinkModifiers(List<CrawledLinkModifier> modifiers) {
         if (modifiers != null) {
-            this.modifiers.addAll(modifiers);
+            this.modifiers = Collections.unmodifiableList(modifiers);
+        } else {
+            this.modifiers = Collections.unmodifiableList(new ArrayList<CrawledLinkModifier>(0));
         }
+    }
+
+    public List<CrawledLinkModifier> getCrawledLinkModifier() {
+        return modifiers;
     }
 
     @Override

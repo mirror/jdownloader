@@ -30,11 +30,11 @@ public class DownloadFolderModifier implements CrawledLinkModifier {
     @Override
     public boolean modifyCrawledLink(CrawledLink link) {
         PackageInfo existing = link.getDesiredPackageInfo();
-        if (overwriteFlag || existing == null || StringUtils.isEmpty(existing.getDestinationFolder())) {
+        if (overwriteFlag || existing == null || StringUtils.isEmpty(existing.getDestinationFolderRoot())) {
             if (existing == null) {
                 existing = new PackageInfo();
             }
-            existing.setDestinationFolder(folder);
+            existing.setDestinationFolderRoot(folder);
             if (overwriteFlag) {
                 existing.setIgnoreVarious(true);
             }

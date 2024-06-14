@@ -52,6 +52,7 @@ public class PackageInfo {
         final PackageInfo ret = new PackageInfo();
         ret.setName(getName());
         ret.setDestinationFolder(getDestinationFolder());
+        ret.setDestinationFolderRoot(getDestinationFolderRoot());
         ret.setIgnoreVarious(isIgnoreVarious());
         ret.setPackagizerRuleMatched(isPackagizerRuleMatched());
         ret.setUniqueId(getUniqueId());
@@ -81,8 +82,21 @@ public class PackageInfo {
         }
     }
 
-    private String name              = null;
-    private String destinationFolder = null;
+    public String getDestinationFolderRoot() {
+        return destinationFolderRoot;
+    }
+
+    public void setDestinationFolderRoot(String destinationFolderRoot) {
+        if (StringUtils.isEmpty(destinationFolderRoot)) {
+            this.destinationFolderRoot = null;
+        } else {
+            this.destinationFolderRoot = destinationFolderRoot;
+        }
+    }
+
+    private String name                  = null;
+    private String destinationFolder     = null;
+    private String destinationFolderRoot = null;
 
     /**
      * @return the packagizerRuleMatched
@@ -119,6 +133,6 @@ public class PackageInfo {
     }
 
     public boolean isNotEmpty() {
-        return ignoreVarious != null || packageKey != null || uniqueId != null || destinationFolder != null || name != null || packagizerRuleMatched;
+        return ignoreVarious != null || packageKey != null || uniqueId != null || destinationFolder != null || destinationFolderRoot != null || name != null || packagizerRuleMatched;
     }
 }
