@@ -20,6 +20,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -39,10 +43,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "newgrounds.com" }, urls = { "https?://(?:www\\.)?newgrounds\\.com/(?:portal/view/|audio/listen/)(\\d+)" })
 public class NewgroundsCom extends antiDDoSForHost {
@@ -64,8 +64,6 @@ public class NewgroundsCom extends antiDDoSForHost {
     /* Connection stuff */
     private static final boolean free_resume    = true;
     private static final int     free_maxchunks = 0;
-    /* 2017-02-02: Only 1 official (audio) download possible every 60 seconds. Else we will get error 429 */
-    private static final int     maxdownloads   = 1;
     private String               dllink         = null;
     private boolean              server_issues  = false;
 
@@ -305,48 +303,43 @@ public class NewgroundsCom extends antiDDoSForHost {
 
     public void login(final Account account, final boolean force) throws Exception {
         synchronized (account) {
-            try {
-                br.setFollowRedirects(true);
-                br.setCookiesExclusive(true);
-                final Cookies cookies = account.loadCookies("");
-                if (cookies != null) {
-                    logger.info("Attempting cookie login");
-                    this.br.setCookies(this.getHost(), cookies);
-                    if (!force) {
-                        /* Don't validate cookies */
-                        return;
-                    }
-                    br.getPage("https://www." + this.getHost() + "/social");
-                    if (this.isLoggedin(br)) {
-                        logger.info("Cookie login successful");
-                        /* Refresh cookie timestamp */
-                        account.saveCookies(this.br.getCookies(this.getHost()), "");
-                        return;
-                    } else {
-                        logger.info("Cookie login failed");
-                    }
+            br.setFollowRedirects(true);
+            br.setCookiesExclusive(true);
+            final Cookies cookies = account.loadCookies("");
+            if (cookies != null) {
+                logger.info("Attempting cookie login");
+                br.setCookies(cookies);
+                if (!force) {
+                    /* Don't validate cookies */
+                    return;
                 }
-                logger.info("Performing full login");
-                br.getPage("https://www." + this.getHost() + "/passport");
-                final Form loginform = br.getFormbyActionRegex(".*passport/.*");
-                if (loginform == null) {
-                    logger.warning("Failed to find loginform");
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                loginform.put("username", Encoding.urlEncode(account.getUser()));
-                loginform.put("password", Encoding.urlEncode(account.getPass()));
-                loginform.put("remember", "1");
-                br.submitForm(loginform);
-                if (!isLoggedin(br)) {
-                    throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                }
-                account.saveCookies(this.br.getCookies(this.getHost()), "");
-            } catch (final PluginException e) {
-                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                br.getPage("https://www." + this.getHost() + "/social");
+                if (this.isLoggedin(br)) {
+                    logger.info("Cookie login successful");
+                    /* Refresh cookie timestamp */
+                    account.saveCookies(br.getCookies(br.getHost()), "");
+                    return;
+                } else {
+                    logger.info("Cookie login failed");
+                    br.clearCookies(null);
                     account.clearCookies("");
                 }
-                throw e;
             }
+            logger.info("Performing full login");
+            br.getPage("https://www." + this.getHost() + "/passport");
+            final Form loginform = br.getFormbyActionRegex(".*passport/.*");
+            if (loginform == null) {
+                logger.warning("Failed to find loginform");
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            loginform.put("username", Encoding.urlEncode(account.getUser()));
+            loginform.put("password", Encoding.urlEncode(account.getPass()));
+            loginform.put("remember", "1");
+            br.submitForm(loginform);
+            if (!isLoggedin(br)) {
+                throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
+            }
+            account.saveCookies(br.getCookies(br.getHost()), "");
         }
     }
 
@@ -357,8 +350,8 @@ public class NewgroundsCom extends antiDDoSForHost {
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
         /* 2021-01-10: Accounts are mainly needed to download adult content. */
-        final AccountInfo ai = new AccountInfo();
         login(account, true);
+        final AccountInfo ai = new AccountInfo();
         ai.setUnlimitedTraffic();
         account.setType(AccountType.FREE);
         return ai;
@@ -371,7 +364,7 @@ public class NewgroundsCom extends antiDDoSForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return maxdownloads;
+        return 1;
     }
 
     @Override
@@ -381,7 +374,8 @@ public class NewgroundsCom extends antiDDoSForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return maxdownloads;
+        /* 2017-02-02: Only 1 official (audio) download possible every 60 seconds. Else we will get error 429 */
+        return 1;
     }
 
     @Override

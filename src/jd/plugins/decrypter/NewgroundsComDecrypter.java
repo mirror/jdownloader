@@ -41,6 +41,7 @@ import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.hoster.DirectHTTP;
 import jd.plugins.hoster.NewgroundsCom;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "newgrounds.com" }, urls = { "https?://(?:\\w+\\.)?newgrounds\\.com/(?:art|audio|movies|games)(/view/[A-Za-z0-9\\-_]+/[A-Za-z0-9\\-_]+)?/?$" })
@@ -67,7 +68,6 @@ public class NewgroundsComDecrypter extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final Account account = AccountController.getInstance().getValidAccount(this.getHost());
         if (account != null) {
             /* Login whenever possible */
@@ -82,8 +82,9 @@ public class NewgroundsComDecrypter extends PluginForDecrypt {
         } else if (br.containsHTML("(?i)>\\s*You must be logged in, and at least 18 years")) {
             throw new AccountRequiredException();
         }
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final Regex singleItem = new Regex(param.getCryptedUrl(), "/view/(.+)");
-        if (singleItem.matches()) {
+        if (singleItem.patternFind()) {
             /* Single item */
             /*
              * 2020-02-03: New: Such URLs may contain multiple URLs --> Crawl all of them. This linktype was initially handled in the
@@ -92,12 +93,12 @@ public class NewgroundsComDecrypter extends PluginForDecrypt {
             final String itemSlug = singleItem.getMatch(0);
             final FilePackage fp = FilePackage.getInstance();
             fp.setName(itemSlug);
-            final String[] pics = br.getRegex("\"(https?://art\\.ngfiles\\.com/(?:comments|images)/[^<>\"]+)\"").getColumn(0);
+            final String[] pics = br.getRegex("\"(https?://art\\.ngfiles\\.com/(?:comments|images|medium_views)/[^<>\"]+)\"").getColumn(0);
             if (pics == null || pics.length == 0) {
-                return null;
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             for (final String pic : pics) {
-                final DownloadLink dl = this.createDownloadlink("directhttp://" + pic);
+                final DownloadLink dl = this.createDownloadlink(DirectHTTP.createURLForThisPlugin(pic));
                 dl.setAvailable(true);
                 ret.add(dl);
                 dl._setFilePackage(fp);
