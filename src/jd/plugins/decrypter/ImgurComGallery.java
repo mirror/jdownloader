@@ -726,7 +726,6 @@ public class ImgurComGallery extends PluginForDecrypt {
             title = HTMLEntities.unhtmlAngleBrackets(title);
             title = HTMLEntities.unhtmlSingleQuotes(title);
             title = HTMLEntities.unhtmlDoubleQuotes(title);
-            title = encodeUnicode(title);
         }
         final String dateFormatted;
         if (!StringUtils.isEmpty(dateStr)) {

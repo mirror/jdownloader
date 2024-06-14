@@ -2352,7 +2352,6 @@ public class SaveTv extends PluginForHost {
             formattedFilename = formattedFilename.replace("*serientitel*", site_title);
             formattedFilename = formattedFilename.replace("*episodenname*", episodename);
         }
-        formattedFilename = plugin.encodeUnicode(formattedFilename);
         formattedFilename = fixCharIssues(formattedFilename);
         return formattedFilename;
     }
@@ -2411,7 +2410,6 @@ public class SaveTv extends PluginForHost {
              */
             formattedFilename = convertNormalDataToServer(formattedFilename);
             formattedFilename += ext;
-            formattedFilename = plugin.encodeUnicode(formattedFilename);
         }
         formattedFilename = fixCharIssues(formattedFilename);
         return formattedFilename;

@@ -310,7 +310,7 @@ public class FlickrComCrawler extends PluginForDecrypt {
                 df = new DecimalFormat(String.valueOf(totalNumberofItems).replaceAll("\\d", "0"));
                 album.setTotalNumberofItems(totalNumberofItems);
                 fp = FilePackage.getInstance();
-                fp.setName(encodeUnicode(this.getFormattedPackagename(album)));
+                fp.setName(this.getFormattedPackagename(album));
                 if (!StringUtils.isEmpty(album.getDescription())) {
                     fp.setComment(album.getDescription());
                 }

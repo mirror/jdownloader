@@ -78,7 +78,7 @@ public class BilibiliComDecrypter extends PluginForDecrypt {
         if (!parameter.contains("/bangumi/")) {
             String title = (String) JavaScriptEngineFactory.walkJson(entries, "videoData/title");
             FilePackage fp = FilePackage.getInstance();
-            fp.setName(encodeUnicode(title.trim()));
+            fp.setName(title.trim());
             List<Map<String, Object>> pages = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entries, "videoData/pages");
             String pageAssignment = new Regex(parameter, "/\\?p=(\\d+)").getMatch(0);
             if (pageAssignment != null && pages.size() > 1) {
@@ -98,7 +98,7 @@ public class BilibiliComDecrypter extends PluginForDecrypt {
                 } else {
                     String mt = (String) JavaScriptEngineFactory.walkJson(entries, "mediaInfo/chn_name");
                     FilePackage fp = FilePackage.getInstance();
-                    fp.setName(encodeUnicode(mt.trim()));
+                    fp.setName(mt.trim());
                     List<Map<String, Object>> episodes = (List<Map<String, Object>>) JavaScriptEngineFactory.walkJson(entries, "mediaInfo/episodes");
                     for (Map<String, Object> ep : episodes) {
                         String ei = (String) ep.get("index");
@@ -121,7 +121,7 @@ public class BilibiliComDecrypter extends PluginForDecrypt {
                     String title = String.format("%s EP%s %s", mt, ei, et);
                     String cid = String.valueOf(JavaScriptEngineFactory.walkJson(entries, "epInfo/cid"));
                     FilePackage fp = FilePackage.getInstance();
-                    fp.setName(encodeUnicode(title.trim()));
+                    fp.setName(title.trim());
                     createDLLinkBangumi(fp, decryptedLinks, title, seasonType, cid);
                 }
             }
@@ -164,7 +164,7 @@ public class BilibiliComDecrypter extends PluginForDecrypt {
             }
             fileName.append(".");
             fileName.append(ext);
-            dl.setFinalFileName(encodeUnicode(fileName.toString()));
+            dl.setFinalFileName(fileName.toString());
             dl.setDownloadSize(JavaScriptEngineFactory.toLong(durl.get("size"), -1));
             fp.add(dl);
             decryptedLinks.add(dl);
@@ -200,7 +200,7 @@ public class BilibiliComDecrypter extends PluginForDecrypt {
             }
             fileName.append(".");
             fileName.append(ext);
-            dl.setFinalFileName(encodeUnicode(fileName.toString()));
+            dl.setFinalFileName(fileName.toString());
             dl.setDownloadSize(JavaScriptEngineFactory.toLong(durl.get("size"), -1));
             fp.add(dl);
             decryptedLinks.add(dl);
@@ -215,24 +215,5 @@ public class BilibiliComDecrypter extends PluginForDecrypt {
             result = true;
         }
         return result;
-    }
-
-    @Override
-    public String encodeUnicode(final String input) {
-        if (input != null) {
-            String output = input;
-            output = output.replace(":", "：");
-            output = output.replace("|", "｜");
-            output = output.replace("<", "＜");
-            output = output.replace(">", "＞");
-            output = output.replace("/", "⁄");
-            output = output.replace("\\", "∖");
-            output = output.replace("*", "＊");
-            output = output.replace("?", "？");
-            output = output.replace("!", "！");
-            output = output.replace("\"", "”");
-            return output;
-        }
-        return null;
     }
 }

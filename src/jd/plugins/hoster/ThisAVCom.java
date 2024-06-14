@@ -15,6 +15,9 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -24,9 +27,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "thisav.com" }, urls = { "https?://(?:www\\.)?thisav\\.com/video/(\\d+)/" })
 public class ThisAVCom extends PluginForHost {
@@ -82,7 +82,6 @@ public class ThisAVCom extends PluginForHost {
             if (!filename.endsWith(DEFAULT_EXTENSION)) {
                 filename += DEFAULT_EXTENSION;
             }
-            filename = encodeUnicode(filename);
             link.setFinalFileName(filename);
         }
         String mpdUrl = br.getRegex("<source src=\"([^\"]+)\"[^>]+label=('|\")HD\\2").getMatch(0);
@@ -151,25 +150,6 @@ public class ThisAVCom extends PluginForHost {
             result = Long.parseLong(mediaRange[mediaRange.length - 1]);
         }
         return result;
-    }
-
-    @Override
-    public String encodeUnicode(final String input) {
-        if (input != null) {
-            String output = input;
-            output = output.replace(":", "：");
-            output = output.replace("|", "｜");
-            output = output.replace("<", "＜");
-            output = output.replace(">", "＞");
-            output = output.replace("/", "⁄");
-            output = output.replace("\\", "∖");
-            output = output.replace("*", "＊");
-            output = output.replace("?", "？");
-            output = output.replace("!", "！");
-            output = output.replace("\"", "”");
-            return output;
-        }
-        return null;
     }
 
     @Override

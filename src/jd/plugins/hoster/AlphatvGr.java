@@ -25,8 +25,6 @@ import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.plugins.components.hls.HlsContainer;
 
 import jd.PluginWrapper;
-import jd.config.ConfigContainer;
-import jd.config.ConfigEntry;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -42,7 +40,6 @@ import jd.plugins.components.PluginJSonUtils;
 public class AlphatvGr extends PluginForHost {
     public AlphatvGr(PluginWrapper wrapper) {
         super(wrapper);
-        // setConfigElements();
     }
 
     @Override
@@ -115,7 +112,6 @@ public class AlphatvGr extends PluginForHost {
         }
         filename += "alphatv_" + title + ".mp4";
         filename = Encoding.htmlDecode(filename).trim();
-        filename = encodeUnicodeStatic(filename);
         return filename;
     }
 
@@ -185,35 +181,13 @@ public class AlphatvGr extends PluginForHost {
         return new Regex(url, "shows?/([^/\\?&]+)").getMatch(0);
     }
 
-    private void setConfigElements() {
-        getConfig().addEntry(new ConfigEntry(ConfigContainer.TYPE_CHECKBOX, getPluginConfig(), "FAST_LINKCHECK", "Enable fast link check? (file name and size won't be shown correctly until downloadstart)").setDefaultValue(true));
-    }
-
-    public static String encodeUnicodeStatic(final String input) {
-        if (input != null) {
-            String output = input;
-            output = output.replace(":", ";");
-            output = output.replace("|", "¦");
-            output = output.replace("<", "[");
-            output = output.replace(">", "]");
-            output = output.replace("/", "⁄");
-            output = output.replace("\\", "∖");
-            output = output.replace("*", "#");
-            output = output.replace("?", "¿");
-            output = output.replace("!", "¡");
-            output = output.replace("\"", "'");
-            return output;
-        }
-        return null;
-    }
-
     @Override
     public void reset() {
     }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return Integer.MAX_VALUE;
     }
 
     @Override

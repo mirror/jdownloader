@@ -253,7 +253,6 @@ public class ArteMediathekV3 extends PluginForDecrypt {
         packageName = packageName.replace("*title*", title);
         packageName = packageName.replace("*subtitle*", subtitle != null ? subtitle : "");
         packageName = packageName.replace("*title_and_subtitle*", titleAndSubtitle);
-        packageName = this.encodeUnicode(packageName);
         final FilePackage fp = FilePackage.getInstance();
         fp.setCleanupPackageName(false);
         fp.setName(packageName);
@@ -478,13 +477,13 @@ public class ArteMediathekV3 extends PluginForDecrypt {
             if (ret.size() == 1 && thumbnailFilenameMode == ThumbnailFilenameMode.AUTO) {
                 /* Only one video result --> Use same filename as that result for thumbnail. */
                 final String filenameOfTheOnlyAddedVideo = ret.get(0).getFinalFileName();
-                thumbnail.setFinalFileName(encodeUnicode(filenameOfTheOnlyAddedVideo.substring(0, filenameOfTheOnlyAddedVideo.lastIndexOf(".")) + "." + extension));
+                thumbnail.setFinalFileName(filenameOfTheOnlyAddedVideo.substring(0, filenameOfTheOnlyAddedVideo.lastIndexOf(".")) + "." + extension);
             } else {
                 final FilenameSchemeType filenameSchemeType = cfg.getFilenameSchemeTypeV2();
                 if (filenameSchemeType == FilenameSchemeType.ORIGINAL) {
-                    thumbnail.setFinalFileName(encodeUnicode(mainImage.get("name").toString()));
+                    thumbnail.setFinalFileName(mainImage.get("name").toString());
                 } else {
-                    thumbnail.setFinalFileName(encodeUnicode(packageName + "." + extension));
+                    thumbnail.setFinalFileName(packageName + "." + extension);
                 }
                 if (!StringUtils.isEmpty(imageCaption)) {
                     thumbnail.setComment(imageCaption);
@@ -543,7 +542,7 @@ public class ArteMediathekV3 extends PluginForDecrypt {
         filename = filename.replace("*title*", link.getStringProperty(PROPERTY_TITLE));
         filename = filename.replace("*subtitle*", link.getStringProperty(PROPERTY_SUBTITLE, ""));
         filename = filename.replace("*title_and_subtitle*", link.getStringProperty(PROPERTY_TITLE_AND_SUBTITLE));
-        link.setFinalFileName(encodeUnicode(filename));
+        link.setFinalFileName(filename);
         return filename;
     }
 

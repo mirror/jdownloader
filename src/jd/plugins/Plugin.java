@@ -35,31 +35,6 @@ import java.util.regex.Pattern;
 
 import javax.swing.Icon;
 
-import jd.PluginWrapper;
-import jd.config.ConfigContainer;
-import jd.config.SubConfiguration;
-import jd.controlling.accountchecker.AccountChecker.AccountCheckJob;
-import jd.controlling.accountchecker.AccountCheckerThread;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.linkchecker.LinkCheckerThread;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.LinkCrawler;
-import jd.controlling.linkcrawler.LinkCrawler.LinkCrawlerGeneration;
-import jd.controlling.linkcrawler.LinkCrawlerDeepInspector;
-import jd.controlling.linkcrawler.LinkCrawlerThread;
-import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
-import jd.controlling.reconnect.ipcheck.IPCheckException;
-import jd.controlling.reconnect.ipcheck.OfflineException;
-import jd.http.Browser;
-import jd.http.Browser.BrowserException;
-import jd.http.BrowserSettingsThread;
-import jd.http.ProxySelectorInterface;
-import jd.http.StaticProxySelector;
-import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
-import jd.plugins.components.SiteType.SiteTemplate;
-import jd.utils.JDUtilities;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.storage.JSonMapperException;
@@ -109,6 +84,31 @@ import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.plugins.controller.host.PluginFinder;
 import org.jdownloader.settings.staticreferences.CFG_CAPTCHA;
 import org.jdownloader.translate._JDT;
+
+import jd.PluginWrapper;
+import jd.config.ConfigContainer;
+import jd.config.SubConfiguration;
+import jd.controlling.accountchecker.AccountChecker.AccountCheckJob;
+import jd.controlling.accountchecker.AccountCheckerThread;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.linkchecker.LinkCheckerThread;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.LinkCrawler;
+import jd.controlling.linkcrawler.LinkCrawler.LinkCrawlerGeneration;
+import jd.controlling.linkcrawler.LinkCrawlerDeepInspector;
+import jd.controlling.linkcrawler.LinkCrawlerThread;
+import jd.controlling.reconnect.ipcheck.BalancedWebIPCheck;
+import jd.controlling.reconnect.ipcheck.IPCheckException;
+import jd.controlling.reconnect.ipcheck.OfflineException;
+import jd.http.Browser;
+import jd.http.Browser.BrowserException;
+import jd.http.BrowserSettingsThread;
+import jd.http.ProxySelectorInterface;
+import jd.http.StaticProxySelector;
+import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
+import jd.plugins.components.SiteType.SiteTemplate;
+import jd.utils.JDUtilities;
 
 /**
  * Diese abstrakte Klasse steuert den Zugriff auf weitere Plugins. Alle Plugins müssen von dieser Klasse abgeleitet werden.
@@ -440,8 +440,9 @@ public abstract class Plugin implements ActionListener {
     }
 
     /**
-     * Corrects extension of given filename. Adds extension if it is missing. Returns null if given filename is null. </br> Pass
-     * fileExtension with dot(s) to this! </br> Only replaces extensions with one dot e.g. ".mp4", NOT e.g. ".tar.gz".
+     * Corrects extension of given filename. Adds extension if it is missing. Returns null if given filename is null. </br>
+     * Pass fileExtension with dot(s) to this! </br>
+     * Only replaces extensions with one dot e.g. ".mp4", NOT e.g. ".tar.gz".
      *
      * @param filenameOrg
      *            Original filename
@@ -759,26 +760,6 @@ public abstract class Plugin implements ActionListener {
         final File dest = JDUtilities.getResourceFile("captchas/" + this.getHost() + "_" + date + extension, true);
         cleanUpCaptchaFiles.addIfAbsent(dest);
         return dest;
-    }
-
-    /** TODO: Remove this once this is done: https://svn.jdownloader.org/issues/83699 */
-    @Deprecated
-    public String encodeUnicode(final String input) {
-        if (input != null) {
-            String output = input;
-            output = output.replace(":", ";");
-            output = output.replace("|", "¦");
-            output = output.replace("<", "[");
-            output = output.replace(">", "]");
-            output = output.replace("/", "⁄");
-            output = output.replace("\\", "∖");
-            output = output.replace("*", "#");
-            output = output.replace("?", "¿");
-            output = output.replace("!", "¡");
-            output = output.replace("\"", "'");
-            return output;
-        }
-        return null;
     }
 
     /**
@@ -1126,9 +1107,10 @@ public abstract class Plugin implements ActionListener {
     }
 
     /**
-     * Displays a BubbleNotification. </br> Plugins which are expected to use this function should return LazyPlugin.FEATURE of type
-     * BUBBLE_NOTIFICATION. </br> Any plugin can try to display a BubbleNotification but upper handling may decide not to display it
-     * depending on user settings. </br> Examples of Plugins using this functionality: RedditComCrawler, TwitterComCrawler, HighWayCore
+     * Displays a BubbleNotification. </br>
+     * Plugins which are expected to use this function should return LazyPlugin.FEATURE of type BUBBLE_NOTIFICATION. </br>
+     * Any plugin can try to display a BubbleNotification but upper handling may decide not to display it depending on user settings. </br>
+     * Examples of Plugins using this functionality: RedditComCrawler, TwitterComCrawler, HighWayCore
      */
     protected void displayBubbleNotification(final String title, final String text, final Icon icon) {
         BubbleNotify.getInstance().show(new AbstractNotifyWindowFactory() {
