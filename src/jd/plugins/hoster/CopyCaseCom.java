@@ -277,19 +277,7 @@ public class CopyCaseCom extends PluginForHost {
                 /* Ask user for 2FA login code and try again. */
                 logger.info("2FA code required");
                 required2FALogin = true;
-                final DownloadLink dl_dummy;
-                if (this.getDownloadLink() != null) {
-                    dl_dummy = this.getDownloadLink();
-                } else {
-                    dl_dummy = new DownloadLink(this, "Account", this.getHost(), "https://" + this.getHost(), true);
-                }
-                String twoFACode = getUserInput("Enter Google 2-Factor authentication code", dl_dummy);
-                if (twoFACode != null) {
-                    twoFACode = twoFACode.trim();
-                }
-                if (twoFACode == null || !twoFACode.matches("\\d{6}")) {
-                    throw new AccountInvalidException("Invalid 2-factor-authentication code format!");
-                }
+                final String twoFACode = this.getTwoFACode(account, "\\d{6}");
                 logger.info("Submitting 2FA code");
                 postData.put("auth_code", twoFACode);
                 resp = this.callAPI(brc, null, account, brc.createPostRequest(getAPIBase() + "/auth/login", JSonStorage.serializeToJson(postData)), true);
@@ -299,7 +287,7 @@ public class CopyCaseCom extends PluginForHost {
             final String token = (String) resp.get("token");
             if (StringUtils.isEmpty(token)) {
                 if (required2FALogin) {
-                    throw new AccountInvalidException("Invalid 2-factor-authentication code!");
+                    throw new AccountInvalidException(org.jdownloader.gui.translate._GUI.T.jd_gui_swing_components_AccountDialog_2FA_login_invalid());
                 } else {
                     /* This should never happen */
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);

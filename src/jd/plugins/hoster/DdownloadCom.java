@@ -38,6 +38,7 @@ import jd.parser.html.InputField;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
@@ -330,32 +331,12 @@ public class DdownloadCom extends XFileSharingProBasic {
                 throw e;
             }
             logger.info("2FA code required");
-            final DownloadLink dl_dummy;
-            if (this.getDownloadLink() != null) {
-                dl_dummy = this.getDownloadLink();
-            } else {
-                dl_dummy = new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true);
-            }
-            String twoFACode = getUserInput("Enter Google 2-Factor authentication code", dl_dummy);
-            if (twoFACode != null) {
-                twoFACode = twoFACode.trim();
-            }
-            if (twoFACode == null || !twoFACode.matches("\\d{6}")) {
-                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                    throw new AccountUnavailableException("\r\nUngültiges Format der 2-faktor-Authentifizierung!", 1 * 60 * 1000l);
-                } else {
-                    throw new AccountUnavailableException("\r\nInvalid 2-factor-authentication code format!", 1 * 60 * 1000l);
-                }
-            }
+            final String twoFACode = this.getTwoFACode(account, "\\d{6}");
             logger.info("Submitting 2FA code");
             twoFAForm.put(formKey2FA, twoFACode);
             this.submitForm(twoFAForm);
             if (!this.br.getURL().contains("?op=my_account")) {
-                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                    throw new AccountUnavailableException("\r\nUngültiger 2-faktor-Authentifizierungscode!", 1 * 60 * 1000l);
-                } else {
-                    throw new AccountUnavailableException("\r\nInvalid 2-factor-authentication code!", 1 * 60 * 1000l);
-                }
+                throw new AccountInvalidException(org.jdownloader.gui.translate._GUI.T.jd_gui_swing_components_AccountDialog_2FA_login_invalid());
             }
             account.saveCookies(br.getCookies(br.getHost()), "");
             return true;

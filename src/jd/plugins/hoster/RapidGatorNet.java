@@ -1108,12 +1108,7 @@ public class RapidGatorNet extends PluginForHost {
                 }
                 if (accountRequires2FALoginCode) {
                     logger.info("2FA code required");
-                    final DownloadLink dl_dummy = new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true);
-                    String twoFACode = getUserInput("Enter 2-Factor authentication code", dl_dummy);
-                    if (twoFACode == null || !(twoFACode = twoFACode.trim()).matches("\\d{6}")) {
-                        logger.info("Login abort: Invalid 2FA code format");
-                        break;
-                    }
+                    final String twoFACode = this.getTwoFACode(account, "\\d{6}");
                     loginform.put("LoginForm%5BtwoStepAuthCode%5D", twoFACode);
                 }
                 br.submitForm(loginform);
@@ -1142,11 +1137,7 @@ public class RapidGatorNet extends PluginForHost {
                 /* Login failed -> Check why */
                 if (accountRequires2FALoginCode) {
                     /* Valid login credentials but invalid 2FA code */
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new AccountInvalidException("\r\nUngültiger 2-faktor-Authentifizierungscode!");
-                    } else {
-                        throw new AccountInvalidException("\r\nInvalid 2-factor-authentication code!");
-                    }
+                    throw new AccountInvalidException(org.jdownloader.gui.translate._GUI.T.jd_gui_swing_components_AccountDialog_2FA_login_invalid());
                 } else {
                     /* Invalid login credentials */
                     throw new AccountInvalidException();

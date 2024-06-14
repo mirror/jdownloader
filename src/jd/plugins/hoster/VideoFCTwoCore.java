@@ -368,19 +368,7 @@ public abstract class VideoFCTwoCore extends PluginForHost {
                 final Form twoFactorLogin = get2FALoginForm(this.br);
                 if (twoFactorLogin != null) {
                     logger.info("2FA login required");
-                    final DownloadLink dl_dummy;
-                    if (this.getDownloadLink() != null) {
-                        dl_dummy = this.getDownloadLink();
-                    } else {
-                        dl_dummy = new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true);
-                    }
-                    String twoFACode = getUserInput("Enter Google 2-Factor Authentication code?", dl_dummy);
-                    if (twoFACode != null) {
-                        twoFACode = twoFACode.trim();
-                    }
-                    if (twoFACode == null || !twoFACode.matches("[A-Za-z0-9]{6}")) {
-                        throw new AccountInvalidException("Invalid 2-factor-authentication code format!");
-                    }
+                    final String twoFACode = this.getTwoFACode(account, "[A-Za-z0-9]{6}");
                     logger.info("Submitting 2FA code");
                     twoFactorLogin.put("code", twoFACode);
                     br.submitForm(twoFactorLogin);
@@ -389,7 +377,7 @@ public abstract class VideoFCTwoCore extends PluginForHost {
                         br.getPage(redirectAfterLogin);
                     }
                     if (get2FALoginForm(this.br) != null) {
-                        throw new AccountInvalidException("2FA auth failed!");
+                        throw new AccountInvalidException(org.jdownloader.gui.translate._GUI.T.jd_gui_swing_components_AccountDialog_2FA_login_invalid());
                     } else {
                         logger.info("2FA login seems to be successful");
                     }

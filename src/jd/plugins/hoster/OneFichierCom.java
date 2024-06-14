@@ -1017,32 +1017,12 @@ public class OneFichierCom extends PluginForHost {
             }
             if (!isLoggedinWebsite(this.br) && twoFAForm != null) {
                 logger.info("2FA code required");
-                final DownloadLink dl_dummy;
-                if (this.getDownloadLink() != null) {
-                    dl_dummy = this.getDownloadLink();
-                } else {
-                    dl_dummy = new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true);
-                }
-                String twoFACode = getUserInput("Enter 2-Factor authentication code", dl_dummy);
-                if (twoFACode != null) {
-                    twoFACode = twoFACode.trim();
-                }
-                if (twoFACode == null || !twoFACode.matches("\\d{6}")) {
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new AccountUnavailableException("\r\nUngültiges Format der 2-faktor-Authentifizierung!", 1 * 60 * 1000l);
-                    } else {
-                        throw new AccountUnavailableException("\r\nInvalid 2-factor-authentication code format!", 1 * 60 * 1000l);
-                    }
-                }
+                final String twoFACode = this.getTwoFACode(account, "\\d{6}");
                 logger.info("Submitting 2FA code");
                 twoFAForm.put(formKey2FA, twoFACode);
                 br.submitForm(twoFAForm);
                 if (!isLoggedinWebsite(this.br)) {
-                    if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                        throw new AccountUnavailableException("\r\nUngültiger 2-faktor-Authentifizierungscode!", 1 * 60 * 1000l);
-                    } else {
-                        throw new AccountUnavailableException("\r\nInvalid 2-factor-authentication code!", 1 * 60 * 1000l);
-                    }
+                    throw new AccountInvalidException(org.jdownloader.gui.translate._GUI.T.jd_gui_swing_components_AccountDialog_2FA_login_invalid());
                 }
             }
             if (!isLoggedinWebsite(this.br)) {
