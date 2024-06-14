@@ -24,7 +24,6 @@ import org.jdownloader.api.myjdownloader.api.MyJDownloaderAPI;
 import org.jdownloader.api.myjdownloader.event.MyJDownloaderEvent;
 import org.jdownloader.api.myjdownloader.event.MyJDownloaderEventSender;
 import org.jdownloader.logging.LogController;
-import org.jdownloader.myjdownloader.client.SessionInfo;
 import org.jdownloader.myjdownloader.client.exceptions.MyJDownloaderException;
 import org.jdownloader.myjdownloader.client.exceptions.UnconnectedException;
 import org.jdownloader.myjdownloader.client.json.MyCaptchaChallenge;
@@ -329,7 +328,7 @@ public class MyJDownloaderController implements ShutdownVetoListener, GenericCon
                     @Override
                     public void run() {
                         try {
-                            final SessionInfo session = api.connect(email, password);
+                            api.connect(email, password);
                             validFlag.set(true);
                             api.disconnect();
                         } catch (Exception e) {
