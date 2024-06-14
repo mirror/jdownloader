@@ -646,42 +646,41 @@ public class PornHubCom extends PluginForHost {
                     /* Directurl needs to be refreshed */
                     return false;
                 } else if (!LinkCrawlerDeepInspector.looksLikeMpegURL(hlsCheck.getHttpConnection())) {
-                    /* Obligatory seconds check. */
+                    /* Obligatory second check. */
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 } else {
                     final List<HlsContainer> hlsContainers = HlsContainer.getHlsQualities(hlsCheck.cloneBrowser());
                     if (hlsContainers == null || hlsContainers.size() != 1) {
                         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    } else {
-                        URLConnectionAdapter con = null;
-                        try {
-                            final List<M3U8Playlist> m3u8list = hlsContainers.get(0).getM3U8(hlsCheck);
-                            if (m3u8list == null || m3u8list.size() == 0) {
-                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                            }
-                            final Browser segmentCheck = br.cloneBrowser();
-                            segmentCheck.setFollowRedirects(true);
-                            con = (Thread.currentThread() instanceof SingleDownloadController) ? segmentCheck.openGetConnection(m3u8list.get(0).getSegment(0).getUrl()) : null;
-                            if (con == null || looksLikeDownloadableContent(con)) {
-                                final HLSDownloader downloader = new HLSDownloader(link, br, br.getURL(), m3u8list);
-                                final long estimatedSize = downloader.getEstimatedSize();
-                                if (estimatedSize > 0) {
-                                    link.setDownloadSize(estimatedSize);
-                                }
-                                link.setProperty(PROPERTY_DIRECTLINK, url);
-                                return true;
-                            } else {
-                                segmentCheck.followConnection(true);
-                            }
-                        } catch (IOException e) {
-                            logger.log(e);
-                        } finally {
-                            if (con != null) {
-                                con.disconnect();
-                            }
-                        }
-                        return false;
                     }
+                    URLConnectionAdapter con = null;
+                    try {
+                        final List<M3U8Playlist> m3u8list = hlsContainers.get(0).getM3U8(hlsCheck);
+                        if (m3u8list == null || m3u8list.size() == 0) {
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                        }
+                        final Browser segmentCheck = br.cloneBrowser();
+                        segmentCheck.setFollowRedirects(true);
+                        con = (Thread.currentThread() instanceof SingleDownloadController) ? segmentCheck.openGetConnection(m3u8list.get(0).getSegment(0).getUrl()) : null;
+                        if (con == null || looksLikeDownloadableContent(con)) {
+                            final HLSDownloader downloader = new HLSDownloader(link, br, br.getURL(), m3u8list);
+                            final long estimatedSize = downloader.getEstimatedSize();
+                            if (estimatedSize > 0) {
+                                link.setDownloadSize(estimatedSize);
+                            }
+                            link.setProperty(PROPERTY_DIRECTLINK, url);
+                            return true;
+                        } else {
+                            segmentCheck.followConnection(true);
+                        }
+                    } catch (IOException e) {
+                        logger.log(e);
+                    } finally {
+                        if (con != null) {
+                            con.disconnect();
+                        }
+                    }
+                    return false;
                 }
             } else {
                 final Browser urlCheck = br.cloneBrowser();

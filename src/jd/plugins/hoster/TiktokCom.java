@@ -300,7 +300,6 @@ public class TiktokCom extends PluginForHost {
         br.getHeaders().put("Referer", "https://www." + this.getHost() + "/");
         br.getHeaders().put("Origin", "https://www." + this.getHost());
         br.getHeaders().put("Sec-Fetch-Mode", "navigate");
-        br.getHeaders().put("Referer", "https://www.tiktok.com/@tristanvd/video/7286131089888808224");
     }
 
     private boolean allowsHeadRequest(final DownloadLink link) {
