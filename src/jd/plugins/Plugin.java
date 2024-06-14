@@ -181,7 +181,7 @@ public abstract class Plugin implements ActionListener {
 
     public String getExtensionFromMimeType(final String contentType) {
         final List<CompiledFiletypeExtension> fileTypeExtensions = CompiledFiletypeFilter.getByMimeType(contentType);
-        if (fileTypeExtensions.size() > 0) {
+        if (fileTypeExtensions != null && fileTypeExtensions.size() > 0) {
             return fileTypeExtensions.get(0).getExtensionFromMimeType(contentType);
         } else {
             return null;
@@ -196,7 +196,7 @@ public abstract class Plugin implements ActionListener {
     @Deprecated
     public static String getExtensionFromMimeTypeStatic(final String contentType) {
         final List<CompiledFiletypeExtension> fileTypeExtensions = CompiledFiletypeFilter.getByMimeType(contentType);
-        if (fileTypeExtensions.size() > 0) {
+        if (fileTypeExtensions != null && fileTypeExtensions.size() > 0) {
             return fileTypeExtensions.get(0).getExtensionFromMimeType(contentType);
         } else {
             return null;
