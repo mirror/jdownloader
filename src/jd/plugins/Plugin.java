@@ -464,8 +464,14 @@ public abstract class Plugin implements ActionListener {
         } else {
             /* Replace existing extension with new extension. */
             final int lastIndex = filenameOrg.lastIndexOf(".");
-            final String fileExtension = lastIndex + 1 < filenameOrg.length() ? filenameOrg.substring(lastIndex + 1) : null;
-            if (CompiledFiletypeFilter.getExtensionsFilterInterface(fileExtension) != null) {
+            final String currentFileExtension = lastIndex + 1 < filenameOrg.length() ? filenameOrg.substring(lastIndex + 1) : null;
+            final CompiledFiletypeExtension newFileType = CompiledFiletypeFilter.getExtensionsFilterInterface(newExtension);
+            if (newFileType != null && currentFileExtension != null && newFileType.isValidExtension(currentFileExtension)) {
+                /* Filename already contains valid/alternative target-extension */
+                return filenameOrg;
+            }
+            final CompiledFiletypeExtension currentFileType = CompiledFiletypeFilter.getExtensionsFilterInterface(currentFileExtension);
+            if (currentFileType != null) {
                 final String filenameWithoutExtension = filenameOrg.substring(0, lastIndex);
                 return filenameWithoutExtension + newExtension;
             } else {

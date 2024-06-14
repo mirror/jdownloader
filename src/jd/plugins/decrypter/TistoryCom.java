@@ -53,7 +53,7 @@ public class TistoryCom extends PluginForDecrypt {
         }
         for (final String singleLink : links) {
             final DownloadLink dl = createDownloadlink(DirectHTTP.createURLForThisPlugin(singleLink));
-            dl.setMimeHint(CompiledFiletypeFilter.ImageExtensions.JPEG);
+            dl.setMimeHint(CompiledFiletypeFilter.ImageExtensions.JPG);
             dl.setAvailable(true);
             ret.add(dl);
         }

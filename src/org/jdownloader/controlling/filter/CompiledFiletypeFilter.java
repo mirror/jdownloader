@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
-import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.filter.FiletypeFilter.TypeMatchType;
 import org.jdownloader.gui.IconKey;
@@ -27,6 +26,8 @@ public class CompiledFiletypeFilter {
         public boolean matchesMimeType(final String mimeType);
 
         public String getExtensionFromMimeType(final String mimeType);
+
+        public boolean isValidExtension(String extension);
 
         public String name();
     }
@@ -83,7 +84,7 @@ public class CompiledFiletypeFilter {
     }
 
     public static List<CompiledFiletypeExtension> getByMimeType(final String mimeType) {
-        if (mimeType == null || !DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+        if (mimeType == null) {
             return null;
         }
         final List<CompiledFiletypeExtension> ret = new ArrayList<CompiledFiletypeExtension>();
@@ -129,6 +130,10 @@ public class CompiledFiletypeFilter {
 
         public String getIconID() {
             return IconKey.ICON_HASHSUM;
+        }
+
+        public boolean isValidExtension(String extension) {
+            return CompiledFiletypeFilter.isValidExtension(extension, this);
         }
 
         public Pattern compiledAllPattern() {
@@ -211,6 +216,10 @@ public class CompiledFiletypeFilter {
             return extension != null && extension instanceof ExecutableExtensions;
         }
 
+        public boolean isValidExtension(String extension) {
+            return CompiledFiletypeFilter.isValidExtension(extension, this);
+        }
+
         @Override
         public ExtensionsFilterInterface[] listSameGroup() {
             return values();
@@ -271,6 +280,10 @@ public class CompiledFiletypeFilter {
                 allPattern = compileAllPattern(SubtitleExtensions.values());
             }
             return allPattern;
+        }
+
+        public boolean isValidExtension(String extension) {
+            return CompiledFiletypeFilter.isValidExtension(extension, this);
         }
 
         @Override
@@ -354,6 +367,10 @@ public class CompiledFiletypeFilter {
             public boolean matchesMimeType(String mimeType) {
                 return pattern.matcher(mimeType).find();
             }
+
+            public boolean isValidExtension(String extension) {
+                return super.isValidExtension(extension) || CompiledFiletypeFilter.isValidExtension(extension, DOC);
+            }
         },
         DOTX {
             private final Pattern pattern = Pattern.compile("(?i)application/vnd.openxmlformats-officedocument.wordprocessingml.template");
@@ -361,6 +378,10 @@ public class CompiledFiletypeFilter {
             @Override
             public boolean matchesMimeType(String mimeType) {
                 return pattern.matcher(mimeType).find();
+            }
+
+            public boolean isValidExtension(String extension) {
+                return super.isValidExtension(extension) || CompiledFiletypeFilter.isValidExtension(extension, DOC);
             }
         },
         DOCT {
@@ -424,6 +445,10 @@ public class CompiledFiletypeFilter {
             return IconKey.ICON_TEXT;
         }
 
+        public boolean isValidExtension(String extension) {
+            return CompiledFiletypeFilter.isValidExtension(extension, this);
+        }
+
         public Pattern compiledAllPattern() {
             if (allPattern == null) {
                 allPattern = compileAllPattern(DocumentExtensions.values());
@@ -454,6 +479,14 @@ public class CompiledFiletypeFilter {
 
     private static String getExtensionFromMimeType(String mimeType, CompiledFiletypeExtension fileTypeExtension) {
         return fileTypeExtension.matchesMimeType(mimeType) ? fileTypeExtension.name().toLowerCase(Locale.ENGLISH) : null;
+    }
+
+    private static Boolean isValidExtension(String extension, CompiledFiletypeExtension fileTypeExtension) {
+        if (extension != null) {
+            return fileTypeExtension.getPattern().matcher(extension).matches();
+        } else {
+            return null;
+        }
     }
 
     public static enum AudioExtensions implements CompiledFiletypeExtension {
@@ -494,6 +527,10 @@ public class CompiledFiletypeFilter {
             public boolean matchesMimeType(String mimeType) {
                 return pattern.matcher(mimeType).find();
             }
+
+            public boolean isValidExtension(String extension) {
+                return super.isValidExtension(extension) || CompiledFiletypeFilter.isValidExtension(extension, OGA);
+            }
         },
         OGA {
             // ogg audio media
@@ -502,6 +539,10 @@ public class CompiledFiletypeFilter {
             @Override
             public boolean matchesMimeType(String mimeType) {
                 return pattern.matcher(mimeType).find();
+            }
+
+            public boolean isValidExtension(String extension) {
+                return super.isValidExtension(extension) || CompiledFiletypeFilter.isValidExtension(extension, OGG);
             }
         },
         OPUS {
@@ -570,6 +611,10 @@ public class CompiledFiletypeFilter {
 
         public String getIconID() {
             return IconKey.ICON_AUDIO;
+        }
+
+        public boolean isValidExtension(String extension) {
+            return CompiledFiletypeFilter.isValidExtension(extension, this);
         }
 
         public Pattern compiledAllPattern() {
@@ -673,6 +718,10 @@ public class CompiledFiletypeFilter {
             return extension != null && extension instanceof VideoExtensions;
         }
 
+        public boolean isValidExtension(String extension) {
+            return CompiledFiletypeFilter.isValidExtension(extension, this);
+        }
+
         private VideoExtensions(String id) {
             this.pattern = Pattern.compile(id, Pattern.DOTALL | Pattern.CASE_INSENSITIVE);
         }
@@ -737,12 +786,6 @@ public class CompiledFiletypeFilter {
                 return pattern.matcher(mimeType).find();
             }
         },
-        SevenZIP("7ZIP") {
-            @Override
-            public String getExtensionFromMimeType(String mimeType) {
-                return matchesMimeType(mimeType) ? "7zip" : null;
-            }
-        },
         R_NUM("[r-z]\\d{2}"),
         NUM("\\d{1,4}"),
         MultiZip("z\\d{1,4}"),
@@ -765,7 +808,7 @@ public class CompiledFiletypeFilter {
         BZ2,
         ARJ,
         CPIO,
-        SevenZ("7z") {
+        SevenZ("(7z|7zip)") {
             private final Pattern pattern = Pattern.compile("(?i)application/x-7z-compressed");
 
             @Override
@@ -814,6 +857,10 @@ public class CompiledFiletypeFilter {
             this.pattern = Pattern.compile(id, Pattern.DOTALL | Pattern.CASE_INSENSITIVE);
         }
 
+        public boolean isValidExtension(String extension) {
+            return CompiledFiletypeFilter.isValidExtension(extension, this);
+        }
+
         public String getDesc() {
             return _GUI.T.FilterRuleDialog_createTypeFilter_mime_archives();
         }
@@ -851,7 +898,7 @@ public class CompiledFiletypeFilter {
     }
 
     public static enum ImageExtensions implements CompiledFiletypeExtension {
-        JPG {
+        JPG("(jpe|jpe?g|jfif)") {
             private final Pattern pattern = Pattern.compile("(?i)image/jpe?g");
 
             @Override
@@ -860,7 +907,6 @@ public class CompiledFiletypeFilter {
             }
         },
         JP2("(jp2|j2k|jpf|jpg2|jpx|jpm|mj2|mjp2)"),
-        JPEG("(jpe|jpeg|jfif)"),
         AVIF,
         GIF {
             private final Pattern pattern = Pattern.compile("(?i)image/gif");
@@ -926,6 +972,10 @@ public class CompiledFiletypeFilter {
 
         public ExtensionsFilterInterface getSource() {
             return this;
+        }
+
+        public boolean isValidExtension(String extension) {
+            return CompiledFiletypeFilter.isValidExtension(extension, this);
         }
 
         public Pattern compiledAllPattern() {

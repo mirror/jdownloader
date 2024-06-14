@@ -6,11 +6,6 @@ import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 
-import jd.controlling.downloadcontroller.DownloadControllerConfig;
-import jd.controlling.faviconcontroller.FavIconsConfig;
-import jd.controlling.linkchecker.LinkCheckerConfig;
-import jd.controlling.linkcrawler.LinkCrawlerConfig;
-
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.storage.config.annotations.AboutConfig;
@@ -25,6 +20,7 @@ import org.jdownloader.controlling.ffmpeg.FFmpegSetup;
 import org.jdownloader.gui.notify.gui.CFG_BUBBLE;
 import org.jdownloader.gui.shortcuts.ShortcutSettings;
 import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.components.containers.ContainerConfig;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.controller.PluginClassLoader;
@@ -50,6 +46,11 @@ import org.jdownloader.updatev2.InternetConnectionSettings;
 import org.jdownloader.updatev2.LastChanceSettings;
 import org.jdownloader.updatev2.UpdateSettings;
 import org.jdownloader.updatev2.gui.LAFOptions;
+
+import jd.controlling.downloadcontroller.DownloadControllerConfig;
+import jd.controlling.faviconcontroller.FavIconsConfig;
+import jd.controlling.linkchecker.LinkCheckerConfig;
+import jd.controlling.linkcrawler.LinkCrawlerConfig;
 
 public class AdvancedConfigManager {
     private static final AdvancedConfigManager INSTANCE = new AdvancedConfigManager();
@@ -90,6 +91,7 @@ public class AdvancedConfigManager {
         register(JsonConfig.create(ExtFileSystemViewSettings.class));
         register(JsonConfig.create(FavIconsConfig.class));
         register(JsonConfig.create(SoundSettings.class));
+        register(JsonConfig.create(ContainerConfig.class));
         register(CFG_BUBBLE.CFG);
         register(CFG_CAPTCHA.CFG);
         register(CFG_SILENTMODE.CFG);
