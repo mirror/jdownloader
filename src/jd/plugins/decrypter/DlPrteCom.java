@@ -22,6 +22,7 @@ import java.util.Locale;
 import java.util.regex.Pattern;
 
 import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.cloudflareturnstile.AbstractCloudflareTurnstileCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForDecrypt;
 
@@ -245,7 +246,7 @@ public class DlPrteCom extends antiDDoSForDecrypt {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         String passCode = null;
-        if (br.containsHTML("cloudflare\\.com/turnstile/")) {
+        if (AbstractCloudflareTurnstileCaptcha.containsCloudflareTurnstileClass(br)) {
             /* https://svn.jdownloader.org/issues/90281 */
             throw new DecrypterRetryException(RetryReason.BLOCKED_BY, "Cloudflare Turnstile captcha is not supported");
         } else if (CaptchaHelperCrawlerPluginRecaptchaV2.containsRecaptchaV2Class(br)) {

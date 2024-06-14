@@ -32,6 +32,7 @@ import org.appwork.utils.net.httpconnection.HTTPConnection;
 import org.appwork.utils.net.httpconnection.SSLSocketStreamOptions;
 import org.appwork.utils.net.httpconnection.SSLSocketStreamOptionsModifier;
 import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.captcha.v2.challenge.cloudflareturnstile.AbstractCloudflareTurnstileCaptcha;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.gui.translate._GUI;
 import org.jdownloader.net.BCSSLSocketStreamFactory;
@@ -544,7 +545,7 @@ public class DoodstreamCom extends XFileSharingProBasic {
             if (dllink == null) {
                 String captchaContainer = br.getRegex("\\$\\.get\\(\"(/[^\"]+op=validate\\&gc_response=)").getMatch(0);
                 if (captchaContainer != null) {
-                    if (br.containsHTML("turnstile\\.render")) {
+                    if (AbstractCloudflareTurnstileCaptcha.containsCloudflareTurnstileClass(br)) {
                         throw new PluginException(LinkStatus.ERROR_FATAL, "Unsupported captcha type 'Cloudflare Turnstile'");
                     } else {
                         final Browser brc = br.cloneBrowser();
