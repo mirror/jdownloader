@@ -41,6 +41,20 @@ import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JWindow;
 
+import jd.controlling.AccountController;
+import jd.controlling.ClipboardMonitoring;
+import jd.controlling.DelayWriteController;
+import jd.controlling.downloadcontroller.DownloadController;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
+import jd.controlling.proxy.ProxyController;
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.laf.LookAndFeelController;
+import jd.http.Browser;
+import jd.nutils.zip.SharedMemoryState;
+import jd.plugins.DownloadLink;
+
 import org.appwork.console.ConsoleDialog;
 import org.appwork.controlling.SingleReachableState;
 import org.appwork.shutdown.ShutdownController;
@@ -129,20 +143,6 @@ import com.btr.proxy.selector.pac.PacScriptParser;
 import com.btr.proxy.selector.pac.PacScriptSource;
 import com.btr.proxy.selector.pac.ProxyEvaluationException;
 import com.btr.proxy.selector.pac.RhinoPacScriptParser;
-
-import jd.controlling.AccountController;
-import jd.controlling.ClipboardMonitoring;
-import jd.controlling.DelayWriteController;
-import jd.controlling.downloadcontroller.DownloadController;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
-import jd.controlling.proxy.ProxyController;
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.laf.LookAndFeelController;
-import jd.http.Browser;
-import jd.nutils.zip.SharedMemoryState;
-import jd.plugins.DownloadLink;
 
 public class SecondLevelLaunch {
     static {
@@ -979,7 +979,13 @@ public class SecondLevelLaunch {
         }
         if (!Application.isHeadless()) {
             while (true) {
-                final Thread initThread = JDGui.getInstance().getInitThread();
+                final Thread initThread = new EDTHelper<Thread>() {
+
+                    @Override
+                    public Thread edtRun() {
+                        return JDGui.getInstance().getInitThread();
+                    }
+                }.getReturnValue();
                 if (initThread == null || initThread.isAlive() == false) {
                     break;
                 }
