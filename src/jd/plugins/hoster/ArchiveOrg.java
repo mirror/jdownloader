@@ -269,7 +269,7 @@ public class ArchiveOrg extends PluginForHost {
 
     /** Returns true if link leads to a compressed archive file. */
     private boolean isArchive(final DownloadLink link) {
-        if (link.getPluginPatternMatcher().matches("(?i).+\\.(zip|rar|7z|gz)/.+")) {
+        if (link.getPluginPatternMatcher().matches("(?i).+\\.(zip|rar|7z|gz|tar)/.+")) {
             return true;
         } else {
             return false;
