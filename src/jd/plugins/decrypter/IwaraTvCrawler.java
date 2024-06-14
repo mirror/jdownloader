@@ -186,7 +186,7 @@ public class IwaraTvCrawler extends PluginForDecrypt {
                     if (embedUrl != null) {
                         /* Video is not hosted on iwara.tv but on a 3rd party website. */
                         addResultForFurtherProcessing = false;
-                        if (cfg.isProfileCrawlerSkipExternalURLs()) {
+                        if (cfg.isProfileAndPlaylistCrawlerSkipExternalURLs()) {
                             logger.info("Skipping externally hosted item: " + embedUrl);
                             numberofSkippedExternalLinksThisPage++;
                         } else {
@@ -196,7 +196,7 @@ public class IwaraTvCrawler extends PluginForDecrypt {
                         }
                     } else {
                         dl.setName(IwaraTv.getFilename(dl));
-                        if (cfg.isProfileCrawlerEnableFastLinkcheck()) {
+                        if (cfg.isProfileAndPlaylistCrawlerEnableFastLinkcheck()) {
                             dl.setAvailable(true);
                         }
                     }
@@ -281,7 +281,7 @@ public class IwaraTvCrawler extends PluginForDecrypt {
             /* Video is not hosted on iwara.tv but on a 3rd party website. */
             final DownloadLink parent = param.getDownloadLink();
             boolean allowReturnExternallyHostedVideoURLs = true;
-            if (parent != null && parent.getContainerUrl() != null && parent.getContainerUrl().matches(PATTERN_USER) && cfg.isProfileCrawlerSkipExternalURLs()) {
+            if (parent != null && parent.getContainerUrl() != null && parent.getContainerUrl().matches(PATTERN_USER) && cfg.isProfileAndPlaylistCrawlerSkipExternalURLs()) {
                 /*
                  * Single video URL was returned as part of profile crawl process and user disabled externally hosted content when videos
                  * got returned by profile crawler.

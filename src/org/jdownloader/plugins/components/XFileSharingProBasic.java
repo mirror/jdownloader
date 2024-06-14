@@ -2923,7 +2923,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
     }
 
     protected boolean containsPlainTextCaptcha(final String correctBR) {
-        return correctBR != null && StringUtils.containsIgnoreCase(correctBR, ";background:#ccc;text-align");
+        return StringUtils.containsIgnoreCase(correctBR, ";background:#ccc;text-align");
     }
 
     /** Tries to find 1st download Form for free(and Free-Account) download. */

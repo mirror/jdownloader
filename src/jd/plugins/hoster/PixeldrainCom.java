@@ -77,7 +77,7 @@ public class PixeldrainCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "https://pixeldrain.com/about";
+        return "https://" + getHost() + "/about";
     }
 
     public static List<String[]> getPluginDomains() {
@@ -123,6 +123,7 @@ public class PixeldrainCom extends PluginForHost {
             /* Premium account */
             return true;
         } else {
+            /* Free user/ free download */
             return true;
         }
     }
@@ -138,6 +139,7 @@ public class PixeldrainCom extends PluginForHost {
             /* Premium user -> No limit */
             return 0;
         } else {
+            /* Free user/ free download */
             return 1;
         }
     }
@@ -166,15 +168,6 @@ public class PixeldrainCom extends PluginForHost {
         return new Regex(link.getPluginPatternMatcher(), "(?i)https?://[^/]+/api/filesystem/(.+)").getMatch(0);
     }
 
-    private String getFID(final DownloadLink link) {
-        final String filesystemFid = this.getFilesystemFileID(link);
-        if (filesystemFid != null) {
-            return filesystemFid;
-        } else {
-            return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
-        }
-    }
-
     /**
      * Returns true for direct downloadable 'filesystem' single file URL. </br>
      * User docs: https://pixeldrain.com/filesystem
@@ -184,6 +177,15 @@ public class PixeldrainCom extends PluginForHost {
             return true;
         } else {
             return false;
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        final String filesystemFid = this.getFilesystemFileID(link);
+        if (filesystemFid != null) {
+            return filesystemFid;
+        } else {
+            return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
         }
     }
 
@@ -363,6 +365,11 @@ public class PixeldrainCom extends PluginForHost {
         } else {
             link.setProperty(speedLimitPropertyKey, speedLimit);
         }
+        /**
+         * Check if file has been abused. </br>
+         * We are checking this just here at the end because file information for such files can still be available and we want to provide
+         * as much information to the user as possible.
+         */
         final String abuse_type = (String) data.get("abuse_type");
         if (!StringUtils.isEmpty(abuse_type)) {
             /* File has been abused / deleted. */
@@ -498,6 +505,7 @@ public class PixeldrainCom extends PluginForHost {
     }
 
     private Map<String, Object> checkErrors(final Browser br, final DownloadLink link, final Account account) throws PluginException {
+        /* Wait milliseconds for unknown/generic errors */
         final long waitmillis = 60 * 1000;
         Map<String, Object> entries = null;
         try {

@@ -14,17 +14,17 @@ import org.jdownloader.plugins.config.Type;
 @PluginHost(host = "iwara.tv", type = Type.HOSTER)
 public interface IwaraTvConfig extends PluginConfigInterface {
     public static final IwaraTvConfig.TRANSLATION TRANSLATION                                           = new TRANSLATION();
-    final String                                  text_ProfileCrawlerEnableFastLinkcheck                = "Enable fast linkcheck for videos found via profile & playlist crawler?";
+    final String                                  text_ProfileAndPlaylistCrawlerEnableFastLinkcheck     = "Enable fast linkcheck for videos found via profile&playlist crawler?";
     final String                                  text_PreferredFilenameSchemeType                      = "Select preferred filename scheme type";
     final String                                  text_PreferredFilenameScheme                          = "Select preferred filename scheme";
     final String                                  text_FindFilesizeDuringAvailablecheck                 = "Find filesize during linkcheck?\r\nWarning: Can slow down linkcheck!";
-    final String                                  text_ProfileCrawlerSkipExternalURLs                   = "Profile/Playlist crawler: Skip externally hosted videos e.g. youtube.com URLs?";
+    final String                                  text_ProfileAndPlaylistCrawlerSkipExternalURLs        = "Profile/Playlist crawler: Skip externally hosted videos e.g. youtube.com URLs?";
     final String                                  text_ScanForDownloadableLinksInContentDescription     = "Scan for URLs in content description?";
     final String                                  text_RegexWhitelistForCrawledUrlsInContentDescription = "RegEx whitelist for crawled URLs from content description e.g. 'https?://(mega\\.nz|gofile\\.io)/.*' [Empty = Allow all URLs]";
 
     public static class TRANSLATION {
-        public String getProfileCrawlerEnableFastLinkcheck_label() {
-            return text_ProfileCrawlerEnableFastLinkcheck;
+        public String getProfileAndPlaylistCrawlerEnableFastLinkcheck_label() {
+            return text_ProfileAndPlaylistCrawlerEnableFastLinkcheck;
         }
 
         public String getPreferredFilenameSchemeType_label() {
@@ -39,8 +39,8 @@ public interface IwaraTvConfig extends PluginConfigInterface {
             return text_FindFilesizeDuringAvailablecheck;
         }
 
-        public String getProfileCrawlerSkipExternalURLs_label() {
-            return text_ProfileCrawlerSkipExternalURLs;
+        public String getProfileAndPlaylistCrawlerSkipExternalURLs_label() {
+            return text_ProfileAndPlaylistCrawlerSkipExternalURLs;
         }
 
         public String getScanForDownloadableLinksInContentDescription_label() {
@@ -58,11 +58,11 @@ public interface IwaraTvConfig extends PluginConfigInterface {
 
     @AboutConfig
     @DefaultBooleanValue(true)
-    @DescriptionForConfigEntry(text_ProfileCrawlerEnableFastLinkcheck)
+    @DescriptionForConfigEntry(text_ProfileAndPlaylistCrawlerEnableFastLinkcheck)
     @Order(10)
-    boolean isProfileCrawlerEnableFastLinkcheck();
+    boolean isProfileAndPlaylistCrawlerEnableFastLinkcheck();
 
-    void setProfileCrawlerEnableFastLinkcheck(boolean b);
+    void setProfileAndPlaylistCrawlerEnableFastLinkcheck(boolean b);
 
     public static enum FilenameSchemeType implements LabelInterface {
         PLUGIN {
@@ -144,15 +144,15 @@ public interface IwaraTvConfig extends PluginConfigInterface {
 
     @AboutConfig
     @DefaultBooleanValue(false)
-    @DescriptionForConfigEntry(text_ProfileCrawlerSkipExternalURLs)
+    @DescriptionForConfigEntry(text_ProfileAndPlaylistCrawlerSkipExternalURLs)
     @Order(40)
-    boolean isProfileCrawlerSkipExternalURLs();
+    boolean isProfileAndPlaylistCrawlerSkipExternalURLs();
 
-    void setProfileCrawlerSkipExternalURLs(boolean b);
+    void setProfileAndPlaylistCrawlerSkipExternalURLs(boolean b);
 
     @AboutConfig
     @DefaultBooleanValue(false)
-    @DescriptionForConfigEntry(text_ProfileCrawlerSkipExternalURLs)
+    @DescriptionForConfigEntry(text_ScanForDownloadableLinksInContentDescription)
     @Order(50)
     boolean isScanForDownloadableLinksInContentDescription();
 
