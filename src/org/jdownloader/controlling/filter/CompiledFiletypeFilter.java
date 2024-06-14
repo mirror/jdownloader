@@ -6,12 +6,13 @@ import java.util.List;
 import java.util.Locale;
 import java.util.regex.Pattern;
 
-import jd.plugins.LinkInfo;
-
+import org.appwork.utils.DebugMode;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.controlling.filter.FiletypeFilter.TypeMatchType;
 import org.jdownloader.gui.IconKey;
 import org.jdownloader.gui.translate._GUI;
+
+import jd.plugins.LinkInfo;
 
 public class CompiledFiletypeFilter {
     private final Pattern[]                   list;
@@ -82,7 +83,7 @@ public class CompiledFiletypeFilter {
     }
 
     public static List<CompiledFiletypeExtension> getByMimeType(final String mimeType) {
-        if (mimeType == null) {
+        if (mimeType == null || !DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
             return null;
         }
         final List<CompiledFiletypeExtension> ret = new ArrayList<CompiledFiletypeExtension>();
@@ -102,6 +103,7 @@ public class CompiledFiletypeFilter {
         SHA512,
         PAR2("(vol\\d+\\.par2|vol\\d+\\+\\d+\\.par2|par2)"),
         PAR("(p\\d+|par)");
+
         private final Pattern  pattern;
         private static Pattern allPattern;
 
@@ -169,6 +171,7 @@ public class CompiledFiletypeFilter {
         RUN,
         PS1,
         CMD;
+
         private final Pattern  pattern;
         private static Pattern allPattern;
 
@@ -235,6 +238,7 @@ public class CompiledFiletypeFilter {
         SMI, // SAMI
         VTT, // WebVTT
         SUB;// VobSub
+
         private final Pattern  pattern;
         private static Pattern allPattern;
 
@@ -392,6 +396,7 @@ public class CompiledFiletypeFilter {
         },
         NFO,
         USF;
+
         private final Pattern  pattern;
         private static Pattern allPattern;
 
@@ -539,6 +544,7 @@ public class CompiledFiletypeFilter {
         SND,
         SPX, // Speex
         NSF;// NES Sound Format, https://wiki.nesdev.com/w/index.php/NSF
+
         private final Pattern  pattern;
         private static Pattern allPattern;
 
@@ -646,6 +652,7 @@ public class CompiledFiletypeFilter {
                 return pattern.matcher(mimeType).find();
             }
         };
+
         private final Pattern  pattern;
         private static Pattern allPattern;
 
@@ -787,6 +794,7 @@ public class CompiledFiletypeFilter {
         LZH,
         LHA,
         AA("[a-z]{2}");
+
         private final Pattern  pattern;
         private static Pattern allPattern;
 
@@ -896,6 +904,7 @@ public class CompiledFiletypeFilter {
             }
         },
         MVIEW;
+
         private final Pattern  pattern;
         private static Pattern allPattern;
 

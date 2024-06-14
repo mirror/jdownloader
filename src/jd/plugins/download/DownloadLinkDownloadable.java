@@ -14,6 +14,20 @@ import java.util.zip.CRC32;
 import java.util.zip.CheckedInputStream;
 import java.util.zip.Checksum;
 
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.IO;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.HexFormatter;
+import org.appwork.utils.logging2.LogInterface;
+import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
+import org.jdownloader.controlling.FileCreationManager;
+import org.jdownloader.plugins.FinalLinkState;
+import org.jdownloader.plugins.HashCheckPluginProgress;
+import org.jdownloader.plugins.SkipReason;
+import org.jdownloader.plugins.SkipReasonException;
+
 import jd.controlling.downloadcontroller.DiskSpaceManager.DISKSPACERESERVATIONRESULT;
 import jd.controlling.downloadcontroller.DiskSpaceReservation;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
@@ -32,19 +46,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.PluginProgress;
 import jd.plugins.download.HashInfo.TYPE;
 import jd.plugins.hoster.DirectHTTP;
-
-import org.appwork.utils.IO;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.HexFormatter;
-import org.appwork.utils.logging2.LogInterface;
-import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
-import org.jdownloader.controlling.FileCreationManager;
-import org.jdownloader.plugins.FinalLinkState;
-import org.jdownloader.plugins.HashCheckPluginProgress;
-import org.jdownloader.plugins.SkipReason;
-import org.jdownloader.plugins.SkipReasonException;
 
 public class DownloadLinkDownloadable implements Downloadable {
     private static volatile boolean crcHashingInProgress = false;
@@ -623,7 +624,7 @@ public class DownloadLinkDownloadable implements Downloadable {
     protected String correctOrApplyFileNameExtension(String name, URLConnectionAdapter connection) {
         final PluginForHost plugin = getPlugin();
         final String ext = getExtensionFromMimeType(connection);
-        if (ext != null) {
+        if (ext != null && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
             if (name.indexOf(".") < 0) {
                 name = name + "." + ext;
             } else if (plugin != null) {
@@ -670,7 +671,6 @@ public class DownloadLinkDownloadable implements Downloadable {
             /* never modify(correctOrApplyFileNameExtension) it in any way */
             return;
         }
-
         if (existingFinalFilename == null && isAllowFilenameFromURL(connection) && StringUtils.isNotEmpty(getFileNameFromURL(connection))) {
             /* Get filename from URL */
             final String fileNameFromURL = getFileNameFromURL(connection);
@@ -683,7 +683,6 @@ public class DownloadLinkDownloadable implements Downloadable {
             logger.info("updateFinalFileName: set to '" + newFinalFilename + "' from url:" + connection.getURL().getPath() + "|Content-Type:" + connection.getContentType() + "|fixEncoding:" + !StringUtils.equals(newFinalFilename, fileNameFromURL));
             setFinalFileName(newFinalFilename);
         }
-
         if (StringUtils.isNotEmpty(getName())) {
             /* Use pre given filename and correct extension if needed. */
             final String name = getName();
