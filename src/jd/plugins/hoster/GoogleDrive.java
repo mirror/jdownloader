@@ -1351,6 +1351,12 @@ public class GoogleDrive extends PluginForHost {
                 /*
                  * The file we are about to download might not be the original anymore -> Delete hash to prevent hashcheck from failing!
                  */
+                final long fileSize = link.getVerifiedFileSize();
+                if (fileSize != -1) {
+                    // filesize might be from original but download can be different file
+                    link.setVerifiedFileSize(-1);
+                    link.setDownloadSize(fileSize);
+                }
                 link.setHashInfo(null);
             }
             if (directurl == null) {
