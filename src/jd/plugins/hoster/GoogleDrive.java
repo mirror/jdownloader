@@ -838,7 +838,11 @@ public class GoogleDrive extends PluginForHost {
                 driveViewerURL = PluginJSonUtils.unescape(driveViewerURL);
                 /*
                  * 2024-06-11: Typically ends with "=s<number>" while in browser it ends with user's screen resolution e.g.: "=w1720-h1264".
+                 *
+                 * remove those as they may cause different image format/resolution
                  */
+                driveViewerURL = driveViewerURL.replaceFirst("=s\\d+[^&\\?]+$", "");
+                driveViewerURL = driveViewerURL.replaceFirst("=w\\d+-h\\d+[^&\\?]+$", "");
                 link.setProperty(PROPERTY_DIRECTURL_DRIVE_VIEWER, driveViewerURL);
             } else {
                 logger.warning("Failed to generate valid driveViewerURL");
