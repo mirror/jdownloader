@@ -324,6 +324,7 @@ public class CompiledFiletypeFilter {
                 return pattern.matcher(mimeType).find();
             }
         },
+        LOG,
         HTML("(html?)") {
             private final Pattern pattern = Pattern.compile("(?i)text/html");
 
@@ -927,9 +928,15 @@ public class CompiledFiletypeFilter {
                 return pattern.matcher(mimeType).find();
             }
         },
-        BMP,
-        TIF,
-        TIFF {
+        BMP {
+            private final Pattern pattern = Pattern.compile("(?i)image/(bmp|x-bmp)");
+
+            @Override
+            public boolean matchesMimeType(String mimeType) {
+                return pattern.matcher(mimeType).find();
+            }
+        },
+        TIFF("tiff?") {
             private final Pattern pattern = Pattern.compile("(?i)image/tiff");
 
             @Override
@@ -938,7 +945,14 @@ public class CompiledFiletypeFilter {
             }
         },
         RAW,
-        SVG,
+        SVG {
+            private final Pattern pattern = Pattern.compile("(?i)image/svg\\+xml");
+
+            @Override
+            public boolean matchesMimeType(String mimeType) {
+                return pattern.matcher(mimeType).find();
+            }
+        },
         ICO,
         CUR,
         WEBP {
