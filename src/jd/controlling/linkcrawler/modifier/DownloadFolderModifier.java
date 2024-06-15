@@ -2,12 +2,12 @@ package jd.controlling.linkcrawler.modifier;
 
 import java.io.File;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.os.CrossSystem;
+
 import jd.controlling.linkcrawler.CrawledLink;
 import jd.controlling.linkcrawler.CrawledLinkModifier;
 import jd.controlling.linkcrawler.PackageInfo;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.os.CrossSystem;
 
 public class DownloadFolderModifier implements CrawledLinkModifier {
     protected final String folder;
@@ -37,6 +37,7 @@ public class DownloadFolderModifier implements CrawledLinkModifier {
             existing.setDestinationFolderRoot(folder);
             if (overwriteFlag) {
                 existing.setIgnoreVarious(true);
+                existing.setDestinationFolder(folder);
             }
             existing.setUniqueId(null);
             link.setDesiredPackageInfo(existing);

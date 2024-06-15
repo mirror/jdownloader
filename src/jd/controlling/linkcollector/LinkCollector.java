@@ -37,44 +37,6 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
-import jd.config.Property;
-import jd.controlling.TaskQueue;
-import jd.controlling.downloadcontroller.DownloadController;
-import jd.controlling.downloadcontroller.DownloadSession;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.downloadcontroller.DownloadWatchDogJob;
-import jd.controlling.linkchecker.LinkChecker;
-import jd.controlling.linkchecker.LinkCheckerHandler;
-import jd.controlling.linkcollector.autostart.AutoStartManager;
-import jd.controlling.linkcrawler.CheckableLink;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledLinkModifier;
-import jd.controlling.linkcrawler.CrawledLinkProperty;
-import jd.controlling.linkcrawler.CrawledPackage;
-import jd.controlling.linkcrawler.CrawledPackage.TYPE;
-import jd.controlling.linkcrawler.LinkCrawler;
-import jd.controlling.linkcrawler.LinkCrawlerDeepInspector;
-import jd.controlling.linkcrawler.LinkCrawlerFilter;
-import jd.controlling.linkcrawler.LinkCrawlerHandler;
-import jd.controlling.linkcrawler.LinkCrawlerRule;
-import jd.controlling.linkcrawler.LinkCrawlerRule.RULE;
-import jd.controlling.linkcrawler.PackageInfo;
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
-import jd.controlling.packagecontroller.PackageController;
-import jd.gui.swing.jdgui.JDGui;
-import jd.gui.swing.jdgui.WarnLevel;
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
-import jd.parser.Regex;
-import jd.plugins.CrawledLinkStorable;
-import jd.plugins.CrawledPackageStorable;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-import jd.plugins.Plugin;
-import jd.plugins.PluginForHost;
-import jd.utils.JDUtilities;
-
 import org.appwork.controlling.SingleReachableState;
 import org.appwork.exceptions.WTFException;
 import org.appwork.scheduler.DelayedRunnable;
@@ -143,6 +105,44 @@ import org.jdownloader.settings.staticreferences.CFG_GUI;
 import org.jdownloader.settings.staticreferences.CFG_LINKCOLLECTOR;
 import org.jdownloader.settings.staticreferences.CFG_LINKGRABBER;
 import org.jdownloader.translate._JDT;
+
+import jd.config.Property;
+import jd.controlling.TaskQueue;
+import jd.controlling.downloadcontroller.DownloadController;
+import jd.controlling.downloadcontroller.DownloadSession;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.DownloadWatchDogJob;
+import jd.controlling.linkchecker.LinkChecker;
+import jd.controlling.linkchecker.LinkCheckerHandler;
+import jd.controlling.linkcollector.autostart.AutoStartManager;
+import jd.controlling.linkcrawler.CheckableLink;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledLinkModifier;
+import jd.controlling.linkcrawler.CrawledLinkProperty;
+import jd.controlling.linkcrawler.CrawledPackage;
+import jd.controlling.linkcrawler.CrawledPackage.TYPE;
+import jd.controlling.linkcrawler.LinkCrawler;
+import jd.controlling.linkcrawler.LinkCrawlerDeepInspector;
+import jd.controlling.linkcrawler.LinkCrawlerFilter;
+import jd.controlling.linkcrawler.LinkCrawlerHandler;
+import jd.controlling.linkcrawler.LinkCrawlerRule;
+import jd.controlling.linkcrawler.LinkCrawlerRule.RULE;
+import jd.controlling.linkcrawler.PackageInfo;
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
+import jd.controlling.packagecontroller.PackageController;
+import jd.gui.swing.jdgui.JDGui;
+import jd.gui.swing.jdgui.WarnLevel;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
+import jd.parser.Regex;
+import jd.plugins.CrawledLinkStorable;
+import jd.plugins.CrawledPackageStorable;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import jd.plugins.Plugin;
+import jd.plugins.PluginForHost;
+import jd.utils.JDUtilities;
 
 public class LinkCollector extends PackageController<CrawledPackage, CrawledLink> implements LinkCheckerHandler<CrawledLink>, LinkCrawlerHandler, ShutdownVetoListener {
     public static final String                        SOURCE_VARIANT_ID = "SOURCE_VARIANT_ID";
@@ -230,10 +230,10 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                     link.setCollectingInfo(collectingInfo);
                     final LinkCollectingJob job = getJob();
                     link.setSourceJob(job);
-                    if (job.isAssignJobID()) {
+                    if (job.isAssignJobID() || true) {
                         final DownloadLink downloadLink = link.getDownloadLink();
                         if (downloadLink != null) {
-                            downloadLink.setProperty(DownloadLink.PROPERTY_JOB_ID, job.getUniqueAlltimeID().getID());
+                            downloadLink.setProperty(DownloadLink.PROPERTY_JOB_ID, job.getUniqueAlltimeID().getIDLong());
                         }
                     }
                     linkCollector.handleFinalLink(link, getLinkChecker());
@@ -748,12 +748,16 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
     }
 
     public List<JobLinkCrawler> getJobLinkCrawlerByJobId(long... ids) {
-        List<JobLinkCrawler> result = new ArrayList<LinkCollector.JobLinkCrawler>();
+        final List<JobLinkCrawler> result = new ArrayList<LinkCollector.JobLinkCrawler>();
         final Set<UniqueAlltimeID> jobs = UniqueAlltimeID.createSet(ids);
         synchronized (jobLinkCrawlers) {
+            // TODO: optimize via Map<ID,WeakReference<JobLinkCrawler>>
             for (final JobLinkCrawler jobLinkCrawler : jobLinkCrawlers.keySet()) {
-                if (jobs.contains(jobLinkCrawler.getJob().getUniqueAlltimeID())) {
+                if (jobs.remove(jobLinkCrawler.getJob().getUniqueAlltimeID())) {
                     result.add(jobLinkCrawler);
+                }
+                if (jobs.size() == 0) {
+                    break;
                 }
             }
         }
@@ -1163,6 +1167,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                                 }
                                 if (filenameForPackagenameDerivation != null) {
                                     crawledPackageName = LinknameCleaner.derivePackagenameFromFilename(filenameForPackagenameDerivation);
+                                    crawledPackageName = LinknameCleaner.cleanPackagename(crawledPackageName, true);
                                 }
                             }
                             final CrawledPackageMappingID crawledPackageMapID = new CrawledPackageMappingID(crawledPackageID, crawledPackageName, downloadFolder);

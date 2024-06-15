@@ -1,9 +1,11 @@
 package jd.controlling.linkcollector;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -46,11 +48,11 @@ public class LinknameCleaner {
             /* not loaded yet */
         }
     }
-    public static final Pattern   pat13    = Pattern.compile("(part\\d+)", Pattern.CASE_INSENSITIVE);
-    public static final Pattern   pat17    = Pattern.compile("(.+)\\.\\d+\\.xtm($|\\.html?)");
-    public static final Pattern   pat18    = Pattern.compile("(.*)\\.isz($|\\.html?)", Pattern.CASE_INSENSITIVE);
-    public static final Pattern   pat19    = Pattern.compile("(.*)\\.i\\d{2}$", Pattern.CASE_INSENSITIVE);
-    public static final Pattern[] iszPats  = new Pattern[] { pat18, pat19 };
+    public static final Pattern   pat13   = Pattern.compile("(part\\d+)", Pattern.CASE_INSENSITIVE);
+    public static final Pattern   pat17   = Pattern.compile("(.+)\\.\\d+\\.xtm($|\\.html?)");
+    public static final Pattern   pat18   = Pattern.compile("(.*)\\.isz($|\\.html?)", Pattern.CASE_INSENSITIVE);
+    public static final Pattern   pat19   = Pattern.compile("(.*)\\.i\\d{2}$", Pattern.CASE_INSENSITIVE);
+    public static final Pattern[] iszPats = new Pattern[] { pat18, pat19 };
 
     public static enum EXTENSION_SETTINGS {
         KEEP,
@@ -58,39 +60,39 @@ public class LinknameCleaner {
         REMOVE_ALL
     }
 
-    private static volatile Map<Pattern, String> FILENAME_REPLACEMAP            = new HashMap<Pattern, String>();
-    private static volatile Map<Pattern, String> FILENAME_REPLACEMAP_DEFAULT    = new HashMap<Pattern, String>();
+    private static volatile Map<Pattern, String> FILENAME_REPLACEMAP         = new HashMap<Pattern, String>();
+    private static volatile Map<String, String>  FILENAME_REPLACEMAP_DEFAULT = new HashMap<String, String>();
     static {
         final ObjectKeyHandler replaceMapKeyHandler = CFG_GENERAL.FILENAME_CHARACTER_REGEX_REPLACEMAP;
+        FILENAME_REPLACEMAP_DEFAULT = (Map<String, String>) replaceMapKeyHandler.getDefaultValue();
         replaceMapKeyHandler.getEventSender().addListener(new GenericConfigEventListener<Object>() {
             @Override
             public void onConfigValueModified(KeyHandler<Object> keyHandler, Object newValue) {
-                FILENAME_REPLACEMAP = convertReplaceMap((Map<String, String>) newValue);
+                FILENAME_REPLACEMAP = convertReplaceMap(FILENAME_REPLACEMAP_DEFAULT, (Map<String, String>) newValue);
             }
 
             @Override
             public void onConfigValidatorError(KeyHandler<Object> keyHandler, Object invalidValue, ValidationException validateException) {
             }
         });
-        FILENAME_REPLACEMAP = convertReplaceMap((Map<String, String>) replaceMapKeyHandler.getValue());
-        FILENAME_REPLACEMAP_DEFAULT = convertReplaceMap((Map<String, String>) replaceMapKeyHandler.getDefaultValue());
+        FILENAME_REPLACEMAP = convertReplaceMap(FILENAME_REPLACEMAP_DEFAULT, (Map<String, String>) replaceMapKeyHandler.getValue());
     }
     private static volatile Map<Pattern, String> PACKAGENAME_REPLACEMAP         = new HashMap<Pattern, String>();
-    private static volatile Map<Pattern, String> PACKAGENAME_REPLACEMAP_DEFAULT = new HashMap<Pattern, String>();
+    private static volatile Map<String, String>  PACKAGENAME_REPLACEMAP_DEFAULT = new HashMap<String, String>();
     static {
         final ObjectKeyHandler replaceMapKeyHandler = CFG_GENERAL.PACKAGE_NAME_CHARACTER_REGEX_REPLACEMAP;
+        PACKAGENAME_REPLACEMAP_DEFAULT = (Map<String, String>) replaceMapKeyHandler.getDefaultValue();
         replaceMapKeyHandler.getEventSender().addListener(new GenericConfigEventListener<Object>() {
             @Override
             public void onConfigValueModified(KeyHandler<Object> keyHandler, Object newValue) {
-                PACKAGENAME_REPLACEMAP = convertReplaceMap((Map<String, String>) newValue);
+                PACKAGENAME_REPLACEMAP = convertReplaceMap(PACKAGENAME_REPLACEMAP_DEFAULT, (Map<String, String>) newValue);
             }
 
             @Override
             public void onConfigValidatorError(KeyHandler<Object> keyHandler, Object invalidValue, ValidationException validateException) {
             }
         });
-        PACKAGENAME_REPLACEMAP = convertReplaceMap((Map<String, String>) replaceMapKeyHandler.getValue());
-        PACKAGENAME_REPLACEMAP_DEFAULT = convertReplaceMap((Map<String, String>) replaceMapKeyHandler.getDefaultValue());
+        PACKAGENAME_REPLACEMAP = convertReplaceMap(PACKAGENAME_REPLACEMAP_DEFAULT, (Map<String, String>) replaceMapKeyHandler.getValue());
     }
 
     public static class ReplaceMapValidator extends AbstractValidator<Map<String, String>> {
@@ -112,20 +114,37 @@ public class LinknameCleaner {
     }
 
     /** Converts given <String, String> Map to <Pattern, String> Map. */
-    private static Map<Pattern, String> convertReplaceMap(final Map<String, String> replaceMap) {
-        if (replaceMap == null || replaceMap.size() == 0) {
-            return null;
-        }
+    private static Map<Pattern, String> convertReplaceMap(final Map<String, String> defaultReplaceMap, final Map<String, String> replaceMap) {
         final Map<Pattern, String> ret = new HashMap<Pattern, String>();
-        for (final Entry<String, String> entry : replaceMap.entrySet()) {
-            if (StringUtils.isNotEmpty(entry.getKey()) && entry.getValue() != null) {
-                try {
-                    ret.put(Pattern.compile(entry.getKey()), Matcher.quoteReplacement(entry.getValue()));
-                } catch (final Exception e) {
+        final Set<String> keys = new HashSet<String>();// Pattern doesn't implement equals!
+        if (replaceMap != null) {
+            for (final Entry<String, String> entry : replaceMap.entrySet()) {
+                if (StringUtils.isNotEmpty(entry.getKey()) && entry.getValue() != null) {
+                    try {
+                        ret.put(Pattern.compile(entry.getKey()), Matcher.quoteReplacement(entry.getValue()));
+                        keys.add(entry.getKey());
+                    } catch (final Exception e) {
+                        e.printStackTrace();
+                    }
                 }
             }
         }
-        return ret;
+        if (defaultReplaceMap != null) {
+            for (final Entry<String, String> entry : defaultReplaceMap.entrySet()) {
+                if (StringUtils.isNotEmpty(entry.getKey()) && entry.getValue() != null && !keys.contains(entry.getKey())) {
+                    try {
+                        ret.put(Pattern.compile(entry.getKey()), Matcher.quoteReplacement(entry.getValue()));
+                    } catch (final Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }
+        if (ret.size() > 0) {
+            return ret;
+        } else {
+            return null;
+        }
     }
 
     private static String replaceCharactersByMap(final String input, final Map<Pattern, String> forbiddenCharacterRegexReplaceMap) {
@@ -144,12 +163,13 @@ public class LinknameCleaner {
                 try {
                     newstr = pattern.matcher(newstr).replaceAll(replacement);
                 } catch (final Exception e) {
+                    e.printStackTrace();
                 }
             }
         }
         /**
-         * Users can put anything into that replace map. </br> Try to avoid the results of adding something like ".+" resulting in empty
-         * filenames.
+         * Users can put anything into that replace map. </br>
+         * Try to avoid the results of adding something like ".+" resulting in empty filenames.
          */
         if (!StringUtils.isEmpty(newstr)) {
             return newstr;
@@ -159,32 +179,22 @@ public class LinknameCleaner {
         }
     }
 
-    public static String cleanFilename(final String filename) {
-        String newfinalFileName = filename;
-        newfinalFileName = replaceCharactersByMap(filename, FILENAME_REPLACEMAP);
-        /* We can never know how users alter the setting so let's do one more round with our default replace map. */
-        newfinalFileName = replaceCharactersByMap(filename, FILENAME_REPLACEMAP_DEFAULT);
-        newfinalFileName = CrossSystem.alleviatePathParts(newfinalFileName, false);
-        return newfinalFileName;
+    public static String cleanFilename(final String fileName) {
+        String ret = replaceCharactersByMap(fileName, FILENAME_REPLACEMAP);
+        ret = CrossSystem.alleviatePathParts(ret, false);
+        return ret;
     }
 
-    public static String cleanPackagename(String name, boolean allowCleanup) {
-        name = replaceCharactersByMap(name, PACKAGENAME_REPLACEMAP);
-        name = replaceCharactersByMap(name, PACKAGENAME_REPLACEMAP_DEFAULT);
+    public static String cleanPackagename(final String packageName, boolean allowCleanup) {
+        String ret = replaceCharactersByMap(packageName, PACKAGENAME_REPLACEMAP);
         /* if enabled, replace dots and _ with spaces and do further clean ups */
-        // final boolean splitUpperLowerCase = false;
         if (allowCleanup && org.jdownloader.settings.staticreferences.CFG_GENERAL.CLEAN_UP_PACKAGENAMES.isEnabled()) {
-            StringBuilder sb = new StringBuilder();
-            char[] cs = name.toCharArray();
+            // still wanted by users, so please do not simply remove this
+            // TODO: maybe add own cleanup replace map that does this via pattern/replace or add those to package name replace map
+            final StringBuilder sb = new StringBuilder();
+            char[] cs = ret.toCharArray();
             char lastChar = 'a';
             for (int i = 0; i < cs.length; i++) {
-                // splitFileNamesLikeThis to "split File Names Like This"
-                // if (splitUpperLowerCase && i > 0 && Character.isUpperCase(cs[i]) && Character.isLowerCase(cs[i - 1])) {
-                // if (lastChar != ' ') {
-                // sb.append(' ');
-                // }
-                // lastChar = ' ';
-                // }
                 switch (cs[i]) {
                 case '_':
                 case '.':
@@ -198,9 +208,9 @@ public class LinknameCleaner {
                     sb.append(cs[i]);
                 }
             }
-            name = sb.toString();
+            ret = sb.toString();
         }
-        return name.trim();
+        return ret.trim();
     }
 
     /** Derives package name out of given filename. */

@@ -71,7 +71,9 @@ public class SetDownloadFolderInLinkgrabberAction extends SetDownloadFolderActio
              * Source package is a "special" package like "permanently offline" or "various" -> Use the filename of the first item of that
              * package and create a new package name by that.
              */
-            pkg.setName(LinknameCleaner.derivePackagenameFromFilename(getSelection().getPackageView(entry).getChildren().get(0).getName()));
+            String packageName = LinknameCleaner.derivePackagenameFromFilename(getSelection().getPackageView(entry).getChildren().get(0).getName());
+            packageName = LinknameCleaner.cleanPackagename(packageName, true);
+            pkg.setName(packageName);
         }
         /* Adopt comment of source-package. */
         pkg.setComment(entry.getComment());

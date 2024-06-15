@@ -89,7 +89,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginsC;
-import jd.plugins.hoster.DirectHTTP;
 
 public class LinkCrawler {
     private static enum DISTRIBUTE {
@@ -1207,10 +1206,10 @@ public class LinkCrawler {
         } else {
             startURL = request.getURL().toExternalForm();
         }
-        final DownloadLink link = new DownloadLink(null, null, "DirectHTTP", DirectHTTP.createURLForThisPlugin(startURL), true);
+        final DownloadLink link = new DownloadLink(null, null, "DirectHTTP", "directhttp://" + startURL, true);
         final String cookie = con.getRequestProperty("Cookie");
         if (StringUtils.isNotEmpty(cookie)) {
-            link.setProperty(DirectHTTP.PROPERTY_COOKIES, cookie);
+            link.setProperty("COOKIES", cookie);
         }
         final long contentLength = con.getCompleteContentLength();
         if (contentLength > 0) {
@@ -1254,7 +1253,7 @@ public class LinkCrawler {
                 }
                 link.setFinalFileName(fileName);
                 /* save filename in property so we can restore in reset case */
-                link.setProperty(DirectHTTP.FIXNAME, fileName);
+                link.setProperty("fixName", fileName);
             }
         }
         link.setAvailable(true);
@@ -1578,7 +1577,7 @@ public class LinkCrawler {
                         if (deepLink == null) {
                             return;
                         }
-                        final boolean scanForHttpDirectory = true;
+                        final boolean scanForHttpDirectory = false;
                         if (scanForHttpDirectory && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
                             // TODO: 2024-03-07: Unfinished feature, properly implement this
                             /* Check if http directory crawler would return results for current item */
@@ -2318,7 +2317,7 @@ public class LinkCrawler {
                                                 break;
                                             }
                                         }
-                                        link.setProperty(DirectHTTP.PROPERTY_COOKIES, sb.toString());
+                                        link.setProperty("COOKIES", sb.toString());
                                     }
                                     final CrawledLink directHTTP = crawledLinkFactorybyDownloadLink(link);
                                     directHTTP.setMatchingRule(rule);
