@@ -537,6 +537,14 @@ public abstract class K2SApi extends PluginForHost {
             // private = owner only..
             link.setProperty(PROPERTY_ACCESS, access);
         }
+        /* Set additional properties for packagizer usage */
+        final Map<String, Object> video_info = (Map<String, Object>) fileInfo.get("video_info");
+        if (video_info != null) {
+            link.setProperty("video_duration", video_info.get("duration"));
+            link.setProperty("video_width", video_info.get("width"));
+            link.setProperty("video_height", video_info.get("height"));
+            link.setProperty("video_format", video_info.get("format"));
+        }
     }
 
     protected boolean fetchAdditionalAccountInfo(final Account account, final AccountInfo ai, final Browser br, final String auth_token) {

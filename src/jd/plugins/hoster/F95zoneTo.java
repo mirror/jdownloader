@@ -19,6 +19,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -44,6 +47,11 @@ public class F95zoneTo extends PluginForHost {
     public F95zoneTo(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://f95zone.to/register/");
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.COOKIE_LOGIN_OPTIONAL };
     }
 
     @Override
@@ -93,55 +101,74 @@ public class F95zoneTo extends PluginForHost {
 
     public boolean login(final Account account, final boolean force) throws Exception {
         synchronized (account) {
-            try {
-                br.setFollowRedirects(true);
-                br.setCookiesExclusive(true);
-                final Cookies cookies = account.loadCookies("");
-                if (cookies != null) {
-                    logger.info("Attempting cookie login");
-                    this.br.setCookies(this.getHost(), cookies);
-                    if (!force) {
-                        /* Don't validate cookies */
-                        return false;
-                    }
-                    br.getPage("https://" + this.getHost() + "/");
-                    if (this.isLoggedin(br)) {
-                        logger.info("Cookie login successful");
+            br.setFollowRedirects(true);
+            br.setCookiesExclusive(true);
+            final Cookies cookies = account.loadCookies("");
+            final Cookies userCookies = account.loadUserCookies();
+            if (cookies != null || userCookies != null) {
+                logger.info("Attempting cookie login");
+                if (userCookies != null) {
+                    br.setCookies(userCookies);
+                } else {
+                    br.setCookies(cookies);
+                }
+                if (!force) {
+                    /* Don't validate cookies */
+                    return false;
+                }
+                br.getPage("https://" + this.getHost() + "/");
+                if (this.isLoggedin(br)) {
+                    logger.info("Cookie login successful");
+                    if (userCookies == null) {
                         /* Refresh cookie timestamp */
                         account.saveCookies(this.br.getCookies(this.getHost()), "");
-                        return true;
-                    } else {
-                        logger.info("Cookie login failed");
+                    }
+                    return true;
+                } else {
+                    logger.info("Cookie login failed");
+                    br.clearCookies(null);
+                    account.clearCookies("");
+                    if (userCookies != null) {
+                        if (account.hasEverBeenValid()) {
+                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
+                        } else {
+                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
+                        }
                     }
                 }
-                logger.info("Performing full login");
-                br.getPage("https://" + this.getHost() + "/login/");
-                final Form loginform = br.getFormbyActionRegex(".*/login.*");
-                if (loginform == null) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
-                loginform.put("login", Encoding.urlEncode(account.getUser()));
-                loginform.put("password", Encoding.urlEncode(account.getPass()));
-                loginform.put("remember", "1");
-                /* Remove some keys due to possible Form parser issues see ticket: https://svn.jdownloader.org/issues/90224 */
-                loginform.remove("username_confirm");
-                loginform.remove("email");
-                loginform.remove("email_confirm");
-                loginform.remove("name_cb");
-                loginform.remove("password_cb");
-                loginform.remove("email_cb");
-                br.submitForm(loginform);
-                if (!isLoggedin(br)) {
-                    throw new AccountInvalidException();
-                }
-                account.saveCookies(this.br.getCookies(this.getHost()), "");
-                return true;
-            } catch (final PluginException e) {
-                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
-                    account.clearCookies("");
-                }
-                throw e;
             }
+            logger.info("Performing full login");
+            br.getPage("https://" + this.getHost() + "/login/");
+            final Form loginform = br.getFormbyActionRegex(".*/login.*");
+            if (loginform == null) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            loginform.put("login", Encoding.urlEncode(account.getUser()));
+            loginform.put("password", Encoding.urlEncode(account.getPass()));
+            loginform.put("remember", "1");
+            /* Remove some keys due to possible Form parser issues see ticket: https://svn.jdownloader.org/issues/90224 */
+            loginform.remove("username_confirm");
+            loginform.remove("email");
+            loginform.remove("email_confirm");
+            loginform.remove("name_cb");
+            loginform.remove("password_cb");
+            loginform.remove("email_cb");
+            br.submitForm(loginform);
+            final Form twoFaLogin = br.getFormbyActionRegex(".*/login/two-step.*");
+            if (!isLoggedin(br) && twoFaLogin != null) {
+                logger.info("2FA code required");
+                final String twoFACode = this.getTwoFACode(account, "^\\d{6}$");
+                twoFaLogin.put("code", twoFACode);
+                br.submitForm(twoFaLogin);
+                if (!isLoggedin(br)) {
+                    throw new AccountInvalidException(org.jdownloader.gui.translate._GUI.T.jd_gui_swing_components_AccountDialog_2FA_login_invalid());
+                }
+            }
+            if (!isLoggedin(br)) {
+                throw new AccountInvalidException();
+            }
+            account.saveCookies(this.br.getCookies(this.getHost()), "");
+            return true;
         }
     }
 

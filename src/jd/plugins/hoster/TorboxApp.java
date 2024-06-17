@@ -25,6 +25,7 @@ import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.storage.JSonMapperException;
 import org.appwork.storage.TypeRef;
 import org.appwork.utils.Exceptions;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
 import org.appwork.utils.parser.UrlQuery;
@@ -131,7 +132,12 @@ public class TorboxApp extends PluginForHost {
         } else {
             mhm.runCheck(account, link);
             logger.info("Creating or finding internal file_id");
-            final Request req_createwebdownload = br.createPostRequest(API_BASE + "/webdl/createwebdownload", "link=" + Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)));
+            final UrlQuery query = new UrlQuery();
+            query.add("link", Encoding.urlEncode(link.getDefaultPlugin().buildExternalDownloadURL(link, this)));
+            if (!StringUtils.isEmpty(link.getDownloadPassword())) {
+                query.add("password", Encoding.urlEncode(link.getDownloadPassword()));
+            }
+            final Request req_createwebdownload = br.createPostRequest(API_BASE + "/webdl/createwebdownload", query);
             final Map<String, Object> entries = (Map<String, Object>) this.callAPI(req_createwebdownload, account, link);
             /**
              * These two strings can be used to identify the unique item/link we just added. </br>

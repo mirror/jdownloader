@@ -54,7 +54,6 @@ public class PixhostTo extends PluginForHost {
     /* Connection stuff */
     private static final boolean free_resume       = false;
     private static final int     free_maxchunks    = 1;
-    private static final int     free_maxdownloads = -1;
     private String               dllink            = null;
 
     public static List<String[]> getPluginDomains() {
@@ -114,7 +113,7 @@ public class PixhostTo extends PluginForHost {
 
     private AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws IOException, PluginException {
         dllink = null;
-        final String filenameFromURL = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(2);
+        final String filenameFromURL = new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(3);
         if (!link.isNameSet()) {
             link.setName(filenameFromURL);
         }
@@ -165,24 +164,27 @@ public class PixhostTo extends PluginForHost {
             }
             link.setFinalFileName(filename);
         }
-        if (!StringUtils.isEmpty(dllink) && !isDownload) {
+        if (!StringUtils.isEmpty(dllink)) {
             dllink = Encoding.htmlOnlyDecode(dllink);
-            URLConnectionAdapter con = null;
-            try {
-                con = br.openHeadConnection(dllink);
-                handleConnectionErrors(br, con);
-                if (con.getCompleteContentLength() > 0) {
-                    link.setVerifiedFileSize(con.getCompleteContentLength());
-                }
-            } finally {
+            if (!isDownload) {
+                URLConnectionAdapter con = null;
                 try {
-                    con.disconnect();
-                } catch (final Throwable e) {
+                    con = br.openHeadConnection(dllink);
+                    handleConnectionErrors(br, con);
+                    if (con.getCompleteContentLength() > 0) {
+                        if (con.isContentDecoded()) {
+                            link.setDownloadSize(con.getCompleteContentLength());
+                        } else {
+                            link.setVerifiedFileSize(con.getCompleteContentLength());
+                        }
+                    }
+                } finally {
+                    try {
+                        con.disconnect();
+                    } catch (final Throwable e) {
+                    }
                 }
             }
-        } else {
-            /* We cannot be sure whether we have the correct extension or not! */
-            link.setName(filename);
         }
         return AvailableStatus.TRUE;
     }
@@ -213,7 +215,7 @@ public class PixhostTo extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return free_maxdownloads;
+        return Integer.MAX_VALUE;
     }
 
     @Override
