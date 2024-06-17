@@ -23,11 +23,8 @@ import org.jdownloader.plugins.components.XFileSharingProBasic;
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.Regex;
-import jd.parser.html.Form;
-import jd.parser.html.InputField;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
-import jd.plugins.AccountInvalidException;
 import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
@@ -158,31 +155,9 @@ public class FastfileCc extends XFileSharingProBasic {
         } catch (final PluginException e) {
             if (br.containsHTML("n order to protect your privacy, your account has been blocked")) {
                 throw new AccountUnavailableException("Your account has been blocked temporarily", 30 * 60 * 1000);
+            } else {
+                return handleLoginWebsite2FA(e, downloadLink, account, validateCookies);
             }
-            Form twoFAForm = null;
-            final String formKey2FA = "code";
-            final Form[] forms = br.getForms();
-            for (final Form form : forms) {
-                final InputField twoFAField = form.getInputField(formKey2FA);
-                if (twoFAField != null) {
-                    twoFAForm = form;
-                    break;
-                }
-            }
-            if (twoFAForm == null) {
-                /* Login failed, not due the need of 2FA login */
-                throw e;
-            }
-            logger.info("2FA code required");
-            final String twoFACode = this.getTwoFACode(account, "\\d{6}");
-            logger.info("Submitting 2FA code");
-            twoFAForm.put(formKey2FA, twoFACode);
-            this.submitForm(twoFAForm);
-            if (!this.br.getURL().contains("?op=my_account")) {
-                throw new AccountInvalidException(org.jdownloader.gui.translate._GUI.T.jd_gui_swing_components_AccountDialog_2FA_login_invalid());
-            }
-            account.saveCookies(br.getCookies(br.getHost()), "");
-            return true;
         }
     }
 

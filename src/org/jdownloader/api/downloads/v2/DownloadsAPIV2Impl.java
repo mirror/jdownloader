@@ -1,22 +1,11 @@
 package org.jdownloader.api.downloads.v2;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import javax.swing.Icon;
-
-import jd.controlling.downloadcontroller.DownloadController;
-import jd.controlling.downloadcontroller.DownloadSession.STOPMARK;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-import jd.plugins.FilePackageView;
-import jd.plugins.PluginProgress;
-import jd.plugins.PluginStateCollection;
 
 import org.appwork.remoteapi.exceptions.BadParameterException;
 import org.jdownloader.DomainInfo;
@@ -34,7 +23,23 @@ import org.jdownloader.myjdownloader.client.bindings.UrlDisplayTypeStorable;
 import org.jdownloader.myjdownloader.client.bindings.interfaces.DownloadsListInterface;
 import org.jdownloader.plugins.ConditionalSkipReason;
 import org.jdownloader.plugins.FinalLinkState;
+import org.jdownloader.plugins.MirrorLoading;
 import org.jdownloader.plugins.SkipReason;
+import org.jdownloader.plugins.TimeOutCondition;
+import org.jdownloader.plugins.WaitForAccountSkipReason;
+import org.jdownloader.plugins.WaitForAccountTrafficSkipReason;
+import org.jdownloader.plugins.WaitWhileWaitingSkipReasonIsSet;
+import org.jdownloader.plugins.WaitingSkipReason;
+
+import jd.controlling.downloadcontroller.DownloadController;
+import jd.controlling.downloadcontroller.DownloadSession.STOPMARK;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import jd.plugins.FilePackageView;
+import jd.plugins.PluginProgress;
+import jd.plugins.PluginStateCollection;
 
 public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
     private final PackageControllerUtils<FilePackage, DownloadLink> packageControllerUtils;
@@ -228,14 +233,24 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
         if (queryParams.isBytesTotal()) {
             dls.setBytesTotal(dl.getView().getBytesTotalEstimated());
         }
-        if (queryParams.isStatus()) {
+        if (queryParams.isStatus() || queryParams.isAdvancedStatus()) {
             setStatus(dls, dl, caller);
+            if (!queryParams.isAdvancedStatus()) {
+                dls.setAdvancedStatus(null);
+            }
+            if (!queryParams.isStatus()) {
+                dls.setStatus(null);
+                dls.setStatusIconKey(null);
+            }
         }
         if (queryParams.isBytesLoaded()) {
             dls.setBytesLoaded(dl.getView().getBytesLoaded());
         }
         if (queryParams.isSpeed()) {
             dls.setSpeed(dl.getView().getSpeedBps());
+        }
+        if (queryParams.isJobUUID()) {
+            dls.setJobUUID(dl.getJobID());
         }
         if (queryParams.isEta()) {
             PluginProgress plg = dl.getPluginProgress();
@@ -280,79 +295,170 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
     }
 
     public static DownloadLinkAPIStorableV2 setStatus(DownloadLinkAPIStorableV2 dls, DownloadLink link, Object caller) {
-        Icon icon = null;
-        String label = null;
-        PluginProgress prog = link.getPluginProgress();
+        final Map<String, Object> advancedStatus = new HashMap<String, Object>();
+        dls.setAdvancedStatus(advancedStatus);
+        boolean oldStatusSet = false;// old status field did only hold/contain first status/progress
+        final PluginProgress prog = link.getPluginProgress();
         if (prog != null) {
-            icon = prog.getIcon(caller);
-            label = prog.getMessage(caller);
-            if (icon != null) {
-                dls.setStatusIconKey(RemoteAPIController.getInstance().getContentAPI().getIconKey(icon));
+            final String iconKey = RemoteAPIController.getInstance().getContentAPI().getIconKey(prog.getIcon(caller));
+            final String label = prog.getMessage(caller);
+            if (!oldStatusSet) {
+                oldStatusSet = true;
+                dls.setStatusIconKey(iconKey);
+                dls.setStatus(label);
             }
-            dls.setStatus(label);
-            return dls;
+            final Map<String, Object> entry = new HashMap<String, Object>();
+            entry.put("iconKey", iconKey);
+            entry.put("current", prog.getCurrent());
+            entry.put("total", prog.getTotal());
+            entry.put("eta", prog.getETA());
+            entry.put("label", label);
+            entry.put("id", prog.getID().name());
+            advancedStatus.put("PluginProgress", entry);
         }
-        ConditionalSkipReason conditionalSkipReason = link.getConditionalSkipReason();
+        final ConditionalSkipReason conditionalSkipReason = link.getConditionalSkipReason();
         if (conditionalSkipReason != null && !conditionalSkipReason.isConditionReached()) {
-            icon = conditionalSkipReason.getIcon(caller, null);
-            label = conditionalSkipReason.getMessage(caller, null);
-            dls.setStatusIconKey(RemoteAPIController.getInstance().getContentAPI().getIconKey(icon));
-            dls.setStatus(label);
-            return dls;
+            final String iconKey = RemoteAPIController.getInstance().getContentAPI().getIconKey(conditionalSkipReason.getIcon(caller, null));
+            final String label = conditionalSkipReason.getMessage(caller, null);
+            if (!oldStatusSet) {
+                oldStatusSet = true;
+                dls.setStatusIconKey(iconKey);
+                dls.setStatus(label);
+            }
+            final Map<String, Object> entry = new HashMap<String, Object>();
+            entry.put("iconKey", iconKey);
+            entry.put("label", label);
+            if (conditionalSkipReason instanceof TimeOutCondition) {
+                final TimeOutCondition timeOutCondition = (TimeOutCondition) conditionalSkipReason;
+                entry.put("id", "TimeOutCondition");
+                entry.put("timeout", timeOutCondition.getTimeOutLeft());
+            }
+            if (conditionalSkipReason instanceof MirrorLoading) {
+                final MirrorLoading mirrorLoading = (MirrorLoading) conditionalSkipReason;
+                entry.put("id", "MirrorLoading");
+                entry.put("uuid", mirrorLoading.getDownloadLink().getUniqueID().getID());
+            } else if (conditionalSkipReason instanceof WaitingSkipReason) {
+                final WaitingSkipReason waitingSkipReason = (WaitingSkipReason) conditionalSkipReason;
+                entry.put("id", "WaitingSkipReason");
+                entry.put("cause", waitingSkipReason.getCause().name());
+            } else if (conditionalSkipReason instanceof WaitForAccountSkipReason) {
+                final WaitForAccountSkipReason waitForAccountSkipReason = (WaitForAccountSkipReason) conditionalSkipReason;
+                entry.put("id", "WaitForAccountSkipReason");
+                entry.put("uuid", waitForAccountSkipReason.getAccount().getId().getID());
+            } else if (conditionalSkipReason instanceof WaitForAccountTrafficSkipReason) {
+                final WaitForAccountTrafficSkipReason waitForAccountTrafficSkipReason = (WaitForAccountTrafficSkipReason) conditionalSkipReason;
+                entry.put("id", "WaitForAccountTrafficSkipReason");
+                entry.put("uuid", waitForAccountTrafficSkipReason.getAccount().getId().getID());
+                entry.put("traffic", waitForAccountTrafficSkipReason.getTrafficRequired());
+            } else if (conditionalSkipReason instanceof WaitWhileWaitingSkipReasonIsSet) {
+                final WaitWhileWaitingSkipReasonIsSet waitWhileWaitingSkipReasonIsSet = (WaitWhileWaitingSkipReasonIsSet) conditionalSkipReason;
+                entry.put("id", "WaitWhileWaitingSkipReasonIsSet");
+                entry.put("uuid", waitWhileWaitingSkipReasonIsSet.getDownloadLink().getUniqueID().getID());
+                entry.put("cause", waitWhileWaitingSkipReasonIsSet.getCause().name());
+            }
+            advancedStatus.put("ConditionalSkipReason", entry);
         }
-        SkipReason skipReason = link.getSkipReason();
+        final SkipReason skipReason = link.getSkipReason();
         if (skipReason != null) {
-            icon = skipReason.getIcon(caller, 18);
-            label = skipReason.getExplanation(caller);
-            dls.setStatusIconKey(RemoteAPIController.getInstance().getContentAPI().getIconKey(icon));
-            dls.setStatus(label);
-            return dls;
+            final String iconKey = RemoteAPIController.getInstance().getContentAPI().getIconKey(skipReason.getIcon(caller, 18));
+            final String label = skipReason.getExplanation(caller);
+            if (!oldStatusSet) {
+                oldStatusSet = true;
+                dls.setStatusIconKey(iconKey);
+                dls.setStatus(label);
+            }
+            final Map<String, Object> entry = new HashMap<String, Object>();
+            entry.put("iconKey", iconKey);
+            entry.put("label", label);
+            entry.put("id", skipReason.name());
+            advancedStatus.put("SkipReason", entry);
         }
         final FinalLinkState finalLinkState = link.getFinalLinkState();
         if (finalLinkState != null) {
+            {
+                final Map<String, Object> entry = new HashMap<String, Object>();
+                entry.put("iconKey", finalLinkState.getIconKey());
+                entry.put("label", finalLinkState.getExplanation(caller, link));
+                entry.put("id", finalLinkState.name());
+                advancedStatus.put("FinalLinkState", finalLinkState);
+            }
             if (FinalLinkState.CheckFailed(finalLinkState)) {
-                label = finalLinkState.getExplanation(caller, link);
-                dls.setStatusIconKey(IconKey.ICON_FALSE);
-                dls.setStatus(label);
-                return dls;
+                final String label = finalLinkState.getExplanation(caller, link);
+                if (!oldStatusSet) {
+                    oldStatusSet = true;
+                    dls.setStatusIconKey(IconKey.ICON_FALSE);
+                    dls.setStatus(label);
+                }
             }
             final ExtractionStatus extractionStatus = link.getExtractionStatus();
             if (extractionStatus != null) {
+                final Map<String, Object> entry = new HashMap<String, Object>();
+                {
+                    // TODO
+                    // entry.put("iconKey", extractionStatus.getIconKey());
+                    entry.put("label", extractionStatus.getExplanation());
+                    entry.put("id", extractionStatus.name());
+                    advancedStatus.put("ExtractionStatus", finalLinkState);
+                }
                 switch (extractionStatus) {
                 case ERROR:
                 case ERROR_PW:
                 case ERROR_CRC:
                 case ERROR_NOT_ENOUGH_SPACE:
-                case ERRROR_FILE_NOT_FOUND:
-                    label = extractionStatus.getExplanation();
-                    dls.setStatusIconKey(IconKey.ICON_EXTRACT_ERROR);
+                case ERRROR_FILE_NOT_FOUND: {
+                    entry.put("iconKey", IconKey.ICON_EXTRACT_ERROR);
+                    if (!oldStatusSet) {
+                        final String label = extractionStatus.getExplanation();
+                        oldStatusSet = true;
+                        dls.setStatusIconKey(IconKey.ICON_EXTRACT_ERROR);
+                        dls.setStatus(label);
+                    }
+                }
+                    break;
+                case SUCCESSFUL: {
+                    entry.put("iconKey", IconKey.ICON_EXTRACT_OK);
+                    final String label = extractionStatus.getExplanation();
+                    if (!oldStatusSet) {
+                        oldStatusSet = true;
+                        dls.setStatusIconKey(IconKey.ICON_EXTRACT_OK);
+                        dls.setStatus(label);
+                    }
+                }
+                    break;
+                case RUNNING: {
+                    entry.put("iconKey", IconKey.ICON_EXTRACT);
+                    final String label = extractionStatus.getExplanation();
+                    if (!oldStatusSet) {
+                        oldStatusSet = true;
+                        dls.setStatusIconKey(IconKey.ICON_EXTRACT);
+                        dls.setStatus(label);
+                    }
+                }
+                    break;
+                }
+                if (!oldStatusSet) {
+                    final String label = finalLinkState.getExplanation(caller, link);
+                    oldStatusSet = true;
+                    if (FinalLinkState.FINISHED_MIRROR.equals(finalLinkState)) {
+                        dls.setStatusIconKey(IconKey.ICON_TRUE_ORANGE);
+                    } else {
+                        dls.setStatusIconKey(IconKey.ICON_TRUE);
+                    }
                     dls.setStatus(label);
-                    return dls;
-                case SUCCESSFUL:
-                    label = extractionStatus.getExplanation();
-                    dls.setStatusIconKey(IconKey.ICON_EXTRACT_OK);
-                    dls.setStatus(label);
-                    return dls;
-                case RUNNING:
-                    label = extractionStatus.getExplanation();
-                    dls.setStatusIconKey(IconKey.ICON_EXTRACT);
-                    dls.setStatus(label);
-                    return dls;
                 }
             }
-            if (FinalLinkState.FINISHED_MIRROR.equals(finalLinkState)) {
-                dls.setStatusIconKey(IconKey.ICON_TRUE_ORANGE);
-            } else {
-                dls.setStatusIconKey(IconKey.ICON_TRUE);
-            }
-            label = finalLinkState.getExplanation(caller, link);
-            dls.setStatus(label);
-            return dls;
         }
         if (link.getDownloadLinkController() != null) {
-            dls.setStatusIconKey(IconKey.ICON_RUN);
-            dls.setStatus(_GUI.T.TaskColumn_fillColumnHelper_starting());
-            return dls;
+            if (!oldStatusSet) {
+                oldStatusSet = true;
+                dls.setStatusIconKey(IconKey.ICON_RUN);
+                dls.setStatus(_GUI.T.TaskColumn_fillColumnHelper_starting());
+            }
+            // TODO: finer/more details
+            final Map<String, Object> entry = new HashMap<String, Object>();
+            entry.put("iconKey", IconKey.ICON_RUN);
+            entry.put("label", _GUI.T.TaskColumn_fillColumnHelper_starting());
+            advancedStatus.put("SingleDownloadController", entry);
         }
         return dls;
     }

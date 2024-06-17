@@ -1,12 +1,16 @@
 package jd.plugins;
 
 import java.awt.Color;
+import java.util.regex.Pattern;
 
 import javax.swing.JComponent;
 import javax.swing.JLabel;
+import javax.swing.text.DefaultHighlighter;
+import javax.swing.text.Highlighter.HighlightPainter;
 
 import org.appwork.swing.MigPanel;
 import org.appwork.swing.components.ExtPasswordField;
+import org.appwork.swing.components.ExtTextHighlighter;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.gui.InputChangedCallbackInterface;
 import org.jdownloader.gui.translate._GUI;
@@ -55,7 +59,14 @@ public class DefaultEditAccountPanelAPIKeyLogin extends MigPanel implements Acco
         add(this.pass = new ExtPasswordField() {
             @Override
             public void onChanged() {
-                callback.onChangedInput(this);
+                callback.onChangedInput(pass);
+            }
+
+            {
+                final HighlightPainter painter = new DefaultHighlighter.DefaultHighlightPainter(Color.yellow);
+                addTextHighlighter(new ExtTextHighlighter(painter, Pattern.compile("^(\\s+)")));
+                addTextHighlighter(new ExtTextHighlighter(painter, Pattern.compile("(\\s+)$")));
+                applyTextHighlighter(null);
             }
         }, "");
         pass.setHelpText(_GUI.T.jd_gui_swing_components_AccountDialog_api_key_help());

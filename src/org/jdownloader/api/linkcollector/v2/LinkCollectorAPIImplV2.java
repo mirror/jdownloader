@@ -290,6 +290,9 @@ public class LinkCollectorAPIImplV2 implements LinkCollectorAPIV2 {
                 LoggerFactory.getDefaultLogger().log(e);
             }
         }
+        if (queryParams.isJobUUID()) {
+            cls.setJobUUID(cl.getJobID());
+        }
         if (queryParams.isComment()) {
             cls.setComment(cl.getComment());
         }

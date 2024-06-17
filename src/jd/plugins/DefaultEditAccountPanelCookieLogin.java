@@ -123,13 +123,29 @@ public class DefaultEditAccountPanelCookieLogin extends MigPanel implements Acco
             public void onChanged() {
                 callback.onChangedInput(pass);
             }
-            /* Highlighter doesn't make any sense here as user can't see password anyways. */
-            // {
-            // final HighlightPainter painter = new DefaultHighlighter.DefaultHighlightPainter(Color.yellow);
-            // addTextHighlighter(new ExtTextHighlighter(painter, Pattern.compile("^(\\s+)")));
-            // addTextHighlighter(new ExtTextHighlighter(painter, Pattern.compile("(\\s+)$")));
-            // applyTextHighlighter(null);
-            // }
+
+            {
+                final HighlightPainter painter = new DefaultHighlighter.DefaultHighlightPainter(Color.yellow);
+                addTextHighlighter(new ExtTextHighlighter(painter, Pattern.compile("^(\\s+)")) {
+                    public boolean highlight(javax.swing.text.Highlighter highlighter, CharSequence charSequence) {
+                        if (Cookies.parseCookiesFromJsonString(charSequence.toString()) != null) {
+                            return false;
+                        } else {
+                            return super.highlight(highlighter, charSequence);
+                        }
+                    };
+                });
+                addTextHighlighter(new ExtTextHighlighter(painter, Pattern.compile("(\\s+)$")) {
+                    public boolean highlight(javax.swing.text.Highlighter highlighter, CharSequence charSequence) {
+                        if (Cookies.parseCookiesFromJsonString(charSequence.toString()) != null) {
+                            return false;
+                        } else {
+                            return super.highlight(highlighter, charSequence);
+                        }
+                    };
+                });
+                applyTextHighlighter(null);
+            }
         }, "");
         if (cookieLoginOnly) {
             pass.setHelpText(_GUI.T.BuyAndAddPremiumAccount_layoutDialogContent_cookies());

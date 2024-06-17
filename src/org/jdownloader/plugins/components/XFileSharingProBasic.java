@@ -4761,6 +4761,8 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
          */
         final boolean isRedirect = brc.getRedirectLocation() != null;
         final boolean myAccountOkay = new Regex(htmlWithoutScriptTagsAndComments, ahrefPattern + "(&|\\?)op=my_account").matches() || new Regex(htmlWithoutScriptTagsAndComments, ahrefPattern + "/my(-|_)account\"").matches() || new Regex(htmlWithoutScriptTagsAndComments, ahrefPattern + "/account/?\"").matches();
+        logger.info("xfss_Cookie:" + cookieXFSS);
+        logger.info("xfsts_Cookie:" + cookieXFSTS);
         logger.info("login_xfss_CookieOkay:" + login_xfss_CookieOkay);
         logger.info("login_xfsts_CookieOkay:" + login_xfsts_CookieOkay);
         logger.info("email_xfss_CookieOkay:" + email_xfss_CookieOkay);
@@ -4770,7 +4772,12 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
         logger.info("myaccount_exists:" + myAccountOkay);
         logger.info("redirect:" + isRedirect);
         logger.info("loginURLFailed:" + loginURLFailed);
-        final boolean ret = (login_xfss_CookieOkay || email_xfss_CookieOkay || login_xfsts_CookieOkay || email_xfsts_CookieOkay) && ((logout || (myAccountOkay && !login) || isRedirect) && !loginURLFailed);
+        boolean ret = (login_xfss_CookieOkay || email_xfss_CookieOkay || login_xfsts_CookieOkay || email_xfsts_CookieOkay) && ((logout || (myAccountOkay && !login) || isRedirect) && !loginURLFailed);
+        if (!ret) {
+            // hosts that only have xfss/xfsts cookie and no login/email one, for example fastfile.cc
+            // maybe login/email cookie not available when 2fa is enabled to protect attack on username/email
+            ret = (cookieXFSS != null || cookieXFSTS != null) && (logout || (myAccountOkay && !login)) && !loginURLFailed;
+        }
         logger.info("loggedin:" + ret);
         return ret;
     }
@@ -4827,6 +4834,50 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
                 passwordField.setValue(password);
             } else {
                 loginform.put(passwordFieldNames[0], password);
+            }
+        }
+    }
+
+    protected boolean handleLoginWebsite2FA(PluginException e, final DownloadLink link, final Account account, final boolean validateCookies) throws Exception {
+        Form twoFAForm = null;
+        String fieldKey = null;
+        final Form[] forms = br.getForms();
+        formLoop: for (final Form form : forms) {
+            final List<InputField> fields = form.getInputFields();
+            for (InputField field : fields) {
+                if (field.getKey().matches("^code\\d*$")) {
+                    fieldKey = field.getKey();
+                    twoFAForm = form;
+                    break formLoop;
+                }
+            }
+            for (InputField field : fields) {
+                if (field.getKey().matches("^new_ip_token$")) {
+                    fieldKey = field.getKey();
+                    // sendCM
+                    twoFAForm = form;
+                    break formLoop;
+                }
+            }
+        }
+        if (twoFAForm == null) {
+            /* Login failed, not due the need of 2FA login */
+            throw e;
+        }
+        logger.info("2FA code required");
+        final String twoFACode = this.getTwoFACode(account, "\\d{6}");
+        logger.info("Submitting 2FA code");
+        twoFAForm.put(fieldKey, twoFACode);
+        this.submitForm(twoFAForm);
+        if (!this.br.getURL().contains("?op=my_account")) {
+            throw new AccountInvalidException(org.jdownloader.gui.translate._GUI.T.jd_gui_swing_components_AccountDialog_2FA_login_invalid());
+        } else {
+            final Cookies cookies = br.getCookies(br.getHost());
+            account.saveCookies(cookies, "");
+            if (verifyCookies(account, cookies)) {
+                return loginWebsite(link, account, validateCookies);
+            } else {
+                throw e;
             }
         }
     }

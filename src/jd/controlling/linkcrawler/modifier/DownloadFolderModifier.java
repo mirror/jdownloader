@@ -34,10 +34,11 @@ public class DownloadFolderModifier implements CrawledLinkModifier {
             if (existing == null) {
                 existing = new PackageInfo();
             }
-            existing.setDestinationFolderRoot(folder);
             if (overwriteFlag) {
                 existing.setIgnoreVarious(true);
                 existing.setDestinationFolder(folder);
+            } else {
+                existing.setDestinationFolderRoot(folder);
             }
             existing.setUniqueId(null);
             link.setDesiredPackageInfo(existing);

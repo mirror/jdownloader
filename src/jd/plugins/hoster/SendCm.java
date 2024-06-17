@@ -39,7 +39,6 @@ import jd.http.Cookie;
 import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
-import jd.parser.html.InputField;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
@@ -223,31 +222,7 @@ public class SendCm extends XFileSharingProBasic {
         try {
             return super.loginWebsite(link, account, validateCookies);
         } catch (final PluginException e) {
-            /* Special 2FA login handling */
-            Form twoFAForm = null;
-            final String formKey2FA = "new_ip_token";
-            final Form[] forms = br.getForms();
-            for (final Form form : forms) {
-                final InputField twoFAField = form.getInputField(formKey2FA);
-                if (twoFAField != null) {
-                    twoFAForm = form;
-                    break;
-                }
-            }
-            if (twoFAForm == null) {
-                /* Login failed */
-                throw e;
-            }
-            logger.info("2FA code required");
-            final String twoFACode = this.getTwoFACode(account, "^\\d{6}$");
-            logger.info("Submitting 2FA code");
-            twoFAForm.put(formKey2FA, twoFACode);
-            this.submitForm(twoFAForm);
-            if (!this.isLoggedin(br)) {
-                throw new AccountInvalidException(org.jdownloader.gui.translate._GUI.T.jd_gui_swing_components_AccountDialog_2FA_login_invalid());
-            }
-            account.saveCookies(br.getCookies(br.getHost()), "");
-            return true;
+            return handleLoginWebsite2FA(e, link, account, validateCookies);
         }
     }
 

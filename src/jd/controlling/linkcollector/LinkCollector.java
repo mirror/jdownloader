@@ -230,7 +230,7 @@ public class LinkCollector extends PackageController<CrawledPackage, CrawledLink
                     link.setCollectingInfo(collectingInfo);
                     final LinkCollectingJob job = getJob();
                     link.setSourceJob(job);
-                    if (job.isAssignJobID() || true) {
+                    if (job.isAssignJobID()) {
                         final DownloadLink downloadLink = link.getDownloadLink();
                         if (downloadLink != null) {
                             downloadLink.setProperty(DownloadLink.PROPERTY_JOB_ID, job.getUniqueAlltimeID().getIDLong());

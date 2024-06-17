@@ -5,15 +5,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import jd.controlling.linkcollector.LinkCollector;
-import jd.controlling.linkcollector.LinkCollector.MoveLinksMode;
-import jd.controlling.linkcollector.LinkCollector.MoveLinksSettings;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
-import jd.controlling.linkcrawler.CrawledPackageView;
-import jd.controlling.packagecontroller.AbstractNodeVisitor;
-import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
-
 import org.appwork.remoteapi.APIQuery;
 import org.jdownloader.api.linkcollector.v2.AddLinksQueryStorable;
 import org.jdownloader.api.linkcollector.v2.LinkCollectorAPIImplV2;
@@ -22,6 +13,15 @@ import org.jdownloader.gui.views.SelectionInfo;
 import org.jdownloader.gui.views.components.packagetable.LinkTreeUtils;
 import org.jdownloader.myjdownloader.client.json.AvailableLinkState;
 import org.jdownloader.settings.GeneralSettings;
+
+import jd.controlling.linkcollector.LinkCollector;
+import jd.controlling.linkcollector.LinkCollector.MoveLinksMode;
+import jd.controlling.linkcollector.LinkCollector.MoveLinksSettings;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
+import jd.controlling.linkcrawler.CrawledPackageView;
+import jd.controlling.packagecontroller.AbstractNodeVisitor;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNodeFilter;
 
 @Deprecated
 public class LinkCollectorAPIImpl implements LinkCollectorAPI {
