@@ -18,11 +18,13 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.net.HTTPHeader;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.plugins.components.hls.HlsContainer;
 import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -73,7 +75,7 @@ public class AkiHCom extends PluginForHost {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/videos/([A-Za-z0-9]+)/?");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:watch|videos)/([A-Za-z0-9]+)/?");
         }
         return ret.toArray(new String[0]);
     }
@@ -105,47 +107,50 @@ public class AkiHCom extends PluginForHost {
             link.setName(publicVideoID + extDefault);
         }
         this.setBrowserExclusive();
+        br.setFollowRedirects(true);
         br.getPage(link.getPluginPatternMatcher());
+        String title = null;
+        Browser brc = null;
+        if (br.getURL().matches("(?i).*/watch/.*")) {
+            title = br.getRegex("<meta property\\s*=\\s*\"og:title\"\\s*content\\s*=\\s*\"(.*?)\\s*-\\s*Aki-H Hentai").getMatch(0);
+        } else {
+            title = br.getRegex("class=\"uc-name\"[^>]*>([^<]+)</div>").getMatch(0);
+        }
+        final String videoID = br.getRegex("displayvideo\\(\\d+\\s*,\\s*(\\d+)\\)").getMatch(0);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (!br.getURL().contains(publicVideoID)) {
             /* E.g. redirect to https://aki-h.com/error/404/ */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (videoID == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        String title = br.getRegex("class=\"uc-name\"[^>]*>([^<]+)</div>").getMatch(0);
+        br.getPage("https://aki-h.com/video/" + videoID + "/");
+        brc = br.cloneBrowser();
+        brc.getPage("https://v.aki-h.com/v/" + videoID);
         if (title != null) {
             title = Encoding.htmlDecode(title);
             title = title.trim();
             link.setFinalFileName(title + extDefault);
         }
-        return AvailableStatus.TRUE;
+        brc.getPage("https://v.aki-h.com/f/" + publicVideoID);
+        final String streamID = brc.getRegex("stream/v/([^\"]*)").getMatch(0);
+        brc.getPage("https://aki-h.stream/v/" + streamID);
+        brc = brc.cloneBrowser();
+        brc.getHeaders().put(new HTTPHeader("Accept", "*/*"));
+        brc.getPage("https://aki-h.stream/file/" + streamID + "/");
+        final List<HlsContainer> containers = HlsContainer.getHlsQualities(brc);
+        if (containers == null || containers.size() == 0) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        } else {
+            this.br = brc;
+            return AvailableStatus.TRUE;
+        }
     }
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
-        // final String publicVideoID = this.getFID(link);
-        final String internalVideoID = br.getRegex("window\\.player_container\\(0, (\\d+)\\);").getMatch(0);
-        if (internalVideoID == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        // br.getPage("https://v.aki-h.com/v/" + internalVideoID);
-        // br.getHeaders().put("Referer", "https://v.aki-h.com/v/" + internalVideoID);
-        br.getHeaders().put("Referer", "https://aki-h.com/");
-        br.getPage("https://v.aki-h.com/v/" + internalVideoID);
-        final String vid = br.getRegex("var vid = '([^\"\\']+)'").getMatch(0);
-        if (vid == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        // br.getHeaders().put("Referer", "https://aki-h.stream/v/" + vid);
-        br.getPage("https://v.aki-h.com/f/" + vid);
-        final String nextID = br.getRegex("/v/([A-Za-z0-9]+)").getMatch(0);
-        if (nextID == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        br.getHeaders().put("Referer", "https://aki-h.stream/v/" + nextID);
-        br.getPage("https://aki-h.stream/file/" + nextID + "/");
-        this.checkFFmpeg(link, "Download a HLS Stream");
         final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
         if (hlsbest == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
