@@ -277,6 +277,7 @@ public class TorboxApp extends PluginForHost {
                     }
                     logger.info("Displaying notification with ID: " + notification.get("id"));
                     displayBubbleNotification(notification.get("title").toString(), notification.get("message").toString());
+                    counterDisplayed++;
                     if (timestampNotificationsDisplayed == 0 && counterDisplayed >= 5) {
                         logger.info("First time we are displaying notifications for this account. Let's not spam the user with all past notifications he has.");
                         break;
@@ -293,6 +294,15 @@ public class TorboxApp extends PluginForHost {
             } finally {
                 /* Save this timestamp so we are able to know to which time we've already displayed notifications. */
                 account.setProperty(PROPERTY_ACCOUNT_NOTIFICATIONS_DISPLAYED_UNTIL_TIMESTAMP, highestNotificationTimestamp);
+                try {
+                    /* Clear all notifications ("mark as read") */
+                    final Request req_clear_all_notifications = br.createGetRequest(API_BASE + "/notifications/clear");
+                    this.callAPI(req_clear_all_notifications, account, null);
+                    // final Object req_clear_allnotofications_answer = this.callAPI(req_clear_all_notifications, account, null);
+                } catch (final Exception e) {
+                    logger.log(e);
+                    logger.info("Clearing notifications API request failed");
+                }
             }
         }
         return ai;
