@@ -1768,8 +1768,9 @@ public abstract class K2SApi extends PluginForHost {
         final String fileID = getFUID(link);
         this.setWeakFilename(link);
         postdataGetfilestatus.put("id", getFUID(link));
-        postdataGetfilestatus.put("limit", 1);
-        postdataGetfilestatus.put("offset", 0);
+        /* 2024-06-17: Do not send any other parameters otherwise the field "video_info" might be missing. */
+        // postdataGetfilestatus.put("limit", 1);
+        // postdataGetfilestatus.put("offset", 0);
         try {
             final Map<String, Object> response = this.postPageRaw(br, "/getfilestatus", postdataGetfilestatus, null);
             K2SApi.parseFileInfo(link, response, fileID);

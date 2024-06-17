@@ -3,6 +3,11 @@ package jd.plugins.decrypter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map.Entry;
+import java.util.regex.Pattern;
+
+import org.appwork.utils.Files;
+import org.appwork.utils.logging2.LogSource;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.config.SubConfiguration;
@@ -19,11 +24,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 
-import org.appwork.utils.Files;
-import org.appwork.utils.logging2.LogSource;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "porn.com" }, urls = { "https?://(\\w+\\.)?porn\\.com/(?:videos/(embed/)?[a-z0-9\\-]*?\\-\\d+|out/[a-z]/[^/]+/[a-zA-Z0-9_/\\+\\=\\-%]+)" })
 public class PornCom extends PluginForDecrypt {
     public PornCom(PluginWrapper wrapper) {
@@ -35,20 +35,25 @@ public class PornCom extends PluginForDecrypt {
         return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.XXX };
     }
 
-    private static final String TYPE_REDIRECT_BASE64 = "https?://(?:\\w+\\.)?[^/]+/out/[a-z]/[^/]+/([a-zA-Z0-9_/\\+\\=\\-%]+)/.*";
+    private static final String TYPE_REDIRECT_BASE64 = "(?i)https?://(?:\\w+\\.)?[^/]+/out/[a-z]/[^/]+/([a-zA-Z0-9_/\\+\\=\\-%]+)/.*";
 
     /* DEV NOTES */
     /* Porn_plugin */
     /* Similar websites: porn.com, fucktube.com */
     @Override
-    public ArrayList<DownloadLink> decryptIt(final CryptedLink parameter, ProgressController progress) throws Exception {
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        String url = parameter.getCryptedUrl();
+        String url = param.getCryptedUrl();
         if (url.matches(TYPE_REDIRECT_BASE64)) {
             /* These ones redirect to a single external URL and contain a base64 encoded String containing that URL. */
-            final String b64 = Encoding.htmlDecode(new Regex(url, "https?://(?:\\w+\\.)?[^/]+/out/[a-z]/[^/]+/([a-zA-Z0-9_/\\+\\=\\-%]+)/.*").getMatch(0));
+            String b64 = Encoding.htmlDecode(new Regex(url, "https?://(?:\\w+\\.)?[^/]+/out/[a-z]/[^/]+/([a-zA-Z0-9_/\\+\\=\\-%]+)/.*").getMatch(0));
+            /* Correct b64 string as it can be invalid. */
+            final String b64Remove = new Regex(b64, "(==|=)(.+)$").getMatch(0);
+            if (b64Remove != null) {
+                b64 = b64.replaceFirst(Pattern.quote(b64Remove), "");
+            }
             final String decoded = Encoding.Base64Decode(b64);
             final String[] urls = HTMLParser.getHttpLinks(decoded, br.getURL());
             if (urls.length == 0) {
@@ -72,7 +77,7 @@ public class PornCom extends PluginForDecrypt {
             }
             jd.plugins.hoster.PornHubCom.getPage(br, url.replace("/embed/", "/"));
             if (br.containsHTML("(id=\"error\"><h2>404|No such video|<title>PORN\\.COM</title>|/removed(_dmca|_deleted_single)?.png)") || this.br.getHttpConnection().getResponseCode() == 404 || !br.getURL().contains(fid)) {
-                links.add(this.createOfflinelink(parameter.getCryptedUrl()));
+                links.add(this.createOfflinelink(param.getCryptedUrl()));
                 return links;
             }
             String filename = jd.plugins.hoster.PornCom.getFilename(br);
@@ -83,7 +88,7 @@ public class PornCom extends PluginForDecrypt {
                 /* This way we can access links which are usually only accessible for registered users */
                 jd.plugins.hoster.PornHubCom.getPage(brc, "https://www.porn.com/videos/embed/" + fid);
                 if (brc.containsHTML("<div id=\"player-removed\">") || br.getHttpConnection().getResponseCode() == 404 || !br.getURL().contains(fid)) {
-                    links.add(this.createOfflinelink(parameter.getCryptedUrl()));
+                    links.add(this.createOfflinelink(param.getCryptedUrl()));
                     return links;
                 }
                 links = getLinks(brc, url, filename);
@@ -98,13 +103,6 @@ public class PornCom extends PluginForDecrypt {
             }
         }
         return links;
-    }
-
-    @Override
-    protected DownloadLink createOfflinelink(final String link) {
-        final DownloadLink offline = super.createOfflinelink(link);
-        offline.setMimeHint(CompiledFiletypeFilter.VideoExtensions.MP4);
-        return offline;
     }
 
     private ArrayList<DownloadLink> getLinks(final Browser br, final String origin, final String fileName) {
