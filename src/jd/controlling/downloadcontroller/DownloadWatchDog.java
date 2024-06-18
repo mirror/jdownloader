@@ -163,6 +163,7 @@ import jd.plugins.DownloadLinkProperty;
 import jd.plugins.FilePackage;
 import jd.plugins.FilePackageProperty;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.PluginsC;
@@ -4151,8 +4152,8 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                             /* Looks like filename might be too long -> Check if writing a shortened filename would be possible. */
                             final boolean allowAutoShortenFilenames = true;
                             String shortenedFilename;
-                            String ext = null;
-                            if (fileName.contains(".")) {
+                            String ext = Plugin.getFileNameExtensionFromString(fileName);
+                            if (ext != null) {
                                 /* Filename contains extension -> Shorten name and keep extension */
                                 final int targetFilenameLengthWithoutExt = 200;
                                 /*
@@ -4177,7 +4178,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                             }
                             /* Trim in case it ends with a space. */
                             shortenedFilename = shortenedFilename.trim();
-                            /* Add file-extension if there is one. */
+                            /* Re-Add file-extension if there is one. */
                             if (ext != null) {
                                 shortenedFilename += ext;
                             }
@@ -4314,7 +4315,7 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                         }
                         String name = splitName[0];
                         int duplicateFilenameCounter = 2;
-                        String alreadyDuplicated = new Regex(name, ".*_(\\d{1,5})$").getMatch(0);
+                        final String alreadyDuplicated = new Regex(name, ".*_(\\d{1,5})$").getMatch(0);
                         if (alreadyDuplicated != null) {
                             /* it seems the file already got auto renamed! */
                             duplicateFilenameCounter = Integer.parseInt(alreadyDuplicated) + 1;
@@ -4359,124 +4360,6 @@ public class DownloadWatchDog implements DownloadControllerListener, StateMachin
                     }
                 }
                 return;
-            }
-
-            /**
-             * Creates path of given file and performs write-test if wanted.
-             *
-             * @throws InterruptedException
-             */
-            private void createPath(final File fileOutput, boolean checkFileWrite, boolean allowCheckForTooLongFilename, boolean allowAutoRenameTooLongFilename) throws BadDestinationException, SkipReasonException, IOException, InterruptedException {
-                if (fileOutput == null) {
-                    throw new IllegalArgumentException();
-                } else if (fileOutput.exists()) {
-                    /* Already exists -> No need to do anything. */
-                    return;
-                }
-                try {
-                    validateDestination(fileOutput);
-                } catch (final PathTooLongException e) {
-                    throw new SkipReasonException(SkipReason.INVALID_DESTINATION_TOO_LONG_PATH, e);
-                } catch (final BadDestinationException e) {
-                    throw new SkipReasonException(SkipReason.INVALID_DESTINATION, e);
-                }
-                if (fileOutput.getParentFile() == null) {
-                    /* This should never happen! */
-                    // TODO: Maybe move this up to "fileOutput.isDirectory()" statement.
-                    // controller.getLogger().severe("has no parentFile?! " + fileOutput);
-                    throw new SkipReasonException(SkipReason.INVALID_DESTINATION);
-                }
-                /**
-                 * Manually create all folders up until we are in our final folder where we want to write the file we want to download.
-                 * </br>
-                 * This may look more complicated compared to File.mkdirs() but this way we can know exactly at which point a directory
-                 * could not be created.
-                 */
-                final List<File> folderCreateList = new ArrayList<File>();
-                File folder = fileOutput.getParentFile();
-                while (!folder.exists()) {
-                    folderCreateList.add(0, folder);
-                    folder = folder.getParentFile();
-                    if (folder == null) {
-                        throw new SkipReasonException(SkipReason.INVALID_DESTINATION);
-                    }
-                }
-                if (folderCreateList.size() > 0) {
-                    /* Create missing folders. */
-                    controller.getLogger().info("Creating path from: " + folderCreateList);
-                    for (int index = 0; index < folderCreateList.size(); index++) {
-                        final File thisfolder = folderCreateList.get(index);
-                        if (!thisfolder.exists() && !thisfolder.mkdir() && !thisfolder.isDirectory()) {
-                            controller.getLogger().severe("could not create folder[" + index + "]: " + thisfolder.getAbsolutePath());
-                            if (CrossSystem.isWindows() && looksLikeTooLongWindowsPathOrFilename(thisfolder)) {
-                                /*
-                                 * Assume that path is too long. We could check it by writing a shorter folder but it would not change the
-                                 * end result: The path is not usable for us.
-                                 */
-                                controller.getLogger().severe("Looks like too long downloadpath for Windows: " + thisfolder.getAbsolutePath());
-                                throw new SkipReasonException(SkipReason.INVALID_DESTINATION_TOO_LONG_PATH);
-                            } else {
-                                throw new SkipReasonException(SkipReason.INVALID_DESTINATION_PERMISSION_ISSUE, _JDT.T.DownloadLink_setSkipped_statusmessage_invalid_path_permission_issue_file(thisfolder.getName()));
-                            }
-                        }
-                        if (controller.isAborting()) {
-                            throw new InterruptedException("Controller is aborted");
-                        }
-                    }
-                }
-                if (checkFileWrite) {
-                    /* TODO: Use specific write check functionality here */
-                    final File writeTest1 = fileOutput;
-                    try {
-                        final RandomAccessFile raf1 = IO.open(writeTest1, "rw");
-                        raf1.close();
-                        if (!writeTest1.delete()) {
-                            /* This should never never never happen! */
-                            logger.warning("Failed to delete test-written file");
-                            throw new SkipReasonException(SkipReason.INVALID_DESTINATION);
-                        }
-                    } catch (final IOException e) {
-                        // TODO: If we want to, this would be the place to check for problems due to too long filenames.
-                        final String filename = fileOutput.getName();
-                        final int maxFilenameLength = 219;
-                        if (filename.length() <= maxFilenameLength) {
-                            /* Filename doesn't look to be too long. */
-                            throw e;
-                        }
-                        /* Filename looks to be too long. */
-                        if (!allowCheckForTooLongFilename) {
-                            // throw e;
-                            throw new SkipReasonException(SkipReason.INVALID_DESTINATION_TOO_LONG_FILENAME, e);
-                        }
-                        // TODO: Do not use a static string here
-                        final String shortenedFilename = "writecheck.txt";
-                        final File writeTest2 = new File(writeTest1.getParent(), shortenedFilename);
-                        if (writeTest2.exists()) {
-                            logger.info("File with shortened filename already exists!");
-                            throw e;
-                        }
-                        try {
-                            final RandomAccessFile raf2 = IO.open(writeTest2, "rw");
-                            raf2.close();
-                            if (!writeTest2.delete()) {
-                                /* This should never happen! */
-                                logger.warning("Failed to delete test-written file with shortened filename");
-                                throw new SkipReasonException(SkipReason.INVALID_DESTINATION, e);
-                            } else if (!allowAutoRenameTooLongFilename) {
-                                /* We know that the filename is too long but we are not allowed to modify the filename -> Stop here. */
-                                throw new SkipReasonException(SkipReason.INVALID_DESTINATION_TOO_LONG_FILENAME, e);
-                            }
-                            controller.setSessionDownloadFilename(shortenedFilename);
-                            // downloadLink.setForcedFileName(shortenedFilename);
-                            // downloadLink.setChunksProgress(null);
-                            // fileOutput = writeTest2;
-                            return;
-                        } catch (final IOException e2) {
-                            /* Permission issue or some other length limitation is in place. */
-                            throw new SkipReasonException(SkipReason.INVALID_DESTINATION, Exceptions.addSuppressed(e2, e));
-                        }
-                    }
-                }
             }
 
             @Override
