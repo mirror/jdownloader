@@ -28,6 +28,31 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 
+import jd.PluginWrapper;
+import jd.controlling.AccountController;
+import jd.http.Browser;
+import jd.http.Cookie;
+import jd.http.Cookies;
+import jd.http.URLConnectionAdapter;
+import jd.nutils.encoding.Encoding;
+import jd.parser.Regex;
+import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
+import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
+import jd.plugins.CookieStorable;
+import jd.plugins.CryptedLink;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
+import jd.plugins.decrypter.TiktokComCrawler;
+
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.SimpleMapper;
 import org.appwork.storage.TypeRef;
 import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
@@ -41,27 +66,6 @@ import org.jdownloader.plugins.components.config.TiktokConfig.MediaCrawlMode;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
-
-import jd.PluginWrapper;
-import jd.controlling.AccountController;
-import jd.http.Browser;
-import jd.http.Cookies;
-import jd.http.URLConnectionAdapter;
-import jd.nutils.encoding.Encoding;
-import jd.parser.Regex;
-import jd.plugins.Account;
-import jd.plugins.Account.AccountType;
-import jd.plugins.AccountInfo;
-import jd.plugins.AccountInvalidException;
-import jd.plugins.CryptedLink;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
-import jd.plugins.decrypter.TiktokComCrawler;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "tiktok.com" }, urls = { "https?://(?:www\\.)?tiktok\\.com/((@[^/]+)/video/|embed/)(\\d+)|https?://m\\.tiktok\\.com/v/(\\d+)\\.html" })
 public class TiktokCom extends PluginForHost {
@@ -177,8 +181,7 @@ public class TiktokCom extends PluginForHost {
     public static final String API_CLIENT                                     = "trill";
     public static final String API_AID                                        = "1180";
     /**
-     * Values used in the past: </br>
-     * Until 2024-03-14: api16-normal-c-useast1a.tiktokv.com
+     * Values used in the past: </br> Until 2024-03-14: api16-normal-c-useast1a.tiktokv.com
      */
     public static final String API_BASE                                       = "https://api22-normal-c-useast2a.tiktokv.com/aweme/v1";
     public static final String API_VERSION_NAME                               = "25.6.2";
@@ -217,12 +220,13 @@ public class TiktokCom extends PluginForHost {
             /* Set fallback-filename. Use .mp4 file-extension as most items are expected to be videos. */
             link.setName(contentID + ".mp4");
         }
-        String dllink = null;
-        dllink = getStoredDirecturl(link);
+        String dllink = getStoredDirecturl(link);
         final String storedCookiesString = link.getStringProperty(TiktokCom.PROPERTY_COOKIES);
         if (storedCookiesString != null) {
-            final Cookies cookies = Cookies.parseCookies(storedCookiesString, getHost(), null);
-            br.setCookies(cookies);
+            final Cookies cookies = loadCookies(this, storedCookiesString);
+            if (cookies != null) {
+                br.setCookies(getHost(), cookies);
+            }
         }
         if (dllink == null || forceFetchNewDirecturl) {
             logger.info("Obtaining fresh directurl");
@@ -295,6 +299,39 @@ public class TiktokCom extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    public static String saveCookies(final Plugin plugin, final Cookies cookies) {
+        if (cookies == null || cookies.getCookies().size() == 0) {
+            return null;
+        } else {
+            final List<CookieStorable> cookieStorables = Account.getListOfCookieStorablesWithoutAntiDdosCookies(cookies);
+            return new SimpleMapper().setPrettyPrintEnabled(false).objectToString(cookieStorables);
+        }
+    }
+
+    public static Cookies loadCookies(Plugin plugin, final String cookiesString) throws PluginException {
+        if (cookiesString == null) {
+            return null;
+        } else {
+            try {
+                final List<CookieStorable> cookies = JSonStorage.restoreFromString(cookiesString, new TypeRef<ArrayList<CookieStorable>>() {
+                }, null);
+                final Cookies ret = new Cookies();
+                for (final CookieStorable storable : cookies) {
+                    final Cookie cookie = storable._restore();
+                    if (!cookie.isExpired()) {
+                        ret.add(cookie);
+                    }
+                }
+                if (ret.getCookies().size() > 0) {
+                    return ret;
+                }
+            } catch (Throwable e) {
+                plugin.getLogger().log(e);
+            }
+            return null;
+        }
+    }
+
     /** Prepare headers for usage of tiktok media direct-URLs. */
     private void prepareDownloadHeaders(final DownloadLink link, final Browser br) {
         br.getHeaders().put("Referer", "https://www." + getHost() + "/");
@@ -354,8 +391,7 @@ public class TiktokCom extends PluginForHost {
     }
 
     /**
-     * Returns true for items that can only be fetched via API. </br>
-     * Returns false for items which can also be fetched via website.
+     * Returns true for items that can only be fetched via API. </br> Returns false for items which can also be fetched via website.
      */
     private final boolean needsAPIUsage(final DownloadLink link) {
         if (isVideo(link)) {
@@ -527,8 +563,8 @@ public class TiktokCom extends PluginForHost {
             String description = null;
             final boolean useWebsiteEmbed = true;
             /**
-             * 2021-04-09: Avoid using the website-way as their bot protection may kick in right away! </br>
-             * When using an account and potentially downloading private videos however, we can't use the embed way.
+             * 2021-04-09: Avoid using the website-way as their bot protection may kick in right away! </br> When using an account and
+             * potentially downloading private videos however, we can't use the embed way.
              */
             String dllink = null;
             if (account != null) {

@@ -24,23 +24,10 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-import org.appwork.storage.JSonMapperException;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.config.TiktokConfig;
-import org.jdownloader.plugins.components.config.TiktokConfig.ImageFormat;
-import org.jdownloader.plugins.components.config.TiktokConfig.MediaCrawlMode;
-import org.jdownloader.plugins.components.config.TiktokConfig.ProfileCrawlMode;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
-import jd.http.Cookies;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -58,6 +45,18 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.hoster.TiktokCom;
+
+import org.appwork.storage.JSonMapperException;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.config.TiktokConfig;
+import org.jdownloader.plugins.components.config.TiktokConfig.ImageFormat;
+import org.jdownloader.plugins.components.config.TiktokConfig.MediaCrawlMode;
+import org.jdownloader.plugins.components.config.TiktokConfig.ProfileCrawlMode;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 @PluginDependencies(dependencies = { TiktokCom.class })
@@ -193,8 +192,8 @@ public class TiktokComCrawler extends PluginForDecrypt {
     private boolean websiteHandlingAsFallbackAndOfflineIfWebsiteHandlingFails = false;
 
     /**
-     * This can crawl single videos from website. </br>
-     * If this tiktok item also contains images or contains only images, this handling will fail!
+     * This can crawl single videos from website. </br> If this tiktok item also contains images or contains only images, this handling will
+     * fail!
      */
     public ArrayList<DownloadLink> crawlSingleMediaWebsite(final TiktokCom hostPlg, final String url, final Account account, final boolean forceGrabAll) throws Exception {
         websiteHandlingAsFallbackAndOfflineIfWebsiteHandlingFails = false;
@@ -482,8 +481,8 @@ public class TiktokComCrawler extends PluginForDecrypt {
     }
 
     /**
-     * Use website to crawl all videos of a user. </br>
-     * Pagination hasn't been implemented so this will only find the first batch of items - usually around 30 items!
+     * Use website to crawl all videos of a user. </br> Pagination hasn't been implemented so this will only find the first batch of items -
+     * usually around 30 items!
      */
     public ArrayList<DownloadLink> crawlProfileWebsite(final CryptedLink param, final String contenturl) throws Exception {
         prepBRWebsite(br);
@@ -738,7 +737,7 @@ public class TiktokComCrawler extends PluginForDecrypt {
             audio.setProperty(TiktokCom.PROPERTY_TYPE, TiktokCom.TYPE_AUDIO);
             ret.add(audio);
         }
-        final Cookies cookies = br.getCookies(br.getHost());
+        final String cookies = TiktokCom.saveCookies(this, br.getCookies(br.getHost()));
         final String dateFormatted = formatDate(Long.parseLong(createTimeStr));
         for (final DownloadLink result : ret) {
             result.setAvailable(true);
@@ -997,6 +996,7 @@ public class TiktokComCrawler extends PluginForDecrypt {
         } while (true);
         return ret;
     }
+
     // private ArrayList<DownloadLink> processVideoList(final List<Map<String, Object>> videos, final FilePackage fp) throws PluginException
     // {
     // final TiktokCom hosterplugin = (TiktokCom) this.getNewPluginForHostInstance(this.getHost());
@@ -1120,8 +1120,8 @@ public class TiktokComCrawler extends PluginForDecrypt {
                 video0.setProperty(TiktokCom.PROPERTY_DIRECTURL_API, directurl);
                 if (data_size != null) {
                     /**
-                     * Set filesize of download-version because streaming- and download-version are nearly identical. </br>
-                     * If a video is watermarked and downloads are prohibited both versions should be identical.
+                     * Set filesize of download-version because streaming- and download-version are nearly identical. </br> If a video is
+                     * watermarked and downloads are prohibited both versions should be identical.
                      */
                     video0.setDownloadSize(data_size.longValue());
                 }
