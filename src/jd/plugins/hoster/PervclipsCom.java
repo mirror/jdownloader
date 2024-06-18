@@ -79,7 +79,7 @@ public class PervclipsCom extends KernelVideoSharingComV2 {
         String officialDownloadurl = br.getRegex("\"(https?://[^\"]+\\.mp4\\?download=1[^\"]*)\"").getMatch(0);
         if (officialDownloadurl != null) {
             if (Encoding.isHtmlEntityCoded(officialDownloadurl)) {
-                officialDownloadurl = Encoding.htmlDecode(officialDownloadurl);
+                officialDownloadurl = Encoding.htmlOnlyDecode(officialDownloadurl);
             }
             return officialDownloadurl;
         } else {

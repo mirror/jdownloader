@@ -675,7 +675,6 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
                 // brc.getHeaders().put("Accept-Encoding", "identity");
                 con = openAntiDDoSRequestConnection(brc, brc.createHeadRequest(dllink));
                 if (this.looksLikeHLS(con)) {
-                    // TODO: Maybe add filesize estimation for HLS streams
                     logger.info("Got HLS stream instead of progressive video");
                     return AvailableStatus.TRUE;
                 }
@@ -1276,19 +1275,6 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
 
     /** Finds direct download link to [video stream] file. */
     protected String getDllink(final DownloadLink link, final Browser br) throws PluginException, IOException {
-        /*
-         * Newer KVS versions also support html5 --> RegEx for that as this is a reliable source for our final downloadurl.They can contain
-         * the old "video_url" as well but it will lead to 404 --> Prefer this way.
-         *
-         * E.g. wankoz.com, pervclips.com, pornicom.com
-         */
-        // final String pc3_vars = br.getRegex("pC3\\s*:\\s*'([^<>\"\\']+)'").getMatch(0);
-        // final String videoID = br.getRegex("video_id\\s*:\\s*(?:')?(\\d+)\\s*(?:')?").getMatch(0);
-        // if (pc3_vars != null && videoID != null) {
-        // /* 2019-11-26: TODO: Add support for this: Used by a lot of these hosts to hide their directurls */
-        // br.postPage("/sn4diyux.php", "param=" + videoID + "," + pc3_vars);
-        // String crypted_url = getDllinkCrypted(br);
-        // }
         String dllink = null;
         final String json_playlist_source = br.getRegex("sources\\s*?:\\s*?(\\[.*?\\])").getMatch(0);
         String httpurl_temp = null;
@@ -1346,10 +1332,6 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
                 foundQualities++;
             }
             logger.info("Found " + foundQualities + " crypted qualities 1");
-            /**
-             * TODO: Check if it is a good idea to only go into the wider attempt if no URLs with quality information have been found. </br>
-             * In this case, uncryptedUrlWithoutQualityIndicator is always null!
-             */
             if (qualityMap.isEmpty()) {
                 /* Wider attempt */
                 foundQualities = 0;
@@ -1514,12 +1496,8 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
                 /* Rare case */
                 logger.info("Failed to find any quality in stage 3");
             }
-            /*
-             * TODO: Find/Implement/prefer download of "official" downloadlinks e.g. xcafe.com - in this case, "get_file" URLs won't contain
-             * a quality identifier (??) at least not in the format "720p" and they will contain either "download=true" or "download=1".
-             */
         }
-        /* For most of all website, we should have found a result by now! */
+        /* For most of all websites, we should have found a result by now! */
         if (StringUtils.isEmpty(dllink)) {
             /* 2020-10-30: Older fallbacks */
             if (StringUtils.isEmpty(dllink)) {
@@ -1600,16 +1578,14 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
                 }
             }
             if (!br.containsHTML("license_code:") && !br.containsHTML("kt_player_[0-9\\.]+\\.swfx?")) {
-                /* No licence key present in html and/or no player --> No video --> Offline */
+                /* No license key present in html and/or no player --> No video --> Offline */
+                // TODO: 2024-06-18: Remove this old handling - it is often triggering false positive offline exceptions, especially for
+                // websites which are using the API but classes do not yet override "useAPI" method.
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        // dllink = Encoding.htmlDecode(dllink); - Why?
-        dllink = Encoding.urlDecode(dllink, true);
-        if (dllink.contains("&amp;")) {
-            dllink = Encoding.htmlOnlyDecode(dllink);
-        }
+        dllink = Encoding.htmlOnlyDecode(dllink);
         return dllink;
     }
 

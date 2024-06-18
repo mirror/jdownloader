@@ -99,7 +99,7 @@ public class TheyarehugeCom extends KernelVideoSharingComV2 {
                 this.getDownloadLink().setComment("SelectedQuality: 720p");
             }
             if (Encoding.isHtmlEntityCoded(officialDownloadurl)) {
-                officialDownloadurl = Encoding.htmlDecode(officialDownloadurl);
+                officialDownloadurl = Encoding.htmlOnlyDecode(officialDownloadurl);
             }
             return officialDownloadurl;
         } else {
