@@ -15,6 +15,7 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.decrypter;
 
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -23,11 +24,24 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import org.appwork.storage.JSonMapperException;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.config.TiktokConfig;
+import org.jdownloader.plugins.components.config.TiktokConfig.ImageFormat;
+import org.jdownloader.plugins.components.config.TiktokConfig.MediaCrawlMode;
+import org.jdownloader.plugins.components.config.TiktokConfig.ProfileCrawlMode;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.http.Cookies;
+import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -44,18 +58,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.plugins.hoster.TiktokCom;
-
-import org.appwork.storage.JSonMapperException;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.config.TiktokConfig;
-import org.jdownloader.plugins.components.config.TiktokConfig.ImageFormat;
-import org.jdownloader.plugins.components.config.TiktokConfig.MediaCrawlMode;
-import org.jdownloader.plugins.components.config.TiktokConfig.ProfileCrawlMode;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 @PluginDependencies(dependencies = { TiktokCom.class })
@@ -191,8 +193,8 @@ public class TiktokComCrawler extends PluginForDecrypt {
     private boolean websiteHandlingAsFallbackAndOfflineIfWebsiteHandlingFails = false;
 
     /**
-     * This can crawl single videos from website. </br> If this tiktok item also contains images or contains only images, this handling will
-     * fail!
+     * This can crawl single videos from website. </br>
+     * If this tiktok item also contains images or contains only images, this handling will fail!
      */
     public ArrayList<DownloadLink> crawlSingleMediaWebsite(final TiktokCom hostPlg, final String url, final Account account, final boolean forceGrabAll) throws Exception {
         websiteHandlingAsFallbackAndOfflineIfWebsiteHandlingFails = false;
@@ -480,8 +482,8 @@ public class TiktokComCrawler extends PluginForDecrypt {
     }
 
     /**
-     * Use website to crawl all videos of a user. </br> Pagination hasn't been implemented so this will only find the first batch of items -
-     * usually around 30 items!
+     * Use website to crawl all videos of a user. </br>
+     * Pagination hasn't been implemented so this will only find the first batch of items - usually around 30 items!
      */
     public ArrayList<DownloadLink> crawlProfileWebsite(final CryptedLink param, final String contenturl) throws Exception {
         prepBRWebsite(br);
@@ -598,7 +600,7 @@ public class TiktokComCrawler extends PluginForDecrypt {
         return ret;
     }
 
-    public ArrayList<DownloadLink> crawlProcessWebsiteMediaMapSingleTiktokItem(final PluginForHost hostPlg, final Map<String, Object> media, final Map<String, Object> preloadInfo, final boolean forceGrabAll) {
+    public ArrayList<DownloadLink> crawlProcessWebsiteMediaMapSingleTiktokItem(final PluginForHost hostPlg, final Map<String, Object> media, final Map<String, Object> preloadInfo, final boolean forceGrabAll) throws PluginException {
         final TiktokConfig cfg = PluginJsonConfig.get(TiktokConfig.class);
         final String preferredImageFileExtension;
         if (cfg.getPreferredImageFormat() == ImageFormat.JPEG) {
@@ -608,7 +610,7 @@ public class TiktokComCrawler extends PluginForDecrypt {
         }
         final Map<String, Object> authormap = (Map<String, Object>) media.get("author");
         final Map<String, Object> stats = (Map<String, Object>) media.get("stats");
-        final Map<String, Object> streamInfo = (Map<String, Object>) media.get("video");
+        final Map<String, Object> videomap = (Map<String, Object>) media.get("video");
         final Map<String, Object> imagePost = (Map<String, Object>) media.get("imagePost");
         final Map<String, Object> music = (Map<String, Object>) media.get("music");
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
@@ -654,18 +656,69 @@ public class TiktokComCrawler extends PluginForDecrypt {
             crawlAudio = true;
         } else {
             /* Video post */
+            String videoDirecturl = (String) videomap.get("playAddr");
+            if (StringUtils.isEmpty(videoDirecturl)) {
+                videoDirecturl = (String) videomap.get("downloadAddr");
+            }
+            if (StringUtils.isEmpty(videoDirecturl) && preloadInfo != null) {
+                /* Old code */
+                videoDirecturl = preloadInfo.get("url").toString();
+            }
+            if (StringUtils.isEmpty(videoDirecturl)) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
             final DownloadLink video = new DownloadLink(hostPlg, this.getHost(), contentURL);
             video.setProperty(TiktokCom.PROPERTY_TYPE, TiktokCom.TYPE_VIDEO);
             video.setProperty(TiktokCom.PROPERTY_ALLOW_HEAD_REQUEST, true);
-            String videoDirecturl = (String) streamInfo.get("downloadAddr");
-            if (StringUtils.isEmpty(videoDirecturl)) {
-                videoDirecturl = (String) streamInfo.get("playAddr");
+            video.setProperty(TiktokCom.PROPERTY_DIRECTURL_WEBSITE, videoDirecturl);
+            final boolean debugTest202406 = false;
+            if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && debugTest202406) {
+                URLConnectionAdapter con = null;
+                try {
+                    final Browser tempbr = br.cloneBrowser();
+                    // tempbr.setCurrentURL(""); // Removes referer
+                    tempbr.getHeaders().put("Referer", "https://www." + getHost() + "/");
+                    tempbr.getHeaders().put("Origin", "https://www." + getHost());
+                    tempbr.getHeaders().put("Sec-Fetch-Mode", "navigate");
+                    con = tempbr.openHeadConnection(videoDirecturl);
+                    if (this.looksLikeDownloadableContent(con)) {
+                        logger.info("VIDEO OK");
+                    } else {
+                        logger.warning("VIDEO FAILED");
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    logger.warning("VIDEO FAILED");
+                } finally {
+                    try {
+                        con.disconnect();
+                    } catch (final Throwable ignore) {
+                    }
+                }
             }
-            if (StringUtils.isEmpty(videoDirecturl) && preloadInfo != null) {
-                videoDirecturl = preloadInfo.get("url").toString();
+            /* Try to find additional video information */
+            boolean foundMatch = false;
+            final List<Map<String, Object>> bitrateInfoList = (List<Map<String, Object>>) videomap.get("bitrateInfo");
+            bitrateLoop: for (final Map<String, Object> bitrateInfo : bitrateInfoList) {
+                final Map<String, Object> playAddr = (Map<String, Object>) bitrateInfo.get("PlayAddr");
+                if (playAddr == null) {
+                    continue;
+                }
+                final List<String> urlList = (List<String>) playAddr.get("UrlList");
+                if (urlList == null || urlList.size() == 0) {
+                    continue;
+                }
+                for (final String url : urlList) {
+                    if (url.equalsIgnoreCase(videoDirecturl)) {
+                        foundMatch = true;
+                        video.setDownloadSize(Long.parseLong(playAddr.get("DataSize").toString()));
+                        video.setMD5Hash(playAddr.get("FileHash").toString());
+                        break bitrateLoop;
+                    }
+                }
             }
-            if (!StringUtils.isEmpty(videoDirecturl)) {
-                video.setProperty(TiktokCom.PROPERTY_DIRECTURL_WEBSITE, videoDirecturl);
+            if (!foundMatch) {
+                logger.warning("Failed to find additional video information");
             }
             ret.add(video);
             /* Crawl separate audio only if wished by user. */
@@ -943,7 +996,6 @@ public class TiktokComCrawler extends PluginForDecrypt {
         } while (true);
         return ret;
     }
-
     // private ArrayList<DownloadLink> processVideoList(final List<Map<String, Object>> videos, final FilePackage fp) throws PluginException
     // {
     // final TiktokCom hosterplugin = (TiktokCom) this.getNewPluginForHostInstance(this.getHost());
@@ -1053,57 +1105,34 @@ public class TiktokComCrawler extends PluginForDecrypt {
                 downloadInfo = (Map<String, Object>) misc_download_addrs.get("suffix_scene");
             }
             final Map<String, Object> play_addr = (Map<String, Object>) video.get("play_addr");
-            final boolean tryHDDownload = false;
-            // if (cfg.getDownloadMode() == DownloadMode.API_HD) {
-            if (tryHDDownload && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-                /* User prefers to download HD version */
-                /*
-                 * 2022-08-17: Look like HD versions have been disabled serverside see e.g.:
-                 * https://github.com/yt-dlp/yt-dlp/issues/4138#issuecomment-1217380819
-                 */
-                /**
-                 * This is also possible using "https://api-h2.tiktokv.com/aweme/v1/play/" </br> This is also possible using modified URLs
-                 * in e.g.: play_addr_bytevc1/uri_list/{last_item} --> Or also any item inside any "uri_list" which contains the "video_id"
-                 * parameter which also typically matches play_addr/uri
-                 */
-                video0.setProperty(TiktokCom.PROPERTY_DIRECTURL_API, String.format("https://api.tiktokv.com/aweme/v1/play/?video_id=%s&line=0&watermark=0&source=AWEME_DETAIL&is_play_url=1&ratio=default&improve_bitrate=1", play_addr.get("uri").toString()));
-                /*
-                 * This way we can't know whether or not the video comes with watermark but usually this version will not contain a
-                 * watermark.
-                 */
-                video0.removeProperty(null);
-                /* We can't know the filesize of this video version in beforehand. */
-                video0.setVerifiedFileSize(-1);
-            } else {
-                /* Get non-HD directurl */
-                String directurl = null;
-                final Number data_size = downloadInfo != null ? (Number) downloadInfo.get("data_size") : null;
-                if (has_watermark || (Boolean.TRUE.equals(aweme_detail.get("prevent_download")) && downloadInfo == null)) {
-                    /* Get stream downloadurl because it comes WITHOUT watermark anyways */
-                    if (has_watermark) {
-                        video0.setProperty(TiktokCom.PROPERTY_HAS_WATERMARK, true);
-                    } else {
-                        video0.setProperty(TiktokCom.PROPERTY_HAS_WATERMARK, null);
-                    }
-                    directurl = (String) JavaScriptEngineFactory.walkJson(play_addr, "url_list/{0}");
-                    video0.setProperty(TiktokCom.PROPERTY_DIRECTURL_API, directurl);
-                    if (data_size != null) {
-                        /**
-                         * Set filesize of download-version because streaming- and download-version are nearly identical. </br> If a video
-                         * is watermarked and downloads are prohibited both versions should be identical.
-                         */
-                        video0.setDownloadSize(data_size.longValue());
-                    }
+            /* Get non-HD directurl */
+            String directurl = null;
+            final Number data_size = downloadInfo != null ? (Number) downloadInfo.get("data_size") : null;
+            if (has_watermark || (Boolean.TRUE.equals(aweme_detail.get("prevent_download")) && downloadInfo == null)) {
+                /* Get stream downloadurl because it comes WITHOUT watermark anyways */
+                if (has_watermark) {
+                    video0.setProperty(TiktokCom.PROPERTY_HAS_WATERMARK, true);
                 } else {
-                    /* Get official downloadurl. */
-                    final Object directURL = JavaScriptEngineFactory.walkJson(downloadInfo, "url_list/{0}");
-                    if (directURL != null) {
-                        video0.setProperty(TiktokCom.PROPERTY_DIRECTURL_API, StringUtils.valueOfOrNull(directURL));
-                        if (data_size != null) {
-                            video0.setVerifiedFileSize(data_size.longValue());
-                        }
-                        video0.removeProperty(TiktokCom.PROPERTY_HAS_WATERMARK);
+                    video0.setProperty(TiktokCom.PROPERTY_HAS_WATERMARK, null);
+                }
+                directurl = (String) JavaScriptEngineFactory.walkJson(play_addr, "url_list/{0}");
+                video0.setProperty(TiktokCom.PROPERTY_DIRECTURL_API, directurl);
+                if (data_size != null) {
+                    /**
+                     * Set filesize of download-version because streaming- and download-version are nearly identical. </br>
+                     * If a video is watermarked and downloads are prohibited both versions should be identical.
+                     */
+                    video0.setDownloadSize(data_size.longValue());
+                }
+            } else {
+                /* Get official downloadurl. */
+                final Object directURL = JavaScriptEngineFactory.walkJson(downloadInfo, "url_list/{0}");
+                if (directURL != null) {
+                    video0.setProperty(TiktokCom.PROPERTY_DIRECTURL_API, StringUtils.valueOfOrNull(directURL));
+                    if (data_size != null) {
+                        video0.setVerifiedFileSize(data_size.longValue());
                     }
+                    video0.removeProperty(TiktokCom.PROPERTY_HAS_WATERMARK);
                 }
             }
             video0.setProperty(TiktokCom.PROPERTY_TYPE, TiktokCom.TYPE_VIDEO);
@@ -1216,5 +1245,4 @@ public class TiktokComCrawler extends PluginForDecrypt {
     private Browser prepBRAPI(final Browser br) {
         return TiktokCom.prepBRAPI(br);
     }
-
 }

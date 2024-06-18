@@ -221,7 +221,7 @@ public class TiktokCom extends PluginForHost {
         dllink = getStoredDirecturl(link);
         final String storedCookiesString = link.getStringProperty(TiktokCom.PROPERTY_COOKIES);
         if (storedCookiesString != null) {
-            final Cookies cookies = Cookies.parseCookies(storedCookiesString, "." + this.getHost(), null);
+            final Cookies cookies = Cookies.parseCookies(storedCookiesString, getHost(), null);
             br.setCookies(cookies);
         }
         if (dllink == null || forceFetchNewDirecturl) {
@@ -297,8 +297,8 @@ public class TiktokCom extends PluginForHost {
 
     /** Prepare headers for usage of tiktok media direct-URLs. */
     private void prepareDownloadHeaders(final DownloadLink link, final Browser br) {
-        br.getHeaders().put("Referer", "https://www." + this.getHost() + "/");
-        br.getHeaders().put("Origin", "https://www." + this.getHost());
+        br.getHeaders().put("Referer", "https://www." + getHost() + "/");
+        br.getHeaders().put("Origin", "https://www." + getHost());
         br.getHeaders().put("Sec-Fetch-Mode", "navigate");
     }
 
@@ -412,6 +412,7 @@ public class TiktokCom extends PluginForHost {
     }
 
     public static MediaCrawlMode getDownloadMode() {
+        // TODO: Add support for AUTO and DEFAULT
         final MediaCrawlMode mode = PluginJsonConfig.get(TiktokConfig.class).getMediaCrawlMode();
         if (false) {
             // see https://svn.jdownloader.org/issues/90292
@@ -946,9 +947,10 @@ public class TiktokCom extends PluginForHost {
         final MediaCrawlMode mode = getDownloadMode();
         if (!link.hasProperty(PROPERTY_LAST_USED_DOWNLOAD_MODE) || !StringUtils.equals(link.getStringProperty(PROPERTY_LAST_USED_DOWNLOAD_MODE), mode.name())) {
             /* Prevent file corruption */
-            logger.info("Resetting progress because user has downloaded using other download mode before");
+            logger.info("Resetting progress because user has downloaded using different download mode before");
             link.setChunksProgress(null);
             link.setVerifiedFileSize(-1);
+            link.setHashInfo(null);
         }
         /* Remember last used download mode */
         link.setProperty(PROPERTY_LAST_USED_DOWNLOAD_MODE, mode.name());

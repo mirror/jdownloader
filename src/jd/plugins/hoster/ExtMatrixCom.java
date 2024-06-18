@@ -114,7 +114,7 @@ public class ExtMatrixCom extends FlexShareCore {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
+        return Integer.MAX_VALUE;
     }
 
     @Override

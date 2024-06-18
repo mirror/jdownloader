@@ -85,17 +85,31 @@ public interface TiktokConfig extends PluginConfigInterface {
 
     void setMaxSimultaneousDownloads(int i);
 
+    final MediaCrawlMode defaultMediaCrawlMode = MediaCrawlMode.AUTO;
+
     public static enum MediaCrawlMode implements LabelInterface {
+        DEFAULT {
+            @Override
+            public String getLabel() {
+                return "Default: " + defaultMediaCrawlMode.getLabel();
+            }
+        },
+        AUTO {
+            @Override
+            public String getLabel() {
+                return "Auto";
+            }
+        },
         WEBSITE {
             @Override
             public String getLabel() {
-                return "Website [Usually with watermark, also private videos]";
+                return "Website [Sometimes with watermark, also private videos if account is given]";
             }
         },
         API {
             @Override
             public String getLabel() {
-                return "API [Usually without watermark, only public videos]";
+                return "API [Without watermark, only public videos]";
             }
         };
     }
