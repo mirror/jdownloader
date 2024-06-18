@@ -116,6 +116,7 @@ public class Account extends Property {
         final String COOKIE_STORAGE_TIMESTAMP_ID = COOKIE_STORAGE + ":TS:" + ID;
         final long ret = System.currentTimeMillis();
         setProperty(COOKIE_STORAGE_TIMESTAMP_ID, ret);
+        // TODO: add support for UserAgent, eg dropbox/filestore.to
         return ret;
     }
 
@@ -157,7 +158,7 @@ public class Account extends Property {
         final String COOKIE_STORAGE_ID = COOKIE_STORAGE + ":" + ID;
         removeProperty(COOKIE_STORAGE_ID);
         final String COOKIE_STORAGE_TIMESTAMP_ID = COOKIE_STORAGE + ":TS:" + ID;
-        removeProperty(COOKIE_STORAGE_TIMESTAMP_ID);
+        removeProperty(COOKIE_STORAGE_TIMESTAMP_ID); // TODO: add support for UserAgent, eg dropbox/filestore.to
     }
 
     public synchronized long getCookiesTimeStamp(final String ID) {
@@ -170,6 +171,7 @@ public class Account extends Property {
         final String validation = Hash.getSHA256(getUser() + ":" + getPass());
         if (StringUtils.equals(getStringProperty(COOKIE_STORAGE), validation)) {
             final String COOKIE_STORAGE_ID = COOKIE_STORAGE + ":" + ID;
+            // TODO: add support for UserAgent, eg dropbox/filestore.to
             final String cookieStorables = getStringProperty(COOKIE_STORAGE_ID);
             if (StringUtils.isNotEmpty(cookieStorables)) {
                 try {
