@@ -1790,6 +1790,11 @@ public abstract class K2SApi extends PluginForHost {
         } catch (final PluginException e) {
             if (br.getHttpConnection().getResponseCode() == 400) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Invalid fileID");
+            } else if (br.getHttpConnection().getResponseCode() == 403) {
+                /* Private file - we know that it is online but we can't obtain any file information. */
+                /* {"message":"You are not authorized for this action","status":"error","code":403,"errorCode":10} */
+                link.setProperty(PROPERTY_ACCESS, "private");
+                return AvailableStatus.TRUE;
             } else {
                 throw e;
             }

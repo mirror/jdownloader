@@ -123,6 +123,7 @@ public class PornktuBe extends KernelVideoSharingComV2 {
         int best = 0;
         final boolean useNewHandling = true;
         if (useNewHandling) {
+            /* 2024-06-18 */
             final int nt = Integer.parseInt(id) / 1000;
             final int n = nt * 1000;
             final String[] qualStrings = br.getRegex("data-c=\"([^\"]+)").getColumn(0);
