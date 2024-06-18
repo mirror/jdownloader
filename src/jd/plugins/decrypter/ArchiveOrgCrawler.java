@@ -28,6 +28,22 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Pattern;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.net.URLHelper;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.archiveorg.ArchiveOrgConfig;
+import org.jdownloader.plugins.components.archiveorg.ArchiveOrgConfig.BookCrawlMode;
+import org.jdownloader.plugins.components.archiveorg.ArchiveOrgConfig.PlaylistCrawlMode;
+import org.jdownloader.plugins.components.archiveorg.ArchiveOrgConfig.SingleFilePathNotFoundMode;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -50,22 +66,6 @@ import jd.plugins.PluginForDecrypt;
 import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.download.HashInfo;
 import jd.plugins.hoster.ArchiveOrg;
-
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.net.URLHelper;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.archiveorg.ArchiveOrgConfig;
-import org.jdownloader.plugins.components.archiveorg.ArchiveOrgConfig.BookCrawlMode;
-import org.jdownloader.plugins.components.archiveorg.ArchiveOrgConfig.PlaylistCrawlMode;
-import org.jdownloader.plugins.components.archiveorg.ArchiveOrgConfig.SingleFilePathNotFoundMode;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "archive.org", "subdomain.archive.org" }, urls = { "https?://(?:www\\.)?archive\\.org/((?:details|download|stream|embed)/.+|search\\?query=.+)", "https?://[^/]+\\.archive\\.org/view_archive\\.php\\?archive=[^\\&]+(?:\\&file=[^\\&]+)?" })
 public class ArchiveOrgCrawler extends PluginForDecrypt {
@@ -111,8 +111,9 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
     }
 
     /**
-     * Returns identifier from given URL. </br> The definition of how an identifier is supposed to look is vague so in this case we're also
-     * including username strings a la "@<username>" as possible return values.
+     * Returns identifier from given URL. </br>
+     * The definition of how an identifier is supposed to look is vague so in this case we're also including username strings a la
+     * "@<username>" as possible return values.
      */
     public static String getIdentifierFromURL(final String url) {
         return new Regex(url, "/(?:details|embed|download|metadata|stream)/(@?[A-Za-z0-9\\-_\\.]{2,})").getMatch(0);
@@ -150,7 +151,8 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
     }
 
     /**
-     * Uses search APIv1 </br> API: Docs: https://archive.org/help/aboutsearch.htm
+     * Uses search APIv1 </br>
+     * API: Docs: https://archive.org/help/aboutsearch.htm
      */
     private ArrayList<DownloadLink> crawlViaScrapeAPI(final Browser br, final String searchTerm, final int maxResultsLimit) throws Exception {
         if (StringUtils.isEmpty(searchTerm)) {
@@ -302,8 +304,8 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         int internalPageIndex = 0;
         for (final Object imageO : imagesO) {
             /**
-             * Most of all objects will contain an array with 2 items --> Books always have two viewable pages. </br> Exception = First page
-             * --> Cover
+             * Most of all objects will contain an array with 2 items --> Books always have two viewable pages. </br>
+             * Exception = First page --> Cover
              */
             final List<Object> pagesO = (List<Object>) imageO;
             for (final Object pageO : pagesO) {
@@ -333,8 +335,8 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                     link.setProperty(ArchiveOrg.PROPERTY_IS_BORROWED_UNTIL_TIMESTAMP, System.currentTimeMillis() + loanedSecondsLeft * 1000);
                 }
                 /**
-                 * Mark pages that are not viewable in browser as offline. </br> If we have borrowed this book, this field will not exist at
-                 * all.
+                 * Mark pages that are not viewable in browser as offline. </br>
+                 * If we have borrowed this book, this field will not exist at all.
                  */
                 final Object viewable = bookpage.get("viewable");
                 if (Boolean.FALSE.equals(viewable)) {
@@ -603,11 +605,13 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
             }
             file._setFilePackage(fp);
             final String fullPath = identifier + "/" + pathWithFilename;
-            if (desiredSubpathDecoded != null && fullPath.startsWith(desiredSubpathDecoded)) {
+            if (desiredSubpathDecoded != null) {
                 /* Add item to list of results which match our given subpath. */
                 if (fullPath.endsWith(desiredSubpathDecoded)) {
+                    /* Single file which the user wants. */
                     singleDesiredFile = file;
                 } else if (fullPath.startsWith(desiredSubpathDecoded)) {
+                    /* File below sub-path which user wants -> Collect all files in that subpath. */
                     desiredSubpathItems.add(file);
                 }
             }
@@ -1142,7 +1146,8 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
         if (path.contains("/") && allowCheckForDirecturl) {
             /**
              * 2023-05-30: Especially important when user adds a like to a file inside a .zip file as that will not be contained in the XML
-             * which we are crawling below. </br> Reference: https://board.jdownloader.org/showthread.php?t=89368
+             * which we are crawling below. </br>
+             * Reference: https://board.jdownloader.org/showthread.php?t=89368
              */
             logger.info("Path contains subpath -> Checking for single directurl");
             URLConnectionAdapter con = null;
@@ -1282,8 +1287,9 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
             final ArrayList<DownloadLink> audioPlaylistItemsDetailed = new ArrayList<DownloadLink>();
             if (metadataJson != null) {
                 /**
-                 * Try to find more metadata to the results we already have and combine them with the track-position-data we know. </br> In
-                 * the end we should get the best of both worlds: All tracks with track numbers, metadata and file hashes for CRC checking.
+                 * Try to find more metadata to the results we already have and combine them with the track-position-data we know. </br>
+                 * In the end we should get the best of both worlds: All tracks with track numbers, metadata and file hashes for CRC
+                 * checking.
                  */
                 logger.info("Looking for more detailed audio metadata");
                 audioPlaylistItemsDetailed.addAll(this.crawlMetadataJson(metadataJson, filepathToPlaylistItemMapping));
@@ -1548,8 +1554,9 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
     }
 
     /**
-     * Crawls json which can sometimes be found in html of such URLs: "/details/<identifier>" </br> If a filename/path to track position
-     * mapping is given, this handling tries to find the playlist position of crawled items based on the mapping.
+     * Crawls json which can sometimes be found in html of such URLs: "/details/<identifier>" </br>
+     * If a filename/path to track position mapping is given, this handling tries to find the playlist position of crawled items based on
+     * the mapping.
      */
     @Deprecated
     private ArrayList<DownloadLink> crawlMetadataJson(final String json, final Map<String, DownloadLink> filepathToPlaylistItemMapping) throws Exception {
@@ -1617,7 +1624,8 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
             final DownloadLink file = new DownloadLink(hostPlugin, null, "archive.org", directurl, true);
             if (audioTrackPosition != -1) {
                 /**
-                 * Size of playlist must not be pre-given </br> Size of playlist = Highest track-number.
+                 * Size of playlist must not be pre-given </br>
+                 * Size of playlist = Highest track-number.
                  */
                 if (audioTrackPosition > playlistSize) {
                     /* Determine size of playlist as it must not be pre-given. */

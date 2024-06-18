@@ -17,6 +17,7 @@ package jd.plugins.decrypter;
 
 import java.util.ArrayList;
 
+import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
@@ -25,9 +26,12 @@ import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
 import jd.plugins.FilePackage;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
+import jd.plugins.PluginForHost;
 
-@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornhost.com" }, urls = { "https?://(www\\.)?pornhost\\.com/([0-9]+|embed/\\d+)" })
+@DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornhost.com" }, urls = { "https?://(www\\.)?pornhost\\.com/([0-9]+.*|embed/\\d+)" })
 public class PrnHstComFldr extends PluginForDecrypt {
     public PrnHstComFldr(PluginWrapper wrapper) {
         super(wrapper);
@@ -39,35 +43,42 @@ public class PrnHstComFldr extends PluginForDecrypt {
     }
 
     @Override
-    public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
-        String parameter = param.toString();
+    public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
+        ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
+        final String contenturl = param.getCryptedUrl();
         br.setFollowRedirects(true);
-        br.getPage(parameter);
-        if (br.containsHTML("gallery not found") || br.containsHTML("You will be redirected to")) {
-            logger.info("Link offline: " + parameter);
-            return decryptedLinks;
+        final PluginForHost hosterplugin = this.getNewPluginForHostInstance(this.getHost());
+        if (hosterplugin.canHandle(contenturl) && StringUtils.startsWithCaseInsensitive(contenturl, ".html")) {
+            ret.add(createDownloadlink(contenturl));
+            return ret;
+        }
+        br.getPage(contenturl);
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("gallery not found") || br.containsHTML("You will be redirected to")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         if (br.containsHTML("(moviecontainer|flashmovie|play this movie|createPlayer|>The movie needs to be converted first|jwplayer\\(\"div_video\"\\)\\.setup\\(\\{)") || br.getURL().contains(".com/embed/")) {
-            /* Probably single video */
-            String finallink = br.getURL();
-            decryptedLinks.add(createDownloadlink(parameter));
+            /* Looks like single video */
+            // final String finallink = br.getURL();
+            ret.add(createDownloadlink(contenturl));
         } else {
-            String[] links = br.getRegex("class=\"thumb\">.*?<img src=.*?.*?<a href=\"(.*?)\">").getColumn(0);
-            if (links.length == 0) {
-                links = br.getRegex("\"(http://(www\\.)?pornhost\\.com/[0-9]+/[0-9]+\\.html)\"").getColumn(0);
+            String[] urls = br.getRegex("class=\"thumb\">\\s*<a href=\"(.*?)\">").getColumn(0);
+            if (urls.length == 0) {
+                urls = br.getRegex("\"(https?://(?:www\\.)?pornhost\\.com/[0-9]+/[0-9]+\\.html)\"").getColumn(0);
             }
-            if (links.length == 0) {
+            if (urls == null || urls.length == 0) {
                 /* Probably single video */
-                decryptedLinks.add(this.createDownloadlink(parameter));
-                return decryptedLinks;
+                ret.add(this.createDownloadlink(contenturl));
+                return ret;
             }
             String fpName = br.getRegex("<title>pornhost\\.com - free file hosting with a twist - gallery(.*?)</title>").getMatch(0);
             if (fpName == null) {
                 fpName = br.getRegex("id=\"url\" value=\"http://(www\\.)?pornhost\\.com/(.*?)/\"").getMatch(1);
             }
-            for (String dl : links) {
-                decryptedLinks.add(createDownloadlink(dl));
+            for (String url : urls) {
+                url = br.getURL(url).toExternalForm();
+                ret.add(createDownloadlink(url));
             }
             // If the plugin knows the name/number of the gallery we can
             // add all pics to one package...looks nicer and makes it easier
@@ -75,13 +86,13 @@ public class PrnHstComFldr extends PluginForDecrypt {
             if (fpName != null) {
                 FilePackage fp = FilePackage.getInstance();
                 fp.setName("Gallery " + fpName.trim());
-                fp.addLinks(decryptedLinks);
+                fp.addLinks(ret);
             }
         }
-        return decryptedLinks;
+        return ret;
     }
 
-    /* NO OVERRIDE!! */
+    @Override
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }

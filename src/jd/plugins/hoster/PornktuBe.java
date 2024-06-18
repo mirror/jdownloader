@@ -25,6 +25,7 @@ import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
@@ -44,8 +45,18 @@ public class PornktuBe extends KernelVideoSharingComV2 {
     /** 2022-07-26: Seems like they're GEO-blocking all IPs except for US IPs. */
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
-        ret.add(new String[] { "pornktube.tv", "pornktube.vip", "pornktube.com", "pornktu.be" });
+        ret.add(new String[] { "pornktube.club", "pornktube.tv", "pornktube.vip", "pornktube.com", "pornktu.be" });
         return ret;
+    }
+
+    @Override
+    protected ArrayList<String> getDeadDomains() {
+        final ArrayList<String> deadDomains = new ArrayList<String>();
+        deadDomains.add("pornktube.tv");
+        deadDomains.add("pornktube.vip");
+        deadDomains.add("pornktube.com");
+        deadDomains.add("pornktu.be");
+        return deadDomains;
     }
 
     public static String[] getAnnotationNames() {
@@ -61,12 +72,12 @@ public class PornktuBe extends KernelVideoSharingComV2 {
         return buildAnnotationUrlsPatternPornktube(getPluginDomains());
     }
 
-    private final String pattern_special = "(?i)https?://[^/]+/vid/(\\d+)/([\\w\\-]+)/";
+    private static final String pattern_special = "/(?:vid|view)/(\\d+)/(([\\w\\-]+)/)?";
 
     public static String[] buildAnnotationUrlsPatternPornktube(final List<String[]> pluginDomains) {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : pluginDomains) {
-            ret.add("https?://(?:\\w+\\.)?" + buildHostsPatternPart(domains) + "/vid/(\\d+)/([\\w\\-]+)/");
+            ret.add("https?://(?:\\w+\\.)?" + buildHostsPatternPart(domains) + pattern_special);
         }
         return ret.toArray(new String[0]);
     }
@@ -104,31 +115,57 @@ public class PornktuBe extends KernelVideoSharingComV2 {
         final String id = this.getFUID(this.getDownloadLink());
         // final String s = br.getRegex("data-s=\"(\\d+)\"").getMatch(0);
         // final String t = br.getRegex("data-t=\"(\\d+)\"").getMatch(0);
-        final String server = br.getRegex("data-n=\"(\\d+)\"").getMatch(0);
+        final String server = br.getRegex("data-n=\"(\\w+)\"").getMatch(0);
         if (server == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final String qualitiesStr = br.getRegex("data-q=\"([^\"]+)\"").getMatch(0);
-        final String[] qualities = qualitiesStr.split(",");
-        int best = 0;
-        final int nt = Integer.parseInt(id) / 1000;
-        final int n = nt * 1000;
         String dllink = null;
-        for (final String qualityItems : qualities) {
-            final Regex qualityInfo = new Regex(qualityItems, "\\&nbsp;(\\d+)p;\\d+;(\\d+);([^;]+)");
-            final String qualityStr = qualityInfo.getMatch(0);
-            final String number = qualityInfo.getMatch(1);
-            final String key = qualityInfo.getMatch(2);
-            if (qualityStr == null || number == null || key == null) {
+        int best = 0;
+        final boolean useNewHandling = true;
+        if (useNewHandling) {
+            final int nt = Integer.parseInt(id) / 1000;
+            final int n = nt * 1000;
+            final String[] qualStrings = br.getRegex("data-c=\"([^\"]+)").getColumn(0);
+            if (qualStrings == null || qualStrings.length == 0) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            String url = "https://s" + server + ".stormedia.info/whpvid/" + number + "/" + key + "/" + n + "/" + id + "/" + id + "_" + qualityStr + "p.mp4";
-            /* Special case */
-            url = url.replace("_720p", "");
-            final int quality = Integer.parseInt(qualityStr);
-            if (quality > best) {
-                best = quality;
-                dllink = url;
+            for (String qualString : qualStrings) {
+                qualString = Encoding.htmlOnlyDecode(qualString);
+                final String[] qualData = qualString.split(";");
+                final String qualityStr = qualData[1];
+                final String number = qualData[4];
+                final String timestampStr = qualData[5];
+                final String keyyy = qualData[6];
+                String url = "https://" + server + ".vstor.top/whpvid/" + timestampStr + "/" + keyyy + "/" + n + "/" + number + "/" + number + "_" + qualityStr + ".mp4";
+                /* Special case */
+                url = url.replace("_720p", "");
+                final int quality = Integer.parseInt(qualityStr.replace("p", ""));
+                if (quality > best) {
+                    best = quality;
+                    dllink = url;
+                }
+            }
+        } else {
+            final String qualitiesStr = br.getRegex("data-q=\"([^\"]+)\"").getMatch(0);
+            final String[] qualities = qualitiesStr.split(",");
+            final int nt = Integer.parseInt(id) / 1000;
+            final int n = nt * 1000;
+            for (final String qualityItems : qualities) {
+                final Regex qualityInfo = new Regex(qualityItems, "(\\d+)p;\\d+;(\\d+);([^;]+)");
+                final String qualityStr = qualityInfo.getMatch(0);
+                final String number = qualityInfo.getMatch(1);
+                final String key = qualityInfo.getMatch(2);
+                if (qualityStr == null || number == null || key == null) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+                String url = "https://" + server + ".vstor.top/whpvid/" + number + "/" + key + "/" + n + "/" + id + "/" + id + ".mp4";
+                /* Special case */
+                url = url.replace("_720p", "");
+                final int quality = Integer.parseInt(qualityStr);
+                if (quality > best) {
+                    best = quality;
+                    dllink = url;
+                }
             }
         }
         link.setProperty(PROPERTY_CHOSEN_QUALITY, best);
@@ -157,7 +194,7 @@ public class PornktuBe extends KernelVideoSharingComV2 {
         if (url == null) {
             return null;
         } else {
-            final String urlTitle = new Regex(url, pattern_special).getMatch(1);
+            final String urlTitle = new Regex(url, pattern_special).getMatch(2);
             if (urlTitle != null) {
                 return urlTitle;
             } else {
@@ -168,6 +205,6 @@ public class PornktuBe extends KernelVideoSharingComV2 {
 
     @Override
     protected String generateContentURL(final String host, final String fuid, final String urlSlug) {
-        return "https://vwv." + host + "/vid/" + fuid + "/" + urlSlug + "/";
+        return "https://www." + host + "/view/" + fuid + "/";
     }
 }

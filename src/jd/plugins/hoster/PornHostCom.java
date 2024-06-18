@@ -17,6 +17,8 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -29,9 +31,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "pornhost.com" }, urls = { "https?://(?:www\\.)?pornhost\\.com/([0-9]+/([0-9]+\\.html)?|[0-9]+|embed/\\d+)" })
 public class PornHostCom extends PluginForHost {
@@ -54,7 +53,7 @@ public class PornHostCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return Integer.MAX_VALUE;
     }
 
     @Override
@@ -65,23 +64,12 @@ public class PornHostCom extends PluginForHost {
         if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("gallery not found") || br.containsHTML("You will be redirected to")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<title>(?:pornhost.com - )?([^<>\"]*?)( - Pornhost)?</title>").getMatch(0);
-        }
-        if (filename == null) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        if (StringUtils.isEmpty(filename)) {
-            filename = new Regex(link.getPluginPatternMatcher(), "(\\d+)(\\.html)?$").getMatch(0);
-        }
-        filename = Encoding.htmlDecode(filename.trim());
-        if (br.containsHTML(">The movie needs to be converted first")) {
-            link.getLinkStatus().setStatusText("The movie needs to be converted first");
-            link.setFinalFileName(filename.trim() + ".flv");
-            return AvailableStatus.TRUE;
-        }
-        if (!link.getPluginPatternMatcher().contains(".html")) {
+        if (link.getPluginPatternMatcher().contains(".html")) {
+            dllink = br.getRegex("class=\"image\"[^>]*>\\s*<img src=\"(http[^\"]+)\"").getMatch(0);
+            if (dllink == null) {
+                dllink = br.getRegex("\"(https?://file[0-9]+\\.pornhost\\.com/[0-9]+/.*?)\"").getMatch(0);
+            }
+        } else {
             dllink = br.getRegex("\"(https?://cdn\\d+\\.dl\\.pornhost\\.com/[^<>\"]*?)\"").getMatch(0);
             if (dllink == null) {
                 dllink = br.getRegex("file: \"(.*?)\"").getMatch(0);
@@ -94,52 +82,50 @@ public class PornHostCom extends PluginForHost {
                 /* 2020-04-30 */
                 dllink = br.getRegex("<source src=\"(http[^<>\"]+)\" type=\"video/mp4\">").getMatch(0);
             }
-        } else {
-            dllink = br.getRegex("style=\"width: 499px; height: 372px\">[\t\n\r ]+<img src=\"(http.*?)\"").getMatch(0);
-            if (dllink == null) {
-                dllink = br.getRegex("\"(https?://file[0-9]+\\.pornhost\\.com/[0-9]+/.*?)\"").getMatch(0);
-            }
         }
         // Maybe we have a picture
         if (dllink == null) {
             dllink = br.getRegex("<div class=\"image\" style=\"width: \\d+px; height: \\d+px\">[\t\n\r ]+<img src=\"(http://[^<>\"]*?)\"").getMatch(0);
         }
-        if (dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        dllink = Encoding.urlDecode(dllink, true);
-        final String ext = getFileNameExtensionFromString(dllink, ".flv");
-        if (!filename.endsWith(ext)) {
-            filename += ext;
-        }
-        link.setFinalFileName(filename);
-        URLConnectionAdapter con = null;
-        try {
-            final Browser brc = br.cloneBrowser();
-            con = brc.openHeadConnection(dllink);
-            if (looksLikeDownloadableContent(con)) {
-                if (con.getCompleteContentLength() > 0) {
-                    link.setVerifiedFileSize(con.getCompleteContentLength());
-                }
-            } else {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        if (dllink != null) {
+            dllink = Encoding.htmlOnlyDecode(dllink);
+            final String filename = Plugin.getFileNameFromURL(dllink);
+            if (filename != null) {
+                link.setFinalFileName(filename);
             }
-            return AvailableStatus.TRUE;
-        } finally {
+            URLConnectionAdapter con = null;
             try {
-                con.disconnect();
-            } catch (Throwable e) {
+                final Browser brc = br.cloneBrowser();
+                con = brc.openHeadConnection(dllink);
+                if (!looksLikeDownloadableContent(con)) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                if (con.getCompleteContentLength() > 0) {
+                    if (con.isContentDecoded()) {
+                        link.setDownloadSize(con.getCompleteContentLength());
+                    } else {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
+                }
+            } finally {
+                try {
+                    con.disconnect();
+                } catch (Throwable e) {
+                }
             }
         }
+        return AvailableStatus.TRUE;
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        if (br.containsHTML(">The movie needs to be converted first")) {
+    public void handleFree(DownloadLink link) throws Exception {
+        requestFileInformation(link);
+        if (br.containsHTML(">\\s*The movie needs to be converted first")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "The movie needs to be converted first", 30 * 60 * 1000l);
+        } else if (dllink == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 0);
         if (!looksLikeDownloadableContent(dl.getConnection())) {
             br.followConnection(true);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -148,11 +134,11 @@ public class PornHostCom extends PluginForHost {
             dl.setAllowFilenameFromURL(false);
             String name = Plugin.getFileNameFromHeader(dl.getConnection());
             if (ending != null && ending.length() <= 1) {
-                String name2 = downloadLink.getName();
+                String name2 = link.getName();
                 name = new Regex(name, ".+?(\\..{1,4})").getMatch(0);
                 if (name != null && !name2.endsWith(name)) {
                     name2 = name2 + name;
-                    downloadLink.setFinalFileName(name2);
+                    link.setFinalFileName(name2);
                 }
             }
         } catch (final Throwable e) {
