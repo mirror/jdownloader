@@ -712,6 +712,7 @@ public class TiktokComCrawler extends PluginForDecrypt {
                     if (url.equalsIgnoreCase(videoDirecturl)) {
                         foundMatch = true;
                         video.setDownloadSize(Long.parseLong(playAddr.get("DataSize").toString()));
+                        // video.setVerifiedFileSize(Long.parseLong(playAddr.get("DataSize").toString()));
                         video.setMD5Hash(playAddr.get("FileHash").toString());
                         break bitrateLoop;
                     }
