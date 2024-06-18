@@ -308,6 +308,12 @@ public class TorboxApp extends PluginForHost {
         return ai;
     }
 
+    @Override
+    protected void displayBubbleNotification(final String title, final String text) {
+        final DownloadLink link = getDownloadLink();
+        super.displayBubbleNotification("TorBox | " + title, text, link != null ? link.getDomainInfo().getIcon(32) : null);
+    }
+
     private Map<String, Object> login(final Account account, final boolean validateLogins) throws IOException, PluginException, InterruptedException {
         synchronized (account) {
             setLoginHeaders(br, account);

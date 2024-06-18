@@ -238,8 +238,9 @@ public class VscoCo extends PluginForHost {
             final String accounturl = "/user/account";
             final String userAgentFromConfig = this.getPluginConfig().getStringProperty(SETTING_CUSTOM_USER_AGENT, SETTING_CUSTOM_USER_AGENT_default);
             if (userAgentFromConfig != null) {
-                br.getHeaders().put("User-Agent", userAgentFromConfig);
+                br.getHeaders().put(HTTPConstants.HEADER_REQUEST_USER_AGENT, userAgentFromConfig);
             }
+            final String propertyLastUsedUserAgent = "lastUsedUserAgent";
             if (cookies != null || userCookies != null) {
                 logger.info("Attempting cookie login");
                 String userAgentFromCookies = null;
@@ -249,7 +250,7 @@ public class VscoCo extends PluginForHost {
                 } else {
                     br.setCookies(cookies);
                 }
-                final String lastUsedUserAgent = account.getStringProperty("useragent");
+                final String lastUsedUserAgent = account.getStringProperty(propertyLastUsedUserAgent);
                 String useragent = null;
                 if (userAgentFromCookies != null) {
                     useragent = userAgentFromCookies;
@@ -261,7 +262,9 @@ public class VscoCo extends PluginForHost {
                 if (useragent != null) {
                     /* Special User-Agent value present: Set it and save it on account for later usage. */
                     br.getHeaders().put(HTTPConstants.HEADER_REQUEST_USER_AGENT, useragent);
-                    account.setProperty("lastUsedUserAgent", useragent);
+                    account.setProperty(propertyLastUsedUserAgent, useragent);
+                } else {
+                    account.removeProperty(propertyLastUsedUserAgent);
                 }
                 if (!force) {
                     /* Don't validate cookies */
@@ -295,7 +298,7 @@ public class VscoCo extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             /* TODO: Unfinished code down below */
-            final String currentUserAgent = br.getHeaders().get("User-Agent");
+            final String currentUserAgent = br.getHeaders().get(HTTPConstants.HEADER_REQUEST_USER_AGENT);
             // br.getPage("https://" + getHost() + "/user/login");
             br.getPage("https://" + getHost() + "/csrf-token");
             final Map<String, Object> tokenResp = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
@@ -311,7 +314,7 @@ public class VscoCo extends PluginForHost {
                 throw new AccountInvalidException();
             }
             account.saveCookies(br.getCookies(br.getHost()), "");
-            account.setProperty("lastUsedUserAgent", currentUserAgent);
+            account.setProperty(propertyLastUsedUserAgent, currentUserAgent);
             return true;
         }
     }

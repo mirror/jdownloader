@@ -2,6 +2,7 @@ package org.jdownloader.plugins.components.config;
 
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
+import org.appwork.storage.config.annotations.DefaultStringValue;
 import org.appwork.storage.config.annotations.DescriptionForConfigEntry;
 import org.jdownloader.plugins.config.Order;
 import org.jdownloader.plugins.config.PluginConfigInterface;
@@ -27,6 +28,10 @@ public interface DropBoxConfig extends PluginConfigInterface {
         public String getEnableFastLinkcheckForSingleFiles_label() {
             return text_EnableFastLinkcheckForSingleFiles;
         }
+
+        public String getUserAgent_label() {
+            return "User-Agent";
+        }
     }
     // @DefaultBooleanValue(false)
     // @AboutConfig
@@ -51,4 +56,11 @@ public interface DropBoxConfig extends PluginConfigInterface {
     boolean isEnableFastLinkcheckForSingleFiles();
 
     void setEnableFastLinkcheckForSingleFiles(boolean b);
+
+    @AboutConfig
+    @DefaultStringValue("JDDEFAULT")
+    @Order(40)
+    String getUserAgent();
+
+    public void setUserAgent(final String userAgent);
 }
