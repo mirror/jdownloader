@@ -641,6 +641,11 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
                 logger.info("Failed to find fuid in html");
             }
         }
+        if (br.containsHTML("\"iab_extended\"") && br.containsHTML("app\\.js")) {
+            /* 2024-06-18: New e.g. vjav.com, txxx.com, upornia.com, mrgay.com and many more */
+            logger.info("Auto detected the need to use API for linkcheck");
+            return this.requestFileInformationAPI(link, account, isDownload);
+        }
         final String title = getFileTitle(link);
         if (!StringUtils.isEmpty(title)) {
             link.setFinalFileName(title + extDefault);
@@ -656,6 +661,7 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
             try {
                 dllink = getDllink(link, this.br);
             } catch (final PluginException e) {
+                // TODO: Check if this check is still required - the "video is private" status should be known before here already.
                 if (this.isPrivateVideo(link) && e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
                     logger.log(e);
                     logger.info("ERROR_FILE_NOT_FOUND in getDllink but we have a private video so it is not offline ...");
@@ -1577,12 +1583,6 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
                     }
                 }
             }
-            if (!br.containsHTML("license_code:") && !br.containsHTML("kt_player_[0-9\\.]+\\.swfx?")) {
-                /* No license key present in html and/or no player --> No video --> Offline */
-                // TODO: 2024-06-18: Remove this old handling - it is often triggering false positive offline exceptions, especially for
-                // websites which are using the API but classes do not yet override "useAPI" method.
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dllink = Encoding.htmlOnlyDecode(dllink);
@@ -1623,7 +1623,7 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
                  * offline-indicator.
                  */
                 if (decryptedVideoURL.startsWith("/")) {
-                    /* Add dummy-host because relative URLs would throw exception. */
+                    /* Add dummy-host because relative URLs would lead to Exception. */
                     new URL("https://example.com" + decryptedVideoURL);
                 } else {
                     new URL(decryptedVideoURL);

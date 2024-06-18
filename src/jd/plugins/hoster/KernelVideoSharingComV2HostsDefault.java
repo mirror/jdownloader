@@ -156,7 +156,7 @@ public class KernelVideoSharingComV2HostsDefault extends KernelVideoSharingComV2
 
     @Override
     protected boolean useAPI() {
-        return "upornia.com".equals(getHost()) || "tubepornclassic.com".equals(getHost()) || "thegay.com".equals(getHost()) || "mrgay.com".equals(getHost()) || super.useAPI();
+        return "upornia.com".equals(getHost()) || "tubepornclassic.com".equals(getHost()) || "thegay.com".equals(getHost()) || super.useAPI();
     }
 
     public static String[] getAnnotationNames() {
