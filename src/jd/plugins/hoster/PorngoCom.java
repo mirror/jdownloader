@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jd.PluginWrapper;
+import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
@@ -55,6 +56,13 @@ public class PorngoCom extends KernelVideoSharingComV2 {
 
     @Override
     protected String generateContentURL(final String host, final String fuid, final String urlSlug) {
-        return generateContentURLDefaultVideosPattern(host, fuid, urlSlug);
+        /* 2024-06-18: That "sid" parameter is needed. */
+        return generateContentURLDefaultVideosPattern(host, fuid, urlSlug) + "?sid=1234";
+    }
+
+    @Override
+    public String getPluginContentURL(final DownloadLink link) {
+        /* 2024-06-18: Make sure user gets a working URL in GUI. */
+        return link.getPluginPatternMatcher() + "?sid=1234";
     }
 }

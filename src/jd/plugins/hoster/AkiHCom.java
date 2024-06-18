@@ -109,30 +109,38 @@ public class AkiHCom extends PluginForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getPluginPatternMatcher());
-        String title = null;
-        Browser brc = null;
-        if (br.getURL().matches("(?i).*/watch/.*")) {
-            title = br.getRegex("<meta property\\s*=\\s*\"og:title\"\\s*content\\s*=\\s*\"(.*?)\\s*-\\s*Aki-H Hentai").getMatch(0);
-        } else {
-            title = br.getRegex("class=\"uc-name\"[^>]*>([^<]+)</div>").getMatch(0);
-        }
-        final String videoID = br.getRegex("displayvideo\\(\\d+\\s*,\\s*(\\d+)\\)").getMatch(0);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (!br.getURL().contains(publicVideoID)) {
             /* E.g. redirect to https://aki-h.com/error/404/ */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (videoID == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        br.getPage("https://aki-h.com/video/" + videoID + "/");
-        brc = br.cloneBrowser();
-        brc.getPage("https://v.aki-h.com/v/" + videoID);
+        String title = null;
+        if (br.getURL().matches("(?i).*/watch/.*")) {
+            title = br.getRegex("<meta property\\s*=\\s*\"og:title\"\\s*content\\s*=\\s*\"(.*?)\\s*-\\s*Aki-H Hentai").getMatch(0);
+        } else {
+            title = br.getRegex("class=\"uc-name\"[^>]*>([^<]+)</div>").getMatch(0);
+        }
         if (title != null) {
             title = Encoding.htmlDecode(title);
             title = title.trim();
             link.setFinalFileName(title + extDefault);
         }
+        return AvailableStatus.TRUE;
+    }
+
+    @Override
+    public void handleFree(final DownloadLink link) throws Exception {
+        requestFileInformation(link);
+        final String videoID = br.getRegex("displayvideo\\(\\d+\\s*,\\s*(\\d+)\\)").getMatch(0);
+        if (videoID == null) {
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        }
+        final String publicVideoID = this.getFID(link);
+        Browser brc = null;
+        br.getPage("https://aki-h.com/video/" + videoID + "/");
+        brc = br.cloneBrowser();
+        brc.getPage("https://v.aki-h.com/v/" + videoID);
         brc.getPage("https://v.aki-h.com/f/" + publicVideoID);
         final String streamID = brc.getRegex("stream/v/([^\"]*)").getMatch(0);
         brc.getPage("https://aki-h.stream/v/" + streamID);
@@ -142,22 +150,15 @@ public class AkiHCom extends PluginForHost {
         final List<HlsContainer> containers = HlsContainer.getHlsQualities(brc);
         if (containers == null || containers.size() == 0) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        } else {
-            this.br = brc;
-            return AvailableStatus.TRUE;
         }
-    }
-
-    @Override
-    public void handleFree(final DownloadLink link) throws Exception {
-        requestFileInformation(link);
+        this.br = brc;
         final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
         if (hlsbest == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         final String url_hls = hlsbest.getDownloadurl();
-        this.dl = new HLSDownloader(link, this.br, url_hls);
-        this.dl.startDownload();
+        dl = new HLSDownloader(link, this.br, url_hls);
+        dl.startDownload();
     }
 
     @Override
