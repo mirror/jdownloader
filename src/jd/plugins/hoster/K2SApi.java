@@ -423,7 +423,7 @@ public abstract class K2SApi extends PluginForHost {
                     try {
                         final HashMap<String, Object> postdata = new HashMap<String, Object>();
                         postdata.put("ids", fileIDs);
-                        // postdata.put("extended_info", true);
+                        postdata.put("extended_info", true);
                         /* Docs to used API call: https://keep2share.github.io/api/#resources:/getFilesInfo:post */
                         final Map<String, Object> entries = postPageRaw(br, "/getfilesinfo", postdata, null);
                         final List<Map<String, Object>> files = (List<Map<String, Object>>) entries.get("files");
@@ -537,8 +537,14 @@ public abstract class K2SApi extends PluginForHost {
             // private = owner only..
             link.setProperty(PROPERTY_ACCESS, access);
         }
-        /* Set additional properties for packagizer usage */
-        final Map<String, Object> video_info = (Map<String, Object>) fileInfo.get("video_info");
+        /* Set additional properties for Packagizer usage */
+        final Map<String, Object> video_info;
+        final Map<String, Object> extended_info = (Map<String, Object>) fileInfo.get("extended_info");
+        if (extended_info != null) {
+            video_info = (Map<String, Object>) extended_info.get("video_info");
+        } else {
+            video_info = (Map<String, Object>) fileInfo.get("video_info");
+        }
         if (video_info != null) {
             link.setProperty("video_duration", video_info.get("duration"));
             link.setProperty("video_width", video_info.get("width"));
