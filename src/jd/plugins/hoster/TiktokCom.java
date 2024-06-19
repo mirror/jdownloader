@@ -428,7 +428,6 @@ public class TiktokCom extends PluginForHost {
     }
 
     public static MediaCrawlMode getDownloadMode() {
-        // TODO: Add support for AUTO and DEFAULT
         final MediaCrawlMode mode = PluginJsonConfig.get(TiktokConfig.class).getMediaCrawlModeV2();
         if (mode == MediaCrawlMode.DEFAULT) {
             return MediaCrawlMode.AUTO;
