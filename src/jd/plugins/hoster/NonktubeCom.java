@@ -19,10 +19,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -35,6 +31,10 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "nonktube.com" }, urls = { "https?://(?:www\\.)?nonktube\\.com/(?:porn/)?video/(\\d+)/([a-z0-9\\-]+)" })
 public class NonktubeCom extends PluginForHost {
@@ -122,7 +122,7 @@ public class NonktubeCom extends PluginForHost {
                  */
                 final List<Object> ressourcelist = (List<Object>) JavaScriptEngineFactory.jsonToJavaObject(jssource);
                 final boolean onlyOneQualityAvailable = ressourcelist.size() == 1;
-                final int userSelectedQuality = -1;
+                int userSelectedQuality = -1;// currently not implemented
                 if (userSelectedQuality == -1) {
                     logger.info("Looking for BEST video stream");
                 } else {
