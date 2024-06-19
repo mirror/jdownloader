@@ -15,6 +15,9 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.DownloadLink;
@@ -22,12 +25,10 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.plugins.components.antiDDoSForHost;
+import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "primemusic.ru" }, urls = { "https?://(?:www\\.)?(primemusic\\.ru|prime-music\\.net|primemusic\\.cc|primemusic\\.me|freshmusic\\.club|newhit\\.me|(?:[a-z0-9]+\\.)?new-hits\\.ru)/Media\\-page\\-\\d+\\.html" })
-public class PrimeMusicRu extends antiDDoSForHost {
+public class PrimeMusicRu extends PluginForHost {
     @Override
     public String[] siteSupportedNames() {
         return new String[] { "primemusic.ru", "prime-music.net", "primemusic.cc", "primemusic.me", "freshmusic.club", "newhit.me" };
@@ -38,14 +39,13 @@ public class PrimeMusicRu extends antiDDoSForHost {
     }
 
     @Override
-    public String getAGBLink() {
-        return "https://primemusic.me";
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.AUDIO_STREAMING };
     }
 
-    @SuppressWarnings("deprecation")
-    public void correctDownloadLink(final DownloadLink link) {
-        /* 2019-01-18: Added domain new-hits.ru but did not enforce the usage of it as newhit.me is still active. */
-        link.setUrlDownload(link.getPluginPatternMatcher().replaceAll("https?://[^/]++/", "https://" + this.getHost() + "/"));
+    @Override
+    public String getAGBLink() {
+        return "https://primemusic.me";
     }
 
     /** 2019-01-18: This website GEO-blocks german IPs */
@@ -54,9 +54,20 @@ public class PrimeMusicRu extends antiDDoSForHost {
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.setAllowedResponseCodes(new int[] { 451 });
-        getPage(link.getPluginPatternMatcher());
+        String url = link.getPluginPatternMatcher();
+        if (!url.matches("(?i)^https?://www\\..+")) {
+            /* 2024-06-19: www. is required! */
+            url = url.replaceFirst("(?i)https?://", "https://www.");
+        }
+        br.getPage(url);
         final boolean offlineForLegalReasons = br.getHttpConnection().getResponseCode() == 451;
-        if (br.containsHTML("<h1 class=\"radio_title\">Композиция не найдена</h1>|>Композиция удалена") || br.getURL().contains("/index.php") || offlineForLegalReasons || br.getHttpConnection().getResponseCode() == 404) {
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (offlineForLegalReasons) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("<h1 class=\"radio_title\">Композиция не найдена</h1>|>Композиция удалена")) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.getURL().contains("/index.php")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String finalfilename = br.getRegex("<h2[^<>]*>Слушать\\s*([^<>\"]*?)\\s*(\\.mp3|онлайн)</h2>").getMatch(0);
@@ -73,12 +84,11 @@ public class PrimeMusicRu extends antiDDoSForHost {
         return AvailableStatus.TRUE;
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link);
         br.setFollowRedirects(false);
-        getPage(link.getDownloadURL().replace("/Media-page-", "/Media-download-"));
+        br.getPage(br.getURL().replaceFirst("(?i)/Media-page-", "/Media-download-"));
         String finallink = br.getRedirectLocation();
         if (finallink == null) {
             br.getRegex("<a class=\"download\" href=(https?://[^<>\"]*?\\.mp3)\"").getMatch(0);
@@ -106,7 +116,7 @@ public class PrimeMusicRu extends antiDDoSForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return Integer.MAX_VALUE;
     }
 
     @Override

@@ -18,6 +18,9 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
@@ -29,12 +32,9 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.controller.LazyPlugin;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
-public class PornsocketCom extends PluginForHost {
-    public PornsocketCom(PluginWrapper wrapper) {
+public class DesihoesCom extends PluginForHost {
+    public DesihoesCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
@@ -47,12 +47,11 @@ public class PornsocketCom extends PluginForHost {
     // Tags: Porn plugin
     // other:
     /* Connection stuff */
-    private static final boolean free_resume       = true;
-    private static final int     free_maxchunks    = 0;
-    private static final int     free_maxdownloads = -1;
-    private String               dllink            = null;
-    private static final String  TYPE_EMBED        = "https?://[^/]+/embed/([a-f0-9]+)";
-    private static final String  TYPE_NORMAL       = "https?://[^/]+/video/(\\d+)(/([a-z0-9\\-]+))?";
+    private static final boolean free_resume    = true;
+    private static final int     free_maxchunks = 0;
+    private String               dllink         = null;
+    private static final String  TYPE_EMBED     = "(?i)https?://[^/]+/embed/([a-f0-9]+)";
+    private static final String  TYPE_NORMAL    = "(?i)https?://[^/]+/video/(\\d+)(/([a-z0-9\\-]+))?";
 
     @Override
     public String getAGBLink() {
@@ -148,7 +147,8 @@ public class PornsocketCom extends PluginForHost {
             link.setFinalFileName(titleByURL.replace("-", " ").trim() + ".mp4");
         }
         /**
-         * 2021-09-06: First result = highest quality </br> These direct-urls are only valid once!!
+         * 2021-09-06: First result = highest quality </br>
+         * These direct-urls are only valid once!!
          */
         dllink = br.getRegex("<source src=\"(https?://[^\"]+\\.mp4)\"").getMatch(0);
         if (dllink == null) {
@@ -163,7 +163,11 @@ public class PornsocketCom extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
                 } else {
                     if (con.getCompleteContentLength() > 0) {
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                        if (con.isContentDecoded()) {
+                            link.setDownloadSize(con.getCompleteContentLength());
+                        } else {
+                            link.setVerifiedFileSize(con.getCompleteContentLength());
+                        }
                     }
                 }
             } finally {
@@ -201,7 +205,7 @@ public class PornsocketCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return free_maxdownloads;
+        return Integer.MAX_VALUE;
     }
 
     @Override

@@ -163,7 +163,7 @@ public class AnonymfileCom extends PluginForHost {
                 }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
+            link.setProperty(directlinkproperty, dl.getConnection().getURL().toExternalForm());
         }
         dl.startDownload();
     }

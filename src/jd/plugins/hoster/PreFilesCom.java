@@ -182,6 +182,18 @@ public class PreFilesCom extends XFileSharingProBasic {
     }
 
     @Override
+    public boolean isPremiumOnly(final Browser br) {
+        if (br == null) {
+            return false;
+        }
+        if (br.containsHTML(">\\s*The file owner does not allow FREE")) {
+            return true;
+        } else {
+            return super.isPremiumOnly(br);
+        }
+    }
+
+    @Override
     public boolean isLoggedin(Browser br) {
         boolean loggedin = super.isLoggedin(br);
         if (!loggedin) {

@@ -35,7 +35,7 @@ public interface TiktokConfig extends PluginConfigInterface {
             return text_MaxSimultaneousDownloads;
         }
 
-        public String getMediaCrawlMode_label() {
+        public String getMediaCrawlModeV2_label() {
             return text_MediaCrawlMode;
         }
 
@@ -106,10 +106,16 @@ public interface TiktokConfig extends PluginConfigInterface {
                 return "Website [Sometimes with watermark, also private videos if account is given]";
             }
         },
+        WEBSITE_EMBED {
+            @Override
+            public String getLabel() {
+                return "Website embed [Usually with watermark, also private videos if account is given]";
+            }
+        },
         API {
             @Override
             public String getLabel() {
-                return "API [Without watermark, only public videos]";
+                return "[!BROKEN!] API [Without watermark, only public videos]";
             }
         };
     }
@@ -118,9 +124,9 @@ public interface TiktokConfig extends PluginConfigInterface {
     @DefaultEnumValue("API")
     @Order(40)
     @DescriptionForConfigEntry(text_MediaCrawlMode)
-    MediaCrawlMode getMediaCrawlMode();
+    MediaCrawlMode getMediaCrawlModeV2();
 
-    void setMediaCrawlMode(final MediaCrawlMode mode);
+    void setMediaCrawlModeV2(final MediaCrawlMode mode);
 
     public static enum ProfileCrawlMode implements LabelInterface {
         WEBSITE {

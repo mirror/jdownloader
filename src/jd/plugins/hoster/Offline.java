@@ -158,6 +158,7 @@ public class Offline extends PluginForHost {
         ret.add(new String[] { "restfilee.com", "restfile.ws", "restfile.ca", "restfile.co", "restfile.com", "restfile.bz", "restfile.cc", "restfile.net" });
         ret.add(new String[] { "mp4player.site", "streamembed.com" });
         ret.add(new String[] { "load.to" });
+        ret.add(new String[] { "przeslij.com" });
         if (cache != null) {
             cache.put(cacheID, ret);
         }

@@ -1187,10 +1187,7 @@ public class GoogleDrive extends PluginForHost {
                 chosenQuality = bestQualityHeight;
                 chosenQualityDownloadlink = bestQualityDownloadlink;
             }
-            /** Reset this because hash could possibly have been set before and is only valid for the original file! */
-            link.setHashInfo(null);
-            /* Reset this as verifiedFilesize will usually be different from stream filesize. */
-            link.setVerifiedFileSize(-1);
+            this.prepareNonOriginalFileDownload(link);
             if (!userHasDownloadedStreamBefore && link.getView().getBytesLoaded() > 0) {
                 /*
                  * User could have started download of original file before: Clear download-progress and potentially partially downloaded
@@ -1300,6 +1297,7 @@ public class GoogleDrive extends PluginForHost {
         boolean usedAccount = false;
         String directurl = null;
         String streamDownloadlink = null;
+        boolean isNonOriginalFileDownload = false;
         if (useAPIForDownloading(link, account)) {
             /* API download */
             logger.info("Download in API mode");
@@ -1310,6 +1308,7 @@ public class GoogleDrive extends PluginForHost {
                 if (StringUtils.isEmpty(directurl)) {
                     throw getErrorFailedToFindFinalDownloadurl(link);
                 }
+                isNonOriginalFileDownload = true;
             } else {
                 /* Check if user prefers stream download which is only possible via website. */
                 if (this.allowVideoStreamDownloadAttempt(link, account)) {
@@ -1326,6 +1325,7 @@ public class GoogleDrive extends PluginForHost {
                     if (!StringUtils.isEmpty(streamDownloadlink)) {
                         /* Use found stream downloadlink. */
                         directurl = streamDownloadlink;
+                        isNonOriginalFileDownload = true;
                     }
                 }
                 if (StringUtils.isEmpty(directurl)) {
@@ -1341,8 +1341,12 @@ public class GoogleDrive extends PluginForHost {
             }
             if (streamDownloadlink != null) {
                 logger.info("Downloading stream");
+                isNonOriginalFileDownload = true;
             } else {
                 logger.info("Downloading original file");
+            }
+            if (isNonOriginalFileDownload) {
+                this.prepareNonOriginalFileDownload(link);
             }
             dl = new jd.plugins.BrowserAdapter().openDownload(br, link, directurl, resume, maxchunks);
         } else {
@@ -1352,16 +1356,7 @@ public class GoogleDrive extends PluginForHost {
             requestFileInformationWebsite(link, account, true);
             if (!this.canDownloadOfficially(link) && looksLikeImageFile(link.getName()) && link.hasProperty(PROPERTY_DIRECTURL_DRIVE_VIEWER)) {
                 directurl = link.getStringProperty(PROPERTY_DIRECTURL_DRIVE_VIEWER);
-                /*
-                 * The file we are about to download might not be the original anymore -> Delete hash to prevent hashcheck from failing!
-                 */
-                final long fileSize = link.getVerifiedFileSize();
-                if (fileSize != -1) {
-                    // filesize might be from original but download can be different file
-                    link.setVerifiedFileSize(-1);
-                    link.setDownloadSize(fileSize);
-                }
-                link.setHashInfo(null);
+                isNonOriginalFileDownload = true;
             }
             if (directurl == null) {
                 /* No downloadurl found yet -> Check for reasons why that is the case. */
@@ -1398,10 +1393,15 @@ public class GoogleDrive extends PluginForHost {
             }
             if (streamDownloadlink != null) {
                 logger.info("Downloading stream");
+                isNonOriginalFileDownload = true;
             } else if (this.isGoogleDocument(link)) {
                 logger.info("Downloading Google Document");
+                isNonOriginalFileDownload = true;
             } else {
                 logger.info("Downloading file");
+            }
+            if (isNonOriginalFileDownload) {
+                this.prepareNonOriginalFileDownload(link);
             }
             this.dl = new jd.plugins.BrowserAdapter().openDownload(br, link, directurl, resume, maxchunks);
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
@@ -1460,6 +1460,19 @@ public class GoogleDrive extends PluginForHost {
             link.setHashInfo(hashInfo);
         }
         this.dl.startDownload();
+    }
+
+    private void prepareNonOriginalFileDownload(final DownloadLink link) {
+        /*
+         * The file we are about to download might not be the original anymore -> Delete hash to prevent hashcheck from failing!
+         */
+        final long fileSize = link.getVerifiedFileSize();
+        if (fileSize != -1) {
+            // filesize might be from original but download can be different file
+            link.setVerifiedFileSize(-1);
+            link.setDownloadSize(fileSize);
+        }
+        link.setHashInfo(null);
     }
 
     @Deprecated

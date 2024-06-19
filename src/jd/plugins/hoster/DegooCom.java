@@ -171,7 +171,7 @@ public class DegooCom extends PluginForHost {
                     br.followConnection(true);
                     checkDownloadErrorsLastResort(dl.getConnection());
                 }
-                link.setProperty(PROPERTY_DIRECTURL, dl.getConnection().getURL().toString());
+                link.setProperty(PROPERTY_DIRECTURL, dl.getConnection().getURL().toExternalForm());
                 dl.startDownload();
             } else {
                 /* For text files they may return the full content of a file as base64 encoded text right away. */

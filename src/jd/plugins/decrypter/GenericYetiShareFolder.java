@@ -73,7 +73,6 @@ public class GenericYetiShareFolder extends PluginForDecrypt {
         /* Websites using the NEW style: */
         ret.add(new String[] { "truefile.cc" });
         ret.add(new String[] { "devdrive.cloud" });
-        ret.add(new String[] { "przeslij.com" });
         ret.add(new String[] { "fhscript.com" });
         ret.add(new String[] { "bowfile.com" });
         ret.add(new String[] { "shareplace.org" });
