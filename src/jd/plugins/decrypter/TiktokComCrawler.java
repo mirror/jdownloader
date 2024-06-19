@@ -104,7 +104,7 @@ public class TiktokComCrawler extends PluginForDecrypt {
     private final String TYPE_PLAYLIST_MUSIC = "(?i)https?://[^/]+/music/([a-z0-9\\-]+)-(\\d+)";
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
-        final iktokCom hostPlg = (TiktokCom) this.getNewPluginForHostInstance(this.getHost());
+        final TiktokCom hostPlg = (TiktokCom) this.getNewPluginForHostInstance(this.getHost());
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         /* 2023-01-26: Replace photo -> video is just a cheap workaround for now. */
         final String contenturl = param.getCryptedUrl().replaceFirst("(?i)http://", "https://").replace("/photo/", "/video/");
@@ -447,26 +447,27 @@ public class TiktokComCrawler extends PluginForDecrypt {
             /* Developer mistake */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        prepBRAPI(br);
+        final Browser brc = br.cloneBrowser();
+        prepBRAPI(brc);
         final UrlQuery query = TiktokCom.getAPIQuery();
         query.add("aweme_id", contentID);
         /* Alternative check for videos not available without feed-context: same request with path == '/feed' */
         // accessAPI(br, "/feed", query);
-        TiktokCom.accessAPI(br, "/aweme/detail", query);
+        TiktokCom.accessAPI(brc, "/aweme/detail", query);
         Map<String, Object> entries = null;
         Map<String, Object> aweme_detail = null;
         try {
-            entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+            entries = restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.MAP);
             aweme_detail = (Map<String, Object>) entries.get("aweme_detail");
         } catch (final JSonMapperException jse) {
             /* Fallback */
             logger.info("Trying API /feed fallback");
             /* Alternative check for videos not available without feed-context: same request with path == '/feed' */
-            prepBRAPI(br);
+            prepBRAPI(brc);
             /* Make sure that the next request will not contain a Referer header otherwise we'll get a blank page! */
-            br.setCurrentURL("");
-            TiktokCom.accessAPI(br, "/feed", query);
-            entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+            brc.setCurrentURL("");
+            TiktokCom.accessAPI(brc, "/feed", query);
+            entries = restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.MAP);
             final List<Map<String, Object>> aweme_list = (List<Map<String, Object>>) entries.get("aweme_list");
             for (final Map<String, Object> aweme_detailTmp : aweme_list) {
                 if (StringUtils.equals(aweme_detailTmp.get("aweme_id").toString(), contentID)) {
@@ -506,7 +507,8 @@ public class TiktokComCrawler extends PluginForDecrypt {
 
     /**
      * Use website to crawl all videos of a user. </br>
-     * Pagination hasn't been implemented so this will only find the first batch of items - usually around 30 items!
+     * Pagination hasn't been implemented so this will only find the first batch of items - usually around 30 items! </br>
+     * 2024-06-19: This is broken, see: https://svn.jdownloader.org/issues/90216
      */
     public ArrayList<DownloadLink> crawlProfileWebsite(final CryptedLink param, final String contenturl) throws Exception {
         prepBRWebsite(br);
@@ -761,6 +763,7 @@ public class TiktokComCrawler extends PluginForDecrypt {
             audio.setProperty(TiktokCom.PROPERTY_TYPE, TiktokCom.TYPE_AUDIO);
             ret.add(audio);
         }
+        String packagename = null;
         final String cookies = TiktokCom.saveCookies(this, br.getCookies(br.getHost()));
         final String dateFormatted = formatDate(Long.parseLong(createTimeStr));
         for (final DownloadLink result : ret) {
@@ -775,6 +778,17 @@ public class TiktokComCrawler extends PluginForDecrypt {
             TiktokCom.setShareCount(result, (Number) stats.get("shareCount"));
             TiktokCom.setCommentCount(result, (Number) stats.get("commentCount"));
             TiktokCom.setFilename(result);
+            if (packagename == null && (result.getStringProperty(TiktokCom.PROPERTY_TYPE).equals(TiktokCom.TYPE_AUDIO) || result.getStringProperty(TiktokCom.PROPERTY_TYPE).equals(TiktokCom.TYPE_VIDEO))) {
+                final String filename = result.getName();
+                /* Remove file extension */
+                packagename = filename.substring(0, filename.lastIndexOf("."));
+            }
+        }
+        if (packagename != null && ret.size() > 1) {
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName(packagename);
+            fp.setCleanupPackageName(false);
+            fp.addLinks(ret);
         }
         return ret;
     }
@@ -1018,20 +1032,6 @@ public class TiktokComCrawler extends PluginForDecrypt {
         } while (true);
         return ret;
     }
-    // private ArrayList<DownloadLink> processVideoList(final List<Map<String, Object>> videos, final FilePackage fp) throws PluginException
-    // {
-    // final TiktokCom hosterplugin = (TiktokCom) this.getNewPluginForHostInstance(this.getHost());
-    // final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-    // for (final Map<String, Object> aweme_detail : videos) {
-    // final ArrayList<DownloadLink> resultlist = this.processAwemeDetail(hosterplugin, aweme_detail, false, false);
-    // for (final DownloadLink result : resultlist) {
-    // result._setFilePackage(fp);
-    // ret.add(result);
-    // distribute(result);
-    // }
-    // }
-    // return ret;
-    // }
 
     private String getPreferredImageURL(final List<String> urlList) {
         final List<String> preferredFallbackExtensions = new ArrayList<String>();
