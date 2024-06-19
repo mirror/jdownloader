@@ -4,9 +4,6 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Map;
 
-import jd.controlling.downloadcontroller.DownloadLinkCandidateSelector;
-import jd.controlling.linkcollector.LinknameCleaner.ReplaceMapValidator;
-
 import org.appwork.storage.config.ConfigInterface;
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.AbstractCustomValueGetter;
@@ -34,6 +31,9 @@ import org.jdownloader.gui.translate._GUI;
 
 import com.sun.jna.platform.win32.KnownFolders;
 
+import jd.controlling.downloadcontroller.DownloadLinkCandidateSelector;
+import jd.controlling.linkcollector.LinknameCleaner.ReplaceMapValidator;
+
 public interface GeneralSettings extends ConfigInterface {
     class DefaultDownloadFolder extends AbstractDefaultFactory<String> {
         @Override
@@ -50,20 +50,25 @@ public interface GeneralSettings extends ConfigInterface {
             } else if (CrossSystem.isLinux()) {
                 try {
                     /**
-                     * 2021-10-06: Comment by pspzockerscene </br> Try to find a nice default download folder for Synology. </br> Main issue
-                     * here: The Synology DSM system does not have any kind of base download folder which is visible to the user. The
-                     * folders below are only trail and error/assumptions. </br>
+                     * 2021-10-06: Comment by pspzockerscene </br>
+                     * Try to find a nice default download folder for Synology. </br>
+                     * Main issue here: The Synology DSM system does not have any kind of base download folder which is visible to the user.
+                     * The folders below are only trail and error/assumptions. </br>
                      *
                      * \@download = old temp download directory of "DownloadStation" Synology application RE:
-                     * https://www.synology-forum.de/threads/wo-ist-der-temporaere-speicherort.50969/ </br> DownloadStation never created
-                     * any user visible download folders but instead upon first start it asks the user to choose a default download folder.
-                     * </br> public = No idea what folder that should be. </br> Folders which are definitely always accessible/visible to
-                     * the Synology users are e.g. paths to reemovable media such as: </br> /volumeUSB1/usbshare or /volumeUSB2/usbshare
-                     * </br> --> Just keep in mind that using those might be a bad idea too because typically users use the Synology USB
-                     * port for small USB stick or backup HDDs so they do not expect an application to just writefiles on them. </br>
+                     * https://www.synology-forum.de/threads/wo-ist-der-temporaere-speicherort.50969/ </br>
+                     * DownloadStation never created any user visible download folders but instead upon first start it asks the user to
+                     * choose a default download folder. </br>
+                     * public = No idea what folder that should be. </br>
+                     * Folders which are definitely always accessible/visible to the Synology users are e.g. paths to reemovable media such
+                     * as: </br>
+                     * /volumeUSB1/usbshare or /volumeUSB2/usbshare </br>
+                     * --> Just keep in mind that using those might be a bad idea too because typically users use the Synology USB port for
+                     * small USB stick or backup HDDs so they do not expect an application to just writefiles on them. </br>
                      * Ultimately the best solution would be to have a path selector built in myjdownloader which is simply limited to all
-                     * the folders that the user can see -> Problem solved. </br> Conclusion: It is not possible to get a good default
-                     * download folder for Synology users! The code below is not really helpful.
+                     * the folders that the user can see -> Problem solved. </br>
+                     * Conclusion: It is not possible to get a good default download folder for Synology users! The code below is not really
+                     * helpful.
                      */
                     final HardwareTypeInterface hardwareType = HardwareType.getHardware();
                     if (hardwareType != null && HardwareTypeInterface.ID.SYNOLOGY.equals(hardwareType.getHardwareType())) {
@@ -347,7 +352,7 @@ public interface GeneralSettings extends ConfigInterface {
      * getFilenameCharacterRegexReplaceMap !!
      */
     @AboutConfig
-    @DescriptionForConfigEntry("Returns mapping of common invalid characters as regular expression to be replaced inside filenames. This is used to try to avoid invalid download paths due to forbidden characters in filenames. You can change this map to your needs but you can't turn off the execution of the RegEx replacements done via this map. Any characters which are invalid for file paths and remain after execution of these replacements will be removed by a generic replacement handling with underscores.")
+    @DescriptionForConfigEntry("Returns mapping of common invalid characters as regular expression to be replaced inside filenames. This is used to try to avoid invalid download paths due to forbidden characters in filenames. Any characters which are invalid for file paths and remain after execution of these replacements will be removed by a generic replacement handling with underscores.")
     @DefaultJsonObject("{\":\":\";\",\"\\\\|\":\"\u00A6\",\"<\":\"[\",\">\":\"]\",\"/\":\"\u2044\",\"\\\\\\\\\":\"\u2216\",\"\\\\*\":\"#\",\"\\\\?\":\"\u00BF\",\"\\\\!\":\"\u00A1\",\"\\\"\":\"'\"}")
     @DefaultOnNull
     @ValidatorFactory(ReplaceMapValidator.class)
@@ -360,7 +365,7 @@ public interface GeneralSettings extends ConfigInterface {
      * getFilenameCharacterRegexReplaceMap !!
      */
     @AboutConfig
-    @DescriptionForConfigEntry("Returns mapping of common invalid characters as regular expression to be replaced inside package names. This is used to try to avoid invalid download paths due to forbidden characters in package names. You can change this map to your needs and you can disable this by turning off the setting 'Clean Up Package Names'.")
+    @DescriptionForConfigEntry("Returns mapping of common invalid characters as regular expression to be replaced inside package names. This is used to try to avoid invalid download paths due to forbidden characters in package names. Any characters which are invalid for file paths and remain after execution of these replacements will be removed by a generic replacement handling with underscores.")
     @DefaultJsonObject("{\":\":\";\",\"\\\\|\":\"\u00A6\",\"<\":\"[\",\">\":\"]\",\"/\":\"\u2044\",\"\\\\\\\\\":\"\u2216\",\"\\\\*\":\"#\",\"\\\\?\":\"\u00BF\",\"\\\\!\":\"\u00A1\",\"\\\"\":\"'\"}")
     @DefaultOnNull
     @ValidatorFactory(ReplaceMapValidator.class)
