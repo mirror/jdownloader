@@ -38,6 +38,7 @@ import java.io.InputStream;
 import java.io.InterruptedIOException;
 import java.io.OutputStream;
 import java.io.RandomAccessFile;
+import java.net.ConnectException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketException;
@@ -45,7 +46,6 @@ import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
-import java.rmi.ConnectException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -1093,13 +1093,13 @@ public abstract class SimpleFTP {
             readLine();
             download(filename, file);
             return;
-        } catch (SocketException e) {
+        } catch (ConnectException e) {
             logger.log(e);
             sendLine("ABOR");
             readLine();
             download(filename, file);
             return;
-        } catch (ConnectException e) {
+        } catch (SocketException e) {
             logger.log(e);
             sendLine("ABOR");
             readLine();

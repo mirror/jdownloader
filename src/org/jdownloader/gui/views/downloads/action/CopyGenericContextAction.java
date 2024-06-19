@@ -11,6 +11,20 @@ import java.util.regex.Pattern;
 
 import javax.swing.TransferHandler;
 
+import jd.controlling.ClipboardMonitoring;
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
+import jd.controlling.linkcrawler.CrawledPackageView;
+import jd.controlling.packagecontroller.AbstractNode;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
+import jd.controlling.packagecontroller.AbstractPackageNode;
+import jd.gui.swing.jdgui.MainTabbedPane;
+import jd.parser.Regex;
+import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
+import jd.plugins.FilePackageView;
+import jd.plugins.download.HashInfo;
+
 import org.appwork.utils.Files;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.os.CrossSystem;
@@ -32,25 +46,12 @@ import org.jdownloader.settings.GraphicalUserInterfaceSettings.SIZEUNIT;
 import org.jdownloader.settings.UrlDisplayType;
 import org.jdownloader.translate._JDT;
 
-import jd.controlling.ClipboardMonitoring;
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
-import jd.controlling.linkcrawler.CrawledPackageView;
-import jd.controlling.packagecontroller.AbstractNode;
-import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
-import jd.controlling.packagecontroller.AbstractPackageNode;
-import jd.gui.swing.jdgui.MainTabbedPane;
-import jd.parser.Regex;
-import jd.plugins.DownloadLink;
-import jd.plugins.FilePackage;
-import jd.plugins.FilePackageView;
-import jd.plugins.download.HashInfo;
-
 public class CopyGenericContextAction extends CustomizableTableContextAppAction implements ActionContext {
     private static final String PATTERN_NAME                  = "{name}";                      // depends on type
     private static final String PATTERN_PACKAGE_NAME          = "{packagename}";               // always package name
     private static final String PATTERN_NAME_NOEXT            = "{name_noext}";
     private static final String PATTERN_NEWLINE               = "{newline}";
+    private static final String PATTERN_TAB                   = "{tab}";
     private static final String PATTERN_DOWNLOADLINK_PROPERTY = "{jd:prop:yourWishedProperty}";
     private static final String PATTERN_COMMENT               = "{comment}";
     private static final String PATTERN_HASH                  = "{hash}";
@@ -82,7 +83,7 @@ public class CopyGenericContextAction extends CustomizableTableContextAppAction 
         sb.append("<html>");
         sb.append(_JDT.T.CopyGenericContextAction_getTranslationForPatternPackages_v3());
         sb.append("<br><ul>");
-        for (final String pattern : new String[] { PATTERN_TYPE, PATTERN_PATH, PATTERN_COMMENT, PATTERN_FILESIZE_RAW, PATTERN_FILESIZE_B, PATTERN_FILESIZE_KIB, PATTERN_FILESIZE_MIB, PATTERN_FILESIZE_GIB, PATTERN_NEWLINE, PATTERN_NAME, PATTERN_PACKAGE_NAME }) {
+        for (final String pattern : new String[] { PATTERN_TYPE, PATTERN_PATH, PATTERN_COMMENT, PATTERN_FILESIZE_RAW, PATTERN_FILESIZE_B, PATTERN_FILESIZE_KIB, PATTERN_FILESIZE_MIB, PATTERN_FILESIZE_GIB, PATTERN_NEWLINE, PATTERN_TAB, PATTERN_NAME, PATTERN_PACKAGE_NAME }) {
             sb.append("<li>").append(pattern).append("</li>");
         }
         sb.append("</ul></html>");
@@ -94,7 +95,7 @@ public class CopyGenericContextAction extends CustomizableTableContextAppAction 
         sb.append("<html>");
         sb.append(_JDT.T.CopyGenericContextAction_getTranslationForPatternLinks_v3());
         sb.append("<br><ul>");
-        for (final String pattern : new String[] { PATTERN_TYPE, PATTERN_PATH, PATTERN_COMMENT, PATTERN_FILESIZE_RAW, PATTERN_FILESIZE_B, PATTERN_FILESIZE_KIB, PATTERN_FILESIZE_MIB, PATTERN_FILESIZE_GIB, PATTERN_NEWLINE, PATTERN_NAME, PATTERN_PACKAGE_NAME, PATTERN_HOST, PATTERN_NAME_NOEXT, PATTERN_EXTENSION, PATTERN_HASH, PATTERN_URL, PATTERN_URL_CONTAINER, PATTERN_URL_CONTENT, PATTERN_URL_ORIGIN, PATTERN_URL_REFERRER, PATTERN_ARCHIVE_PASSWORD, PATTERN_DOWNLOADLINK_PROPERTY }) {
+        for (final String pattern : new String[] { PATTERN_TYPE, PATTERN_PATH, PATTERN_COMMENT, PATTERN_FILESIZE_RAW, PATTERN_FILESIZE_B, PATTERN_FILESIZE_KIB, PATTERN_FILESIZE_MIB, PATTERN_FILESIZE_GIB, PATTERN_NEWLINE, PATTERN_TAB, PATTERN_NAME, PATTERN_PACKAGE_NAME, PATTERN_HOST, PATTERN_NAME_NOEXT, PATTERN_EXTENSION, PATTERN_HASH, PATTERN_URL, PATTERN_URL_CONTAINER, PATTERN_URL_CONTENT, PATTERN_URL_ORIGIN, PATTERN_URL_REFERRER, PATTERN_ARCHIVE_PASSWORD, PATTERN_DOWNLOADLINK_PROPERTY }) {
             sb.append("<li>").append(pattern).append("</li>");
         }
         sb.append("</ul></html>");
@@ -283,6 +284,7 @@ public class CopyGenericContextAction extends CustomizableTableContextAppAction 
             line = line.replace(PATTERN_FILESIZE_MIB, nulltoString(formatFileSize(fileSize, SIZEUNIT.MiB)));
             line = line.replace(PATTERN_FILESIZE_GIB, nulltoString(formatFileSize(fileSize, SIZEUNIT.GiB)));
             line = line.replace(PATTERN_NEWLINE, CrossSystem.getNewLine());
+            line = line.replace(PATTERN_TAB, "\t");
             final String name = pkg.getName();
             line = line.replace(PATTERN_NAME, nulltoString(name));
             line = line.replace(PATTERN_PACKAGE_NAME, nulltoString(name));
@@ -303,6 +305,7 @@ public class CopyGenericContextAction extends CustomizableTableContextAppAction 
             line = line.replace(PATTERN_FILESIZE_MIB, nulltoString(formatFileSize(fileSize, SIZEUNIT.MiB)));
             line = line.replace(PATTERN_FILESIZE_GIB, nulltoString(formatFileSize(fileSize, SIZEUNIT.GiB)));
             line = line.replace(PATTERN_NEWLINE, CrossSystem.getNewLine());
+            line = line.replace(PATTERN_TAB, "\t");
             line = replaceDownloadLinkProperties(link, line);
             final String name = link.getView().getDisplayName();
             line = line.replace(PATTERN_NAME, nulltoString(name));
@@ -346,6 +349,7 @@ public class CopyGenericContextAction extends CustomizableTableContextAppAction 
             line = line.replace(PATTERN_FILESIZE_MIB, nulltoString(formatFileSize(fileSize, SIZEUNIT.MiB)));
             line = line.replace(PATTERN_FILESIZE_GIB, nulltoString(formatFileSize(fileSize, SIZEUNIT.GiB)));
             line = line.replace(PATTERN_NEWLINE, CrossSystem.getNewLine());
+            line = line.replace(PATTERN_TAB, "\t");
             line = replaceDownloadLinkProperties(link.getDownloadLink(), line);
             final String name = link.getName();
             line = line.replace(PATTERN_NAME, nulltoString(name));
@@ -387,6 +391,7 @@ public class CopyGenericContextAction extends CustomizableTableContextAppAction 
             line = line.replace(PATTERN_FILESIZE_MIB, nulltoString(formatFileSize(fileSize, SIZEUNIT.MiB)));
             line = line.replace(PATTERN_FILESIZE_GIB, nulltoString(formatFileSize(fileSize, SIZEUNIT.GiB)));
             line = line.replace(PATTERN_NEWLINE, CrossSystem.getNewLine());
+            line = line.replace(PATTERN_TAB, "\t");
             final String name = pkg.getName();
             line = line.replace(PATTERN_NAME, nulltoString(name));
             line = line.replace(PATTERN_PACKAGE_NAME, nulltoString(name));

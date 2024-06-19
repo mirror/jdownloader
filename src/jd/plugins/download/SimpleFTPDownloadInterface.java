@@ -5,10 +5,10 @@ import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.net.ConnectException;
 import java.net.InetSocketAddress;
 import java.net.SocketException;
 import java.net.SocketTimeoutException;
-import java.rmi.ConnectException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -196,10 +196,10 @@ public class SimpleFTPDownloadInterface extends DownloadInterface {
         } catch (SocketTimeoutException e) {
             LogSource.exception(logger, e);
             error(new PluginException(LinkStatus.ERROR_DOWNLOAD_INCOMPLETE, _JDT.T.download_error_message_networkreset(), LinkStatus.VALUE_NETWORK_IO_ERROR));
-        } catch (SocketException e) {
+        } catch (ConnectException e) {
             LogSource.exception(logger, e);
             error(new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _JDT.T.download_error_message_networkreset(), 1000l * 60 * 5));
-        } catch (ConnectException e) {
+        } catch (SocketException e) {
             LogSource.exception(logger, e);
             error(new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, _JDT.T.download_error_message_networkreset(), 1000l * 60 * 5));
         } finally {

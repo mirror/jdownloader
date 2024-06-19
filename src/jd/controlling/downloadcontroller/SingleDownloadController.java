@@ -16,6 +16,7 @@
 package jd.controlling.downloadcontroller;
 
 import java.io.File;
+import java.io.InterruptedIOException;
 import java.net.NoRouteToHostException;
 import java.net.URL;
 import java.util.ArrayList;
@@ -26,23 +27,6 @@ import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
-
-import org.appwork.utils.Exceptions;
-import org.appwork.utils.NullsafeAtomicReference;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.UniqueAlltimeID;
-import org.appwork.utils.logging2.LogInterface;
-import org.appwork.utils.logging2.LogSource;
-import org.appwork.utils.net.httpconnection.HTTPProxy;
-import org.appwork.utils.net.httpconnection.NetworkInterfaceException;
-import org.jdownloader.controlling.download.DownloadControllerListener;
-import org.jdownloader.logging.LogController;
-import org.jdownloader.plugins.SkipReason;
-import org.jdownloader.plugins.SkipReasonException;
-import org.jdownloader.plugins.controller.PluginClassLoader;
-import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
-import org.jdownloader.plugins.tasks.PluginProgressTask;
-import org.jdownloader.plugins.tasks.PluginSubTask;
 
 import jd.controlling.downloadcontroller.DiskSpaceManager.DISKSPACERESERVATIONRESULT;
 import jd.controlling.downloadcontroller.event.DownloadWatchdogEvent;
@@ -72,6 +56,23 @@ import jd.plugins.PluginForHost;
 import jd.plugins.PluginProgress;
 import jd.plugins.download.DownloadInterface;
 import jd.plugins.download.HashResult;
+
+import org.appwork.utils.Exceptions;
+import org.appwork.utils.NullsafeAtomicReference;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.UniqueAlltimeID;
+import org.appwork.utils.logging2.LogInterface;
+import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.net.httpconnection.HTTPProxy;
+import org.appwork.utils.net.httpconnection.NetworkInterfaceException;
+import org.jdownloader.controlling.download.DownloadControllerListener;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.SkipReason;
+import org.jdownloader.plugins.SkipReasonException;
+import org.jdownloader.plugins.controller.PluginClassLoader;
+import org.jdownloader.plugins.controller.PluginClassLoader.PluginClassLoaderChild;
+import org.jdownloader.plugins.tasks.PluginProgressTask;
+import org.jdownloader.plugins.tasks.PluginSubTask;
 
 public class SingleDownloadController extends BrowserSettingsThread implements DownloadControllerListener {
     /**
@@ -462,9 +463,15 @@ public class SingleDownloadController extends BrowserSettingsThread implements D
             final PluginForHost lastPlugin = finalizeProcessingPlugin();
             try {
                 throw throwable;
+            } catch (InterruptedIOException e) {
+                if (isAborting()) {
+                    throwable = new PluginException(LinkStatus.ERROR_RETRY, null, e);
+                }
             } catch (BrowserException browserException) {
                 if (isConnectionOffline(lastPlugin, browserException)) {
                     throwable = new NoInternetConnection(browserException).fillInStackTrace();
+                } else if (Exceptions.containsInstanceOf(browserException, InterruptedIOException.class) && isAborting()) {
+                    throwable = new PluginException(LinkStatus.ERROR_RETRY, null, browserException);
                 } else if (browserException.getCause() != null) {
                     throwable = browserException.getCause();
                 }

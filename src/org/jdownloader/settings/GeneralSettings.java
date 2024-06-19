@@ -353,12 +353,12 @@ public interface GeneralSettings extends ConfigInterface {
      */
     @AboutConfig
     @DescriptionForConfigEntry("Returns mapping of common invalid characters as regular expression to be replaced inside filenames. This is used to try to avoid invalid download paths due to forbidden characters in filenames. Any characters which are invalid for file paths and remain after execution of these replacements will be removed by a generic replacement handling with underscores.")
-    @DefaultJsonObject("{\":\":\";\",\"\\\\|\":\"\u00A6\",\"<\":\"[\",\">\":\"]\",\"/\":\"\u2044\",\"\\\\\\\\\":\"\u2216\",\"\\\\*\":\"#\",\"\\\\?\":\"\u00BF\",\"\\\\!\":\"\u00A1\",\"\\\"\":\"'\"}")
+    @DefaultJsonObject("{\":\":\";\",\"\\\\|\":\"\u00A6\",\"<\":\"[\",\">\":\"]\",\"/\":\"\u2044\",\"\\\\\\\\\":\"\u2216\",\"\\\\*\":\"#\",\"\\\\?\":\"\u00BF\",\"\\\"\":\"'\"}")
     @DefaultOnNull
     @ValidatorFactory(ReplaceMapValidator.class)
-    Map<String, String> getFilenameCharacterRegexReplaceMap();
+    Map<String, String> getFilenameReplaceMap();
 
-    public void setFilenameCharacterRegexReplaceMap(Map<String, String> map);
+    public void setFilenameReplaceMap(Map<String, String> map);
 
     /**
      * Important: Developers: Keep default value the same for: getPackagenameCharacterRegexReplaceMap and
@@ -366,12 +366,12 @@ public interface GeneralSettings extends ConfigInterface {
      */
     @AboutConfig
     @DescriptionForConfigEntry("Returns mapping of common invalid characters as regular expression to be replaced inside package names. This is used to try to avoid invalid download paths due to forbidden characters in package names. Any characters which are invalid for file paths and remain after execution of these replacements will be removed by a generic replacement handling with underscores.")
-    @DefaultJsonObject("{\":\":\";\",\"\\\\|\":\"\u00A6\",\"<\":\"[\",\">\":\"]\",\"/\":\"\u2044\",\"\\\\\\\\\":\"\u2216\",\"\\\\*\":\"#\",\"\\\\?\":\"\u00BF\",\"\\\\!\":\"\u00A1\",\"\\\"\":\"'\"}")
+    @DefaultJsonObject("{\":\":\";\",\"\\\\|\":\"\u00A6\",\"<\":\"[\",\">\":\"]\",\"/\":\"\u2044\",\"\\\\\\\\\":\"\u2216\",\"\\\\*\":\"#\",\"\\\\?\":\"\u00BF\",\"\\\"\":\"'\"}")
     @DefaultOnNull
     @ValidatorFactory(ReplaceMapValidator.class)
-    Map<String, String> getPackagenameCharacterRegexReplaceMap();
+    Map<String, String> getPackagenameReplaceMap();
 
-    public void setPackagenameCharacterRegexReplaceMap(Map<String, String> map);
+    public void setPackagenameReplaceMap(Map<String, String> map);
 
     boolean isClosedWithRunningDownloads();
 
