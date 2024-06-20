@@ -18,6 +18,11 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
@@ -32,9 +37,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class RomsgamesNet extends PluginForHost {
@@ -73,9 +75,8 @@ public class RomsgamesNet extends PluginForHost {
     }
 
     /* Connection stuff */
-    private static final boolean FREE_RESUME       = true;
-    private static final int     FREE_MAXCHUNKS    = 0;
-    private static final int     FREE_MAXDOWNLOADS = 20;
+    private static final boolean FREE_RESUME    = true;
+    private static final int     FREE_MAXCHUNKS = 0;
 
     // private static final boolean ACCOUNT_FREE_RESUME = true;
     // private static final int ACCOUNT_FREE_MAXCHUNKS = 0;
@@ -112,10 +113,8 @@ public class RomsgamesNet extends PluginForHost {
             /* Fallback */
             filename = this.getFID(link);
         }
-        /* 2021-01-26: Expect archives only */
-        if (!filename.endsWith(".zip")) {
-            filename += ".zip";
-        }
+        /* 2021-01-26: We expect to download .zip archives only. */
+        filename = this.correctOrApplyFileNameExtension(filename, ".zip");
         filename = Encoding.htmlDecode(filename).trim();
         link.setName(filename);
         if (!StringUtils.isEmpty(filesize)) {
@@ -126,27 +125,39 @@ public class RomsgamesNet extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        requestFileInformation(link);
-        doFree(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+        handleDownload(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
     }
 
-    private void doFree(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
+    private void handleDownload(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
         String dllink = checkDirectLink(link, directlinkproperty);
         if (dllink != null) {
             dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
         } else {
-            final String mediaID = br.getRegex("dlid=\"(\\d+)\"").getMatch(0);
-            final Form preDownloadForm = br.getFormbyProperty("id", "download-form");
-            if (preDownloadForm == null || mediaID == null) {
+            requestFileInformation(link);
+            String mediaID = br.getRegex("dlid=\"(\\d+)\"").getMatch(0);
+            if (mediaID == null) {
+                // 2024-06-20
+                mediaID = br.getRegex("data-media-id=\"(\\d+)\"").getMatch(0);
+            }
+            final Form dlform = br.getFormbyProperty("id", "download-form");
+            if (dlform == null || mediaID == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            preDownloadForm.put("mediaId", mediaID);
-            br.submitForm(preDownloadForm);
-            final Form dlform = br.getFormbyProperty("name", "redirected");
-            if (dlform == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (dlform.getAction() != null && dlform.getAction().endsWith("/")) {
+                dlform.setAction(dlform.getAction() + "?download");
             }
-            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dlform, resumable, maxchunks);
+            dlform.put("mediaId", mediaID);
+            /* 2024-06-20: Captcha is not needed */
+            // if (preDownloadForm.containsHTML("g-recaptcha")) {
+            // CaptchaHelperHostPluginRecaptchaV2 rc2 = new CaptchaHelperHostPluginRecaptchaV2(this, br);
+            // final String token = rc2.getToken();
+            // }
+            final Browser brc = br.cloneBrowser();
+            brc.getHeaders().put("Accept", "application/json");
+            brc.submitForm(dlform);
+            final Map<String, Object> entries = restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.MAP);
+            dllink = entries.get("downloadUrl").toString();
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
         }
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             br.followConnection(true);
@@ -158,7 +169,7 @@ public class RomsgamesNet extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
+        link.setProperty(directlinkproperty, dl.getConnection().getURL().toExternalForm());
         dl.startDownload();
     }
 
@@ -192,7 +203,7 @@ public class RomsgamesNet extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return FREE_MAXDOWNLOADS;
+        return Integer.MAX_VALUE;
     }
 
     @Override

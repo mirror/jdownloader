@@ -219,7 +219,10 @@ public class PreFilesCom extends XFileSharingProBasic {
         } else {
             /* 2020-12-11: They're using simple redirectors here e.g. "pro.sh" */
             dllink = new Regex(src, "href=\"(https?://[^\"]+)\"[^>]*>\\s*Click here to Download").getMatch(0);
-            if (dllink != null && dllink.matches("https?://[^/]+/[A-Za-z0-9]+")) {
+            if (dllink == null) {
+                return null;
+            }
+            if (dllink.matches("https?://[^/]+/[A-Za-z0-9]+")) {
                 /* pro.sh/ouo.io --> Use dedicated crawler plugin. */
                 logger.info("Processing special redirect URL");
                 try {
@@ -236,8 +239,8 @@ public class PreFilesCom extends XFileSharingProBasic {
                         return dllink;
                     } else {
                         e.printStackTrace();
+                        return null;
                     }
-                    return null;
                 }
             } else {
                 return dllink;

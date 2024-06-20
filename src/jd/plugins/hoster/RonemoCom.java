@@ -17,10 +17,14 @@ package jd.plugins.hoster;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
 import org.jdownloader.downloader.hls.HLSDownloader;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
@@ -37,7 +41,10 @@ public class RonemoCom extends antiDDoSForHost {
         super(wrapper);
     }
 
-    private static final int free_maxdownloads = -1;
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.VIDEO_STREAMING };
+    }
 
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
@@ -82,34 +89,47 @@ public class RonemoCom extends antiDDoSForHost {
         return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
+    private String hlsmaster = null;
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        hlsmaster = null;
+        final String extDefault = ".mp4";
+        final String fid = this.getFID(link);
         if (!link.isNameSet()) {
-            link.setName(this.getFID(link) + ".mp4");
+            link.setName(fid + extDefault);
         }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        getPage(link.getPluginPatternMatcher());
+        br.getPage("https://" + getHost() + "/api/video/load-video-info?idVideo=" + fid);
         if (br.getHttpConnection().getResponseCode() == 404) {
+            /* E.g. {"success":0,"message":"Video not found."} */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = br.getRegex("meta name=\"twitter:title\" content=\"([^\"]+)\"").getMatch(0);
-        if (filename != null) {
-            filename = Encoding.htmlDecode(filename).trim();
-            link.setFinalFileName(filename + ".mp4");
+        final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+        final Map<String, Object> data = (Map<String, Object>) entries.get("data");
+        String title = (String) data.get("name");
+        if (!StringUtils.isEmpty(title)) {
+            title = Encoding.htmlDecode(title).trim();
+            link.setFinalFileName(title + extDefault);
+        } else {
+            logger.warning("Failed to find filename");
         }
+        final String description = (String) data.get("description");
+        if (!StringUtils.isEmpty(description) && StringUtils.isEmpty(link.getComment())) {
+            link.setComment(description);
+        }
+        hlsmaster = (String) entries.get("link");
         return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
-        final Regex hlsinfo = br.getRegex("(https?://rocdn\\.[^/]+/([a-z0-9\\-_]+)/f/playlist\\.m3u8)");
-        if (!hlsinfo.matches()) {
+        if (StringUtils.isEmpty(hlsmaster)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final String hlsMaster = hlsinfo.getMatch(0);
-        br.getPage(hlsMaster);
+        br.getPage(hlsmaster);
         final List<HlsContainer> qualities = HlsContainer.getHlsQualities(this.br);
         final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(qualities);
         if (hlsbest == null) {
@@ -122,7 +142,7 @@ public class RonemoCom extends antiDDoSForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return free_maxdownloads;
+        return Integer.MAX_VALUE;
     }
 
     @Override

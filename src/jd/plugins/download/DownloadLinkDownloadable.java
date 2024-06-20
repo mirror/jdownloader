@@ -23,6 +23,8 @@ import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
 import org.jdownloader.controlling.FileCreationManager;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ExtensionsFilterInterface;
 import org.jdownloader.plugins.FinalLinkState;
 import org.jdownloader.plugins.HashCheckPluginProgress;
 import org.jdownloader.plugins.SkipReason;
@@ -623,12 +625,31 @@ public class DownloadLinkDownloadable implements Downloadable {
     /** Corrects or adds file-extension in given filename string based on mime-type of given URLConnection. */
     protected String correctOrApplyFileNameExtension(String name, URLConnectionAdapter connection) {
         final PluginForHost plugin = getPlugin();
-        final String ext = getExtensionFromMimeType(connection);
-        if (ext != null && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+        final String extNew = getExtensionFromMimeType(connection);
+        if (extNew != null && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            // TODO: Add final functionality
+            final String extCurrent = Plugin.getFileNameExtensionFromString(name);
+            if (extCurrent == null) {
+                /* No file extension -> Add new file extension */
+            } else {
+                /**
+                 * Check for type of current extension, only correct specific file types because there are some cases where the attempt to
+                 * correct them can easily fuck up our filename e.g.: </br>
+                 * - Multipart rar archives but 2nd item got another mime type like "bin" -> Extension is changed from .rar.001 to .bin ->
+                 * Extraction will fail </br>
+                 * - Text files: Anything can be a text, we do not want to correct e.g. ".txt" to ".xml".
+                 */
+                final ExtensionsFilterInterface efi = CompiledFiletypeFilter.getExtensionsFilterInterface(extCurrent);
+                if (CompiledFiletypeFilter.VideoExtensions.MP4.isSameExtensionGroup(efi) || CompiledFiletypeFilter.ImageExtensions.JPG.isSameExtensionGroup(efi)) {
+                    // Correct file extension
+                } else {
+                    // Do not correct file extension
+                }
+            }
             if (name.indexOf(".") < 0) {
-                name = name + "." + ext;
+                name = name + "." + extNew;
             } else if (plugin != null) {
-                name = plugin.correctOrApplyFileNameExtension(name, "." + ext);
+                name = plugin.correctOrApplyFileNameExtension(name, "." + extNew);
             }
         }
         return name;
