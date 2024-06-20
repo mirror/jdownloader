@@ -89,6 +89,9 @@ public class PrimeMusicRu extends PluginForHost {
         requestFileInformation(link);
         br.setFollowRedirects(false);
         br.getPage(br.getURL().replaceFirst("(?i)/Media-page-", "/Media-download-"));
+        if (br.getHttpConnection().getResponseCode() == 500) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download page is broken");
+        }
         String finallink = br.getRedirectLocation();
         if (finallink == null) {
             br.getRegex("<a class=\"download\" href=(https?://[^<>\"]*?\\.mp3)\"").getMatch(0);
@@ -96,10 +99,14 @@ public class PrimeMusicRu extends PluginForHost {
                 finallink = br.getRegex("class=\"download_link\" href=\"(https?://[^<>\"]*?)\"").getMatch(0);
                 if (finallink == null) {
                     finallink = br.getRegex("\"(https?://[a-z0-9]+\\.(primemusic\\.ru|prime\\-music\\.net|primemusic\\.cc|primemusic\\.me|freshmusic\\.club|newhit\\.me)/dl\\d+/[^<>\"]*?)\"").getMatch(0);
-                    if (finallink == null) {
-                        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                    }
                 }
+            }
+        }
+        if (finallink == null) {
+            if (br.getHttpConnection().getResponseCode() == 500) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Download page is broken", 3 * 60 * 60 * 1000);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, finallink, true, 0);

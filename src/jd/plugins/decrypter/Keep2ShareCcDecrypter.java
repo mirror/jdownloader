@@ -275,6 +275,12 @@ public class Keep2ShareCcDecrypter extends PluginForDecrypt {
         } catch (final PluginException e) {
             if (br.getHttpConnection().getResponseCode() == 400) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Invalid fileID");
+            } else if (br.getHttpConnection().getResponseCode() == 403) {
+                /* That's a vague assumption but it should be correct. */
+                /*
+                 * {"message":"You are not authorized for this action","status":"error","code":403,"errorCode":10}
+                 */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, "Private file which only the owner can download");
             } else {
                 throw e;
             }

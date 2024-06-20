@@ -23,6 +23,7 @@ import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.http.Browser.BlockedByException;
 import jd.http.Cookies;
 import jd.parser.Regex;
 import jd.plugins.Account;
@@ -219,7 +220,7 @@ public class PreFilesCom extends XFileSharingProBasic {
             /* 2020-12-11: They're using simple redirectors here e.g. "pro.sh" */
             dllink = new Regex(src, "href=\"(https?://[^\"]+)\"[^>]*>\\s*Click here to Download").getMatch(0);
             if (dllink != null && dllink.matches("https?://[^/]+/[A-Za-z0-9]+")) {
-                /* pro.sh --> Use dedicated crawler plugin. */
+                /* pro.sh/ouo.io --> Use dedicated crawler plugin. */
                 logger.info("Processing special redirect URL");
                 try {
                     final Browser brc = br.cloneBrowser();
@@ -230,7 +231,12 @@ public class PreFilesCom extends XFileSharingProBasic {
                     dllink = results.get(0).getPluginPatternMatcher();
                     return dllink;
                 } catch (final Throwable e) {
-                    e.printStackTrace();
+                    if (e instanceof BlockedByException) {
+                        /* 2024-06-20: Dirty hack to make this fail later in order to let upper handling run into BlockedByException. */
+                        return dllink;
+                    } else {
+                        e.printStackTrace();
+                    }
                     return null;
                 }
             } else {

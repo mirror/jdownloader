@@ -133,6 +133,9 @@ public class RosefileNet extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.containsHTML(">\\s*The file has been deleted")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("\"No file for this condition was found")) {
+            // loadingText.textContent = "No file for this condition was found.";
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         /* 2021-04-12: Trust filename inside URL. */
         String filename = br.getRegex("(?i)<title>\\s*(.*?)\\s*-\\s*RoseFile\\s*</title>").getMatch(0);

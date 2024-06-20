@@ -138,7 +138,9 @@ public class RareFileNet extends XFileSharingProBasic {
 
     @Override
     protected boolean isOffline(final DownloadLink link, final Browser br) {
-        if (br.containsHTML(">\\s*This server has crashed but we are still working for this server|>\\s*No such file with this filename")) {
+        if (br.containsHTML(">\\s*This server has crashed but we are still working for this server")) {
+            return true;
+        } else if (br.containsHTML(">\\s*No such file with this filename")) {
             return true;
         } else {
             return super.isOffline(link, br);

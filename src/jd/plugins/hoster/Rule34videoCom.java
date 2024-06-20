@@ -22,6 +22,7 @@ import org.jdownloader.plugins.components.config.KVSConfig;
 import org.jdownloader.plugins.components.config.KVSConfigRule34videoCom;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
 import jd.plugins.DownloadLink;
@@ -77,6 +78,15 @@ public class Rule34videoCom extends KernelVideoSharingComV2 {
             link.setProperty(PROPERTY_FUID, fuid);
         }
         return status;
+    }
+
+    @Override
+    protected boolean isOfflineWebsite(final Browser br) {
+        if (br.getHttpConnection().getResponseCode() == 403) {
+            return true;
+        } else {
+            return super.isOfflineWebsite(br);
+        }
     }
 
     @Override
