@@ -72,7 +72,7 @@ public class RonemoCom extends antiDDoSForHost {
 
     @Override
     public String getAGBLink() {
-        return "https://ronemo.com/";
+        return "https://" + getHost() + "/";
     }
 
     @Override
@@ -130,10 +130,13 @@ public class RonemoCom extends antiDDoSForHost {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         br.getPage(hlsmaster);
+        if (!br.getHttpConnection().isOK()) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Broken video?");
+        }
         final List<HlsContainer> qualities = HlsContainer.getHlsQualities(this.br);
         final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(qualities);
         if (hlsbest == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Broken video?");
         }
         checkFFmpeg(link, "Download a HLS Stream");
         dl = new HLSDownloader(link, br, hlsbest.getDownloadurl());

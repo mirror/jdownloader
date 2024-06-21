@@ -30,6 +30,7 @@ import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
+import jd.plugins.Account;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -69,21 +70,20 @@ public class RomsgamesNet extends PluginForHost {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/download/([a-z0-9\\-]+)/?");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:download/)?([a-z0-9\\-]+)/?");
         }
         return ret.toArray(new String[0]);
     }
 
-    /* Connection stuff */
-    private static final boolean FREE_RESUME    = true;
-    private static final int     FREE_MAXCHUNKS = 0;
+    @Override
+    public boolean isResumeable(final DownloadLink link, final Account account) {
+        return true;
+    }
 
-    // private static final boolean ACCOUNT_FREE_RESUME = true;
-    // private static final int ACCOUNT_FREE_MAXCHUNKS = 0;
-    // private static final int ACCOUNT_FREE_MAXDOWNLOADS = 20;
-    // private static final boolean ACCOUNT_PREMIUM_RESUME = true;
-    // private static final int ACCOUNT_PREMIUM_MAXCHUNKS = 0;
-    // private static final int ACCOUNT_PREMIUM_MAXDOWNLOADS = 20;
+    public int getMaxChunks(final DownloadLink link, final Account account) {
+        return 0;
+    }
+
     @Override
     public String getLinkID(final DownloadLink link) {
         final String fid = getFID(link);
@@ -100,32 +100,46 @@ public class RomsgamesNet extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        final String extDefault = ".zip";
+        if (!link.isNameSet()) {
+            link.setFinalFileName(this.getFID(link) + extDefault);
+        }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage("https://www." + this.getHost() + "/" + this.getFID(link) + "/");
         br.getPage(link.getPluginPatternMatcher());
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("class=\"listh1\"|>\\s*No Rom or Emulator found for uri")) {
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("class=\"listh1\"|>\\s*No Rom or Emulator found for uri")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = PluginJSonUtils.getJson(br, "name");
         final String filesize = PluginJSonUtils.getJson(br, "fileSize");
-        if (StringUtils.isEmpty(filename)) {
+        if (!StringUtils.isEmpty(filename)) {
             /* Fallback */
-            filename = this.getFID(link);
+            /* 2021-01-26: We expect to download .zip archives only. */
+            filename = this.correctOrApplyFileNameExtension(filename, extDefault);
+            filename = Encoding.htmlDecode(filename).trim();
+            /*
+             * 2024-06-21: Set final filename here as website returns every file with same filename in Content-Disposition header:
+             * output.bin
+             */
+            link.setFinalFileName(filename);
         }
-        /* 2021-01-26: We expect to download .zip archives only. */
-        filename = this.correctOrApplyFileNameExtension(filename, ".zip");
-        filename = Encoding.htmlDecode(filename).trim();
-        link.setName(filename);
         if (!StringUtils.isEmpty(filesize)) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
+        }
+        final String schemaOrgType = PluginJSonUtils.getJson(br, "@type");
+        if (filename == null && filesize == null && schemaOrgType == null) {
+            /* Not a link to a single downloadable file e.g. https://www.romsgames.net/roms/ */
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         return AvailableStatus.TRUE;
     }
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
-        handleDownload(link, FREE_RESUME, FREE_MAXCHUNKS, "free_directlink");
+        handleDownload(link, this.isResumeable(link, null), this.getMaxChunks(link, null), "free_directlink");
     }
 
     private void handleDownload(final DownloadLink link, final boolean resumable, final int maxchunks, final String directlinkproperty) throws Exception, PluginException {
