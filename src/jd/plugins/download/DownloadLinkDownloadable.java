@@ -629,27 +629,32 @@ public class DownloadLinkDownloadable implements Downloadable {
         if (extNew != null && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
             // TODO: Add final functionality
             final String extCurrent = Plugin.getFileNameExtensionFromString(name);
+            boolean allowAddOrCorrectFileExtension = false;
             if (extCurrent == null) {
                 /* No file extension -> Add new file extension */
+                allowAddOrCorrectFileExtension = true;
             } else {
                 /**
                  * Check for type of current extension, only correct specific file types because there are some cases where the attempt to
                  * correct them can easily fuck up our filename e.g.: </br>
                  * - Multipart rar archives but 2nd item got another mime type like "bin" -> Extension is changed from .rar.001 to .bin ->
                  * Extraction will fail </br>
-                 * - Text files: Anything can be a text, we do not want to correct e.g. ".txt" to ".xml".
+                 * - Document/Text files: Anything can be a text, we do not want to correct e.g. ".txt" to ".xml".
                  */
                 final ExtensionsFilterInterface efi = CompiledFiletypeFilter.getExtensionsFilterInterface(extCurrent);
                 if (CompiledFiletypeFilter.VideoExtensions.MP4.isSameExtensionGroup(efi) || CompiledFiletypeFilter.ImageExtensions.JPG.isSameExtensionGroup(efi)) {
                     // Correct file extension
+                    allowAddOrCorrectFileExtension = true;
                 } else {
                     // Do not correct file extension
                 }
             }
-            if (name.indexOf(".") < 0) {
-                name = name + "." + extNew;
-            } else if (plugin != null) {
-                name = plugin.correctOrApplyFileNameExtension(name, "." + extNew);
+            if (allowAddOrCorrectFileExtension) {
+                if (name.indexOf(".") < 0) {
+                    name = name + "." + extNew;
+                } else if (plugin != null) {
+                    name = plugin.correctOrApplyFileNameExtension(name, "." + extNew);
+                }
             }
         }
         return name;

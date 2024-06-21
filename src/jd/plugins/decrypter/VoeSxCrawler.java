@@ -19,6 +19,10 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.Regex;
+import org.jdownloader.plugins.components.config.XFSConfigVideoVoeSx;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.plugins.CryptedLink;
@@ -30,10 +34,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.Regex;
-import org.jdownloader.plugins.components.config.XFSConfigVideoVoeSx;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class VoeSxCrawler extends PluginForDecrypt {
     public VoeSxCrawler(PluginWrapper wrapper) {
@@ -44,7 +44,7 @@ public class VoeSxCrawler extends PluginForDecrypt {
         final List<String[]> ret = new ArrayList<String[]>();
         ret.add(new String[] { "voe.sx", "voe-unblock.com", "voe-unblock.net", "voeunblock.com", "voeunblk.com", "voeunblck.com", "voe-un-block.com", "un-block-voe.net", "voeunbl0ck.com", "voeunblock1.com", "voeunblock2.com", "voeunblock3.com", "voeunblock4.com", "voeunblock5.com", "voeunblock6.com", "voeun-block.net", "v-o-e-unblock.com", "audaciousdefaulthouse.com", "launchreliantcleaverriver.com", "reputationsheriffkennethsand.com", "fittingcentermondaysunday.com", "housecardsummerbutton.com", "fraudclatterflyingcar.com", "bigclatterhomesguideservice.com", "uptodatefinishconferenceroom.com", "realfinanceblogcenter.com", "tinycat-voe-fashion.com", "20demidistance9elongations.com", "telyn610zoanthropy.com", "toxitabellaeatrebates306.com", "greaseball6eventual20.com", "745mingiestblissfully.com", "19turanosephantasia.com", "30sensualizeexpression.com", "321naturelikefurfuroid.com",
                 "449unceremoniousnasoseptal.com", "cyamidpulverulence530.com", "boonlessbestselling244.com", "antecoxalbobbing1010.com", "matriculant401merited.com", "scatch176duplicities.com", "35volitantplimsoles5.com", "tummulerviolableness.com", "tubelessceliolymph.com", "availedsmallest.com", "counterclockwisejacky.com", "monorhinouscassaba.com", "tummulerviolableness.com", "urochsunloath.com", "simpulumlamerop.com", "wolfdyslectic.com", "metagnathtuggers.com", "gamoneinterrupted.com", "chromotypic.com", "crownmakermacaronicism.com", "generatesnitrosate.com", "yodelswartlike.com", "figeterpiazine.com", "cigarlessarefy.com", "valeronevijao.com", "apinchcaseation.com", "nectareousoverelate.com", "phenomenalityuniform.com", "nonesnanking.com", "troyyourlead.com", "stevenimaginelittle.com", "edwardarriveoften.com", "lukecomparetwo.com", "bradleyviewdoctor.com", "jamiesamewalk.com",
-                "seanshowcould.com", "sandrataxeight.com", "jayservicestuff.com", "graceaddresscommunity.com" });
+                "seanshowcould.com", "sandrataxeight.com", "jayservicestuff.com", "graceaddresscommunity.com", "loriwithinfamily.com" });
         return ret;
     }
 

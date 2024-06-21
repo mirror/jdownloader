@@ -26,7 +26,6 @@ public interface GoogleConfig extends PluginConfigInterface {
     final String                    text_DebugAccountLogin                                         = "Debug: Website mode: Perform extended account check (enable = slower account check)?";
     final String                    text_DebugForceValidateLoginAlways                             = "Debug: Website mode: Force validate login on every linkcheck/download attempt (enable = slower linkcheck!)?";
     final String                    text_DebugWebsiteTrustQuickLinkcheckOfflineStatus              = "Debug: Website mode: Trust quick linkcheck offline status (enable = can speed up linkcheck)?";
-    final String                    text_DebugWebsiteSkipExtendedLinkcheckForGoogleDocuments       = "Debug: Website mode: Skip extended linkcheck for google documents (enable = can speed up linkcheck)?";
     public static final TRANSLATION TRANSLATION                                                    = new TRANSLATION();
 
     public static class TRANSLATION {
@@ -72,10 +71,6 @@ public interface GoogleConfig extends PluginConfigInterface {
 
         public String getDebugWebsiteTrustQuickLinkcheckOfflineStatus_label() {
             return text_DebugWebsiteTrustQuickLinkcheckOfflineStatus;
-        }
-
-        public String getDebugWebsiteSkipExtendedLinkcheckForGoogleDocuments_label() {
-            return text_DebugWebsiteSkipExtendedLinkcheckForGoogleDocuments;
         }
     }
 
@@ -227,12 +222,4 @@ public interface GoogleConfig extends PluginConfigInterface {
     boolean isDebugWebsiteTrustQuickLinkcheckOfflineStatus();
 
     void setDebugWebsiteTrustQuickLinkcheckOfflineStatus(boolean b);
-
-    @AboutConfig
-    @DefaultBooleanValue(false)
-    @DescriptionForConfigEntry(text_DebugWebsiteSkipExtendedLinkcheckForGoogleDocuments)
-    @Order(90)
-    boolean isDebugWebsiteSkipExtendedLinkcheckForGoogleDocuments();
-
-    void setDebugWebsiteSkipExtendedLinkcheckForGoogleDocuments(boolean b);
 }

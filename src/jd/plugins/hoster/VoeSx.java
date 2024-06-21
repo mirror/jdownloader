@@ -20,8 +20,17 @@ import java.net.URL;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+import org.jdownloader.plugins.components.config.XFSConfigVideo.DownloadMode;
+import org.jdownloader.plugins.components.config.XFSConfigVideoVoeSx;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
+import jd.http.Cookie;
+import jd.http.Cookies;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.parser.html.Form;
@@ -35,13 +44,6 @@ import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.VoeSxCrawler;
-
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
-import org.jdownloader.plugins.components.config.XFSConfigVideo.DownloadMode;
-import org.jdownloader.plugins.components.config.XFSConfigVideoVoeSx;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 @PluginDependencies(dependencies = { VoeSxCrawler.class })
@@ -238,7 +240,9 @@ public class VoeSx extends XFileSharingProBasic {
                 setFilename(fileInfo[0], link, br);
                 fallBackFileName = false;
             } else {
-                /* Fallback. Do this again as now we got the html code available so we can e.g. know if this is a video-filehoster or not. */
+                /*
+                 * Fallback. Do this again as now we got the html code available so we can e.g. know if this is a video-filehoster or not.
+                 */
                 fallBackFileName = true;
             }
             final String dllink = getDllinkVideohost(link, account, br, br.getRequest().getHtmlCode());
@@ -344,6 +348,40 @@ public class VoeSx extends XFileSharingProBasic {
                 }
             }
             return dllink;
+        }
+    }
+
+    @Override
+    public Form findLoginform(final Browser br) {
+        final Form loginform = br.getFormbyActionRegex(".*/login$");
+        if (loginform != null) {
+            return loginform;
+        } else {
+            return super.findLoginform(br);
+        }
+    }
+
+    @Override
+    public boolean isLoggedin(final Browser brc) {
+        final boolean logout = brc.containsHTML("/logout");
+        boolean cookie1 = false;
+        boolean cookie2 = false;
+        for (final Cookies cookies : brc.getCookies().values()) {
+            for (final Cookie cookie : cookies.getCookies()) {
+                if (cookie.getKey().matches("remember_web_.+")) {
+                    cookie1 = true;
+                } else if (cookie.getKey().equalsIgnoreCase("voe_session")) {
+                    cookie2 = true;
+                }
+            }
+        }
+        logger.info("cookie1:" + cookie1);
+        logger.info("cookie2:" + cookie2);
+        logger.info("logout:" + logout);
+        if (logout && (cookie1 || cookie2)) {
+            return true;
+        } else {
+            return super.isLoggedin(brc);
         }
     }
 

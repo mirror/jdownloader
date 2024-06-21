@@ -18,6 +18,7 @@ public class HashInfo {
         CRC32C("CRC32C", 8, false),
         CRC32("CRC32", 8),
         NONE("NONE", 0, false);
+
         private final String  digest;
         private final int     size;
         private final boolean autoMode;
@@ -49,6 +50,7 @@ public class HashInfo {
         if (hashInfo != null) {
             return getType().ordinal() < hashInfo.getType().ordinal();
         } else {
+            /* Any HashInfo is stronger than null. */
             return true;
         }
     }
