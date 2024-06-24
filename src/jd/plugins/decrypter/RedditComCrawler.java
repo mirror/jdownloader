@@ -205,7 +205,6 @@ public class RedditComCrawler extends PluginForDecrypt {
         if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
             super.distribute(links);
         }
-        super.distribute(links);
     }
 
     /**
@@ -426,9 +425,6 @@ public class RedditComCrawler extends PluginForDecrypt {
                             serverFilenameWithoutExt = serverFilename.substring(0, serverFilename.lastIndexOf("."));
                         } else {
                             serverFilenameWithoutExt = serverFilename;
-                        }
-                        if (serverFilenameWithoutExt.startsWith("/")) {
-                            logger.warning("WTF");
                         }
                         final DownloadLink dl = this.createDownloadlink(maybeExternalURL);
                         if (maybeExternalURL.matches(PATTERN_SELFHOSTED_VIDEO)) {
