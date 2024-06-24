@@ -349,7 +349,7 @@ public class TorboxApp extends PluginForHost {
 
     private Object checkErrors(final Account account, final DownloadLink link) throws PluginException, InterruptedException {
         try {
-            final Object jsonO = restoreFromString(br.toString(), TypeRef.OBJECT);
+            final Object jsonO = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.OBJECT);
             if (jsonO == null || !(jsonO instanceof Map)) {
                 return jsonO;
             }
@@ -376,6 +376,8 @@ public class TorboxApp extends PluginForHost {
             /* No error */
             return;
         }
+        // TODO: Add better errorhandling
+        // final Object error = entries.get("error");
         final String errormsg = entries.get("detail").toString();
         if (link != null) {
             /* E.g. {"success":false,"detail":"Failed to request web download. Please try again later.","data":null} */

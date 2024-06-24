@@ -20,8 +20,10 @@ import java.util.ArrayList;
 import java.util.Locale;
 import java.util.Map;
 
+import org.appwork.storage.JSonMapperException;
 import org.appwork.storage.TypeRef;
 import org.appwork.storage.simplejson.JSonUtils;
+import org.appwork.utils.Exceptions;
 import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
@@ -36,7 +38,9 @@ import jd.parser.html.Form;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.AccountRequiredException;
+import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -50,12 +54,20 @@ public class DataHu extends antiDDoSForHost {
 
     public DataHu(PluginWrapper wrapper) {
         super(wrapper);
-        this.enablePremium("https://data.hu/premium.php");
+        this.enablePremium("https://" + getHost() + "/premium.php");
+    }
+
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.getHeaders().put("User-Agent", "JDownloader");
+        br.setFollowRedirects(true);
+        return br;
     }
 
     @Override
     public String getAGBLink() {
-        return "https://data.hu/adatvedelem.php";
+        return "https://" + getHost() + "/adatvedelem.php";
     }
 
     public void correctDownloadLink(DownloadLink link) {
@@ -83,12 +95,6 @@ public class DataHu extends antiDDoSForHost {
     @Override
     public int getTimegapBetweenConnections() {
         return 500;
-    }
-
-    private Browser prepBR(final Browser br) {
-        br.getHeaders().put("User-Agent", "JDownloader");
-        br.setFollowRedirects(true);
-        return br;
     }
 
     @Override
@@ -120,7 +126,6 @@ public class DataHu extends antiDDoSForHost {
             return false;
         }
         try {
-            prepBR(this.br);
             br.setCookiesExclusive(true);
             final StringBuilder sb = new StringBuilder();
             final ArrayList<DownloadLink> links = new ArrayList<DownloadLink>();
@@ -141,8 +146,7 @@ public class DataHu extends antiDDoSForHost {
                     sb.append(link.getPluginPatternMatcher());
                     sb.append("%2C");
                 }
-                this.getAPISafe(API_BASE + "?act=check_download_links&links=" + sb.toString());
-                final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+                final Map<String, Object> entries = (Map<String, Object>) this.getAPISafe(API_BASE + "?act=check_download_links&links=" + sb.toString(), urls[0], null);
                 final Map<String, Object> link_info = (Map<String, Object>) entries.get("link_info");
                 for (final DownloadLink link : links) {
                     final Map<String, Object> info = (Map<String, Object>) link_info.get(link.getPluginPatternMatcher());
@@ -209,17 +213,12 @@ public class DataHu extends antiDDoSForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        AccountInfo ai = new AccountInfo();
         this.setBrowserExclusive();
-        login(account);
-        final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+        final Map<String, Object> entries = (Map<String, Object>) login(account);
+        final AccountInfo ai = new AccountInfo();
         final String type = entries.get("type").toString();
         if (!"premium".equalsIgnoreCase(type)) {
-            if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nNicht unterstützter Accounttyp (" + type + ")!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            } else {
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUnsupported account type (" + type + ")!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-            }
+            throw new AccountInvalidException("\r\nUnsupported account type (" + type + ")!");
         }
         final String expiredate = (String) entries.get("expiration_date");
         if (expiredate != null) {
@@ -297,7 +296,7 @@ public class DataHu extends antiDDoSForHost {
         final int maxchunks = -2;
         if (!attemptStoredDownloadurlDownload(link, directlinkproperty, resume, maxchunks)) {
             requestFileInformation(link);
-            getAPISafe(API_BASE + "?act=get_direct_link&link=" + PluginJSonUtils.escape(link.getPluginPatternMatcher()) + "&username=" + JSonUtils.escape(account.getUser()) + "&password=" + JSonUtils.escape(account.getPass()));
+            getAPISafe(API_BASE + "?act=get_direct_link&link=" + PluginJSonUtils.escape(link.getPluginPatternMatcher()) + "&username=" + JSonUtils.escape(account.getUser()) + "&password=" + JSonUtils.escape(account.getPass()), link, account);
             final String dllink = PluginJSonUtils.getJsonValue(br, "direct_link");
             if (StringUtils.isEmpty(dllink)) {
                 /* Should never happen */
@@ -364,115 +363,50 @@ public class DataHu extends antiDDoSForHost {
         }
     }
 
-    public void login(final Account account) throws Exception {
+    public Object login(final Account account) throws Exception {
         this.setBrowserExclusive();
-        prepBR(this.br);
-        getAPISafe(API_BASE + "?act=check_login_data&username=" + JSonUtils.escape(account.getUser()) + "&password=" + JSonUtils.escape(account.getPass()));
+        return getAPISafe(API_BASE + "?act=check_login_data&username=" + JSonUtils.escape(account.getUser()) + "&password=" + JSonUtils.escape(account.getPass()), null, account);
     }
 
-    private void getAPISafe(final String accesslink) throws Exception {
+    private Object getAPISafe(final String accesslink, final DownloadLink link, final Account account) throws Exception {
         getPage(accesslink);
-        updatestatuscode();
-        handleAPIErrors(this.br);
+        return this.checkErrors(account, link);
     }
 
-    private void postAPISafe(final String accesslink, final String postdata) throws Exception {
-        postPage(accesslink, postdata);
-        updatestatuscode();
-        handleAPIErrors(this.br);
-    }
-
-    /**
-     * 0 = everything ok, 1-99 = "error"-errors, 100-199 = "not_available"-errors, 200-299 = Other (html) [download] errors, sometimes mixed
-     * with the API errors.
-     */
-    private void updatestatuscode() {
-        String error = PluginJSonUtils.getJsonValue(br, "error");
-        final String msg = PluginJSonUtils.getJsonValue(br, "msg");
-        if (error != null && msg != null) {
-            if (msg.equals("wrong username or password")) {
-                statuscode = 1;
-            } else if (msg.equals("no premium")) {
-                statuscode = 2;
-            } else if (msg.equals("wrong link")) {
-                statuscode = 3;
-            } else if (msg.equals("max 50 link can check")) {
-                statuscode = 4;
-            } else if (msg.equals("no act param defined")) {
-                statuscode = 5;
-            } else {
-                statuscode = 666;
-            }
-        } else {
-            /* No way to tell that something unpredictable happened here --> status should be fine. */
-            statuscode = 0;
-        }
-    }
-
-    private void handleAPIErrors(final Browser br) throws PluginException {
-        String statusMessage = null;
+    private Object checkErrors(final Account account, final DownloadLink link) throws PluginException, InterruptedException {
         try {
-            switch (statuscode) {
-            case 0:
-                /* Everything ok */
-                break;
-            case 1:
-                /* Wrong username or password -> permanently disable account */
-                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                    statusMessage = "\r\nUngültiger Benutzername oder ungültiges Passwort!\r\nDu bist dir sicher, dass dein eingegebener Benutzername und Passwort stimmen? Versuche folgendes:\r\n1. Falls dein Passwort Sonderzeichen enthält, ändere es (entferne diese) und versuche es erneut!\r\n2. Gib deine Zugangsdaten per Hand (ohne kopieren/einfügen) ein.";
-                } else {
-                    statusMessage = "\r\nInvalid username/password!\r\nYou're sure that the username and password you entered are correct? Some hints:\r\n1. If your password contains special characters, change it (remove them) and try again!\r\n2. Type in your username/password by hand without copy & paste.";
-                }
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
-            case 2:
-                /* Account = Free account tried a download in premium mode --> (Should never happen anyways) Permanently disable */
-                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                    statusMessage = "\r\nNicht unterstützter Accounttyp!\r\nFalls du denkst diese Meldung sei falsch die Unterstützung dieses Account-Typs sich\r\ndeiner Meinung nach aus irgendeinem Grund lohnt,\r\nkontaktiere uns über das support Forum.";
-                } else {
-                    statusMessage = "\r\nUnsupported account type!\r\nIf you think this message is incorrect or it makes sense to add support for this account type\r\ncontact us via our support forum.";
-                }
-                throw new PluginException(LinkStatus.ERROR_PREMIUM, statusMessage, PluginException.VALUE_ID_PREMIUM_DISABLE);
-            case 3:
-                /* User tried to download an invalid link via account --> Should never happen */
-                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                    statusMessage = "\r\nUngültiger Downloadlink";
-                } else {
-                    statusMessage = "\r\nInvalid downloadlink";
-                }
-                throw new PluginException(LinkStatus.ERROR_FATAL, statusMessage);
-            case 4:
-                /* We tried to check more than 50 links at the same time --> Should never happen */
-                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                    statusMessage = "\r\nKann maximal 50 Links gleichzeitig überprüfen";
-                } else {
-                    statusMessage = "\r\nMax simultaneous checkable links number equals 50";
-                }
-                throw new PluginException(LinkStatus.ERROR_FATAL, statusMessage);
-            case 5:
-                /* 'no act param defined' --> Should never happen */
-                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                    statusMessage = "\r\nFATALER API Fehler";
-                } else {
-                    statusMessage = "\r\nFATAL API error";
-                }
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, statusMessage);
-            case 666:
-                /* SHTF --> Should never happen */
-                if ("de".equalsIgnoreCase(System.getProperty("user.language"))) {
-                    statusMessage = "\r\nUnbekannter Fehler";
-                } else {
-                    statusMessage = "\r\nUnknown error";
-                }
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, statusMessage);
-            default:
-                /* Completely Unknown error */
-                statusMessage = "Unknown error";
-                logger.info("Unknown API error");
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            final Object jsonO = restoreFromString(br.toString(), TypeRef.OBJECT);
+            if (jsonO == null || !(jsonO instanceof Map)) {
+                return jsonO;
             }
-        } catch (final PluginException e) {
-            logger.info("Exception: statusCode: " + statuscode + " statusMessage: " + statusMessage);
-            throw e;
+            final Map<String, Object> map = (Map<String, Object>) jsonO;
+            final Object error = map.get("error");
+            if (error == null || error.toString().equals("0")) {
+                /* No error */
+                return map;
+            }
+            final String msg = map.get("msg").toString();
+            if (msg.equals("wrong username or password")) {
+                throw new AccountInvalidException(msg);
+            } else if (msg.equals("no premium")) {
+                throw new AccountInvalidException("Invalid account type (no premium)");
+            } else if (msg.equals("wrong link")) {
+                throw new PluginException(LinkStatus.ERROR_FATAL, msg);
+            } else {
+                if (link != null) {
+                    throw new AccountInvalidException(msg);
+                } else {
+                    /* Unknown login problem */
+                    throw new AccountUnavailableException(msg, 5 * 60 * 1000l);
+                }
+            }
+        } catch (final JSonMapperException jme) {
+            final String errortext = "Bad API response";
+            if (link != null) {
+                throw new AccountInvalidException(errortext);
+            } else {
+                throw Exceptions.addSuppressed(new AccountUnavailableException(errortext, 1 * 60 * 1000l), jme);
+            }
         }
     }
 

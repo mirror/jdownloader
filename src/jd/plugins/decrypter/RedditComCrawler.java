@@ -26,6 +26,20 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.storage.simplejson.MinimalMemoryMap;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.components.config.RedditConfig;
+import org.jdownloader.plugins.components.config.RedditConfig.CommentsPackagenameScheme;
+import org.jdownloader.plugins.components.config.RedditConfig.FilenameScheme;
+import org.jdownloader.plugins.components.config.RedditConfig.TextCrawlerMode;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
@@ -52,20 +66,6 @@ import jd.plugins.PluginForHost;
 import jd.plugins.hoster.DirectHTTP;
 import jd.plugins.hoster.RedditCom;
 
-import org.appwork.storage.TypeRef;
-import org.appwork.storage.simplejson.MinimalMemoryMap;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.components.config.RedditConfig;
-import org.jdownloader.plugins.components.config.RedditConfig.CommentsPackagenameScheme;
-import org.jdownloader.plugins.components.config.RedditConfig.FilenameScheme;
-import org.jdownloader.plugins.components.config.RedditConfig.TextCrawlerMode;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 @PluginDependencies(dependencies = { RedditCom.class })
 public class RedditComCrawler extends PluginForDecrypt {
@@ -89,8 +89,8 @@ public class RedditComCrawler extends PluginForDecrypt {
     public int getMaxConcurrentProcessingInstances() {
         /**
          * 2023-08-07: Try not to run into API rate-limits RE:
-         * https://support.reddithelp.com/hc/en-us/articles/16160319875092-Reddit-Data-API-Wiki </br> IMPORTANT: Dev: If you want to set
-         * this to a value higher than 1, first check API rate-limit handling and implement locks!!
+         * https://support.reddithelp.com/hc/en-us/articles/16160319875092-Reddit-Data-API-Wiki </br>
+         * IMPORTANT: Dev: If you want to set this to a value higher than 1, first check API rate-limit handling and implement locks!!
          */
         return 1;
     }
@@ -205,6 +205,7 @@ public class RedditComCrawler extends PluginForDecrypt {
         if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
             super.distribute(links);
         }
+        super.distribute(links);
     }
 
     /**
@@ -426,6 +427,9 @@ public class RedditComCrawler extends PluginForDecrypt {
                         } else {
                             serverFilenameWithoutExt = serverFilename;
                         }
+                        if (serverFilenameWithoutExt.startsWith("/")) {
+                            logger.warning("WTF");
+                        }
                         final DownloadLink dl = this.createDownloadlink(maybeExternalURL);
                         if (maybeExternalURL.matches(PATTERN_SELFHOSTED_VIDEO)) {
                             dl.setProperty(RedditCom.PROPERTY_SERVER_FILENAME_WITHOUT_EXT, serverFilenameWithoutExt);
@@ -490,7 +494,8 @@ public class RedditComCrawler extends PluginForDecrypt {
                     }
                     /**
                      * Return "preview video" because e.g. in some cases original video is hosted on imgur.com but it is offline while
-                     * content on reddit is still online e.g.: </br> /r/Bellissima/comments/151ruli/brit_manuela/
+                     * content on reddit is still online e.g.: </br>
+                     * /r/Bellissima/comments/151ruli/brit_manuela/
                      */
                     final Map<String, Object> reddit_video_preview = (Map<String, Object>) preview.get("reddit_video_preview");
                     if (reddit_video_preview != null && !addedRedditSelfhostedVideo) {
@@ -556,8 +561,8 @@ public class RedditComCrawler extends PluginForDecrypt {
                     }
                 } else {
                     /**
-                     * No image gallery </br> --> Look for embedded content from external sources - the object is always given but can be
-                     * empty
+                     * No image gallery </br>
+                     * --> Look for embedded content from external sources - the object is always given but can be empty
                      */
                     final Object embeddedMediaO = data.get("media_embed");
                     if (embeddedMediaO != null) {
@@ -693,6 +698,27 @@ public class RedditComCrawler extends PluginForDecrypt {
                 }
             } finally {
                 final FilenameScheme scheme = cfg.getPreferredFilenameScheme();
+                /*
+                 * Look ahead to check if we have a single text item. In this case, an "original filename" is not available so if the user
+                 * wants this, this is impossible and we'll select another filename scheme.
+                 */
+                int numberofTextItemsWithoutOriginalFilenameHints = 0;
+                int numberofRedditItems = 0;
+                for (final DownloadLink thisCrawledLink : thisCrawledLinks) {
+                    final String type = thisCrawledLink.getStringProperty(RedditCom.PROPERTY_TYPE);
+                    if (type != null && thisCrawledLink.getAvailableStatus() == AvailableStatus.TRUE) {
+                        numberofRedditItems++;
+                        if (StringUtils.equalsIgnoreCase(type, RedditCom.PROPERTY_TYPE_text) && !thisCrawledLink.hasProperty(RedditCom.PROPERTY_SERVER_FILENAME_WITHOUT_EXT)) {
+                            numberofTextItemsWithoutOriginalFilenameHints++;
+                        }
+                    }
+                }
+                final boolean isSingleTextItem;
+                if (numberofRedditItems > 0 && numberofTextItemsWithoutOriginalFilenameHints == numberofRedditItems) {
+                    isSingleTextItem = true;
+                } else {
+                    isSingleTextItem = false;
+                }
                 final String customFilenameScheme = cfg.getCustomFilenameScheme();
                 final String chosenFilenameScheme;
                 if (scheme == FilenameScheme.CUSTOM && !StringUtils.isEmpty(customFilenameScheme)) {
@@ -701,7 +727,7 @@ public class RedditComCrawler extends PluginForDecrypt {
                     chosenFilenameScheme = "*date*_*subreddit_title*_*post_id*_*original_filename_without_ext**ext*";
                 } else if (scheme == FilenameScheme.DATE_SUBREDDIT_POSTID_TITLE) {
                     chosenFilenameScheme = "*date*_*subreddit_title*_*post_id*_*post_title**ext*";
-                } else if (scheme == FilenameScheme.SERVER_FILENAME) {
+                } else if (scheme == FilenameScheme.SERVER_FILENAME && !isSingleTextItem) {
                     chosenFilenameScheme = "*original_filename_without_ext**ext*";
                 } else {
                     /* FilenameScheme.DATE_SUBREDDIT_POSTID_SLUG and fallback */
@@ -803,17 +829,18 @@ public class RedditComCrawler extends PluginForDecrypt {
             attempt++;
             final URLConnectionAdapter con = br.openGetConnection(url);
             try {
+                /* 2024-06-24: Ahh I'm shocked - these headers can also contain double values... */
                 final String ratelimitRemainingStr = con.getRequest().getResponseHeader("x-ratelimit-remaining");
                 final String ratelimitUsedStr = con.getRequest().getResponseHeader("x-ratelimit-used");
                 final String ratelimitResetSecondsStr = con.getRequest().getResponseHeader("x-ratelimit-reset");
                 logger.info("API Limits: Used: " + ratelimitUsedStr + " | Remaining: " + ratelimitRemainingStr + " | Reset in seconds: " + ratelimitResetSecondsStr);
                 if (ratelimitRemainingStr != null) {
-                    lastRatelimitRemaining = Integer.parseInt(ratelimitRemainingStr);
+                    lastRatelimitRemaining = (int) Double.parseDouble(ratelimitRemainingStr);
                 } else {
                     lastRatelimitRemaining = -1;
                 }
                 if (ratelimitResetSecondsStr != null) {
-                    lastRatelimitResetSeconds = Integer.parseInt(ratelimitResetSecondsStr);
+                    lastRatelimitResetSeconds = (int) Double.parseDouble(ratelimitResetSecondsStr);
                 } else {
                     lastRatelimitResetSeconds = -1;
                 }

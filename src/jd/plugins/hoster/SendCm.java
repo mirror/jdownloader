@@ -262,6 +262,18 @@ public class SendCm extends XFileSharingProBasic {
     }
 
     @Override
+    protected void checkErrors(final Browser br, final String html, final DownloadLink link, final Account account, final boolean checkAll) throws NumberFormatException, PluginException {
+        super.checkErrors(br, html, link, account, checkAll);
+        if (br.containsHTML(">\\s*Not allowed")) {
+            /*
+             * 2024-06-24: Not sure what this means. Possibly this happens for premium-only files. In this case, website does not provide
+             * any information on filename/size.
+             */
+            throw new PluginException(LinkStatus.ERROR_FATAL, "Website error 'Not allowed'");
+        }
+    }
+
+    @Override
     protected boolean isOffline(final DownloadLink link, final Browser br) {
         if (br.containsHTML(">\\s*The file you were looking for doesn")) {
             return true;
