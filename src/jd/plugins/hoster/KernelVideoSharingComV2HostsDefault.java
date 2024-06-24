@@ -151,6 +151,7 @@ public class KernelVideoSharingComV2HostsDefault extends KernelVideoSharingComV2
         ret.add(new String[] { "thegay.com" });
         ret.add(new String[] { "mrgay.com" });
         ret.add(new String[] { "gayboystube.com" });
+        ret.add(new String[] { "pornwex.tv" });
         return ret;
     }
 

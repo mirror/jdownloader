@@ -13,10 +13,12 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
 import java.io.IOException;
+
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.nutils.encoding.Encoding;
@@ -28,13 +30,15 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-import org.appwork.utils.formatter.SizeFormatter;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "rufox.ru" }, urls = { "https?://(?:www\\.)?files\\.rufox\\.ru/\\?(?:Act=byCategory&)?k=[a-z0-9]+|https?://video\\.rufox\\.ru/play/\\d+" })
 public class RufoxRu extends PluginForHost {
-
     public RufoxRu(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.VIDEO_STREAMING };
     }
 
     @Override
@@ -42,8 +46,8 @@ public class RufoxRu extends PluginForHost {
         return "http://rufox.ru/";
     }
 
-    private static final String TYPE_FILES = "https?://(?:www\\.)?files\\.rufox\\.ru/\\?(?:Act=byCategory&)?k=[a-z0-9]+";
-    private static final String TYPE_VIDEO = "https?://video\\.rufox\\.ru/.+";
+    private static final String TYPE_FILES = "(?i)https?://(?:www\\.)?files\\.rufox\\.ru/\\?(?:Act=byCategory&)?k=[a-z0-9]+";
+    private static final String TYPE_VIDEO = "(i)https?://video\\.rufox\\.ru/.+";
 
     @Override
     public void correctDownloadLink(final DownloadLink link) {
@@ -60,6 +64,7 @@ public class RufoxRu extends PluginForHost {
         br.getPage(link.getDownloadURL());
         String filename = null;
         String filesize = null;
+        final String extDefault = ".mp4";
         final String fid = new Regex(link.getDownloadURL(), "([A-Za-z0-9]+)$").getMatch(0);
         if (link.getDownloadURL().matches(TYPE_FILES)) {
             if (this.br.getHttpConnection().getResponseCode() == 404 || !br.containsHTML("class=\"fileName\"")) {
@@ -74,7 +79,6 @@ public class RufoxRu extends PluginForHost {
             }
             filename = Encoding.htmlDecode(filename.trim());
             link.setName(filename);
-
             filesize = br.getRegex("<tr class=\"info\">[\t\n\r ]+<td>\\&nbsp;</td>[\t\n\r ]+<td>([^<>\"]*?)</td>").getMatch(0);
         } else {
             if (this.br.getHttpConnection().getResponseCode() == 404 || this.br.getURL().contains("/error/notfound")) {
@@ -84,9 +88,9 @@ public class RufoxRu extends PluginForHost {
             if (filename == null) {
                 filename = fid;
             }
-            filename += ".flv";
+            filename = Encoding.htmlDecode(filename).trim();
+            filename += extDefault;
             link.setFinalFileName(filename);
-
             filesize = this.br.getRegex("class=\"size_video\">([^<>\"]+)<").getMatch(0);
         }
         if (filesize != null) {
@@ -111,20 +115,22 @@ public class RufoxRu extends PluginForHost {
             }
             dllink = "http://files.rufox.ru" + dllink;
         } else {
-            final String url_continue = this.br.getRegex("\"(https?://video\\.rufox\\.ru/code/[^<>\"]+)\"").getMatch(0);
+            final String url_continue = br.getRegex("\"(https?://videos?\\.rufox\\.ru/code/[^<>\"]+)\"").getMatch(0);
             if (url_continue == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            this.br.getPage(url_continue);
-            final String videoid = this.br.getRegex("video_([A-Za-z0-9]+)").getMatch(0);
+            br.getPage(url_continue);
+            final String videoid = br.getRegex("video_([A-Za-z0-9]+)").getMatch(0);
             if (videoid == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            dllink = "http://video.rufox.ru/video/video_" + videoid + ".flv";
+            dllink = "https://videos.rufox.ru/video/video_" + videoid + ".mp4";
+            /* Old: */
+            // dllink = "http://videos.rufox.ru/video/video_" + videoid + ".flv";
         }
         /* More chunks possible but results in server errors most times */
         dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             if (dl.getConnection().getResponseCode() == 503) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error", 10 * 60 * 1000l);
             }
@@ -146,5 +152,4 @@ public class RufoxRu extends PluginForHost {
     @Override
     public void resetDownloadlink(final DownloadLink link) {
     }
-
 }

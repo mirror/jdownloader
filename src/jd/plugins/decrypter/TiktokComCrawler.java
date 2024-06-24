@@ -639,7 +639,7 @@ public class TiktokComCrawler extends PluginForDecrypt {
         final Map<String, Object> imagePost = (Map<String, Object>) media.get("imagePost");
         final Map<String, Object> music = (Map<String, Object>) media.get("music");
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
-        final String username = authormap.get("nickname").toString();
+        final String username = authormap.get("uniqueId").toString();
         final String videoID = (String) media.get("id");
         final String createTimeStr = (String) media.get("createTime");
         final String description = (String) media.get("desc");
