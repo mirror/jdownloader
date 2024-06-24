@@ -9,7 +9,9 @@ import org.jdownloader.plugins.components.youtube.variants.VideoVariant;
 
 public enum VideoResolution implements LabelInterface, IntegerInterface {
     // Order is default quality sort order
+    P_7680(4320, 7680), // upright of P_4320
     P_4320(7680, 4320),
+    P_3840(2160, 3840), // upright of P_2160
     P_2160(3840, 2160),
     P_1920(1080, 1920),
     P_1440(2560, 1440),
@@ -23,7 +25,8 @@ public enum VideoResolution implements LabelInterface, IntegerInterface {
     P_180(320, 180),
     P_144(256, 144),
     P_90(120, 90),
-    P_72(128, 72), ;
+    P_72(128, 72);
+
     private final int height;
     private final int width;
 
