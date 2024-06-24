@@ -85,11 +85,12 @@ public class Formatter {
         return formatSeconds(ms / 1000) + "." + Formatter.fillInteger(ms % 1000, 3, "0");
     }
 
+    @Deprecated
     public static String formatFilesize(double value, int size) {
         if (value > 1024 && size < 5) {
             return formatFilesize(value / 1024.0, ++size);
         } else {
-            final DecimalFormat c = new DecimalFormat("0.00");
+            final DecimalFormat c = new DecimalFormat();
             switch (size) {
             case 0:
                 return c.format(value) + " B";
