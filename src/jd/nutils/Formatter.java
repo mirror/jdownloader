@@ -18,10 +18,10 @@ package jd.nutils;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 
+import org.appwork.utils.formatter.StringFormatter;
+
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
-
-import org.appwork.utils.formatter.StringFormatter;
 
 public class Formatter {
     /**
@@ -106,11 +106,12 @@ public class Formatter {
         return null;
     }
 
+    @Deprecated
     public static String formatReadable(long fileSize) {
         if (fileSize < 0) {
             fileSize = 0;
         }
-        final DecimalFormat c = new DecimalFormat("0.00");
+        final DecimalFormat c = new DecimalFormat();
         if (fileSize >= (1024 * 1024 * 1024 * 1024l)) {
             return c.format(fileSize / (1024 * 1024 * 1024 * 1024.0)) + " TiB";
         } else if (fileSize >= (1024 * 1024 * 1024l)) {

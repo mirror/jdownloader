@@ -6,9 +6,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 
-import jd.controlling.linkcrawler.CrawledLink;
-import jd.controlling.linkcrawler.CrawledPackage;
-
 import org.appwork.storage.config.JsonConfig;
 import org.appwork.utils.os.CrossSystem;
 import org.jdownloader.DomainInfo;
@@ -20,11 +17,14 @@ import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings;
 import org.jdownloader.settings.GraphicalUserInterfaceSettings.SIZEUNIT;
 
+import jd.controlling.linkcrawler.CrawledLink;
+import jd.controlling.linkcrawler.CrawledPackage;
+
 public class AggregatedCrawlerNumbers {
     protected static final boolean FORCED_MIRROR_CASE_INSENSITIVE = CrossSystem.isWindows() || JsonConfig.create(GeneralSettings.class).isForceMirrorDetectionCaseInsensitive();
     private final long             totalBytes;
     private static final SIZEUNIT  maxSizeUnit                    = JsonConfig.create(GraphicalUserInterfaceSettings.class).getMaxSizeUnit();
-    private final DecimalFormat    formatter                      = new DecimalFormat("0.00");
+    private final DecimalFormat    formatter                      = new DecimalFormat();
 
     public final String getTotalBytesString(boolean includeDisabled) {
         if (includeDisabled) {

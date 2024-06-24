@@ -58,7 +58,7 @@ public class FileSizeColumn extends ExtColumn<AbstractNode> {
                 }
             }
         });
-        this.formatter = new DecimalFormat("0.00");
+        this.formatter = new DecimalFormat();
     }
 
     @Override

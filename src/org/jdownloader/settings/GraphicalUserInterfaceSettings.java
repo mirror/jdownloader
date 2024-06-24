@@ -436,6 +436,7 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
         KiB(1024, true),
         KB(1000l),
         B(1);
+
         private final long    divider;
         private final boolean iecPrefix;
 
@@ -462,7 +463,7 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
         }
 
         public static final String formatValue(SIZEUNIT maxSizeUnit, final long fileSize) {
-            return formatValue(maxSizeUnit, new DecimalFormat("0.00"), fileSize);
+            return formatValue(maxSizeUnit, new DecimalFormat(), fileSize);
         }
 
         public static final String formatValue(SIZEUNIT maxSizeUnit, final DecimalFormat formatter, final long fileSize) {
@@ -506,7 +507,7 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
                 } else if (fileSize < 0) {
                     return "~";
                 } else {
-                    return fileSize + " B";
+                    return formatter.format(fileSize) + " B";
                 }
             }
         }
@@ -906,6 +907,7 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
                 return org.jdownloader.gui.translate._GUI.T.ConfirmDeleteLinksDialog_layoutDialogContent_delete_2();
             }
         };
+
         @Override
         public String getLabel() {
             return null;

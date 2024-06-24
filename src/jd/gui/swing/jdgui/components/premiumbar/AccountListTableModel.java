@@ -392,7 +392,7 @@ public class AccountListTableModel extends ExtTableModel<AccountEntry> implement
         });
         this.addColumn(new ExtProgressColumn<AccountEntry>(_GUI.T.premiumaccounttablemodel_column_trafficleft()) {
             private final SIZEUNIT      maxSizeUnit      = JsonConfig.create(GraphicalUserInterfaceSettings.class).getMaxSizeUnit();
-            private final DecimalFormat formatter        = new DecimalFormat("0.00");
+            private final DecimalFormat formatter        = new DecimalFormat();
             private static final long   serialVersionUID = -8376056840172682617L;
             {
                 setRowSorter(new ExtDefaultRowSorter<AccountEntry>() {
