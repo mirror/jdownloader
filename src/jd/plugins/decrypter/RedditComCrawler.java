@@ -814,9 +814,6 @@ public class RedditComCrawler extends PluginForDecrypt {
         return "https://v.redd.it/" + videoID;
     }
 
-    private int lastRatelimitRemaining    = -1;
-    private int lastRatelimitResetSeconds = -1;
-
     private void getPage(final Browser br, final String url) throws IOException, DecrypterRetryException, InterruptedException {
         int attempt = 0;
         final int maxAttemptsNumber = 4;
@@ -830,19 +827,15 @@ public class RedditComCrawler extends PluginForDecrypt {
                 final String ratelimitUsedStr = con.getRequest().getResponseHeader("x-ratelimit-used");
                 final String ratelimitResetSecondsStr = con.getRequest().getResponseHeader("x-ratelimit-reset");
                 logger.info("API Limits: Used: " + ratelimitUsedStr + " | Remaining: " + ratelimitRemainingStr + " | Reset in seconds: " + ratelimitResetSecondsStr);
-                if (ratelimitRemainingStr != null) {
-                    lastRatelimitRemaining = (int) Double.parseDouble(ratelimitRemainingStr);
-                } else {
-                    lastRatelimitRemaining = -1;
-                }
+                final double lastRatelimitResetSeconds;
                 if (ratelimitResetSecondsStr != null) {
-                    lastRatelimitResetSeconds = (int) Double.parseDouble(ratelimitResetSecondsStr);
+                    lastRatelimitResetSeconds = Double.parseDouble(ratelimitResetSecondsStr);
                 } else {
                     lastRatelimitResetSeconds = -1;
                 }
                 if (con.getResponseCode() == 429) {
                     br.followConnection(true);
-                    final int waitSeconds = Math.max(10, lastRatelimitResetSeconds);
+                    final int waitSeconds = Math.max(5, (int) lastRatelimitResetSeconds) + 5;
                     logger.info("Waiting seconds to resolve rate-limit: " + waitSeconds + " | Attempt: " + attempt);
                     displayBubbleNotification("Reached API Rate-Limit", "Waiting seconds to resolve API rate-limit: " + waitSeconds + " | Retry number: " + attempt + "/" + (maxAttemptsNumber - 1));
                     this.sleep(waitSeconds * 1001l, this.param);
