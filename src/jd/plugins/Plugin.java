@@ -271,14 +271,14 @@ public abstract class Plugin implements ActionListener {
             /*
              * cut off get url parameters
              */
-            if (queryIndex > 0) {
+            if (queryIndex >= 0) {
                 ret = ret.substring(0, queryIndex);
             }
         }
         {
             final int anchorIndex = ret.indexOf("#");
             /* cut off anchor */
-            if (anchorIndex > 0) {
+            if (anchorIndex >= 0) {
                 ret = ret.substring(0, anchorIndex);
             }
         }
@@ -286,7 +286,7 @@ public abstract class Plugin implements ActionListener {
         {
             final int fileIndex = Math.max(ret.lastIndexOf("/"), ret.lastIndexOf("\\"));
             /* cut off directory */
-            if (fileIndex > 0) {
+            if (fileIndex >= 0) {
                 ret = ret.substring(fileIndex + 1);
             }
         }
