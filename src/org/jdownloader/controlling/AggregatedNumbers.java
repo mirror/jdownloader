@@ -80,6 +80,14 @@ public class AggregatedNumbers {
         }
     }
 
+    public String getRemainingBytesString(boolean inclDisabled) {
+        if (inclDisabled) {
+            return format((totalBytes + disabledTotalBytes) - (loadedBytes + disabledLoadedBytes));
+        } else {
+            return format(totalBytes - loadedBytes);
+        }
+    }
+
     public String getDownloadSpeedString() {
         return SIZEUNIT.formatValue(maxSizeUnit, formatter, downloadSpeed) + "/s";
     }

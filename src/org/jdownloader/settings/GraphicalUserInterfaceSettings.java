@@ -1041,6 +1041,12 @@ public interface GraphicalUserInterfaceSettings extends ConfigInterface {
 
     @AboutConfig
     @DefaultBooleanValue(true)
+    boolean isOverviewPanelDownloadBytesRemainingVisible();
+
+    void setOverviewPanelDownloadBytesRemainingVisible(boolean b);
+
+    @AboutConfig
+    @DefaultBooleanValue(true)
     boolean isOverviewPanelLinkgrabberPackageCountVisible();
 
     void setOverviewPanelLinkgrabberPackageCountVisible(boolean b);

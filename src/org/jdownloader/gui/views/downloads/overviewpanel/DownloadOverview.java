@@ -266,6 +266,31 @@ public class DownloadOverview extends AbstractOverviewPanel<AggregatedNumbers, F
         }
     }
 
+    private final class BytesRemainingEntry extends DataEntry<AggregatedNumbers> {
+        private BytesRemainingEntry(String label) {
+            super(label);
+        }
+
+        @Override
+        public void setData(AggregatedNumbers total, AggregatedNumbers filtered, AggregatedNumbers selected) {
+            final boolean includeDisabled = isIncludeDisabled();
+            if (total != null) {
+                setTotal(total.getRemainingBytesString(includeDisabled));
+            }
+            if (filtered != null) {
+                setFiltered(filtered.getRemainingBytesString(includeDisabled));
+            }
+            if (selected != null) {
+                setSelected(selected.getRemainingBytesString(includeDisabled));
+            }
+        }
+
+        @Override
+        public BooleanKeyHandler getVisibleKeyHandler() {
+            return CFG_GUI.OVERVIEW_PANEL_DOWNLOAD_BYTES_REMAINING_VISIBLE;
+        }
+    }
+
     private final class BytesTotalEntry extends DataEntry<AggregatedNumbers> {
         private BytesTotalEntry(String label) {
             super(label);
@@ -395,6 +420,7 @@ public class DownloadOverview extends AbstractOverviewPanel<AggregatedNumbers, F
         DataEntry<AggregatedNumbers> packageCount = new PackagesEntry(_GUI.T.DownloadOverview_DownloadOverview_packages());
         DataEntry<AggregatedNumbers> size = new BytesTotalEntry(_GUI.T.DownloadOverview_DownloadOverview_size());
         DataEntry<AggregatedNumbers> bytesLoaded = new BytesLoadedEntry(_GUI.T.DownloadOverview_DownloadOverview_loaded());
+        DataEntry<AggregatedNumbers> bytesRemaining = new BytesRemainingEntry(_GUI.T.DownloadOverview_DownloadOverview_remaining());
         DataEntry<AggregatedNumbers> runningDownloads = new DownloadsEntry(_GUI.T.DownloadOverview_DownloadOverview_running_downloads());
         DataEntry<AggregatedNumbers> linkCount = new LinksCountEntry(_GUI.T.DownloadOverview_DownloadOverview_links());
         DataEntry<AggregatedNumbers> speed = new SpeedEntry(_GUI.T.DownloadOverview_DownloadOverview_speed());
@@ -409,6 +435,7 @@ public class DownloadOverview extends AbstractOverviewPanel<AggregatedNumbers, F
         entries.add(size);
         entries.add(speed);
         entries.add(bytesLoaded);
+        entries.add(bytesRemaining);
         entries.add(eta);
         entries.add(runningDownloads);
         entries.add(connections);

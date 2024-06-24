@@ -2283,6 +2283,9 @@ public interface GuiTranslation extends TranslateInterface {
     @Default(lngs = { "en" }, values = { "Bytes loaded:" })
     String DownloadOverview_DownloadOverview_loaded();
 
+    @Default(lngs = { "en" }, values = { "Remaining Bytes:" })
+    String DownloadOverview_DownloadOverview_remaining();
+
     @Default(lngs = { "en" }, values = { "Downloadspeed:" })
     String DownloadOverview_DownloadOverview_speed();
 

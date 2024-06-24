@@ -182,6 +182,7 @@ public class CFG_GUI {
     public static final BooleanKeyHandler                              OVERVIEW_PANEL_DOWNLOAD_SPEED_VISIBLE                   = SH.getKeyHandler("OverviewPanelDownloadSpeedVisible", BooleanKeyHandler.class);
     public static final BooleanKeyHandler                              OVERVIEW_PANEL_LINKGRABBER_TOTAL_BYTES_VISIBLE          = SH.getKeyHandler("OverviewPanelLinkgrabberTotalBytesVisible", BooleanKeyHandler.class);
     public static final BooleanKeyHandler                              OVERVIEW_PANEL_DOWNLOAD_BYTES_LOADED_VISIBLE            = SH.getKeyHandler("OverviewPanelDownloadBytesLoadedVisible", BooleanKeyHandler.class);
+    public static final BooleanKeyHandler                              OVERVIEW_PANEL_DOWNLOAD_BYTES_REMAINING_VISIBLE         = SH.getKeyHandler("OverviewPanelDownloadBytesRemainingVisible", BooleanKeyHandler.class);
     /**
      * The row that is 'touched' by the mouse cursor gets a darker shadow
      **/
