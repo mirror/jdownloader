@@ -35,7 +35,9 @@ import jd.controlling.downloadcontroller.DownloadController;
 import jd.controlling.downloadcontroller.DownloadSession.STOPMARK;
 import jd.controlling.downloadcontroller.DownloadWatchDog;
 import jd.controlling.packagecontroller.AbstractNode;
+import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.FilePackage;
 import jd.plugins.FilePackageView;
 import jd.plugins.PluginProgress;
@@ -380,7 +382,7 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
                 entry.put("iconKey", finalLinkState.getIconKey());
                 entry.put("label", finalLinkState.getExplanation(caller, link));
                 entry.put("id", finalLinkState.name());
-                advancedStatus.put("FinalLinkState", finalLinkState);
+                advancedStatus.put("FinalLinkState", entry);
             }
             if (FinalLinkState.CheckFailed(finalLinkState)) {
                 final String label = finalLinkState.getExplanation(caller, link);
@@ -398,7 +400,7 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
                     // entry.put("iconKey", extractionStatus.getIconKey());
                     entry.put("label", extractionStatus.getExplanation());
                     entry.put("id", extractionStatus.name());
-                    advancedStatus.put("ExtractionStatus", finalLinkState);
+                    advancedStatus.put("ExtractionStatus", entry);
                 }
                 switch (extractionStatus) {
                 case ERROR:
@@ -459,6 +461,25 @@ public class DownloadsAPIV2Impl implements DownloadsAPIV2 {
             entry.put("iconKey", IconKey.ICON_RUN);
             entry.put("label", _GUI.T.TaskColumn_fillColumnHelper_starting());
             advancedStatus.put("SingleDownloadController", entry);
+        }
+        {
+            final AvailableStatus availableStatus = link.getAvailableStatus();
+            final Map<String, Object> entry = new HashMap<String, Object>();
+            entry.put("label", availableStatus.getExplanation());
+            entry.put("id", availableStatus.name());
+            advancedStatus.put("AvailableStatus", entry);
+        }
+        if ("LinkCrawlerRetry".equals(link.getHost())) {
+            final String reason = link.getStringProperty("reason", null);
+            final Map<String, Object> entry = new HashMap<String, Object>();
+            try {
+                if (reason != null) {
+                    entry.put("id", reason);
+                    entry.put("label", RetryReason.valueOf(reason).getExplanation(caller));
+                }
+            } catch (IllegalArgumentException ignore) {
+            }
+            advancedStatus.put("LinkCrawlerRetry", entry);
         }
         return dls;
     }

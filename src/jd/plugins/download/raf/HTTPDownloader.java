@@ -604,8 +604,36 @@ public class HTTPDownloader extends DownloadInterface implements FileBytesCacheF
     /** Parses and sets hash info from headers [if it is stronger than existing hash]. */
     private void parseHashesFromHeaders() {
         final HashInfo hashInfo = getHashInfoFromHeaders(this.getLogger(), connection);
-        if (hashInfo != null && hashInfo.isStrongerThan(downloadable.getHashInfo())) {
+        if (hashInfo != null) {
             downloadable.setHashInfo(hashInfo);
+        }
+    }
+
+    private static class ConnectionHashInfo extends HashInfo {
+        private ConnectionHashInfo(String hash, TYPE type) {
+            super(hash, type, true, false);
+        }
+
+        @Override
+        public boolean isStrongerThan(final HashInfo hashInfo) {
+            if (hashInfo instanceof ConnectionHashInfo) {
+                return super.isStrongerThan(hashInfo);
+            } else {
+                return true;
+            }
+        }
+    }
+
+    private static HashInfo newConnectionHashInfo(final LogInterface logger, String hash, TYPE type) {
+        try {
+            return new ConnectionHashInfo(hash, type);
+        } catch (IllegalArgumentException e) {
+            if (logger != null) {
+                logger.log(e);
+            } else {
+                e.printStackTrace();
+            }
+            return null;
         }
     }
 
@@ -621,8 +649,8 @@ public class HTTPDownloader extends DownloadInterface implements FileBytesCacheF
             if (con.getHeaderField("X-Mod-H264-Streaming") == null && isNoneContentEncoding(contentEncoding) && requestContentRange == null && getCompleteContentLength(logger, con, false) >= 0) {
                 final String contentSHA1 = con.getHeaderField("Content-SHA1");
                 final String contentMD5 = con.getHeaderField("Content-MD5"); // e.g. terabox.com
-                hashInfo = contentSHA1 != null ? HashInfo.newInstanceSafe(contentSHA1, TYPE.SHA1) : null;
-                hashInfo = hashInfo == null ? (contentMD5 != null ? HashInfo.newInstanceSafe(contentMD5, TYPE.MD5) : null) : hashInfo;
+                hashInfo = contentSHA1 != null ? newConnectionHashInfo(logger, contentSHA1, TYPE.SHA1) : null;
+                hashInfo = hashInfo == null ? (contentMD5 != null ? newConnectionHashInfo(logger, contentMD5, TYPE.MD5) : null) : hashInfo;
             }
         }
         return hashInfo;
@@ -642,13 +670,15 @@ public class HTTPDownloader extends DownloadInterface implements FileBytesCacheF
                         final String crc32c = new Regex(googleHash, "crc32c\\s*=\\s*([^,]+)").getMatch(0);
                         final HashInfo hashInfo;
                         if (md5 != null) {
-                            hashInfo = HashInfo.newInstanceSafe(md5, HashInfo.TYPE.MD5);
+                            hashInfo = newConnectionHashInfo(logger, md5, HashInfo.TYPE.MD5);
                         } else if (crc32c != null) {
-                            hashInfo = HashInfo.newInstanceSafe(crc32c, HashInfo.TYPE.CRC32C);
+                            hashInfo = newConnectionHashInfo(logger, crc32c, HashInfo.TYPE.CRC32C);
                         } else {
                             continue;
                         }
-                        if (ret == null || hashInfo.isStrongerThan(ret)) {
+                        if (hashInfo == null) {
+                            continue;
+                        } else if (ret == null || hashInfo.isStrongerThan(ret)) {
                             ret = hashInfo;
                         }
                     } catch (final Exception ignore) {
@@ -661,19 +691,20 @@ public class HTTPDownloader extends DownloadInterface implements FileBytesCacheF
     }
 
     public static HashInfo parseAmazonHash(final LogInterface logger, final URLConnectionAdapter con) {
-        HashInfo ret = null;
         final List<String> amazonHashList = con.getRequest().getResponseHeaders("x-amz-meta-md5-hash");
         if (amazonHashList != null && amazonHashList.size() > 0) {
             for (final String amazonHash : amazonHashList) {
                 if (amazonHash == null) {
                     continue;
                 }
-                ret = HashInfo.newInstanceSafe(amazonHash, HashInfo.TYPE.MD5);
-                /* Take first result */
-                break;
+                final HashInfo ret = newConnectionHashInfo(logger, amazonHash, HashInfo.TYPE.MD5);
+                if (ret != null) {
+                    /* Take first result */
+                    return ret;
+                }
             }
         }
-        return ret;
+        return null;
     }
 
     /**

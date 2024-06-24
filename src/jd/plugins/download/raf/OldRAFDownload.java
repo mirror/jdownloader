@@ -541,7 +541,7 @@ public class OldRAFDownload extends DownloadInterface {
                 DownloadPluginProgress downloadPluginProgress = null;
                 downloadable.setConnectionHandler(this.getManagedConnetionHandler());
                 final HashInfo hashInfo = HTTPDownloader.getHashInfoFromHeaders(logger, connection);
-                if (hashInfo != null && hashInfo.isStrongerThan(downloadable.getHashInfo())) {
+                if (hashInfo != null) {
                     downloadable.setHashInfo(hashInfo);
                 }
                 final DiskSpaceReservation reservation = downloadable.createDiskSpaceReservation();

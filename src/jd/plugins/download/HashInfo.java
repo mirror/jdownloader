@@ -55,14 +55,6 @@ public class HashInfo {
         }
     }
 
-    public boolean isWeakerThan(final HashInfo hashInfo) {
-        if (hashInfo != null) {
-            return getType().ordinal() > hashInfo.getType().ordinal();
-        } else {
-            return false;
-        }
-    }
-
     private final String hash;
 
     public String getHash() {

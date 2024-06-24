@@ -833,7 +833,7 @@ public class TurbobitCore extends antiDDoSForHost {
         final HashInfo md5Hash = HashInfo.parse(md5Value, true, false);
         if (md5Hash != null) {
             final HashInfo existingHash = link.getHashInfo();
-            if (existingHash == null || existingHash.isWeakerThan(md5Hash) || (existingHash.getType() == md5Hash.getType() && !existingHash.equals(md5Hash))) {
+            if (existingHash == null || md5Hash.isStrongerThan(existingHash) || (existingHash.getType() == md5Hash.getType() && !existingHash.equals(md5Hash))) {
                 logger.info("Found hash on downloadstart:" + md5Hash + "|Existing:" + existingHash);
                 link.setHashInfo(md5Hash);
             }
