@@ -22,14 +22,12 @@ import java.net.URL;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
-import java.util.Set;
 import java.util.regex.Pattern;
 
 import org.appwork.storage.StorageException;
@@ -77,6 +75,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
@@ -407,7 +406,7 @@ public abstract class YetiShareCore extends antiDDoSForHost {
             setWeakFilename(link);
         }
         br.setFollowRedirects(true);
-        prepBrowserWebsite(this.br);
+        prepBrowserWebsite(br);
         final String[] fileInfo = getFileInfoArray();
         try {
             if (supports_availablecheck_over_info_page(link) && !isDownload) {
@@ -436,7 +435,64 @@ public abstract class YetiShareCore extends antiDDoSForHost {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
             } else {
-                getPage(getContentURL(link));
+                final String contenturl = getContentURL(link);
+                URLConnectionAdapter con = null;
+                boolean hasGoneThroughVerifiedLoginOnce = false;
+                if (account != null) {
+                    hasGoneThroughVerifiedLoginOnce = loginWebsite(account, false);
+                }
+                int attemptNumber = 0;
+                do {
+                    if (isDownload) {
+                        dl = jd.plugins.BrowserAdapter.openDownload(br, link, contenturl, this.isResumeable(link, account), this.getMaxChunks(account));
+                        con = dl.getConnection();
+                    } else {
+                        br.openGetConnection(contenturl);
+                    }
+                    if (this.looksLikeDownloadableContent(con)) {
+                        logger.info("Direct download");
+                        final String filename = Plugin.getFileNameFromDispositionHeader(con);
+                        if (filename != null) {
+                            link.setFinalFileName(Encoding.htmlDecode(filename).trim());
+                        }
+                        if (con.getCompleteContentLength() > 0) {
+                            if (con.isContentDecoded()) {
+                                link.setDownloadSize(con.getCompleteContentLength());
+                            } else {
+                                link.setVerifiedFileSize(con.getCompleteContentLength());
+                            }
+                        }
+                        return AvailableStatus.TRUE;
+                    }
+                    /* No direct download */
+                    br.followConnection(true);
+                    dl = null;
+                    /* Try again if we are unsure whether or not we are logged in. */
+                    if (account == null || hasGoneThroughVerifiedLoginOnce) {
+                        break;
+                    } else if (this.isLoggedin(this.br, account)) {
+                        /* We are logged in and direct downloads is not possible. */
+                        break;
+                    } else if (hasGoneThroughVerifiedLoginOnce) {
+                        /**
+                         * Only try once! </br>
+                         * We HAVE to be logged in at this stage!
+                         */
+                        this.loggedInOrException(this.br, account);
+                        break;
+                    } else {
+                        /*
+                         * Some websites only allow 1 session per user. If a user then logs in again via browser while JD is logged in, we
+                         * might download as a free-user without noticing that. Example host: Przeslij.com </br> This may also help in other
+                         * situations in which we get logged out all of the sudden.
+                         */
+                        logger.warning("Possible login failure -> Trying again");
+                        loginWebsite(account, true);
+                        hasGoneThroughVerifiedLoginOnce = true;
+                        attemptNumber++;
+                        continue;
+                    }
+                } while (attemptNumber <= 1);
                 /* Offline check is very unsafe which is why we need to check for other errors first! */
                 this.checkErrors(br, link, account);
                 /* Offline errorhandling */
@@ -616,68 +672,14 @@ public abstract class YetiShareCore extends antiDDoSForHost {
     }
 
     protected void handleDownloadWebsite(final DownloadLink link, final Account account) throws Exception, PluginException {
-        /* Login if possible although login is usually not required to access directurls. */
-        boolean hasGoneThroughVerifiedLoginOnce = account != null && loginWebsite(account, false);
         /* First try to re-use stored directurl */
         checkDirectLink(link, account);
         if (this.dl == null) {
-            /* Access downloadurl */
-            br.setFollowRedirects(false);
             prepBrowserWebsite(br);
             this.requestFileInformationWebsite(link, account, true);
-            final boolean resume = this.isResumeable(link, account);
-            final int maxchunks = this.getMaxChunks(account);
-            /*
-             * Check for direct-download and ensure that we're logged in! </br> This is needed because we usually load- and set stored
-             * cookies without verifying them to save time!
-             */
-            do {
-                if (br.getRedirectLocation() != null) {
-                    if (this.isDownloadlink(br.getRedirectLocation())) {
-                        br.setFollowRedirects(true);
-                        dl = jd.plugins.BrowserAdapter.openDownload(br, link, br.getRedirectLocation(), resume, maxchunks);
-                        if (this.looksLikeDownloadableContent(dl.getConnection())) {
-                            logger.info("Direct download");
-                            break;
-                        } else {
-                            br.followConnection(true);
-                            dl = null;
-                            continue;
-                        }
-                    } else {
-                        /* just follow a single redirect */
-                        this.br.followRedirect(false);
-                        continue;
-                    }
-                } else {
-                    if (account == null) {
-                        break;
-                    } else if (this.isLoggedin(this.br, account)) {
-                        break;
-                    } else if (hasGoneThroughVerifiedLoginOnce) {
-                        /**
-                         * Only try once! </br>
-                         * We HAVE to be logged in at this stage!
-                         */
-                        this.loggedInOrException(this.br, account);
-                        break;
-                    } else {
-                        /*
-                         * Some websites only allow 1 session per user. If a user then logs in again via browser while JD is logged in, we
-                         * might download as a free-user without noticing that. Example host: Przeslij.com </br> This may also help in other
-                         * situations in which we get logged out all of the sudden.
-                         */
-                        logger.warning("Possible login failure -> Trying again");
-                        hasGoneThroughVerifiedLoginOnce = loginWebsite(account, true);
-                        br.setFollowRedirects(false);
-                        getPage(this.getContentURL(link));
-                        parseAndSetYetiShareVersion(this.br, account);
-                        continue;
-                    }
-                }
-            } while (true);
             if (this.dl == null) {
                 /* Check for password protected */
+                br.setFollowRedirects(true);
                 this.handlePasswordProtection(link, account, this.br);
                 /* Now handle pre-download-waittime, captcha and other pre-download steps. */
                 if (this.dl == null) {
@@ -719,18 +721,19 @@ public abstract class YetiShareCore extends antiDDoSForHost {
                             }
                             final String fileID = this.getStoredInternalFileID(link);
                             boolean passwordSuccess = false;
-                            String passCode = link.getDownloadPassword();
                             int counter = 0;
                             pwhandling: do {
                                 requestFileDetailsNewYetiShare(br, fileID);
                                 /* Grab Form on first loop, then re-use it */
                                 final Form pwForm = br.getFormbyProperty("id", "folderPasswordForm");
                                 if (pwForm == null) {
-                                    /* File is not password protected or correct password has already been entered */
+                                    /* File is not password protected */
+                                    link.setPasswordProtected(false);
                                     break pwhandling;
                                 }
                                 link.setPasswordProtected(true);
                                 pwForm.setMethod(MethodType.POST);
+                                String passCode = link.getDownloadPassword();
                                 if (passCode == null) {
                                     passCode = getUserInput("Password?", link);
                                 }
@@ -765,7 +768,7 @@ public abstract class YetiShareCore extends antiDDoSForHost {
                                 if (br.containsHTML("triggerFileDownload\\(" + fileID)) {
                                     logger.info("Attempting direct_download");
                                     this.hookBeforeV2DirectDownload(link, account, br);
-                                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, "/account/direct_download/" + fileID, resume, maxchunks);
+                                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, "/account/direct_download/" + fileID, this.isResumeable(link, account), this.getMaxChunks(account));
                                     break;
                                 } else {
                                     /* This should never happen */
@@ -792,37 +795,13 @@ public abstract class YetiShareCore extends antiDDoSForHost {
                              * We don't need a captcha in this case/loop/pass for sure! E.g. host 'filecad.com'.
                              */
                             waitTime(this.br, link, timeBeforeCaptchaInput);
-                            this.dl = jd.plugins.BrowserAdapter.openDownload(br, link, continueLink, resume, maxchunks);
-                            break;
+                            this.dl = jd.plugins.BrowserAdapter.openDownload(br, link, continueLink, this.isResumeable(link, account), this.getMaxChunks(account));
+                            /* Break loop because we expect to get a file now. No file = No retry. */
+                            break preDownloadLoop;
                         } else if (continueform == null) {
                             /* Check if link to next download-page redirects directly to final downloadurl. */
                             waitTime(this.br, link, timeBeforeCaptchaInput);
-                            br.setFollowRedirects(false);
-                            this.dl = jd.plugins.BrowserAdapter.openDownload(br, link, continueLink, resume, maxchunks);
-                            if (this.looksLikeDownloadableContent(dl.getConnection())) {
-                                break preDownloadLoop;
-                            } else {
-                                br.followConnection(true);
-                            }
-                            /* Loop to handle redirects */
-                            while (true) {
-                                final String redirect = this.br.getRedirectLocation();
-                                if (redirect == null) {
-                                    break;
-                                } else {
-                                    this.dl = jd.plugins.BrowserAdapter.openDownload(br, link, redirect, resume, maxchunks);
-                                    if (this.looksLikeDownloadableContent(dl.getConnection())) {
-                                        break preDownloadLoop;
-                                    } else {
-                                        br.followConnection(true);
-                                        br.followRedirect();
-                                        if (this.isAbort()) {
-                                            throw new InterruptedException();
-                                        }
-                                    }
-                                }
-                            }
-                            br.setFollowRedirects(true);
+                            this.dl = jd.plugins.BrowserAdapter.openDownload(br, link, continueLink, this.isResumeable(link, account), this.getMaxChunks(account));
                         } else if (containsRecaptchaV2Class(continueform) || br.containsHTML("data\\-sitekey\\s*=\\s*|g\\-recaptcha\\'")) {
                             loopLog += " --> reCaptchaV2";
                             hasRequestedCaptcha = true;
@@ -834,9 +813,8 @@ public abstract class YetiShareCore extends antiDDoSForHost {
                             }
                             continueform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
                             continueform.setMethod(MethodType.POST);
-                            br.setFollowRedirects(true);
                             hookBeforeCaptchaFormSubmit(br, continueform);
-                            dl = jd.plugins.BrowserAdapter.openDownload(br, link, continueform, resume, maxchunks);
+                            dl = jd.plugins.BrowserAdapter.openDownload(br, link, continueform, this.isResumeable(link, account), this.getMaxChunks(account));
                             numberofCaptchasRequested++;
                         } else if (containsSolvemediaCaptcha(continueform) || this.containsSolvemediaCaptcha(br.getRequest().getHtmlCode())) {
                             loopLog += " --> SolvemediaCaptcha";
@@ -878,20 +856,18 @@ public abstract class YetiShareCore extends antiDDoSForHost {
                             continueform.put("adcopy_challenge", Encoding.urlEncode(chid));
                             continueform.put("adcopy_response", Encoding.urlEncode(code));
                             continueform.setMethod(MethodType.POST);
-                            br.setFollowRedirects(true);
                             hookBeforeCaptchaFormSubmit(br, continueform);
-                            dl = jd.plugins.BrowserAdapter.openDownload(br, link, continueform, resume, maxchunks);
+                            dl = jd.plugins.BrowserAdapter.openDownload(br, link, continueform, this.isResumeable(link, account), this.getMaxChunks(account));
                             numberofCaptchasRequested++;
                         } else if (continueform != null && continueform.getMethod() == MethodType.POST) {
                             /* Form + no captcha */
                             loopLog += " --> Form_POST";
                             waitTime(this.br, link, timeBeforeCaptchaInput);
-                            br.setFollowRedirects(true);
                             hookBeforeCaptchaFormSubmit(br, continueform);
-                            dl = jd.plugins.BrowserAdapter.openDownload(br, link, continueform, resume, maxchunks);
+                            dl = jd.plugins.BrowserAdapter.openDownload(br, link, continueform, this.isResumeable(link, account), this.getMaxChunks(account));
                         } else {
                             logger.warning("Unknown state");
-                            break;
+                            break preDownloadLoop;
                         }
                         logger.info("loopLog: " + loopLog);
                         try {
@@ -907,7 +883,7 @@ public abstract class YetiShareCore extends antiDDoSForHost {
                         if (looksLikeDownloadableContent(this.dl.getConnection())) {
                             loopLog += " --> DOWNLOAD!";
                             logger.info("Successfully initiated download");
-                            break;
+                            break preDownloadLoop;
                         } else {
                             br.followConnection(true);
                             this.dl = null;
@@ -965,7 +941,6 @@ public abstract class YetiShareCore extends antiDDoSForHost {
             checkErrors(br, link, account);
             checkErrorsLastResort(br, link, account);
         }
-        dl.setFilenameFix(isContentDispositionFixRequired(dl, dl.getConnection(), link));
         dl.startDownload();
     }
 
@@ -1001,46 +976,44 @@ public abstract class YetiShareCore extends antiDDoSForHost {
     /** Password handling for older YetiShare versions. */
     @Deprecated
     protected void handlePasswordProtection(final DownloadLink link, final Account account, final Browser br) throws Exception {
-        final boolean isFollowingRedirects = br.isFollowingRedirects();
-        try {
-            final Form pwform = this.getPasswordProtectedForm(br);
-            if (pwform == null) {
-                link.setPasswordProtected(false);
-                return;
-            }
-            /* Old layout additionally redirects to "/file_password.html?file=<fuid>" */
-            link.setPasswordProtected(true);
-            String passCode = link.getDownloadPassword();
-            if (passCode == null) {
-                passCode = getUserInput("Password?", link);
-            }
-            pwform.put("filePassword", Encoding.urlEncode(passCode));
-            br.setFollowRedirects(false);
-            this.submitForm(br, pwform);
-            if (this.isDownloadlink(br.getRedirectLocation())) {
-                /*
-                 * We can start the download right away -> Entered password is correct and we're probably logged in into a premium account.
-                 */
-                link.setDownloadPassword(passCode);
-                dl = jd.plugins.BrowserAdapter.openDownload(br, link, br.getRedirectLocation(), this.isResumeable(link, account), this.getMaxChunks(account));
+        final Form pwform = this.getPasswordProtectedForm(br);
+        if (pwform == null) {
+            link.setPasswordProtected(false);
+            return;
+        }
+        /* Old layout additionally redirects to "/file_password.html?file=<fuid>" */
+        link.setPasswordProtected(true);
+        String passCode = link.getDownloadPassword();
+        if (passCode == null) {
+            passCode = getUserInput("Password?", link);
+        }
+        pwform.put("filePassword", Encoding.urlEncode(passCode));
+        this.dl = jd.plugins.BrowserAdapter.openDownload(br, link, pwform, this.isResumeable(link, account), this.getMaxChunks(account));
+        if (this.looksLikeDownloadableContent(dl.getConnection())) {
+            /*
+             * We can start the download right away -> Entered password is correct and it looks like this is a premium download.
+             */
+            logger.info("User has entered correct password: " + passCode);
+            link.setDownloadPassword(passCode);
+        } else {
+            /* No download -> Either wrong password or correct password & free download. */
+            br.followConnection();
+            this.dl = null;
+            if (getPasswordProtectedForm(br) != null) {
+                /* Assume that entered password is wrong! */
+                logger.info("User has entered wrong password: " + passCode);
+                link.setDownloadPassword(null);
+                throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
             } else {
-                /* No download -> Either wrong password or correct password & free download */
-                br.followRedirect(true);
-                if (getPasswordProtectedForm(br) != null) {
-                    /* Assume that entered password is wrong! */
-                    link.setDownloadPassword(null);
-                    throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
-                } else {
-                    /* Correct password was entered --> Store it */
-                    link.setDownloadPassword(passCode);
-                }
+                /* Correct password was entered --> Store it */
+                logger.info("User has entered correct password: " + passCode);
+                link.setDownloadPassword(passCode);
             }
-        } finally {
-            /* Restore previous value */
-            br.setFollowRedirects(isFollowingRedirects);
         }
     }
 
+    @Deprecated
+    /** Returns Form for password protected items for older YetiShare versions/websites. */
     protected Form getPasswordProtectedForm(final Browser br) {
         return br.getFormbyKey("filePassword");
     }
@@ -1345,44 +1318,6 @@ public abstract class YetiShareCore extends antiDDoSForHost {
     private static final String error_you_have_reached_the_max_permitted_downloads                          = "error_you_have_reached_the_max_permitted_downloads";
     private static final String error_you_must_wait_between_downloads                                       = "error_you_must_wait_between_downloads";
 
-    /**
-     * Checks for reasons to ignore given PluginExceptions. </br>
-     * Example: Certain errors thay may happen during availablecheck when user is not yet logged in but won't happen when user is logged in.
-     * </br>
-     * TODO: Remove this once "fastdrive.io" does not exist anymore.
-     */
-    @Deprecated
-    protected void ignorePluginException(final PluginException exception, final Browser br, final DownloadLink link, final Account account) throws PluginException {
-        if (account != null) {
-            // TODO: update with more account specific error handling or find a way to eliminate the need of this handling!
-            final Set<String> mightBeOkayWithAccountLogin = new HashSet<String>();
-            switch (account.getType()) {
-            case PREMIUM:
-                mightBeOkayWithAccountLogin.add(error_you_have_reached_the_maximum_permitted_downloads_in_the_last_24_hours);
-                mightBeOkayWithAccountLogin.add(error_you_must_register_for_a_premium_account_for_filesize);
-                mightBeOkayWithAccountLogin.add(error_you_must_be_a_x_user_to_download_this_file);
-                break;
-            default:
-                mightBeOkayWithAccountLogin.add(error_you_must_be_a_x_user_to_download_this_file);
-                break;
-            }
-            final String mappedErrorKey;
-            synchronized (errorMsgURLMap) {
-                mappedErrorKey = errorMsgURLMap.get(exception.getMessage());
-            }
-            if (mightBeOkayWithAccountLogin.contains(mappedErrorKey)) {
-                logger.exception("special handling to ignore:" + exception.getMessage() + "|" + mappedErrorKey, exception);
-                return;
-            } else {
-                logger.info("no special handling for:" + exception.getMessage() + "|" + mappedErrorKey);
-            }
-        }
-        throw exception;
-    }
-
-    @Deprecated
-    protected static HashMap<String, String> errorMsgURLMap = new HashMap<String, String>();
-
     /** Throws appropriate Exception depending on whether or not an account is given. */
     private void ipBlockedOrAccountLimit(final DownloadLink link, final Account account, final String errorMsg, final long waitMillis) throws PluginException {
         if (account != null) {
@@ -1435,9 +1370,6 @@ public abstract class YetiShareCore extends antiDDoSForHost {
                  * ("?e=...").
                  */
                 final String errorkey = (String) errorMap.get("error_key");
-                synchronized (errorMsgURLMap) {
-                    errorMsgURLMap.put(errorMsgURL, errorkey);
-                }
                 logger.info("Found key to errormessage: " + errorkey);
                 Map<String, String> errorProperties = null;
                 if (errorMap.containsKey("error_properties")) {
@@ -1525,7 +1457,7 @@ public abstract class YetiShareCore extends antiDDoSForHost {
             if (StringUtils.containsIgnoreCase(errorMsgURL, "You have reached the maximum concurrent downloads")) {
                 throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Max. simultan downloads limit reached, wait to start more downloads", 1 * 60 * 1000l);
             } else if (StringUtils.containsIgnoreCase(errorMsgURL, "Could not open file for reading")) {
-                throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error 'Could not open file for reading'", 60 * 60 * 1000l);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 'Could not open file for reading'", 60 * 60 * 1000l);
             } else if (new Regex(errorMsgURL, "(?i).*File is not publicly available.*").patternFind()) {
                 /* Private file -> Only owner can download it. */
                 throw new AccountRequiredException(errorMsgURL);
@@ -1698,7 +1630,11 @@ public abstract class YetiShareCore extends antiDDoSForHost {
         final boolean isFileWebsite = br.containsHTML("class=\"downloadPageTable(V2)?\"") || br.containsHTML("class=\"download\\-timer\"");
         final boolean isErrorPage = br.getURL().contains("/error.html") || br.getURL().contains("/index.html");
         final boolean isOffline404 = br.getHttpConnection().getResponseCode() == 404;
-        if ((!isFileWebsite || isErrorPage || isOffline404) && !isDownloadable) {
+        final Form pwform = this.getPasswordProtectedForm(br);
+        if (pwform != null) {
+            /* File is password protected so it must be downloadable (not offline). */
+            return false;
+        } else if ((!isFileWebsite || isErrorPage || isOffline404) && !isDownloadable) {
             return true;
         } else {
             return false;
@@ -2550,12 +2486,14 @@ public abstract class YetiShareCore extends antiDDoSForHost {
         final UrlQuery query = new UrlQuery();
         query.add("access_token", getStoredAPIAccessToken(account, key1, key2));
         query.add("account_id", getAPIAccountID(account, key1, key2));
-        if (br.getURL() == null || !br.getURL().contains("/account/info")) {
+        final Map<String, Object> jsonRoot;
+        if (br.getURL() != null && br.getURL().contains("/account/info")) {
+            jsonRoot = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+        } else {
             this.getPage(br, this.getAPIBase() + "/account/info?access_token=" + getStoredAPIAccessToken(account, key1, key2) + "&account_id=" + getAPIAccountID(account, key1, key2));
             /* We don't expect any errors to happen at this stage but we can never know... */
-            checkErrorsAPI(br, null, account);
+            jsonRoot = (Map<String, Object>) checkErrorsAPI(br, null, account);
         }
-        final Map<String, Object> jsonRoot = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         final String server_timeStr = (String) jsonRoot.get("_datetime");
         final Map<String, Object> data = (Map<String, Object>) jsonRoot.get("data");
         // final String username = (String) entries.get("username");
@@ -2575,11 +2513,10 @@ public abstract class YetiShareCore extends antiDDoSForHost {
             premiumExpireMilliseconds = TimeFormatter.getMilliSeconds(premiumExpireDateStr, "yyyy-MM-dd HH:mm:ss", Locale.ENGLISH);
         }
         this.getPage(br, this.getAPIBase() + "/account/package?access_token=" + getStoredAPIAccessToken(account, key1, key2) + "&account_id=" + getAPIAccountID(account, key1, key2));
-        final Map<String, Object> packageInfoRoot = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+        final Map<String, Object> packageInfoRoot = (Map<String, Object>) checkErrorsAPI(br, null, account);
         final Map<String, Object> packageInfoData = (Map<String, Object>) packageInfoRoot.get("data");
         final String accountType = (String) packageInfoData.get("label");
         final String level_type = (String) packageInfoData.get("level_type");
-        checkErrorsAPI(br, null, account);
         final long premiumDurationMilliseconds = premiumExpireMilliseconds - currentTime;
         if (premiumExpireMilliseconds > currentTime || StringUtils.equalsIgnoreCase(level_type, "paid")) {
             account.setType(AccountType.PREMIUM);
@@ -2639,8 +2576,7 @@ public abstract class YetiShareCore extends antiDDoSForHost {
             }
             this.getPage(br, this.getAPIBase() + "/account/info?access_token=" + storedAccessToken + "&account_id=" + storedAccountID);
             try {
-                checkErrorsAPI(br, null, account);
-                final Map<String, Object> jsonRoot = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+                final Map<String, Object> jsonRoot = (Map<String, Object>) checkErrorsAPI(br, null, account);
                 final Map<String, Object> data = (Map<String, Object>) jsonRoot.get("data");
                 final Object currentAccountID = data != null ? data.get("id").toString() : null;
                 if (currentAccountID != null) {
@@ -2671,12 +2607,11 @@ public abstract class YetiShareCore extends antiDDoSForHost {
             throw new AccountInvalidException("Invalid API credentials");
         }
         this.postPage(br, this.getAPIBase() + "/authorize", "key1=" + Encoding.urlEncode(key1) + "&key2=" + Encoding.urlEncode(key2));
-        checkErrorsAPI(br, null, account);
         /*
          * 2021-04-22: Token should be valid for at least 60 minutes but in my tests it lasted more like... 60 seconds! As long as it is
          * only used for account checking that is fine though.
          */
-        final Map<String, Object> authorizationResponse = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+        final Map<String, Object> authorizationResponse = (Map<String, Object>) checkErrorsAPI(br, null, account);
         final Map<String, Object> authorizationData = (Map<String, Object>) authorizationResponse.get("data");
         final String accessToken = authorizationData.get("access_token").toString();
         final String accountIDStr = authorizationData.get("account_id").toString();
@@ -2704,8 +2639,7 @@ public abstract class YetiShareCore extends antiDDoSForHost {
             prepBrowserAPI(br);
         }
         this.getPage(br, this.getAPIBase() + "/file/info?" + query.toString());
-        this.checkErrorsAPI(br, link, account);
-        final Map<String, Object> jsonRoot = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+        final Map<String, Object> jsonRoot = (Map<String, Object>) this.checkErrorsAPI(br, link, account);
         final Map<String, Object> data = (Map<String, Object>) jsonRoot.get("data");
         final String filename = (String) data.get("filename");
         final Number filesizeO = (Number) data.get("fileSize");
@@ -2796,8 +2730,7 @@ public abstract class YetiShareCore extends antiDDoSForHost {
             /* Availablecheck not required as download call will return offline message. */
             // this.requestFileInformationAPI(link, account);
             this.getPage(this.getAPIBase() + "/file/download?" + query.toString());
-            this.checkErrorsAPI(this.br, link, account);
-            final Map<String, Object> jsonRoot = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+            final Map<String, Object> jsonRoot = (Map<String, Object>) this.checkErrorsAPI(this.br, link, account);
             final Map<String, Object> data = (Map<String, Object>) jsonRoot.get("data");
             final String dllink = (String) data.get("download_url");
             if (StringUtils.isEmpty(dllink)) {
@@ -2832,7 +2765,6 @@ public abstract class YetiShareCore extends antiDDoSForHost {
             checkErrors(br, link, account);
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Final downloadurl did not lead to downloadable content");
         }
-        dl.setFilenameFix(isContentDispositionFixRequired(dl, con, link));
         dl.startDownload();
     }
 
@@ -2840,7 +2772,7 @@ public abstract class YetiShareCore extends antiDDoSForHost {
      * Handles API errormessages. </br>
      * We usually can't use this API for downloading thus all Exceptions will be account related (as of 2021-04-22)
      */
-    protected void checkErrorsAPI(final Browser br, final DownloadLink link, final Account account) throws PluginException {
+    protected Object checkErrorsAPI(final Browser br, final DownloadLink link, final Account account) throws PluginException {
         Map<String, Object> entries = null;
         try {
             entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
@@ -2850,7 +2782,7 @@ public abstract class YetiShareCore extends antiDDoSForHost {
         }
         if (entries.containsKey("data")) {
             /* No error */
-            return;
+            return entries;
         }
         final Object statusO = entries.get("_status");
         if (statusO != null) {
@@ -2918,5 +2850,6 @@ public abstract class YetiShareCore extends antiDDoSForHost {
                 }
             }
         }
+        return entries;
     }
 }

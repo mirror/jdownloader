@@ -57,8 +57,6 @@ public class MightyScriptAdLinkFlyDefault extends MightyScriptAdLinkFly {
             "webo.one",
             /** 2021-06-17 */
             "srts.me",
-            /** 2021-04-22: Belongs to filehost "fastdrive.io" and is used to redirect to their final downloadurls. */
-            "roda.site", "securitystickers.info", "fencepedia.com",
             /** 2021-03-29: tny.so -> URL-Shortener of doodstream.com [promoted 2021-03-27 via E-Mail campaign] */
             "tny.so",
             /** 2021-02-08: hoastie.com */

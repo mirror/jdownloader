@@ -159,6 +159,7 @@ public class Offline extends PluginForHost {
         ret.add(new String[] { "mp4player.site", "streamembed.com" });
         ret.add(new String[] { "load.to" });
         ret.add(new String[] { "przeslij.com" });
+        ret.add(new String[] { "archivos.me", "archivos.club" }); // 2024-06-25
         if (cache != null) {
             cache.put(cacheID, ret);
         }
