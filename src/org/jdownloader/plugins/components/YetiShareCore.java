@@ -1540,9 +1540,9 @@ public abstract class YetiShareCore extends antiDDoSForHost {
                 /* Private file -> Only owner can download it. */
                 throw new AccountRequiredException(errorMsgURL);
             } else if (StringUtils.containsIgnoreCase(errorMsgURL, "You have reached the maximum permitted downloads in")) {
-                ipBlockedOrAccountLimit(link, account, errorMsgURL, 3 * 60 * 60 * 1001l);
+                ipBlockedOrAccountLimit(link, account, errorMsgURL, 30 * 60 * 1001l);
             } else if (StringUtils.containsIgnoreCase(errorMsgURL, "You have reached the maximum permitted download filesize")) {
-                ipBlockedOrAccountLimit(link, account, errorMsgURL, 3 * 60 * 60 * 1001l);
+                ipBlockedOrAccountLimit(link, account, errorMsgURL, 30 * 60 * 1001l);
             } else if (StringUtils.containsIgnoreCase(errorMsgURL, "File not found") || StringUtils.containsIgnoreCase(errorMsgURL, "File has been removed") || StringUtils.containsIgnoreCase(errorMsgURL, "Dosya kaldırıldı")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else if (errorMsgURL.matches("(?i).*(You must wait |Você deve esperar).*")) {
