@@ -52,4 +52,10 @@ public class KernelVideoSharingComV2HclipsCom extends KernelVideoSharingComV2 {
     protected String generateContentURL(final String host, final String fuid, final String urlTitle) {
         return generateContentURLDefaultVideosPattern(host, fuid, urlTitle);
     }
+
+    @Override
+    protected boolean useEmbedWorkaround() {
+        /* 2024-06-25: Their embed URLs are broken. */
+        return true;
+    }
 }

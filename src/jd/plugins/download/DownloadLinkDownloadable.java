@@ -625,8 +625,12 @@ public class DownloadLinkDownloadable implements Downloadable {
     /** Corrects or adds file-extension in given filename string based on mime-type of given URLConnection. */
     protected String correctOrApplyFileNameExtension(String name, URLConnectionAdapter connection) {
         final PluginForHost plugin = getPlugin();
-        final String extNew = getExtensionFromMimeType(connection);
-        if (extNew != null && DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+        String extNew = getExtensionFromMimeType(connection);
+        if (extNew == null) {
+            /* No file extension found -> Do nothing. */
+            return name;
+        }
+        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
             // TODO: Add final functionality
             final String extCurrent = Plugin.getFileNameExtensionFromString(name);
             boolean allowAddOrCorrectFileExtension = false;
@@ -639,10 +643,12 @@ public class DownloadLinkDownloadable implements Downloadable {
                  * correct them can easily fuck up our filename e.g.: </br>
                  * - Multipart rar archives but 2nd item got another mime type like "bin" -> Extension is changed from .rar.001 to .bin ->
                  * Extraction will fail </br>
-                 * - Document/Text files: Anything can be a text, we do not want to correct e.g. ".txt" to ".xml".
+                 * - Document/Text files: Anything can be a text, we do not want to correct e.g. ".txt" to ".xml". </br>
+                 * For these reasons, currently only audio, video and image files' file extensions will be corrected.
                  */
-                final ExtensionsFilterInterface efi = CompiledFiletypeFilter.getExtensionsFilterInterface(extCurrent);
-                if (CompiledFiletypeFilter.VideoExtensions.MP4.isSameExtensionGroup(efi) || CompiledFiletypeFilter.ImageExtensions.JPG.isSameExtensionGroup(efi)) {
+                final ExtensionsFilterInterface efiCurrent = CompiledFiletypeFilter.getExtensionsFilterInterface(extCurrent);
+                final ExtensionsFilterInterface efiNew = CompiledFiletypeFilter.getExtensionsFilterInterface(extNew);
+                if ((CompiledFiletypeFilter.VideoExtensions.MP4.isSameExtensionGroup(efiCurrent) || CompiledFiletypeFilter.ImageExtensions.JPG.isSameExtensionGroup(efiCurrent) || CompiledFiletypeFilter.AudioExtensions.MP3.isSameExtensionGroup(efiCurrent)) && efiNew != null && efiNew.isSameExtensionGroup(efiCurrent)) {
                     // Correct file extension
                     allowAddOrCorrectFileExtension = true;
                 } else {
@@ -650,10 +656,13 @@ public class DownloadLinkDownloadable implements Downloadable {
                 }
             }
             if (allowAddOrCorrectFileExtension) {
+                if (!extNew.startsWith(".")) {
+                    extNew = "." + extNew;
+                }
                 if (name.indexOf(".") < 0) {
-                    name = name + "." + extNew;
+                    name = name + extNew;
                 } else if (plugin != null) {
-                    name = plugin.correctOrApplyFileNameExtension(name, "." + extNew);
+                    name = plugin.correctOrApplyFileNameExtension(name, extNew);
                 }
             }
         }
