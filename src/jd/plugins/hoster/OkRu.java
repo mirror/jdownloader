@@ -20,6 +20,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.config.OkRuConfig;
+import org.jdownloader.plugins.components.config.OkRuConfig.Quality;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -37,16 +47,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.config.OkRuConfig;
-import org.jdownloader.plugins.components.config.OkRuConfig.Quality;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "ok.ru" }, urls = { "https?://(?:[A-Za-z0-9]+\\.)?ok\\.ru/(?:video|videoembed|web-api/video/moviePlayer|live)/(\\d+(-\\d+)?)" })
 public class OkRu extends PluginForHost {
@@ -90,7 +90,7 @@ public class OkRu extends PluginForHost {
     }
 
     public static Map<String, Object> getFlashVars(final Browser br) {
-        String playerJsonSrc = br.getRegex("data-module=\"OKVideo\" data-options=\"([^<>]+)\" data-player-container-id=").getMatch(0);
+        String playerJsonSrc = br.getRegex("data-module=\"OKVideo\"[^>]*data-options=\"([^<>]+)\"[^>]*data-player-container-id=").getMatch(0);
         if (playerJsonSrc == null) {
             return null;
         }
@@ -138,109 +138,112 @@ public class OkRu extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String title = null;
-        Map<String, Object> entries = getFlashVars(this.br);
-        if (entries != null) {
-            title = (String) JavaScriptEngineFactory.walkJson(entries, "movie/title");
-            final Object paymentInfo = entries.get("paymentInfo");
-            if (paymentInfo != null) {
-                /* User needs account and has to pay to download/view such content. */
-                this.paidContent = true;
-            } else {
-                // final String[] qualities = { "full", "hd", "sd", "low", "lowest", "mobile" };
-                String bestHTTPQualityDownloadurl = null;
-                String bestHTTPQualityName = null;
-                String bestUserPreferredQualityDownloadurl = null;
-                String bestUserPreferredQualityName = null;
-                final Map<String, String> collectedHTTPQualities = new HashMap<String, String>();
-                Map<String, Object> httpQualityInfo = null;
-                final Object httpQualitiesO = entries.get("videos");
-                if (httpQualitiesO != null) {
-                    final int preferredUserQuality = getUserPreferredqualityHeightInt(link);
-                    int maxQuality = 0;
-                    final List<Object> httpQualities = (List<Object>) httpQualitiesO;
-                    for (final Object httpQ : httpQualities) {
-                        httpQualityInfo = (Map<String, Object>) httpQ;
-                        final String qualityIdentifier = (String) httpQualityInfo.get("name");
-                        final String url = (String) httpQualityInfo.get("url");
-                        if (StringUtils.isEmpty(qualityIdentifier) || StringUtils.isEmpty(url)) {
-                            continue;
-                        }
-                        collectedHTTPQualities.put(qualityIdentifier, url);
-                        final int currentQualityHeigthInt;
-                        if (qualityIdentifier.equalsIgnoreCase("full")) {
-                            currentQualityHeigthInt = 1080;
-                        } else if (qualityIdentifier.equalsIgnoreCase("hd")) {
-                            currentQualityHeigthInt = 720;
-                        } else if (qualityIdentifier.equalsIgnoreCase("sd")) {
-                            currentQualityHeigthInt = 480;
-                        } else if (qualityIdentifier.equalsIgnoreCase("low")) {
-                            currentQualityHeigthInt = 360;
-                        } else if (qualityIdentifier.equalsIgnoreCase("lowest")) {
-                            currentQualityHeigthInt = 240;
-                        } else if (qualityIdentifier.equalsIgnoreCase("mobile")) {
-                            currentQualityHeigthInt = 144;
-                        } else {
-                            /* Mobile or other > 0 */
-                            currentQualityHeigthInt = 1;
-                            logger.info("Unknown qualityIdentifier: " + qualityIdentifier);
-                        }
-                        if (currentQualityHeigthInt > maxQuality) {
-                            bestHTTPQualityDownloadurl = url;
-                            bestHTTPQualityName = qualityIdentifier;
-                            maxQuality = currentQualityHeigthInt;
-                        }
-                        if (currentQualityHeigthInt > 1 && currentQualityHeigthInt <= preferredUserQuality) {
-                            bestUserPreferredQualityDownloadurl = url;
-                            bestUserPreferredQualityName = qualityIdentifier;
-                        }
-                    }
-                }
-                /* null = user wants BEST */
-                final String userPreferredQuality = getUserPreferredqualityStr(link);
-                if (userPreferredQuality != null && collectedHTTPQualities.containsKey(userPreferredQuality)) {
-                    logger.info("Using user preferred HTTP quality: " + userPreferredQuality);
-                    this.dllink = collectedHTTPQualities.get(userPreferredQuality);
-                    link.setProperty(PROPERTY_QUALITY, userPreferredQuality);
-                } else if (userPreferredQuality == null && !StringUtils.isEmpty(bestHTTPQualityDownloadurl)) {
-                    logger.info("Using best HTTP quality: " + bestHTTPQualityName);
-                    this.dllink = bestHTTPQualityDownloadurl;
-                    link.setProperty(PROPERTY_QUALITY, bestHTTPQualityName);
-                } else {
-                    /* Prefer http - only use HLS if http is not available! */
-                    /**
-                     * 2021-09-10: Some users also get: "ondemandHls" and "ondemandDash" </br> No idea if "ondemandHls" == "hlsManifestUrl"
-                     */
-                    if (userPreferredQuality != null) {
-                        logger.info("Trying HLS fallback because user selected quality hasn't been found!");
-                    } else {
-                        logger.info("Trying HLS fallback because no HTTP qualities have been found");
-                    }
-                    final String hlsMaster;
-                    final Object ondemandHlsO = entries.get("ondemandHls");
-                    if (ondemandHlsO != null) {
-                        /* This is typically available when user is logged in. */
-                        hlsMaster = (String) ondemandHlsO;
-                    } else {
-                        hlsMaster = (String) entries.get("hlsManifestUrl");
-                    }
-                    if (StringUtils.isEmpty(hlsMaster)) {
-                        /* This will result in an Exception in download handling later on! This should never happen! */
-                        logger.warning("Failed to find any HLS fallback");
-                        if (!StringUtils.isEmpty(bestUserPreferredQualityDownloadurl)) {
-                            logger.info("Using best HTTP quality as fallback: " + bestUserPreferredQualityName + "/" + userPreferredQuality);
-                            this.dllink = bestUserPreferredQualityDownloadurl;
-                            link.setProperty(PROPERTY_QUALITY, bestUserPreferredQualityName);
-                        }
-                    } else {
-                        logger.info("Found HLS fallback: " + hlsMaster);
-                        this.dllink = hlsMaster;
-                    }
-                }
-            }
+        final Map<String, Object> entries = getFlashVars(this.br);
+        if (entries == null) {
+            logger.warning("Failed to obtain file information");
+            return AvailableStatus.TRUE;
         }
+        title = (String) JavaScriptEngineFactory.walkJson(entries, "movie/title");
         if (title != null) {
             title = Encoding.htmlDecode(title).trim();
             link.setFinalFileName(title + extDefault);
+        }
+        final Object paymentInfo = entries.get("paymentInfo");
+        if (paymentInfo != null) {
+            /* User needs account and has to pay to download/view such content. */
+            this.paidContent = true;
+            return AvailableStatus.TRUE;
+        }
+        // final String[] qualities = { "full", "hd", "sd", "low", "lowest", "mobile" };
+        String bestHTTPQualityDownloadurl = null;
+        String bestHTTPQualityName = null;
+        String bestUserPreferredQualityDownloadurl = null;
+        String bestUserPreferredQualityName = null;
+        final Map<String, String> collectedHTTPQualities = new HashMap<String, String>();
+        Map<String, Object> httpQualityInfo = null;
+        final Object httpQualitiesO = entries.get("videos");
+        if (httpQualitiesO != null) {
+            final int preferredUserQuality = getUserPreferredqualityHeightInt(link);
+            int maxQuality = 0;
+            final List<Object> httpQualities = (List<Object>) httpQualitiesO;
+            for (final Object httpQ : httpQualities) {
+                httpQualityInfo = (Map<String, Object>) httpQ;
+                final String qualityIdentifier = (String) httpQualityInfo.get("name");
+                final String url = (String) httpQualityInfo.get("url");
+                if (StringUtils.isEmpty(qualityIdentifier) || StringUtils.isEmpty(url)) {
+                    continue;
+                }
+                collectedHTTPQualities.put(qualityIdentifier, url);
+                final int currentQualityHeigthInt;
+                if (qualityIdentifier.equalsIgnoreCase("full")) {
+                    currentQualityHeigthInt = 1080;
+                } else if (qualityIdentifier.equalsIgnoreCase("hd")) {
+                    currentQualityHeigthInt = 720;
+                } else if (qualityIdentifier.equalsIgnoreCase("sd")) {
+                    currentQualityHeigthInt = 480;
+                } else if (qualityIdentifier.equalsIgnoreCase("low")) {
+                    currentQualityHeigthInt = 360;
+                } else if (qualityIdentifier.equalsIgnoreCase("lowest")) {
+                    currentQualityHeigthInt = 240;
+                } else if (qualityIdentifier.equalsIgnoreCase("mobile")) {
+                    currentQualityHeigthInt = 144;
+                } else {
+                    /* Mobile or other > 0 */
+                    currentQualityHeigthInt = 1;
+                    logger.info("Unknown qualityIdentifier: " + qualityIdentifier);
+                }
+                if (currentQualityHeigthInt > maxQuality) {
+                    bestHTTPQualityDownloadurl = url;
+                    bestHTTPQualityName = qualityIdentifier;
+                    maxQuality = currentQualityHeigthInt;
+                }
+                if (currentQualityHeigthInt > 1 && currentQualityHeigthInt <= preferredUserQuality) {
+                    bestUserPreferredQualityDownloadurl = url;
+                    bestUserPreferredQualityName = qualityIdentifier;
+                }
+            }
+        }
+        /* null = user wants BEST */
+        final String userPreferredQuality = getUserPreferredqualityStr(link);
+        if (userPreferredQuality != null && collectedHTTPQualities.containsKey(userPreferredQuality)) {
+            logger.info("Using user preferred HTTP quality: " + userPreferredQuality);
+            this.dllink = collectedHTTPQualities.get(userPreferredQuality);
+            link.setProperty(PROPERTY_QUALITY, userPreferredQuality);
+        } else if (userPreferredQuality == null && !StringUtils.isEmpty(bestHTTPQualityDownloadurl)) {
+            logger.info("Using best HTTP quality: " + bestHTTPQualityName);
+            this.dllink = bestHTTPQualityDownloadurl;
+            link.setProperty(PROPERTY_QUALITY, bestHTTPQualityName);
+        } else {
+            /* Prefer http - only use HLS if http is not available! */
+            /**
+             * 2021-09-10: Some users also get: "ondemandHls" and "ondemandDash" </br>
+             * No idea if "ondemandHls" == "hlsManifestUrl"
+             */
+            if (userPreferredQuality != null) {
+                logger.info("Trying HLS fallback because user selected quality hasn't been found!");
+            } else {
+                logger.info("Trying HLS fallback because no HTTP qualities have been found");
+            }
+            final String hlsMaster;
+            final Object ondemandHlsO = entries.get("ondemandHls");
+            if (ondemandHlsO != null) {
+                /* This is typically available when user is logged in. */
+                hlsMaster = (String) ondemandHlsO;
+            } else {
+                hlsMaster = (String) entries.get("hlsManifestUrl");
+            }
+            if (StringUtils.isEmpty(hlsMaster)) {
+                /* This will result in an Exception in download handling later on! This should never happen! */
+                logger.warning("Failed to find any HLS fallback");
+                if (!StringUtils.isEmpty(bestUserPreferredQualityDownloadurl)) {
+                    logger.info("Using best HTTP quality as fallback: " + bestUserPreferredQualityName + "/" + userPreferredQuality);
+                    this.dllink = bestUserPreferredQualityDownloadurl;
+                    link.setProperty(PROPERTY_QUALITY, bestUserPreferredQualityName);
+                }
+            } else {
+                logger.info("Found HLS fallback: " + hlsMaster);
+                this.dllink = hlsMaster;
+            }
         }
         // final String url_quality = new Regex(dllink, "(st.mq=\\d+)").getMatch(0);
         // if (url_quality != null) {
@@ -263,10 +266,6 @@ public class OkRu extends PluginForHost {
                 } else {
                     link.setVerifiedFileSize(con.getCompleteContentLength());
                 }
-                final String ext = getExtensionFromMimeType(con);
-                if (ext != null) {
-                    link.setFinalFileName(title + extDefault);
-                }
             } finally {
                 try {
                     con.disconnect();
@@ -283,7 +282,7 @@ public class OkRu extends PluginForHost {
             return true;
         }
         /* Offline or private video */
-        if (br.containsHTML(">Access to this video has been restricted|>Access to the video has been restricted") || br.getURL().contains("/main/st.redirect/")) {
+        if (br.containsHTML(">\\s*Access to this video has been restricted|>\\s*Access to the video has been restricted") || br.getURL().contains("/main/st.redirect/")) {
             return true;
         }
         if (br.getURL().contains("?")) {
@@ -293,7 +292,7 @@ public class OkRu extends PluginForHost {
         // video blocked | video not found (RU, then EN)
         if (br.containsHTML(">\\s*Видеоролик заблокирован\\s*<|>\\s*Видеоролик не найден\\s*<|>\\s*The video is blocked")) {
             return true;
-        } else if (br.containsHTML(">Video has not been found</div") || br.containsHTML(">Video hasn't been found</div")) {
+        } else if (br.containsHTML(">\\s*Video has not been found</div") || br.containsHTML(">\\s*Video hasn't been found</div")) {
             return true;
         } else if (offlineBecauseOfDMCA(br)) {
             return true;
@@ -322,7 +321,7 @@ public class OkRu extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "https://ok.ru/";
+        return "https://" + getHost() + "/";
     }
 
     @Override
@@ -396,7 +395,7 @@ public class OkRu extends PluginForHost {
             final Cookies cookies = account.loadCookies("");
             if (cookies != null) {
                 logger.info("Attempting cookie login");
-                this.br.setCookies(this.getHost(), cookies);
+                br.setCookies(cookies);
                 if (!force) {
                     logger.info("Trust cookies without login");
                     return false;
@@ -405,7 +404,7 @@ public class OkRu extends PluginForHost {
                 if (isLoggedin(br)) {
                     logger.info("Cookie login successful");
                     /* Refresh cookie timestamp */
-                    account.saveCookies(this.br.getCookies(this.getHost()), "");
+                    account.saveCookies(br.getCookies(br.getHost()), "");
                     return true;
                 } else {
                     logger.info("Cookie login failed");
@@ -417,7 +416,7 @@ public class OkRu extends PluginForHost {
             br.getPage("https://" + this.getHost());
             final Form loginform = br.getFormbyActionRegex(".*AnonymLogin.*");
             if (loginform == null) {
-                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Failed to find loginform");
             }
             loginform.put("st.email", Encoding.urlEncode(account.getUser()));
             loginform.put("st.password", Encoding.urlEncode(account.getPass()));
@@ -428,7 +427,7 @@ public class OkRu extends PluginForHost {
             if (!isLoggedin(br)) {
                 throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
             }
-            account.saveCookies(this.br.getCookies(this.getHost()), "");
+            account.saveCookies(br.getCookies(br.getHost()), "");
             return true;
         }
     }
@@ -443,8 +442,8 @@ public class OkRu extends PluginForHost {
 
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
-        final AccountInfo ai = new AccountInfo();
         login(account, true);
+        final AccountInfo ai = new AccountInfo();
         ai.setUnlimitedTraffic();
         account.setType(AccountType.FREE);
         return ai;
@@ -457,7 +456,7 @@ public class OkRu extends PluginForHost {
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
+        return Integer.MAX_VALUE;
     }
 
     @Override
@@ -467,7 +466,7 @@ public class OkRu extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return Integer.MAX_VALUE;
     }
 
     private String getUserPreferredqualityStr(DownloadLink link) {

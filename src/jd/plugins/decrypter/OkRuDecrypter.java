@@ -25,6 +25,7 @@ import org.jdownloader.scripting.JavaScriptEngineFactory;
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.controlling.ProgressController;
+import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
 import jd.plugins.Account;
 import jd.plugins.CryptedLink;
@@ -45,8 +46,8 @@ public class OkRuDecrypter extends PluginForDecrypt {
         super(wrapper);
     }
 
-    private static final String TYPE_CHANNEL  = "https?://[^/]+/video/c(\\d+)";
-    private static final String TYPE_PLAYLIST = "https?://[^/]+/profile/(\\d+)/video/(c\\d+)";
+    private static final String TYPE_CHANNEL  = "(?i)https?://[^/]+/video/c(\\d+)";
+    private static final String TYPE_PLAYLIST = "(?i)https?://[^/]+/profile/(\\d+)/video/(c\\d+)";
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
@@ -66,7 +67,9 @@ public class OkRuDecrypter extends PluginForDecrypt {
             final ArrayList<String> dupes = new ArrayList<String>();
             final String channelID = new Regex(param.getCryptedUrl(), TYPE_CHANNEL).getMatch(0);
             String fpName = br.getRegex("class=\"album-info_name textWrap\">([^<>\"]+)").getMatch(0);
-            if (StringUtils.isEmpty(fpName)) {
+            if (fpName != null) {
+                fpName = Encoding.htmlDecode(fpName).trim();
+            } else {
                 /* Fallback */
                 fpName = channelID;
             }
@@ -108,7 +111,7 @@ public class OkRuDecrypter extends PluginForDecrypt {
                     /* Try to find a meaningful title right away */
                     final String title = br.getRegex("/video/" + videoID + "[^\"]+\" title=\"([^<>\"]+)\"").getMatch(0);
                     if (title != null) {
-                        dl.setName(title + ".mp4");
+                        dl.setName(Encoding.htmlDecode(title).trim() + ".mp4");
                     } else {
                         dl.setName(videoID + ".mp4");
                     }
