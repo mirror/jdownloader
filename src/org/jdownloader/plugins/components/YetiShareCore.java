@@ -473,13 +473,6 @@ public abstract class YetiShareCore extends antiDDoSForHost {
                     } else if (this.isLoggedin(this.br, account)) {
                         /* We are logged in and direct downloads is not possible. */
                         break;
-                    } else if (hasGoneThroughVerifiedLoginOnce) {
-                        /**
-                         * Only try once! </br>
-                         * We HAVE to be logged in at this stage!
-                         */
-                        this.loggedInOrException(this.br, account);
-                        break;
                     } else {
                         /*
                          * Some websites only allow 1 session per user. If a user then logs in again via browser while JD is logged in, we
@@ -493,6 +486,15 @@ public abstract class YetiShareCore extends antiDDoSForHost {
                         continue;
                     }
                 } while (attemptNumber <= 1);
+                if (hasGoneThroughVerifiedLoginOnce) {
+                    /**
+                     * Only try once! </br>
+                     * We HAVE to be logged in at this stage!
+                     */
+                    this.loggedInOrException(this.br, account);
+                    /* This should never happen. */
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
                 /* Offline check is very unsafe which is why we need to check for other errors first! */
                 this.checkErrors(br, link, account);
                 /* Offline errorhandling */
