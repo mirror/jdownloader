@@ -750,7 +750,6 @@ public abstract class HighWayCore extends UseNet {
                     // final String unlimited = (String) hoster_map.get("unlimited");
                     if (((Number) hoster_map.get("active")).intValue() != 1) {
                         logger.info("Skipping serverside inactive domain: " + domain);
-                        ;
                         continue;
                     }
                     if (supportedHosts.add(realDomain)) {

@@ -279,10 +279,7 @@ public class AllDebridCom extends PluginForHost {
                  */
                 final String type = (String) entry.get("type");
                 final Boolean status = (Boolean) entry.get("status"); // optional field
-                if (Boolean.FALSE.equals(status)) {
-                    logger.info("Skipping host because it is not working according to website: " + host_without_tld);
-                    continue;
-                } else if (account.getType() == AccountType.FREE && !"free".equalsIgnoreCase(type)) {
+                if (account.getType() == AccountType.FREE && !"free".equalsIgnoreCase(type)) {
                     logger.info("Skipping host because it cannot be used with free accounts: " + host_without_tld);
                     continue;
                 }
@@ -294,7 +291,7 @@ public class AllDebridCom extends PluginForHost {
                 // final String quotaType = (String) entries.get("quotaType");
                 // final long quotaLeft = JavaScriptEngineFactory.toLong(entries.get("quota"), -1);
                 /* Skip currently disabled hosts --> 2020-03-26: Do not skip any hosts anymore, display all in JD RE: admin */
-                if (Boolean.FALSE.equals(entry.get("status"))) {
+                if (Boolean.FALSE.equals(status)) {
                     /* Log hosts which look to be non working according to API. */
                     logger.info("Host which might currently be broken: " + host_without_tld);
                     // continue;
