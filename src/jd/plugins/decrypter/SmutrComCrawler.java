@@ -85,6 +85,8 @@ public class SmutrComCrawler extends PornEmbedParser {
         final String offlineTrait = "/404.php";
         if (br.getHttpConnection().getResponseCode() == 404) {
             return true;
+        } else if (br.containsHTML(">\\s*This video has been removed")) {
+            return true;
         } else if (br.getURL().contains(offlineTrait) || br.getRedirectLocation() != null && br.getRedirectLocation().contains(offlineTrait)) {
             return true;
         } else {

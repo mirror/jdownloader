@@ -278,7 +278,11 @@ public class AllDebridCom extends PluginForHost {
                  * JD also does not accept them but we're doing this check nevertheless.
                  */
                 final String type = (String) entry.get("type");
-                if (account.getType() == AccountType.FREE && !"free".equalsIgnoreCase(type)) {
+                final Boolean status = (Boolean) entry.get("status"); // optional field
+                if (Boolean.FALSE.equals(status)) {
+                    logger.info("Skipping host because it is not working according to website: " + host_without_tld);
+                    continue;
+                } else if (account.getType() == AccountType.FREE && !"free".equalsIgnoreCase(type)) {
                     logger.info("Skipping host because it cannot be used with free accounts: " + host_without_tld);
                     continue;
                 }
@@ -290,13 +294,15 @@ public class AllDebridCom extends PluginForHost {
                 // final String quotaType = (String) entries.get("quotaType");
                 // final long quotaLeft = JavaScriptEngineFactory.toLong(entries.get("quota"), -1);
                 /* Skip currently disabled hosts --> 2020-03-26: Do not skip any hosts anymore, display all in JD RE: admin */
-                // if (Boolean.FALSE.equals(entry.get("status"))) {
-                // continue;
-                // }
+                if (Boolean.FALSE.equals(entry.get("status"))) {
+                    /* Log hosts which look to be non working according to API. */
+                    logger.info("Host which might currently be broken: " + host_without_tld);
+                    // continue;
+                }
                 /* Add all domains of host */
                 final Object domainsO = entry.get("domains");
                 if (domainsO == null && StringUtils.isEmpty(host_without_tld)) {
-                    logger.info("WTF: " + host_without_tld);
+                    logger.info("WTF, unexpected format of field 'domains': " + host_without_tld);
                     continue;
                 }
                 if (domainsO != null) {
@@ -311,6 +317,8 @@ public class AllDebridCom extends PluginForHost {
                 }
             } catch (final Throwable e) {
                 /* Skip broken/unexpected json objects */
+                logger.log(e);
+                logger.warning("Skipped item due to unexpected json structure");
             }
         }
         accountInfo.setMultiHostSupport(this, supportedHosts);

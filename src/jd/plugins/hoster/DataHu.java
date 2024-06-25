@@ -19,14 +19,16 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Locale;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import org.appwork.storage.JSonMapperException;
 import org.appwork.storage.TypeRef;
-import org.appwork.storage.simplejson.JSonUtils;
 import org.appwork.utils.Exceptions;
 import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 import org.jdownloader.plugins.components.antiDDoSForHost;
 
@@ -70,9 +72,8 @@ public class DataHu extends antiDDoSForHost {
         return "https://" + getHost() + "/adatvedelem.php";
     }
 
-    public void correctDownloadLink(DownloadLink link) {
-        /* Prefer https */
-        link.setPluginPatternMatcher(link.getPluginPatternMatcher().replace("http://", "https://").replace(".html", ""));
+    private String getContentURL(final DownloadLink link) {
+        return link.getPluginPatternMatcher().replaceFirst("(?i)http://", "https://").replace(".html", "");
     }
 
     private static final String API_BASE             = "https://data.hu/api.php";
@@ -143,13 +144,14 @@ public class DataHu extends antiDDoSForHost {
                 }
                 sb.delete(0, sb.capacity());
                 for (final DownloadLink link : links) {
-                    sb.append(link.getPluginPatternMatcher());
+                    sb.append(this.getContentURL(link));
                     sb.append("%2C");
                 }
-                final Map<String, Object> entries = (Map<String, Object>) this.getAPISafe(API_BASE + "?act=check_download_links&links=" + sb.toString(), urls[0], null);
+                final Map<String, Object> entries = (Map<String, Object>) this.getAPISafe(API_BASE + "?act=check_download_links&links=" + sb.toString(), links.get(0), null);
                 final Map<String, Object> link_info = (Map<String, Object>) entries.get("link_info");
                 for (final DownloadLink link : links) {
-                    final Map<String, Object> info = (Map<String, Object>) link_info.get(link.getPluginPatternMatcher());
+                    final String contenturl = this.getContentURL(link);
+                    final Map<String, Object> info = (Map<String, Object>) link_info.get(contenturl);
                     if (info == null) {
                         /* This should never happen! */
                         link.setAvailable(false);
@@ -164,8 +166,8 @@ public class DataHu extends antiDDoSForHost {
                     if (!StringUtils.isEmpty(filename)) {
                         link.setFinalFileName(filename);
                         /* Correct urls so when users copy them they can actually use them. */
-                        if (!link.getPluginPatternMatcher().contains(filename)) {
-                            link.setContentUrl("https://" + this.getHost() + "/get/" + this.getFID(link) + "/" + Encoding.urlEncode(filename));
+                        if (!contenturl.contains(filename)) {
+                            link.setContentUrl("https://" + getHost() + "/get/" + getFID(link) + "/" + URLEncode.encodeURIComponent(filename));
                         }
                     }
                     if (!StringUtils.isEmpty(filesize)) {
@@ -238,7 +240,7 @@ public class DataHu extends antiDDoSForHost {
             if (isPremiumOnly(link)) {
                 throw new AccountRequiredException();
             }
-            getPage(link.getPluginPatternMatcher());
+            getPage(this.getContentURL(link));
             handleErrorsWebsite(br);
             if (br.containsHTML("class='slow_dl_error_text'")) {
                 link.setProperty(PROPERTY_PREMIUMONLY, true);
@@ -260,7 +262,7 @@ public class DataHu extends antiDDoSForHost {
                 dllink = (String) entries.get("redirect");
             } else {
                 /* No captcha required */
-                dllink = br.getRegex("(\"|')(https?://ddl\\d+\\." + org.appwork.utils.Regex.escape(this.getHost()) + "/get/\\d+/\\d+/.*?)\\1").getMatch(1);
+                dllink = br.getRegex("(\"|')(https?://ddl\\d+\\." + Pattern.quote(this.getHost()) + "/get/\\d+/\\d+/.*?)\\1").getMatch(1);
             }
             if (StringUtils.isEmpty(dllink)) {
                 final String message = PluginJSonUtils.getJsonValue(this.br, "message");
@@ -296,8 +298,13 @@ public class DataHu extends antiDDoSForHost {
         final int maxchunks = -2;
         if (!attemptStoredDownloadurlDownload(link, directlinkproperty, resume, maxchunks)) {
             requestFileInformation(link);
-            getAPISafe(API_BASE + "?act=get_direct_link&link=" + PluginJSonUtils.escape(link.getPluginPatternMatcher()) + "&username=" + JSonUtils.escape(account.getUser()) + "&password=" + JSonUtils.escape(account.getPass()), link, account);
-            final String dllink = PluginJSonUtils.getJsonValue(br, "direct_link");
+            final UrlQuery query = new UrlQuery();
+            query.append("act", "get_direct_link", true);
+            query.append("link", this.getContentURL(link), true);
+            query.append("username", account.getUser(), true);
+            query.append("password", account.getPass(), true);
+            final Map<String, Object> resp = (Map<String, Object>) getAPISafe(API_BASE + "?" + query.toString(), link, account);
+            final String dllink = resp.get("direct_link").toString();
             if (StringUtils.isEmpty(dllink)) {
                 /* Should never happen */
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
@@ -365,7 +372,11 @@ public class DataHu extends antiDDoSForHost {
 
     public Object login(final Account account) throws Exception {
         this.setBrowserExclusive();
-        return getAPISafe(API_BASE + "?act=check_login_data&username=" + JSonUtils.escape(account.getUser()) + "&password=" + JSonUtils.escape(account.getPass()), null, account);
+        final UrlQuery query = new UrlQuery();
+        query.append("act", "check_login_data", true);
+        query.append("username", account.getUser(), true);
+        query.append("password", account.getPass(), true);
+        return getAPISafe(API_BASE + "?" + query.toString(), null, account);
     }
 
     private Object getAPISafe(final String accesslink, final DownloadLink link, final Account account) throws Exception {

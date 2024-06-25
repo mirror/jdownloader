@@ -37,7 +37,6 @@ public class DataHuFolder extends PluginForDecrypt {
     }
 
     public ArrayList<DownloadLink> decryptIt(CryptedLink param, ProgressController progress) throws Exception {
-        ArrayList<DownloadLink> decryptedLinks = new ArrayList<DownloadLink>();
         br.setCustomCharset("utf-8");
         br.setFollowRedirects(true);
         br.setCookie("https://" + this.getHost(), "lang", "en");
@@ -59,7 +58,7 @@ public class DataHuFolder extends PluginForDecrypt {
         // throw new DecrypterException(DecrypterException.PASSWORD);
         // }
         // }
-        final String currentFolderID = new Regex(param.getCryptedUrl(), "data\\.hu/(dir/.+)").getMatch(0);
+        final String currentFolderID = new Regex(param.getCryptedUrl(), "(?i)data\\.hu/(dir/.+)").getMatch(0);
         String nextpage = null;
         String folderName = br.getRegex("id=\"main_big_content\">\\s*<h1>([^<]+)</h1>").getMatch(0);
         FilePackage fp = null;
@@ -68,6 +67,7 @@ public class DataHuFolder extends PluginForDecrypt {
             fp = FilePackage.getInstance();
             fp.setName(folderName);
         }
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         int page = 1;
         do {
             final String[] links = br.getRegex("(https?://[^/]+/get/\\d+/[^<>\"\\']+)").getColumn(0);
@@ -81,7 +81,7 @@ public class DataHuFolder extends PluginForDecrypt {
                     if (fp != null) {
                         file._setFilePackage(fp);
                     }
-                    decryptedLinks.add(file);
+                    ret.add(file);
                     distribute(file);
                 }
             }
@@ -89,12 +89,12 @@ public class DataHuFolder extends PluginForDecrypt {
                 for (final String folderURL : folders) {
                     if (!folderURL.contains(currentFolderID)) {
                         final DownloadLink subfolder = createDownloadlink(folderURL);
-                        decryptedLinks.add(subfolder);
+                        ret.add(subfolder);
                         distribute(subfolder);
                     }
                 }
             }
-            logger.info("Crawled page " + page + " | Found items so far: " + decryptedLinks.size());
+            logger.info("Crawled page " + page + " | Found items so far: " + ret.size());
             page++;
             nextpage = br.getRegex("class=\"next_page_link\" href=\"(\\?page=" + page + ")\"").getMatch(0);
             if (nextpage == null) {
@@ -105,12 +105,13 @@ public class DataHuFolder extends PluginForDecrypt {
             /* Small workaround: Decode json answer */
             br.getRequest().setHtmlCode(PluginJSonUtils.unescape(br.toString()));
         } while (!this.isAbort());
-        if (decryptedLinks.isEmpty()) {
+        if (ret.isEmpty()) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        return decryptedLinks;
+        return ret;
     }
 
+    @Override
     public boolean hasCaptcha(CryptedLink link, jd.plugins.Account acc) {
         return false;
     }

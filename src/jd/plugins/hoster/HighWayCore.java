@@ -748,23 +748,26 @@ public abstract class HighWayCore extends UseNet {
                     }
                     final String realDomain = realDomainList.get(0);
                     // final String unlimited = (String) hoster_map.get("unlimited");
-                    if (((Number) hoster_map.get("active")).intValue() == 1) {
-                        if (supportedHosts.add(realDomain)) {
-                            hostTrafficCalculationMap.put(realDomain, ((Number) hoster_map.get("berechnung")).intValue());
-                            hostMaxchunksMap.put(realDomain, correctChunks(((Number) hoster_map.get("chunks")).intValue()));
-                            hostMaxdlsMap.put(realDomain, ((Number) hoster_map.get("downloads")).intValue());
-                            if (((Number) hoster_map.get("resume")).intValue() == 1) {
-                                hostResumeMap.put(realDomain, true);
-                            } else {
-                                hostResumeMap.put(realDomain, false);
-                            }
+                    if (((Number) hoster_map.get("active")).intValue() != 1) {
+                        logger.info("Skipping serverside inactive domain: " + domain);
+                        ;
+                        continue;
+                    }
+                    if (supportedHosts.add(realDomain)) {
+                        hostTrafficCalculationMap.put(realDomain, ((Number) hoster_map.get("berechnung")).intValue());
+                        hostMaxchunksMap.put(realDomain, correctChunks(((Number) hoster_map.get("chunks")).intValue()));
+                        hostMaxdlsMap.put(realDomain, ((Number) hoster_map.get("downloads")).intValue());
+                        if (((Number) hoster_map.get("resume")).intValue() == 1) {
+                            hostResumeMap.put(realDomain, true);
                         } else {
-                            // multiple entries, eg 1fichier(resume=true) and and megadl.fr(resume=false) but with different properties!?
-                            if (((Number) hoster_map.get("resume")).intValue() == 1) {
-                                hostResumeMap.put(realDomain, true);
-                            } else {
-                                // do not disable resume
-                            }
+                            hostResumeMap.put(realDomain, false);
+                        }
+                    } else {
+                        // multiple entries, eg 1fichier(resume=true) and and megadl.fr(resume=false) but with different properties!?
+                        if (((Number) hoster_map.get("resume")).intValue() == 1) {
+                            hostResumeMap.put(realDomain, true);
+                        } else {
+                            // do not disable resume
                         }
                     }
                 }

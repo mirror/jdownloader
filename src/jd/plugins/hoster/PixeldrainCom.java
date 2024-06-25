@@ -26,7 +26,6 @@ import org.appwork.uio.ConfirmDialogInterface;
 import org.appwork.uio.UIOManager;
 import org.appwork.utils.Application;
 import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.os.CrossSystem;
 import org.appwork.utils.parser.UrlQuery;
 import org.appwork.utils.swing.dialog.ConfirmDialog;
@@ -36,6 +35,8 @@ import org.jdownloader.plugins.components.config.PixeldrainConfig.ActionOnCaptch
 import org.jdownloader.plugins.components.config.PixeldrainConfig.ActionOnSpeedLimitReached;
 import org.jdownloader.plugins.config.PluginJsonConfig;
 import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.settings.GraphicalUserInterfaceSettings.SIZEUNIT;
+import org.jdownloader.settings.staticreferences.CFG_GUI;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -475,10 +476,11 @@ public class PixeldrainCom extends PluginForHost {
             ai.setTrafficLeft(monthlyTrafficMax - monthlyTrafficUsed);
         }
         /* Build text string which will be displayed to user in GUI. */
+        final SIZEUNIT maxSizeUnit = (SIZEUNIT) CFG_GUI.MAX_SIZE_UNIT.getValue();
         String accountStatusText = subscription.get("name").toString();
         final double euroBalance = ((Number) user.get("balance_micro_eur")).doubleValue();
         accountStatusText += String.format(" | %2.2f€", euroBalance / 1000000);
-        accountStatusText += " | Monthly used: " + SizeFormatter.formatBytes(monthlyTrafficUsed);
+        accountStatusText += " | Monthly used: " + SIZEUNIT.formatValue(maxSizeUnit, monthlyTrafficUsed);
         ai.setStatus(accountStatusText);
         /**
          * Global limits and limits for (anonymous) users can be checked here: https://pixeldrain.com/api/misc/rate_limits </br>

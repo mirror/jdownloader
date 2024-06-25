@@ -1541,6 +1541,8 @@ public abstract class YetiShareCore extends antiDDoSForHost {
                 throw new AccountRequiredException(errorMsgURL);
             } else if (StringUtils.containsIgnoreCase(errorMsgURL, "You have reached the maximum permitted downloads in")) {
                 ipBlockedOrAccountLimit(link, account, errorMsgURL, 3 * 60 * 60 * 1001l);
+            } else if (StringUtils.containsIgnoreCase(errorMsgURL, "You have reached the maximum permitted download filesize")) {
+                ipBlockedOrAccountLimit(link, account, errorMsgURL, 3 * 60 * 60 * 1001l);
             } else if (StringUtils.containsIgnoreCase(errorMsgURL, "File not found") || StringUtils.containsIgnoreCase(errorMsgURL, "File has been removed") || StringUtils.containsIgnoreCase(errorMsgURL, "Dosya kaldırıldı")) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else if (errorMsgURL.matches("(?i).*(You must wait |Você deve esperar).*")) {
@@ -1594,11 +1596,11 @@ public abstract class YetiShareCore extends antiDDoSForHost {
             }
             logger.info("Found unidentified errormessage inside URL: " + errorMsgURL);
             logger.info("checkErrorsURL did not do anything --> Throwing Exception ERROR_TEMPORARILY_UNAVAILABLE because of errorMsgURL: " + errorMsgURL);
-            final String errormessageInGUI = "Unknown error without errorkey: " + errorMsgURL;
+            final long waitMillis = 5 * 60 * 1000l;
             if (link == null) {
-                throw new AccountUnavailableException(errormessageInGUI, 5 * 60 * 1000);
+                throw new AccountUnavailableException(errorMsgURL, waitMillis);
             } else {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errormessageInGUI);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errorMsgURL, waitMillis);
             }
         }
         /* Check errors by URL structure */

@@ -122,6 +122,11 @@ public class SankakucomplexCom extends PluginForHost {
         return true;
     }
 
+    public int getMaxChunks(final DownloadLink link, final Account account) {
+        /* 2024-06-25: Set to 1 based on logs. */
+        return 1;
+    }
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         final Account account = AccountController.getInstance().getValidAccount(this.getHost());
@@ -333,12 +338,12 @@ public class SankakucomplexCom extends PluginForHost {
                 }
             }
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, isResumeable(link, account), 0);
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, isResumeable(link, account), 1);
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             br.followConnection(true);
             /* Force generation of new directurl next time */
             link.removeProperty(PROPERTY_DIRECTURL);
-            final long timestampLastTimeFileMaybeBroken = link.getLongProperty(TIMESTAMP_LAST_TIME_FILE_MAYBE_BROKEN, 0);
+            final long timestampLastTimeFileMaybeBroken = link.getLongProperty(TIMESTAMP_LAST_TIME_FILE_MAYBE_BROKEN, this.getMaxChunks(link, account));
             if (System.currentTimeMillis() - timestampLastTimeFileMaybeBroken <= 5 * 60 * 1000l) {
                 /* Wait longer time before retry as we've just recently tried and it failed again. */
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Broken file", 60 * 60 * 1000l);
