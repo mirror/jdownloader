@@ -409,69 +409,58 @@ public abstract class YetiShareCore extends antiDDoSForHost {
         br.setFollowRedirects(true);
         prepBrowserWebsite(this.br);
         final String[] fileInfo = getFileInfoArray();
-        if (supports_availablecheck_over_info_page(link)) {
-            getPage(getInfoPageURL(link));
-            /* Offline check is unsafe which is why we need to check for other errors first! */
-            try {
+        try {
+            if (supports_availablecheck_over_info_page(link) && !isDownload) {
+                getPage(getInfoPageURL(link));
+                /* Offline check is unsafe which is why we need to check for other errors first! */
                 this.checkErrors(br, link, account);
-            } catch (final PluginException e) {
-                if (isDownload || e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
-                    /* File offline or error during download -> Always throw exception. */
-                    throw e;
-                } else {
-                    /* Other error (during linkcheck - e.g. limit reached) -> Return online status - file should be online. */
-                    logger.log(e);
-                    return AvailableStatus.TRUE;
+                /* Offline errorhandling */
+                if (isOfflineWebsiteInfoPage(br, link)) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                parseAndSetYetiShareVersion(this.br, account);
+                scanInfo(link, fileInfo);
+                if (!StringUtils.isEmpty(fileInfo[0])) {
+                    final String filename = Encoding.htmlDecode(fileInfo[0]).trim();
+                    link.setName(filename);
+                }
+                if (fileInfo[1] != null) {
+                    link.setDownloadSize(SizeFormatter.getSize(Encoding.htmlDecode(fileInfo[1].replace(",", ""))));
+                }
+                /**
+                 * Additional offline check. Useful for websites which still provide filename & filesize for offline files. </br>
+                 * This can only happen on special file information page! </br>
+                 * Some websites enforce a specific language so there is no other way but to add traits for multiple languages.
+                 */
+                if (br.containsHTML("(?i)>\\s*Status\\s*:\\s*</span>\\s*<span>\\s*(Deleted|Usunięto|Silindi|Çöp)\\s*</span>")) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+            } else {
+                getPage(getContentURL(link));
+                /* Offline check is very unsafe which is why we need to check for other errors first! */
+                this.checkErrors(br, link, account);
+                /* Offline errorhandling */
+                if (isOfflineWebsite(this.br, link)) {
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+                parseAndSetYetiShareVersion(this.br, account);
+                scanInfo(link, fileInfo);
+                if (!StringUtils.isEmpty(fileInfo[0])) {
+                    final String filename = Encoding.htmlDecode(fileInfo[0]).trim();
+                    link.setName(filename);
+                }
+                if (fileInfo[1] != null) {
+                    link.setDownloadSize(SizeFormatter.getSize(Encoding.htmlDecode(fileInfo[1].replace(",", ""))));
                 }
             }
-            /* Offline errorhandling */
-            if (isOfflineWebsiteInfoPage(br, link)) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            parseAndSetYetiShareVersion(this.br, account);
-            scanInfo(link, fileInfo);
-            if (!StringUtils.isEmpty(fileInfo[0])) {
-                final String filename = Encoding.htmlDecode(fileInfo[0]).trim();
-                link.setName(filename);
-            }
-            if (fileInfo[1] != null) {
-                link.setDownloadSize(SizeFormatter.getSize(Encoding.htmlDecode(fileInfo[1].replace(",", ""))));
-            }
-            /**
-             * Additional offline check. Useful for websites which still provide filename & filesize for offline files. </br>
-             * This can only happen on special file information page! </br>
-             * Some websites enforce a specific language so there is no other way but to add traits for multiple languages.
-             */
-            if (br.containsHTML("(?i)>\\s*Status\\s*:\\s*</span>\\s*<span>\\s*(Deleted|Usunięto|Silindi|Çöp)\\s*</span>")) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-        } else {
-            getPage(getContentURL(link));
-            /* Offline check is very unsafe which is why we need to check for other errors first! */
-            try {
-                this.checkErrors(br, link, account);
-            } catch (final PluginException e) {
-                if (isDownload || e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
-                    /* File offline or error during download -> Always throw exception. */
-                    throw e;
-                } else {
-                    logger.log(e);
-                    /* Other error (during linkcheck - e.g. limit reached) -> Return online status - file should be online. */
-                    return AvailableStatus.TRUE;
-                }
-            }
-            /* Offline errorhandling */
-            if (isOfflineWebsite(this.br, link)) {
-                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-            }
-            parseAndSetYetiShareVersion(this.br, account);
-            scanInfo(link, fileInfo);
-            if (!StringUtils.isEmpty(fileInfo[0])) {
-                final String filename = Encoding.htmlDecode(fileInfo[0]).trim();
-                link.setName(filename);
-            }
-            if (fileInfo[1] != null) {
-                link.setDownloadSize(SizeFormatter.getSize(Encoding.htmlDecode(fileInfo[1].replace(",", ""))));
+        } catch (final PluginException e) {
+            if (isDownload || e.getLinkStatus() == LinkStatus.ERROR_FILE_NOT_FOUND) {
+                /* File offline or error during download -> Always throw exception. */
+                throw e;
+            } else {
+                logger.log(e);
+                /* Other error (during linkcheck - e.g. limit reached) -> Return online status - file should be online. */
+                return AvailableStatus.TRUE;
             }
         }
         if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && !StringUtils.startsWithCaseInsensitive(link.getName(), "[NewYetiShare]") && !StringUtils.startsWithCaseInsensitive(link.getName(), "[OldYetiShare]")) {
@@ -635,7 +624,7 @@ public abstract class YetiShareCore extends antiDDoSForHost {
             /* Access downloadurl */
             br.setFollowRedirects(false);
             prepBrowserWebsite(br);
-            getPage(this.getContentURL(link));
+            this.requestFileInformationWebsite(link, account, true);
             final boolean resume = this.isResumeable(link, account);
             final int maxchunks = this.getMaxChunks(account);
             /*
@@ -682,12 +671,12 @@ public abstract class YetiShareCore extends antiDDoSForHost {
                         hasGoneThroughVerifiedLoginOnce = loginWebsite(account, true);
                         br.setFollowRedirects(false);
                         getPage(this.getContentURL(link));
+                        parseAndSetYetiShareVersion(this.br, account);
                         continue;
                     }
                 }
             } while (true);
             if (this.dl == null) {
-                parseAndSetYetiShareVersion(this.br, account);
                 /* Check for password protected */
                 this.handlePasswordProtection(link, account, this.br);
                 /* Now handle pre-download-waittime, captcha and other pre-download steps. */
@@ -732,14 +721,13 @@ public abstract class YetiShareCore extends antiDDoSForHost {
                             boolean passwordSuccess = false;
                             String passCode = link.getDownloadPassword();
                             int counter = 0;
-                            boolean isPasswordRequired = false;
-                            do {
+                            pwhandling: do {
                                 requestFileDetailsNewYetiShare(br, fileID);
                                 /* Grab Form on first loop, then re-use it */
                                 final Form pwForm = br.getFormbyProperty("id", "folderPasswordForm");
                                 if (pwForm == null) {
                                     /* File is not password protected or correct password has already been entered */
-                                    break;
+                                    break pwhandling;
                                 }
                                 link.setPasswordProtected(true);
                                 pwForm.setMethod(MethodType.POST);
@@ -755,16 +743,17 @@ public abstract class YetiShareCore extends antiDDoSForHost {
                                     passwordSuccess = true;
                                     link.setDownloadPassword(passCode);
                                     requestFileDetailsNewYetiShare(br, fileID);
-                                    break;
+                                    break pwhandling;
                                 } else {
                                     /* Try again */
                                     logger.info("Password failure: passCode= " + passCode);
                                     link.setDownloadPassword(null);
                                     passCode = null;
                                     counter++;
+                                    continue pwhandling;
                                 }
                             } while (!this.isAbort() && !passwordSuccess && counter < 3);
-                            if (isPasswordRequired && !passwordSuccess) {
+                            if (link.isPasswordProtected() && !passwordSuccess) {
                                 throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
                             }
                             /* Check for rare case: Final downloadurl inside html provided by via json (e.g. mediafile.cc). */
@@ -1014,38 +1003,37 @@ public abstract class YetiShareCore extends antiDDoSForHost {
     protected void handlePasswordProtection(final DownloadLink link, final Account account, final Browser br) throws Exception {
         final boolean isFollowingRedirects = br.isFollowingRedirects();
         try {
-            if (getPasswordProtectedForm(br) != null) {
-                /* Old layout additionally redirects to "/file_password.html?file=<fuid>" */
-                link.setPasswordProtected(true);
-                String passCode = link.getDownloadPassword();
-                if (passCode == null) {
-                    passCode = getUserInput("Password?", link);
-                }
-                final Form pwform = this.getPasswordProtectedForm(br);
-                pwform.put("filePassword", Encoding.urlEncode(passCode));
-                br.setFollowRedirects(false);
-                this.submitForm(br, pwform);
-                if (this.isDownloadlink(br.getRedirectLocation())) {
-                    /*
-                     * We can start the download right away -> Entered password is correct and we're probably logged in into a premium
-                     * account.
-                     */
-                    link.setDownloadPassword(passCode);
-                    dl = jd.plugins.BrowserAdapter.openDownload(br, link, br.getRedirectLocation(), this.isResumeable(link, account), this.getMaxChunks(account));
-                } else {
-                    /* No download -> Either wrong password or correct password & free download */
-                    br.followRedirect(true);
-                    if (getPasswordProtectedForm(br) != null) {
-                        /* Assume that entered password is wrong! */
-                        link.setDownloadPassword(null);
-                        throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
-                    } else {
-                        /* Correct password --> Store it */
-                        link.setDownloadPassword(passCode);
-                    }
-                }
-            } else {
+            final Form pwform = this.getPasswordProtectedForm(br);
+            if (pwform == null) {
                 link.setPasswordProtected(false);
+                return;
+            }
+            /* Old layout additionally redirects to "/file_password.html?file=<fuid>" */
+            link.setPasswordProtected(true);
+            String passCode = link.getDownloadPassword();
+            if (passCode == null) {
+                passCode = getUserInput("Password?", link);
+            }
+            pwform.put("filePassword", Encoding.urlEncode(passCode));
+            br.setFollowRedirects(false);
+            this.submitForm(br, pwform);
+            if (this.isDownloadlink(br.getRedirectLocation())) {
+                /*
+                 * We can start the download right away -> Entered password is correct and we're probably logged in into a premium account.
+                 */
+                link.setDownloadPassword(passCode);
+                dl = jd.plugins.BrowserAdapter.openDownload(br, link, br.getRedirectLocation(), this.isResumeable(link, account), this.getMaxChunks(account));
+            } else {
+                /* No download -> Either wrong password or correct password & free download */
+                br.followRedirect(true);
+                if (getPasswordProtectedForm(br) != null) {
+                    /* Assume that entered password is wrong! */
+                    link.setDownloadPassword(null);
+                    throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
+                } else {
+                    /* Correct password was entered --> Store it */
+                    link.setDownloadPassword(passCode);
+                }
             }
         } finally {
             /* Restore previous value */
@@ -1208,7 +1196,9 @@ public abstract class YetiShareCore extends antiDDoSForHost {
     /** Tries to get filename from URL and if this fails, will return <fuid> filename. */
     public String getFallbackFilename(final DownloadLink dl) {
         String fallback_filename = this.getFilenameFromURL(dl);
-        if (fallback_filename == null) {
+        if (fallback_filename != null) {
+            fallback_filename = Encoding.htmlDecode(fallback_filename);
+        } else {
             /* Final fallback */
             fallback_filename = this.getFUID(dl);
         }

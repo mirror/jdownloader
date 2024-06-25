@@ -309,7 +309,7 @@ public class VscoCo extends PluginForHost {
             br.getHeaders().put("Content-Type", "application/json");
             br.getHeaders().put("Origin", "https://" + getHost());
             br.postPageRaw("/grpc/user/login", "{\"credential\":{\"vscoCredential\":{\"identity\":\"" + PluginJSonUtils.escape(account.getUser()) + "\",\"" + PluginJSonUtils.escape(account.getPass()) + "\":\"4jd2userztrtzkzonly\"}},\"provider\":1}");
-            final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+            // final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
             if (!isLoggedin(br)) {
                 throw new AccountInvalidException();
             }
