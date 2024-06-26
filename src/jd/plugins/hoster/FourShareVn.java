@@ -33,6 +33,7 @@ import jd.parser.html.InputField;
 import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
+import jd.plugins.AccountInvalidException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -45,6 +46,16 @@ public class FourShareVn extends PluginForHost {
     public FourShareVn(PluginWrapper wrapper) {
         super(wrapper);
         this.enablePremium("https://up.4share.vn/?act=gold");
+    }
+
+    @Override
+    public Browser createNewBrowserInstance() {
+        final Browser br = super.createNewBrowserInstance();
+        br.setFollowRedirects(true);
+        /* 2024-06-26: Website is very slow */
+        br.setReadTimeout(2 * 60 * 1000);
+        br.setConnectTimeout(2 * 60 * 1000);
+        return br;
     }
 
     @SuppressWarnings("deprecation")
@@ -77,9 +88,7 @@ public class FourShareVn extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         correctDownloadLink(link);
-        prepBR(br);
         this.setBrowserExclusive();
-        br.setFollowRedirects(true);
         getPage(link.getPluginPatternMatcher());
         String filename = br.getRegex("<h1[^>]*>\\s*<strong>\\s*([^<>\"]+)\\s*</strong>").getMatch(0);
         if (filename == null) {
@@ -99,13 +108,19 @@ public class FourShareVn extends PluginForHost {
         }
         if (filename != null) {
             link.setName(Encoding.htmlDecode(filename).trim());
+        } else {
+            logger.warning("Failed to find filename");
         }
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
+        } else {
+            logger.warning("Failed to find filesize");
         }
         final String md5 = br.getRegex("(?i)MD5\\s*:?\\s*([a-f0-9]{32})").getMatch(0);
         if (md5 != null) {
             link.setMD5Hash(md5);
+        } else {
+            logger.warning("Failed to find md5hash");
         }
         /* Website may still provide names of deleted files --> First check for file info, then check for offline status. */
         if (br.getHttpConnection().getResponseCode() == 404) {
@@ -261,60 +276,54 @@ public class FourShareVn extends PluginForHost {
 
     private void login(final Account account, final boolean force) throws Exception {
         synchronized (account) {
-            boolean redirect = this.br.isFollowingRedirects();
-            try {
-                /* Load cookies */
-                this.setBrowserExclusive();
-                prepBR(br);
-                boolean refresh = true;
-                final Cookies cookies = account.loadCookies("");
-                if (cookies != null) {
-                    br.setCookies(account.getHoster(), cookies);
-                    if (!force) {
-                        refresh = false;
-                    } else {
-                        getPage("https://4share.vn/");
-                        if (!br.containsHTML("TK <b>VIP") && !br.containsHTML("Hạn sử dụng VIP: \\d{2,4}-\\d{2}-\\d{2,4}") && !br.containsHTML("Còn hạn sử dụng VIP đến: \\d{2,4}-\\d{2}-\\d{2,4}") && !br.containsHTML("Hạn dùng: \\d{2,4}-\\d{2}-\\d{2,4}")) {
-                            refresh = true;
-                        } else {
-                            refresh = false;
-                        }
-                    }
+            /* Load cookies */
+            this.setBrowserExclusive();
+            boolean refresh = true;
+            final Cookies cookies = account.loadCookies("");
+            if (cookies != null) {
+                br.setCookies(cookies);
+                if (!force) {
+                    /* Do not validate cookies */
+                    return;
                 }
-                if (refresh) {
-                    br.setFollowRedirects(true);
-                    getPage("https://4share.vn/");
-                    getPage("https://4share.vn/default/login");
-                    final CaptchaHelperHostPluginRecaptchaV2 rc2 = new CaptchaHelperHostPluginRecaptchaV2(this, br, "6Lfnb8YUAAAAAElE9DwwEWA881UX3-chISAQZApu") {
-                        @Override
-                        public org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2.TYPE getType() {
-                            return TYPE.INVISIBLE;
-                        }
-                    };
-                    br.getHeaders().put("Accept", "application/json, text/plain, */*");
-                    postPage("https://4share.vn/a_p_i/public-common/login", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&captcha=" + Encoding.urlEncode(rc2.getToken()));
-                    final String lang = System.getProperty("user.language");
-                    if (br.getCookie(br.getHost(), "currentUser", Cookies.NOTDELETEDPATTERN) == null) {
-                        throw new PluginException(LinkStatus.ERROR_PREMIUM, PluginException.VALUE_ID_PREMIUM_DISABLE);
-                    }
-                    getPage("https://4share.vn/");
-                    if (!br.containsHTML("TK <b>VIP") && !br.containsHTML("Hạn sử dụng VIP: \\d{2,4}-\\d{2}-\\d{2,4}") && !br.containsHTML("Còn hạn sử dụng VIP đến: \\d{2,4}-\\d{2}-\\d{2,4}") && !br.containsHTML("Hạn dùng: \\d{2,4}-\\d{2}-\\d{2,4}")) {
-                        if ("de".equalsIgnoreCase(lang)) {
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nUngültiger Account Typ!\r\nDas ist ein kostenloser Account.\r\nJDownloader unterstützt keine kostenlosen Accounts für diesen Hoster!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                        } else {
-                            throw new PluginException(LinkStatus.ERROR_PREMIUM, "\r\nInvalid account type!\r\nThis is a free account. JDownloader only supports premium (VIP) accounts for this host!", PluginException.VALUE_ID_PREMIUM_DISABLE);
-                        }
-                    }
-                }
-                account.saveCookies(br.getCookies(br.getHost()), "");
-            } catch (final PluginException e) {
-                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
+                getPage("https://" + getHost());
+                if (!br.containsHTML("TK <b>VIP") && !br.containsHTML("Hạn sử dụng VIP: \\d{2,4}-\\d{2}-\\d{2,4}") && !br.containsHTML("Còn hạn sử dụng VIP đến: \\d{2,4}-\\d{2}-\\d{2,4}") && !br.containsHTML("Hạn dùng: \\d{2,4}-\\d{2}-\\d{2,4}")) {
+                    logger.info("Cookie login failed");
+                    refresh = true;
                     account.clearCookies("");
+                } else {
+                    refresh = false;
                 }
-                throw e;
-            } finally {
-                this.br.setFollowRedirects(redirect);
             }
+            if (refresh) {
+                getPage("https://4share.vn/");
+                getPage("/default/login");
+                final CaptchaHelperHostPluginRecaptchaV2 rc2 = new CaptchaHelperHostPluginRecaptchaV2(this, br, "6Lfnb8YUAAAAAElE9DwwEWA881UX3-chISAQZApu") {
+                    @Override
+                    public org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2.TYPE getType() {
+                        return TYPE.INVISIBLE;
+                    }
+                };
+                br.getHeaders().put("Accept", "application/json, text/plain, */*");
+                postPage("/a_p_i/public-common/login", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&captcha=" + Encoding.urlEncode(rc2.getToken()));
+                if (br.getCookie(br.getHost(), "currentUser", Cookies.NOTDELETEDPATTERN) == null) {
+                    throw new AccountInvalidException();
+                }
+                getPage("/");
+                if (!br.containsHTML("TK <b>VIP") && !br.containsHTML("Hạn sử dụng VIP: \\d{2,4}-\\d{2}-\\d{2,4}") && !br.containsHTML("Còn hạn sử dụng VIP đến: \\d{2,4}-\\d{2}-\\d{2,4}") && !br.containsHTML("Hạn dùng: \\d{2,4}-\\d{2}-\\d{2,4}")) {
+                    throw new AccountInvalidException();
+                }
+            }
+            account.saveCookies(br.getCookies(br.getHost()), "");
+        }
+    }
+
+    private boolean isLoggedIN(final Browser br) {
+        // TODO: Also check logged in state via html, then make use of this function
+        if (br.getCookie(br.getHost(), "currentUser", Cookies.NOTDELETEDPATTERN) != null) {
+            return true;
+        } else {
+            return false;
         }
     }
 
@@ -356,12 +365,6 @@ public class FourShareVn extends PluginForHost {
             }
             break;
         }
-    }
-
-    private Browser prepBR(final Browser br) {
-        br.setReadTimeout(2 * 60 * 1000);
-        br.setConnectTimeout(2 * 60 * 1000);
-        return br;
     }
 
     private void handleErrorsGeneral() throws PluginException {

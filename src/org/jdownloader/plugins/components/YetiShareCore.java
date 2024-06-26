@@ -30,6 +30,7 @@ import java.util.Map.Entry;
 import java.util.Random;
 import java.util.regex.Pattern;
 
+import org.appwork.net.protocol.http.HTTPConstants;
 import org.appwork.storage.StorageException;
 import org.appwork.storage.TypeRef;
 import org.appwork.uio.ConfirmDialogInterface;
@@ -188,7 +189,7 @@ public abstract class YetiShareCore extends antiDDoSForHost {
     }
 
     protected String getContentURL(final DownloadLink link) {
-        /* Link cleanup, but respect users protocol choosing or forced protocol */
+        /* Link cleanup, but respect users' protocol choosing or forced protocol */
         if (link == null) {
             return null;
         }
@@ -203,7 +204,11 @@ public abstract class YetiShareCore extends antiDDoSForHost {
             final List<String> deadDomains = this.getDeadDomains();
             final String protocol = getProtocol(originalURL);
             if (deadDomains == null || (!deadDomains.contains(urlHost) && !deadDomains.contains(urlHostWithoutWww))) {
-                return protocol + url.getHost() + url.getPath();
+                /*
+                 * Current domain from URL is not known to be dead-> Do not alter it, return given URL with corrected host and corrected
+                 * 'www.'.
+                 */
+                return protocol + this.appendWWWIfRequired(urlHost) + url.getPath();
             }
             /* Correct domains if we know they're dead. */
             final String pluginHost = this.getHost();
@@ -215,8 +220,7 @@ public abstract class YetiShareCore extends antiDDoSForHost {
                 /* e.g. down.xx.com -> down.yy.com, keep subdomain(s) */
                 host = urlHost.replaceFirst("(?i)" + Pattern.quote(Browser.getHost(url, false)) + "$", pluginHost);
             }
-            final String hostCorrected = this.appendWWWIfRequired(host);
-            return protocol + hostCorrected + url.getPath();
+            return protocol + this.appendWWWIfRequired(host) + url.getPath();
         } catch (final MalformedURLException e) {
             LogController.getRebirthLogger(logger).log(e);
         }
@@ -286,16 +290,16 @@ public abstract class YetiShareCore extends antiDDoSForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return Integer.MAX_VALUE;
     }
 
     public int getMaxSimultaneousFreeAccountDownloads() {
-        return -1;
+        return Integer.MAX_VALUE;
     }
 
     @Override
     public int getMaxSimultanPremiumDownloadNum() {
-        return -1;
+        return Integer.MAX_VALUE;
     }
 
     /** Returns direct-link-property-String for current download mode based on account availability and account type. */
@@ -392,13 +396,12 @@ public abstract class YetiShareCore extends antiDDoSForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        if (this.supportsAPISingleAvailablecheck(link)) {
-            final Account account = this.findAccountWithAPICredentials();
-            if (account != null) {
-                return this.requestFileInformationAPI(this.br, link, account);
-            }
+        final Account account;
+        if (this.supportsAPISingleAvailablecheck(link) && (account = this.findAccountWithAPICredentials()) != null) {
+            return requestFileInformationAPI(this.br, link, account);
+        } else {
+            return requestFileInformationWebsite(link, null, false);
         }
-        return requestFileInformationWebsite(link, null, false);
     }
 
     public AvailableStatus requestFileInformationWebsite(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
@@ -414,7 +417,7 @@ public abstract class YetiShareCore extends antiDDoSForHost {
                 /* Offline check is unsafe which is why we need to check for other errors first! */
                 this.checkErrors(br, link, account);
                 /* Offline errorhandling */
-                if (isOfflineWebsiteInfoPage(br, link)) {
+                if (!br.getURL().contains("~i") || br.getHttpConnection().getResponseCode() == 404) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
                 parseAndSetYetiShareVersion(this.br, account);
@@ -539,7 +542,9 @@ public abstract class YetiShareCore extends antiDDoSForHost {
      */
     public String[] scanInfo(final DownloadLink link, final String[] fileInfo) {
         /* New YetiShare versions are using the same layout for "/<fuid>" and "/<fuid>~i" pages. */
-        if (this.isNewYetiShareVersion(null) || supports_availablecheck_over_info_page(link)) {
+        final String fuid = this.getFUID(link);
+        final boolean currentUrlIsFileInfoURL = br.getURL().contains(fuid + "~i");
+        if (this.isNewYetiShareVersion(null) || supports_availablecheck_over_info_page(link) || currentUrlIsFileInfoURL) {
             /*
              * 2021-11-19: YetiShare sometimes have a bug where it URL-encodes "_20" to "%20" but at this place this bug does not occur -->
              * Prefer to get filename from here.
@@ -561,7 +566,7 @@ public abstract class YetiShareCore extends antiDDoSForHost {
                 return fileInfo;
             }
         }
-        if (supports_availablecheck_over_info_page(link)) {
+        if (supports_availablecheck_over_info_page(link) || currentUrlIsFileInfoURL) {
             /* Older handling */
             final List<String> fileNameCandidates = new ArrayList<String>();
             /* Add pre given candidate */
@@ -695,19 +700,11 @@ public abstract class YetiShareCore extends antiDDoSForHost {
                     final int maxCaptchaAttempts = 3;
                     int preDownloadPageCounter = 0;
                     int captchaAttemptCounter = 0;
-                    long timeBeforeCaptchaInput;
-                    boolean hasRequestedCaptcha = false; // true if user has been asked for captcha at least once
                     int numberofCaptchasRequested = 0;
                     preDownloadLoop: do {
+                        boolean hasRequestedCaptcha = false;
                         logger.info("Handling pre-download page " + (preDownloadPageCounter + 1) + " of max " + maxPreDownloadPages + " | Captcha attempts needed: " + captchaAttemptCounter + "/" + maxCaptchaAttempts + " | Captchas requested so far: " + numberofCaptchasRequested);
-                        timeBeforeCaptchaInput = Time.systemIndependentCurrentJVMTimeMillis();
-                        if (hasRequestedCaptcha && this.containsCaptcha(br)) {
-                            /* Retry on wrong captcha */
-                            captchaAttemptCounter++;
-                        } else {
-                            /* Pass to next download page */
-                            preDownloadPageCounter++;
-                        }
+                        final long timeBeforeCaptchaInput = Time.systemIndependentCurrentJVMTimeMillis();
                         /* Captcha, pre-download pages or new YetiShare direct_download API-style handling. */
                         /* Check if new YetiShare API-like handling can be used. */
                         final String continueLink;
@@ -723,7 +720,7 @@ public abstract class YetiShareCore extends antiDDoSForHost {
                             }
                             final String fileID = this.getStoredInternalFileID(link);
                             boolean passwordSuccess = false;
-                            int counter = 0;
+                            int passwordcounter = 0;
                             pwhandling: do {
                                 requestFileDetailsNewYetiShare(br, fileID);
                                 /* Grab Form on first loop, then re-use it */
@@ -754,10 +751,10 @@ public abstract class YetiShareCore extends antiDDoSForHost {
                                     logger.info("Password failure: passCode= " + passCode);
                                     link.setDownloadPassword(null);
                                     passCode = null;
-                                    counter++;
+                                    passwordcounter++;
                                     continue pwhandling;
                                 }
-                            } while (!this.isAbort() && !passwordSuccess && counter < 3);
+                            } while (!this.isAbort() && !passwordSuccess && passwordcounter < 3);
                             if (link.isPasswordProtected() && !passwordSuccess) {
                                 throw new PluginException(LinkStatus.ERROR_RETRY, "Wrong password entered");
                             }
@@ -778,6 +775,7 @@ public abstract class YetiShareCore extends antiDDoSForHost {
                                 }
                             }
                         } else {
+                            /* Old YetiShare */
                             continueLink = getContinueLink(this.br);
                         }
                         final Form continueform = getContinueForm(this.br, preDownloadPageCounter, continueLink);
@@ -785,6 +783,8 @@ public abstract class YetiShareCore extends antiDDoSForHost {
                             logger.info("No continue_form/continue_link available, plugin broken --> Step: " + (preDownloadPageCounter + 1));
                             checkErrors(br, link, account);
                             checkErrorsLastResort(br, link, account);
+                            /* This shall never be reached. */
+                            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                         }
                         if (loopLog == null) {
                             loopLog = continueLink;
@@ -901,14 +901,18 @@ public abstract class YetiShareCore extends antiDDoSForHost {
                             } else {
                                 /* Captcha logger */
                                 if (hasRequestedCaptcha) {
+                                    captchaAttemptCounter++;
                                     if (containsCaptcha(br)) {
                                         this.invalidateLastChallengeResponse();
                                         logger.info("Wrong captcha");
                                     } else {
                                         this.validateLastChallengeResponse();
                                     }
+                                } else {
+                                    preDownloadPageCounter++;
                                 }
                                 logger.info("Continue to next round");
+                                continue preDownloadLoop;
                             }
                         }
                     } while (true);
@@ -922,6 +926,8 @@ public abstract class YetiShareCore extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             checkErrorsLastResort(br, link, account);
+            /* This shall never be reached. */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         /*
          * Save directurl before download-attempt as it should be valid even if it e.g. fails because of server issue 503 (= too many
@@ -942,6 +948,8 @@ public abstract class YetiShareCore extends antiDDoSForHost {
             br.followConnection(true);
             checkErrors(br, link, account);
             checkErrorsLastResort(br, link, account);
+            /* This shall never be reached. */
+            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }
@@ -972,7 +980,6 @@ public abstract class YetiShareCore extends antiDDoSForHost {
     }
 
     protected void hookBeforeV2DirectDownload(final DownloadLink link, final Account account, final Browser br) throws Exception {
-        /* E.g. used for letsupload.io/letsupload.co */
     }
 
     /** Password handling for older YetiShare versions. */
@@ -1049,7 +1056,7 @@ public abstract class YetiShareCore extends antiDDoSForHost {
             /* Return form without changes. */
             return continueform;
         } else {
-            /* Manually build / complete form. */
+            /* Manually build / complete Form. */
             final Form ret = new Form();
             ret.setMethod(continueform.getMethod());
             if (continue_link != null) {
@@ -1308,18 +1315,6 @@ public abstract class YetiShareCore extends antiDDoSForHost {
         }
     }
 
-    private static final String error_you_have_reached_the_download_limit                                   = "error_you_have_reached_the_download_limit";
-    private static final String error_you_have_reached_the_download_limit_this_file                         = "error_you_have_reached_the_download_limit_this_file";
-    private static final String error_you_must_register_for_a_premium_account_for_filesize                  = "error_you_must_register_for_a_premium_account_for_filesize";
-    private static final String error_file_is_not_publicly_shared                                           = "error_file_is_not_publicly_shared";
-    private static final String error_you_must_be_a_x_user_to_download_this_file                            = "error_you_must_be_a_x_user_to_download_this_file";
-    private static final String error_you_have_reached_the_maximum_daily_download_limit                     = "error_you_have_reached_the_maximum_daily_download_limit";
-    private static final String error_you_have_reached_the_maximum_band_width_per_day_in_the_last_24_hours  = "error_you_have_reached_the_maximum_band_width_per_day_in_the_last_24_hours";
-    private static final String error_you_have_reached_the_maximum_daily_download_limit_this_file           = "error_you_have_reached_the_maximum_daily_download_limit_this_file";
-    private static final String error_you_have_reached_the_maximum_permitted_downloads_in_the_last_24_hours = "error_you_have_reached_the_maximum_permitted_downloads_in_the_last_24_hours";
-    private static final String error_you_have_reached_the_max_permitted_downloads                          = "error_you_have_reached_the_max_permitted_downloads";
-    private static final String error_you_must_wait_between_downloads                                       = "error_you_must_wait_between_downloads";
-
     /** Throws appropriate Exception depending on whether or not an account is given. */
     private void ipBlockedOrAccountLimit(final DownloadLink link, final Account account, final String errorMsg, final long waitMillis) throws PluginException {
         if (account != null) {
@@ -1355,6 +1350,18 @@ public abstract class YetiShareCore extends antiDDoSForHost {
         }
         return waitmillis;
     }
+
+    private static final String error_you_have_reached_the_download_limit                                   = "error_you_have_reached_the_download_limit";
+    private static final String error_you_have_reached_the_download_limit_this_file                         = "error_you_have_reached_the_download_limit_this_file";
+    private static final String error_you_must_register_for_a_premium_account_for_filesize                  = "error_you_must_register_for_a_premium_account_for_filesize";
+    private static final String error_file_is_not_publicly_shared                                           = "error_file_is_not_publicly_shared";
+    private static final String error_you_must_be_a_x_user_to_download_this_file                            = "error_you_must_be_a_x_user_to_download_this_file";
+    private static final String error_you_have_reached_the_maximum_daily_download_limit                     = "error_you_have_reached_the_maximum_daily_download_limit";
+    private static final String error_you_have_reached_the_maximum_band_width_per_day_in_the_last_24_hours  = "error_you_have_reached_the_maximum_band_width_per_day_in_the_last_24_hours";
+    private static final String error_you_have_reached_the_maximum_daily_download_limit_this_file           = "error_you_have_reached_the_maximum_daily_download_limit_this_file";
+    private static final String error_you_have_reached_the_maximum_permitted_downloads_in_the_last_24_hours = "error_you_have_reached_the_maximum_permitted_downloads_in_the_last_24_hours";
+    private static final String error_you_have_reached_the_max_permitted_downloads                          = "error_you_have_reached_the_max_permitted_downloads";
+    private static final String error_you_must_wait_between_downloads                                       = "error_you_must_wait_between_downloads";
 
     public void checkErrors(final Browser br, final DownloadLink link, final Account account) throws PluginException {
         final String errorMsgURL = this.getErrorMsgURL(br);
@@ -1568,6 +1575,7 @@ public abstract class YetiShareCore extends antiDDoSForHost {
              * 2021-05-04: psp: No check for other responsecodes required: This is supposed to throw Exception if we're not logged in. If we
              * can't reliably check the loggedin state we just do nothing.
              */
+            logger.info("Cannot determine loggedIN state");
         }
     }
 
@@ -1576,7 +1584,7 @@ public abstract class YetiShareCore extends antiDDoSForHost {
         final String rcID = br.getRegex("recaptcha/api/noscript\\?k=([^<>\"]*?)\"").getMatch(0);
         if (account != null) {
             this.loggedInOrException(br, account);
-        } else if (new Regex(br.getURL(), "^https?://[^/]+/?$").matches()) {
+        } else if (new Regex(br.getURL(), "(?i)^https?://[^/]+/?$").matches()) {
             /* Handle redirect to mainpage as premiumonly */
             throw new AccountRequiredException();
         } else if (rcID != null) {
@@ -1607,15 +1615,6 @@ public abstract class YetiShareCore extends antiDDoSForHost {
 
     private void exception429TooManyConnections() throws PluginException {
         throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error 429 too many requests", 5 * 60 * 1000l);
-    }
-
-    /* Returns true if file under url /<fileID>~i is offline. */
-    protected boolean isOfflineWebsiteInfoPage(final Browser br, final DownloadLink link) throws Exception {
-        if (!br.getURL().contains("~i") || br.getHttpConnection().getResponseCode() == 404) {
-            return true;
-        } else {
-            return false;
-        }
     }
 
     /**
@@ -1733,7 +1732,7 @@ public abstract class YetiShareCore extends antiDDoSForHost {
                     agent.put(getHost(), ua);
                 }
             }
-            br.getHeaders().put("User-Agent", ua);
+            br.getHeaders().put(HTTPConstants.HEADER_REQUEST_USER_AGENT, ua);
         }
         return br;
     }
@@ -1791,10 +1790,10 @@ public abstract class YetiShareCore extends antiDDoSForHost {
     }
 
     protected boolean isNewYetiShareVersion(final Account account) {
-        if (account == null) {
-            return this.getPluginConfig().getBooleanProperty(PROPERTY_IS_NEW_YETISHARE_VERSION, false);
-        } else {
+        if (account != null) {
             return account.getBooleanProperty(PROPERTY_IS_NEW_YETISHARE_VERSION, false);
+        } else {
+            return this.getPluginConfig().getBooleanProperty(PROPERTY_IS_NEW_YETISHARE_VERSION, false);
         }
     }
 
@@ -1857,128 +1856,118 @@ public abstract class YetiShareCore extends antiDDoSForHost {
      */
     public boolean loginWebsite(final Account account, boolean force) throws Exception {
         synchronized (account) {
-            try {
-                br.setCookiesExclusive(true);
-                prepBrowser(this.br, account.getHoster());
-                br.setFollowRedirects(true);
-                final Cookies cookies = account.loadCookies("");
-                final Cookies userCookies = account.loadUserCookies();
-                if (userCookies != null) {
-                    br.setCookies(getHost(), userCookies);
-                    if (!force) {
-                        /* Trust cookies without checking */
-                        return false;
-                    }
-                    if (this.verifyCookies(br, account, userCookies)) {
-                        return true;
-                    } else {
-                        if (account.hasEverBeenValid()) {
-                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
-                        } else {
-                            throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
-                        }
-                    }
-                } else if (cookies != null) {
-                    br.setCookies(this.getHost(), cookies);
-                    if (!force) {
-                        /* Trust cookies without checking */
-                        return false;
-                    }
-                    if (this.verifyCookies(br, account, cookies)) {
-                        /* Refresh stored cookies */
-                        account.saveCookies(br.getCookies(br.getHost()), "");
-                        return true;
-                    }
+            br.setCookiesExclusive(true);
+            prepBrowser(this.br, account.getHoster());
+            br.setFollowRedirects(true);
+            final Cookies cookies = account.loadCookies("");
+            final Cookies userCookies = account.loadUserCookies();
+            if (userCookies != null) {
+                br.setCookies(getHost(), userCookies);
+                if (!force) {
+                    /* Trust cookies without checking */
+                    return false;
                 }
-                logger.info("Performing full login");
-                getPage(this.getProtocol(null) + this.getHost());
-                /* This is crucial!! */
-                this.parseAndSetYetiShareVersion(br, account);
-                getPage(getAccountNameSpaceLogin(account));
-                if (br.containsHTML("flow-login\\.js") && !enforce_old_login_method()) {
-                    final String loginstart = new Regex(br.getURL(), "(https?://(www\\.)?)").getMatch(0);
-                    /* New (ajax) login method - mostly used - example: iosddl.net */
-                    logger.info("Using new login method");
-                    /* These headers are important! */
-                    br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
-                    br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
-                    Form loginform = br.getFormbyProperty("id", "form_login");
-                    if (loginform == null) {
-                        logger.info("Fallback to custom built loginform");
-                        loginform = new Form();
-                        loginform.put("submitme", "1");
-                    }
-                    fillWebsiteLoginForm(br, loginform, account);
-                    final String action = loginstart + this.getHost() + "/ajax/_account_login.ajax.php";
-                    loginform.setAction(action);
-                    if (CaptchaHelperHostPluginRecaptchaV2.containsRecaptchaV2Class(loginform)) {
-                        final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-                        loginform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-                    }
-                    submitForm(loginform);
-                    final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
-                    if (!entries.get("login_status").toString().equalsIgnoreCase("success")) {
-                        /* E.g. {"error":"Your username and password are invalid","login_status":"invalid"} */
-                        throw new AccountInvalidException(entries.get("error").toString());
-                    }
+                if (this.verifyCookies(br, account, userCookies)) {
+                    return true;
                 } else {
-                    /* Old non-ajax method - rare case! Example: All extremely old YetiShare versions and all >= 5.0 */
-                    logger.info("Using non-ajax login method");
-                    Form loginform = br.getFormbyProperty("id", "form_login");
-                    if (loginform == null) {
-                        loginform = br.getFormbyKey("loginUsername");
-                    }
-                    if (loginform == null) {
-                        logger.info("Fallback to custom built loginform");
-                        loginform = new Form();
-                        loginform.setMethod(MethodType.POST);
-                        loginform.put("submit", "Login");
-                        loginform.put("submitme", "1");
-                    }
-                    fillWebsiteLoginForm(br, loginform, account);
-                    if (br.containsHTML("solvemedia\\.com/papi/")) {
-                        /* Handle login-captcha if required */
-                        final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
-                        if (br.containsHTML("api\\-secure\\.solvemedia\\.com/")) {
-                            sm.setSecure(true);
-                        }
-                        File cf = null;
-                        try {
-                            cf = sm.downloadCaptcha(getLocalCaptchaFile());
-                        } catch (final Exception e) {
-                            if (org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia.FAIL_CAUSE_CKEY_MISSING.equals(e.getMessage())) {
-                                throw new PluginException(LinkStatus.ERROR_FATAL, "Host side solvemedia.com captcha error - please contact the " + this.getHost() + " support");
-                            }
-                            throw e;
-                        }
-                        final String code = getCaptchaCode("solvemedia", cf, new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true));
-                        final String chid = sm.getChallenge(code);
-                        loginform.put("adcopy_challenge", chid);
-                        loginform.put("adcopy_response", "manual_challenge");
-                    } else if (CaptchaHelperHostPluginRecaptchaV2.containsRecaptchaV2Class(loginform)) {
-                        /* E.g. thotdrive.com */
-                        final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
-                        loginform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
-                    }
-                    submitForm(loginform);
-                    if (br.containsHTML(">\\s*Your username and password are invalid\\s*<") || !isLoggedin(br, account)) {
-                        throw new AccountInvalidException();
+                    if (account.hasEverBeenValid()) {
+                        throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_expired());
+                    } else {
+                        throw new AccountInvalidException(_GUI.T.accountdialog_check_cookies_invalid());
                     }
                 }
-                account.saveCookies(br.getCookies(br.getHost()), "");
-                return true;
-            } catch (final PluginException e) {
-                if (e.getLinkStatus() == LinkStatus.ERROR_PREMIUM) {
-                    account.clearCookies("");
+            } else if (cookies != null) {
+                br.setCookies(this.getHost(), cookies);
+                if (!force) {
+                    /* Trust cookies without checking */
+                    return false;
                 }
-                throw e;
+                if (this.verifyCookies(br, account, cookies)) {
+                    /* Refresh stored cookies */
+                    account.saveCookies(br.getCookies(br.getHost()), "");
+                    return true;
+                }
+                br.clearCookies(null);
+                account.clearCookies("");
             }
+            logger.info("Performing full login");
+            getPage(this.getProtocol(null) + this.getHost());
+            /* This is crucial!! */
+            this.parseAndSetYetiShareVersion(br, account);
+            getPage(getAccountNameSpaceLogin(account));
+            if (br.containsHTML("flow-login\\.js") && !enforce_old_login_method()) {
+                final String loginstart = new Regex(br.getURL(), "(https?://(www\\.)?)").getMatch(0);
+                /* New (ajax) login method - mostly used - example: iosddl.net */
+                logger.info("Using new login method");
+                /* These headers are important! */
+                br.getHeaders().put("X-Requested-With", "XMLHttpRequest");
+                br.getHeaders().put("Accept", "application/json, text/javascript, */*; q=0.01");
+                Form loginform = br.getFormbyProperty("id", "form_login");
+                if (loginform == null) {
+                    logger.info("Fallback to custom built loginform");
+                    loginform = new Form();
+                    loginform.put("submitme", "1");
+                }
+                fillWebsiteLoginForm(br, loginform, account);
+                final String action = loginstart + this.getHost() + "/ajax/_account_login.ajax.php";
+                loginform.setAction(action);
+                if (CaptchaHelperHostPluginRecaptchaV2.containsRecaptchaV2Class(loginform)) {
+                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                    loginform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                }
+                submitForm(loginform);
+                final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+                if (!entries.get("login_status").toString().equalsIgnoreCase("success")) {
+                    /* E.g. {"error":"Your username and password are invalid","login_status":"invalid"} */
+                    throw new AccountInvalidException(entries.get("error").toString());
+                }
+            } else {
+                /* Old non-ajax method - rare case! Example: All extremely old YetiShare versions and all >= 5.0 */
+                logger.info("Using non-ajax login method");
+                Form loginform = br.getFormbyProperty("id", "form_login");
+                if (loginform == null) {
+                    loginform = br.getFormbyKey("loginUsername");
+                }
+                if (loginform == null) {
+                    logger.info("Fallback to custom built loginform");
+                    loginform = new Form();
+                    loginform.setMethod(MethodType.POST);
+                    loginform.put("submit", "Login");
+                    loginform.put("submitme", "1");
+                }
+                fillWebsiteLoginForm(br, loginform, account);
+                if (br.containsHTML("solvemedia\\.com/papi/")) {
+                    /* Handle login-captcha if required */
+                    final org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia sm = new org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia(br);
+                    if (br.containsHTML("api\\-secure\\.solvemedia\\.com/")) {
+                        sm.setSecure(true);
+                    }
+                    File cf = null;
+                    try {
+                        cf = sm.downloadCaptcha(getLocalCaptchaFile());
+                    } catch (final Exception e) {
+                        if (org.jdownloader.captcha.v2.challenge.solvemedia.SolveMedia.FAIL_CAUSE_CKEY_MISSING.equals(e.getMessage())) {
+                            throw new PluginException(LinkStatus.ERROR_FATAL, "Host side solvemedia.com captcha error - please contact the " + this.getHost() + " support");
+                        }
+                        throw e;
+                    }
+                    final String code = getCaptchaCode("solvemedia", cf, new DownloadLink(this, "Account", this.getHost(), "https://" + account.getHoster(), true));
+                    final String chid = sm.getChallenge(code);
+                    loginform.put("adcopy_challenge", chid);
+                    loginform.put("adcopy_response", "manual_challenge");
+                } else if (CaptchaHelperHostPluginRecaptchaV2.containsRecaptchaV2Class(loginform)) {
+                    /* E.g. thotdrive.com */
+                    final String recaptchaV2Response = new CaptchaHelperHostPluginRecaptchaV2(this, br).getToken();
+                    loginform.put("g-recaptcha-response", Encoding.urlEncode(recaptchaV2Response));
+                }
+                submitForm(loginform);
+                if (br.containsHTML(">\\s*Your username and password are invalid\\s*<") || !isLoggedin(br, account)) {
+                    throw new AccountInvalidException();
+                }
+            }
+            account.saveCookies(br.getCookies(br.getHost()), "");
+            return true;
         }
-    }
-
-    @Override
-    public String buildExternalDownloadURL(DownloadLink downloadLink, PluginForHost buildForThisPlugin) {
-        return getContentURL(downloadLink);
     }
 
     /** Sets given cookies and checks if we can login with them. */
@@ -2055,6 +2044,7 @@ public abstract class YetiShareCore extends antiDDoSForHost {
         }
         ai.setUnlimitedTraffic();
         if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            /* Debug/developer information */
             final String accStatus;
             if (ai.getStatus() != null) {
                 accStatus = ai.getStatus();
@@ -2077,12 +2067,14 @@ public abstract class YetiShareCore extends antiDDoSForHost {
             accountType = br.getRegex(">\\s*Account\\s*Type\\s*</strong></td>\\s*<td>([^<]+)</td>").getMatch(0);
         }
         final boolean isPremiumType = StringUtils.containsIgnoreCase(accountType, "Premium") || StringUtils.containsIgnoreCase(accountType, "Paid User");
+        if (isPremiumType) {
+            return true;
+        }
         final String expireStr = regexExpireDate(br);
-        if (expireStr == null) {
-            return isPremiumType;
+        if (expireStr != null && parseExpireTimeStamp(account, expireStr) > System.currentTimeMillis()) {
+            return true;
         } else {
-            final long expire_milliseconds = parseExpireTimeStamp(account, expireStr);
-            return isPremiumType || expire_milliseconds > System.currentTimeMillis();
+            return false;
         }
     }
 
@@ -2098,7 +2090,10 @@ public abstract class YetiShareCore extends antiDDoSForHost {
         return expireStr;
     }
 
-    /** Tries to auto-find API keys in website HTML code and return account information from API! */
+    /**
+     * Tries to auto-find API keys in website HTML code and return account information from API! </br>
+     * If this returns something which is not null, that account information will be used and not the one obtained via website.
+     */
     protected AccountInfo fetchAccountInfoWebsiteAPI(final Browser brc, final Account account) {
         try {
             synchronized (account) {
@@ -2132,7 +2127,7 @@ public abstract class YetiShareCore extends antiDDoSForHost {
                         logger.info("Not attempting to generate API keys although it looks possible because that is disabled!");
                         return null;
                     }
-                    if ((!foundValidLookingAPICredentialsOnWebsite && this.allowToGenerateAPIKeyInWebsiteModeDuringAccountCheck()) || (devForceNewApikeyCreation && DebugMode.TRUE_IN_IDE_ELSE_FALSE)) {
+                    if ((!foundValidLookingAPICredentialsOnWebsite && this.allowToGenerateAPIKeyInWebsiteModeDuringAccountCheck()) || (DebugMode.TRUE_IN_IDE_ELSE_FALSE && devForceNewApikeyCreation)) {
                         /* Tested with: letsupload.io */
                         logger.info("Generating API keys");
                         key1 = this.websiteGenerateRandomAPIKey();
@@ -2193,7 +2188,7 @@ public abstract class YetiShareCore extends antiDDoSForHost {
                     logger.info("API handling inside website handling failed! In most of all cases this means that the website owner only enabled API usage for specific users and only for uploading files.");
                     logger.info("@@Developer: Consider disabling API usage in website mode completely via TODO");
                     if (!foundValidLookingAPICredentialsOnWebsite) {
-                        logger.info("@@Developer: Consider disabling website API key generation via allowToGenerateAPIKeyInWebsiteMode");
+                        logger.info("@@Developer: Consider disabling website API key generation for this website via allowToGenerateAPIKeyInWebsiteMode");
                     }
                 }
             }
@@ -2204,6 +2199,16 @@ public abstract class YetiShareCore extends antiDDoSForHost {
         account.removeProperty(PROPERTY_API_KEY1);
         account.removeProperty(PROPERTY_API_KEY2);
         return null;
+    }
+
+    /** See https://fhscript.com/themes/spirit/assets/js/global.js */
+    private String websiteGenerateRandomAPIKey() {
+        final String possibleChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        final StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < 64; i++) {
+            sb.append(possibleChars.charAt(new Random().nextInt(possibleChars.length() - 1)));
+        }
+        return sb.toString();
     }
 
     protected void setAccountLimitsByType(final Account account, final AccountType type) {
@@ -2314,16 +2319,6 @@ public abstract class YetiShareCore extends antiDDoSForHost {
         if (weak_fallback_filename != null) {
             link.setName(weak_fallback_filename);
         }
-    }
-
-    /** See https://fhscript.com/themes/spirit/assets/js/global.js */
-    private String websiteGenerateRandomAPIKey() {
-        final String possibleChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-        final StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < 64; i++) {
-            sb.append(possibleChars.charAt(new Random().nextInt(possibleChars.length() - 1)));
-        }
-        return sb.toString();
     }
 
     @Override
@@ -2483,15 +2478,15 @@ public abstract class YetiShareCore extends antiDDoSForHost {
      * and: https://fhscript.com/api#account-package </br>
      */
     protected AccountInfo fetchAccountInfoAPI(final Browser br, final Account account, final String key1, final String key2) throws Exception {
-        final AccountInfo ai = new AccountInfo();
-        this.loginAPI(br, account, key1, key2, true);
+        final Map<String, Object> loginResp = this.loginAPI(br, account, key1, key2);
         final UrlQuery query = new UrlQuery();
         query.add("access_token", getStoredAPIAccessToken(account, key1, key2));
         query.add("account_id", getAPIAccountID(account, key1, key2));
         final Map<String, Object> jsonRoot;
         if (br.getURL() != null && br.getURL().contains("/account/info")) {
-            jsonRoot = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
+            jsonRoot = loginResp;
         } else {
+            // TODO: Remove this (code duplication!)
             this.getPage(br, this.getAPIBase() + "/account/info?access_token=" + getStoredAPIAccessToken(account, key1, key2) + "&account_id=" + getAPIAccountID(account, key1, key2));
             /* We don't expect any errors to happen at this stage but we can never know... */
             jsonRoot = (Map<String, Object>) checkErrorsAPI(br, null, account);
@@ -2520,6 +2515,7 @@ public abstract class YetiShareCore extends antiDDoSForHost {
         final String accountType = (String) packageInfoData.get("label");
         final String level_type = (String) packageInfoData.get("level_type");
         final long premiumDurationMilliseconds = premiumExpireMilliseconds - currentTime;
+        final AccountInfo ai = new AccountInfo();
         if (premiumExpireMilliseconds > currentTime || StringUtils.equalsIgnoreCase(level_type, "paid")) {
             account.setType(AccountType.PREMIUM);
             if (premiumExpireMilliseconds > currentTime) {
@@ -2564,18 +2560,12 @@ public abstract class YetiShareCore extends antiDDoSForHost {
     }
 
     /** Login according to: https://fhscript.com/api#authorize */
-    protected void loginAPI(final Browser br, final Account account, final String key1, final String key2, final boolean verifyToken) throws Exception {
+    protected Map<String, Object> loginAPI(final Browser br, final Account account, final String key1, final String key2) throws Exception {
         final String storedAccessToken = this.getStoredAPIAccessToken(account, key1, key2);
         final String storedAccountID = this.getAPIAccountID(account, key1, key2);
-        if (this.enableAPIOnlyMode()) {
-            prepBrowserAPI(br);
-        }
+        prepBrowserAPI(br);
         if (!StringUtils.isEmpty(storedAccessToken) && !StringUtils.isEmpty(storedAccountID)) {
             logger.info("Trying to re-use stored access_token");
-            if (!verifyToken) {
-                logger.info("Trust existing access_token");
-                return;
-            }
             this.getPage(br, this.getAPIBase() + "/account/info?access_token=" + storedAccessToken + "&account_id=" + storedAccountID);
             try {
                 final Map<String, Object> jsonRoot = (Map<String, Object>) checkErrorsAPI(br, null, account);
@@ -2585,7 +2575,7 @@ public abstract class YetiShareCore extends antiDDoSForHost {
                     /* Compare accountID with stored accountID --> If it matches, we trust login to be successful */
                     if (StringUtils.equals(currentAccountID.toString(), storedAccountID)) {
                         logger.info("Successfully re-used access_token");
-                        return;
+                        return jsonRoot;
                     }
                 }
                 logger.info("Failed to re-use access_token");
@@ -2629,6 +2619,7 @@ public abstract class YetiShareCore extends antiDDoSForHost {
         account.setProperty(PROPERTY_API_ACCESS_TOKEN + Hash.getSHA256(key1 + ":" + key2), accessToken);
         account.setProperty(PROPERTY_API_ACCOUNT_ID + Hash.getSHA256(key1 + ":" + key2), accountIDStr);
         account.setProperty(API_LOGIN_HAS_BEEN_SUCCESSFUL_ONCE + Hash.getSHA256(key1 + ":" + key2), true);
+        return authorizationResponse;
     }
 
     protected AvailableStatus requestFileInformationAPI(final Browser br, final DownloadLink link, final Account account) throws Exception {
@@ -2637,9 +2628,7 @@ public abstract class YetiShareCore extends antiDDoSForHost {
         query.add("account_id", this.getAPIAccountID(account));
         query.add("file_id", this.getStoredInternalFileID(link));
         /* Availablecheck not required as we do check for offline here! */
-        if (this.enableAPIOnlyMode()) {
-            prepBrowserAPI(br);
-        }
+        prepBrowserAPI(br);
         this.getPage(br, this.getAPIBase() + "/file/info?" + query.toString());
         final Map<String, Object> jsonRoot = (Map<String, Object>) this.checkErrorsAPI(br, link, account);
         final Map<String, Object> data = (Map<String, Object>) jsonRoot.get("data");
@@ -2719,12 +2708,7 @@ public abstract class YetiShareCore extends antiDDoSForHost {
     protected void handleDownloadAPI(final DownloadLink link, final Account account, final String apikey1, final String apikey2) throws StorageException, Exception {
         final String directlinkproperty = getDownloadModeDirectlinkProperty(account);
         if (this.checkDirectLink(link, account) == null) {
-            /* Login not really required as it won't do anything but check validity of APIKey strings here! */
-            this.loginAPI(this.br, account, apikey1, apikey2, false);
-            /* Headers are set in login! */
-            // if (this.enableAPIOnlyMode()) {
-            // prepBrowserAPI(br);
-            // }
+            prepBrowserAPI(br);
             final UrlQuery query = new UrlQuery();
             query.add("access_token", this.getStoredAPIAccessToken(account, apikey1, apikey2));
             query.add("account_id", this.getAPIAccountID(account, apikey1, apikey2));
@@ -2752,17 +2736,8 @@ public abstract class YetiShareCore extends antiDDoSForHost {
          * connections) --> Should work fine after the next try.
          */
         link.setProperty(directlinkproperty, con.getURL().toExternalForm());
-        try {
-            checkResponseCodeErrors(con);
-        } catch (final PluginException e) {
-            try {
-                br.followConnection(true);
-            } catch (IOException ioe) {
-                throw Exceptions.addSuppressed(e, ioe);
-            }
-            throw e;
-        }
         if (!looksLikeDownloadableContent(con)) {
+            checkResponseCodeErrors(con);
             br.followConnection(true);
             checkErrors(br, link, account);
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Final downloadurl did not lead to downloadable content");
@@ -2853,5 +2828,10 @@ public abstract class YetiShareCore extends antiDDoSForHost {
             }
         }
         return entries;
+    }
+
+    @Override
+    public String buildExternalDownloadURL(DownloadLink downloadLink, PluginForHost buildForThisPlugin) {
+        return getContentURL(downloadLink);
     }
 }
