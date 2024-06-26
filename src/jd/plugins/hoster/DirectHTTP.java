@@ -1169,14 +1169,18 @@ public class DirectHTTP extends antiDDoSForHost implements DownloadConnectionVer
                 }
             }
             /* if final filename already set, do not change */
-            if (downloadLink.getFinalFileName() == null) {
+            if (downloadLink.getFinalFileName() != null && Plugin.parseDispositionHeader(urlConnection) == null) {
+                final String oldFinalFilename = downloadLink.getFinalFileName();
+                final String newFinalFilename = correctOrApplyFileNameExtension(oldFinalFilename, urlConnection);
+                if (!StringUtils.equals(oldFinalFilename, newFinalFilename)) {
+                    logger.info("Updated finalFilenames' file extension | Old: " + oldFinalFilename + " | New: " + newFinalFilename);
+                    downloadLink.setFinalFileName(newFinalFilename);
+                }
+            } else if (downloadLink.getFinalFileName() == null) {
                 /* Restore filename from property */
                 boolean allowFileExtensionCorrection = true;
                 String fileName = downloadLink.getStringProperty(FIXNAME, null);
-                if (StringUtils.isNotEmpty(fileName)) {
-                    // trust given filename extension from FIXNAME
-                    allowFileExtensionCorrection = false;
-                } else {
+                if (StringUtils.isEmpty(fileName)) {
                     final DispositionHeader dispositionHeader = Plugin.parseDispositionHeader(urlConnection);
                     if (dispositionHeader != null && StringUtils.isNotEmpty(dispositionHeader.getFilename())) {
                         // trust given filename extension via Content-Disposition header
@@ -1195,6 +1199,7 @@ public class DirectHTTP extends antiDDoSForHost implements DownloadConnectionVer
                     if (StringUtils.isEmpty(fileName)) {
                         fileName = Plugin.extractFileNameFromURL(urlConnection.getRequest().getUrl());
                         if (StringUtils.isNotEmpty(fileName)) {
+                            // TODO: Check if this is still needed
                             if (StringUtils.equalsIgnoreCase("php", Files.getExtension(fileName)) || fileName.matches(IP.IP_PATTERN)) {
                                 fileName = null;
                             }
@@ -1205,16 +1210,12 @@ public class DirectHTTP extends antiDDoSForHost implements DownloadConnectionVer
                     }
                 }
                 if (StringUtils.isEmpty(fileName)) {
+                    /* Get any cached name */
                     fileName = downloadLink.getName();
                 }
                 if (fileName != null) {
-                    final String ext = getExtensionFromMimeType(urlConnection);
-                    if (ext != null) {
-                        if (fileName.indexOf(".") < 0) {
-                            fileName = fileName + "." + ext;
-                        } else if (allowFileExtensionCorrection) {
-                            fileName = correctOrApplyFileNameExtension(fileName, "." + ext);
-                        }
+                    if (allowFileExtensionCorrection) {
+                        fileName = correctOrApplyFileNameExtension(fileName, urlConnection);
                     }
                     downloadLink.setFinalFileName(fileName);
                     /* save filename in property so we can restore in reset case */

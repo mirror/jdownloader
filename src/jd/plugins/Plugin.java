@@ -439,6 +439,11 @@ public abstract class Plugin implements ActionListener {
         return getCorrectOrApplyFileNameExtension(filenameOrg, newExtension);
     }
 
+    public String correctOrApplyFileNameExtension(String name, URLConnectionAdapter connection) {
+        final String extNew = getExtensionFromMimeType(connection);
+        return getCorrectOrApplyFileNameExtension(name, extNew);
+    }
+
     /**
      * Corrects extension of given filename. Adds extension if it is missing. Returns null if given filename is null. </br>
      * Pass fileExtension with dot(s) to this! </br>
@@ -452,35 +457,51 @@ public abstract class Plugin implements ActionListener {
      *
      * @return Filename with new extension
      */
-    public static String getCorrectOrApplyFileNameExtension(final String filenameOrg, final String newExtension) {
-        if (StringUtils.isEmpty(filenameOrg) || StringUtils.isEmpty(newExtension) || !newExtension.startsWith(".")) {
+    public static String getCorrectOrApplyFileNameExtension(final String filenameOrg, String newExtension) {
+        if (StringUtils.isEmpty(filenameOrg) || StringUtils.isEmpty(newExtension)) {
             return filenameOrg;
-        } else if (!filenameOrg.contains(".")) {
+        }
+        if (!DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
+            /* Testing: do not alter filenames in stable version */
+            return filenameOrg;
+        }
+        if (!newExtension.startsWith(".")) {
+            newExtension = "." + newExtension;
+        }
+        if (!filenameOrg.contains(".")) {
             /* Filename doesn't contain an extension at all -> Add extension to filename. */
             return filenameOrg + newExtension;
         } else if (StringUtils.endsWithCaseInsensitive(filenameOrg, newExtension)) {
-            /* Filename already ends with/contains target-extension. */
+            /* Filename already ends with target-extension. */
             return filenameOrg;
-        } else {
-            /* Replace existing extension with new extension. */
-            final int lastIndex = filenameOrg.lastIndexOf(".");
-            final String currentFileExtension = lastIndex + 1 < filenameOrg.length() ? filenameOrg.substring(lastIndex + 1) : null;
-            final CompiledFiletypeExtension newFileType = CompiledFiletypeFilter.getExtensionsFilterInterface(newExtension);
-            final CompiledFiletypeExtension oldFileType = CompiledFiletypeFilter.getExtensionsFilterInterface(currentFileExtension);
-            if (newFileType != null && currentFileExtension != null && newFileType.isValidExtension(currentFileExtension)) {
-                /* Filename already contains valid/alternative target-extension */
-                return filenameOrg;
-            }
-            if (oldFileType != null) {
-                final String filenameWithoutExtension = filenameOrg.substring(0, lastIndex);
-                return filenameWithoutExtension + newExtension;
-            } else {
-                return filenameOrg + newExtension;
-            }
         }
+        final CompiledFiletypeExtension filetypeNew = CompiledFiletypeFilter.getExtensionsFilterInterface(newExtension);
+        if (filetypeNew == null) {
+            /* Unknown new filetype -> Do not touch given filename */
+            return filenameOrg;
+        }
+        final int lastIndex = filenameOrg.lastIndexOf(".");
+        final String currentFileExtension = lastIndex < filenameOrg.length() ? filenameOrg.substring(lastIndex) : null;
+        if (StringUtils.isEmpty(currentFileExtension)) {
+            return filenameOrg;
+        }
+        final CompiledFiletypeExtension filetypeOld = CompiledFiletypeFilter.getExtensionsFilterInterface(currentFileExtension);
+        if (filetypeOld == null) {
+            /* Unknown current/old filetype -> Do not touch given filename */
+            return filenameOrg;
+        }
+        if (filetypeNew.isValidExtension(currentFileExtension)) {
+            /* Filename already contains valid/alternative target-extension e.g. webm/mp4 */
+            return filenameOrg;
+        }
+        if ((CompiledFiletypeFilter.VideoExtensions.MP4.isSameExtensionGroup(filetypeOld) || CompiledFiletypeFilter.ImageExtensions.JPG.isSameExtensionGroup(filetypeOld) || CompiledFiletypeFilter.AudioExtensions.MP3.isSameExtensionGroup(filetypeOld)) && filetypeNew != null && filetypeNew.isSameExtensionGroup(filetypeOld)) {
+            final String filenameWithoutExtension = filenameOrg.substring(0, lastIndex);
+            return filenameWithoutExtension + newExtension;
+        }
+        return filenameOrg;
     }
 
-    /** Adds extension to given filename (if it's not already in this filename). */
+    /** Adds extension to given filename if given filename does not already end with new extension. */
     public String applyFilenameExtension(final String filenameOrg, final String fileExtension) {
         if (filenameOrg == null) {
             return null;

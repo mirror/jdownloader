@@ -14,7 +14,6 @@ import java.util.zip.CRC32;
 import java.util.zip.CheckedInputStream;
 import java.util.zip.Checksum;
 
-import org.appwork.utils.DebugMode;
 import org.appwork.utils.IO;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
@@ -23,8 +22,6 @@ import org.appwork.utils.formatter.HexFormatter;
 import org.appwork.utils.logging2.LogInterface;
 import org.appwork.utils.net.httpconnection.HTTPConnectionUtils.DispositionHeader;
 import org.jdownloader.controlling.FileCreationManager;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter.ExtensionsFilterInterface;
 import org.jdownloader.plugins.FinalLinkState;
 import org.jdownloader.plugins.HashCheckPluginProgress;
 import org.jdownloader.plugins.SkipReason;
@@ -623,50 +620,13 @@ public class DownloadLinkDownloadable implements Downloadable {
     }
 
     /** Corrects or adds file-extension in given filename string based on mime-type of given URLConnection. */
-    protected String correctOrApplyFileNameExtension(String name, URLConnectionAdapter connection) {
+    protected String correctOrApplyFileNameExtension(final String name, final URLConnectionAdapter connection) {
         final PluginForHost plugin = getPlugin();
-        String extNew = getExtensionFromMimeType(connection);
-        if (extNew == null) {
-            /* No file extension found -> Do nothing. */
+        if (plugin != null) {
+            return plugin.correctOrApplyFileNameExtension(name, connection);
+        } else {
             return name;
         }
-        if (DebugMode.TRUE_IN_IDE_ELSE_FALSE) {
-            // TODO: Add final functionality
-            final String extCurrent = Plugin.getFileNameExtensionFromString(name);
-            boolean allowAddOrCorrectFileExtension = false;
-            if (extCurrent == null) {
-                /* No file extension -> Add new file extension */
-                allowAddOrCorrectFileExtension = true;
-            } else {
-                /**
-                 * Check for type of current extension, only correct specific file types because there are some cases where the attempt to
-                 * correct them can easily fuck up our filename e.g.: </br>
-                 * - Multipart rar archives but 2nd item got another mime type like "bin" -> Extension is changed from .rar.001 to .bin ->
-                 * Extraction will fail </br>
-                 * - Document/Text files: Anything can be a text, we do not want to correct e.g. ".txt" to ".xml". </br>
-                 * For these reasons, currently only audio, video and image files' file extensions will be corrected.
-                 */
-                final ExtensionsFilterInterface efiCurrent = CompiledFiletypeFilter.getExtensionsFilterInterface(extCurrent);
-                final ExtensionsFilterInterface efiNew = CompiledFiletypeFilter.getExtensionsFilterInterface(extNew);
-                if ((CompiledFiletypeFilter.VideoExtensions.MP4.isSameExtensionGroup(efiCurrent) || CompiledFiletypeFilter.ImageExtensions.JPG.isSameExtensionGroup(efiCurrent) || CompiledFiletypeFilter.AudioExtensions.MP3.isSameExtensionGroup(efiCurrent)) && efiNew != null && efiNew.isSameExtensionGroup(efiCurrent)) {
-                    // Correct file extension
-                    allowAddOrCorrectFileExtension = true;
-                } else {
-                    // Do not correct file extension
-                }
-            }
-            if (allowAddOrCorrectFileExtension) {
-                if (!extNew.startsWith(".")) {
-                    extNew = "." + extNew;
-                }
-                if (name.indexOf(".") < 0) {
-                    name = name + extNew;
-                } else if (plugin != null) {
-                    name = plugin.correctOrApplyFileNameExtension(name, extNew);
-                }
-            }
-        }
-        return name;
     }
 
     protected boolean isAllowFilenameFromURL(URLConnectionAdapter connection) {
