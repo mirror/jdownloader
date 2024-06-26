@@ -15,17 +15,24 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.Locale;
+import java.util.Map;
 
+import org.appwork.storage.JSonMapperException;
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.parser.UrlQuery;
 import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 import jd.PluginWrapper;
 import jd.http.Browser;
-import jd.http.Browser.BrowserException;
 import jd.http.Cookies;
+import jd.http.Request;
+import jd.http.requests.PostRequest;
 import jd.nutils.encoding.Encoding;
 import jd.parser.html.Form;
 import jd.parser.html.Form.MethodType;
@@ -34,6 +41,7 @@ import jd.plugins.Account;
 import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.AccountInvalidException;
+import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -58,9 +66,21 @@ public class FourShareVn extends PluginForHost {
         return br;
     }
 
-    @SuppressWarnings("deprecation")
-    public void correctDownloadLink(final DownloadLink link) {
-        link.setUrlDownload(link.getDownloadURL().replace("up.4share.vn/", "4share.vn/"));
+    private String getContentURL(final DownloadLink link) {
+        return link.getPluginPatternMatcher().replaceFirst("up\\.4share\\.vn/", "4share.vn/");
+    }
+
+    @Override
+    public boolean isResumeable(final DownloadLink link, final Account account) {
+        return true;
+    }
+
+    public int getMaxChunks(final DownloadLink link, final Account account) {
+        if (account != null && AccountType.PREMIUM.equals(account.getType())) {
+            return 0;
+        } else {
+            return 1;
+        }
     }
 
     @Override
@@ -85,11 +105,19 @@ public class FourShareVn extends PluginForHost {
         return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
+    /* API docs: https://4share.vn/documents/api/ */
+    private final String  API_BASE                    = "https://api.4share.vn/api/v1/";
+    private final String  PROPERTY_ACCOUNT_TOKEN      = "token";
+    private final boolean USE_API_FOR_ACCOUNT_ACTIONS = true;
+
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
-        correctDownloadLink(link);
+        return requestFileInformationWebsite(link);
+    }
+
+    private AvailableStatus requestFileInformationWebsite(final DownloadLink link) throws Exception {
         this.setBrowserExclusive();
-        getPage(link.getPluginPatternMatcher());
+        br.getPage(this.getContentURL(link));
         String filename = br.getRegex("<h1[^>]*>\\s*<strong>\\s*([^<>\"]+)\\s*</strong>").getMatch(0);
         if (filename == null) {
             filename = br.getRegex(">\\s*Tên File\\s*:\\s*<strong>([^<>\"]*?)</strong>").getMatch(0);
@@ -103,7 +131,7 @@ public class FourShareVn extends PluginForHost {
             filesize = br.getRegex("</h1>\\s*<strong>\\s*([^<>\"]+)\\s*</strong>").getMatch(0);
             if (filesize == null) {
                 /* 2021-10-21 */
-                filesize = br.getRegex("/strong>\\s*</h1>\\s*(\\d+[^<>\"]+)<br/>").getMatch(0);
+                filesize = br.getRegex("/strong>\\s*</h1>\\s*(\\d+[^<]+)<br/>").getMatch(0);
             }
         }
         if (filename != null) {
@@ -116,7 +144,9 @@ public class FourShareVn extends PluginForHost {
         } else {
             logger.warning("Failed to find filesize");
         }
-        final String md5 = br.getRegex("(?i)MD5\\s*:?\\s*([a-f0-9]{32})").getMatch(0);
+        final String md5 = br.getRegex("MD5\\s*:?\\s*([a-f0-9]{32})").getMatch(0);
+        /* 2024-06-26: We currently can't handle crc32b */
+        // final String crc32b = br.getRegex("CRC32B\\s*:\\s*(\\d+)").getMatch(0);
         if (md5 != null) {
             link.setMD5Hash(md5);
         } else {
@@ -133,12 +163,41 @@ public class FourShareVn extends PluginForHost {
         return AvailableStatus.TRUE;
     }
 
+    /** https://4share.vn/documents/api/#api-File_and_Folder-Get_File_Info */
+    private AvailableStatus requestFileInformationAPI(final DownloadLink link, final Account account) throws Exception {
+        this.setBrowserExclusive();
+        final String fid = this.getFID(link);
+        if (!link.isNameSet()) {
+            link.setName(fid);
+        }
+        final UrlQuery query = new UrlQuery();
+        query.add("file_id", Encoding.urlEncode(fid));
+        final PostRequest req = br.createPostRequest(API_BASE + "?cmd=get_file_info", query);
+        final Map<String, Object> payload = (Map<String, Object>) this.callAPI(req, account, null);
+        link.setFinalFileName(payload.get("name").toString());
+        link.setVerifiedFileSize(((Number) payload.get("size")).longValue());
+        /* 2024-06-26: Not sure about this. Could also mean a delete-date in the future. */
+        // final Object delete_date = payload.get("delete_date");
+        // if(delete_date != null) {
+        // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        // }
+        return AvailableStatus.TRUE;
+    }
+
     @Override
     public AccountInfo fetchAccountInfo(final Account account) throws Exception {
+        if (USE_API_FOR_ACCOUNT_ACTIONS) {
+            return fetchAccountInfoAPI(account);
+        } else {
+            return fetchAccountInfoWebsite(account);
+        }
+    }
+
+    private AccountInfo fetchAccountInfoWebsite(final Account account) throws Exception {
         final AccountInfo ai = new AccountInfo();
         synchronized (account) {
-            login(account, true);
-            getPage("/member");
+            loginWebsite(account, true);
+            br.getPage("/member");
             /*
              * TODO
              *
@@ -158,12 +217,12 @@ public class FourShareVn extends PluginForHost {
             } else {
                 ai.setUnlimitedTraffic();
             }
-            final String expire = br.getRegex("Ngày hết hạn: <b>(\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
+            final String expire = br.getRegex("Ngày hết hạn:\\s*<b>\\s*(\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2})").getMatch(0);
             if (expire == null) {
                 ai.setExpired(true);
                 return ai;
             } else {
-                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MM-dd hh:mm:ss", Locale.ENGLISH));
+                ai.setValidUntil(TimeFormatter.getMilliSeconds(expire, "yyyy-MM-dd hh:mm:ss", Locale.ENGLISH), br);
             }
             if (br.containsHTML("Gold TKC")) {
                 ai.setStatus("Premium (Gold) User");
@@ -174,9 +233,80 @@ public class FourShareVn extends PluginForHost {
         return ai;
     }
 
+    /** https://4share.vn/documents/api/#api-AccessToken-GetUserInfomation */
+    private AccountInfo fetchAccountInfoAPI(final Account account) throws Exception {
+        final AccountInfo ai = new AccountInfo();
+        synchronized (account) {
+            loginAPI(account, true);
+            final PostRequest req = br.createPostRequest(API_BASE + "?cmd=get_user_info", new UrlQuery());
+            final Map<String, Object> payload = (Map<String, Object>) this.callAPI(req, account, null);
+            final String register_date = (String) payload.get("register_date");
+            final String vip_time = (String) payload.get("vip_time");
+            final Number quota_limit_download_daily_byte = (Number) payload.get("quota_limit_download_daily_byte");
+            // final Number downloaded_lastday_byte = (Number)payload.get("downloaded_lastday_byte");
+            if (register_date != null) {
+                ai.setCreateTime(TimeFormatter.getMilliSeconds(register_date, "yyyy-MM-dd hh:mm:ss", Locale.ENGLISH));
+            }
+            long premiumValidUntil = -1;
+            if (vip_time != null) {
+                premiumValidUntil = TimeFormatter.getMilliSeconds(vip_time, "yyyy-MM-dd hh:mm:ss", Locale.ENGLISH);
+            }
+            if (premiumValidUntil < System.currentTimeMillis()) {
+                // ai.setExpired(true);
+                throw new AccountInvalidException("Free accounts are not supported");
+            }
+            if (quota_limit_download_daily_byte != null) {
+                ai.setTrafficLeft(quota_limit_download_daily_byte.longValue());
+                ai.setTrafficMax(quota_limit_download_daily_byte.longValue());
+            }
+            account.setType(AccountType.PREMIUM);
+        }
+        return ai;
+    }
+
+    /** https://4share.vn/documents/api/#api-AccessToken-AccessToken */
+    private Object loginAPI(final Account account, final boolean force) throws Exception {
+        synchronized (account) {
+            /* Load cookies */
+            this.setBrowserExclusive();
+            final String storedToken = account.getStringProperty(PROPERTY_ACCOUNT_TOKEN);
+            if (storedToken != null) {
+                /* Work with existing token */
+                if (!force) {
+                    /* Do not check existing token. */
+                    return null;
+                }
+                logger.info("Checking token validity");
+                try {
+                    final PostRequest req = br.createPostRequest(API_BASE + "?cmd=check_token", new UrlQuery());
+                    final Object responseO = this.callAPI(req, account, null);
+                    logger.info("Token is valid");
+                    return responseO;
+                } catch (final PluginException e) {
+                    logger.log(e);
+                    logger.info("Token login failed");
+                }
+            }
+            /* Obtain new token. */
+            account.removeProperty(PROPERTY_ACCOUNT_TOKEN);
+            final UrlQuery query = new UrlQuery();
+            query.add("username", Encoding.urlEncode(account.getUser()));
+            query.add("password", Encoding.urlEncode(account.getPass()));
+            final PostRequest req = br.createPostRequest(API_BASE + "?cmd=get_token", query);
+            final Object response = this.callAPI(req, account, null);
+            final String newtoken = response.toString();
+            if (StringUtils.isEmpty(newtoken)) {
+                /* This should never happen. */
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            account.setProperty(PROPERTY_ACCOUNT_TOKEN, newtoken);
+            return response;
+        }
+    }
+
     @Override
     public String getAGBLink() {
-        return "https://up.4share.vn/?act=terms";
+        return "https://" + getHost() + "/?act=terms";
     }
 
     @Override
@@ -192,7 +322,6 @@ public class FourShareVn extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link);
-        br.setFollowRedirects(false);
         String dllink = null;
         // Can be skipped
         // int wait = 60;
@@ -230,51 +359,76 @@ public class FourShareVn extends PluginForHost {
         if (dllink == null && br.containsHTML("(api\\.recaptcha\\.net|google\\.com/recaptcha/api/)")) {
             throw new PluginException(LinkStatus.ERROR_CAPTCHA);
         } else if (dllink == null) {
-            handleErrorsGeneral();
+            handleErrorsWebsite(br);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, true, 1);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, this.isResumeable(link, null), this.getMaxChunks(link, null));
         if (!looksLikeDownloadableContent(dl.getConnection())) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection(true);
-            handleErrorsGeneral();
+            handleErrorsWebsite(br);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public void handlePremium(final DownloadLink link, final Account account) throws Exception {
-        requestFileInformation(link);
-        login(account, false);
-        getPage(link.getDownloadURL());
-        if (br.containsHTML("chứa file này đang bảo dưỡng")) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server is under maintenance!");
+        /* 2024-06-26: psp: The API call for downloading is broken. I've reported this bug to the 4share.vn support. */
+        final boolean apiDownloadBroken = true;
+        if (USE_API_FOR_ACCOUNT_ACTIONS && !apiDownloadBroken) {
+            handlePremiumAPI(link, account);
+        } else {
+            handlePremiumWebsite(link, account);
         }
-        String dllink = br.getRedirectLocation();
-        if (dllink == null) {
-            dllink = br.getRegex("class=''> <a href\\s*=\\s*'(https?://.*?)'").getMatch(0);
+    }
+
+    private void handlePremiumWebsite(final DownloadLink link, final Account account) throws Exception {
+        requestFileInformation(link);
+        loginWebsite(account, false);
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, this.getContentURL(link), this.isResumeable(link, account), this.getMaxChunks(link, account));
+        if (!looksLikeDownloadableContent(dl.getConnection())) {
+            /* Maybe no direct download */
+            br.followConnection(true);
+            dl = null;
+            String dllink = br.getRegex("class=''> <a href\\s*=\\s*'(https?://.*?)'").getMatch(0);
             if (dllink == null) {
-                dllink = br.getRegex("('|\")(https?://sv\\d+\\.4share\\.vn/[^<>\"]*?)\\1").getMatch(1);
+                dllink = br.getRegex("('|\")(https?://sv\\d+\\.4share\\.vn(:\\d+)?/[^<>\"]*?)\\1").getMatch(1);
                 if (dllink == null) {
-                    handleErrorsGeneral();
+                    handleErrorsWebsite(br);
                     logger.warning("Final downloadlink (String is \"dllink\") regex didn't match!");
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
             }
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, this.isResumeable(link, account), this.getMaxChunks(link, account));
         }
-        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, dllink, true, 0);
         if (!looksLikeDownloadableContent(dl.getConnection())) {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection(true);
-            handleErrorsGeneral();
+            handleErrorsWebsite(br);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl.startDownload();
     }
 
-    private void login(final Account account, final boolean force) throws Exception {
+    private void handlePremiumAPI(final DownloadLink link, final Account account) throws Exception {
+        requestFileInformationAPI(link, account);
+        final String fid = this.getFID(link);
+        final UrlQuery query = new UrlQuery();
+        query.add("file_id", Encoding.urlEncode(fid));
+        final PostRequest req = br.createPostRequest(API_BASE + "?cmd=get_download_link", query);
+        final Map<String, Object> payload = (Map<String, Object>) this.callAPI(req, account, null);
+        final String directurl = payload.get("download_link").toString();
+        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, directurl, this.isResumeable(link, account), this.getMaxChunks(link, account));
+        if (!looksLikeDownloadableContent(dl.getConnection())) {
+            logger.warning("The final dllink seems not to be a file!");
+            br.followConnection(true);
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server did not respond with file content");
+        }
+        dl.startDownload();
+    }
+
+    private void loginWebsite(final Account account, final boolean force) throws Exception {
         synchronized (account) {
             /* Load cookies */
             this.setBrowserExclusive();
@@ -286,18 +440,19 @@ public class FourShareVn extends PluginForHost {
                     /* Do not validate cookies */
                     return;
                 }
-                getPage("https://" + getHost());
-                if (!br.containsHTML("TK <b>VIP") && !br.containsHTML("Hạn sử dụng VIP: \\d{2,4}-\\d{2}-\\d{2,4}") && !br.containsHTML("Còn hạn sử dụng VIP đến: \\d{2,4}-\\d{2}-\\d{2,4}") && !br.containsHTML("Hạn dùng: \\d{2,4}-\\d{2}-\\d{2,4}")) {
+                br.getPage("https://" + getHost() + "/member");
+                if (this.isLoggedINWebsite(br)) {
+                    logger.info("Cookie login successful");
+                    refresh = false;
+                } else {
                     logger.info("Cookie login failed");
                     refresh = true;
                     account.clearCookies("");
-                } else {
-                    refresh = false;
                 }
             }
             if (refresh) {
-                getPage("https://4share.vn/");
-                getPage("/default/login");
+                br.getPage("https://4share.vn/");
+                br.getPage("/default/login");
                 final CaptchaHelperHostPluginRecaptchaV2 rc2 = new CaptchaHelperHostPluginRecaptchaV2(this, br, "6Lfnb8YUAAAAAElE9DwwEWA881UX3-chISAQZApu") {
                     @Override
                     public org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2.TYPE getType() {
@@ -305,12 +460,12 @@ public class FourShareVn extends PluginForHost {
                     }
                 };
                 br.getHeaders().put("Accept", "application/json, text/plain, */*");
-                postPage("/a_p_i/public-common/login", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&captcha=" + Encoding.urlEncode(rc2.getToken()));
+                br.postPage("/a_p_i/public-common/login", "username=" + Encoding.urlEncode(account.getUser()) + "&password=" + Encoding.urlEncode(account.getPass()) + "&captcha=" + Encoding.urlEncode(rc2.getToken()));
                 if (br.getCookie(br.getHost(), "currentUser", Cookies.NOTDELETEDPATTERN) == null) {
                     throw new AccountInvalidException();
                 }
-                getPage("/");
-                if (!br.containsHTML("TK <b>VIP") && !br.containsHTML("Hạn sử dụng VIP: \\d{2,4}-\\d{2}-\\d{2,4}") && !br.containsHTML("Còn hạn sử dụng VIP đến: \\d{2,4}-\\d{2}-\\d{2,4}") && !br.containsHTML("Hạn dùng: \\d{2,4}-\\d{2}-\\d{2,4}")) {
+                br.getPage("/member");
+                if (!this.isLoggedINWebsite(br)) {
                     throw new AccountInvalidException();
                 }
             }
@@ -318,58 +473,76 @@ public class FourShareVn extends PluginForHost {
         }
     }
 
-    private boolean isLoggedIN(final Browser br) {
-        // TODO: Also check logged in state via html, then make use of this function
-        if (br.getCookie(br.getHost(), "currentUser", Cookies.NOTDELETEDPATTERN) != null) {
+    private boolean isLoggedINWebsite(final Browser br) {
+        if (br.getCookie(br.getHost(), "currentUser", Cookies.NOTDELETEDPATTERN) != null && br.containsHTML("/login/logout")) {
             return true;
         } else {
             return false;
         }
     }
 
-    private void getPage(final String string) throws Exception {
-        if (string == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+    /* API docs: https://4share.vn/documents/api/ */
+    private Object callAPI(final Request req, final Account account, final DownloadLink link) throws IOException, PluginException, InterruptedException {
+        final String token = account.getStringProperty(PROPERTY_ACCOUNT_TOKEN);
+        if (token != null) {
+            req.getHeaders().put("accesstoken01", token);
         }
-        for (int i = 0; i != 4; i++) {
-            try {
-                br.getPage(string);
-            } catch (final BrowserException e) {
-                if (e.getCause() != null && e.getCause().toString().contains("ConnectException")) {
-                    if (i + 1 == 4) {
-                        throw e;
-                    } else {
-                        continue;
-                    }
+        br.getPage(req);
+        return checkErrors(account, link);
+    }
+
+    private Object checkErrors(final Account account, final DownloadLink link) throws PluginException, InterruptedException {
+        try {
+            final Object jsonO = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.OBJECT);
+            // if (jsonO == null || !(jsonO instanceof Map)) {
+            // return jsonO;
+            // }
+            final Map<String, Object> entries = (Map<String, Object>) jsonO;
+            final Number errorNumberO = (Number) entries.get("errorNumber");
+            final Object payload = entries.get("payload");
+            if (errorNumberO == null || errorNumberO.intValue() == 0) {
+                /* No error -> Return payload */
+                return payload;
+            }
+            /* Looks like on error, they always return code -100. */
+            // final int errorNumber = errorNumberO.intValue();
+            final String msg;
+            if (payload instanceof String) {
+                /* On error, payload should contain an error message as string */
+                msg = payload.toString();
+            } else {
+                msg = "API error " + errorNumberO;
+            }
+            if (msg.matches("(?i).*Please input valid access token.*")) {
+                /* Invalid access token */
+                throw new AccountUnavailableException(msg, 1 * 60 * 1000l);
+            } else if (msg.matches("(?i).*Not valid file_id.*")) {
+                /* File offline */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND, msg);
+            } else {
+                /* Unknown error */
+                if (link != null) {
+                    /* E.g. {"success":false,"detail":"Failed to request web download. Please try again later.","data":null} */
+                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, msg);
                 } else {
-                    throw e;
+                    throw new AccountInvalidException(msg);
                 }
             }
-            break;
+        } catch (final JSonMapperException jme) {
+            final String errortext = "Bad API response";
+            if (link != null) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, errortext);
+            } else {
+                throw new AccountUnavailableException(errortext, 1 * 60 * 1000l);
+            }
         }
     }
 
-    private void postPage(String string, String string2) throws Exception {
-        if (string == null || string2 == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        for (int i = 0; i != 4; i++) {
-            try {
-                br.postPage(string, string2);
-            } catch (final BrowserException e) {
-                if (e.getCause() != null && e.getCause().toString().contains("ConnectException")) {
-                    continue;
-                } else {
-                    throw e;
-                }
-            }
-            break;
-        }
-    }
-
-    private void handleErrorsGeneral() throws PluginException {
+    private void handleErrorsWebsite(final Browser br) throws PluginException {
         if (this.br.containsHTML("(?i)File này tạm dừng Download do yêu cầu của Người upload|Thông báo với Administrator\\!")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 30 * 60 * 1000l);
+        } else if (br.containsHTML("chứa file này đang bảo dưỡng")) {
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server is under maintenance!");
         }
     }
 
