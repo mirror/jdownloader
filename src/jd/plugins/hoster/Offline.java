@@ -160,6 +160,7 @@ public class Offline extends PluginForHost {
         ret.add(new String[] { "load.to" });
         ret.add(new String[] { "przeslij.com" });
         ret.add(new String[] { "archivos.me", "archivos.club" }); // 2024-06-25
+        ret.add(new String[] { "onuploads.com" });
         if (cache != null) {
             cache.put(cacheID, ret);
         }

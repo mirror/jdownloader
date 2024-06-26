@@ -90,7 +90,8 @@ public class PornportalCom extends PluginForHost {
         final List<String[]> ret = new ArrayList<String[]>();
         // each entry in List<String[]> will result in one PluginForHost, Plugin.getHost() will return String[0]->main domain
         ret.add(new String[] { "pornportal.com" });
-        ret.add(new String[] { "babes.com", "blackisbetter.com" });
+        /* 2024-06-26: babes.com is now spicevids.com */
+        ret.add(new String[] { "spicevids.com", "babes.com", "blackisbetter.com" });
         ret.add(new String[] { "bellesafilms.com" });
         ret.add(new String[] { "biempire.com" });
         ret.add(new String[] { "brazzers.com", "brazzer.com" });
@@ -114,6 +115,7 @@ public class PornportalCom extends PluginForHost {
         ret.add(new String[] { "whynotbi.com" });
         ret.add(new String[] { "bangbros.com", "bangbrothers.com", "bangbrothers.net" });
         ret.add(new String[] { "seancody.com" });
+        ret.add(new String[] { "dancingbear.com" });
         return ret;
     }
 
