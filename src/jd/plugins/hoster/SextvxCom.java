@@ -40,12 +40,11 @@ public class SextvxCom extends PluginForHost {
     // protocol: no https
     // other:
     /* Connection stuff - too many connections = server returns 404 on download attempt! */
-    private static final boolean free_resume       = true;
-    private static final int     free_maxchunks    = 1;
-    private static final int     free_maxdownloads = 5;
-    private String               dllink            = null;
-    private static final String  TYPE_NORMAL       = "https?://[^/]+/(?:[a-z]{2}/)?video/(\\d+)/([a-z0-9\\-]+)";
-    private static final String  TYPE_EMBED        = "https?://[^/]+/embed/(\\d+)";
+    private static final boolean free_resume    = true;
+    private static final int     free_maxchunks = 1;
+    private String               dllink         = null;
+    private static final String  TYPE_NORMAL    = "(?i)https?://[^/]+/(?:[a-z]{2}/)?video/(\\d+)/([a-z0-9\\-]+)";
+    private static final String  TYPE_EMBED     = "(?i)https?://[^/]+/embed/(\\d+)";
 
     @Override
     public String getAGBLink() {
@@ -84,10 +83,10 @@ public class SextvxCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        dllink = null;
         if (!link.isNameSet()) {
             link.setName(getWeakFilename(link));
         }
-        dllink = null;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         if (link.getPluginPatternMatcher().matches(TYPE_EMBED)) {
@@ -137,35 +136,38 @@ public class SextvxCom extends PluginForHost {
             }
             link.setFinalFileName(filename);
         }
-        final String source = br.getRegex("<source[^<>']+src='([^']+)'").getMatch(0);
+        /* First hit = best quality */
+        String source = br.getRegex("<source[^<>']+src=(?:\"|')([^'\"]+)[^>]*video/mp4").getMatch(0);
         if (source != null) {
             br.setFollowRedirects(false);
+            source = Encoding.htmlOnlyDecode(source);
             br.getPage(source);
             /* 2017-01-05: 2 different types. */
             final String redirect = br.getRedirectLocation();
             if (redirect != null) {
                 dllink = redirect;
             } else {
-                dllink = br.toString();
+                dllink = br.getRequest().getHtmlCode();
             }
             br.setFollowRedirects(true);
             if (dllink == null || !dllink.startsWith("http") || dllink.length() > 500) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            dllink = Encoding.htmlDecode(dllink);
+            dllink = Encoding.htmlOnlyDecode(dllink);
             final Browser br2 = br.cloneBrowser();
-            br2.getHeaders().put("Referer", "http://sextvx.com/static/player/player.swf");
+            br2.getHeaders().put("Referer", "http://" + getHost() + "/static/player/player.swf");
             // In case the link redirects to the finallink
             br2.setFollowRedirects(true);
             URLConnectionAdapter con = null;
             try {
                 con = br.openHeadConnection(dllink);
-                if (this.looksLikeDownloadableContent(con)) {
-                    if (con.getCompleteContentLength() > 0) {
+                handleConnectionErrors(br, con);
+                if (con.getCompleteContentLength() > 0) {
+                    if (con.isContentDecoded()) {
+                        link.setDownloadSize(con.getCompleteContentLength());
+                    } else {
                         link.setVerifiedFileSize(con.getCompleteContentLength());
                     }
-                } else {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Broken video?");
                 }
             } finally {
                 try {
@@ -181,22 +183,26 @@ public class SextvxCom extends PluginForHost {
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
-        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+        handleConnectionErrors(br, dl.getConnection());
+        dl.startDownload();
+    }
+
+    private void handleConnectionErrors(final Browser br, final URLConnectionAdapter con) throws PluginException, IOException {
+        if (!this.looksLikeDownloadableContent(con)) {
             br.followConnection(true);
-            if (dl.getConnection().getResponseCode() == 403) {
+            if (con.getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
+            } else if (con.getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             } else {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Broken video?");
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Video broken?");
             }
         }
-        dl.startDownload();
     }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return free_maxdownloads;
+        return 5;
     }
 
     @Override

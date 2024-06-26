@@ -15,10 +15,15 @@
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.parser.Regex;
 import jd.plugins.DownloadLink;
@@ -27,9 +32,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class SexbotCom extends PluginForHost {
@@ -46,12 +48,11 @@ public class SexbotCom extends PluginForHost {
     // Tags: Porn plugin
     // other:
     /* Connection stuff */
-    private static final boolean free_resume       = true;
-    private static final int     free_maxchunks    = 0;
-    private static final int     free_maxdownloads = -1;
-    private String               dllink            = null;
-    private static final String  TYPE_EMBED        = "(?:https?://[^/]+)?/embed/(\\d+)/?";
-    private static final String  TYPE_NORMAL       = "(?:https?://[^/]+)?/video/(\\d+)/([a-z0-9\\-]+)";
+    private static final boolean free_resume    = true;
+    private static final int     free_maxchunks = 0;
+    private String               dllink         = null;
+    private static final String  TYPE_EMBED     = "(?:https?://[^/]+)?/embed/(\\d+)/?";
+    private static final String  TYPE_NORMAL    = "(?:https?://[^/]+)?/video/(\\d+)/([a-z0-9\\-]+)";
 
     public static List<String[]> getPluginDomains() {
         final List<String[]> ret = new ArrayList<String[]>();
@@ -79,7 +80,7 @@ public class SexbotCom extends PluginForHost {
 
     @Override
     public String getAGBLink() {
-        return "https://www.sexbot.com/page/tos/";
+        return "https://www." + getHost() + "/page/tos/";
     }
 
     @Override
@@ -102,10 +103,6 @@ public class SexbotCom extends PluginForHost {
         }
     }
 
-    private String getURLTitle(final DownloadLink link) {
-        return getURLTitleCleaned(link.getPluginPatternMatcher());
-    }
-
     private String getURLTitleCleaned(final String url) {
         String title = new Regex(url, TYPE_NORMAL).getMatch(1);
         if (title != null) {
@@ -116,16 +113,22 @@ public class SexbotCom extends PluginForHost {
     }
 
     private String getWeakFilename(final DownloadLink link) {
+        final String extDefault = ".mp4";
         final String urlTitle = getURLTitleCleaned(link.getPluginPatternMatcher());
         if (urlTitle != null) {
-            return urlTitle + ".mp4";
+            return urlTitle + extDefault;
         } else {
-            return this.getFID(link) + ".mp4";
+            return this.getFID(link) + extDefault;
         }
     }
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
+        return requestFileInformation(link, false);
+    }
+
+    private AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
+        dllink = null;
         if (!link.isNameSet()) {
             link.setName(getWeakFilename(link));
         }
@@ -140,22 +143,23 @@ public class SexbotCom extends PluginForHost {
             if (realVideoURL == null || !realVideoURL.contains(this.getFID(link))) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            link.setPluginPatternMatcher(br.getURL(realVideoURL).toString());
+            link.setPluginPatternMatcher(br.getURL(realVideoURL).toExternalForm());
             br.getPage(realVideoURL);
         }
         final String titleByURL = getURLTitleCleaned(br.getURL());
         if (titleByURL != null) {
             link.setFinalFileName(titleByURL + ".mp4");
         }
-        dllink = br.getRegex("src=\"(https?://cdn[^\"]+)\"[^>]*type=\"video/mp4\"").getMatch(0);
-        if (!StringUtils.isEmpty(dllink)) {
+        dllink = br.getRegex("\"contentUrl\":\\s*\"(http[^\"]+)").getMatch(0);
+        if (!StringUtils.isEmpty(dllink) && !isDownload) {
             URLConnectionAdapter con = null;
             try {
                 con = br.openHeadConnection(this.dllink);
-                if (!this.looksLikeDownloadableContent(con)) {
-                    throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Video broken?");
-                } else {
-                    if (con.getCompleteContentLength() > 0) {
+                handleConnectionErrors(br, con);
+                if (con.getCompleteContentLength() > 0) {
+                    if (con.isContentDecoded()) {
+                        link.setDownloadSize(con.getCompleteContentLength());
+                    } else {
                         link.setVerifiedFileSize(con.getCompleteContentLength());
                     }
                 }
@@ -171,27 +175,31 @@ public class SexbotCom extends PluginForHost {
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
-        requestFileInformation(link);
+        requestFileInformation(link, true);
         if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, free_resume, free_maxchunks);
-        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
+        handleConnectionErrors(br, dl.getConnection());
+        dl.startDownload();
+    }
+
+    private void handleConnectionErrors(final Browser br, final URLConnectionAdapter con) throws PluginException, IOException {
+        if (!this.looksLikeDownloadableContent(con)) {
             br.followConnection(true);
-            if (dl.getConnection().getResponseCode() == 403) {
+            if (con.getResponseCode() == 403) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
-            } else if (dl.getConnection().getResponseCode() == 404) {
+            } else if (con.getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
             } else {
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error");
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Video broken?");
             }
         }
-        dl.startDownload();
     }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return free_maxdownloads;
+        return Integer.MAX_VALUE;
     }
 
     @Override

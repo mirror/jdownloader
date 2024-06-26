@@ -256,6 +256,7 @@ public class FourShareVn extends PluginForHost {
                 throw new AccountInvalidException("Free accounts are not supported");
             }
             if (quota_limit_download_daily_byte != null) {
+                /* 2024-06-26: API does not return traffic left so we set traffic max as traffic left. */
                 ai.setTrafficLeft(quota_limit_download_daily_byte.longValue());
                 ai.setTrafficMax(quota_limit_download_daily_byte.longValue());
             }
