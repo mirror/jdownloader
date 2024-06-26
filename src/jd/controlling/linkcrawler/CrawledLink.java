@@ -302,6 +302,7 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
                 }
                 return fixFilename((PackagizerController.replaceDynamicTags(lname, packageName, this)));
             } else {
+                // see setName method
                 return lname;
             }
         }
@@ -349,6 +350,7 @@ public class CrawledLink implements AbstractPackageChildrenNode<CrawledPackage>,
         }
         if (name != null) {
             if (!name.contains("<jd:")) {
+                // see getName method
                 name = fixFilename(name);
             }
             if (StringUtils.equals(name, this.name)) {

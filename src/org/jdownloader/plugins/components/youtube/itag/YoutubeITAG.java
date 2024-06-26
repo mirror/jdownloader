@@ -9,6 +9,7 @@ import java.util.List;
 import org.appwork.utils.parser.UrlQuery;
 
 public enum YoutubeITAG {
+    /* https://gist.github.com/MartinEesmaa/2f4b261cb90a47e9c41ba115a011a4aa */
     DASH_VIDEO_144p_AV1(394, StreamContainer.DASH_VIDEO, VideoResolution.P_144, VideoCodec.AV1, VideoFrameRate.FPS_30),
     DASH_VIDEO_144p_AV1_HIGHER_BITRATE(694, StreamContainer.DASH_VIDEO, VideoResolution.P_144, VideoCodec.AV1, VideoFrameRate.FPS_30),
     DASH_VIDEO_240p_AV1(395, StreamContainer.DASH_VIDEO, VideoResolution.P_240, VideoCodec.AV1, VideoFrameRate.FPS_30),
@@ -29,24 +30,46 @@ public enum YoutubeITAG {
     DASH_VIDEO_2160p_AV1_HIGHER_BITRATE(701, StreamContainer.DASH_VIDEO, VideoResolution.P_2160, VideoCodec.AV1, VideoFrameRate.FPS_60),
     DASH_VIDEO_4320p_AV1(402, StreamContainer.DASH_VIDEO, VideoResolution.P_4320, VideoCodec.AV1, VideoFrameRate.FPS_60),
     DASH_VIDEO_4320p_AV1_HIGHER_BITRATE(571, StreamContainer.DASH_VIDEO, VideoResolution.P_4320, VideoCodec.AV1, VideoFrameRate.FPS_60),
+
+    DASH_VIDEO_4320p_AV1_HFR_HIGH(702, StreamContainer.DASH_VIDEO, VideoResolution.P_4320, VideoCodec.AV1, VideoFrameRate.FPS_60),
+    // AAC (LC) 128 Kbps Stereo (2) Yes, YT Music
     DASH_AUDIO_128K_AAC(140, StreamContainer.DASH_AUDIO, AudioCodec.AAC, AudioBitrate.KBIT_128),
     // DASH_AUDIO_48K_OPUS(249, null, null, "Opus", "38kbit", YoutubeITAG.OPUS_48),
     DASH_AUDIO_128K_WEBM(171, StreamContainer.DASH_AUDIO, AudioCodec.VORBIS, AudioBitrate.KBIT_128),
     DASH_AUDIO_192K_WEBM(172, StreamContainer.DASH_AUDIO, AudioCodec.VORBIS, AudioBitrate.KBIT_192),
     DASH_AUDIO_256K_WEBM_SPATIAL(339, StreamContainer.DASH_AUDIO, AudioCodec.VORBIS_SPATIAL, AudioBitrate.KBIT_256),
+    // DTSE (DTS Express) 384 Kbps Surround (5.1) Rarely*
     DASH_AUDIO_384K_DTSE_SPATIAL(325, StreamContainer.DASH_AUDIO, AudioCodec.DTSE_SPATIAL, AudioBitrate.KBIT_384),
+    // EAC3 384 Kbps Surround (5.1) Rarely
     DASH_AUDIO_384K_EC3_SPATIAL(328, StreamContainer.DASH_AUDIO, AudioCodec.EC3_SPATIAL, AudioBitrate.KBIT_384),
+    // AC3 384 Kbps Surround (5.1) Rarely
     DASH_AUDIO_384K_AC3_SPATIAL(380, StreamContainer.DASH_AUDIO, AudioCodec.AC3_SPATIAL, AudioBitrate.KBIT_384),
+    // AAC (LC) 256 Kbps Surround (5.1) ?*
     DASH_AUDIO_256K_AAC_SPATIAL(327, StreamContainer.DASH_AUDIO, AudioCodec.AAC_SPATIAL, AudioBitrate.KBIT_256),
+    // AAC (HE v1) 192 Kbps Surround (5.1) Rarely
     DASH_AUDIO_192K_AAC_SPATIAL(256, StreamContainer.DASH_AUDIO, AudioCodec.AAC_SPATIAL, AudioBitrate.KBIT_192),
+    // AAC (LC) 384 Kbps Surround (5.1) Rarely
     DASH_AUDIO_384K_AAC_SPATIAL(258, StreamContainer.DASH_AUDIO, AudioCodec.AAC_SPATIAL, AudioBitrate.KBIT_384),
+    // AAC (LC) 256 Kbps Stereo (2) No, YT Music*
     DASH_AUDIO_256K_AAC(141, StreamContainer.DASH_AUDIO, AudioCodec.AAC, AudioBitrate.KBIT_256),
+    // AAC (HE v1) 48 Kbps Stereo (2) Yes, YT Music
     DASH_AUDIO_48K_AAC(139, StreamContainer.DASH_AUDIO, AudioCodec.AAC, AudioBitrate.KBIT_48),
-    // Opus Audio (ID 251) was changed from 160 kbit to 128 kbit https://board.jdownloader.org/showpost.php?p=371689&postcount=2238
+    // AAC (HE v1) 30 Kbps Stereo (2) Yes
+    DASH_AUDIO_32K_AAC(599, StreamContainer.DASH_AUDIO, AudioCodec.AAC, AudioBitrate.KBIT_32),
+
+    // Opus (VBR) ~480 Kbps (?) Quadraphonic (4) ?*
     DASH_AUDIO_512K_OPUS_SPATIAL(338, StreamContainer.DASH_AUDIO, AudioCodec.OPUS_SPATIAL, AudioBitrate.KBIT_512),
+    // Opus (VBR) ~256 Kbps Stereo (2) Some, YT Music*
+    DASH_AUDIO_OPUS_256KBIT(774, StreamContainer.DASH_AUDIO, AudioCodec.OPUS, AudioBitrate.KBIT_256),
+    // Opus (VBR) <=160 Kbps Stereo (2) Yes
     DASH_AUDIO_OPUS_160KBIT(251, StreamContainer.DASH_AUDIO, AudioCodec.OPUS, AudioBitrate.KBIT_160),
+    // Opus (VBR) ~70 Kbps Stereo (2) Yes
     DASH_AUDIO_OPUS_64KBIT(250, StreamContainer.DASH_AUDIO, AudioCodec.OPUS, AudioBitrate.KBIT_64),
+    // Opus (VBR) ~50 Kbps Stereo (2) Yes
     DASH_AUDIO_OPUS_48KBIT(249, StreamContainer.DASH_AUDIO, AudioCodec.OPUS, AudioBitrate.KBIT_48),
+    // Opus (VBR) ~35 Kbps Stereo (2) Yes
+    DASH_AUDIO_OPUS_32KBIT(600, StreamContainer.DASH_AUDIO, AudioCodec.OPUS, AudioBitrate.KBIT_32),
+
     DASH_VIDEO_1080_H264_FPS60(299, StreamContainer.DASH_VIDEO, VideoResolution.P_1080, VideoCodec.H264, VideoFrameRate.FPS_60),
     DASH_VIDEO_1080P_H264(137, StreamContainer.DASH_VIDEO, VideoResolution.P_1080, VideoCodec.H264, VideoFrameRate.FPS_30),
     // http://www.youtube.com/watch?v=gBabKoHSErI
@@ -62,8 +85,8 @@ public enum YoutubeITAG {
     DASH_VIDEO_360P_H264(134, StreamContainer.DASH_VIDEO, VideoResolution.P_360, VideoCodec.H264, VideoFrameRate.FPS_30),
     DASH_VIDEO_480P_H264(135, StreamContainer.DASH_VIDEO, VideoResolution.P_480, VideoCodec.H264, VideoFrameRate.FPS_30),
     /*
-     * 
-     * 
+     *
+     *
      * Video ID : 1 Format : AVC Format/Info : Advanced Video Codec Format profile : Main@L3 Format settings, CABAC : Yes Format settings,
      * ReFrames : 3 frames Codec ID : avc1 Codec ID/Info : Advanced Video Coding Duration : 6s 773ms Bit rate : 1 063 Kbps Width : 720
      * pixels Height : 480 pixels Display aspect ratio : 3:2 Frame rate mode : Variable Frame rate : 29.970 fps Minimum frame rate : 29.970

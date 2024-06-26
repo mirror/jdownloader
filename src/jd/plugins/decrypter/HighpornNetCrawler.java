@@ -16,18 +16,9 @@
 package jd.plugins.decrypter;
 
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Locale;
-
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
-import javax.script.ScriptException;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
@@ -45,6 +36,9 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
 import jd.utils.JDUtilities;
+
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "highporn.net", "tanix.net", "japanhub.net", "thatav.net" }, urls = { "https?://(?:www\\.)?highporn\\.net/video/(\\d+)(?:/[a-z0-9\\-]+)?", "https?://(?:www\\.)?tanix\\.net/video/(\\d+)(?:/[a-z0-9\\-]+)?", "https?://(?:www\\.)?japanhub\\.net/video/(\\d+)(?:/[a-z0-9\\-]+)?", "https?://(?:www\\.)?thatav\\.net/video/(\\d+)(?:/[a-z0-9\\-]+)?" })
 public class HighpornNetCrawler extends PluginForDecrypt {
@@ -166,18 +160,18 @@ public class HighpornNetCrawler extends PluginForDecrypt {
         return title;
     }
 
-    public static void main(String[] args) throws InterruptedException, MalformedURLException, ScriptException {
-        /* Simple method for decoding msg values obtained from real browser requests. */
-        final StringBuilder sb = new StringBuilder();
-        sb.append(
-                "function _0x3bbf() {     var _0xad5001 = ['HTXyy', 'r_script_f', 'charAt', 'HnnWl', 'epUkB', 'ODkNs', 'HJKLNMPQRS', 'stateObjec', '__nightmar', 'uFXvr', 'Sequentum', 'sZsMg', 'aMAhK', 'RAXbe', 'setup', 'outerHeigh', 'hidden', 'IFIjP', 'yqpGp', 'aEpaf', 'JjWRM', '__webdrive', 'VRtul', 'DYuQh', 'RPLuu', 'aqyby', '305UmmDux', 'pjUOp', 'FUeub', 'eqMXg', 'wunnS', 'rn\\\\x20this\\\\x22)(', 'data-src', 'l?random=', 'removeClas', 'aBnPU', 'LpYgA', 'gger', 'MNUmC', 'mHyLy', 'ajax', 'QUrNW', 'XcGiF', 'FJJzZ', 'click', '2631284xNFRVw', 'zORJj', 'tcbBp', 'ode\\\\x20receiv', 'crKgh', 'ctor(\\\\x22retu', 'table\\\\x20inpu', 'DqDEz', 'vGDOh', '.playlist_', '__driver_e', 'highporn', 'POST', 'constructo', '4297965OrgDCf', 'length', 'LqxfT', 'djGCn', 'UWhHL', 'split', '550HElZhf', 'ACryd', '620MIDKMs', 'Ucmmm', 'zOYUa', 'Rkmzi', 'attr', 'UNyFV', 'languages', 'Vwrrd', 'qvBor', 'yXlDD', 'frameEleme', 'rqAlZ', 'QRzSU', 'BehIZ', '35361aWsESU', 'DgYmp', 'log', 'QXGAb', '__karma__', 'find', 'uOjJZ', 'prototype', 'ZcTJe', 'MTndT', 'Xuokx', 'uvfXT', 'contains', 'counter', 'nPMLV', '#playlist', 'cjjfn', '__proto__', 'lbPjz', 'plugins', 'Trident/', 'ljGtX', 'qAvlC', 'info', 'LaTIP', 'player_con', 'webdriver', 'documentEl', 'userAgent', 'n\\\\x20the\\\\x20Base', 'html5', 'pvEoP', 'tGPVt', '.fel-playc', 'callSeleni', 'mvWWW', 'r_evaluate', '99770kJDkRO', 'ECJuK', 'search', 'toString', '789ABCDEFG', 'jvKjv', '{}.constru', 'ASftc', '_unwrapped', 'qmJcu', 'qOxpX', 'YZabcdefgh', 'PChAd', 'edxjI', 'nHPMv', 'MPQRSTUVWX', 'Base58.dec', '__selenium', 'unction', 'yMmAN', 'FuHHs', 'call', 'NlPtp', 'aGMpG', 'cache_', '\\\\x27\\\\x20is\\\\x20not\\\\x20i', 'sFlMA', 'exception', 'VWetC', 'NhepH', 'vGiJz', 'push', 'a-zA-Z_$][', 'jGjUB', 'ReDji', 'FLUaV', 'getTime', 'addClass', 'OgBkp', 'YiJiU', 'Yjenp', 'JCbep', 'er\\\\x20\\\\x27', 'Jwjxu', 'nhdoi', '$]*)', 'AEXns', 'RHzFW', '_Selenium_', 'BQBaM', 'ay.openhub', 'map', 'lXNec', 'gxfbh', 'cyZOU', 'oMvLT', 'tMwZd', 'nuHep', 'WDYZM', '0-9a-zA-Z_', 'lsxpX', '58\\\\x20xx88aa.', 'function\\\\x20*', 'HYJUV', 'qJIVD', 'ffxQC', 'DnAwi', 'lose', '4|0|5|3|2|', 'TZWCh', 'waLxU', '_selenium', '__driver_u', 'external', 'reverse', 'uljFO', '__fxdriver', 'IULbh', 'XxIbu', 'string', 'vSYMw', 'VZuZV', '101862AioVqs', 'uugqQ', 'https://pl', 'jVAHt', 'AbmDO', 'yJmrW', '.tv/playur', 'eCyTU', 'join', 'YnPOk', 'ZBSpZ', '.mjs-close', 'hwAGu', 'jhuOt', '1820VmJHhg', 'kmXQS', 'NoQKi', 'pVxxv', 'charCodeAt', 'test', 'IZeNh', 'ement', 'indexOf', 'YOcVr', 'trace', 'PSWba', 'NnFeZ', 'rNTQu', 'apply', 'RUIDx', 'HmfGf', 'yPTvX', 'xwTFS', '23456789AB', '2128155ocIJBi', 'nCTsb', 'GgRPl', '_evaluate', 'VIyNq', 'fziBm', 'DZTuU', 'SJhJG', 'sngrE', 'tuvwxyz1', 'hsvvT', 'VHSeT', 'yGDgx', 'PeLsL', 'fromCharCo', 'match', 'tainer', 'mNoZY', 'OVySg', 'selenium', 'IKVgl', 'document', 'phEtg', 'pltge', 'lfwdH', 'rUANi', 'getAttribu', 'init', 'UiLFc', 'toLowerCas', 'console', 'IRvkj', 'arQmM', 'nction()\\\\x20', 'setInterva', 'uaSBl', 'cUAUQ', 'iHdCe', 'cdRzL', 'OaAlC', 'bWBha', 'play__butt', 'SxgEy', 'input', 'IaIJt', 'e)\\\\x20{}', 'PNUKw', 'scene', 'gtEde', 'uneHu', 'RQyij', 'icFHX', 'BRZrc', 'XIAgt', 'return\\\\x20(fu', 'JtkcZ', 'unc', 'cRwSK', '8LodgeK', 'cPjfo', 'pMuYp', 'zWVFG', 'bind', 'BbGil', 'debu', 'osRrv', 'uniform', 'cxsVt', 'VLNxj', 'nfdwg', 'while\\\\x20(tru', 'bioSP', 'pause', 'error', 't.\\\\x20Charact', 'zAKGh', 'ed\\\\x20unaccep', 'KuvKL', 'pxlDn', 'ZIymQ', 'kEJuW', 'Llram', '1|4|3|5|6', 'kZbad', 'callPhanto', 'bSmfp', 'xNWZs', 'tvSUy', 'done', 'rwrYT'];    _0x3bbf = function() {      return _0xad5001;   };  return _0x3bbf(); }");
-        sb.append("var result = _0x3bbf();");
-        final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(null);
-        final ScriptEngine engine = manager.getEngineByName("javascript");
-        String result = null;
-        engine.eval(sb.toString());
-        final Object resultO = engine.get("result");
-        result = engine.get("result").toString();
-        System.out.println("Result = ");
-    }
+    // public static void main(String[] args) throws InterruptedException, MalformedURLException, ScriptException {
+    // /* Simple method for decoding msg values obtained from real browser requests. */
+    // final StringBuilder sb = new StringBuilder();
+    // sb.append(
+    // "function _0x3bbf() {     var _0xad5001 = ['HTXyy', 'r_script_f', 'charAt', 'HnnWl', 'epUkB', 'ODkNs', 'HJKLNMPQRS', 'stateObjec', '__nightmar', 'uFXvr', 'Sequentum', 'sZsMg', 'aMAhK', 'RAXbe', 'setup', 'outerHeigh', 'hidden', 'IFIjP', 'yqpGp', 'aEpaf', 'JjWRM', '__webdrive', 'VRtul', 'DYuQh', 'RPLuu', 'aqyby', '305UmmDux', 'pjUOp', 'FUeub', 'eqMXg', 'wunnS', 'rn\\\\x20this\\\\x22)(', 'data-src', 'l?random=', 'removeClas', 'aBnPU', 'LpYgA', 'gger', 'MNUmC', 'mHyLy', 'ajax', 'QUrNW', 'XcGiF', 'FJJzZ', 'click', '2631284xNFRVw', 'zORJj', 'tcbBp', 'ode\\\\x20receiv', 'crKgh', 'ctor(\\\\x22retu', 'table\\\\x20inpu', 'DqDEz', 'vGDOh', '.playlist_', '__driver_e', 'highporn', 'POST', 'constructo', '4297965OrgDCf', 'length', 'LqxfT', 'djGCn', 'UWhHL', 'split', '550HElZhf', 'ACryd', '620MIDKMs', 'Ucmmm', 'zOYUa', 'Rkmzi', 'attr', 'UNyFV', 'languages', 'Vwrrd', 'qvBor', 'yXlDD', 'frameEleme', 'rqAlZ', 'QRzSU', 'BehIZ', '35361aWsESU', 'DgYmp', 'log', 'QXGAb', '__karma__', 'find', 'uOjJZ', 'prototype', 'ZcTJe', 'MTndT', 'Xuokx', 'uvfXT', 'contains', 'counter', 'nPMLV', '#playlist', 'cjjfn', '__proto__', 'lbPjz', 'plugins', 'Trident/', 'ljGtX', 'qAvlC', 'info', 'LaTIP', 'player_con', 'webdriver', 'documentEl', 'userAgent', 'n\\\\x20the\\\\x20Base', 'html5', 'pvEoP', 'tGPVt', '.fel-playc', 'callSeleni', 'mvWWW', 'r_evaluate', '99770kJDkRO', 'ECJuK', 'search', 'toString', '789ABCDEFG', 'jvKjv', '{}.constru', 'ASftc', '_unwrapped', 'qmJcu', 'qOxpX', 'YZabcdefgh', 'PChAd', 'edxjI', 'nHPMv', 'MPQRSTUVWX', 'Base58.dec', '__selenium', 'unction', 'yMmAN', 'FuHHs', 'call', 'NlPtp', 'aGMpG', 'cache_', '\\\\x27\\\\x20is\\\\x20not\\\\x20i', 'sFlMA', 'exception', 'VWetC', 'NhepH', 'vGiJz', 'push', 'a-zA-Z_$][', 'jGjUB', 'ReDji', 'FLUaV', 'getTime', 'addClass', 'OgBkp', 'YiJiU', 'Yjenp', 'JCbep', 'er\\\\x20\\\\x27', 'Jwjxu', 'nhdoi', '$]*)', 'AEXns', 'RHzFW', '_Selenium_', 'BQBaM', 'ay.openhub', 'map', 'lXNec', 'gxfbh', 'cyZOU', 'oMvLT', 'tMwZd', 'nuHep', 'WDYZM', '0-9a-zA-Z_', 'lsxpX', '58\\\\x20xx88aa.', 'function\\\\x20*', 'HYJUV', 'qJIVD', 'ffxQC', 'DnAwi', 'lose', '4|0|5|3|2|', 'TZWCh', 'waLxU', '_selenium', '__driver_u', 'external', 'reverse', 'uljFO', '__fxdriver', 'IULbh', 'XxIbu', 'string', 'vSYMw', 'VZuZV', '101862AioVqs', 'uugqQ', 'https://pl', 'jVAHt', 'AbmDO', 'yJmrW', '.tv/playur', 'eCyTU', 'join', 'YnPOk', 'ZBSpZ', '.mjs-close', 'hwAGu', 'jhuOt', '1820VmJHhg', 'kmXQS', 'NoQKi', 'pVxxv', 'charCodeAt', 'test', 'IZeNh', 'ement', 'indexOf', 'YOcVr', 'trace', 'PSWba', 'NnFeZ', 'rNTQu', 'apply', 'RUIDx', 'HmfGf', 'yPTvX', 'xwTFS', '23456789AB', '2128155ocIJBi', 'nCTsb', 'GgRPl', '_evaluate', 'VIyNq', 'fziBm', 'DZTuU', 'SJhJG', 'sngrE', 'tuvwxyz1', 'hsvvT', 'VHSeT', 'yGDgx', 'PeLsL', 'fromCharCo', 'match', 'tainer', 'mNoZY', 'OVySg', 'selenium', 'IKVgl', 'document', 'phEtg', 'pltge', 'lfwdH', 'rUANi', 'getAttribu', 'init', 'UiLFc', 'toLowerCas', 'console', 'IRvkj', 'arQmM', 'nction()\\\\x20', 'setInterva', 'uaSBl', 'cUAUQ', 'iHdCe', 'cdRzL', 'OaAlC', 'bWBha', 'play__butt', 'SxgEy', 'input', 'IaIJt', 'e)\\\\x20{}', 'PNUKw', 'scene', 'gtEde', 'uneHu', 'RQyij', 'icFHX', 'BRZrc', 'XIAgt', 'return\\\\x20(fu', 'JtkcZ', 'unc', 'cRwSK', '8LodgeK', 'cPjfo', 'pMuYp', 'zWVFG', 'bind', 'BbGil', 'debu', 'osRrv', 'uniform', 'cxsVt', 'VLNxj', 'nfdwg', 'while\\\\x20(tru', 'bioSP', 'pause', 'error', 't.\\\\x20Charact', 'zAKGh', 'ed\\\\x20unaccep', 'KuvKL', 'pxlDn', 'ZIymQ', 'kEJuW', 'Llram', '1|4|3|5|6', 'kZbad', 'callPhanto', 'bSmfp', 'xNWZs', 'tvSUy', 'done', 'rwrYT'];    _0x3bbf = function() {      return _0xad5001;   };  return _0x3bbf(); }");
+    // sb.append("var result = _0x3bbf();");
+    // final ScriptEngineManager manager = JavaScriptEngineFactory.getScriptEngineManager(null);
+    // final ScriptEngine engine = manager.getEngineByName("javascript");
+    // String result = null;
+    // engine.eval(sb.toString());
+    // final Object resultO = engine.get("result");
+    // result = engine.get("result").toString();
+    // System.out.println("Result = ");
+    // }
 }
