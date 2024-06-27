@@ -120,7 +120,7 @@ public class SharebitUploadCom extends XFileSharingProBasic {
 
     @Override
     protected boolean isOffline(final DownloadLink link, final Browser br) {
-        if (br.containsHTML(">\\s*Downloading this file, you break DMCA") && !true) {
+        if (br.containsHTML(">\\s*Downloading this file, you break DMCA")) {
             return true;
         } else {
             return super.isOffline(link, br);
