@@ -419,12 +419,27 @@ public abstract class Plugin implements ActionListener {
      * @return Filename aus dem header (content disposition) extrahiert
      */
     public static String getFileNameFromHeader(final URLConnectionAdapter urlConnection) {
-        final String fileName = getFileNameFromDispositionHeader(urlConnection);
-        if (StringUtils.isEmpty(fileName)) {
-            return Plugin.getFileNameFromURL(urlConnection.getURL());
-        } else {
-            return fileName;
+        final String filenameFromDispositionHeader = getFileNameFromDispositionHeader(urlConnection);
+        if (!StringUtils.isEmpty(filenameFromDispositionHeader)) {
+            return filenameFromDispositionHeader;
         }
+        String filenameFromURL = Plugin.getFileNameFromURL(urlConnection.getURL());
+        if (filenameFromURL != null) {
+            /* Add file extension if none is there. */
+            if (!filenameFromURL.contains(".") && urlConnection.getContentType() != null) {
+                String extByMimetype = null;
+                // TODO: Obtain file extension via one-liner from another function
+                final List<CompiledFiletypeExtension> fileTypeExtensions = CompiledFiletypeFilter.getByMimeType(urlConnection.getContentType());
+                if (fileTypeExtensions != null && fileTypeExtensions.size() > 0) {
+                    extByMimetype = fileTypeExtensions.get(0).getExtensionFromMimeType(urlConnection.getContentType());
+                }
+                if (extByMimetype != null) {
+                    filenameFromURL = filenameFromURL + "." + extByMimetype;
+                }
+            }
+            return filenameFromURL;
+        }
+        return null;
     }
 
     public static String getFileNameFromURL(final URL url) {

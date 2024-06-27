@@ -494,10 +494,6 @@ public class TwitterCom extends PluginForHost {
                             if (tweetID != null && !filenameFromConnection.contains(tweetID)) {
                                 filenameFromConnection = tweetID + "_" + filenameFromConnection;
                             }
-                            final String ext = getExtensionFromMimeType(con);
-                            if (ext != null) {
-                                filenameFromConnection = applyFilenameExtension(filenameFromConnection, "." + ext);
-                            }
                         }
                     } finally {
                         if (con != null) {
