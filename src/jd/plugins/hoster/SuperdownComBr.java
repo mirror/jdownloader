@@ -145,7 +145,7 @@ public class SuperdownComBr extends antiDDoSForHost {
                 try {
                     con = openAntiDDoSRequestConnection(checkbr, checkbr.createGetRequest(link.getDownloadURL()));
                     if (con.isContentDisposition()) {
-                        link.setFinalFileName(getFileNameFromHeader(con));
+                        link.setFinalFileName(getFileNameFromConnection(con));
                         if (con.isContentDecoded()) {
                             link.setDownloadSize(con.getCompleteContentLength());
                         } else {

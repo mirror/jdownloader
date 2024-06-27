@@ -176,7 +176,7 @@ public class BangbrosCom extends PluginForHost {
                 }
                 link.setVerifiedFileSize(con.getCompleteContentLength());
                 if (final_filename == null) {
-                    final String filenameFromHeader = getFileNameFromHeader(con);
+                    final String filenameFromHeader = getFileNameFromConnection(con);
                     if (filenameFromHeader != null) {
                         final_filename = Encoding.htmlDecode(filenameFromHeader);
                     }

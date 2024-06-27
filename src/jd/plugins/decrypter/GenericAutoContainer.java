@@ -61,7 +61,7 @@ public class GenericAutoContainer extends PluginForDecrypt {
             try {
                 if (con.isOK()) {
                     boolean seemsValidContainer = StringUtils.containsIgnoreCase(con.getContentType(), type);
-                    seemsValidContainer = seemsValidContainer | (con.isContentDisposition() && StringUtils.containsIgnoreCase(Plugin.getFileNameFromHeader(con), type)) || (con.getContentLength() > 100 && (con.getContentType() == null || !StringUtils.containsIgnoreCase(con.getContentType(), "text")));
+                    seemsValidContainer = seemsValidContainer | (con.isContentDisposition() && StringUtils.containsIgnoreCase(Plugin.getFileNameFromConnection(con), type)) || (con.getContentLength() > 100 && (con.getContentType() == null || !StringUtils.containsIgnoreCase(con.getContentType(), "text")));
                     if (seemsValidContainer) {
                         containerTemp = org.appwork.utils.Application.getResource("tmp/autocontainer/" + System.nanoTime() + "." + type);
                         br.downloadConnection(containerTemp, con);

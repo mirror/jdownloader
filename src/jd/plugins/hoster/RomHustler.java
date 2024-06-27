@@ -248,7 +248,7 @@ public class RomHustler extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        final String filename = getFileNameFromHeader(dl.getConnection());
+        final String filename = getFileNameFromConnection(dl.getConnection());
         if (filename != null) {
             link.setFinalFileName(Encoding.htmlDecode(filename).trim());
         }

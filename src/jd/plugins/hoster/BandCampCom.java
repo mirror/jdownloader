@@ -174,7 +174,7 @@ public class BandCampCom extends PluginForHost {
                 if (con.getCompleteContentLength() > 0) {
                     link.setVerifiedFileSize(con.getCompleteContentLength());
                 }
-                final String filenameFromHeader = getFileNameFromHeader(con);
+                final String filenameFromHeader = getFileNameFromConnection(con);
                 if (filenameFromHeader != null) {
                     link.setFinalFileName(Encoding.htmlDecode(filenameFromHeader).trim());
                 }

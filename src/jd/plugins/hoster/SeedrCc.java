@@ -103,7 +103,7 @@ public class SeedrCc extends PluginForHost {
                         link.setVerifiedFileSize(con.getCompleteContentLength());
                     }
                 }
-                final String filenameFromConnection = getFileNameFromHeader(con);
+                final String filenameFromConnection = getFileNameFromConnection(con);
                 if (filenameFromConnection != null && link.getFinalFileName() == null) {
                     link.setFinalFileName(filenameFromConnection);
                 }
@@ -151,7 +151,7 @@ public class SeedrCc extends PluginForHost {
                         link.setVerifiedFileSize(con.getCompleteContentLength());
                     }
                 }
-                final String filenameFromHeader = getFileNameFromHeader(con);
+                final String filenameFromHeader = getFileNameFromConnection(con);
                 if (filenameFromHeader != null) {
                     link.setFinalFileName(filenameFromHeader);
                 }

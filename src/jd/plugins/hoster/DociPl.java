@@ -262,7 +262,7 @@ public class DociPl extends PluginForHost {
                 throw e;
             }
         }
-        final String final_server_filename = getFileNameFromHeader(dl.getConnection());
+        final String final_server_filename = getFileNameFromConnection(dl.getConnection());
         if (final_server_filename != null) {
             link.setFinalFileName(Encoding.htmlDecode(final_server_filename).trim());
         }

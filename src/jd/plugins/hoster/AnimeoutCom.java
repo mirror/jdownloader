@@ -120,7 +120,7 @@ public class AnimeoutCom extends PluginForHost {
                 if (con.getCompleteContentLength() > 0) {
                     link.setVerifiedFileSize(con.getCompleteContentLength());
                 }
-                link.setFinalFileName(getFileNameFromHeader(con));
+                link.setFinalFileName(getFileNameFromConnection(con));
             } else if (con.getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else {

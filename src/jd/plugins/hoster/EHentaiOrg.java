@@ -609,7 +609,7 @@ public class EHentaiOrg extends PluginForHost {
             }
         }
         /* Correct filename if necessary */
-        final String headerFilename = Plugin.getFileNameFromHeader(dl.getConnection());
+        final String headerFilename = Plugin.getFileNameFromConnection(dl.getConnection());
         final String finalFilename = link.getFinalFileName();
         final String extByMimeType = getExtensionFromMimeType(dl.getConnection());
         if (finalFilename != null && headerFilename != null) {

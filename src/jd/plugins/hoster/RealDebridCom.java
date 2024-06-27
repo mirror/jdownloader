@@ -851,7 +851,7 @@ public class RealDebridCom extends PluginForHost {
                 con = brc.openGetConnection(link.getDownloadURL());
                 if (looksLikeDownloadableContent(con)) {
                     if (link.getFinalFileName() == null) {
-                        link.setFinalFileName(getFileNameFromHeader(con));
+                        link.setFinalFileName(getFileNameFromConnection(con));
                     }
                     if (con.isContentDecoded()) {
                         link.setDownloadSize(con.getCompleteContentLength());

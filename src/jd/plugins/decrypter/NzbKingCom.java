@@ -64,7 +64,7 @@ public class NzbKingCom extends PluginForDecrypt {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             ret.addAll(NZBSAXHandler.parseNZB(con.getInputStream()));
-            final String nzbFilename = Plugin.getFileNameFromHeader(con);
+            final String nzbFilename = Plugin.getFileNameFromConnection(con);
             final Regex nzbCommonFilenameScheme = new Regex(nzbFilename, NZB.PATTERN_COMMON_FILENAME_SCHEME);
             if (nzbFilename != null && nzbCommonFilenameScheme.matches()) {
                 if (nzbCommonFilenameScheme.matches()) {

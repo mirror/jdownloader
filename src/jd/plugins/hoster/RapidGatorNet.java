@@ -320,7 +320,7 @@ public class RapidGatorNet extends PluginForHost {
                     }
                 }
                 if (link.getFinalFileName() == null) {
-                    final String filenameFromConnection = Plugin.getFileNameFromHeader(con);
+                    final String filenameFromConnection = Plugin.getFileNameFromConnection(con);
                     if (filenameFromConnection != null) {
                         link.setFinalFileName(filenameFromConnection);
                     }

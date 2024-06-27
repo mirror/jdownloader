@@ -255,7 +255,7 @@ public abstract class HighWayCore extends UseNet {
                     if (!this.looksLikeDownloadableContent(con) || con.getCompleteContentLength() <= 0) {
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                     }
-                    final String filename = getFileNameFromHeader(con);
+                    final String filename = getFileNameFromConnection(con);
                     if (filename != null) {
                         link.setFinalFileName(filename);
                     }
@@ -298,7 +298,7 @@ public abstract class HighWayCore extends UseNet {
                 if (!this.looksLikeDownloadableContent(con)) {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
-                final String serverFilename = getFileNameFromHeader(con);
+                final String serverFilename = getFileNameFromConnection(con);
                 if (!StringUtils.isEmpty(serverFilename)) {
                     link.setFinalFileName(serverFilename);
                 } else {

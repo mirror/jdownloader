@@ -180,7 +180,7 @@ public class MvpdjCom extends PluginForHost {
                 con = br2.openHeadConnection(dllink);
                 handleConnectionErrors(br2, con);
                 /* Especially for official account-downloads, server-filenames might be crippled! */
-                final String filename_connection = getFileNameFromHeader(con);
+                final String filename_connection = getFileNameFromConnection(con);
                 link.setFinalFileName(filename_connection);
                 if (con.getCompleteContentLength() > 0) {
                     if (con.isContentDecoded()) {

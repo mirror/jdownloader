@@ -80,7 +80,7 @@ public class SolidFilesComFolder extends PluginForDecrypt {
             // direct downloadable
             final DownloadLink dl = createDownloadlink(param.getCryptedUrl());
             dl.setProperty(SolidFilesCom.PROPERTY_DIRECT_DOWNLOAD, true);
-            final String fileName = getFileNameFromHeader(br.getHttpConnection());
+            final String fileName = getFileNameFromConnection(br.getHttpConnection());
             if (fileName != null) {
                 dl.setFinalFileName(fileName);
             }

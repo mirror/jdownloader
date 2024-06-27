@@ -963,7 +963,7 @@ public class DirectHTTP extends antiDDoSForHost implements DownloadConnectionVer
                     /* server has issues with open end range requests */
                     optionSet.add("avoidOpenRange");
                 }
-                if (retryConnection(downloadLink, urlConnection) || (StringUtils.contains(urlConnection.getContentType(), "image") && (urlConnection.getLongContentLength() < 1024) || StringUtils.containsIgnoreCase(getFileNameFromHeader(urlConnection), "expired"))) {
+                if (retryConnection(downloadLink, urlConnection) || (StringUtils.contains(urlConnection.getContentType(), "image") && (urlConnection.getLongContentLength() < 1024) || StringUtils.containsIgnoreCase(getFileNameFromConnection(urlConnection), "expired"))) {
                     final String possibleURLParams = getPossibleURLParams(downloadLink);
                     if (possibleURLParams != null || RequestMethod.HEAD.equals(urlConnection.getRequest().getRequestMethod())) {
                         followURLConnection(br, urlConnection);

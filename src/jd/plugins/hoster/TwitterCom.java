@@ -487,7 +487,7 @@ public class TwitterCom extends PluginForHost {
                                 link.setVerifiedFileSize(con.getCompleteContentLength());
                             }
                         }
-                        filenameFromConnection = getFileNameFromHeader(con);
+                        filenameFromConnection = getFileNameFromConnection(con);
                         if (filenameFromConnection != null) {
                             /* Do some corrections */
                             filenameFromConnection = Encoding.htmlDecode(filenameFromConnection).replace(":orig", "").trim();

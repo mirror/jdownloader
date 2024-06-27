@@ -583,7 +583,7 @@ public class MotherLessCom extends PluginForHost {
             }
             if (link.getFinalFileName() == null) {
                 final String plugin_filename = link.getName();
-                String server_filename = getFileNameFromHeader(dl.getConnection());
+                String server_filename = getFileNameFromConnection(dl.getConnection());
                 if (server_filename != null) {
                     server_filename = Encoding.htmlDecode(server_filename).trim();
                 }

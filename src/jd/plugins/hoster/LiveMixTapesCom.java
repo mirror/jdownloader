@@ -136,7 +136,7 @@ public class LiveMixTapesCom extends antiDDoSForHost {
                     }
                     /* Check if final filename has been set in crawler before */
                     if (link.getFinalFileName() == null) {
-                        link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con).trim()));
+                        link.setFinalFileName(Encoding.htmlDecode(getFileNameFromConnection(con).trim()));
                     }
                 } else {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

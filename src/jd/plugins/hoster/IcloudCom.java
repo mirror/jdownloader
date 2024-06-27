@@ -127,7 +127,7 @@ public class IcloudCom extends PluginForHost {
                         }
                     }
                     if (filename == null) {
-                        filename = getFileNameFromHeader(con);
+                        filename = getFileNameFromConnection(con);
                         link.setFinalFileName(filename);
                     }
                     /* Save directlink to save http requests in the future. */

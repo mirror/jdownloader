@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -15,8 +17,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.components.SiteType.SiteTemplate;
-
-import org.appwork.utils.StringUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class ImgShotCore extends antiDDoSForHost {
@@ -100,16 +100,19 @@ public class ImgShotCore extends antiDDoSForHost {
     }
 
     /**
-     * Override to disable filesize-check! </br> default = true
+     * Override to disable filesize-check! </br>
+     * default = true
      */
     protected boolean checkFilesize() {
         return true;
     }
 
     /**
-     * Enforce official download via "dlimg.php"? </br> A lot of hosts have it enabled although they do not display a download button on
-     * their website! </br> default = true </br> Example official download supported but broken serverside: imagedecode.com, imageteam.org
-     * </br> Example official download working fine: imgwallet.com, imgadult.com
+     * Enforce official download via "dlimg.php"? </br>
+     * A lot of hosts have it enabled although they do not display a download button on their website! </br>
+     * default = true </br>
+     * Example official download supported but broken serverside: imagedecode.com, imageteam.org </br>
+     * Example official download working fine: imgwallet.com, imgadult.com
      */
     protected boolean enforceOfficialDownloadURL() {
         return true;
@@ -170,7 +173,7 @@ public class ImgShotCore extends antiDDoSForHost {
                          * Set filename with correct extension. Most content will be .jpg but sometimes there will be .png and .gif as well.
                          */
                         final String final_file_extension;
-                        final String file_extension_from_server = getFileNameExtensionFromString(getFileNameFromHeader(con));
+                        final String file_extension_from_server = getFileNameExtensionFromString(getFileNameFromConnection(con));
                         if (file_extension_from_server != null) {
                             final_file_extension = file_extension_from_server;
                         } else {
@@ -267,22 +270,24 @@ public class ImgShotCore extends antiDDoSForHost {
                 } else {
                     logger.info("Official downloadlink works");
                     if (con.getCompleteContentLength() > 0) {
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                        if (con.isContentDecoded()) {
+                            link.setDownloadSize(con.getCompleteContentLength());
+                        } else {
+                            link.setVerifiedFileSize(con.getCompleteContentLength());
+                        }
                     }
                     if (filename != null) {
                         /*
                          * Set filename with correct extension. Most content will be .jpg but sometimes there will be .png and .gif as well.
                          */
                         final String final_file_extension;
-                        final String file_extension_from_server = getFileNameExtensionFromString(getFileNameFromHeader(con));
+                        final String file_extension_from_server = getFileNameExtensionFromString(getFileNameFromConnection(con));
                         if (file_extension_from_server != null) {
                             final_file_extension = file_extension_from_server;
                         } else {
                             final_file_extension = getDefaultFileExtension();
                         }
-                        if (!filename.endsWith(final_file_extension)) {
-                            filename += final_file_extension;
-                        }
+                        filename = this.applyFilenameExtension(filename, final_file_extension);
                         link.setFinalFileName(filename);
                     }
                     return dllink;
@@ -344,7 +349,7 @@ public class ImgShotCore extends antiDDoSForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return Integer.MAX_VALUE;
     }
 
     @Override

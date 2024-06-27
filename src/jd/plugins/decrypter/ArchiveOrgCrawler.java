@@ -1038,7 +1038,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                                     link.setVerifiedFileSize(con.getCompleteContentLength());
                                 }
                             }
-                            link.setFinalFileName(getFileNameFromHeader(con));
+                            link.setFinalFileName(getFileNameFromConnection(con));
                             link.setAvailable(true);
                         } else {
                             /* 2021-02-05: Either offline or account-only. Assume offline for now. */
@@ -1170,7 +1170,7 @@ public class ArchiveOrgCrawler extends PluginForDecrypt {
                             link.setVerifiedFileSize(con.getCompleteContentLength());
                         }
                     }
-                    final String filenameFromHeader = getFileNameFromHeader(con);
+                    final String filenameFromHeader = getFileNameFromConnection(con);
                     if (filenameFromHeader != null) {
                         link.setFinalFileName(Encoding.htmlDecode(filenameFromHeader).trim());
                     }

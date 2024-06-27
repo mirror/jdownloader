@@ -140,7 +140,7 @@ public class FexNet extends PluginForHost {
             if (this.looksLikeDownloadableContent(con)) {
                 /* Filename is usually set in crawler */
                 if (link.getFinalFileName() == null) {
-                    link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
+                    link.setFinalFileName(Encoding.htmlDecode(getFileNameFromConnection(con)));
                 }
                 if (con.getCompleteContentLength() > 0) {
                     link.setVerifiedFileSize(con.getCompleteContentLength());

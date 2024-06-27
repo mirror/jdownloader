@@ -86,7 +86,7 @@ public class AdriveComDecrypter extends PluginForDecrypt {
                     if (con.getContentType().contains("html")) {
                         br.followConnection();
                     } else {
-                        String filename = getFileNameFromHeader(con);
+                        String filename = getFileNameFromConnection(con);
                         long filesize = con.getCompleteContentLength();
                         if (filename != null && filesize > 0) {
                             final DownloadLink dl = new DownloadLink(hostPlg, this.getHost(), this.getHost(), br.getURL(), true);

@@ -150,7 +150,7 @@ public class SuicidegirlsCom extends PluginForHost {
                     }
                 }
                 if (filename == null) {
-                    filename = getFileNameFromHeader(con);
+                    filename = getFileNameFromConnection(con);
                 }
                 link.setProperty(PROPERTY_DIRECTURL, dllink);
             } finally {

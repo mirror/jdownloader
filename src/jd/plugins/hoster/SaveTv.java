@@ -1298,7 +1298,7 @@ public class SaveTv extends PluginForHost {
             /* Avoid downloading (too small) trash data */
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Serverfehler: Datei vom Server zu klein: " + SIZEUNIT.formatValue((SIZEUNIT) CFG_GUI.MAX_SIZE_UNIT.getValue(), dl.getConnection().getCompleteContentLength()), 60 * 60 * 1000l);
         }
-        String server_filename = getFileNameFromHeader(dl.getConnection());
+        String server_filename = getFileNameFromConnection(dl.getConnection());
         server_filename = fixCharIssues(server_filename);
         server_filename = server_filename.substring(0, server_filename.lastIndexOf("."));
         link.setProperty(PROPERTY_server_filename, server_filename);

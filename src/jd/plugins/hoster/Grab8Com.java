@@ -133,7 +133,7 @@ public class Grab8Com extends antiDDoSForHost {
         try {
             con = openAntiDDoSRequestConnection(br, br.createHeadRequest(link.getDownloadURL()));
             if (con.isContentDisposition() && con.isOK()) {
-                link.setName(getFileNameFromHeader(con));
+                link.setName(getFileNameFromConnection(con));
                 if (con.isContentDecoded()) {
                     link.setDownloadSize(con.getCompleteContentLength());
                 } else {

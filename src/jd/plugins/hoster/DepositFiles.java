@@ -529,7 +529,7 @@ public class DepositFiles extends antiDDoSForHost {
 
     private void handlePreDownloadStuff(final URLConnectionAdapter connection, final DownloadLink link, final Account account, String finalLink) {
         final String finalLinkProperty = this.getDirectlinkproperty(account);
-        final String name = Plugin.getFileNameFromHeader(connection);
+        final String name = Plugin.getFileNameFromConnection(connection);
         if (name != null && name.contains("?") && link.getFinalFileName() == null) {
             /* fix invalid filenames */
             final String fixedName = new Regex(name, "(.+)\\?").getMatch(0);

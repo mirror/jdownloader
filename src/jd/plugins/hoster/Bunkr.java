@@ -339,7 +339,7 @@ public class Bunkr extends PluginForHost {
             if (con.getCompleteContentLength() > 0) {
                 link.setVerifiedFileSize(con.getCompleteContentLength());
             }
-            final String filenameFromHeader = Plugin.getFileNameFromHeader(con);
+            final String filenameFromHeader = Plugin.getFileNameFromConnection(con);
             if (!StringUtils.isEmpty(filenameFromHeader)) {
                 setFilename(link, filenameFromHeader, true, true);
             }

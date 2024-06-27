@@ -102,7 +102,7 @@ public class GooglePhotos extends PluginForHost {
                     }
                     if (dllink != null) {
                         con = br.openHeadConnection(dllink);
-                        filename = getFileNameFromHeader(con);
+                        filename = getFileNameFromConnection(con);
                         if (isVideoStreamDwnload) {
                             filename = this.removeDoubleExtensions(filename, "mp4");
                             /* =m22?cpn=blablabla&c=WEB&cver=1.20160414 */
@@ -146,7 +146,7 @@ public class GooglePhotos extends PluginForHost {
                 if (!con.getContentType().contains("html")) {
                     filesize = con.getLongContentLength();
                     if (filename == null) {
-                        filename = getFileNameFromHeader(con);
+                        filename = getFileNameFromConnection(con);
                     }
                     if (filename == null) {
                         filename = url_title;

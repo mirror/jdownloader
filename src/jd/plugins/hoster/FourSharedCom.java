@@ -641,7 +641,7 @@ public class FourSharedCom extends PluginForHost {
                     } else {
                         link.setVerifiedFileSize(con.getCompleteContentLength());
                     }
-                    link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
+                    link.setFinalFileName(Encoding.htmlDecode(getFileNameFromConnection(con)));
                     DLLINK = link.getDownloadURL();
                     return AvailableStatus.TRUE;
                 }

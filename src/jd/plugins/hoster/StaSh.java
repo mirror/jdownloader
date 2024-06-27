@@ -185,7 +185,7 @@ public class StaSh extends PluginForHost {
                         }
                     }
                     if (isZip(link)) {
-                        filename = getFileNameFromHeader(con);
+                        filename = getFileNameFromConnection(con);
                     }
                     if (ext == null) {
                         ext = this.getExtensionFromMimeType(con);

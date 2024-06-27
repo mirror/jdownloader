@@ -296,7 +296,7 @@ public class PanBaiduCom extends PluginForHost {
             handleJsonErrorcodes(this.br);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        downloadLink.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
+        downloadLink.setFinalFileName(Encoding.htmlDecode(getFileNameFromConnection(dl.getConnection())));
         if (passCode != null) {
             downloadLink.setDownloadPassword(passCode);
         }

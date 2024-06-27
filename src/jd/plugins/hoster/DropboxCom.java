@@ -212,7 +212,7 @@ public class DropboxCom extends PluginForHost {
                             link.setVerifiedFileSize(con.getCompleteContentLength());
                         }
                     }
-                    String filenameFromHeader = getFileNameFromHeader(con);
+                    String filenameFromHeader = getFileNameFromConnection(con);
                     if (!StringUtils.isEmpty(filenameFromHeader)) {
                         if (Encoding.isHtmlEntityCoded(filenameFromHeader)) {
                             filenameFromHeader = Encoding.htmlDecode(filenameFromHeader).trim();

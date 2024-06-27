@@ -114,7 +114,7 @@ public class HulkShareCom extends PluginForHost {
                 } else {
                     link.setVerifiedFileSize(con.getCompleteContentLength());
                 }
-                link.setFinalFileName(getFileNameFromHeader(con));
+                link.setFinalFileName(getFileNameFromConnection(con));
                 link.setProperty("freelink", con.getURL().toString());
                 return AvailableStatus.TRUE;
             } else {

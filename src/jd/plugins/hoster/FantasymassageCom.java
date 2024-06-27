@@ -91,7 +91,7 @@ public class FantasymassageCom extends PluginForHost {
             con = br.openHeadConnection(dllink);
             if (!con.getContentType().contains("html")) {
                 link.setDownloadSize(con.getLongContentLength());
-                link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
+                link.setFinalFileName(Encoding.htmlDecode(getFileNameFromConnection(con)));
             } else {
                 this.refreshDownloadurl(link);
                 if (dllink != null) {

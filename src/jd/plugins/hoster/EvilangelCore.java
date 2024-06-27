@@ -200,7 +200,7 @@ public abstract class EvilangelCore extends PluginForHost {
                         }
                         if (StringUtils.isEmpty(filename)) {
                             /* Fallback if everything else fails */
-                            filename = Encoding.htmlDecode(getFileNameFromHeader(con));
+                            filename = Encoding.htmlDecode(getFileNameFromConnection(con));
                         }
                         link.setFinalFileName(filename);
                     } else {
@@ -520,7 +520,7 @@ public abstract class EvilangelCore extends PluginForHost {
                                 link.setVerifiedFileSize(con.getCompleteContentLength());
                             }
                         }
-                        final String serverFilename = getFileNameFromHeader(con);
+                        final String serverFilename = getFileNameFromConnection(con);
                         if (serverFilename != null) {
                             if (link.getFinalFileName() == null) {
                                 link.setFinalFileName(serverFilename);

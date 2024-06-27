@@ -193,7 +193,7 @@ public class ChoMikujPl extends antiDDoSForHost {
                     /* Only set final filename if it wasn't set before as video and */
                     /* audio streams can have bad filenames */
                     if (link.getFinalFileName() == null) {
-                        link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
+                        link.setFinalFileName(Encoding.htmlDecode(getFileNameFromConnection(con)));
                     }
                 } else {
                     /* Just because we get html here that doesn't mean that the file is offline ... */

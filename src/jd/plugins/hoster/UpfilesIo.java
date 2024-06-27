@@ -166,7 +166,7 @@ public class UpfilesIo extends PluginForHost {
                 if (con.getCompleteContentLength() > 0) {
                     link.setVerifiedFileSize(con.getCompleteContentLength());
                 }
-                link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con).trim()));
+                link.setFinalFileName(Encoding.htmlDecode(getFileNameFromConnection(con).trim()));
             } else {
                 br.followConnection(true);
             }
@@ -257,7 +257,7 @@ public class UpfilesIo extends PluginForHost {
             final URLConnectionAdapter con = this.checkDownloadableRequest(link, br, new GetRequest(storedDirecturl), -1, true);
             if (con != null) {
                 logger.info("Successfully checked stored directurl");
-                link.setFinalFileName(Plugin.getFileNameFromHeader(con));
+                link.setFinalFileName(Plugin.getFileNameFromConnection(con));
                 return AvailableStatus.TRUE;
             }
         }
@@ -282,7 +282,7 @@ public class UpfilesIo extends PluginForHost {
                     if (con.getCompleteContentLength() > 0) {
                         link.setVerifiedFileSize(con.getCompleteContentLength());
                     }
-                    link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con).trim()));
+                    link.setFinalFileName(Encoding.htmlDecode(getFileNameFromConnection(con).trim()));
                     link.setProperty(PROPERTY_DIRECTURL, con.getURL().toString());
                 } else {
                     br.followConnection();

@@ -66,7 +66,7 @@ public class FreeLoopsCom extends PluginForDecrypt {
                 brc.setFollowRedirects(true);
                 brc.getPage(parameter);
                 final String fileName = brc.getRegex("File:\\s*(.*?)\\s*<br/>").getMatch(0);
-                final String serverFileName = Plugin.getFileNameFromHeader(con);
+                final String serverFileName = Plugin.getFileNameFromConnection(con);
                 if (fileName != null) {
                     l.setFinalFileName(fileName + getFileNameExtensionFromString(serverFileName, ".wav"));
                 } else {

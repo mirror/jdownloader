@@ -97,7 +97,7 @@ public class ZbigzCom extends antiDDoSForHost {
         try {
             con = br.openGetConnection(dllink);
             if (this.looksLikeDownloadableContent(con)) {
-                link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)).trim());
+                link.setFinalFileName(Encoding.htmlDecode(getFileNameFromConnection(con)).trim());
                 if (con.getCompleteContentLength() > 0) {
                     if (con.isContentDecoded()) {
                         link.setDownloadSize(con.getCompleteContentLength());

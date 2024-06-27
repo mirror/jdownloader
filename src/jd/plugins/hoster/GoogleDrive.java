@@ -1496,7 +1496,7 @@ public class GoogleDrive extends PluginForHost {
             this.removeQuotaReachedFlags(link, null, streamDownloadlink != null);
         }
         /** Set final filename here in case previous handling failed to find a good final filename. */
-        final String connectionFilename = getFileNameFromHeader(dl.getConnection());
+        final String connectionFilename = getFileNameFromConnection(dl.getConnection());
         if (link.getFinalFileName() == null && !StringUtils.isEmpty(connectionFilename)) {
             link.setFinalFileName(connectionFilename);
             link.setProperty(PROPERTY_CACHED_FILENAME, connectionFilename);

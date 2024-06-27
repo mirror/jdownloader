@@ -120,7 +120,7 @@ public class VdiskCn extends PluginForHost {
         }
         link.setProperty("freelink", dllink);
         if (link.getFinalFileName() == null) {
-            link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
+            link.setFinalFileName(Encoding.htmlDecode(getFileNameFromConnection(dl.getConnection())));
         }
         if (!this.dl.startDownload()) {
             try {

@@ -174,7 +174,7 @@ public class EightMusesCom extends antiDDoSForHost {
                         link.setVerifiedFileSize(con.getCompleteContentLength());
                     }
                     if (filename == null) {
-                        link.setFinalFileName(Plugin.getFileNameFromHeader(con));
+                        link.setFinalFileName(Plugin.getFileNameFromConnection(con));
                     }
                 } else if (con.getResponseCode() == 403) {
                     /* Account required to download */

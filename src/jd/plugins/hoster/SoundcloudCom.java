@@ -374,7 +374,7 @@ public class SoundcloudCom extends PluginForHost {
              * E.g. official download: All filenames are set with .mp3 extension in crawler but official downloads can also e.g. be .wav
              * files.
              */
-            final String serverFilename = Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection()));
+            final String serverFilename = Encoding.htmlDecode(getFileNameFromConnection(dl.getConnection()));
             if (link.getFinalFileName() != null && serverFilename != null) {
                 final String newExtension = Plugin.getFileNameExtensionFromString(serverFilename);
                 if (newExtension != null) {

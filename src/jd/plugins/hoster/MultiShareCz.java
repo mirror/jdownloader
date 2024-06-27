@@ -207,7 +207,7 @@ public class MultiShareCz extends antiDDoSForHost {
             con = brc.openGetConnection(link.getPluginPatternMatcher());
             if (this.looksLikeDownloadableContent(con)) {
                 if (link.getFinalFileName() == null) {
-                    link.setFinalFileName(getFileNameFromHeader(con));
+                    link.setFinalFileName(getFileNameFromConnection(con));
                 }
                 if (con.getCompleteContentLength() > 0) {
                     if (con.isContentDecoded()) {

@@ -931,7 +931,7 @@ public class VKontakteRuHoster extends PluginForHost {
             }
             if (this.looksLikeDownloadableContent(con)) {
                 if (!isHLS(link, finalUrl)) {
-                    final String connectionFilename = Plugin.getFileNameFromHeader(con);
+                    final String connectionFilename = Plugin.getFileNameFromConnection(con);
                     if (link.getFinalFileName() == null && connectionFilename != null) {
                         link.setFinalFileName(Encoding.htmlDecode(connectionFilename));
                     }
@@ -1031,7 +1031,7 @@ public class VKontakteRuHoster extends PluginForHost {
             finalfilename = photoGetFinalFilename(this.getPhotoID(link), finalfilename, directurl);
             if (finalfilename == null) {
                 /* This should actually never happen. */
-                final String filenameFromConnection = getFileNameFromHeader(con);
+                final String filenameFromConnection = getFileNameFromConnection(con);
                 if (filenameFromConnection != null) {
                     finalfilename = Encoding.htmlDecode(filenameFromConnection);
                 }

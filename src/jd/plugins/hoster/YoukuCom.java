@@ -112,7 +112,7 @@ public class YoukuCom extends antiDDoSForHost {
                 }
                 if (this.looksLikeDownloadableContent(con)) {
                     if (link.getFinalFileName() == null) {
-                        link.setFinalFileName(getFileNameFromHeader(con));
+                        link.setFinalFileName(getFileNameFromConnection(con));
                     }
                     if (con.isContentDecoded()) {
                         link.setDownloadSize(con.getCompleteContentLength());

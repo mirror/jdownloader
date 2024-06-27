@@ -82,7 +82,7 @@ public class UploadsRu extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             if (!this.looksLikeDownloadableContent(con)) {
-                link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
+                link.setFinalFileName(Encoding.htmlDecode(getFileNameFromConnection(con)));
                 if (con.isContentDecoded()) {
                     link.setDownloadSize(con.getCompleteContentLength());
                 } else {

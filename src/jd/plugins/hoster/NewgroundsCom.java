@@ -222,7 +222,7 @@ public class NewgroundsCom extends antiDDoSForHost {
                 final Browser br2 = br.cloneBrowser();
                 br2.setFollowRedirects(true);
                 con = br2.openHeadConnection(dllink);
-                filename = getFileNameFromHeader(con);
+                filename = getFileNameFromConnection(con);
                 if (filename != null) {
                     filename = Encoding.htmlDecode(filename);
                     link.setFinalFileName(filename);

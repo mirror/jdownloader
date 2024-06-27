@@ -65,7 +65,7 @@ public class ZopharNet extends PluginForHost {
         try {
             con = br.openHeadConnection(link.getPluginPatternMatcher());
             if (this.looksLikeDownloadableContent(con)) {
-                link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
+                link.setFinalFileName(Encoding.htmlDecode(getFileNameFromConnection(con)));
                 if (con.getCompleteContentLength() > 0) {
                     if (con.isContentDecoded()) {
                         link.setDownloadSize(con.getCompleteContentLength());

@@ -89,7 +89,7 @@ public class OrangedoxCom extends PluginForDecrypt {
                 direct.setVerifiedFileSize(con.getCompleteContentLength());
             }
             if (con.isContentDisposition()) {
-                direct.setFinalFileName(Plugin.getFileNameFromHeader(con));
+                direct.setFinalFileName(Plugin.getFileNameFromConnection(con));
             }
             direct.setAvailable(true);
             ret.add(direct);

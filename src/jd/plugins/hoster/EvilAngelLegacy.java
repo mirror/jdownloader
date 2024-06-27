@@ -196,7 +196,7 @@ public class EvilAngelLegacy extends antiDDoSForHost {
                         }
                         if (StringUtils.isEmpty(filename)) {
                             /* Fallback if everything else fails */
-                            filename = Encoding.htmlDecode(getFileNameFromHeader(con));
+                            filename = Encoding.htmlDecode(getFileNameFromConnection(con));
                         }
                         link.setFinalFileName(filename);
                     } else {
@@ -267,7 +267,7 @@ public class EvilAngelLegacy extends antiDDoSForHost {
                     if (con.getCompleteContentLength() > 0) {
                         link.setVerifiedFileSize(con.getCompleteContentLength());
                     }
-                    link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
+                    link.setFinalFileName(Encoding.htmlDecode(getFileNameFromConnection(con)));
                 } else {
                     server_issues = true;
                 }

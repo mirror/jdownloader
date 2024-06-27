@@ -141,7 +141,7 @@ public class Open3dlabCom extends PluginForHost {
                         link.setVerifiedFileSize(con.getCompleteContentLength());
                     }
                 }
-                final String serverFilename = Plugin.getFileNameFromHeader(con);
+                final String serverFilename = Plugin.getFileNameFromConnection(con);
                 if (serverFilename != null) {
                     link.setFinalFileName(serverFilename);
                 }

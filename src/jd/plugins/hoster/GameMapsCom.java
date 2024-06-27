@@ -144,7 +144,7 @@ public class GameMapsCom extends PluginForHost {
             br.followConnection(true);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final String filenameFromHeader = getFileNameFromHeader(dl.getConnection());
+        final String filenameFromHeader = getFileNameFromConnection(dl.getConnection());
         if (filenameFromHeader != null) {
             link.setFinalFileName(Encoding.htmlDecode(filenameFromHeader));
         }

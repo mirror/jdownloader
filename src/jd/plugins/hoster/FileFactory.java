@@ -1053,7 +1053,7 @@ public class FileFactory extends PluginForHost {
                 final String contenturl = this.getContentURL(link);
                 con = br.openGetConnection(contenturl);
                 if (this.looksLikeDownloadableContent(con)) {
-                    link.setFinalFileName(Plugin.getFileNameFromHeader(con));
+                    link.setFinalFileName(Plugin.getFileNameFromConnection(con));
                     if (con.getCompleteContentLength() > 0) {
                         if (con.isContentDecoded()) {
                             link.setDownloadSize(con.getCompleteContentLength());

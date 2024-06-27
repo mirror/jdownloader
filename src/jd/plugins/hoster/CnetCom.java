@@ -129,7 +129,7 @@ public class CnetCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        final String serverFilename = getFileNameFromHeader(dl.getConnection());
+        final String serverFilename = getFileNameFromConnection(dl.getConnection());
         if (!StringUtils.isEmpty(serverFilename)) {
             link.setFinalFileName(serverFilename);
         }

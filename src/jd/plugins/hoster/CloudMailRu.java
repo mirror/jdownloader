@@ -100,7 +100,7 @@ public class CloudMailRu extends PluginForHost {
                 final Browser br2 = br.cloneBrowser();
                 con = br2.openGetConnection(dlink);
                 if (this.looksLikeDownloadableContent(con)) {
-                    link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)).trim());
+                    link.setFinalFileName(Encoding.htmlDecode(getFileNameFromConnection(con)).trim());
                     if (con.getCompleteContentLength() > 0) {
                         if (con.isContentDecoded()) {
                             link.setDownloadSize(con.getCompleteContentLength());

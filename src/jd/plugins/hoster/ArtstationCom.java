@@ -104,7 +104,7 @@ public class ArtstationCom extends PluginForHost {
                     link.setDownloadSize(con.getCompleteContentLength());
                 }
                 if (filename == null) {
-                    filename = getFileNameFromHeader(con);
+                    filename = getFileNameFromConnection(con);
                     link.setFinalFileName(filename);
                 }
                 link.setProperty("directlink", dllink);

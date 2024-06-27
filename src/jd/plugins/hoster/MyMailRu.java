@@ -359,7 +359,7 @@ public class MyMailRu extends PluginForHost {
     }
 
     private void fixFilename(final DownloadLink downloadLink) {
-        final String serverFilename = Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection()));
+        final String serverFilename = Encoding.htmlDecode(getFileNameFromConnection(dl.getConnection()));
         final String newExtension = serverFilename.substring(serverFilename.lastIndexOf("."));
         if (newExtension != null && !downloadLink.getFinalFileName().endsWith(newExtension)) {
             final String oldExtension = downloadLink.getFinalFileName().substring(downloadLink.getFinalFileName().lastIndexOf("."));

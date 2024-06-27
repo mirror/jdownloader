@@ -52,7 +52,7 @@ public class MicrosoftCom extends PluginForHost {
             if (!this.looksLikeDownloadableContent(con)) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            final String filenameFromHeader = getFileNameFromHeader(con);
+            final String filenameFromHeader = getFileNameFromConnection(con);
             if (filenameFromHeader != null) {
                 link.setFinalFileName(Encoding.htmlDecode(filenameFromHeader).trim());
             }

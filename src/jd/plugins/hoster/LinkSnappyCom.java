@@ -167,7 +167,7 @@ public class LinkSnappyCom extends PluginForHost {
                     link.setVerifiedFileSize(con.getCompleteContentLength());
                 }
             }
-            link.setFinalFileName(Plugin.getFileNameFromHeader(con));
+            link.setFinalFileName(Plugin.getFileNameFromConnection(con));
         } finally {
             try {
                 con.disconnect();

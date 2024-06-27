@@ -268,7 +268,7 @@ public class DebridItaliaCom extends antiDDoSForHost {
     }
 
     public static String getFileNameFromHeader(final URLConnectionAdapter urlConnection) {
-        final String ret = Plugin.getFileNameFromHeader(urlConnection);
+        final String ret = Plugin.getFileNameFromConnection(urlConnection);
         if (!isValidFileNameFromHeader(ret)) {
             return null;
         } else {

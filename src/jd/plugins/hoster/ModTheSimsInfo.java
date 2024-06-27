@@ -117,7 +117,7 @@ public class ModTheSimsInfo extends PluginForHost {
         try {
             con = br.openHeadConnection(dllink);
             if (this.looksLikeDownloadableContent(con)) {
-                link.setFinalFileName(getFileNameFromHeader(con));
+                link.setFinalFileName(getFileNameFromConnection(con));
                 if (con.getCompleteContentLength() > 0) {
                     if (con.isContentDecoded()) {
                         link.setDownloadSize(con.getCompleteContentLength());

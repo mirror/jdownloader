@@ -265,7 +265,7 @@ public class AniLinkzCom extends antiDDoSForDecrypt {
                         con = br2.openGetConnection(aLink);
                         // only way to check for made up links... or offline is here
                         if (!con.getContentType().contains("html")) {
-                            downloadLink.setName(fpName + getFileNameFromHeader(con).substring(getFileNameFromHeader(con).lastIndexOf(".")));
+                            downloadLink.setName(fpName + getFileNameFromConnection(con).substring(getFileNameFromConnection(con).lastIndexOf(".")));
                             downloadLink.setDownloadSize(con.getLongContentLength());
                             downloadLink.setAvailable(true);
                         } else {

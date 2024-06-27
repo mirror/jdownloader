@@ -157,7 +157,7 @@ public class SendspaceCom extends PluginForHost {
                         if (!this.looksLikeDownloadableContent(con)) {
                             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                         }
-                        final String filenameFromConnection = getFileNameFromHeader(con);
+                        final String filenameFromConnection = getFileNameFromConnection(con);
                         if (filenameFromConnection != null) {
                             link.setName(Encoding.htmlDecode(filenameFromConnection));
                         }

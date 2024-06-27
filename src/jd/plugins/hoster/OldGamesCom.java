@@ -161,7 +161,7 @@ public class OldGamesCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        link.setFinalFileName(getFileNameFromHeader(dl.getConnection()));
+        link.setFinalFileName(getFileNameFromConnection(dl.getConnection()));
         link.setProperty(directlinkproperty, dllink);
         dl.startDownload();
     }
@@ -275,7 +275,7 @@ public class OldGamesCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        link.setFinalFileName(getFileNameFromHeader(dl.getConnection()));
+        link.setFinalFileName(getFileNameFromConnection(dl.getConnection()));
         link.setProperty("premium_directlink", dllink);
         dl.startDownload();
     }

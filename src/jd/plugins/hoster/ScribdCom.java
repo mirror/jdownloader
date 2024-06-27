@@ -429,7 +429,7 @@ public class ScribdCom extends PluginForHost {
             /* Assume that our current account type = free and the file is not downloadable */
             throw new AccountRequiredException();
         }
-        parameter.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
+        parameter.setFinalFileName(Encoding.htmlDecode(getFileNameFromConnection(dl.getConnection())));
         dl.startDownload();
     }
 

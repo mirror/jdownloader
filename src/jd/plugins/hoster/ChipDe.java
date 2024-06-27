@@ -305,7 +305,7 @@ public class ChipDe extends PluginForHost {
                 }
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-            link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
+            link.setFinalFileName(Encoding.htmlDecode(getFileNameFromConnection(dl.getConnection())));
             link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
             dl.startDownload();
         } else {

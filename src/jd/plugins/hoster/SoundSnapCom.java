@@ -90,7 +90,7 @@ public class SoundSnapCom extends PluginForHost {
             }
         } else {
             con.disconnect();
-            final String filename = getFileNameFromHeader(con);
+            final String filename = getFileNameFromConnection(con);
             if (filename != null) {
                 link.setFinalFileName(Encoding.htmlDecode(filename).trim());
             }

@@ -164,7 +164,7 @@ public class ArchiveOrg extends PluginForHost {
                 prepDownloadHeaders(br, link);
                 con = br.openGetConnection(getDirectURL(link, account));
                 connectionErrorhandling(con, link, account, null);
-                String filenameFromHeader = getFileNameFromHeader(con);
+                String filenameFromHeader = getFileNameFromConnection(con);
                 if (filenameFromHeader != null) {
                     filenameFromHeader = Encoding.htmlDecode(filenameFromHeader);
                     setFinalFilename(link, filenameFromHeader);

@@ -184,7 +184,7 @@ public class YouJizzCom extends PluginForHost {
         try {
             con = br2.openGetConnection(dllink);
             if (this.looksLikeDownloadableContent(con)) {
-                String ext = getFileNameFromHeader(con).substring(getFileNameFromHeader(con).lastIndexOf("."));
+                String ext = getFileNameFromConnection(con).substring(getFileNameFromConnection(con).lastIndexOf("."));
                 link.setFinalFileName(Encoding.htmlDecode(filename) + ext);
                 if (con.isContentDecoded()) {
                     link.setDownloadSize(con.getCompleteContentLength());

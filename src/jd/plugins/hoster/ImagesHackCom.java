@@ -184,7 +184,7 @@ public class ImagesHackCom extends PluginForHost {
             try {
                 con = br.openHeadConnection(dllink);
                 handleConnectionErrors(br, con);
-                final String filenameFromHeader = getFileNameFromHeader(con);
+                final String filenameFromHeader = getFileNameFromConnection(con);
                 if (filenameFromHeader != null) {
                     link.setName(filenameFromHeader);
                 }

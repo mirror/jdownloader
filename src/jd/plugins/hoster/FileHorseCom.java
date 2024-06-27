@@ -119,7 +119,7 @@ public class FileHorseCom extends PluginForHost {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        downloadLink.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
+        downloadLink.setFinalFileName(Encoding.htmlDecode(getFileNameFromConnection(dl.getConnection())));
         dl.startDownload();
     }
 

@@ -262,7 +262,7 @@ public class DatPiffCom extends PluginForHost {
             br.followConnection(true);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        final String headerFilename = getFileNameFromHeader(dl.getConnection());
+        final String headerFilename = getFileNameFromConnection(dl.getConnection());
         if (headerFilename != null) {
             link.setFinalFileName(headerFilename);
         }

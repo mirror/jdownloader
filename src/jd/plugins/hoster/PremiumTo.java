@@ -826,7 +826,7 @@ public class PremiumTo extends UseNet {
             if (fileSize <= 0) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            link.setFinalFileName(getFileNameFromHeader(con));
+            link.setFinalFileName(getFileNameFromConnection(con));
             if (con.isContentDecoded()) {
                 link.setDownloadSize(fileSize);
             } else {

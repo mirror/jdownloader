@@ -242,7 +242,7 @@ public class ImgSrcRu extends PluginForHost {
     }
 
     private void filenameHandling(final DownloadLink link, final URLConnectionAdapter con) {
-        String filenameFromConnection = getFileNameFromHeader(con);
+        String filenameFromConnection = getFileNameFromConnection(con);
         if (filenameFromConnection == null) {
             return;
         }

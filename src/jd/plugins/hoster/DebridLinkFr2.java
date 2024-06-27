@@ -642,7 +642,7 @@ public class DebridLinkFr2 extends PluginForHost {
          */
         String final_filename = null;
         final String previous_filename = link.getName();
-        final String this_filename = getFileNameFromHeader(dl.getConnection());
+        final String this_filename = getFileNameFromConnection(dl.getConnection());
         if (previous_filename != null && this_filename != null && (this_filename.length() < previous_filename.length() || link.getHost().contains("vidoza"))) {
             final_filename = previous_filename;
         } else {

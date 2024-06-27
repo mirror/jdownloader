@@ -330,7 +330,7 @@ public class EmuParadiseMe extends PluginForHost {
             }
         }
         link.setProperty(directlinkproperty, dllink);
-        link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())).trim());
+        link.setFinalFileName(Encoding.htmlDecode(getFileNameFromConnection(dl.getConnection())).trim());
         dl.startDownload();
     }
 

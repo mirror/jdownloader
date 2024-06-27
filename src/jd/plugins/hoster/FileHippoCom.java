@@ -144,7 +144,7 @@ public class FileHippoCom extends PluginForHost {
                     throw new PluginException(LinkStatus.ERROR_FATAL, "Download impossible - download-url points to external site");
                 }
             }
-            link.setFinalFileName(getFileNameFromHeader(dl.getConnection()));
+            link.setFinalFileName(getFileNameFromConnection(dl.getConnection()));
             dl.startDownload();
             return;
         }
@@ -187,7 +187,7 @@ public class FileHippoCom extends PluginForHost {
                     continue;
                 }
             }
-            link.setFinalFileName(getFileNameFromHeader(dl.getConnection()));
+            link.setFinalFileName(getFileNameFromConnection(dl.getConnection()));
             dl.startDownload();
             return;
         }

@@ -334,7 +334,7 @@ public class MetArtCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Directurl expired or media content is broken");
             }
         }
-        final String headerFilename = getFileNameFromHeader(dl.getConnection());
+        final String headerFilename = getFileNameFromConnection(dl.getConnection());
         if (!link.isNameSet() && !StringUtils.isEmpty(headerFilename)) {
             link.setFinalFileName(Encoding.htmlDecode(headerFilename));
         }

@@ -132,7 +132,7 @@ public class PornHostCom extends PluginForHost {
         }
         try {
             dl.setAllowFilenameFromURL(false);
-            String name = Plugin.getFileNameFromHeader(dl.getConnection());
+            String name = Plugin.getFileNameFromConnection(dl.getConnection());
             if (ending != null && ending.length() <= 1) {
                 String name2 = link.getName();
                 name = new Regex(name, ".+?(\\..{1,4})").getMatch(0);

@@ -136,7 +136,7 @@ public class MassengeschmackTv extends PluginForHost {
                     }
                     if (link.getFinalFileName() == null) {
                         /* E.g. user added direct-URLs directly, without decrypter. */
-                        link.setFinalFileName(getFileNameFromHeader(con));
+                        link.setFinalFileName(getFileNameFromConnection(con));
                     }
                 }
             } finally {

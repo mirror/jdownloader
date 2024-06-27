@@ -84,7 +84,7 @@ public class SugarSyncCom extends PluginForHost {
                 } else {
                     link.setVerifiedFileSize(con.getCompleteContentLength());
                 }
-                link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
+                link.setFinalFileName(Encoding.htmlDecode(getFileNameFromConnection(con)));
                 return AvailableStatus.TRUE;
             }
         } finally {

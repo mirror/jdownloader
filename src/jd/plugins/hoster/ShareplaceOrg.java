@@ -247,7 +247,7 @@ public class ShareplaceOrg extends YetiShareCore {
             }
         }
         /* Workaround für fehlerhaften Filename Header */
-        final String name = Plugin.getFileNameFromHeader(dl.getConnection());
+        final String name = Plugin.getFileNameFromConnection(dl.getConnection());
         if (name != null) {
             link.setFinalFileName(Encoding.deepHtmlDecode(name));
         }

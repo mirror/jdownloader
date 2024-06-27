@@ -413,19 +413,19 @@ public abstract class Plugin implements ActionListener {
     }
 
     /**
-     * Holt den Dateinamen aus einem Content-Disposition header. wird dieser nicht gefunden, wird der dateiname aus der url ermittelt
+     * Obtains filename from Content-Disposition header. If none is there, filename will be obtained from URL.
      *
      * @param urlConnection
-     * @return Filename aus dem header (content disposition) extrahiert
+     * @return Extracted filename.
      */
-    public static String getFileNameFromHeader(final URLConnectionAdapter urlConnection) {
+    public static String getFileNameFromConnection(final URLConnectionAdapter urlConnection) {
         final String filenameFromDispositionHeader = getFileNameFromDispositionHeader(urlConnection);
         if (!StringUtils.isEmpty(filenameFromDispositionHeader)) {
             return filenameFromDispositionHeader;
         }
         String filenameFromURL = Plugin.getFileNameFromURL(urlConnection.getURL());
         if (filenameFromURL != null) {
-            /* Add file extension if none is there. */
+            /* Add file extension if none is there. Allow empty strings so in the worst case, this may only return something like ".jpg". */
             if (!filenameFromURL.contains(".") && urlConnection.getContentType() != null) {
                 String extByMimetype = null;
                 // TODO: Obtain file extension via one-liner from another function

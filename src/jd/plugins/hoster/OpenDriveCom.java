@@ -231,7 +231,7 @@ public class OpenDriveCom extends PluginForHost {
             br.followConnection(true);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        if (StringUtils.equalsIgnoreCase(getFileNameFromHeader(dl.getConnection()), "limit_exceeded.jpg")) {
+        if (StringUtils.equalsIgnoreCase(getFileNameFromConnection(dl.getConnection()), "limit_exceeded.jpg")) {
             throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Limit exeeded");
         }
         link.setProperty("directurl", dl.getConnection().getURL().toString());
