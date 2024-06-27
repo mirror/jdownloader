@@ -90,11 +90,12 @@ public class HashInfo {
     }
 
     public static HashInfo parse(final String hash, boolean isTrustWorthy, boolean isForced) {
-        if (hash != null) {
-            for (final TYPE type : TYPE.values()) {
-                if (type.isAutoMode() && type.getSize() == hash.length()) {
-                    return new HashInfo(hash, type, isTrustWorthy, isForced);
-                }
+        if (hash == null) {
+            return null;
+        }
+        for (final TYPE type : TYPE.values()) {
+            if (type.isAutoMode() && type.getSize() == hash.length()) {
+                return new HashInfo(hash, type, isTrustWorthy, isForced);
             }
         }
         return null;

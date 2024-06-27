@@ -100,9 +100,11 @@ public class SoundclickComCrawler extends PluginForDecrypt {
             String[] songIDs = br.getRegex("data-songid=\"(\\d+)").getColumn(0);
             if (songIDs == null || songIDs.length == 0) {
                 songIDs = br.getRegex("songid=(\\d+)").getColumn(0);
-                if (songIDs == null || songIDs.length == 0) {
-                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                }
+            }
+            if (songIDs == null || songIDs.length == 0) {
+                /* We can be quite sure that there is no downloadable content. */
+                logger.info("Link offline or plugin broken");
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             final FilePackage fp = FilePackage.getInstance();
             if (title != null) {

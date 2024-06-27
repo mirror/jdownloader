@@ -29,20 +29,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import jd.config.Property;
-import jd.controlling.downloadcontroller.DownloadLinkCandidate;
-import jd.controlling.downloadcontroller.DownloadWatchDog;
-import jd.controlling.downloadcontroller.HistoryEntry;
-import jd.controlling.downloadcontroller.SingleDownloadController;
-import jd.controlling.linkcollector.LinknameCleaner;
-import jd.controlling.linkcrawler.CheckableLink;
-import jd.controlling.packagecontroller.AbstractNodeNotifier;
-import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
-import jd.plugins.DownloadLinkDatabindingInterface.Key;
-import jd.plugins.download.DownloadInterface;
-import jd.plugins.download.HashInfo;
-import jd.plugins.download.HashInfo.TYPE;
-
 import org.appwork.exceptions.WTFException;
 import org.appwork.storage.JSonStorage;
 import org.appwork.storage.TypeRef;
@@ -71,6 +57,20 @@ import org.jdownloader.plugins.controller.host.LazyHostPlugin;
 import org.jdownloader.settings.GeneralSettings;
 import org.jdownloader.settings.staticreferences.CFG_GENERAL;
 
+import jd.config.Property;
+import jd.controlling.downloadcontroller.DownloadLinkCandidate;
+import jd.controlling.downloadcontroller.DownloadWatchDog;
+import jd.controlling.downloadcontroller.HistoryEntry;
+import jd.controlling.downloadcontroller.SingleDownloadController;
+import jd.controlling.linkcollector.LinknameCleaner;
+import jd.controlling.linkcrawler.CheckableLink;
+import jd.controlling.packagecontroller.AbstractNodeNotifier;
+import jd.controlling.packagecontroller.AbstractPackageChildrenNode;
+import jd.plugins.DownloadLinkDatabindingInterface.Key;
+import jd.plugins.download.DownloadInterface;
+import jd.plugins.download.HashInfo;
+import jd.plugins.download.HashInfo.TYPE;
+
 /**
  * Hier werden alle notwendigen Informationen zu einem einzelnen Download festgehalten. Die Informationen werden dann in einer Tabelle
  * dargestellt
@@ -83,6 +83,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
         FALSE(_GUI.T.linkgrabber_onlinestatus_offline()),
         UNCHECKABLE(_GUI.T.linkgrabber_onlinestatus_uncheckable()),
         TRUE(_GUI.T.linkgrabber_onlinestatus_online());
+
         private final String exp;
 
         private AvailableStatus(String exp) {
@@ -1060,7 +1061,7 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     /*
      * Gibt zurueck ob Dieser Link schon auf verfuegbarkeit getestet wurde.+ Diese FUnktion fuehrt keinen!! Check durch. Sie prueft nur ob
      * schon geprueft worden ist. anschiessend kann mit isAvailable() die verfuegbarkeit ueberprueft werden
-     * 
+     *
      * @return Link wurde schon getestet (true) nicht getestet(false)
      */
     public boolean isAvailabilityStatusChecked() {
@@ -1705,8 +1706,9 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     /**
-     * Returns whether or not a download password is required to download this item. 7 </br> In most of all cases, this cannot be known
-     * until downloads are started but in some instances this can be set e.g. during folder crawling already.
+     * Returns whether or not a download password is required to download this item. 7 </br>
+     * In most of all cases, this cannot be known until downloads are started but in some instances this can be set e.g. during folder
+     * crawling already.
      */
     public boolean isPasswordProtected() {
         return this.getBooleanProperty(PROPERTY_PASSWORD_PROTECTED, false);
@@ -1763,6 +1765,42 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
             if (hasNotificationListener()) {
                 notifyChanges(AbstractNodeNotifier.NOTIFY.PROPERTY_CHANCE, new DownloadLinkProperty(this, DownloadLinkProperty.Property.HASHINFO, hashInfo));
             }
+        }
+    }
+
+    /**
+     * Allows to set multiple HashInfo. </br>
+     * 2024-06-27: This is kind of just a mockup, add functionality. </br>
+     * Supported data types: </br>
+     * - String </br>
+     * - HashInfo </br>
+     * - List<HashInfo> and List<String> </br>
+     * Throws IllegalArgumentException if you provide something totally wrong. Wrong hash-strings are ignored (no Exception). <br>
+     * See ticket: https://svn.jdownloader.org/issues/90472
+     */
+    public void setHashInfos(final Object hashInfos) {
+        if (hashInfos instanceof HashInfo) {
+            /* Single HashInfo */
+            setHashInfo((HashInfo) hashInfos);
+        } else if (hashInfos instanceof String) {
+            final HashInfo hashInfo = HashInfo.parse(hashInfos.toString(), true, true);
+            this.setHashInfo(hashInfo);
+        } else if (hashInfos instanceof List) {
+            for (final Object hashInfo : (List) hashInfos) {
+                if (hashInfo instanceof HashInfo) {
+                    setHashInfo((HashInfo) hashInfos);
+                } else if (hashInfo instanceof String) {
+                    final HashInfo hashInfoParsed = HashInfo.parse(hashInfos.toString(), true, true);
+                    this.setHashInfo(hashInfoParsed);
+                } else {
+                    throw new IllegalArgumentException();
+                }
+                // TODO: Add support to set multiple HashInfo items
+                break;
+            }
+        } else {
+            /* Unsupported type */
+            throw new IllegalArgumentException();
         }
     }
 
@@ -1937,16 +1975,17 @@ public class DownloadLink extends Property implements Serializable, AbstractPack
     }
 
     /**
-     * This date will later be written in the file if wanted by the user. </br> Preferable not(!) set this because in most of all cases this
-     * information will be obtained via the "Last-Modified" header once a download is complete.
+     * This date will later be written in the file if wanted by the user. </br>
+     * Preferable not(!) set this because in most of all cases this information will be obtained via the "Last-Modified" header once a
+     * download is complete.
      */
     public void setLastModifiedTimestamp(final long timestamp) {
         this.setProperty(PROPERTY_LAST_MODIFIED, timestamp);
     }
 
     /**
-     * Returns timestamp when this file was last modified. </br> Typically only given [before download] if provided by an API and set on
-     * this DownloadLink.
+     * Returns timestamp when this file was last modified. </br>
+     * Typically only given [before download] if provided by an API and set on this DownloadLink.
      */
     public long getLastModifiedTimestamp() {
         return this.getLongProperty(PROPERTY_LAST_MODIFIED, -1);

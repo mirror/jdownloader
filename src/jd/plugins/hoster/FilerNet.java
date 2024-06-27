@@ -21,6 +21,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.ReflectionUtils;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -43,12 +49,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.ReflectionUtils;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "filer.net" }, urls = { "https?://(?:www\\.)?filer\\.net/(?:app\\.php/)?(?:get|dl)/([a-z0-9]+)" })
 public class FilerNet extends PluginForHost {
@@ -84,10 +84,10 @@ public class FilerNet extends PluginForHost {
             @Override
             public URLConnectionAdapter openRequestConnection(Request request, final boolean followRedirects) throws IOException {
                 /**
-                 * 2024-02-20: Ensure to enforce user-preferred protocol. </br> This can also be seen as a workaround since filer.net
-                 * redirects from https to http on final download-attempt so without this, http protocol would be used even if user
-                 * preferred https. Atm we don't know if this is a filer.net serverside bug or if this is intentional. Asked support about
-                 * this, waiting for feedback
+                 * 2024-02-20: Ensure to enforce user-preferred protocol. </br>
+                 * This can also be seen as a workaround since filer.net redirects from https to http on final download-attempt so without
+                 * this, http protocol would be used even if user preferred https. Atm we don't know if this is a filer.net serverside bug
+                 * or if this is intentional. Asked support about this, waiting for feedback
                  */
                 request.setURL(new URL(rewriteProtocol(request.getURL().toExternalForm())));
                 return super.openRequestConnection(request, followRedirects);
@@ -200,8 +200,6 @@ public class FilerNet extends PluginForHost {
         }
         link.setFinalFileName(PluginJSonUtils.getJson(br, "name"));
         link.setDownloadSize(Long.parseLong(PluginJSonUtils.getJson(br, "size")));
-        /* hash != md5, its the hash of fileID */
-        link.setMD5Hash(null);
         return AvailableStatus.TRUE;
     }
 

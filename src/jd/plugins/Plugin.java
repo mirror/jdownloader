@@ -444,6 +444,10 @@ public abstract class Plugin implements ActionListener {
         return getCorrectOrApplyFileNameExtension(name, extNew);
     }
 
+    public static String getCorrectOrApplyFileNameExtension(final String filenameOrg, String newExtension) {
+        return correctOrApplyFileNameExtension(filenameOrg, newExtension, false);
+    }
+
     /**
      * Corrects extension of given filename. Adds extension if it is missing. Returns null if given filename is null. </br>
      * Pass fileExtension with dot(s) to this! </br>
@@ -457,7 +461,7 @@ public abstract class Plugin implements ActionListener {
      *
      * @return Filename with new extension
      */
-    public static String getCorrectOrApplyFileNameExtension(final String filenameOrg, String newExtension) {
+    public static String correctOrApplyFileNameExtension(final String filenameOrg, String newExtension, final boolean force) {
         if (StringUtils.isEmpty(filenameOrg) || StringUtils.isEmpty(newExtension)) {
             return filenameOrg;
         }
@@ -485,6 +489,11 @@ public abstract class Plugin implements ActionListener {
         if (StringUtils.isEmpty(currentFileExtension)) {
             return filenameOrg;
         }
+        if (force) {
+            /* Replace extension without any further checks. */
+            final String filenameWithoutExtension = filenameOrg.substring(0, lastIndex);
+            return filenameWithoutExtension + newExtension;
+        }
         final CompiledFiletypeExtension filetypeOld = CompiledFiletypeFilter.getExtensionsFilterInterface(currentFileExtension);
         if (filetypeOld == null) {
             /* Unknown current/old filetype -> Do not touch given filename */
@@ -494,7 +503,7 @@ public abstract class Plugin implements ActionListener {
             /* Filename already contains valid/alternative target-extension e.g. webm/mp4 */
             return filenameOrg;
         }
-        if ((CompiledFiletypeFilter.VideoExtensions.MP4.isSameExtensionGroup(filetypeOld) || CompiledFiletypeFilter.ImageExtensions.JPG.isSameExtensionGroup(filetypeOld) || CompiledFiletypeFilter.AudioExtensions.MP3.isSameExtensionGroup(filetypeOld)) && filetypeNew != null && filetypeNew.isSameExtensionGroup(filetypeOld)) {
+        if ((CompiledFiletypeFilter.VideoExtensions.MP4.isSameExtensionGroup(filetypeOld) || CompiledFiletypeFilter.ImageExtensions.JPG.isSameExtensionGroup(filetypeOld) || CompiledFiletypeFilter.AudioExtensions.MP3.isSameExtensionGroup(filetypeOld)) && filetypeNew.isSameExtensionGroup(filetypeOld)) {
             final String filenameWithoutExtension = filenameOrg.substring(0, lastIndex);
             return filenameWithoutExtension + newExtension;
         }

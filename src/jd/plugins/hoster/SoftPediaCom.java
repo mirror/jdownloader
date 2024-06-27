@@ -17,6 +17,9 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -28,9 +31,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
-
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.parser.UrlQuery;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "softpedia.com" }, urls = { "https?://(?:www\\.|drivers\\.)?softpedia\\.com/(get/.+/.*?\\.shtml|progDownload/.*?\\-download\\-\\d+\\.(s)?html)" })
 public class SoftPediaCom extends PluginForHost {
@@ -90,7 +90,7 @@ public class SoftPediaCom extends PluginForHost {
     public void handleFree(final DownloadLink link) throws Exception, PluginException {
         requestFileInformation(link);
         /* Happens when they block your IP */
-        if (br.containsHTML("No htmlCode read")) {
+        if (br.getRequest().getHtmlCode().length() < 100) {
             throw new PluginException(LinkStatus.ERROR_HOSTER_TEMPORARILY_UNAVAILABLE, "Server error");
         }
         int server = getConfiguredServer();
@@ -165,6 +165,8 @@ public class SoftPediaCom extends PluginForHost {
         br.setFollowRedirects(true);
         br.getPage(link.getPluginPatternMatcher());
         if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.getHttpConnection().getResponseCode() == 410) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (br.toString().length() <= 100) {
             return AvailableStatus.UNCHECKABLE;

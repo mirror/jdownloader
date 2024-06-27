@@ -145,7 +145,7 @@ public class FourShareVn extends PluginForHost {
             logger.warning("Failed to find filesize");
         }
         final String md5 = br.getRegex("MD5\\s*:?\\s*([a-f0-9]{32})").getMatch(0);
-        /* 2024-06-26: We currently can't handle crc32b */
+        /* 2024-06-26: We currently can't handle crc32b, see https://svn.jdownloader.org/issues/90471 */
         // final String crc32b = br.getRegex("CRC32B\\s*:\\s*(\\d+)").getMatch(0);
         if (md5 != null) {
             link.setMD5Hash(md5);
