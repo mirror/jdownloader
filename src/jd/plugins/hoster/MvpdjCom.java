@@ -19,6 +19,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -38,9 +41,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class MvpdjCom extends PluginForHost {
@@ -177,23 +177,11 @@ public class MvpdjCom extends PluginForHost {
             // In case the link redirects to the finallink
             URLConnectionAdapter con = null;
             try {
-                final boolean allowHeadConnection = true;
                 con = br2.openHeadConnection(dllink);
                 handleConnectionErrors(br2, con);
                 /* Especially for official account-downloads, server-filenames might be crippled! */
-                final String filename_header = getFileNameFromHeader(con);
-                String ext = getExtensionFromMimeType(con);
-                if (ext == null) {
-                    /* Fallback */
-                    ext = extDefault;
-                } else {
-                    ext = "." + ext;
-                }
-                if (title_html != null) {
-                    link.setFinalFileName(this.correctOrApplyFileNameExtension(title_html, ext));
-                } else if (filename_header != null) {
-                    link.setFinalFileName(filename_header);
-                }
+                final String filename_connection = getFileNameFromHeader(con);
+                link.setFinalFileName(filename_connection);
                 if (con.getCompleteContentLength() > 0) {
                     if (con.isContentDecoded()) {
                         link.setDownloadSize(con.getCompleteContentLength());

@@ -154,7 +154,11 @@ public class FShareVn extends PluginForHost {
                     /* Directurl */
                     link.setName(getFileNameFromHeader(con));
                     if (con.getCompleteContentLength() > 0) {
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                        if (con.isContentDecoded()) {
+                            link.setDownloadSize(con.getCompleteContentLength());
+                        } else {
+                            link.setVerifiedFileSize(con.getCompleteContentLength());
+                        }
                     }
                     dllink = con.getURL().toString();
                     return AvailableStatus.TRUE;

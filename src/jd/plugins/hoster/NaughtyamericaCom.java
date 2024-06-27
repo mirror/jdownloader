@@ -171,9 +171,9 @@ public class NaughtyamericaCom extends PluginForHost {
             if (con.getCompleteContentLength() > 0) {
                 link.setVerifiedFileSize(con.getCompleteContentLength());
             }
-            final String filenameFromHeader = getFileNameFromHeader(con);
-            if (link.getFinalFileName() == null && filenameFromHeader != null) {
-                link.setFinalFileName(Encoding.htmlDecode(filenameFromHeader).trim());
+            final String filenameFromConnection = getFileNameFromHeader(con);
+            if (link.getFinalFileName() == null && filenameFromConnection != null) {
+                link.setFinalFileName(Encoding.htmlDecode(filenameFromConnection).trim());
             }
         } finally {
             try {

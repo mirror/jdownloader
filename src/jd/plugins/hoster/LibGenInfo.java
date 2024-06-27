@@ -21,6 +21,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Request;
@@ -36,11 +41,6 @@ import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.LibGenCrawler;
-
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 @PluginDependencies(dependencies = { PornportalCom.class })
@@ -376,7 +376,7 @@ public class LibGenInfo extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Final downloadurl did not lead to a file");
             }
         }
-        final String headerFilename = Plugin.getFileNameFromHeader(dl.getConnection());
+        final String headerFilename = Plugin.getFileNameFromDispositionHeader(dl.getConnection());
         if (headerFilename != null) {
             /* Do some corrections */
             String finalFilename = Encoding.htmlDecode(headerFilename);

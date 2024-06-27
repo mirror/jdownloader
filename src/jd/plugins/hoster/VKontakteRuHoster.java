@@ -28,6 +28,20 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
+import org.appwork.net.protocol.http.HTTPConstants;
+import org.appwork.storage.TypeRef;
+import org.appwork.storage.config.annotations.LabelInterface;
+import org.appwork.utils.Hash;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.logging2.LogSource;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.logging.LogController;
+import org.jdownloader.plugins.SkipReasonException;
+import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -60,20 +74,6 @@ import jd.plugins.components.PluginJSonUtils;
 import jd.plugins.decrypter.VKontakteRu;
 import jd.utils.JDUtilities;
 import jd.utils.locale.JDL;
-
-import org.appwork.net.protocol.http.HTTPConstants;
-import org.appwork.storage.TypeRef;
-import org.appwork.storage.config.annotations.LabelInterface;
-import org.appwork.utils.Hash;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.logging2.LogSource;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.logging.LogController;
-import org.jdownloader.plugins.SkipReasonException;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "vk.com" }, urls = { "https?://vkontaktedecrypted\\.ru/(picturelink/(?:-)?\\d+_\\d+(\\?tag=[\\d\\-]+)?|audiolink/(?:-)?\\d+_\\d+)|https?://(?:new\\.)?vk\\.com/(doc[\\d\\-]+_[\\d\\-]+|s/v1/doc/[A-Za-z0-9\\-_]+|video[\\d\\-]+_[\\d\\-]+(?:#quality=\\d+p)?)(\\?hash=[^&#]+(\\&dl=[^&#]{16,})?)?|https?://(?:c|p)s[a-z0-9\\-]+\\.(?:vk\\.com|userapi\\.com|vk\\.me|vkuservideo\\.net|vkuseraudio\\.net)/[^<>\"]+\\.(?:mp[34]|(?:rar|zip|pdf).+|[rz][0-9]{2}.+)" })
 /* Most of all links are coming from a crawler plugin. */
@@ -931,12 +931,16 @@ public class VKontakteRuHoster extends PluginForHost {
             }
             if (this.looksLikeDownloadableContent(con)) {
                 if (!isHLS(link, finalUrl)) {
-                    final String headerFilename = Plugin.getFileNameFromHeader(con);
-                    if (link.getFinalFileName() == null && headerFilename != null) {
-                        link.setFinalFileName(Encoding.htmlDecode(headerFilename));
+                    final String connectionFilename = Plugin.getFileNameFromHeader(con);
+                    if (link.getFinalFileName() == null && connectionFilename != null) {
+                        link.setFinalFileName(Encoding.htmlDecode(connectionFilename));
                     }
                     if (con.getCompleteContentLength() > 0) {
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                        if (con.isContentDecoded()) {
+                            link.setDownloadSize(con.getCompleteContentLength());
+                        } else {
+                            link.setVerifiedFileSize(con.getCompleteContentLength());
+                        }
                     }
                 }
                 if (isDownload) {
@@ -1027,9 +1031,9 @@ public class VKontakteRuHoster extends PluginForHost {
             finalfilename = photoGetFinalFilename(this.getPhotoID(link), finalfilename, directurl);
             if (finalfilename == null) {
                 /* This should actually never happen. */
-                final String filenameFromHeaderOrURL = getFileNameFromHeader(con);
-                if (filenameFromHeaderOrURL != null) {
-                    finalfilename = Encoding.htmlDecode(filenameFromHeaderOrURL);
+                final String filenameFromConnection = getFileNameFromHeader(con);
+                if (filenameFromConnection != null) {
+                    finalfilename = Encoding.htmlDecode(filenameFromConnection);
                 }
             }
             if (finalfilename != null) {

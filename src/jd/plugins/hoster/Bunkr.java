@@ -241,7 +241,7 @@ public class Bunkr extends PluginForHost {
                     con = br.openGetConnection(lastCachedDirecturl);
                 }
                 handleConnectionErrors(link, br, con);
-                final String filenameFromHeader = Plugin.getFileNameFromHeader(con);
+                final String filenameFromHeader = Plugin.getFileNameFromDispositionHeader(con);
                 final String filenameFromDirecturl = Plugin.getFileNameFromURL(lastCachedDirecturl);
                 if (filenameFromHeader != null) {
                     setFilename(link, filenameFromHeader, true, true);

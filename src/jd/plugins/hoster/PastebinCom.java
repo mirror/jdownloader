@@ -65,7 +65,11 @@ public class PastebinCom extends AbstractPastebinHoster {
             con = br.openHeadConnection(getDirectDownloadURL(link));
             link.setFinalFileName(Plugin.getFileNameFromHeader(con));
             if (con.getCompleteContentLength() > 0) {
-                link.setVerifiedFileSize(con.getCompleteContentLength());
+                if (con.isContentDecoded()) {
+                    link.setDownloadSize(con.getCompleteContentLength());
+                } else {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                }
             }
         } finally {
             try {

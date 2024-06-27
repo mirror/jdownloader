@@ -235,7 +235,7 @@ public class TwitterCom extends PluginForHost {
     }
 
     public AvailableStatus requestFileInformation(final DownloadLink link, final Account account, final boolean isDownload) throws Exception {
-        String filenameFromHeader = null;
+        String filenameFromConnection = null;
         if (isText(link)) {
             if (StringUtils.isEmpty(getTweetText(link))) {
                 /* This should never happen! */
@@ -487,16 +487,16 @@ public class TwitterCom extends PluginForHost {
                                 link.setVerifiedFileSize(con.getCompleteContentLength());
                             }
                         }
-                        filenameFromHeader = getFileNameFromHeader(con);
-                        if (filenameFromHeader != null) {
+                        filenameFromConnection = getFileNameFromHeader(con);
+                        if (filenameFromConnection != null) {
                             /* Do some corrections */
-                            filenameFromHeader = Encoding.htmlDecode(filenameFromHeader).replace(":orig", "").trim();
-                            if (tweetID != null && !filenameFromHeader.contains(tweetID)) {
-                                filenameFromHeader = tweetID + "_" + filenameFromHeader;
+                            filenameFromConnection = Encoding.htmlDecode(filenameFromConnection).replace(":orig", "").trim();
+                            if (tweetID != null && !filenameFromConnection.contains(tweetID)) {
+                                filenameFromConnection = tweetID + "_" + filenameFromConnection;
                             }
                             final String ext = getExtensionFromMimeType(con);
                             if (ext != null) {
-                                filenameFromHeader = applyFilenameExtension(filenameFromHeader, "." + ext);
+                                filenameFromConnection = applyFilenameExtension(filenameFromConnection, "." + ext);
                             }
                         }
                     } finally {
@@ -511,8 +511,8 @@ public class TwitterCom extends PluginForHost {
         if (tweetID != null) {
             /* Item from crawler which shall contain all information needed to set custom filenames. */
             TwitterComCrawler.setFormattedFilename(link);
-        } else if (filenameFromHeader != null) {
-            link.setFinalFileName(filenameFromHeader);
+        } else if (filenameFromConnection != null) {
+            link.setFinalFileName(filenameFromConnection);
         }
         return AvailableStatus.TRUE;
     }

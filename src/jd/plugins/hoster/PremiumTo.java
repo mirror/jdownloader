@@ -827,7 +827,11 @@ public class PremiumTo extends UseNet {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             link.setFinalFileName(getFileNameFromHeader(con));
-            link.setVerifiedFileSize(fileSize);
+            if (con.isContentDecoded()) {
+                link.setDownloadSize(fileSize);
+            } else {
+                link.setVerifiedFileSize(fileSize);
+            }
             return AvailableStatus.TRUE;
         } finally {
             try {

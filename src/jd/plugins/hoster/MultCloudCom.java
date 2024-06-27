@@ -13,9 +13,9 @@
 //
 //You should have received a copy of the GNU General Public License
 //along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 package jd.plugins.hoster;
 
+import org.appwork.utils.StringUtils;
 import org.appwork.utils.formatter.SizeFormatter;
 
 import jd.PluginWrapper;
@@ -31,7 +31,6 @@ import jd.plugins.components.PluginJSonUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "multcloud.com" }, urls = { "https?://(www\\.)?multcloud\\.com/(?:download/[A-Z0-9\\-]+|action/share!downloadShare\\?.+)" })
 public class MultCloudCom extends PluginForHost {
-
     public MultCloudCom(PluginWrapper wrapper) {
         super(wrapper);
     }
@@ -70,8 +69,8 @@ public class MultCloudCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
             filename = PluginJSonUtils.getJsonValue(br, "name");
-            if (filename != null && !filename.equals("")) {
-                link.setFinalFileName(filename);
+            if (!StringUtils.isEmpty(filename)) {
+                link.setName(filename);
             } else {
                 link.setName(fid);
             }
@@ -118,5 +117,4 @@ public class MultCloudCom extends PluginForHost {
     @Override
     public void resetDownloadlink(final DownloadLink link) {
     }
-
 }

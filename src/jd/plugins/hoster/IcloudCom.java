@@ -120,7 +120,11 @@ public class IcloudCom extends PluginForHost {
                 con = br2.openGetConnection(dllink);
                 if (this.looksLikeDownloadableContent(con)) {
                     if (con.getCompleteContentLength() > 0) {
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                        if (con.isContentDecoded()) {
+                            link.setDownloadSize(con.getCompleteContentLength());
+                        } else {
+                            link.setVerifiedFileSize(con.getCompleteContentLength());
+                        }
                     }
                     if (filename == null) {
                         filename = getFileNameFromHeader(con);

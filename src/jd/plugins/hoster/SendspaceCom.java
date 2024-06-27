@@ -157,12 +157,16 @@ public class SendspaceCom extends PluginForHost {
                         if (!this.looksLikeDownloadableContent(con)) {
                             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                         }
-                        final String filenameFromHeader = getFileNameFromHeader(con);
-                        if (filenameFromHeader != null) {
-                            link.setName(Encoding.htmlDecode(filenameFromHeader));
+                        final String filenameFromConnection = getFileNameFromHeader(con);
+                        if (filenameFromConnection != null) {
+                            link.setName(Encoding.htmlDecode(filenameFromConnection));
                         }
                         if (con.getCompleteContentLength() > 0) {
-                            link.setVerifiedFileSize(con.getCompleteContentLength());
+                            if (con.isContentDecoded()) {
+                                link.setDownloadSize(con.getCompleteContentLength());
+                            } else {
+                                link.setVerifiedFileSize(con.getCompleteContentLength());
+                            }
                         }
                         return AvailableStatus.TRUE;
                     } finally {

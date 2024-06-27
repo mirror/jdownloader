@@ -242,16 +242,16 @@ public class ImgSrcRu extends PluginForHost {
     }
 
     private void filenameHandling(final DownloadLink link, final URLConnectionAdapter con) {
-        String filenameFromHeader = getFileNameFromHeader(con);
-        if (filenameFromHeader == null) {
+        String filenameFromConnection = getFileNameFromHeader(con);
+        if (filenameFromConnection == null) {
             return;
         }
         final String fileid = this.getFID(link);
-        if (filenameFromHeader.contains(".")) {
+        if (filenameFromConnection.contains(".")) {
             /* Remove domain from header-filename. */
-            filenameFromHeader = filenameFromHeader.substring(filenameFromHeader.lastIndexOf("."));
+            filenameFromConnection = filenameFromConnection.substring(filenameFromConnection.lastIndexOf("."));
         }
-        link.setFinalFileName(fileid + filenameFromHeader);
+        link.setFinalFileName(fileid + filenameFromConnection);
     }
 
     public static boolean isPasswordProtected(final Browser br) {

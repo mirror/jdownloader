@@ -30,6 +30,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
@@ -150,7 +151,7 @@ public class FilesFm extends PluginForHost {
                 link.setFinalFileName(torrentFilename);
                 // throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             } else {
-                filename_header = Encoding.htmlDecode(getFileNameFromHeader(con));
+                filename_header = Encoding.htmlDecode(Plugin.getFileNameFromDispositionHeader(con));
                 if (filename_url == null && filename_header != null) {
                     link.setFinalFileName(filename_header);
                 } else if (filename_url != null && filename_header.length() > filename_url.length()) {

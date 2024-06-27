@@ -186,7 +186,11 @@ public class YouJizzCom extends PluginForHost {
             if (this.looksLikeDownloadableContent(con)) {
                 String ext = getFileNameFromHeader(con).substring(getFileNameFromHeader(con).lastIndexOf("."));
                 link.setFinalFileName(Encoding.htmlDecode(filename) + ext);
-                link.setDownloadSize(con.getLongContentLength());
+                if (con.isContentDecoded()) {
+                    link.setDownloadSize(con.getCompleteContentLength());
+                } else {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                }
             } else {
                 br2.followConnection(true);
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

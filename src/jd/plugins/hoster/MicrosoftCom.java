@@ -57,7 +57,11 @@ public class MicrosoftCom extends PluginForHost {
                 link.setFinalFileName(Encoding.htmlDecode(filenameFromHeader).trim());
             }
             if (con.getCompleteContentLength() > 0) {
-                link.setVerifiedFileSize(con.getCompleteContentLength());
+                if (con.isContentDecoded()) {
+                    link.setDownloadSize(con.getCompleteContentLength());
+                } else {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                }
             }
         } finally {
             try {

@@ -200,19 +200,19 @@ public class MegagamesCom extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error");
             }
         }
-        String server_filename = Plugin.getFileNameFromHeader(dl.getConnection());
+        final String server_filename = Plugin.getFileNameFromHeader(dl.getConnection());
         final String badExtension = new Regex(server_filename, "(\\.zipd)$").getMatch(0);
         if (badExtension != null) {
-            server_filename = server_filename.replace(badExtension, ".zip");
-            link.setFinalFileName(server_filename);
+            final String final_filename = server_filename.replace(badExtension, ".zip");
+            link.setFinalFileName(final_filename);
         }
         /* 2020-07-14: WTF they're also sending wrong video extensions */
         final String badExtensionVideo = new Regex(server_filename, "(\\.mp4d)$").getMatch(0);
         if (badExtensionVideo != null) {
-            server_filename = server_filename.replace(badExtensionVideo, ".mp4");
-            link.setFinalFileName(server_filename);
+            final String final_filename = this.applyFilenameExtension(server_filename, ".mp4");
+            link.setFinalFileName(final_filename);
         }
-        link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
+        link.setProperty(directlinkproperty, dl.getConnection().getURL().toExternalForm());
         dl.startDownload();
     }
 

@@ -99,7 +99,11 @@ public class ZbigzCom extends antiDDoSForHost {
             if (this.looksLikeDownloadableContent(con)) {
                 link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)).trim());
                 if (con.getCompleteContentLength() > 0) {
-                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                    if (con.isContentDecoded()) {
+                        link.setDownloadSize(con.getCompleteContentLength());
+                    } else {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
                 }
             } else {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);

@@ -189,7 +189,11 @@ public class ImagesHackCom extends PluginForHost {
                     link.setName(filenameFromHeader);
                 }
                 if (con.getCompleteContentLength() > 0) {
-                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                    if (con.isContentDecoded()) {
+                        link.setDownloadSize(con.getCompleteContentLength());
+                    } else {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
                 }
             } finally {
                 try {

@@ -28,6 +28,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.utils.locale.JDL;
@@ -150,8 +151,9 @@ public class SoftPediaCom extends PluginForHost {
                 }
             }
         }
-        if (dl.getConnection().isContentDisposition()) {
-            link.setFinalFileName(getFileNameFromHeader(dl.getConnection()));
+        final String filename = Plugin.getFileNameFromDispositionHeader(dl.getConnection());
+        if (filename != null) {
+            link.setFinalFileName(filename);
         }
         dl.startDownload();
     }

@@ -119,11 +119,15 @@ public class KoofrNet extends PluginForHost {
             con = br.openGetConnection(dllink);
             handleConnectionErrors(br, con);
             if (con.getCompleteContentLength() > 0) {
-                link.setVerifiedFileSize(con.getCompleteContentLength());
+                if (con.isContentDecoded()) {
+                    link.setDownloadSize(con.getCompleteContentLength());
+                } else {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                }
             }
-            final String filenameFromHeader = Plugin.getFileNameFromHeader(con);
-            if (filenameFromHeader != null) {
-                link.setFinalFileName(filenameFromHeader);
+            final String filenameFromConnection = Plugin.getFileNameFromDispositionHeader(con);
+            if (filenameFromConnection != null) {
+                link.setFinalFileName(filenameFromConnection);
             }
             final String jsonFromHeader = br.getRequest().getResponseHeader("x-file-info");
             if (jsonFromHeader != null && jsonFromHeader.startsWith("{")) {

@@ -254,12 +254,14 @@ public abstract class HighWayCore extends UseNet {
                     con = br.openHeadConnection(Encoding.urlDecode(link.getPluginPatternMatcher(), true));
                     if (!this.looksLikeDownloadableContent(con) || con.getCompleteContentLength() <= 0) {
                         throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                    }
+                    final String filename = getFileNameFromHeader(con);
+                    if (filename != null) {
+                        link.setFinalFileName(filename);
+                    }
+                    if (con.isContentDecoded()) {
+                        link.setDownloadSize(con.getCompleteContentLength());
                     } else {
-                        final String filename = getFileNameFromHeader(con);
-                        if (filename != null) {
-                            link.setFinalFileName(filename);
-                        }
-                        ;
                         link.setVerifiedFileSize(con.getCompleteContentLength());
                     }
                 } finally {

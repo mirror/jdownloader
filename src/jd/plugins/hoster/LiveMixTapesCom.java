@@ -19,6 +19,12 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.Time;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.Cookies;
@@ -36,12 +42,6 @@ import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.Time;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.antiDDoSForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "livemixtapes.com" }, urls = { "https?://((?:\\w+\\.)?livemixtapes\\.com/download(?:/mp3)?/\\d+/[a-z0-9\\-]+\\.html|club\\.livemixtapes\\.com/play/\\d+)" })
 public class LiveMixTapesCom extends antiDDoSForHost {
@@ -128,7 +128,11 @@ public class LiveMixTapesCom extends antiDDoSForHost {
                 con = br.openHeadConnection(link.getPluginPatternMatcher());
                 if (this.looksLikeDownloadableContent(con)) {
                     if (con.getCompleteContentLength() > 0) {
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                        if (con.isContentDecoded()) {
+                            link.setDownloadSize(con.getCompleteContentLength());
+                        } else {
+                            link.setVerifiedFileSize(con.getCompleteContentLength());
+                        }
                     }
                     /* Check if final filename has been set in crawler before */
                     if (link.getFinalFileName() == null) {

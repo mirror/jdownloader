@@ -15,6 +15,9 @@
 //    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 package jd.plugins.hoster;
 
+import org.appwork.utils.Regex;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -25,9 +28,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.Regex;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 //Links come from a decrypter
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "soundsnap.com" }, urls = { "https?://(?:www\\.)?soundsnap\\.com/node/(\\d+)" })
@@ -95,7 +95,11 @@ public class SoundSnapCom extends PluginForHost {
                 link.setFinalFileName(Encoding.htmlDecode(filename).trim());
             }
             if (con.getCompleteContentLength() > 0) {
-                link.setVerifiedFileSize(con.getCompleteContentLength());
+                if (con.isContentDecoded()) {
+                    link.setDownloadSize(con.getCompleteContentLength());
+                } else {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                }
             }
             return AvailableStatus.TRUE;
         }

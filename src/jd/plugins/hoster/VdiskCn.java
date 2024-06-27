@@ -172,10 +172,10 @@ public class VdiskCn extends PluginForHost {
             /* 2022-01-14 */
             filesize = br.getRegex(">大小：(\\d+ [^<]+)</div>").getMatch(0);
         }
-        String MD5sum = br.getRegex("(?i)文件校验: ([A-Z0-9]{32})").getMatch(0);
-        if (MD5sum == null) {
-            MD5sum = br.getRegex(">MD5</td>\\s*<td>([a-fA-F0-9]{32})</td>").getMatch(0);
-            if (MD5sum == null) {
+        String md5sum = br.getRegex("(?i)文件校验: ([A-Z0-9]{32})").getMatch(0);
+        if (md5sum == null) {
+            md5sum = br.getRegex(">MD5</td>\\s*<td>([a-fA-F0-9]{32})</td>").getMatch(0);
+            if (md5sum == null) {
                 logger.warning("Can't find MD5sum, Please report issue to JDownloader Development!");
                 logger.warning("Continuing...");
             }
@@ -186,8 +186,8 @@ public class VdiskCn extends PluginForHost {
         if (filesize != null) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
-        if (MD5sum != null) {
-            link.setMD5Hash(MD5sum);
+        if (md5sum != null) {
+            link.setMD5Hash(md5sum);
         }
         final String directurl = this.getDownloadurl(this.br);
         /* 2020-12-02: Filename/size can still be given for offline files! */

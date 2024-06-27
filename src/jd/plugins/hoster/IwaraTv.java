@@ -419,7 +419,7 @@ public class IwaraTv extends PluginForHost {
         }
         final IwaraTvConfig cfg = PluginJsonConfig.get(IwaraTvConfig.class);
         final FilenameSchemeType preferredFilenameSchemeType = cfg.getPreferredFilenameSchemeType();
-        final String serverFilename = Plugin.getFileNameFromHeader(dl.getConnection());
+        final String serverFilename = Plugin.getFileNameFromDispositionHeader(dl.getConnection());
         final String mimeExt = getExtensionFromMimeType(dl.getConnection());
         if (preferredFilenameSchemeType == FilenameSchemeType.ORIGINAL_SERVER_FILENAMES) {
             if (StringUtils.endsWithCaseInsensitive(serverFilename, mimeExt)) {

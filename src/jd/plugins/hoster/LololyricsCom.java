@@ -28,7 +28,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
@@ -102,7 +101,11 @@ public class LololyricsCom extends PluginForHost {
             con = br.openHeadConnection(dllink);
             if (this.looksLikeDownloadableContent(con)) {
                 if (con.getCompleteContentLength() > 0) {
-                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                    if (con.isContentDecoded()) {
+                        link.setDownloadSize(con.getCompleteContentLength());
+                    } else {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
                 }
             } else {
                 /* Probably limit reached */
@@ -133,11 +136,6 @@ public class LololyricsCom extends PluginForHost {
             } else {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-        }
-        /* Prefer server filename as extension is not always .mp3! */
-        final String serverFilename = Plugin.getFileNameFromHeader(dl.getConnection());
-        if (serverFilename != null) {
-            link.setFinalFileName(serverFilename);
         }
         dl.startDownload();
     }

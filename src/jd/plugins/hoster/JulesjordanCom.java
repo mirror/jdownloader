@@ -162,7 +162,11 @@ public class JulesjordanCom extends antiDDoSForHost {
                 if (this.looksLikeDownloadableContent(con)) {
                     link.setFinalFileName(getFileNameFromHeader(con));
                     if (con.getCompleteContentLength() > 0) {
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                        if (con.isContentDecoded()) {
+                            link.setDownloadSize(con.getCompleteContentLength());
+                        } else {
+                            link.setVerifiedFileSize(con.getCompleteContentLength());
+                        }
                     }
                 } else {
                     this.server_issues = true;

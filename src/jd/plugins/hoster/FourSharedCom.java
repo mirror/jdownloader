@@ -636,7 +636,11 @@ public class FourSharedCom extends PluginForHost {
                     br.followConnection();
                 } else {
                     logger.info("Detected directlink");
-                    link.setDownloadSize(con.getLongContentLength());
+                    if (con.isContentDecoded()) {
+                        link.setDownloadSize(con.getCompleteContentLength());
+                    } else {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
                     link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
                     DLLINK = link.getDownloadURL();
                     return AvailableStatus.TRUE;

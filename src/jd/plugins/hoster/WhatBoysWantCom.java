@@ -109,7 +109,7 @@ public class WhatBoysWantCom extends PluginForHost {
                 filename += default_EXT_photo;
             }
         }
-        link.setFinalFileName(Encoding.htmlDecode(filename.trim()));
+        link.setName(Encoding.htmlDecode(filename.trim()));
         return AvailableStatus.TRUE;
     }
 
@@ -141,9 +141,6 @@ public class WhatBoysWantCom extends PluginForHost {
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             br.followConnection(true);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        if (link.getFinalFileName() == null && dl.getConnection().isContentDisposition()) {
-            link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
         }
         link.setProperty(directlinkproperty, dllink);
         dl.startDownload();
@@ -340,9 +337,6 @@ public class WhatBoysWantCom extends PluginForHost {
             logger.warning("The final dllink seems not to be a file!");
             br.followConnection(true);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        if (link.getFinalFileName() == null && dl.getConnection().isContentDisposition()) {
-            link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection())));
         }
         link.setProperty(directlinkproperty, dllink);
         dl.startDownload();

@@ -188,7 +188,11 @@ public class EvilAngelLegacy extends antiDDoSForHost {
                     con = brc.openHeadConnection(dllink);
                     if (this.looksLikeDownloadableContent(con)) {
                         if (con.getCompleteContentLength() > 0) {
-                            link.setVerifiedFileSize(con.getCompleteContentLength());
+                            if (con.isContentDecoded()) {
+                                link.setDownloadSize(con.getCompleteContentLength());
+                            } else {
+                                link.setVerifiedFileSize(con.getCompleteContentLength());
+                            }
                         }
                         if (StringUtils.isEmpty(filename)) {
                             /* Fallback if everything else fails */

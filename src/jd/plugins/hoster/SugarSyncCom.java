@@ -79,7 +79,11 @@ public class SugarSyncCom extends PluginForHost {
             } else {
                 /* We have a directlink */
                 dllink = link.getPluginPatternMatcher();
-                link.setDownloadSize(con.getLongContentLength());
+                if (con.isContentDecoded()) {
+                    link.setDownloadSize(con.getCompleteContentLength());
+                } else {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                }
                 link.setFinalFileName(Encoding.htmlDecode(getFileNameFromHeader(con)));
                 return AvailableStatus.TRUE;
             }

@@ -29,6 +29,20 @@ import java.util.regex.Pattern;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.appwork.loggingv3.NullLogger;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Application;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.logging2.LogInterface;
+import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -49,20 +63,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.loggingv3.NullLogger;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Application;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.logging2.LogInterface;
-import org.appwork.utils.net.httpconnection.HTTPConnection.RequestMethod;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.plugins.controller.LazyPlugin.FEATURE;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class FileFactory extends PluginForHost {
@@ -604,7 +604,8 @@ public class FileFactory extends PluginForHost {
                 isPremium = true;
             }
             /**
-             * Other possible values: </br> "expired" -> Free Account
+             * Other possible values: </br>
+             * "expired" -> Free Account
              */
         }
         if (!isPremium && !isPremiumLifetime) {
@@ -689,7 +690,8 @@ public class FileFactory extends PluginForHost {
     }
 
     /**
-     * Returns final downloadurl </br> TODO: 2023-11-03: Check if this is still needed
+     * Returns final downloadurl </br>
+     * TODO: 2023-11-03: Check if this is still needed
      */
     @Deprecated
     public String getUrl() throws Exception {
@@ -1053,7 +1055,11 @@ public class FileFactory extends PluginForHost {
                 if (this.looksLikeDownloadableContent(con)) {
                     link.setFinalFileName(Plugin.getFileNameFromHeader(con));
                     if (con.getCompleteContentLength() > 0) {
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                        if (con.isContentDecoded()) {
+                            link.setDownloadSize(con.getCompleteContentLength());
+                        } else {
+                            link.setVerifiedFileSize(con.getCompleteContentLength());
+                        }
                     }
                     dllink = con.getURL().toExternalForm();
                     link.setAvailable(true);

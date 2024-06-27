@@ -109,7 +109,11 @@ public class HulkShareCom extends PluginForHost {
         try {
             con = br.openGetConnection(link.getPluginPatternMatcher());
             if (this.looksLikeDownloadableContent(con)) {
-                link.setVerifiedFileSize(con.getCompleteContentLength());
+                if (con.isContentDecoded()) {
+                    link.setDownloadSize(con.getCompleteContentLength());
+                } else {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                }
                 link.setFinalFileName(getFileNameFromHeader(con));
                 link.setProperty("freelink", con.getURL().toString());
                 return AvailableStatus.TRUE;

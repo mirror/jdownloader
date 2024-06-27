@@ -246,10 +246,6 @@ public class SlideShareNet extends PluginForHost {
             logger.warning("The final dllink seems not to be a file!");
             handleServerErrors(null);
         }
-        /* Set correct ending - 2016-11-23: Only pictures- and videos are downloadable without account. */
-        if (!this.isVideo) {
-            fixFilename(link);
-        }
         dl.startDownload();
     }
 
@@ -404,10 +400,6 @@ public class SlideShareNet extends PluginForHost {
             logger.warning("The final dllink seems not to be a file!");
             handleServerErrors(account);
         }
-        // Set correct ending
-        if (!this.isVideo) {
-            fixFilename(link);
-        }
         dl.startDownload();
     }
 
@@ -431,26 +423,6 @@ public class SlideShareNet extends PluginForHost {
         } catch (final Throwable e) {
         }
         throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-    }
-
-    private void fixFilename(final DownloadLink link) {
-        String oldName = link.getFinalFileName();
-        if (oldName == null) {
-            oldName = link.getName();
-        }
-        final String serverFilename = Encoding.htmlDecode(getFileNameFromHeader(dl.getConnection()));
-        final String newExtension = serverFilename.substring(serverFilename.lastIndexOf("."));
-        if (newExtension != null && !oldName.endsWith(newExtension)) {
-            String oldExtension = null;
-            if (oldName.contains(".")) {
-                oldExtension = oldName.substring(oldName.lastIndexOf("."));
-            }
-            if (oldExtension != null && oldExtension.length() <= 5) {
-                link.setFinalFileName(oldName.replace(oldExtension, newExtension));
-            } else {
-                link.setFinalFileName(oldName + newExtension);
-            }
-        }
     }
 
     private String getXML(final String parameter) {

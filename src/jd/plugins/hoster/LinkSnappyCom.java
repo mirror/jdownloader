@@ -161,7 +161,11 @@ public class LinkSnappyCom extends PluginForHost {
             con = br2.openGetConnection(link.getPluginPatternMatcher());
             handleConnectionErrors(br2, link, con);
             if (con.getCompleteContentLength() > 0) {
-                link.setVerifiedFileSize(con.getCompleteContentLength());
+                if (con.isContentDecoded()) {
+                    link.setDownloadSize(con.getCompleteContentLength());
+                } else {
+                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                }
             }
             link.setFinalFileName(Plugin.getFileNameFromHeader(con));
         } finally {
