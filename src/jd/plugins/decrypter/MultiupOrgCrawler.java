@@ -37,6 +37,7 @@ import jd.plugins.DecrypterPlugin;
 import jd.plugins.DecrypterRetryException;
 import jd.plugins.DecrypterRetryException.RetryReason;
 import jd.plugins.DownloadLink;
+import jd.plugins.FilePackage;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 
@@ -81,7 +82,7 @@ public class MultiupOrgCrawler extends antiDDoSForDecrypt {
     public static String[] getAnnotationUrls() {
         final List<String> ret = new ArrayList<String>();
         for (final String[] domains : getPluginDomains()) {
-            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:en|fr/)?(fichiers/download/[a-z0-9]{32}_[^<> \"'&%]+|([a-z]{2}/)?(download|mirror)/[a-z0-9]{32}(/[^<> \"'&%]+)?|\\?lien=[a-z0-9]{32}_[^<> \"'&%]+|[a-f0-9]{32})");
+            ret.add("https?://(?:www\\.)?" + buildHostsPatternPart(domains) + "/(?:en|fr/)?(fichiers/download/[a-z0-9]{32}_[^<> \"'&%]+|([a-z]{2}/)?(download|mirror)/[a-z0-9]{32}(/[^<> \"'&%]+)?|\\?lien=[a-z0-9]{32}_[^<> \"'&%]+|[a-f0-9]{32}|project/[a-f0-9]{32})");
         }
         return ret.toArray(new String[0]);
     }
@@ -90,131 +91,160 @@ public class MultiupOrgCrawler extends antiDDoSForDecrypt {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         String contenturl = param.getCryptedUrl();
         contenturl = contenturl.replaceFirst("(?i)/(en|fr)/", "/");
-        contenturl = contenturl.replaceFirst("(?i)http://", "https://");
-        String uid = getFUID(contenturl);
-        String filename = getFilename(contenturl);
-        String filesize = getFileSize(contenturl);
-        if (filename != null && uid != null) {
-            contenturl = new Regex(contenturl, "(https?://[^/]+)").getMatch(0) + "/download/" + uid + "/" + filename;
-        }
-        getPage(contenturl);
-        if (uid == null) {
-            getFUID(br.getURL());
-            if (uid == null) {
-                /* Invalid URL / content offline */
+        contenturl = contenturl.replaceFirst("^(?i)http://", "https://");
+        final String projectID = new Regex(contenturl, "/project/([a-f0-9]{32})").getMatch(0);
+        if (projectID != null) {
+            /* Crawl all file links of a "project" (like a folder of files) */
+            getPage(contenturl);
+            if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-        }
-        final String csrftoken = br.getRegex("_csrf_token\"\\s*value\\s*=\\s*\"(.*?)\"").getMatch(0);
-        final String mirror = contenturl.replace("/en/download/", "/en/mirror/").replace("/download/", "/en/mirror/");
-        if (csrftoken != null) {
-            postPage(mirror, "_csrf_token=" + Encoding.urlEncode(csrftoken));
-        } else {
-            getPage(mirror);
-        }
-        final String webSiteFilename = getWebsiteFileName(br);
-        if (!StringUtils.isEmpty(webSiteFilename)) {
-            filename = webSiteFilename;
-        }
-        final String webSiteFileSize = getWebsiteFileSize(br);
-        if (filesize == null) {
-            filesize = webSiteFileSize;
-        }
-        if (br.getHttpConnection().getResponseCode() == 404) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (br.containsHTML("The file does not exist any more\\.<|<h1>\\s*The server returned a \"404 Not Found\"\\.</h2>|<h1>\\s*Oops! An Error Occurred\\s*</h1>|>\\s*File not found|>\\s*No link currently available")) {
-            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        }
-        if (AbstractCloudflareTurnstileCaptcha.containsCloudflareTurnstileClass(br)) {
-            /* https://svn.jdownloader.org/issues/90281 */
-            throw new DecrypterRetryException(RetryReason.BLOCKED_BY, "Cloudflare Turnstile captcha is not supported");
-        } else if (AbstractHCaptcha.containsHCaptcha(br)) {
-            final Form form = br.getFormbyActionRegex("/mirror/");
-            final String response = new CaptchaHelperCrawlerPluginHCaptcha(this, br).getToken();
-            form.put("h-captcha-response", Encoding.urlEncode(response));
-            form.put("g-recaptcha-response", Encoding.urlEncode(response));
-            submitForm(form);
-            if (br.containsHTML("h-recaptcha")) {
-                /* This should never happen */
-                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-            }
-        } else if (br.containsHTML("g-recaptcha")) {
-            final Form form = br.getFormbyActionRegex("/mirror/");
-            final String response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
-            form.put("g-recaptcha-response", Encoding.urlEncode(response));
-            submitForm(form);
-            if (br.containsHTML("g-recaptcha")) {
-                throw new PluginException(LinkStatus.ERROR_CAPTCHA);
-            }
-        }
-        String[] urls = br.getRegex("\\s+link\\s*=\\s*\"((https?://)?[^\"]+)\"\\s+").getColumn(0);
-        if (urls == null || urls.length == 0) {
-            urls = br.getRegex("\\s+href\\s*=\\s*\"([^\"]+)\"\\s+").getColumn(0);
+            final String[] urls = br.getRegex("(/[a-f0-9]{32})").getColumn(0);
             if (urls == null || urls.length == 0) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
-        }
-        int index = -1;
-        for (final String url : urls) {
-            index++;
-            logger.info("Crawling mirror " + index + "/" + urls.length);
-            if (isAbort()) {
-                break;
+            String title = br.getRegex("name=\"description\"[^>]*content=\"Show files in the project ([^\"]+)\"").getMatch(0);
+            if (title != null) {
+                title = Encoding.htmlDecode(title).trim();
+                title = title.replace(" (" + projectID + ")", "");
+            } else {
+                /* Fallback */
+                title = projectID;
             }
-            String finalURL = null;
-            if (StringUtils.containsIgnoreCase(url, "/redirect-to-host/")) {
-                final Browser brc = br.cloneBrowser();
-                brc.setFollowRedirects(false);
-                brc.getPage(url);
-                boolean retry = true;
-                while (!isAbort()) {
-                    finalURL = brc.getRedirectLocation();
-                    if (finalURL == null) {
-                        finalURL = brc.getRegex("http-equiv\\s*=\\s*\"refresh\"\\s*content\\s*=\\s*\"[^\"]*url\\s*=\\s*(.*?)\"").getMatch(0);
-                        if (finalURL != null) {
-                            if (retry && StringUtils.containsIgnoreCase(finalURL, "multinews.me")) {
-                                // first/randomly opens sort of *show some ads* website, on retry the real destination is given
-                                retry = false;
-                                brc.getPage(url);
-                                continue;
+            final FilePackage fp = FilePackage.getInstance();
+            fp.setName(title);
+            for (final String url : urls) {
+                final DownloadLink link = this.createDownloadlink(br.getURL(url).toExternalForm());
+                link._setFilePackage(fp);
+                ret.add(link);
+            }
+        } else {
+            /* Crawl all mirrors to a single file */
+            String uid = getFUID(contenturl);
+            String filename = getFilename(contenturl);
+            String filesize = getFileSize(contenturl);
+            if (filename != null && uid != null) {
+                contenturl = new Regex(contenturl, "(https?://[^/]+)").getMatch(0) + "/download/" + uid + "/" + filename;
+            }
+            getPage(contenturl);
+            if (uid == null) {
+                getFUID(br.getURL());
+                if (uid == null) {
+                    /* Invalid URL / content offline */
+                    throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+                }
+            }
+            final String csrftoken = br.getRegex("_csrf_token\"\\s*value\\s*=\\s*\"(.*?)\"").getMatch(0);
+            final String mirror = contenturl.replace("/en/download/", "/en/mirror/").replace("/download/", "/en/mirror/");
+            if (csrftoken != null) {
+                postPage(mirror, "_csrf_token=" + Encoding.urlEncode(csrftoken));
+            } else {
+                getPage(mirror);
+            }
+            final String webSiteFilename = getWebsiteFileName(br);
+            if (!StringUtils.isEmpty(webSiteFilename)) {
+                filename = webSiteFilename;
+            }
+            final String webSiteFileSize = getWebsiteFileSize(br);
+            if (filesize == null) {
+                filesize = webSiteFileSize;
+            }
+            if (br.getHttpConnection().getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else if (br.containsHTML("The file does not exist any more\\.<|<h1>\\s*The server returned a \"404 Not Found\"\\.</h2>|<h1>\\s*Oops! An Error Occurred\\s*</h1>|>\\s*File not found|>\\s*No link currently available")) {
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            }
+            if (AbstractCloudflareTurnstileCaptcha.containsCloudflareTurnstileClass(br)) {
+                /* https://svn.jdownloader.org/issues/90281 */
+                throw new DecrypterRetryException(RetryReason.BLOCKED_BY, "Cloudflare Turnstile captcha is not supported");
+            } else if (AbstractHCaptcha.containsHCaptcha(br)) {
+                final Form form = br.getFormbyActionRegex("/mirror/");
+                final String response = new CaptchaHelperCrawlerPluginHCaptcha(this, br).getToken();
+                form.put("h-captcha-response", Encoding.urlEncode(response));
+                form.put("g-recaptcha-response", Encoding.urlEncode(response));
+                submitForm(form);
+                if (br.containsHTML("h-recaptcha")) {
+                    /* This should never happen */
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                }
+            } else if (br.containsHTML("g-recaptcha")) {
+                final Form form = br.getFormbyActionRegex("/mirror/");
+                final String response = new CaptchaHelperCrawlerPluginRecaptchaV2(this, br).getToken();
+                form.put("g-recaptcha-response", Encoding.urlEncode(response));
+                submitForm(form);
+                if (br.containsHTML("g-recaptcha")) {
+                    throw new PluginException(LinkStatus.ERROR_CAPTCHA);
+                }
+            }
+            String[] urls = br.getRegex("\\s+link\\s*=\\s*\"((https?://)?[^\"]+)\"\\s+").getColumn(0);
+            if (urls == null || urls.length == 0) {
+                urls = br.getRegex("\\s+href\\s*=\\s*\"([^\"]+)\"\\s+").getColumn(0);
+                if (urls == null || urls.length == 0) {
+                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                }
+            }
+            int index = -1;
+            for (final String url : urls) {
+                index++;
+                logger.info("Crawling mirror " + index + "/" + urls.length);
+                if (isAbort()) {
+                    break;
+                }
+                String finalURL = null;
+                if (StringUtils.containsIgnoreCase(url, "/redirect-to-host/")) {
+                    final Browser brc = br.cloneBrowser();
+                    brc.setFollowRedirects(false);
+                    brc.getPage(url);
+                    boolean retry = true;
+                    while (!isAbort()) {
+                        finalURL = brc.getRedirectLocation();
+                        if (finalURL == null) {
+                            finalURL = brc.getRegex("http-equiv\\s*=\\s*\"refresh\"\\s*content\\s*=\\s*\"[^\"]*url\\s*=\\s*(.*?)\"").getMatch(0);
+                            if (finalURL != null) {
+                                if (retry && StringUtils.containsIgnoreCase(finalURL, "multinews.me")) {
+                                    // first/randomly opens sort of *show some ads* website, on retry the real destination is given
+                                    retry = false;
+                                    brc.getPage(url);
+                                    continue;
+                                }
+                                if (!StringUtils.containsIgnoreCase(finalURL, "/redirect-to-host/") || finalURL.startsWith("http")) {
+                                    break;
+                                }
                             }
-                            if (!StringUtils.containsIgnoreCase(finalURL, "/redirect-to-host/") || finalURL.startsWith("http")) {
-                                break;
+                            if (finalURL != null) {
+                                if (finalURL.matches("^.+/\\d+$")) {
+                                    // seems we can skip the redirects
+                                    finalURL = finalURL.substring(0, finalURL.length() - 2);
+                                }
+                                sleep(1000, param);
+                                finalURL = brc.getURL(finalURL).toString();
+                                brc.setRequest(null);
+                                brc.setCurrentURL(null);
+                                brc.getPage(finalURL);
+                            } else {
+                                finalURL = brc.getRedirectLocation();
+                                if (finalURL == null) {
+                                    throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+                                }
                             }
-                        }
-                        if (finalURL != null) {
-                            if (finalURL.matches("^.+/\\d+$")) {
-                                // seems we can skip the redirects
-                                finalURL = finalURL.substring(0, finalURL.length() - 2);
-                            }
-                            sleep(1000, param);
-                            finalURL = brc.getURL(finalURL).toString();
-                            brc.setRequest(null);
-                            brc.setCurrentURL(null);
-                            brc.getPage(finalURL);
                         } else {
-                            finalURL = brc.getRedirectLocation();
-                            if (finalURL == null) {
-                                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-                            }
+                            break;
                         }
-                    } else {
-                        break;
                     }
+                } else if (url.startsWith("http")) {
+                    finalURL = url.trim().replaceFirst(":/+", "://");
                 }
-            } else if (url.startsWith("http")) {
-                finalURL = url.trim().replaceFirst(":/+", "://");
-            }
-            if (finalURL != null) {
-                final DownloadLink downloadLink = createDownloadlink(finalURL);
-                if (filename != null) {
-                    downloadLink.setFinalFileName(filename);
+                if (finalURL != null) {
+                    final DownloadLink downloadLink = createDownloadlink(finalURL);
+                    if (filename != null) {
+                        downloadLink.setFinalFileName(filename);
+                    }
+                    if (filesize != null) {
+                        downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
+                    }
+                    distribute(downloadLink);
+                    ret.add(downloadLink);
                 }
-                if (filesize != null) {
-                    downloadLink.setDownloadSize(SizeFormatter.getSize(filesize));
-                }
-                distribute(downloadLink);
-                ret.add(downloadLink);
             }
         }
         return ret;

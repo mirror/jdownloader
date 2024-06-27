@@ -121,10 +121,25 @@ public class StreamhubTo extends XFileSharingProBasic {
     @Override
     public String[] scanInfo(final String html, final String[] fileInfo) {
         super.scanInfo(html, fileInfo);
-        final String betterFilename = br.getRegex("<h4>([^<]+)</h4>").getMatch(0);
+        String betterFilename = br.getRegex("<h4>([^<]+)</h4>").getMatch(0);
+        if (betterFilename == null) {
+            /* 2024-06-27 */
+            betterFilename = br.getRegex("<h2>([^<]+)</h2>").getMatch(0);
+        }
         if (betterFilename != null) {
+            betterFilename = betterFilename.replaceFirst("(?i)^Download\\s*", "");
             fileInfo[0] = betterFilename;
         }
         return fileInfo;
+    }
+
+    @Override
+    protected String getDllink(final DownloadLink link, final Account account, final Browser br, String src) {
+        final String dllink = br.getRegex("btn-primary btn-go\"[^>]*href=\"(http[^\"]+)").getMatch(0);
+        if (dllink != null) {
+            return dllink;
+        } else {
+            return super.getDllink(link, account, br, src);
+        }
     }
 }
