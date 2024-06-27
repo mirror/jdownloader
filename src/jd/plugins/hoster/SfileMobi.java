@@ -17,6 +17,9 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -28,9 +31,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "sfile.mobi" }, urls = { "https?://(?:www\\.)?sfile\\.mobi/(?!loads)([A-Za-z0-9]+)" })
 public class SfileMobi extends PluginForHost {
@@ -44,9 +44,8 @@ public class SfileMobi extends PluginForHost {
     }
 
     /* Connection stuff */
-    private final boolean FREE_RESUME       = true;
-    private final int     FREE_MAXCHUNKS    = 0;
-    private final int     FREE_MAXDOWNLOADS = 20;
+    private final boolean FREE_RESUME    = true;
+    private final int     FREE_MAXCHUNKS = 0;
 
     @Override
     public String getLinkID(final DownloadLink link) {
@@ -64,31 +63,33 @@ public class SfileMobi extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        final String fid = this.getFID(link);
         if (!link.isNameSet()) {
             link.setName(this.getFID(link));
         }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
         br.getPage(link.getPluginPatternMatcher());
-        if (this.br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("(?i)404 File not found")) {
+        if (this.br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
-        } else if (!br.containsHTML("class=\"fa fa-cloud-download\"")) {
+        } else if (!br.containsHTML("/download/" + fid)) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         String filename = br.getRegex("title\\s*:\\s*'Download ([^<>\"\\']+)'").getMatch(0);
         if (filename == null) {
             filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]+)\"").getMatch(0);
         }
-        String filesize = br.getRegex(">Download File\\s*?\\(([^<>\"]+)\\)<").getMatch(0);
+        String filesize = br.getRegex(">\\s*Download File\\s*?\\(([^<>\"]+)\\)<").getMatch(0);
         if (filename != null) {
-            link.setName(Encoding.htmlDecode(filename).trim());
+            /* 2019-07-04: Hoster tags filenames so let's try to set the final filename here whenever possible */
+            link.setFinalFileName(Encoding.htmlDecode(filename).trim());
+        } else {
+            logger.warning("Failed to find filename");
         }
         if (!StringUtils.isEmpty(filesize)) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
-        }
-        if (!StringUtils.isEmpty(filename)) {
-            /* 2019-07-04: Hoster tags filenames so let's try to set the final filename here whenever possible */
-            link.setFinalFileName(filename);
+        } else {
+            logger.warning("Failed to find filesize");
         }
         return AvailableStatus.TRUE;
     }
@@ -102,10 +103,18 @@ public class SfileMobi extends PluginForHost {
         String dllink = checkDirectLink(link, directlinkproperty);
         if (dllink == null) {
             requestFileInformation(link);
-            br.getPage("/download/" + this.getFID(link));
-            dllink = br.getRegex("(/get/[^<>\"\\']+)").getMatch(0);
+            final String predownload = br.getRegex("(/download/" + this.getFID(link) + "[^\"]+)").getMatch(0);
+            if (StringUtils.isEmpty(predownload)) {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            br.getPage(predownload);
+            dllink = br.getRegex("(/download/\\d+/[^\"]+)").getMatch(0);
             if (StringUtils.isEmpty(dllink)) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
+            final String extraParam = br.getRegex("'&k='\\+'([a-f0-9]+)'").getMatch(0);
+            if (extraParam != null) {
+                dllink += "&k=" + extraParam;
             }
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, resumable, maxchunks);
@@ -119,7 +128,7 @@ public class SfileMobi extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        link.setProperty(directlinkproperty, dl.getConnection().getURL().toString());
+        link.setProperty(directlinkproperty, dl.getConnection().getURL().toExternalForm());
         dl.startDownload();
     }
 
@@ -154,7 +163,7 @@ public class SfileMobi extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return FREE_MAXDOWNLOADS;
+        return Integer.MAX_VALUE;
     }
 
     @Override

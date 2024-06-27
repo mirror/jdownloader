@@ -18,8 +18,10 @@ package jd.plugins.hoster;
 import java.io.IOException;
 
 import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
+import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -30,56 +32,74 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 
-@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sexyandfunny.com" }, urls = { "https?://(?:www\\.)?sexyandfunny\\.com/watch_video/[a-z0-9\\-_]+_\\d+\\.html" })
+@HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "sexyandfunny.com" }, urls = { "https?://(?:www\\.)?sexyandfunny\\.com/watch_video/([a-z0-9\\-_]+)_(\\d+)\\.html" })
 public class SexyAndFunnyCom extends PluginForHost {
     public SexyAndFunnyCom(PluginWrapper wrapper) {
         super(wrapper);
     }
 
-    private String  dllink        = null;
-    private boolean server_issues = false;
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.VIDEO_STREAMING };
+    }
+
+    private String dllink = null;
 
     @Override
     public String getAGBLink() {
-        return "http://forums.sexyandfunny.com/register.php?do=showrules";
+        return "https://forums.sexyandfunny.com/register.php?do=showrules";
     }
 
-    @SuppressWarnings("deprecation")
     @Override
-    public AvailableStatus requestFileInformation(DownloadLink downloadLink) throws IOException, PluginException {
+    public String getLinkID(final DownloadLink link) {
+        final String fid = getFID(link);
+        if (fid != null) {
+            return this.getHost() + "://" + fid;
+        } else {
+            return super.getLinkID(link);
+        }
+    }
+
+    private String getFID(final DownloadLink link) {
+        return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(1);
+    }
+
+    @Override
+    public AvailableStatus requestFileInformation(DownloadLink link) throws IOException, PluginException {
         dllink = null;
-        server_issues = false;
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage(downloadLink.getDownloadURL());
-        if (br.containsHTML("<title> \\- Sexy and Funny \\- SexyAndFunny\\.com</title>") || br.containsHTML(">Invalid video") || br.getHttpConnection().getResponseCode() == 404) {
+        br.getPage(link.getPluginPatternMatcher());
+        if (br.getHttpConnection().getResponseCode() == 404) {
+            throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+        } else if (br.containsHTML("<title> \\- Sexy and Funny \\- SexyAndFunny\\.com</title>") || br.containsHTML(">\\s*Invalid video")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        final String filename_url = new Regex(downloadLink.getDownloadURL(), "/watch_video/([a-z0-9\\-_]+)_\\d+\\.html").getMatch(0);
-        String filename = br.getRegex("<div class=\"content_title_main\" >([^<>\"]*?)</div>").getMatch(0);
-        if (filename == null) {
-            filename = br.getRegex("<title>([^<>\"]*?)\\- Sexy Videos \\- SexyAndFunny\\.com</title>").getMatch(0);
+        final String title_url = new Regex(link.getPluginPatternMatcher(), "/watch_video/([a-z0-9\\-_]+)_\\d+\\.html").getMatch(0);
+        String title = br.getRegex("<div class=\"content_title_main\" >([^<>\"]*?)</div>").getMatch(0);
+        if (title == null) {
+            title = br.getRegex("<title>([^<>\"]*?)\\- Sexy Videos \\- SexyAndFunny\\.com</title>").getMatch(0);
         }
-        if (StringUtils.isEmpty(filename)) {
+        if (StringUtils.isEmpty(title)) {
             /* Last chance fallback */
-            filename = filename_url;
+            title = title_url;
         }
         dllink = br.getRegex("<source src=\"(https?://[^<>\"]*?)\" type=(?:\"|\\')video/(?:mp4|flv)(?:\"|\\')").getMatch(0);
-        if (filename == null || dllink == null) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+        if (title != null) {
+            link.setFinalFileName(Encoding.htmlDecode(title).trim() + ".mp4");
         }
-        dllink = Encoding.htmlDecode(dllink);
-        filename = filename.trim();
-        final String ext = getFileNameExtensionFromString(dllink, ".flv");
-        downloadLink.setFinalFileName(Encoding.htmlDecode(filename) + ext);
         if (!StringUtils.isEmpty(dllink)) {
+            dllink = Encoding.htmlOnlyDecode(dllink);
             URLConnectionAdapter con = null;
             try {
-                con = br.openGetConnection(dllink);
-                if (!con.getContentType().contains("html")) {
-                    downloadLink.setDownloadSize(con.getLongContentLength());
-                } else {
-                    server_issues = true;
+                con = br.openHeadConnection(dllink);
+                handleConnectionErrors(br, con);
+                if (con.getCompleteContentLength() > 0) {
+                    if (con.isContentDecoded()) {
+                        link.setDownloadSize(con.getCompleteContentLength());
+                    } else {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
                 }
             } finally {
                 try {
@@ -92,24 +112,32 @@ public class SexyAndFunnyCom extends PluginForHost {
     }
 
     @Override
-    public void handleFree(DownloadLink downloadLink) throws Exception {
-        requestFileInformation(downloadLink);
-        if (server_issues) {
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Unknown server error", 10 * 60 * 1000l);
-        } else if (StringUtils.isEmpty(dllink)) {
+    public void handleFree(DownloadLink link) throws Exception {
+        requestFileInformation(link);
+        if (StringUtils.isEmpty(dllink)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        dl = jd.plugins.BrowserAdapter.openDownload(br, downloadLink, dllink, true, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
-            br.followConnection();
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
+        dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
+        handleConnectionErrors(br, dl.getConnection());
         dl.startDownload();
+    }
+
+    private void handleConnectionErrors(final Browser br, final URLConnectionAdapter con) throws PluginException, IOException {
+        if (!this.looksLikeDownloadableContent(con)) {
+            br.followConnection(true);
+            if (con.getResponseCode() == 403) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 403", 60 * 60 * 1000l);
+            } else if (con.getResponseCode() == 404) {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Server error 404", 60 * 60 * 1000l);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Video broken?");
+            }
+        }
     }
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return -1;
+        return Integer.MAX_VALUE;
     }
 
     @Override

@@ -82,7 +82,6 @@ public class GenericYetiShareFolder extends PluginForDecrypt {
         ret.add(new String[] { "filestank.com" });
         ret.add(new String[] { "wrzucaj.pl" });
         ret.add(new String[] { "rapidshare.io" });
-        ret.add(new String[] { "sharewith.click" });
         ret.add(new String[] { "uploadcorner.com" });
         ret.add(new String[] { "bippupload.com" });
         ret.add(new String[] { "cyphershare.net" });
