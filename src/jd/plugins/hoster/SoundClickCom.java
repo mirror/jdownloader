@@ -24,7 +24,6 @@ import org.appwork.utils.formatter.SizeFormatter;
 import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
-import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
 import jd.parser.Regex;
@@ -32,7 +31,6 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.download.HashInfo;
@@ -105,13 +103,15 @@ public class SoundClickCom extends PluginForHost {
 
     public AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws IOException, PluginException {
         final String songID = getFID(link);
+        final String extDefault = ".mp3";
         if (!link.isNameSet()) {
             /* Offline links should also have nice filenames */
-            link.setName(songID + ".mp3");
+            link.setName(songID + extDefault);
         }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        br.getPage("https://www." + this.getHost() + "/music/songInfo.cfm?songID=" + songID + "&popup=true");
+        final String songURL = "https://www." + this.getHost() + "/music/songInfo.cfm?songID=" + songID + "&popup=true";
+        br.getPage(songURL);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         } else if (!br.getURL().contains(songID)) {
@@ -121,7 +121,7 @@ public class SoundClickCom extends PluginForHost {
         }
         String title = br.getRegex("<div id=\"sclkArtist_songInfo_title\"[^>]*>([^<]+)</div>").getMatch(0);
         if (title != null) {
-            link.setName(Encoding.htmlDecode(title).trim() + ".mp3");
+            link.setFinalFileName(Encoding.htmlDecode(title).trim() + extDefault);
         }
         String filesizeFromHTML = null;
         final String[][] songInfoMetaBlocks = br.getRegex("<div class=\"songinfo_metaBlock_labels\"[^>]*>([^<]+)</div>\\s*<div>([^<]+)</div>").getMatches();
@@ -136,45 +136,9 @@ public class SoundClickCom extends PluginForHost {
                 }
             }
         }
-        /* 2020-05-06 */
-        final String officialDownloadurl = "https://www." + this.getHost() + "/utils_download/download_song.cfm?ID=" + getFID(link);
-        // br.getPage(officialDownloadurl);
-        br.getHeaders().put("Referer", officialDownloadurl);
-        final boolean useNewHandling = false;
-        if (useNewHandling) {
-            /* 2023-05-22: This seems to do the same but we will not get a header containing the md5 hash. */
-            dllink = "https://www.soundclick.com/playerV5/panels/audioStream.cfm?songID=" + songID + "&r=0." + System.currentTimeMillis();
-        } else {
-            dllink = String.format("/utils_download/download_songDeliver.cfm?songID=%s&ppID=0&selectLevel=160", this.getFID(link));
-        }
-        filesizeFromHTML = null;
         if (filesizeFromHTML != null) {
             /* Use filesize found in html code */
             link.setDownloadSize(SizeFormatter.getSize(filesizeFromHTML));
-        } else if (!isDownload) {
-            /* Get filesize and name from header */
-            final Browser brc = br.cloneBrowser();
-            URLConnectionAdapter con = null;
-            try {
-                con = brc.openHeadConnection(dllink);
-                this.connectionErrorhandling(con);
-                if (con.getCompleteContentLength() > 0) {
-                    link.setVerifiedFileSize(con.getCompleteContentLength());
-                }
-                final String filename_server = Plugin.getFileNameFromDispositionHeader(con);
-                if (filename_server != null) {
-                    link.setFinalFileName(filename_server);
-                }
-                final HashInfo hashInfo = HTTPDownloader.parseAmazonHash(getLogger(), con);
-                if (hashInfo != null) {
-                    link.setHashInfo(hashInfo);
-                }
-            } finally {
-                try {
-                    con.disconnect();
-                } catch (Throwable e) {
-                }
-            }
         }
         return AvailableStatus.TRUE;
     }
@@ -182,18 +146,51 @@ public class SoundClickCom extends PluginForHost {
     private void connectionErrorhandling(final URLConnectionAdapter con) throws IOException, PluginException {
         if (!this.looksLikeDownloadableContent(con)) {
             br.followConnection(true);
-            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Broken audio file");
+            throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Broken audio file?");
         }
     }
 
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link, true);
+        final String songID = getFID(link);
+        /* 2020-05-06 */
+        final String officialDownloadurl = "https://www." + this.getHost() + "/utils_download/download_song.cfm?ID=" + getFID(link);
+        final String streamLink = "https://www." + getHost() + "/playerV5/panels/audioStream.cfm?songID=" + songID + "&r=0." + System.currentTimeMillis();
+        // br.getPage(officialDownloadurl);
+        br.getHeaders().put("Referer", officialDownloadurl);
+        final boolean preferStreamDownload = false;
+        if (preferStreamDownload) {
+            /* 2023-05-22: This seems to do the same but we will not get a header containing the md5 hash. */
+            dllink = streamLink;
+        } else {
+            dllink = String.format("/utils_download/download_songDeliver.cfm?songID=%s&ppID=0&selectLevel=160", this.getFID(link));
+        }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, true, 1);
+        if (!this.looksLikeDownloadableContent(dl.getConnection()) && !preferStreamDownload) {
+            logger.info("Attempting fallback to stream download");
+            try {
+                dl.getConnection().disconnect();
+            } catch (Throwable e) {
+            }
+            dl = jd.plugins.BrowserAdapter.openDownload(br, link, streamLink, true, 1);
+        }
         this.connectionErrorhandling(dl.getConnection());
         final HashInfo hashInfo = HTTPDownloader.parseAmazonHash(getLogger(), this.dl.getConnection());
+        String etag = this.br.getRequest().getResponseHeader("ETag");
         if (hashInfo != null) {
             link.setHashInfo(hashInfo);
+        } else if (etag != null) {
+            /* chip.de servers will often | always return md5 hash via headers! */
+            try {
+                etag = etag.replace("\"", "");
+                final String[] etagInfo = etag.split(":");
+                final String md5 = etagInfo[0];
+                if (md5.matches("[A-Fa-f0-9]{32}")) {
+                    link.setMD5Hash(md5);
+                }
+            } catch (final Throwable ignore) {
+            }
         }
         dl.startDownload();
     }
