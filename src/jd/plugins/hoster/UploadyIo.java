@@ -168,7 +168,7 @@ public class UploadyIo extends XFileSharingProBasic {
         checkErrors(br, getCorrectBR(br), link, account, false);
         final Form download1 = findFormDownload1Free(br);
         if (download1 == null) {
-            this.checkErrorsLastResort(br, account);
+            this.checkErrorsLastResort(br, link, account);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         /* 2024-06-17: Disabled for now as the captcha is now happening after the wait time (also hCaptcha instead of reCaptchaV2). */
@@ -204,7 +204,7 @@ public class UploadyIo extends XFileSharingProBasic {
         checkErrors(br, getCorrectBR(br), link, account, false);
         final Form download2 = this.findFormDownload2Free(br);
         if (download2 == null) {
-            this.checkErrorsLastResort(br, account);
+            this.checkErrorsLastResort(br, link, account);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         if (handleCaptchaDuringWait) {
@@ -218,7 +218,7 @@ public class UploadyIo extends XFileSharingProBasic {
         if (StringUtils.isEmpty(dllink)) {
             logger.warning("Failed to find final downloadurl");
             checkErrors(br, getCorrectBR(br), link, account, true);
-            checkErrorsLastResort(br, account);
+            checkErrorsLastResort(br, link, account);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         handleDownload(link, account, null, dllink, null);

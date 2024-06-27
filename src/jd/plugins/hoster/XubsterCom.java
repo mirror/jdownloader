@@ -18,6 +18,10 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.html.Form;
@@ -27,10 +31,6 @@ import jd.plugins.Account.AccountType;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class XubsterCom extends XFileSharingProBasic {
@@ -131,7 +131,7 @@ public class XubsterCom extends XFileSharingProBasic {
             String captchaurl = null;
             if (sitelinks == null || sitelinks.length == 0) {
                 logger.warning("Standard captcha captchahandling broken!");
-                checkErrorsLastResort(br, null);
+                checkErrorsLastResort(br, link, null);
             }
             for (final String linkTmp : sitelinks) {
                 if (linkTmp.contains("/captchas/")) {
@@ -145,7 +145,7 @@ public class XubsterCom extends XFileSharingProBasic {
             }
             if (captchaurl == null) {
                 logger.warning("Standard captcha captchahandling broken2!");
-                checkErrorsLastResort(br, null);
+                checkErrorsLastResort(br, link, null);
             }
             /* 2021-08-23: Special: Their captchas are different from the normal XFS captchas and we cannot auto-recognize them. */
             String code = getCaptchaCode("xfilesharingprobasic_special", captchaurl, link);

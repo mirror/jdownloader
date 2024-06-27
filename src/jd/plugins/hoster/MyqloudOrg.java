@@ -20,6 +20,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.XFileSharingProBasic;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.parser.Regex;
@@ -30,9 +33,6 @@ import jd.plugins.AccountRequiredException;
 import jd.plugins.DownloadLink;
 import jd.plugins.HostPlugin;
 import jd.plugins.PluginException;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.XFileSharingProBasic;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class MyqloudOrg extends XFileSharingProBasic {
@@ -288,11 +288,11 @@ public class MyqloudOrg extends XFileSharingProBasic {
     }
 
     @Override
-    protected void checkErrorsLastResort(final Browser br, final Account account) throws PluginException {
+    protected void checkErrorsLastResort(final Browser br, final DownloadLink link, final Account account) throws PluginException {
         if (requiresAccountToDownload) {
             throw new AccountRequiredException();
         } else {
-            super.checkErrorsLastResort(br, account);
+            super.checkErrorsLastResort(br, link, account);
         }
     }
 

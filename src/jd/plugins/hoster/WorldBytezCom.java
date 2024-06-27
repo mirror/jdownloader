@@ -133,7 +133,7 @@ public class WorldBytezCom extends XFileSharingProBasic {
     }
 
     @Override
-    protected void checkErrorsLastResort(final Browser br, final Account account) throws PluginException {
+    protected void checkErrorsLastResort(final Browser br, final DownloadLink link, final Account account) throws PluginException {
         if (br.containsHTML("(?i)>\\s*If You Are Using VPN Please Disable To Continue Downloading\\s*<") && account != null) {
             /*
              * <h2 style="color: aliceblue;">Oops File Not Found</h2>
@@ -143,7 +143,7 @@ public class WorldBytezCom extends XFileSharingProBasic {
              */
             throw new AccountUnavailableException("VPN/IP blocked!", 15 * 60 * 1000l);
         }
-        super.checkErrorsLastResort(br, account);
+        super.checkErrorsLastResort(br, link, account);
     }
 
     @Override
