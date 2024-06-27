@@ -120,9 +120,9 @@ public abstract class HighWayCore extends UseNet {
     @Override
     public LazyPlugin.FEATURE[] getFeatures() {
         if (this.useApikeyLogin()) {
-            return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.MULTIHOST, LazyPlugin.FEATURE.USENET, LazyPlugin.FEATURE.API_KEY_LOGIN };
+            return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.MULTIHOST, LazyPlugin.FEATURE.BUBBLE_NOTIFICATION, LazyPlugin.FEATURE.USENET, LazyPlugin.FEATURE.API_KEY_LOGIN };
         } else {
-            return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.MULTIHOST, LazyPlugin.FEATURE.USENET };
+            return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.MULTIHOST, LazyPlugin.FEATURE.BUBBLE_NOTIFICATION, LazyPlugin.FEATURE.USENET };
         }
     }
 

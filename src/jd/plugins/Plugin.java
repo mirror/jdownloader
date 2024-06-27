@@ -1139,11 +1139,12 @@ public abstract class Plugin implements ActionListener {
      * Any plugin can try to display a BubbleNotification but upper handling may decide not to display it depending on user settings. </br>
      * Examples of Plugins using this functionality: RedditComCrawler, TwitterComCrawler, HighWayCore
      */
-    protected void displayBubbleNotification(final String title, final String text, final Icon icon) {
+    protected void displayBubbleNotification(String title, final String text, final Icon icon) {
+        final String finaltitle = title = getHost() + ": " + title;
         BubbleNotify.getInstance().show(new AbstractNotifyWindowFactory() {
             @Override
             public AbstractNotifyWindow<?> buildAbstractNotifyWindow() {
-                return new BasicNotify(title, text, icon == null ? new AbstractIcon(IconKey.ICON_INFO, 32) : icon);
+                return new BasicNotify(finaltitle, text, icon == null ? new AbstractIcon(IconKey.ICON_INFO, 32) : icon);
             }
         });
     }

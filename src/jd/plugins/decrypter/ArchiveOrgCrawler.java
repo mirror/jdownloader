@@ -42,6 +42,7 @@ import org.jdownloader.plugins.components.archiveorg.ArchiveOrgConfig.PlaylistCr
 import org.jdownloader.plugins.components.archiveorg.ArchiveOrgConfig.SingleFilePathNotFoundMode;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 import jd.PluginWrapper;
@@ -71,6 +72,11 @@ import jd.plugins.hoster.ArchiveOrg;
 public class ArchiveOrgCrawler extends PluginForDecrypt {
     public ArchiveOrgCrawler(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.BUBBLE_NOTIFICATION };
     }
 
     @Override

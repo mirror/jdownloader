@@ -82,7 +82,7 @@ public class RedditComCrawler extends PluginForDecrypt {
 
     @Override
     public LazyPlugin.FEATURE[] getFeatures() {
-        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.IMAGE_GALLERY };
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.IMAGE_GALLERY, LazyPlugin.FEATURE.BUBBLE_NOTIFICATION };
     }
 
     @Override

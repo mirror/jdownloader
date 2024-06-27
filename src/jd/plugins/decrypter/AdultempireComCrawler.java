@@ -22,10 +22,11 @@ import java.util.List;
 import java.util.Map;
 
 import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
 import org.appwork.utils.Regex;
 import org.appwork.utils.StringUtils;
 import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
+import org.jdownloader.plugins.controller.LazyPlugin;
 
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
@@ -33,6 +34,7 @@ import jd.controlling.ProgressController;
 import jd.http.Browser;
 import jd.nutils.encoding.Encoding;
 import jd.plugins.Account;
+import jd.plugins.Account.AccountType;
 import jd.plugins.CryptedLink;
 import jd.plugins.DecrypterPlugin;
 import jd.plugins.DownloadLink;
@@ -50,6 +52,11 @@ import jd.plugins.hoster.GenericM3u8;
 public class AdultempireComCrawler extends PluginForDecrypt {
     public AdultempireComCrawler(PluginWrapper wrapper) {
         super(wrapper);
+    }
+
+    @Override
+    public LazyPlugin.FEATURE[] getFeatures() {
+        return new LazyPlugin.FEATURE[] { LazyPlugin.FEATURE.BUBBLE_NOTIFICATION };
     }
 
     @Override
@@ -92,11 +99,14 @@ public class AdultempireComCrawler extends PluginForDecrypt {
 
     public ArrayList<DownloadLink> decryptIt(final CryptedLink param, ProgressController progress) throws Exception {
         final Account account = AccountController.getInstance().getValidAccount(this.getHost());
+        boolean isPremiumUser = false;
         if (account != null) {
             final AdultempireCom hosterplugin = (AdultempireCom) this.getNewPluginForHostInstance(this.getHost());
             hosterplugin.login(account, false);
+            if (AccountType.PREMIUM == account.getType()) {
+                isPremiumUser = true;
+            }
         }
-        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         String internalIDStr;
         String[][] scenesData = null;
         Browser sceneBR = null;
@@ -120,6 +130,7 @@ public class AdultempireComCrawler extends PluginForDecrypt {
             /* Assume that content is offline or no trailer is available. */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
+        final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         /* Website will include more parameters but really only "item_id" is required! */
         br.getPage("https://www." + this.getHost() + "/gw/player/?type=trailer&item_id=" + internalIDStr);
         final String thumbnailUrl = PluginJSonUtils.getJson(br, "thumbnailUrl");
@@ -203,6 +214,10 @@ public class AdultempireComCrawler extends PluginForDecrypt {
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(title);
         fp.addLinks(ret);
+        if (isPremiumUser) {
+            /* Display information message to user */
+            this.displayBubbleNotification("Premium items cannot be crawled", title + "\r\nPremium items cannot be crawled/downloaded because they are DRM protected.");
+        }
         return ret;
     }
 
@@ -223,7 +238,7 @@ public class AdultempireComCrawler extends PluginForDecrypt {
         postData.put("stream_type", stream_type);
         postData.put("timestamp", null);
         br.postPageRaw("https://player.digiflix.video/verify", JSonStorage.serializeToJson(postData));
-        final Map<String, Object> entries = JavaScriptEngineFactory.jsonToJavaMap(br.getRequest().getHtmlCode());
+        final Map<String, Object> entries = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         final Map<String, Object> item_detail = (Map<String, Object>) entries.get("item_detail");
         final String title = (String) item_detail.get("title");
         if (stream_type.equalsIgnoreCase("trailer")) {
