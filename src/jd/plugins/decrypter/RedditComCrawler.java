@@ -480,7 +480,7 @@ public class RedditComCrawler extends PluginForDecrypt {
                                  *
                                  * -> Correct that but keep .gif to signal source of the mp4
                                  */
-                                direct.setFinalFileName(this.correctOrApplyFileNameExtension(filenameFromURL, ".gif.mp4"));
+                                direct.setFinalFileName(this.applyFilenameExtension(filenameFromURL, ".gif.mp4"));
                                 direct.setProperty(RedditCom.PROPERTY_VIDEO_SOURCE, "gif");
                             }
                             direct.setProperty(RedditCom.PROPERTY_TYPE, RedditCom.PROPERTY_TYPE_video);

@@ -514,11 +514,19 @@ public abstract class EvilangelCore extends PluginForHost {
                     con = brc.openHeadConnection(dllink);
                     if (this.looksLikeDownloadableContent(con)) {
                         if (con.getCompleteContentLength() > 0) {
-                            link.setVerifiedFileSize(con.getCompleteContentLength());
+                            if (con.isContentDecoded()) {
+                                link.setDownloadSize(con.getCompleteContentLength());
+                            } else {
+                                link.setVerifiedFileSize(con.getCompleteContentLength());
+                            }
                         }
                         final String serverFilename = getFileNameFromHeader(con);
-                        if (serverFilename != null && link.getFinalFileName() == null) {
-                            link.setFinalFileName(serverFilename);
+                        if (serverFilename != null) {
+                            if (link.getFinalFileName() == null) {
+                                link.setFinalFileName(serverFilename);
+                            }
+                        } else if (filename != null) {
+                            link.setFinalFileName(this.correctOrApplyFileNameExtension(filename, con));
                         }
                     } else {
                         brc.followConnection(true);

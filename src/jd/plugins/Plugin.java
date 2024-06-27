@@ -511,16 +511,37 @@ public abstract class Plugin implements ActionListener {
     }
 
     /** Adds extension to given filename if given filename does not already end with new extension. */
-    public String applyFilenameExtension(final String filenameOrg, final String fileExtension) {
+    public String applyFilenameExtension(final String filenameOrg, String newExtension) {
         if (filenameOrg == null) {
             return null;
-        } else if (StringUtils.isEmpty(fileExtension) || !fileExtension.startsWith(".")) {
+        } else if (StringUtils.isEmpty(newExtension)) {
             return filenameOrg;
-        } else if (StringUtils.endsWithCaseInsensitive(filenameOrg, fileExtension)) {
+        }
+        if (!newExtension.startsWith(".")) {
+            newExtension = "." + newExtension;
+        }
+        if (StringUtils.endsWithCaseInsensitive(filenameOrg, newExtension)) {
             /* Filename already contains target-extension. */
             return filenameOrg;
+        } else if (!filenameOrg.contains(".")) {
+            /* Filename has no extension at all -> Apply extension */
+            return filenameOrg + newExtension;
+        }
+        final int lastIndex = filenameOrg.lastIndexOf(".");
+        final String currentFileExtension = lastIndex < filenameOrg.length() ? filenameOrg.substring(lastIndex) : null;
+        final CompiledFiletypeExtension filetypeOld = CompiledFiletypeFilter.getExtensionsFilterInterface(currentFileExtension);
+        if (filetypeOld == null) {
+            /* We don't know the type of the current/old file extension -> No "smart handling" possible -> Apply new extension */
+            return filenameOrg + newExtension;
+        }
+        final CompiledFiletypeExtension filetypeNew = CompiledFiletypeFilter.getExtensionsFilterInterface(newExtension);
+        if (filetypeNew != null && filetypeNew.isSameExtensionGroup(filetypeOld)) {
+            /* Same filetype (e.g. old is image, new is image) -> Replace old extension with new extension e.g. .png to .jpg */
+            final String filenameWithoutExtension = filenameOrg.substring(0, lastIndex);
+            return filenameWithoutExtension + newExtension;
         } else {
-            return filenameOrg + fileExtension;
+            /* Apply new extension */
+            return filenameOrg + newExtension;
         }
     }
 

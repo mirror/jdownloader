@@ -180,6 +180,7 @@ public class KinkCom extends PluginForHost {
                     } else {
                         link.setVerifiedFileSize(con.getCompleteContentLength());
                     }
+                    link.setFinalFileName(this.correctOrApplyFileNameExtension(filetitle, con));
                 } finally {
                     try {
                         con.disconnect();

@@ -124,9 +124,10 @@ public class VidguardTo extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
         final String fuid = this.getFID(link);
+        final String extDefault = ".mp4";
         if (!link.isNameSet()) {
             /* Set dummy filenames as fallback / weak filenames. */
-            link.setName(fuid + ".mp4");
+            link.setName(fuid + extDefault);
         }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -151,7 +152,7 @@ public class VidguardTo extends PluginForHost {
         if (filename != null) {
             filename = Encoding.htmlDecode(filename).trim();
             /* Extension is not always given but we can be sure that this filehost is only hosting video content! */
-            filename = this.applyFilenameExtension(filename, ".mp4");
+            filename = this.applyFilenameExtension(filename, extDefault);
             link.setName(filename);
         }
         if (filesize != null) {

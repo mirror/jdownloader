@@ -102,7 +102,7 @@ public class FilesFm extends PluginForHost {
                 // https://files.fm/thumb_show.php?i=wfslpuh&n=20140908_073035.jpg&refresh1
                 /* Maybe we have a picture without official "Download" button ... */
                 logger.info("Checking for picture content without official download button");
-                dllink = "https://files.fm/thumb_show.php" + linkpart + "&refresh1";
+                dllink = "/thumb_show.php" + linkpart + "&refresh1";
                 con = brc.openHeadConnection(dllink);
             }
             if (!this.looksLikeDownloadableContent(con)) {

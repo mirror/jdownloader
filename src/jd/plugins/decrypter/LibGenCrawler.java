@@ -23,6 +23,9 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.regex.Pattern;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.parser.UrlQuery;
+
 import jd.PluginWrapper;
 import jd.controlling.ProgressController;
 import jd.http.Browser;
@@ -38,9 +41,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.hoster.DirectHTTP;
 import jd.plugins.hoster.LibGenInfo;
-
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.parser.UrlQuery;
 
 @DecrypterPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class LibGenCrawler extends PluginForDecrypt {
@@ -230,8 +230,9 @@ public class LibGenCrawler extends PluginForDecrypt {
                 }
                 final String title = br.getRegex(">\\s*Title:\\s*</font>\\s*</nobr>\\s*</td>\\s*<td[^>]*>\\s*<b>\\s*<a[^>]*>\\s*(.*?)\\s*<").getMatch(0);
                 if (title != null) {
-                    final String extension = br.getRegex(">\\s*Extension:\\s*</font>\\s*</nobr>\\s*</td>\\s*<td>\\s*(.*?)\\s*<").getMatch(0);
+                    String extension = br.getRegex(">\\s*Extension:\\s*</font>\\s*</nobr>\\s*</td>\\s*<td>\\s*(.*?)\\s*<").getMatch(0);
                     if (extension != null) {
+                        extension = Encoding.htmlDecode(extension).trim();
                         book.setName(applyFilenameExtension(title, extension));
                     } else {
                         book.setName(title);

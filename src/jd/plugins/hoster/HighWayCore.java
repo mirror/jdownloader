@@ -301,12 +301,7 @@ public abstract class HighWayCore extends UseNet {
                     link.setFinalFileName(serverFilename);
                 } else {
                     /* Fallback: This should not be needed. */
-                    final String realExtension = this.getExtensionFromMimeType(con);
-                    if (realExtension != null) {
-                        link.setFinalFileName(applyFilenameExtension(fallbackFilename, "." + realExtension));
-                    } else {
-                        link.setFinalFileName(fallbackFilename);
-                    }
+                    link.setFinalFileName(correctOrApplyFileNameExtension(fallbackFilename, con));
                 }
                 if (con.getCompleteContentLength() != -1) {
                     if (con.isContentDecoded()) {

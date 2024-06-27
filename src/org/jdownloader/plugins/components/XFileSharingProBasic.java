@@ -1426,7 +1426,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
         name = name.replaceAll("(</b>|<b>|\\.html)", "").trim();
         if (this.internal_isVideohoster_enforce_video_filename(link, br)) {
             /* For videohosts we often get ugly filenames such as 'some_videotitle.avi.mkv.mp4' --> Correct that! */
-            name = this.correctOrApplyFileNameExtension(name, ".mp4");
+            name = this.applyFilenameExtension(name, ".mp4");
         }
         link.setName(name);
     }
@@ -3787,7 +3787,7 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
         /* Either final filename from previous download attempt or filename found in HTML. */
         final String orgNameWithExt = link.getName();
         if (orgNameWithExt != null) {
-            link.setFinalFileName(this.correctOrApplyFileNameExtension(orgNameWithExt, ".mp4"));
+            link.setFinalFileName(this.applyFilenameExtension(orgNameWithExt, ".mp4"));
         }
     }
 
@@ -5891,14 +5891,14 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
                                 filename = Encoding.htmlDecode(filename);
                             }
                             if (isVideohost) {
-                                filename = this.correctOrApplyFileNameExtension(filename, ".mp4");
+                                filename = this.applyFilenameExtension(filename, ".mp4");
                             }
                             /* Trust API filenames -> Set as final filename. */
                             link.setFinalFileName(filename);
                         } else {
                             final String name = link.getName();
                             if (name != null && isVideohost) {
-                                link.setName(this.correctOrApplyFileNameExtension(filename, ".mp4"));
+                                link.setName(this.applyFilenameExtension(filename, ".mp4"));
                             }
                         }
                     }

@@ -57,8 +57,9 @@ public class ZMagsCom extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
+        final String extDefault = ".pdf";
         if (!link.isNameSet()) {
-            link.setName(this.getFID(link) + ".pdf");
+            link.setName(this.getFID(link) + extDefault);
         }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -100,7 +101,7 @@ public class ZMagsCom extends PluginForHost {
         if (title != null) {
             title = Encoding.htmlDecode(title.trim());
             link.setProperty(PROPERTY_TITLE, title);
-            link.setName(title + ".pdf");
+            link.setName(title + extDefault);
         }
         return AvailableStatus.TRUE;
     }
@@ -112,12 +113,6 @@ public class ZMagsCom extends PluginForHost {
         if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             br.followConnection(true);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
-        }
-        /* Previously set name might not contain a file-extension --> Correct that if possible */
-        final String title = link.getStringProperty(PROPERTY_TITLE);
-        final String ext = getExtensionFromMimeType(dl.getConnection());
-        if (title != null && ext != null) {
-            link.setFinalFileName(applyFilenameExtension(title, "." + ext));
         }
         dl.startDownload();
     }
