@@ -67,6 +67,7 @@ import jd.plugins.Account.AccountType;
 import jd.plugins.AccountInfo;
 import jd.plugins.AccountInvalidException;
 import jd.plugins.AccountRequiredException;
+import jd.plugins.AccountUnavailableException;
 import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
@@ -871,25 +872,12 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
     }
 
     protected boolean isOfflineWebsite(final Browser br) {
-        switch (br.getHttpConnection().getResponseCode()) {
-        case 404:
-        case 410:
+        final int responsecode = br.getHttpConnection().getResponseCode();
+        if (responsecode == 404 || responsecode == 410) {
             return true;
-        default:
-            if (br._getURL().getPath().matches("(?i)/4(04|10)\\.php.*")) {
-                return true;
-            } else {
-                if (isOfflineVideoWebsite(br)) {
-                    return true;
-                } else {
-                    return false;
-                }
-            }
-        }
-    }
-
-    protected boolean isOfflineVideoWebsite(final Browser br) {
-        if (br.containsHTML("(?i)>\\s*(Sorry, this video was deleted per copyright owner request|Video has been removed due to a violation of the Terms and Conditions|Deleted by the owner request)")) {
+        } else if (br._getURL().getPath().matches("(?i)/4(04|10)\\.php.*")) {
+            return true;
+        } else if (br.containsHTML("(?i)>\\s*(Sorry, this video was deleted per copyright owner request|Video has been removed due to a violation of the Terms and Conditions|Deleted by the owner request|This video has been removed)")) {
             return true;
         } else {
             return false;
@@ -1020,6 +1008,7 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
                     throw new AccountRequiredException("Private videos can only be watched by registered users or friends of the uploader");
                 } else {
                     /* Broken video or broken plugin. */
+                    this.checkErrorsLastResort(br, link, account);
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT, "Broken video (?)");
                 }
             }
@@ -1064,6 +1053,7 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
                 handleConnectionErrors(brc, brc.getHttpConnection());
                 final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(brc));
                 if (hlsbest == null) {
+                    this.checkErrorsLastResort(brc, link, account);
                     throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
                 }
                 checkFFmpeg(link, "Download a HLS Stream");
@@ -1094,6 +1084,24 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
                 throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Final downloadurl did not lead to file");
             }
         }
+    }
+
+    /** Use this during download handling instead of just throwing PluginException with LinkStatus ERROR_PLUGIN_DEFECT! */
+    protected void checkErrorsLastResort(final Browser br, final DownloadLink link, final Account account) throws PluginException {
+        logger.info("Last resort errorhandling");
+        String website_error = br.getRegex("class=\"message\"[^>]*>([^<]+)<").getMatch(0);
+        if (website_error != null) {
+            website_error = Encoding.htmlDecode(website_error).trim();
+            logger.info("Found website error: " + website_error);
+            final long waitMillis = 5 * 60 * 1000l;
+            if (link == null) {
+                throw new AccountUnavailableException(website_error, waitMillis);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_FATAL, website_error);
+            }
+        }
+        logger.warning("Unknown error happened");
+        throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
     }
 
     private boolean attemptStoredDownloadurlDownload(final DownloadLink link, final Account account) throws Exception {
@@ -1583,6 +1591,7 @@ public abstract class KernelVideoSharingComV2 extends antiDDoSForHost {
                     }
                 }
             }
+            this.checkErrorsLastResort(br, link, null);
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
         dllink = Encoding.htmlOnlyDecode(dllink);
