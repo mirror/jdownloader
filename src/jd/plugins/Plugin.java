@@ -261,8 +261,8 @@ public abstract class Plugin implements ActionListener {
      *
      * @return Datename des Downloads.
      */
-    public static String extractFileNameFromURL(final String iFilename) {
-        String ret = iFilename;
+    public static String extractFileNameFromURL(final String filename) {
+        String ret = filename;
         if (StringUtils.isEmpty(ret)) {
             return null;
         }
@@ -525,7 +525,11 @@ public abstract class Plugin implements ActionListener {
         return filenameOrg;
     }
 
-    /** Adds extension to given filename if given filename does not already end with new extension. */
+    /**
+     * Adds extension to given filename if given filename does not already end with new extension. </br>
+     * Do not use this to replace a file extension with another one if you clearly know what to replace with what because this will auto
+     * decide whether to replace or append the new extension!
+     */
     public String applyFilenameExtension(final String filenameOrg, String newExtension) {
         if (filenameOrg == null) {
             return null;

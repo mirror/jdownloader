@@ -276,7 +276,7 @@ public class VKontakteRuHoster extends PluginForHost {
                     }
                     if (title != null) {
                         final String fileExtension = (String) doc.get("docExt");
-                        title = this.correctOrApplyFileNameExtension(title, "." + fileExtension);
+                        title = this.applyFilenameExtension(title, fileExtension);
                         if (this.getPluginConfig().getBooleanProperty(VKDOCS_ADD_UNIQUE_ID, default_VKDOCS_ADD_UNIQUE_ID)) {
                             link.setFinalFileName("doc" + ownerID + "_" + contentID + "_" + title);
                         } else {

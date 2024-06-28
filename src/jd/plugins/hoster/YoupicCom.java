@@ -19,6 +19,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -31,9 +34,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class YoupicCom extends PluginForHost {
@@ -131,7 +131,7 @@ public class YoupicCom extends PluginForHost {
             }
             title = title.trim();
             link.setProperty(PROPERTY_TITLE, title);
-            link.setFinalFileName(title + extDefault);
+            link.setFinalFileName(this.applyFilenameExtension(title, extDefault));
         }
         final String username = br.getRegex("/photographer/([\\w\\-]+)").getMatch(0);
         if (username != null) {
@@ -152,9 +152,8 @@ public class YoupicCom extends PluginForHost {
                         link.setVerifiedFileSize(con.getCompleteContentLength());
                     }
                 }
-                final String ext = getExtensionFromMimeType(con);
-                if (ext != null) {
-                    link.setFinalFileName(this.correctOrApplyFileNameExtension(title, "." + ext));
+                if (title != null) {
+                    link.setFinalFileName(this.correctOrApplyFileNameExtension(title, con));
                 }
             } finally {
                 try {

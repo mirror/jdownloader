@@ -19,6 +19,12 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import org.appwork.storage.TypeRef;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.plugins.components.hls.HlsContainer;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -41,12 +47,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
-
-import org.appwork.storage.TypeRef;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.plugins.components.hls.HlsContainer;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "boyfriendtv.com", "ashemaletube.com", "pornoxo.com", "worldsex.com", "bigcamtube.com", "porneq.com" }, urls = { "https?://(?:\\w+\\.)?boyfriendtv\\.com/videos/\\d+/[a-z0-9\\-]+/", "https?://(?:\\w+\\.)?ashemaletube\\.com/videos/\\d+/[a-z0-9\\-]+/", "https?://(?:\\w+\\.)?pornoxo\\.com/videos/\\d+/[a-z0-9\\-]+/", "https?://(?:\\w+\\.)?worldsex\\.com/videos/[a-z0-9\\-]+\\-\\d+(?:\\.html|/)?", "https?://(?:\\w+\\.)?bigcamtube\\.com/videos/[a-z0-9\\-]+/", "https?://(?:\\w+\\.)?porneq\\.com/(?:video/\\d+/[a-z0-9\\-]+/?|wporn/porn-videos/[a-z0-9\\-]+/\\d+/)" })
 public class UnknownPornScript5 extends PluginForHost {
@@ -176,9 +176,8 @@ public class UnknownPornScript5 extends PluginForHost {
                         link.setVerifiedFileSize(con.getCompleteContentLength());
                     }
                 }
-                final String ext = getExtensionFromMimeType(con);
-                if (ext != null) {
-                    link.setFinalFileName(this.correctOrApplyFileNameExtension(title, "." + ext));
+                if (title != null) {
+                    link.setFinalFileName(this.correctOrApplyFileNameExtension(title, con));
                 }
             } finally {
                 try {
@@ -210,7 +209,7 @@ public class UnknownPornScript5 extends PluginForHost {
         if (jwplayer_source == null && dllink == null && !requiresAccount(br)) {
             /*
              * No player found --> Chances are high that there is no playable content --> Video offline
-             * 
+             *
              * This can also be seen as a "last chance offline" errorhandling for websites for which the above offline-errorhandling doesn't
              * work!
              */

@@ -18,6 +18,9 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -31,9 +34,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "luxuretv.com", "homemoviestube.com" }, urls = { "https?://(?:www\\.|en\\.)?luxuretv\\.com/videos/[a-z0-9\\-]+\\-\\d+\\.html", "https?://(?:www\\.)?homemoviestube\\.com/videos/\\d+/[a-z0-9\\-]+\\.html" })
 public class UnknownPornScript4 extends PluginForHost {
@@ -139,11 +139,11 @@ public class UnknownPornScript4 extends PluginForHost {
         if (dllink == null) {
             final String src = br.getRegex("<source src=\"([^<>\"]*?)\"").getMatch(0);
             if (src != null) {
-                dllink = br.getURL(src).toString();
+                dllink = br.getURL(src).toExternalForm();
             }
         }
         if (title != null) {
-            link.setName(title + default_Extension);
+            link.setName(this.applyFilenameExtension(title, default_Extension));
         }
         if (!StringUtils.isEmpty(dllink) && !isDownload) {
             URLConnectionAdapter con = null;
@@ -157,9 +157,8 @@ public class UnknownPornScript4 extends PluginForHost {
                         link.setVerifiedFileSize(con.getCompleteContentLength());
                     }
                 }
-                final String ext = getExtensionFromMimeType(con);
-                if (ext != null) {
-                    link.setFinalFileName(this.correctOrApplyFileNameExtension(title, "." + ext));
+                if (title != null) {
+                    link.setFinalFileName(this.correctOrApplyFileNameExtension(title, con));
                 }
             } finally {
                 try {

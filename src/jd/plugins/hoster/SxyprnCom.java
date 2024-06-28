@@ -2,6 +2,12 @@ package jd.plugins.hoster;
 
 import java.util.Map;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.Regex;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.components.antiDDoSForHost;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -20,12 +26,6 @@ import jd.plugins.LinkStatus;
 import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.Regex;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.components.antiDDoSForHost;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "yourporn.sexy", "sxyprn.com" }, urls = { "https?://(?:www\\.)?yourporn\\.sexy/post/([a-fA-F0-9]{13})(?:\\.html)?", "https?://(?:www\\.)?sxyprn\\.(?:com|net)/post/([a-fA-F0-9]{13})(?:\\.html)?" })
 public class SxyprnCom extends antiDDoSForHost {
@@ -65,7 +65,6 @@ public class SxyprnCom extends antiDDoSForHost {
         return new Regex(link.getPluginPatternMatcher(), this.getSupportedLinks()).getMatch(0);
     }
 
-    // private String json = null;
     private String dllink = null;
 
     // private String authorid = null;
@@ -184,10 +183,9 @@ public class SxyprnCom extends antiDDoSForHost {
                             link.setVerifiedFileSize(con.getCompleteContentLength());
                         }
                     }
-                    final String ext = getExtensionFromMimeType(con);
                     final String filenameSoFar = link.getName();
-                    if (ext != null && filenameSoFar != null) {
-                        link.setFinalFileName(this.correctOrApplyFileNameExtension(filenameSoFar, "." + ext));
+                    if (filenameSoFar != null) {
+                        link.setFinalFileName(this.correctOrApplyFileNameExtension(filenameSoFar, con));
                     }
                     return con.getURL().toExternalForm();
                 }

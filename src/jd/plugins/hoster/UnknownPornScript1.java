@@ -19,6 +19,9 @@ import java.io.IOException;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -32,9 +35,6 @@ import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 @PluginDependencies(dependencies = { jd.plugins.decrypter.UnknownPornScript1Crawler.class })
@@ -150,7 +150,7 @@ public class UnknownPornScript1 extends PluginForHost {
             } else {
                 ext = default_extension;
             }
-            link.setFinalFileName(this.correctOrApplyFileNameExtension(title, ext));
+            link.setFinalFileName(this.applyFilenameExtension(title, ext));
         }
         if (!StringUtils.isEmpty(dllink) && !isDownload) {
             URLConnectionAdapter con = null;
@@ -164,9 +164,8 @@ public class UnknownPornScript1 extends PluginForHost {
                         link.setVerifiedFileSize(con.getCompleteContentLength());
                     }
                 }
-                final String ext = getExtensionFromMimeType(con);
-                if (ext != null) {
-                    link.setFinalFileName(this.correctOrApplyFileNameExtension(title, "." + ext));
+                if (title != null) {
+                    link.setFinalFileName(this.correctOrApplyFileNameExtension(title, con));
                 }
             } finally {
                 try {

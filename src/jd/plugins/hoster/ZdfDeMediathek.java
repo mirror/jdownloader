@@ -28,17 +28,6 @@ import java.util.Locale;
 import java.util.Scanner;
 import java.util.TimeZone;
 
-import jd.PluginWrapper;
-import jd.http.Browser;
-import jd.http.URLConnectionAdapter;
-import jd.parser.Regex;
-import jd.plugins.DownloadLink;
-import jd.plugins.DownloadLink.AvailableStatus;
-import jd.plugins.HostPlugin;
-import jd.plugins.LinkStatus;
-import jd.plugins.PluginException;
-import jd.plugins.PluginForHost;
-
 import org.appwork.storage.config.annotations.AboutConfig;
 import org.appwork.storage.config.annotations.DefaultBooleanValue;
 import org.appwork.storage.config.annotations.DefaultEnumValue;
@@ -51,6 +40,17 @@ import org.jdownloader.plugins.config.Order;
 import org.jdownloader.plugins.config.PluginConfigInterface;
 import org.jdownloader.plugins.controller.LazyPlugin;
 import org.jdownloader.translate._JDT;
+
+import jd.PluginWrapper;
+import jd.http.Browser;
+import jd.http.URLConnectionAdapter;
+import jd.parser.Regex;
+import jd.plugins.DownloadLink;
+import jd.plugins.DownloadLink.AvailableStatus;
+import jd.plugins.HostPlugin;
+import jd.plugins.LinkStatus;
+import jd.plugins.PluginException;
+import jd.plugins.PluginForHost;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "zdf.de" }, urls = { "decryptedmediathek://.+" })
 public class ZdfDeMediathek extends PluginForHost {
@@ -172,8 +172,8 @@ public class ZdfDeMediathek extends PluginForHost {
                 waitMillisUntilVideoIsAvailable = timeUntilLater;
             } else {
                 /**
-                 * This should never happen. Either server time is wrong/offset or user has wrong local OS time. </br> Video should already
-                 * be available -> Wait static wait time
+                 * This should never happen. Either server time is wrong/offset or user has wrong local OS time. </br>
+                 * Video should already be available -> Wait static wait time
                  */
                 waitMillisUntilVideoIsAvailable = 30 * 60 * 1000;
             }
@@ -252,7 +252,7 @@ public class ZdfDeMediathek extends PluginForHost {
             if (!convertSubtitle(link)) {
                 logger.severe("Subtitle conversion failed!");
             } else {
-                link.setFinalFileName(this.correctOrApplyFileNameExtension(link.getName(), ".srt"));
+                link.setFinalFileName(link.getFinalFileName().replaceFirst("(?i)\\.xml$", ".srt"));
             }
         }
     }
