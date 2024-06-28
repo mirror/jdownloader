@@ -177,7 +177,7 @@ public class SankakucomplexCom extends PluginForHost {
                 dllink = br.getRegex("Post\\.prepare_download\\(\\&#39;(//[^\"<>]+)&#39;,").getMatch(0);
             }
         }
-        String filename = fileID;
+        String title = fileID;
         String ext = null;
         if (dllink == null) {
             /* 2021-02-23: Image download - if the upper handling fails on videos, this may make us download an image vs a video */
@@ -190,13 +190,7 @@ public class SankakucomplexCom extends PluginForHost {
         if (dllink != null) {
             ext = Plugin.getFileNameExtensionFromURL(dllink);
         }
-        if (ext == null) {
-            ext = getFileNameExtensionFromString(dllink);
-        }
-        if (ext != null) {
-            filename = this.correctOrApplyFileNameExtension(filename, ext);
-        }
-        link.setFinalFileName(filename);
+        link.setFinalFileName(this.applyFilenameExtension(title, ext));
         final String filesizeBytesStr = br.getRegex("([0-9,]+) bytes").getMatch(0);
         if (filesizeBytesStr != null) {
             link.setDownloadSize(Long.parseLong(filesizeBytesStr.replace(",", "")));
@@ -208,15 +202,16 @@ public class SankakucomplexCom extends PluginForHost {
                 URLConnectionAdapter con = null;
                 try {
                     con = br2.openHeadConnection(dllink);
-                    if (this.looksLikeDownloadableContent(con)) {
-                        if (con.isContentDecoded()) {
-                            link.setDownloadSize(con.getCompleteContentLength());
-                        } else {
-                            link.setVerifiedFileSize(con.getCompleteContentLength());
-                        }
-                    } else {
+                    if (!this.looksLikeDownloadableContent(con)) {
                         logger.info("Final downloadurl did not lead to file -> File broken/unavailable serverside?");
+                        return AvailableStatus.TRUE;
                     }
+                    if (con.isContentDecoded()) {
+                        link.setDownloadSize(con.getCompleteContentLength());
+                    } else {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
+                    link.setFinalFileName(this.correctOrApplyFileNameExtension(title, con));
                 } finally {
                     try {
                         con.disconnect();

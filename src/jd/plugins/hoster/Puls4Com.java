@@ -18,6 +18,10 @@ package jd.plugins.hoster;
 import java.io.IOException;
 import java.util.Map;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -31,10 +35,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
 
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
-
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "puls4.com" }, urls = { "https?://(?:www\\.)?puls4\\.com/.+" })
 public class Puls4Com extends PluginForHost {
     public Puls4Com(PluginWrapper wrapper) {
@@ -47,12 +47,11 @@ public class Puls4Com extends PluginForHost {
     }
 
     /* Nice (old 2016) API, usually only available for mobile devices. */
-    private static final boolean use_mobile_api    = true;
+    private static final boolean use_mobile_api = true;
     /* Connection stuff */
-    private static final boolean free_resume       = true;
-    private static final int     free_maxchunks    = 0;
-    private static final int     free_maxdownloads = -1;
-    private String               dllink            = null;
+    private static final boolean free_resume    = true;
+    private static final int     free_maxchunks = 0;
+    private String               dllink         = null;
 
     @Override
     public String getAGBLink() {
@@ -169,7 +168,7 @@ public class Puls4Com extends PluginForHost {
             }
             title = Encoding.htmlDecode(title);
             title = title.trim();
-            link.setName(this.correctOrApplyFileNameExtension(title, extDefault));
+            link.setName(this.applyFilenameExtension(title, extDefault));
         }
         if (!StringUtils.isEmpty(dllink)) {
             URLConnectionAdapter con = null;
@@ -183,9 +182,8 @@ public class Puls4Com extends PluginForHost {
                         link.setVerifiedFileSize(con.getCompleteContentLength());
                     }
                 }
-                final String ext = getExtensionFromMimeType(con);
-                if (ext != null) {
-                    link.setFinalFileName(this.correctOrApplyFileNameExtension(title, "." + ext));
+                if (title != null) {
+                    link.setFinalFileName(this.correctOrApplyFileNameExtension(title, con));
                 }
             } finally {
                 try {
@@ -223,7 +221,7 @@ public class Puls4Com extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return free_maxdownloads;
+        return Integer.MAX_VALUE;
     }
 
     @Override

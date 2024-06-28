@@ -137,11 +137,10 @@ public class Rule34Us extends PluginForHost {
         if (title != null) {
             title = Encoding.htmlDecode(title).trim();
             final String extFromURL = getFileNameExtensionFromString(dllink, extDefault);
-            link.setFinalFileName(this.correctOrApplyFileNameExtension(title, extFromURL));
+            link.setFinalFileName(this.applyFilenameExtension(title, extFromURL));
         }
-        if (!StringUtils.isEmpty(dllink) && !isDownload) {
+        if (!StringUtils.isEmpty(dllink)) {
             dllink = Encoding.htmlOnlyDecode(dllink);
-            dllink = br.getURL(dllink).toExternalForm();
             if (!isDownload) {
                 final Browser br2 = br.cloneBrowser();
                 URLConnectionAdapter con = null;
@@ -154,6 +153,9 @@ public class Rule34Us extends PluginForHost {
                         } else {
                             link.setVerifiedFileSize(con.getCompleteContentLength());
                         }
+                    }
+                    if (title != null) {
+                        link.setFinalFileName(this.correctOrApplyFileNameExtension(title, con));
                     }
                 } finally {
                     try {

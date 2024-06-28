@@ -113,24 +113,25 @@ public class RomsgamesNet extends PluginForHost {
         } else if (br.containsHTML("class=\"listh1\"|>\\s*No Rom or Emulator found for uri")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        String filename = PluginJSonUtils.getJson(br, "name");
+        String title = PluginJSonUtils.getJson(br, "name");
         final String filesize = PluginJSonUtils.getJson(br, "fileSize");
-        if (!StringUtils.isEmpty(filename)) {
+        if (!StringUtils.isEmpty(title)) {
             /* Fallback */
             /* 2021-01-26: We expect to download .zip archives only. */
-            filename = this.correctOrApplyFileNameExtension(filename, extDefault);
-            filename = Encoding.htmlDecode(filename).trim();
+            title = Encoding.htmlDecode(title).trim();
             /*
              * 2024-06-21: Set final filename here as website returns every file with same filename in Content-Disposition header:
              * output.bin
              */
-            link.setFinalFileName(filename);
+            link.setFinalFileName(this.applyFilenameExtension(title, extDefault));
+        } else {
+            logger.warning("Failed to find filename");
         }
         if (!StringUtils.isEmpty(filesize)) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
         }
         final String schemaOrgType = PluginJSonUtils.getJson(br, "@type");
-        if (filename == null && filesize == null && schemaOrgType == null) {
+        if (title == null && filesize == null && schemaOrgType == null) {
             /* Not a link to a single downloadable file e.g. https://www.romsgames.net/roms/ */
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }

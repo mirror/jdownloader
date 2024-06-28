@@ -18,6 +18,15 @@ package jd.plugins.hoster;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.appwork.utils.StringUtils;
+import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.downloader.hls.M3U8Playlist;
+import org.jdownloader.plugins.components.config.SrfChConfig;
+import org.jdownloader.plugins.components.config.SrfChConfig.QualitySelectionFallbackMode;
+import org.jdownloader.plugins.components.config.SrfChConfig.QualitySelectionMode;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+
 import jd.PluginWrapper;
 import jd.controlling.linkcrawler.LinkCrawlerDeepInspector;
 import jd.http.URLConnectionAdapter;
@@ -30,15 +39,6 @@ import jd.plugins.PluginDependencies;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.decrypter.SrfChCrawler;
-
-import org.appwork.utils.StringUtils;
-import org.jdownloader.controlling.ffmpeg.json.StreamInfo;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.downloader.hls.M3U8Playlist;
-import org.jdownloader.plugins.components.config.SrfChConfig;
-import org.jdownloader.plugins.components.config.SrfChConfig.QualitySelectionFallbackMode;
-import org.jdownloader.plugins.components.config.SrfChConfig.QualitySelectionMode;
-import org.jdownloader.plugins.config.PluginConfigInterface;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 @PluginDependencies(dependencies = { SrfChCrawler.class })
@@ -151,13 +151,7 @@ public class SrfCh extends PluginForHost {
                     /* Audio URLs sometimes end with .jpg but redirect to .png files. */
                     final String finalFilename = link.getFinalFileName();
                     if (finalFilename != null) {
-                        final String extensionByMinetype = getExtensionFromMimeType(con);
-                        if (extensionByMinetype != null) {
-                            final String filenameWithCorrectedExtension = this.correctOrApplyFileNameExtension(finalFilename, "." + extensionByMinetype);
-                            if (!filenameWithCorrectedExtension.equals(finalFilename)) {
-                                link.setFinalFileName(filenameWithCorrectedExtension);
-                            }
-                        }
+                        link.setFinalFileName(this.correctOrApplyFileNameExtension(finalFilename, con));
                     }
                 } finally {
                     try {

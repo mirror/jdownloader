@@ -26,6 +26,19 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.storage.config.annotations.LabelInterface;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.appwork.utils.net.URLHelper;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.downloader.hls.HLSDownloader;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.config.ConfigContainer;
 import jd.config.ConfigEntry;
@@ -51,19 +64,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.storage.config.annotations.LabelInterface;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.appwork.utils.net.URLHelper;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.downloader.hls.HLSDownloader;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "soundcloud.com" }, urls = { "https://(?:www\\.)?soundclouddecrypted\\.com/[A-Za-z\\-_0-9]+/[A-Za-z\\-_0-9]+(/[A-Za-z\\-_0-9]+)?" })
 public class SoundcloudCom extends PluginForHost {
@@ -292,9 +292,9 @@ public class SoundcloudCom extends PluginForHost {
             final boolean looksLikeOfficiallyDownloadable = looksLikeOfficiallyDownloadable(response);
             if (songPolicy != null && songPolicy.equalsIgnoreCase("SNIP")) {
                 /**
-                 * Typically previews will also have a duration value of only "30000" --> 30 seconds </br> When logged in with a Soundcloud
-                 * premium account, songs for which before only previews were available may change to "POLICY":"MONETIZE" --> Can be fully
-                 * streamed by the user.
+                 * Typically previews will also have a duration value of only "30000" --> 30 seconds </br>
+                 * When logged in with a Soundcloud premium account, songs for which before only previews were available may change to
+                 * "POLICY":"MONETIZE" --> Can be fully streamed by the user.
                  */
                 isOnlyPreviewDownloadable = true;
             }
@@ -374,12 +374,9 @@ public class SoundcloudCom extends PluginForHost {
              * E.g. official download: All filenames are set with .mp3 extension in crawler but official downloads can also e.g. be .wav
              * files.
              */
-            final String serverFilename = Encoding.htmlDecode(getFileNameFromConnection(dl.getConnection()));
-            if (link.getFinalFileName() != null && serverFilename != null) {
-                final String newExtension = Plugin.getFileNameExtensionFromString(serverFilename);
-                if (newExtension != null) {
-                    link.setFinalFileName(this.correctOrApplyFileNameExtension(link.getFinalFileName(), newExtension));
-                }
+            final String contentDispositionFilename = Plugin.getFileNameFromDispositionHeader(dl.getConnection());
+            if (contentDispositionFilename != null) {
+                link.setFinalFileName(contentDispositionFilename);
             }
             dl.startDownload();
         }
@@ -421,8 +418,9 @@ public class SoundcloudCom extends PluginForHost {
         if (looksLikeOfficiallyDownloadable && userPrefersOfficialDownload()) {
             /* File is officially downloadable */
             /**
-             * Only set calculated filesize if wanted by user. </br> Officially downloadable files could come in any bitrate thus we do by
-             * default not calculate the filesize for such items based on an assumed bitrate.
+             * Only set calculated filesize if wanted by user. </br>
+             * Officially downloadable files could come in any bitrate thus we do by default not calculate the filesize for such items based
+             * on an assumed bitrate.
              */
             if (userEnforcesFilesizeEstimationEvenForNonStreamDownloads()) {
                 link.setDownloadSize(calculateFilesize(link));

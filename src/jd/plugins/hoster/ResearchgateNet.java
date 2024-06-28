@@ -17,6 +17,9 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.config.Property;
 import jd.http.Browser;
@@ -31,9 +34,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "researchgate.net" }, urls = { "https?://(?:www\\.)?researchgate\\.net/(publication/\\d+_[A-Za-z0-9\\-_]+|figure/[A-Za-z0-9\\-_]+_\\d+)" })
 public class ResearchgateNet extends PluginForHost {
@@ -56,7 +56,7 @@ public class ResearchgateNet extends PluginForHost {
 
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws IOException, PluginException {
-        final String urlTitle = new Regex(link.getPluginPatternMatcher(), "(?:publication|figure)/(.+)").getMatch(0);
+        final String urlTitle = new Regex(link.getPluginPatternMatcher(), "(?i)(?:publication|figure)/(.+)").getMatch(0);
         if (!link.isNameSet()) {
             /* Set fallback filename */
             link.setName(urlTitle + ".zip");
@@ -104,12 +104,12 @@ public class ResearchgateNet extends PluginForHost {
             }
             if (StringUtils.containsIgnoreCase(link.getPluginPatternMatcher(), "/figure/")) {
                 final String ext = getFileNameExtensionFromURL(dllink, ".jpg");
-                filename = Encoding.htmlDecode(filename.trim()) + ext;
+                filename = this.applyFilenameExtension(filename, ext);
             } else if (correctFileExtension != null) {
                 filename = Encoding.htmlDecode(filename.trim());
-                filename = this.correctOrApplyFileNameExtension(filename, correctFileExtension);
+                filename = this.applyFilenameExtension(filename, correctFileExtension);
             } else {
-                filename = Encoding.htmlDecode(filename.trim()) + ".zip";
+                filename = this.applyFilenameExtension(filename, ".zip");
             }
             link.setName(filename);
         }
@@ -146,7 +146,7 @@ public class ResearchgateNet extends PluginForHost {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
         }
-        link.setProperty("directlink", dl.getConnection().getURL().toString());
+        link.setProperty("directlink", dl.getConnection().getURL().toExternalForm());
         dl.startDownload();
     }
 
