@@ -6002,16 +6002,15 @@ public abstract class XFileSharingProBasic extends antiDDoSForHost implements Do
 
     /** @return apikey but only if it is considered valid! */
     protected final String getAPIKeyFromConfig() {
-        final Class<? extends XFSConfigVideo> cfgO = getVideoConfigInterface();
+        final Class<? extends XFSConfig> cfgO = getConfigInterface();
         if (cfgO == null) {
             return null;
+        }
+        final String apikey = PluginJsonConfig.get(cfgO).getApikey();
+        if (looksLikeValidAPIKey(apikey)) {
+            return apikey;
         } else {
-            final String apikey = PluginJsonConfig.get(cfgO).getApikey();
-            if (looksLikeValidAPIKey(apikey)) {
-                return apikey;
-            } else {
-                return null;
-            }
+            return null;
         }
     }
 

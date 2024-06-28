@@ -84,7 +84,10 @@ public class SugarSyncCom extends PluginForHost {
                 } else {
                     link.setVerifiedFileSize(con.getCompleteContentLength());
                 }
-                link.setFinalFileName(Encoding.htmlDecode(getFileNameFromConnection(con)));
+                final String fname = getFileNameFromConnection(con);
+                if (fname != null) {
+                    link.setFinalFileName(Encoding.htmlDecode(fname).trim());
+                }
                 return AvailableStatus.TRUE;
             }
         } finally {
@@ -93,19 +96,18 @@ public class SugarSyncCom extends PluginForHost {
             } catch (final Throwable e) {
             }
         }
-        if (br.getHttpConnection().getResponseCode() == 404 || br.containsHTML("class=\"pf-error-information-message\"")) {
-            /* 2020-05-08 e.g. <div class="pf-main-error-message">Die Datei ist nicht mehr verfügbar.</div> */
-            /*
-             * or <div class="pf-error-information-message">Die Datei, auf die Sie zugreifen wollen, ist nicht mehr zum Herunterladen
-             * verfügbar.<br/>Wenden Sie sich an den Besitzer, wenn Sie Fragen haben.</div>
-             */
+        if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
-        // br.getPage(link.getPluginPatternMatcher());
         final String sessionid = br.getCookie(br.getHost(), "JSESSIONID");
         final String somevaluesid = br.getRegex("id=\"someValuesId\" value=\"([^<>\"]+)\"").getMatch(0);
         if (StringUtils.isEmpty(sessionid)) {
-            throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            if (br.containsHTML("class=\"pf-error-information-message\"")) {
+                /* 2024-06-28: They always have this text in their html so only check for this as a last resort. */
+                throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
+            } else {
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
+            }
         }
         final String fid = getFID(link);
         final UrlQuery query = new UrlQuery();
@@ -122,7 +124,7 @@ public class SugarSyncCom extends PluginForHost {
         query.add("c0-param3", "string:" + somevaluesid);
         query.add("batchId", "0");
         br.postPageRaw("https://www.sugarsync.com/dwr/call/plaincall/publicLinkPage.landingPagePublicLink.dwr", query.toString());
-        br.getRequest().setHtmlCode(PluginJSonUtils.unescape(br.toString()));
+        br.getRequest().setHtmlCode(PluginJSonUtils.unescape(br.getRequest().getHtmlCode()));
         if (br.getHttpConnection().getResponseCode() == 404) {
             // || br.containsHTML("class=\"pf-error-icon\"")) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
@@ -133,9 +135,13 @@ public class SugarSyncCom extends PluginForHost {
         String filesize = PluginJSonUtils.getJson(br, "publicFileSize");
         if (filename != null) {
             link.setFinalFileName(filename.trim());
+        } else {
+            logger.warning("Failed to find filename");
         }
         if (!StringUtils.isEmpty(filesize)) {
             link.setDownloadSize(SizeFormatter.getSize(filesize));
+        } else {
+            logger.warning("Failed to find filesize");
         }
         return AvailableStatus.TRUE;
     }
@@ -152,11 +158,10 @@ public class SugarSyncCom extends PluginForHost {
             dllink = String.format("https://www.sugarsync.com/pf/%s?_=0.%d&token=%s&customData=%s", fid, System.currentTimeMillis(), token, token);
         }
         dl = jd.plugins.BrowserAdapter.openDownload(br, link, dllink, false, 1);
-        if (dl.getConnection().getContentType().contains("html")) {
+        if (!this.looksLikeDownloadableContent(dl.getConnection())) {
             br.followConnection();
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        link.setProperty("freelink", dllink);
         dl.startDownload();
     }
 
