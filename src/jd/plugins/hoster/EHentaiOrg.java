@@ -368,11 +368,6 @@ public class EHentaiOrg extends PluginForHost {
         }
         checkErrors(br, link, account);
         brokenimagehandling: if (needsBrokenImageWorkaround(link, account)) {
-            /**
-             * Download of this image has just recently failed due to the image being serverside broken/unavailable. </br>
-             * Website has a feature called 'Reload broken image' which we are making use of here. </br>
-             * This will give us the same image hosted on a different CDN.
-             */
             logger.info("Attempting to 'Reload broken image'");
             final String reloadBrokenImageStr = br.getRegex("id=\"loadfail\"[^>]*onclick=\"return nl\\('([^']+)'\\)").getMatch(0);
             if (reloadBrokenImageStr == null) {
@@ -593,9 +588,9 @@ public class EHentaiOrg extends PluginForHost {
             if (storedDirecturl != null) {
                 link.removeProperty(directurlproperty);
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Stored directurl expired", e);
-            } else if (link.getPluginPatternMatcher().matches(TYPE_SINGLE_IMAGE) && !link.hasProperty(PROPERTY_TIMESTAMP_LAST_BROKEN_IMAGE_FAIL) && !Boolean.TRUE.equals(isOriginalFileDownload)) {
+            } else if (link.getPluginPatternMatcher().matches(TYPE_SINGLE_IMAGE) && !needsBrokenImageWorkaround(link, account) && !Boolean.TRUE.equals(isOriginalFileDownload)) {
                 link.setProperty(PROPERTY_TIMESTAMP_LAST_BROKEN_IMAGE_FAIL, System.currentTimeMillis());
-                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Retry on possibly broken image", 30 * 1000l, e);
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Wait for retry on possibly broken image", 30 * 1000l, e);
             } else {
                 throw e;
             }
@@ -619,6 +614,12 @@ public class EHentaiOrg extends PluginForHost {
         }
     }
 
+    /**
+     * If this returns true: </br>
+     * Download of this image has just recently failed due to the image being serverside broken/unavailable. </br>
+     * Website has a feature called 'Reload broken image' which we are making use of here. </br>
+     * This will give us the same image hosted on a different CDN.
+     */
     private boolean needsBrokenImageWorkaround(final DownloadLink link, final Account account) {
         final long timestampLastFailDueToBrokenImage = link.getLongProperty(PROPERTY_TIMESTAMP_LAST_BROKEN_IMAGE_FAIL, 0);
         final long timestampLastBrokenImageRetry = link.getLongProperty(PROPERTY_TIMESTAMP_LAST_BROKEN_IMAGE_RETRY, 0);
