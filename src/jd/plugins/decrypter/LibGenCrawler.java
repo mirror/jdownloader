@@ -286,7 +286,7 @@ public class LibGenCrawler extends PluginForDecrypt {
                     if (title != null) {
                         final String ext = getFileNameExtensionFromString(cover_art_url, ".jpg");
                         if (ext != null) {
-                            String filename_cover = correctOrApplyFileNameExtension(title, ext);
+                            String filename_cover = applyFilenameExtension(title, ext);
                             cover.setFinalFileName(filename_cover);
                         }
                     }

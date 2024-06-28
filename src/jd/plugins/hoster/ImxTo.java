@@ -17,6 +17,9 @@ package jd.plugins.hoster;
 
 import java.io.IOException;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -30,9 +33,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = { "imx.to" }, urls = { "https?://(?:\\w+\\.)?imx\\.to/((?:u/)?(?:i|t)/\\d+/\\d+/\\d+/([a-z0-9]+)\\.[a-z]+|(?:i/|img\\-)[a-z0-9]+)" })
 public class ImxTo extends PluginForHost {
@@ -141,7 +141,7 @@ public class ImxTo extends PluginForHost {
         String filename = br.getRegex("<title>\\s*IMX\\.to\\s*/\\s*([^<>\"]+)\\s*</title>").getMatch(0);
         if (filename != null) {
             filename = Encoding.htmlDecode(filename).trim();
-            filename = this.correctOrApplyFileNameExtension(filename, ".jpg");
+            filename = this.applyFilenameExtension(filename, ".jpg");
             link.setFinalFileName(filename);
         }
         final String filesize = br.getRegex("(?i)FILESIZE\\s*<span[^>]*>([^<]+)</span>").getMatch(0);
@@ -202,7 +202,11 @@ public class ImxTo extends PluginForHost {
                 con = br2.openHeadConnection(dllink);
                 if (this.looksLikeDownloadableContent(con)) {
                     if (con.getCompleteContentLength() > 0) {
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                        if (con.isContentDecoded()) {
+                            link.setDownloadSize(con.getCompleteContentLength());
+                        } else {
+                            link.setVerifiedFileSize(con.getCompleteContentLength());
+                        }
                     }
                     if (link.getFinalFileName() == null) {
                         String name = link.getName();
@@ -237,9 +241,6 @@ public class ImxTo extends PluginForHost {
             final Browser brc = br.cloneBrowser();
             dl = new jd.plugins.BrowserAdapter().openDownload(brc, link, url, false, 1);
             if (this.looksLikeDownloadableContent(dl.getConnection())) {
-                if (dl.getConnection().getCompleteContentLength() > 0) {
-                    link.setVerifiedFileSize(dl.getConnection().getCompleteContentLength());
-                }
                 return true;
             } else {
                 brc.followConnection(true);

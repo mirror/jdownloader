@@ -76,6 +76,7 @@ public class FlyflvCom extends PluginForHost {
     }
 
     public AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
+        final String extDefault = ".mp4";
         final String fid = getFID(link);
         String fallbackTitle = new Regex(link.getPluginPatternMatcher(), "(?i)movies/\\d+/(.+)").getMatch(0);
         if (fallbackTitle != null) {
@@ -84,7 +85,7 @@ public class FlyflvCom extends PluginForHost {
             fallbackTitle = fid;
         }
         if (!link.isNameSet()) {
-            link.setName(fallbackTitle + ".mp4");
+            link.setName(fallbackTitle + extDefault);
         }
         dllink = null;
         this.setBrowserExclusive();
@@ -94,12 +95,12 @@ public class FlyflvCom extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         /* Check if crawler set filename as this website does not provide good filenames! */
-        String filename = link.getFinalFileName();
-        if (filename == null) {
-            filename = br.getRegex("<h1 itemprop=\"name\">([^<>\"]+)</h1>").getMatch(0);
+        String title = link.getFinalFileName();
+        if (title == null) {
+            title = br.getRegex("<h1 itemprop=\"name\">([^<>\"]+)</h1>").getMatch(0);
         }
-        if (filename == null) {
-            filename = fallbackTitle;
+        if (title == null) {
+            title = fallbackTitle;
         }
         dllink = br.getRegex("\\'(?:file|video)\\'[\t\n\r ]*?:[\t\n\r ]*?\\'(http[^<>\"]*?)\\'").getMatch(0);
         if (dllink == null) {
@@ -111,19 +112,19 @@ public class FlyflvCom extends PluginForHost {
         if (dllink == null) {
             dllink = br.getRegex("var fileUrl[\t\n\r ]*?=[\t\n\r ]*?\"(http[^<>\"\\']+)\"").getMatch(0);
         }
-        if (filename == null) {
+        if (title == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        filename = Encoding.htmlDecode(filename).trim();
-        final String ext = getFileNameExtensionFromString(dllink, ".mp4");
-        filename = this.correctOrApplyFileNameExtension(filename, ext);
-        link.setFinalFileName(filename);
+        title = Encoding.htmlDecode(title).trim();
+        final String ext = getFileNameExtensionFromString(dllink, extDefault);
+        link.setFinalFileName(this.applyFilenameExtension(title, ext));
         if (!StringUtils.isEmpty(this.dllink) && !isDownload) {
             URLConnectionAdapter con = null;
             try {
                 con = br.openHeadConnection(dllink);
                 handleConnectionErrors(br, con);
                 link.setVerifiedFileSize(con.getCompleteContentLength());
+                link.setFinalFileName(this.correctOrApplyFileNameExtension(title, con));
             } finally {
                 try {
                     con.disconnect();

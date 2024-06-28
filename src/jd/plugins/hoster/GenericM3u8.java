@@ -261,7 +261,7 @@ public class GenericM3u8 extends PluginForHost {
         if (bandwidth > 0 && ((videoq == null && audioq == null) || PluginJsonConfig.get(GenericM3u8DecrypterConfig.class).isAddBandwidthValueToFilenames())) {
             name += "_bw_" + bandwidth;
         }
-        name = plugin.correctOrApplyFileNameExtension(name, "." + assumedFileExtension);
+        name = plugin.applyFilenameExtension(name, "." + assumedFileExtension);
         if (setFinalFilename) {
             link.setFinalFileName(name);
         } else {

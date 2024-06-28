@@ -92,7 +92,7 @@ public class ParteeeyDe extends PluginForHost {
             return AvailableStatus.UNCHECKABLE;
         }
         String urlThumb = link.getStringProperty(ParteeeyDe.PROPERTY_THUMBURL);
-        final String filename_decrypter = link.getStringProperty(ParteeeyDe.PROPERTY_DECRYPTERFILENAME);
+        final String filename_from_crawler = link.getStringProperty(ParteeeyDe.PROPERTY_DECRYPTERFILENAME);
         final String galleryid = link.getStringProperty(ParteeeyDe.PROPERTY_GALLERYID);
         /**
          * 2017-10-06: Official downloads are disabled (that time this required special account permissions.) </br>
@@ -156,9 +156,9 @@ public class ParteeeyDe extends PluginForHost {
             String filename;
             if (url_filename != null) {
                 filename = url_filename;
-            } else if (filename_decrypter != null) {
-                filename = filename_decrypter;
-                filename = this.correctOrApplyFileNameExtension(filename, default_extension);
+            } else if (filename_from_crawler != null) {
+                filename = filename_from_crawler;
+                filename = this.applyFilenameExtension(filename, default_extension);
             } else {
                 filename = fid + default_extension;
             }
@@ -168,7 +168,11 @@ public class ParteeeyDe extends PluginForHost {
                 con = this.br.openHeadConnection(dllink);
                 this.downloadErrorhandling(con);
                 if (con.getCompleteContentLength() > 0) {
-                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                    if (con.isContentDecoded()) {
+                        link.setDownloadSize(con.getCompleteContentLength());
+                    } else {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
                 }
             } finally {
                 try {
@@ -176,8 +180,8 @@ public class ParteeeyDe extends PluginForHost {
                 } catch (final Throwable e) {
                 }
             }
-        } else if (filename_decrypter != null) {
-            link.setFinalFileName(filename_decrypter);
+        } else if (filename_from_crawler != null) {
+            link.setFinalFileName(filename_from_crawler);
         }
         return AvailableStatus.TRUE;
     }

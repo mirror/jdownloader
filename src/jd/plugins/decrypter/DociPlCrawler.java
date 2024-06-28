@@ -113,7 +113,7 @@ public class DociPlCrawler extends PluginForDecrypt {
             }
             for (final String singleLink[] : files) {
                 String filename = singleLink[1];
-                filename = this.correctOrApplyFileNameExtension(filename, ".pdf");
+                filename = this.applyFilenameExtension(filename, ".pdf");
                 final String url = br.getURL(singleLink[0]).toExternalForm();
                 final DownloadLink link = createDownloadlink(url);
                 link.setDefaultPlugin(plg);

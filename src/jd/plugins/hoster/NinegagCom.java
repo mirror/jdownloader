@@ -19,6 +19,11 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -30,11 +35,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "9gag.com" }, urls = { "https?://(?:www\\.)?9gag\\.com/[^/]+/([a-zA-Z0-9]+)" })
 public class NinegagCom extends PluginForHost {
@@ -132,7 +132,7 @@ public class NinegagCom extends PluginForHost {
         title = Encoding.htmlDecode(title);
         title = title.trim();
         final String ext = getFileNameExtensionFromString(dllink, video ? ".mp4" : ".jpg");
-        link.setFinalFileName(this.correctOrApplyFileNameExtension(title, ext));
+        link.setFinalFileName(this.applyFilenameExtension(title, ext));
         if (!StringUtils.isEmpty(description) && link.getComment() == null) {
             link.setComment(description);
         }
@@ -151,9 +151,8 @@ public class NinegagCom extends PluginForHost {
                         link.setVerifiedFileSize(con.getCompleteContentLength());
                     }
                 }
-                final String realExt = getExtensionFromMimeType(con);
-                if (realExt != null) {
-                    link.setFinalFileName(this.correctOrApplyFileNameExtension(title, "." + realExt));
+                if (title != null) {
+                    link.setFinalFileName(this.correctOrApplyFileNameExtension(title, con));
                 }
             } finally {
                 try {

@@ -207,10 +207,10 @@ public class JpgChurchCrawler extends PluginForDecrypt {
                     ext = Plugin.getFileNameExtensionFromURL(urlThumbnail);
                 }
                 if (ext != null) {
-                    link.setFinalFileName(this.correctOrApplyFileNameExtension(Encoding.htmlDecode(title).trim(), ext));
+                    link.setFinalFileName(this.applyFilenameExtension(Encoding.htmlDecode(title).trim(), ext));
                 } else {
                     /* Fallback */
-                    link.setName(this.correctOrApplyFileNameExtension(Encoding.htmlDecode(title).trim(), ".jpg"));
+                    link.setName(this.applyFilenameExtension(Encoding.htmlDecode(title).trim(), ".jpg"));
                 }
                 link.setVerifiedFileSize(Long.parseLong(filesizeBytesStr));
                 link.setAvailable(true);

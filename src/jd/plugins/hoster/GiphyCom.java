@@ -19,6 +19,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+
 import jd.PluginWrapper;
 import jd.http.URLConnectionAdapter;
 import jd.nutils.encoding.Encoding;
@@ -29,10 +32,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class GiphyCom extends PluginForHost {
@@ -137,7 +136,7 @@ public class GiphyCom extends PluginForHost {
             dllink = br.getRegex("property=\"og:image\" content=\"(https://[^\"]+)").getMatch(0);
         }
         if (title != null) {
-            link.setFinalFileName(this.correctOrApplyFileNameExtension(title, ".gif"));
+            link.setFinalFileName(this.applyFilenameExtension(title, ".gif"));
         }
         if (!StringUtils.isEmpty(dllink)) {
             dllink = Encoding.htmlDecode(dllink);
@@ -148,7 +147,14 @@ public class GiphyCom extends PluginForHost {
                     server_issues = true;
                 } else {
                     if (con.getCompleteContentLength() > 0) {
-                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                        if (con.isContentDecoded()) {
+                            link.setDownloadSize(con.getCompleteContentLength());
+                        } else {
+                            link.setVerifiedFileSize(con.getCompleteContentLength());
+                        }
+                    }
+                    if (title != null) {
+                        link.setFinalFileName(this.correctOrApplyFileNameExtension(title, con));
                     }
                 }
             } finally {

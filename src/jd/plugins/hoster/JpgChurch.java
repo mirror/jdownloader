@@ -21,6 +21,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.encoding.URLEncode;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -37,13 +44,6 @@ import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.SiteType.SiteTemplate;
 import jd.plugins.decrypter.JpgChurchCrawler;
-
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.encoding.URLEncode;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class JpgChurch extends PluginForHost {
@@ -141,7 +141,7 @@ public class JpgChurch extends PluginForHost {
 
     public AvailableStatus requestFileInformation(final DownloadLink link, final boolean isDownload) throws Exception {
         if (!link.isNameSet()) {
-            link.setName(this.correctOrApplyFileNameExtension(this.getFID(link).replaceAll("-+", " "), ".jpg"));
+            link.setName(this.applyFilenameExtension(this.getFID(link).replaceAll("-+", " ").trim(), ".jpg"));
         }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
@@ -266,7 +266,7 @@ public class JpgChurch extends PluginForHost {
             if (ext == null) {
                 link.setName(title);
             } else {
-                link.setFinalFileName(this.correctOrApplyFileNameExtension(title, ext));
+                link.setFinalFileName(this.applyFilenameExtension(title, ext));
             }
         }
         if (!StringUtils.isEmpty(filesizeStr)) {
@@ -284,9 +284,8 @@ public class JpgChurch extends PluginForHost {
                         link.setVerifiedFileSize(con.getCompleteContentLength());
                     }
                 }
-                final String ext = getExtensionFromMimeType(con);
-                if (ext != null) {
-                    link.setFinalFileName(this.correctOrApplyFileNameExtension(title, "." + ext));
+                if (title != null) {
+                    link.setFinalFileName(this.correctOrApplyFileNameExtension(title, con));
                 }
             } finally {
                 try {

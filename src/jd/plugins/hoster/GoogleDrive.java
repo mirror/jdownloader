@@ -933,7 +933,7 @@ public class GoogleDrive extends PluginForHost {
             if (!googleDocumentExt.startsWith(".")) {
                 googleDocumentExt = "." + googleDocumentExt;
             }
-            filename = plg.correctOrApplyFileNameExtension(filename, googleDocumentExt);
+            filename = plg.applyFilenameExtension(filename, googleDocumentExt);
         }
         if (setFinalFilename) {
             link.setFinalFileName(filename);
@@ -1261,7 +1261,7 @@ public class GoogleDrive extends PluginForHost {
             }
             /* Update file-extension in filename to .mp4 and add quality identifier to filename if chosen by user. */
             final String videoExt = ".mp4";
-            String filenameNew = correctOrApplyFileNameExtension(filenameOld, videoExt);
+            String filenameNew = applyFilenameExtension(filenameOld, videoExt);
             if (PluginJsonConfig.get(GoogleConfig.class).isAddStreamQualityIdentifierToFilename()) {
                 final String newFilenameEnding = "_" + chosenQuality + "p" + videoExt;
                 if (!filenameNew.toLowerCase(Locale.ENGLISH).endsWith(newFilenameEnding)) {

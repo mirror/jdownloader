@@ -270,7 +270,7 @@ public class ARDMediathek extends PluginForHost {
             if (!convertSubtitle(link)) {
                 logger.severe("Subtitle conversion failed!");
             } else {
-                link.setFinalFileName(this.correctOrApplyFileNameExtension(link.getFinalFileName(), ".srt"));
+                link.setFinalFileName(this.applyFilenameExtension(link.getFinalFileName(), ".srt"));
             }
         }
     }

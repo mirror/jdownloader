@@ -173,7 +173,7 @@ public class FotografDe extends PluginForDecrypt {
                     /* Fallback */
                     ext = ".jpg";
                 }
-                final String finalFilename = this.correctOrApplyFileNameExtension(title, ext);
+                final String finalFilename = this.applyFilenameExtension(title, ext);
                 photo.setFinalFileName(finalFilename);
                 /* Make sure that this filename will never change even if the user resets that item. */
                 photo.setProperty(DirectHTTP.FIXNAME, finalFilename);

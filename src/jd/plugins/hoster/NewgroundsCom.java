@@ -115,7 +115,7 @@ public class NewgroundsCom extends antiDDoSForHost {
         } else if (requiresAccount(br)) {
             return AvailableStatus.TRUE;
         }
-        String filename = HTMLSearch.searchMetaTag(br, "og:title");
+        String title = HTMLSearch.searchMetaTag(br, "og:title");
         // String artist = br.getRegex("<em>(?:Artist|Author|Programming) ?<[^<>]+>([^<>]*?)<").getMatch(0);
         String artist = br.getRegex("<h4.*?>\\s*<[^<>]+>([^<>]*?)</a>[^~]*?<em>(?:Artist|Author|Programming)").getMatch(0);
         if (artist != null) {
@@ -124,7 +124,7 @@ public class NewgroundsCom extends antiDDoSForHost {
         // logger.info("artist:" + artist + "|");
         // final String username = br.getRegex("newgrounds\\.com/pm/send/([^<>\"]+)\"").getMatch(0);
         if (artist != null && getPluginConfig().getBooleanProperty("Filename_by", true)) {
-            filename = filename + " by " + artist;
+            title = title + " by " + artist;
         }
         String ext = null;
         final boolean checkForFilesize;
@@ -139,8 +139,8 @@ public class NewgroundsCom extends antiDDoSForHost {
                 if (dllink != null) {
                     dllink = dllink.replace("\\", "");
                     final String id = new Regex(dllink, "images/\\d+/(\\d+)").getMatch(0);
-                    if (addID2Filename && filename != null && id != null) {
-                        filename = filename + "_" + id;
+                    if (addID2Filename && title != null && id != null) {
+                        title = title + "_" + id;
                     }
                 }
             }
@@ -155,10 +155,10 @@ public class NewgroundsCom extends antiDDoSForHost {
             // filename = br.getRegex("property=\"og:title\" content=\"([^<>\"]*?)\"").getMatch(0);
             final String embedController = br.getRegex("embedController\\s*\\(\\s*\\[\\s*\\{\\s*\"url\"\\s*:\\s*\"(https?:.*?)\"").getMatch(0);
             if (link.getDownloadURL().contains("/audio/listen/")) {
-                if (filename != null) {
-                    filename = Encoding.htmlDecode(filename).trim();
+                if (title != null) {
+                    title = Encoding.htmlDecode(title).trim();
                     if (addID2Filename) {
-                        filename = filename + "_" + fid;
+                        title = title + "_" + fid;
                     }
                 }
                 // var embed_controller = new
@@ -176,7 +176,7 @@ public class NewgroundsCom extends antiDDoSForHost {
                     throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
                 }
                 Map<String, Object> entries = restoreFromString(br.toString(), TypeRef.MAP);
-                filename = (String) entries.get("title");
+                title = (String) entries.get("title");
                 entries = (Map<String, Object>) entries.get("sources");
                 final Iterator<Entry<String, Object>> iterator = entries.entrySet().iterator();
                 int qualityMax = 0;
@@ -196,8 +196,8 @@ public class NewgroundsCom extends antiDDoSForHost {
                         this.dllink = url;
                     }
                 }
-                if (addID2Filename && filename != null && fid != null) {
-                    filename = filename + "_" + fid;
+                if (addID2Filename && title != null && fid != null) {
+                    title = title + "_" + fid;
                 }
             }
         }
@@ -207,25 +207,23 @@ public class NewgroundsCom extends antiDDoSForHost {
         if (ext == null) {
             ext = getFileNameExtensionFromString(dllink, ".mp4");
         }
-        if (filename == null) {
+        if (title == null) {
             /* Fallback */
-            filename = url_filename;
+            title = url_filename;
         }
-        filename = this.correctOrApplyFileNameExtension(filename, ext);
-        if (!filename.endsWith(ext)) {
-            filename += ext;
+        if (title != null) {
+            link.setFinalFileName(this.applyFilenameExtension(title, ext));
         }
-        link.setFinalFileName(filename);
         if (dllink != null && checkForFilesize) {
             URLConnectionAdapter con = null;
             try {
                 final Browser br2 = br.cloneBrowser();
                 br2.setFollowRedirects(true);
                 con = br2.openHeadConnection(dllink);
-                filename = getFileNameFromConnection(con);
-                if (filename != null) {
-                    filename = Encoding.htmlDecode(filename);
-                    link.setFinalFileName(filename);
+                title = getFileNameFromConnection(con);
+                if (title != null) {
+                    title = Encoding.htmlDecode(title);
+                    link.setFinalFileName(title);
                 }
                 if (this.looksLikeDownloadableContent(con)) {
                     if (con.getCompleteContentLength() > 0) {
@@ -234,6 +232,9 @@ public class NewgroundsCom extends antiDDoSForHost {
                         } else {
                             link.setVerifiedFileSize(con.getCompleteContentLength());
                         }
+                    }
+                    if (title != null) {
+                        link.setFinalFileName(this.correctOrApplyFileNameExtension(title, con));
                     }
                 } else {
                     server_issues = true;

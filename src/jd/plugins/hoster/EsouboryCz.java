@@ -171,7 +171,7 @@ public class EsouboryCz extends PluginForHost {
                 filename = Encoding.htmlDecode(filename).trim();
                 if (fileextension != null) {
                     fileextension = fileextension.trim();
-                    filename = this.correctOrApplyFileNameExtension(filename, fileextension);
+                    filename = this.applyFilenameExtension(filename, fileextension);
                 }
                 /* Do not set the final filename here as we'll have the API when downloading via account anyways! */
                 link.setName(filename);

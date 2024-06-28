@@ -85,7 +85,7 @@ public class HentaiFoundryCom extends PluginForHost {
     @SuppressWarnings("deprecation")
     private AvailableStatus requestFileInformation(final DownloadLink link, final Account account) throws Exception {
         dllink = null;
-        String filename = null;
+        String title = null;
         String ext = null;
         final String fid = getFID(link.getDownloadURL());
         br.setFollowRedirects(true);
@@ -95,31 +95,31 @@ public class HentaiFoundryCom extends PluginForHost {
         if (link.getDownloadURL().matches(type_direct_pdf)) {
             dllink = link.getDownloadURL() + "?enterAgree=1&size=0";
             ext = ".pdf";
-            filename = fid + "_" + new Regex(link.getDownloadURL(), "([A-Za-z0-9\\-_]+\\.pdf)$").getMatch(0);
+            title = fid + "_" + new Regex(link.getDownloadURL(), "([A-Za-z0-9\\-_]+\\.pdf)$").getMatch(0);
         } else {
             br.getPage(link.getDownloadURL() + "?enterAgree=1&size=0");
             if (br.getHttpConnection().getResponseCode() == 404) {
                 throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
             }
-            filename = br.getRegex("<title>([^<>]*?) - Hentai Foundry</title>").getMatch(0);
+            title = br.getRegex("<title>([^<>]*?) - Hentai Foundry</title>").getMatch(0);
             dllink = br.getRegex("(//pictures\\.hentai-foundry\\.com/{1,}[^<>\"\\[\\]]+)\"").getMatch(0);
-            if (filename == null) {
+            if (title == null) {
                 throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             if (dllink != null) {
                 dllink = Request.getLocation(Encoding.htmlDecode(dllink), br.getRequest());
             }
             if (getPluginConfig().getBooleanProperty("Filename_id", true)) {
-                filename = Encoding.htmlDecode(filename) + "_" + fid;
+                title = Encoding.htmlDecode(title) + "_" + fid;
             } else {
-                filename = fid + "_" + Encoding.htmlDecode(filename);
+                title = fid + "_" + Encoding.htmlDecode(title);
             }
-            filename = filename.trim();
+            title = title.trim();
         }
         if (ext == null && dllink != null) {
             ext = getFileNameExtensionFromString(dllink, ".png");
             /*
-             * 2017-01-30: Fallback for some pictures - thei´r urls end with "." and they do not even have an extensions via browser -->
+             * 2017-01-30: Fallback for some pictures - their urls end with "." and they do not even have an extensions via browser -->
              * Usually these are .jpg files.
              */
             if (!ext.matches("\\.[A-Za-z]{3,5}")) {
@@ -128,9 +128,8 @@ public class HentaiFoundryCom extends PluginForHost {
         } else if (ext == null) {
             ext = ".jpg";
         }
-        filename = this.correctOrApplyFileNameExtension(filename, ext);
-        if (link.getFinalFileName() == null) {
-            link.setFinalFileName(filename);
+        if (title != null) {
+            link.setFinalFileName(this.applyFilenameExtension(title, ext));
         }
         if (!StringUtils.isEmpty(dllink)) {
             URLConnectionAdapter con = null;
@@ -138,7 +137,14 @@ public class HentaiFoundryCom extends PluginForHost {
                 con = br.openHeadConnection(this.dllink);
                 handleConnectionErrors(br, con);
                 if (con.getCompleteContentLength() > 0) {
-                    link.setVerifiedFileSize(con.getCompleteContentLength());
+                    if (con.isContentDecoded()) {
+                        link.setDownloadSize(con.getCompleteContentLength());
+                    } else {
+                        link.setVerifiedFileSize(con.getCompleteContentLength());
+                    }
+                }
+                if (title != null) {
+                    link.setFinalFileName(this.correctOrApplyFileNameExtension(title, con));
                 }
             } finally {
                 try {

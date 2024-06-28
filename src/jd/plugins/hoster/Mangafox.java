@@ -22,6 +22,12 @@ import java.util.List;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.parser.UrlQuery;
+import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
+import org.jdownloader.plugins.controller.LazyPlugin;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.http.Browser;
 import jd.http.URLConnectionAdapter;
@@ -33,12 +39,6 @@ import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
-
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.parser.UrlQuery;
-import org.jdownloader.controlling.filter.CompiledFiletypeFilter;
-import org.jdownloader.plugins.controller.LazyPlugin;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = {}, urls = {})
 public class Mangafox extends PluginForHost {
@@ -129,21 +129,20 @@ public class Mangafox extends PluginForHost {
         br.getPage("https://" + br.getHost(true) + "/" + urlpart + "/chapterfun.ashx?" + query.toString());
         dllink = decodeDownloadLink(br.toString());
         final String url_filename = urlpart.replace("/", "_") + "_" + page;
-        String filename = link.getFinalFileName();
-        if (StringUtils.isEmpty(filename)) {
-            filename = url_filename;
+        String title = link.getFinalFileName();
+        if (StringUtils.isEmpty(title)) {
+            title = url_filename;
         }
-        if (filename != null) {
-            filename = Encoding.htmlDecode(filename);
-            filename = filename.trim();
+        if (title != null) {
+            title = Encoding.htmlDecode(title);
+            title = title.trim();
             String ext;
             if (!StringUtils.isEmpty(dllink)) {
                 ext = getFileNameExtensionFromString(dllink, default_extension);
             } else {
                 ext = default_extension;
             }
-            filename = this.correctOrApplyFileNameExtension(filename, ext);
-            link.setName(filename);
+            link.setName(this.applyFilenameExtension(title, ext));
         }
         if (!StringUtils.isEmpty(dllink)) {
             URLConnectionAdapter con = null;
@@ -157,9 +156,8 @@ public class Mangafox extends PluginForHost {
                         link.setVerifiedFileSize(con.getCompleteContentLength());
                     }
                 }
-                final String ext = getExtensionFromMimeType(con);
-                if (ext != null) {
-                    link.setFinalFileName(this.correctOrApplyFileNameExtension(filename, "." + ext));
+                if (title != null) {
+                    link.setFinalFileName(this.correctOrApplyFileNameExtension(title, con));
                 }
             } finally {
                 try {

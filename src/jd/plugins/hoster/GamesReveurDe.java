@@ -49,7 +49,7 @@ public class GamesReveurDe extends PluginForHost {
         }
         final String assumedFileExtension = ".rar";
         if (!link.isNameSet()) {
-            final String urlpart = new Regex(link.getPluginPatternMatcher(), "https?://[^/]+/(.+)\\.html").getMatch(0);
+            final String urlpart = new Regex(link.getPluginPatternMatcher(), "(?i)https?://[^/]+/(.+)\\.html").getMatch(0);
             link.setName(urlpart + assumedFileExtension);
         }
         this.setBrowserExclusive();
@@ -78,7 +78,7 @@ public class GamesReveurDe extends PluginForHost {
         if (filename != null) {
             filename = Encoding.htmlDecode(filename).trim();
             filename += "_" + dlid;
-            filename = this.correctOrApplyFileNameExtension(filename, assumedFileExtension);
+            filename = this.applyFilenameExtension(filename, assumedFileExtension);
             link.setName(Encoding.htmlDecode(filename).trim());
         }
         if (filesize != null) {

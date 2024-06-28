@@ -38,6 +38,7 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
+import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.PluginJSonUtils;
@@ -167,8 +168,8 @@ public class MvpdjCom extends PluginForHost {
             }
             if (title_html != null) {
                 title_html = Encoding.htmlDecode(title_html).trim();
-                final String ext = getFileNameExtensionFromString(dllink, extDefault);
-                link.setFinalFileName(this.correctOrApplyFileNameExtension(title_html, ext));
+                final String ext = Plugin.getFileNameExtensionFromURL(dllink, extDefault);
+                link.setFinalFileName(this.applyFilenameExtension(title_html, ext));
             }
         }
         if (dllink != null && !isDownload) {
@@ -181,7 +182,9 @@ public class MvpdjCom extends PluginForHost {
                 handleConnectionErrors(br2, con);
                 /* Especially for official account-downloads, server-filenames might be crippled! */
                 final String filename_connection = getFileNameFromConnection(con);
-                link.setFinalFileName(filename_connection);
+                if (filename_connection != null) {
+                    link.setFinalFileName(filename_connection);
+                }
                 if (con.getCompleteContentLength() > 0) {
                     if (con.isContentDecoded()) {
                         link.setDownloadSize(con.getCompleteContentLength());

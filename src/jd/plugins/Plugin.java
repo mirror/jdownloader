@@ -454,9 +454,9 @@ public abstract class Plugin implements ActionListener {
         return getCorrectOrApplyFileNameExtension(filenameOrg, newExtension);
     }
 
-    public String correctOrApplyFileNameExtension(String name, URLConnectionAdapter connection) {
+    public String correctOrApplyFileNameExtension(final String filenameOrg, final URLConnectionAdapter connection) {
         final String extNew = getExtensionFromMimeType(connection);
-        return getCorrectOrApplyFileNameExtension(name, extNew);
+        return getCorrectOrApplyFileNameExtension(filenameOrg, extNew);
     }
 
     public static String getCorrectOrApplyFileNameExtension(final String filenameOrg, String newExtension) {

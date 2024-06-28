@@ -48,11 +48,10 @@ public class BdsmstreakCom extends PluginForHost {
     // Tags:
     // other:
     /* Connection stuff */
-    private static final int free_maxchunks    = 1;
-    private static final int free_maxdownloads = -1;
-    private String           dllink            = null;
-    private final String     PATTERN_NORMAL    = "(?i)https?://[^/]+/video/(\\d+)(/([a-z0-9\\-]+))?";
-    private final String     PATTERN_EMBED     = "(?i)https?://[^/]+/embed/(\\d+)";
+    private static final int free_maxchunks = 1;
+    private String           dllink         = null;
+    private final String     PATTERN_NORMAL = "(?i)https?://[^/]+/video/(\\d+)(/([a-z0-9\\-]+))?";
+    private final String     PATTERN_EMBED  = "(?i)https?://[^/]+/embed/(\\d+)";
 
     @Override
     public String getAGBLink() {
@@ -134,7 +133,7 @@ public class BdsmstreakCom extends PluginForHost {
         if (title != null) {
             title = Encoding.htmlDecode(title);
             title = title.trim();
-            link.setName(this.correctOrApplyFileNameExtension(title, extDefault));
+            link.setName(this.applyFilenameExtension(title, extDefault));
         }
         if (!StringUtils.isEmpty(dllink) && !isDownload) {
             URLConnectionAdapter con = null;
@@ -147,6 +146,9 @@ public class BdsmstreakCom extends PluginForHost {
                     } else {
                         link.setVerifiedFileSize(con.getCompleteContentLength());
                     }
+                }
+                if (title != null) {
+                    link.setFinalFileName(this.correctOrApplyFileNameExtension(title, con));
                 }
             } finally {
                 try {
@@ -184,7 +186,7 @@ public class BdsmstreakCom extends PluginForHost {
 
     @Override
     public int getMaxSimultanFreeDownloadNum() {
-        return free_maxdownloads;
+        return Integer.MAX_VALUE;
     }
 
     @Override

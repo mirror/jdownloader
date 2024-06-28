@@ -86,7 +86,7 @@ public class ParteeeyDeGallery extends PluginForDecrypt {
         final FilePackage fp = FilePackage.getInstance();
         fp.setName(Encoding.htmlDecode(fpName).trim());
         int page_int_max = 1;
-        final String[] pages = br.getRegex("\\?p=(\\d+)\">\\d+").getColumn(0);
+        final String[] pages = br.getRegex("\\?p=(\\d+)\"[^>]*>\\d+").getColumn(0);
         if (pages != null && pages.length != 0) {
             for (final String page_str : pages) {
                 final int page_int = Integer.parseInt(page_str);
@@ -138,7 +138,7 @@ public class ParteeeyDeGallery extends PluginForDecrypt {
                 } else {
                     finalname = df.format(counter) + "_" + photoID;
                 }
-                finalname = this.correctOrApplyFileNameExtension(finalname, ParteeeyDe.default_extension);
+                finalname = this.applyFilenameExtension(finalname, ParteeeyDe.default_extension);
                 final String contenturl = "https://www.parteeey.de/galerie/" + gallerySlug + "-" + galleryID + "#mulFile-" + photoID;
                 final DownloadLink dl = createDownloadlink(contenturl);
                 dl.setName(finalname);
@@ -157,7 +157,7 @@ public class ParteeeyDeGallery extends PluginForDecrypt {
                 break;
             }
         }
-        if (ret.size() == 0) {
+        if (ret.isEmpty()) {
             /* WTF this should never happen! */
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }

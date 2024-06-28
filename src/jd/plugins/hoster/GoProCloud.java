@@ -384,7 +384,7 @@ public class GoProCloud extends PluginForHost/* implements MenuExtenderHandler *
             fileExtension = "mp4";
         }
         if (StringUtils.isNotEmpty(fileExtension)) {
-            name = plugin.correctOrApplyFileNameExtension(name, "." + fileExtension);
+            name = plugin.applyFilenameExtension(name, "." + fileExtension);
         }
         if (config.isUseOriginalGoProFileNames()) {
             link.setFinalFileName(name);

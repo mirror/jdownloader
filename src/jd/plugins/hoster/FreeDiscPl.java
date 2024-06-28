@@ -27,6 +27,21 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
+import org.appwork.storage.JSonMapperException;
+import org.appwork.storage.TypeRef;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.formatter.TimeFormatter;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.plugins.components.config.FreeDiscPlConfig;
+import org.jdownloader.plugins.components.config.FreeDiscPlConfig.StreamDownloadMode;
+import org.jdownloader.plugins.config.PluginConfigInterface;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.scripting.JavaScriptEngineFactory;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -50,21 +65,6 @@ import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForDecrypt;
 import jd.plugins.PluginForHost;
-
-import org.appwork.storage.JSonMapperException;
-import org.appwork.storage.TypeRef;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.formatter.TimeFormatter;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.AbstractRecaptchaV2;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperCrawlerPluginRecaptchaV2;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.plugins.components.config.FreeDiscPlConfig;
-import org.jdownloader.plugins.components.config.FreeDiscPlConfig.StreamDownloadMode;
-import org.jdownloader.plugins.config.PluginConfigInterface;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.scripting.JavaScriptEngineFactory;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 2, names = {}, urls = {})
 public class FreeDiscPl extends PluginForHost {
@@ -313,7 +313,7 @@ public class FreeDiscPl extends PluginForHost {
             logger.info("Cannot do linkcheck due to antiBot captcha");
             return AvailableStatus.UNCHECKABLE;
         }
-        final Map<String, Object> root = restoreFromString(br.toString(), TypeRef.MAP);
+        final Map<String, Object> root = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         /* TODO: Make use of field "current_file_description" */
         final Map<String, Object> data = (Map<String, Object>) JavaScriptEngineFactory.walkJson(root, "response/data");
         if ((Boolean) data.get("file_exists") == Boolean.FALSE) {
@@ -324,7 +324,7 @@ public class FreeDiscPl extends PluginForHost {
         final boolean is_my_file = ((Boolean) data.get("is_my_file")).booleanValue();
         final Map<String, Object> file_data = (Map<String, Object>) data.get("file_data");
         final String filenameWithoutExt = file_data.get("fileName").toString();
-        final String fileExtension = (String) file_data.get("fileExtension");
+        final String fileExtensionWithoutDot = (String) file_data.get("fileExtension");
         final long filesize = Long.parseLong(file_data.get("fileSize").toString());
         String streamingFilename = null;
         Long streamingFilesize = null;
@@ -347,10 +347,11 @@ public class FreeDiscPl extends PluginForHost {
         }
         final boolean userPrefersStreamDownloads = PluginJsonConfig.get(FreeDiscPlConfig.class).getStreamDownloadMode() == StreamDownloadMode.PREFER_STREAM;
         if (userPrefersStreamDownloads && !StringUtils.isEmpty(streamingFilename) && streamingFilesize != null) {
+            /* fUser prefers stream download and pre given stream download filename is available. */
             link.setFinalFileName(streamingFilename);
             link.setVerifiedFileSize(streamingFilesize.longValue());
         } else if (userPrefersStreamDownloads && this.isStreamAvailable(link)) {
-            /* Set custom made streaming filename */
+            /* User prefers stream download and it is available -> Set custom made streaming filename */
             if (this.isAudioStreamAvailable(link)) {
                 link.setFinalFileName(filenameWithoutExt + ".mp3");
             } else {
@@ -358,16 +359,16 @@ public class FreeDiscPl extends PluginForHost {
             }
             link.setDownloadSize(filesize);
         } else {
-            /* Set original filename */
-            if (!StringUtils.isEmpty(fileExtension)) {
-                link.setFinalFileName(filenameWithoutExt + "." + fileExtension);
+            /* Original file download */
+            if (!StringUtils.isEmpty(fileExtensionWithoutDot)) {
+                link.setFinalFileName(filenameWithoutExt + "." + fileExtensionWithoutDot);
             } else {
                 /* Filename has no extension */
                 link.setFinalFileName(filenameWithoutExt);
             }
             link.setVerifiedFileSize(filesize);
         }
-        /* File has been moved to trash by current owner. It is still downloadable but only for the owner. */
+        /* File has been moved to trash by current owner. It is still downloadable but only for the owner/uploader. */
         if (file_data.get("inTrash").toString().equals("1") && !is_my_file) {
             throw new AccountRequiredException();
         }
@@ -578,7 +579,7 @@ public class FreeDiscPl extends PluginForHost {
                     /* TODO: Improve errorhandling */
                     postPageRaw("/download/payment_info", "{\"item_id\":\"" + fid + "\",\"item_type\":1,\"code\":\"\",\"file_id\":" + fid + ",\"no_headers\":1,\"menu_visible\":0}", account);
                     try {
-                        final Map<String, Object> root = restoreFromString(br.toString(), TypeRef.MAP);
+                        final Map<String, Object> root = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
                         final Map<String, Object> response = (Map<String, Object>) root.get("response");
                         final String html = (String) response.get("html");
                         final Map<String, Object> download_data = (Map<String, Object>) response.get("download_data");
@@ -658,38 +659,9 @@ public class FreeDiscPl extends PluginForHost {
                 link.setProperty(getDirecturlproperty(account), dllink);
             }
         }
-        /* Correct filename if needed */
-        final String filenameFromHeader = getFileNameFromDispositionHeader(dl.getConnection());
-        if (filenameFromHeader != null) {
-            link.setFinalFileName(Encoding.htmlDecode(filenameFromHeader).trim());
-        } else {
-            /* Correct filename extension if needed. E.g. required if user downloads stream instead of original file. */
-            String newFilename = null;
-            final String filename = link.getName();
-            if (link.hasProperty(PROPERTY_STREAMING_FILENAME)) {
-                newFilename = link.getStringProperty(PROPERTY_STREAMING_FILENAME);
-            } else {
-                String realFileExtension = this.getExtensionFromMimeType(dl.getConnection());
-                /* Fallback if file-extension could not be determined by header. */
-                if (realFileExtension == null && this.hasAttemptedStreamDownload(link)) {
-                    if (this.isAudioStreamAvailable(link)) {
-                        realFileExtension = "mp3";
-                    } else {
-                        realFileExtension = "mp4";
-                    }
-                }
-                if (filename != null && realFileExtension != null) {
-                    newFilename = this.correctOrApplyFileNameExtension(filename, "." + realFileExtension);
-                }
-            }
-            if (filename != null && newFilename != null && !newFilename.equals(filename)) {
-                logger.info("Filename (extension) has changed. Old name: " + filename + " | New: " + newFilename);
-                link.setFinalFileName(newFilename);
-            }
-        }
+        /* Add a download slot */
+        controlMaxFreeDownloads(account, link, +1);
         try {
-            /* Add a download slot */
-            controlMaxFreeDownloads(account, link, +1);
             /* Start download */
             dl.startDownload();
         } finally {
@@ -909,10 +881,12 @@ public class FreeDiscPl extends PluginForHost {
                 br.getPage("https://" + this.getHost() + "/");
                 handleAntiBot(br, account);
                 if (isLoggedinHTML(br)) {
+                    /* Success */
                     logger.info("Cookie login successful");
-                    account.saveCookies(br.getCookies(this.getHost()), "");
+                    account.saveCookies(br.getCookies(br.getHost()), "");
                     return;
                 } else {
+                    /* Failure */
                     logger.info("Cookie login failed");
                     br.clearCookies(br.getHost());
                     account.clearCookies("");
@@ -923,7 +897,7 @@ public class FreeDiscPl extends PluginForHost {
             handleAntiBot(br, account);
             prepBRAjax(br);
             br.postPageRaw("/account/signin_set", "{\"email_login\":\"" + account.getUser() + "\",\"password_login\":\"" + account.getPass() + "\",\"remember_login\":1,\"provider_login\":\"\"}");
-            final Map<String, Object> root = JavaScriptEngineFactory.jsonToJavaMap(br.toString());
+            final Map<String, Object> root = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
             final Map<String, Object> response = (Map<String, Object>) root.get("response");
             if (((Boolean) root.get("success")) == Boolean.FALSE) {
                 /*
@@ -937,7 +911,8 @@ public class FreeDiscPl extends PluginForHost {
                 } else if (errMsg.equalsIgnoreCase("Jeden użytkownik, jedno konto! Pozostałe konta zostały czasowo zablokowane!")) {
                     /**
                      * 2022-03-22: Account is temp. banned under current IP. This can happen when trying to login with two accounts under
-                     * the same IP. </br> Solution: Wait and retry later or delete cookies, change IP and try again.
+                     * the same IP. </br>
+                     * Solution: Wait and retry later or delete cookies, change IP and try again.
                      */
                     throw new AccountUnavailableException(errMsg, 5 * 60 * 1000l);
                 } else {
@@ -947,7 +922,7 @@ public class FreeDiscPl extends PluginForHost {
             if (!isLoggedinHTML(response.get("html").toString())) {
                 throw new AccountInvalidException();
             }
-            account.saveCookies(br.getCookies(this.getHost()), "");
+            account.saveCookies(br.getCookies(br.getHost()), "");
         }
     }
 
@@ -970,7 +945,7 @@ public class FreeDiscPl extends PluginForHost {
         final Browser brc = br.cloneBrowser();
         prepBRAjax(brc);
         brc.getPage("/settings/get/");
-        final Map<String, Object> root = restoreFromString(brc.toString(), TypeRef.MAP);
+        final Map<String, Object> root = restoreFromString(brc.getRequest().getHtmlCode(), TypeRef.MAP);
         final Map<String, Object> response = (Map<String, Object>) root.get("response");
         final Map<String, Object> profile = (Map<String, Object>) response.get("profile");
         final Map<String, Object> user_settings = (Map<String, Object>) response.get("user_settings");

@@ -111,7 +111,7 @@ public class BeegCom extends PluginForHost {
         }
         this.setBrowserExclusive();
         br.setFollowRedirects(true);
-        String filename = null;
+        String title = null;
         boolean isHLS = false;
         String extraParams = "";
         final String timeParams = UrlQuery.parse(link.getPluginPatternMatcher()).get("t");
@@ -133,10 +133,10 @@ public class BeegCom extends PluginForHost {
         final Map<String, Object> stuff = (Map<String, Object>) file.get("stuff");
         if (stuff != null) {
             /* 2024-05-06: The "stuff" map si not always given. */
-            filename = (String) stuff.get("sf_name");
+            title = (String) stuff.get("sf_name");
         }
-        if (StringUtils.isEmpty(filename) && data != null && data.size() > 0) {
-            filename = (String) data.get(0).get("cd_value");
+        if (StringUtils.isEmpty(title) && data != null && data.size() > 0) {
+            title = (String) data.get(0).get("cd_value");
         }
         Map<String, String> qualities_http = null;
         Map<String, String> qualities_hls = null;
@@ -177,10 +177,9 @@ public class BeegCom extends PluginForHost {
                 dllink = "https://video.beeg.com/" + dllink;
             }
         }
-        if (!StringUtils.isEmpty(filename)) {
-            filename = filename.trim();
-            filename = this.correctOrApplyFileNameExtension(filename, extDefault);
-            link.setFinalFileName(filename);
+        if (!StringUtils.isEmpty(title)) {
+            title = title.trim();
+            link.setFinalFileName(this.applyFilenameExtension(title, extDefault));
         }
         br.setFollowRedirects(true);
         br.getHeaders().put("Referer", link.getPluginPatternMatcher());
@@ -201,6 +200,9 @@ public class BeegCom extends PluginForHost {
                             } else {
                                 link.setVerifiedFileSize(con.getCompleteContentLength());
                             }
+                        }
+                        if (!StringUtils.isEmpty(title)) {
+                            link.setFinalFileName(this.correctOrApplyFileNameExtension(title, con));
                         }
                     } else {
                         server_issue = true;

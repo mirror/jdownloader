@@ -36,7 +36,7 @@ public class LezlezlezCom extends PluginForDecrypt {
         final ArrayList<DownloadLink> ret = new ArrayList<DownloadLink>();
         final String name = UrlQuery.parse(param.getCryptedUrl()).get("name");
         final String finallink = "https://www.lezlezlez.com/vidz/" + name.replace(".flv", ".mp4");
-        final String finalfilename = this.correctOrApplyFileNameExtension(name, ".mp4");
+        final String finalfilename = this.applyFilenameExtension(name, ".mp4");
         final DownloadLink dl = createDownloadlink(finallink);
         dl.setFinalFileName(finalfilename);
         ret.add(dl);
