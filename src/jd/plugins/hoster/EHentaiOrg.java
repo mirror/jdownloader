@@ -20,6 +20,20 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import org.appwork.storage.JSonStorage;
+import org.appwork.storage.TypeRef;
+import org.appwork.uio.ConfirmDialogInterface;
+import org.appwork.uio.UIOManager;
+import org.appwork.utils.DebugMode;
+import org.appwork.utils.StringUtils;
+import org.appwork.utils.formatter.SizeFormatter;
+import org.appwork.utils.swing.dialog.ConfirmDialog;
+import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
+import org.jdownloader.gui.translate._GUI;
+import org.jdownloader.plugins.components.config.EhentaiConfig;
+import org.jdownloader.plugins.config.PluginJsonConfig;
+import org.jdownloader.plugins.controller.LazyPlugin;
+
 import jd.PluginWrapper;
 import jd.controlling.AccountController;
 import jd.http.Browser;
@@ -38,24 +52,9 @@ import jd.plugins.DownloadLink;
 import jd.plugins.DownloadLink.AvailableStatus;
 import jd.plugins.HostPlugin;
 import jd.plugins.LinkStatus;
-import jd.plugins.Plugin;
 import jd.plugins.PluginException;
 import jd.plugins.PluginForHost;
 import jd.plugins.components.UserAgents;
-
-import org.appwork.storage.JSonStorage;
-import org.appwork.storage.TypeRef;
-import org.appwork.uio.ConfirmDialogInterface;
-import org.appwork.uio.UIOManager;
-import org.appwork.utils.DebugMode;
-import org.appwork.utils.StringUtils;
-import org.appwork.utils.formatter.SizeFormatter;
-import org.appwork.utils.swing.dialog.ConfirmDialog;
-import org.jdownloader.captcha.v2.challenge.recaptcha.v2.CaptchaHelperHostPluginRecaptchaV2;
-import org.jdownloader.gui.translate._GUI;
-import org.jdownloader.plugins.components.config.EhentaiConfig;
-import org.jdownloader.plugins.config.PluginJsonConfig;
-import org.jdownloader.plugins.controller.LazyPlugin;
 
 @HostPlugin(revision = "$Revision$", interfaceVersion = 3, names = { "e-hentai.org" }, urls = { "https?://(?:[a-z0-9\\-]+\\.)?(?:e-hentai\\.org|exhentai\\.org)/(?:s/[a-f0-9]{10}/\\d+-\\d+|mpv/\\d+/[a-f0-9]{10}/#page\\d+)|ehentaiarchive://\\d+/[a-z0-9]+" })
 public class EHentaiOrg extends PluginForHost {
@@ -175,8 +174,8 @@ public class EHentaiOrg extends PluginForHost {
     }
 
     /**
-     * Take account from download candidate! </br> 2021-01-18: There is an API available but it is only returning the metadata:
-     * https://ehwiki.org/wiki/API
+     * Take account from download candidate! </br>
+     * 2021-01-18: There is an API available but it is only returning the metadata: https://ehwiki.org/wiki/API
      *
      * @param link
      * @param account
@@ -243,8 +242,8 @@ public class EHentaiOrg extends PluginForHost {
                 /* Another step */
                 final String continue_url2 = br.getRegex("document\\.getElementById\\(\"continue\"\\).*?document\\.location\\s*=\\s*\"((?:/|http)[^\"]+)\"").getMatch(0);
                 /**
-                 * 2022-01-07: Two types can be available: "Original Archive" and "Resample Archive". </br> We prefer best quality -->
-                 * "Original Archive"
+                 * 2022-01-07: Two types can be available: "Original Archive" and "Resample Archive". </br>
+                 * We prefer best quality --> "Original Archive"
                  */
                 final Form continueForm = br.getFormByInputFieldKeyValue("dltype", "org");
                 if (continue_url2 != null) {
@@ -368,14 +367,11 @@ public class EHentaiOrg extends PluginForHost {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
         checkErrors(br, link, account);
-        // TODO: 2024-05-03: Add functionality and test this
-        final long timestampLastFailDueToBrokenImage = link.getLongProperty(PROPERTY_TIMESTAMP_LAST_BROKEN_IMAGE_FAIL, 0);
-        final long timestampLastBrokenImageRetry = link.getLongProperty(PROPERTY_TIMESTAMP_LAST_BROKEN_IMAGE_RETRY, 0);
-        brokenimagehandling: if (DebugMode.TRUE_IN_IDE_ELSE_FALSE && timestampLastFailDueToBrokenImage > 0 && System.currentTimeMillis() - timestampLastBrokenImageRetry > 15 * 60 * 1000) {
+        brokenimagehandling: if (needsBrokenImageWorkaround(link, account)) {
             /**
-             * Download of this image has just recently failed due to the image being serverside broken/unavailable. </br> Website has a
-             * feature called 'Reload broken image' which we are making use of here. </br> This will give us the same image hosted on a
-             * different CDN.
+             * Download of this image has just recently failed due to the image being serverside broken/unavailable. </br>
+             * Website has a feature called 'Reload broken image' which we are making use of here. </br>
+             * This will give us the same image hosted on a different CDN.
              */
             logger.info("Attempting to 'Reload broken image'");
             final String reloadBrokenImageStr = br.getRegex("id=\"loadfail\"[^>]*onclick=\"return nl\\('([^']+)'\\)").getMatch(0);
@@ -399,15 +395,15 @@ public class EHentaiOrg extends PluginForHost {
         final EhentaiConfig cfg = PluginJsonConfig.get(EhentaiConfig.class);
         if (link.getForcedFileName() != null) {
             /* Special handling: Package customizer altered, or user altered value, we need to update this value. */
-            link.setForcedFileName(this.correctOrApplyFileNameExtension(link.getForcedFileName(), ext));
+            link.setForcedFileName(this.applyFilenameExtension(link.getForcedFileName(), ext));
         } else {
-            final String namepart = getFileTitle(br, link);
+            final String title = getFileTitle(br, link);
             /* Set filename based on user setting */
             if (StringUtils.isNotEmpty(originalFileName) && cfg.isPreferOriginalFilename()) {
                 link.setFinalFileName(originalFileName);
             } else {
-                /* crawler might not set file extension. */
-                link.setFinalFileName(namepart + ext);
+                /* crawler might not have set file extension. */
+                link.setFinalFileName(this.applyFilenameExtension(title, ext));
             }
         }
         final boolean userPrefersOriginalDownloadurl = cfg.isAccountDownloadsPreferOriginalQuality();
@@ -415,7 +411,7 @@ public class EHentaiOrg extends PluginForHost {
         final String filesizeStrOriginalImage = originalDownloadRegex.getMatch(1);
         String originalImageDownloadurl = originalDownloadRegex.getMatch(0);
         if (originalImageDownloadurl != null) {
-            originalImageDownloadurl = Encoding.htmlDecode(originalImageDownloadurl);
+            originalImageDownloadurl = Encoding.htmlOnlyDecode(originalImageDownloadurl);
             this.dllinkOriginal = originalImageDownloadurl;
             link.setProperty(PROPERTY_IS_ORIGINAL_DOWNLOAD_AVAILABLE, true);
         } else {
@@ -543,16 +539,16 @@ public class EHentaiOrg extends PluginForHost {
             }
         }
         String directurl;
-        if (storedDirecturl != null) {
-            logger.info("Trying to re-use stored directurl via property: " + directurlproperty + " | URL: " + storedDirecturl);
-            directurl = storedDirecturl;
-        } else {
+        Boolean isOriginalFileDownload = null;
+        if (storedDirecturl == null || this.needsBrokenImageWorkaround(link, account)) {
             requestFileInformation(link, account, true);
             if (StringUtils.isEmpty(dllink) && StringUtils.isEmpty(this.dllinkOriginal)) {
                 /* This should never happen! */
                 logger.warning("Failed to find final downloadurl");
                 checkErrors(br, link, account);
                 this.handleErrorsLastResort(link, account, this.br);
+                /* This should never be reached. */
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             }
             /*
              * Some original images can be downloaded without account but most of them can only be downloaded via account so this handling
@@ -562,24 +558,29 @@ public class EHentaiOrg extends PluginForHost {
                 /* No need to check here as we've checked cached limits before already. */
                 // checkForCachedAccountLimits(account, this.dllinkOriginal);
                 directurl = this.dllinkOriginal;
+                isOriginalFileDownload = Boolean.TRUE;
             } else {
                 directurl = this.dllink;
             }
-        }
-        dl = new jd.plugins.BrowserAdapter().openDownload(br, link, directurl, this.isResumeable(link, account), getMaxChunks(link, account));
-        long expectedFilesize = link.getView().getBytesTotal();
-        if (expectedFilesize > 1000) {
-            /*
-             * Allow content to be up to 1KB smaller than expected filesize --> All to prevent downloading static images e.g. when trying to
-             * download after randomly being logged-out.
-             */
-            expectedFilesize -= 1000;
+        } else {
+            logger.info("Trying to re-use stored directurl via property: " + directurlproperty + " | URL: " + storedDirecturl);
+            directurl = storedDirecturl;
         }
         try {
+            dl = new jd.plugins.BrowserAdapter().openDownload(br, link, directurl, this.isResumeable(link, account), getMaxChunks(link, account));
+            long expectedFilesize = link.getView().getBytesTotal();
+            if (expectedFilesize > 1000) {
+                /*
+                 * Allow content to be up to 1KB smaller than expected filesize --> All to prevent downloading static images e.g. when
+                 * trying to download after randomly being logged-out.
+                 */
+                expectedFilesize -= 1000;
+            }
             if (!this.looksLikeDownloadableContent(dl.getConnection())) {
                 br.followConnection(true);
                 checkErrors(br, link, account);
-                this.handleErrorsLastResort(link, account, this.br);
+                this.handleErrorsLastResort(link, account, this.br); /* This should never be reached. */
+                throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
             } else if (dl.getConnection().getResponseCode() != 206 && dl.getConnection().getCompleteContentLength() > 0 && expectedFilesize > 0 && dl.getConnection().getCompleteContentLength() < expectedFilesize) {
                 /* Don't jump into this for response code 206 Partial Content (when download is resumed). */
                 br.followConnection(true);
@@ -592,6 +593,9 @@ public class EHentaiOrg extends PluginForHost {
             if (storedDirecturl != null) {
                 link.removeProperty(directurlproperty);
                 throw new PluginException(LinkStatus.ERROR_RETRY, "Stored directurl expired", e);
+            } else if (link.getPluginPatternMatcher().matches(TYPE_SINGLE_IMAGE) && !link.hasProperty(PROPERTY_TIMESTAMP_LAST_BROKEN_IMAGE_FAIL) && !Boolean.TRUE.equals(isOriginalFileDownload)) {
+                link.setProperty(PROPERTY_TIMESTAMP_LAST_BROKEN_IMAGE_FAIL, System.currentTimeMillis());
+                throw new PluginException(LinkStatus.ERROR_TEMPORARILY_UNAVAILABLE, "Retry on possibly broken image", 30 * 1000l, e);
             } else {
                 throw e;
             }
@@ -608,29 +612,20 @@ public class EHentaiOrg extends PluginForHost {
                 }
             }
         }
-        /* Correct filename if necessary */
-        final String headerFilename = Plugin.getFileNameFromConnection(dl.getConnection());
-        final String finalFilename = link.getFinalFileName();
-        final String extByMimeType = getExtensionFromMimeType(dl.getConnection());
-        if (finalFilename != null && headerFilename != null) {
-            final String newExt = Plugin.getFileNameExtensionFromString(headerFilename);
-            if (newExt != null) {
-                final String newFilename = this.correctOrApplyFileNameExtension(finalFilename, newExt);
-                if (!newFilename.equals(finalFilename)) {
-                    logger.info("Corrected file-extension before download by header | New filename: " + newFilename);
-                    link.setFinalFileName(newFilename);
-                }
-            }
-        } else if (finalFilename != null && extByMimeType != null) {
-            final String newFilename = this.correctOrApplyFileNameExtension(finalFilename, "." + extByMimeType);
-            if (!newFilename.equals(finalFilename)) {
-                logger.info("Corrected file-extension before download by Content-Type | New filename: " + newFilename);
-                link.setFinalFileName(newFilename);
-            }
-        }
         if (dl.startDownload()) {
             /* Download was successful -> Remove some properties related to download-failures. */
+            link.removeProperty(PROPERTY_TIMESTAMP_LAST_BROKEN_IMAGE_FAIL);
             link.removeProperty(PROPERTY_TIMESTAMP_LAST_BROKEN_IMAGE_RETRY);
+        }
+    }
+
+    private boolean needsBrokenImageWorkaround(final DownloadLink link, final Account account) {
+        final long timestampLastFailDueToBrokenImage = link.getLongProperty(PROPERTY_TIMESTAMP_LAST_BROKEN_IMAGE_FAIL, 0);
+        final long timestampLastBrokenImageRetry = link.getLongProperty(PROPERTY_TIMESTAMP_LAST_BROKEN_IMAGE_RETRY, 0);
+        if (timestampLastFailDueToBrokenImage > 0 && System.currentTimeMillis() - timestampLastBrokenImageRetry > 15 * 60 * 1000) {
+            return true;
+        } else {
+            return false;
         }
     }
 
@@ -810,8 +805,8 @@ public class EHentaiOrg extends PluginForHost {
                 logger.info("e-hentai.org: Successfully logged in via cookies -> Checking exhentai.org login");
                 /* Get- and save exhentai.org cookies too */
                 /**
-                 * Important! Get- and save exhentai cookies: First time this will happen: </br> exhentai.org ->
-                 * forums.e-hentai.org/remoteapi.php?ex= -> exhentai.org/?poni= -> exhentai.org
+                 * Important! Get- and save exhentai cookies: First time this will happen: </br>
+                 * exhentai.org -> forums.e-hentai.org/remoteapi.php?ex= -> exhentai.org/?poni= -> exhentai.org
                  */
                 br.getPage(MAINPAGE_exhentai);
                 if (this.isLoggedInEhentaiOrExhentai(br)) {
@@ -930,8 +925,11 @@ public class EHentaiOrg extends PluginForHost {
     }
 
     /**
-     * Access e-hentai.org/home.php before calling this! </br> Returns array of numbers with: </br> [0] = number of items downloaded / used
-     * from limit </br> [1] = max limit for this account </br> [1] minus [0] = points left
+     * Access e-hentai.org/home.php before calling this! </br>
+     * Returns array of numbers with: </br>
+     * [0] = number of items downloaded / used from limit </br>
+     * [1] = max limit for this account </br>
+     * [1] minus [0] = points left
      */
     private int[] getImagePointsLeftInfo(final Browser br) {
         if (!br.getURL().endsWith("/home.php")) {

@@ -55,7 +55,7 @@ public interface EhentaiConfig extends PluginConfigInterface {
         ZIP_AND_IMAGES {
             @Override
             public String getLabel() {
-                return "Crawl zip archive and images";
+                return "Crawl original zip archive and images";
             }
         },
         ZIP_ONLY {
@@ -67,7 +67,7 @@ public interface EhentaiConfig extends PluginConfigInterface {
         ZIP_DISABLED {
             @Override
             public String getLabel() {
-                return "Do not crawl zip archive: Crawl images only";
+                return "Do not crawl original zip archive: Crawl images only";
             }
         };
     }

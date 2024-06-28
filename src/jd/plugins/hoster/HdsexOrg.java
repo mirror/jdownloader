@@ -108,11 +108,12 @@ public class HdsexOrg extends PluginForHost {
     @Override
     public AvailableStatus requestFileInformation(final DownloadLink link) throws Exception {
         final String extDefault = ".mp4";
+        final String fid = this.getFID(link);
         if (!link.isNameSet()) {
-            link.setName(this.getFID(link) + extDefault);
+            link.setName(fid + extDefault);
         }
         this.setBrowserExclusive();
-        br.getPage("https://" + this.getHost() + "/video/" + this.getFID(link));
+        br.getPage("https://" + this.getHost() + "/video/" + fid);
         if (br.getHttpConnection().getResponseCode() == 404) {
             throw new PluginException(LinkStatus.ERROR_FILE_NOT_FOUND);
         }
@@ -123,7 +124,7 @@ public class HdsexOrg extends PluginForHost {
         if (title != null) {
             title = Encoding.htmlDecode(title);
             title = title.trim();
-            link.setFinalFileName(title + extDefault);
+            link.setFinalFileName(this.applyFilenameExtension(title, extDefault));
         }
         return AvailableStatus.TRUE;
     }
@@ -131,16 +132,17 @@ public class HdsexOrg extends PluginForHost {
     @Override
     public void handleFree(final DownloadLink link) throws Exception {
         requestFileInformation(link);
-        String hlsBest = br.getRegex("\"(https?://[^\"]*\\.m3u8[^\"]*)\"").getMatch(0);
-        if (StringUtils.isEmpty(hlsBest)) {
+        String singleHlsURL = br.getRegex("source src=\"(https?://[^\"]+)\"[^>]*type=\"application/x-mpegURL\"").getMatch(0);
+        if (StringUtils.isEmpty(singleHlsURL)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        hlsBest = Encoding.htmlDecode(hlsBest);
+        checkFFmpeg(link, "Download a HLS Stream");
+        singleHlsURL = Encoding.htmlOnlyDecode(singleHlsURL);
+        // br.getPage(hlsMaster);
+        // final HlsContainer hlsbest = HlsContainer.findBestVideoByBandwidth(HlsContainer.getHlsQualities(this.br));
         br.getHeaders().put("Origin", "https://" + br.getHost());
         br.getHeaders().put("Referer", "https://" + br.getHost() + "/");
-        br.getPage(hlsBest);
-        checkFFmpeg(link, "Download a HLS Stream");
-        dl = new HLSDownloader(link, br, hlsBest);
+        dl = new HLSDownloader(link, br, singleHlsURL);
         dl.startDownload();
     }
 

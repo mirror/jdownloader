@@ -358,24 +358,33 @@ public class BiqleRuCrawler extends PluginForDecrypt {
         final Regex urlinfo = new Regex(param.getCryptedUrl(), "((?:\\-)?\\d+)_(\\d+)");
         final String oid = urlinfo.getMatch(0);
         final String id = urlinfo.getMatch(1);
-        String url = br.getRegex("((?:https?:)?//[^/]+/(?:player|playlist|download)/[a-zA-Z0-9_\\-]+\\?m=[a-f0-9]+)").getMatch(0);
-        if (url == null) {
+        String urlstep1 = br.getRegex("((?:https?:)?//[^/]+/(?:player|playlist|download)/[a-zA-Z0-9_\\-]+\\?m=[a-f0-9]+)").getMatch(0);
+        if (urlstep1 == null) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
-        url = url.replaceFirst("/(player|playlist|download)/", "/player/");
-        br.getPage(url);
-        url = br.getRegex("(/playlist/[^<>\"\\']+)").getMatch(0);
-        if (url == null) {
+        urlstep1 = urlstep1.replaceFirst("/(player|playlist|download)/", "/player/");
+        br.getPage(urlstep1);
+        /* 2024-06-28: step2 is not mandatory anymore */
+        final String urlstep2 = br.getRegex("(/playlist/[^<>\"\\']+)").getMatch(0);
+        if (urlstep2 != null) {
+            br.getPage(urlstep2);
+        }
+        final String json;
+        if (br.getRequest().getHtmlCode().startsWith("{")) {
+            json = br.getRequest().getHtmlCode();
+        } else {
+            json = br.getRegex("window\\.playlist = (\\{.*?\\});\\s+").getMatch(0);
+        }
+        if (StringUtils.isEmpty(json)) {
             throw new PluginException(LinkStatus.ERROR_PLUGIN_DEFECT);
         }
+        final Map<String, Object> response = restoreFromString(json, TypeRef.MAP);
         // final String userPreferredQuality = getUserPreferredqualityStr();
         final Map<String, DownloadLink> qualityMap = new HashMap<String, DownloadLink>();
         DownloadLink best = null;
         int highestQualityHeight = -1;
-        br.getPage(url);
-        final Map<String, Object> response = restoreFromString(br.getRequest().getHtmlCode(), TypeRef.MAP);
         int numberofSkippedUnsupportedStreamTypes = 0;
-        for (Map<String, Object> source : (List<Map<String, Object>>) response.get("sources")) {
+        for (final Map<String, Object> source : (List<Map<String, Object>>) response.get("sources")) {
             if ("mp4".equals(source.get("type"))) {
                 final String file = (String) source.get("file");
                 String resolution = new Regex(file, "(\\d+)p\\.mp4").getMatch(0);
